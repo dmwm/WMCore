@@ -4,7 +4,7 @@ _CreateWMBS_
 Implementation of CreateWMBS for MySQL.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.10 2008/09/15 10:09:07 sfoulkes Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.11 2008/09/18 13:26:44 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -19,37 +19,16 @@ class CreateWMBS(CreateWMBSBase):
         """        
         CreateWMBSBase.__init__(self, logger, dbInterface)
 
-        self.create["wmbs_fileset"] = \
+        self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          INT(11)      NOT NULL AUTO_INCREMENT,
              name        VARCHAR(255) NOT NULL,
              open        BOOLEAN      NOT NULL DEFAULT FALSE,
              last_update TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
                ON UPDATE CURRENT_TIMESTAMP,  
-             PRIMARY KEY (id), UNIQUE (name))"""
+             PRIMARY KEY (id), UNIQUE (name)) ENGINE=InnoDB"""
 
-        self.create["wmbs_fileset_files"] = \
-          """CREATE TABLE wmbs_fileset_files (
-             file        INT(11)   NOT NULL,
-             fileset     INT(11)   NOT NULL,
-             status      ENUM ('active', 'inactive', 'invalid'),
-             insert_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-               ON UPDATE CURRENT_TIMESTAMP,
-             FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY(file)    REFERENCES wmbs_file_details(id)
-               ON DELETE CASCADE)"""
-
-        self.create["wmbs_file_parent"] = \
-          """CREATE TABLE wmbs_file_parent (
-             child  INT(11) NOT NULL,
-             parent INT(11) NOT NULL,
-             FOREIGN KEY (child)  REFERENCES wmbs_file(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY (parent) REFERENCES wmbs_file(id),
-             UNIQUE(child, parent))"""
-        
-        self.create["wmbs_file_details"] = \
+        self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
              id          INT(11)      NOT NULL AUTO_INCREMENT,
              lfn         VARCHAR(255) NOT NULL,
@@ -59,43 +38,69 @@ class CreateWMBS(CreateWMBSBase):
              last_event  INT(11),
              UNIQUE(lfn),
              PRIMARY KEY(id),
-             INDEX (lfn))"""
+             INDEX (lfn)) ENGINE=InnoDB"""
+             
+        self.create["03wmbs_fileset_files"] = \
+          """CREATE TABLE wmbs_fileset_files (
+             file        INT(11)   NOT NULL,
+             fileset     INT(11)   NOT NULL,
+             status      ENUM ('active', 'inactive', 'invalid'),
+             insert_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+               ON UPDATE CURRENT_TIMESTAMP,
+             FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY(file)    REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE) ENGINE=InnoDB"""
+
+        self.create["04wmbs_file_parent"] = \
+          """CREATE TABLE wmbs_file_parent (
+             child  INT(11) NOT NULL,
+             parent INT(11) NOT NULL,
+             FOREIGN KEY (child)  REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY (parent) REFERENCES wmbs_file_details(id),
+             UNIQUE(child, parent)) ENGINE=InnoDB"""
         
-        self.create["wmbs_file_runlumi_map"] = \
+        
+        self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
-             file    INT(11),
-             run     INT(11),
-             lumi    INT(11),
-             FOREIGN KEY (file) REFERENCES wmbs_file(id)
-               ON DELETE CASCADE)"""
+             file    INT(11) NOT NULL,
+             run     INT(11) NOT NULL,
+             lumi    INT(11) NOT NULL,
+             FOREIGN KEY (file) REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE) ENGINE=InnoDB"""
         
-        self.create["wmbs_location"] = \
+        self.constraints["uniquefilerunlumi"] = \
+          """CREATE UNIQUE INDEX uniq_wmbs_file_run_lumi on
+             wmbs_file_runlumi_map (file, run, lumi)"""
+             
+        self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
              id      INT(11)      NOT NULL AUTO_INCREMENT,
              se_name VARCHAR(255) NOT NULL,
              UNIQUE(se_name),
-             PRIMARY KEY(id))"""
+             PRIMARY KEY(id)) ENGINE=InnoDB"""
         
-        self.create["wmbs_file_location"] = \
+        self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
              file     INT(11),
              location INT(11),
              UNIQUE(file, location),
-             FOREIGN KEY(file)     REFERENCES wmbs_file(id)
+             FOREIGN KEY(file)     REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE,
              FOREIGN KEY(location) REFERENCES wmbs_location(id)
                ON DELETE CASCADE)"""
         
-        self.create["wmbs_workflow"] = \
+        self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
             id           INT(11) NOT NULL AUTO_INCREMENT,
             spec         VARCHAR(255) NOT NULL,
             name         VARCHAR(255) NOT NULL,
             owner        VARCHAR(255) NOT NULL,
             UNIQUE(spec, name, owner),
-            PRIMARY KEY (id))"""
+            PRIMARY KEY (id)) ENGINE=InnoDB"""
         
-        self.create["wmbs_subscription"] = \
+        self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
              id          INT(11)      NOT NULL AUTO_INCREMENT,
              fileset     INT(11)      NOT NULL,
@@ -109,33 +114,33 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE,
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
-               ON DELETE CASCADE)"""
+               ON DELETE CASCADE) ENGINE=InnoDB"""
           
-        self.create["wmbs_sub_files_acquired"] = \
+        self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (
              subscription INT(11) NOT NULL,
              file         INT(11) NOT NULL,
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
-             FOREIGN KEY (file)         REFERENCES wmbs_file(id))"""
+             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)) ENGINE=InnoDB"""
         
-        self.create["wmbs_sub_files_failed"] = \
+        self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (
              subscription INT(11) NOT NULL,
              file         INT(11) NOT NULL,
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
-             FOREIGN KEY (file)         REFERENCES wmbs_file(id))"""
+             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)) ENGINE=InnoDB"""
         
-        self.create["wmbs_sub_files_complete"] = \
+        self.create["12wmbs_sub_files_complete"] = \
           """CREATE TABLE wmbs_sub_files_complete (
              subscription INT(11) NOT NULL,
              file         INT(11) NOT NULL,
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
-             FOREIGN KEY (file)         REFERENCES wmbs_file(id))"""
+             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)) ENGINE=InnoDB"""
         
-        self.create["wmbs_jobgroup"] = \
+        self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
              id           INT(11)    NOT NULL AUTO_INCREMENT,
              subscription INT(11)    NOT NULL,
@@ -143,9 +148,9 @@ class CreateWMBS(CreateWMBSBase):
              ON UPDATE CURRENT_TIMESTAMP,
              PRIMARY KEY (id),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-               ON DELETE CASCADE)"""
+               ON DELETE CASCADE) ENGINE=InnoDB"""
         
-        self.create["wmbs_job"] = \
+        self.create["14wmbs_job"] = \
           """CREATE TABLE wmbs_job (
              id          INT(11)   NOT NULL AUTO_INCREMENT,
              jobgroup    INT(11)   NOT NULL,
@@ -155,16 +160,16 @@ class CreateWMBS(CreateWMBSBase):
              ON UPDATE CURRENT_TIMESTAMP,
              PRIMARY KEY (id),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-               ON DELETE CASCADE)"""
+               ON DELETE CASCADE) ENGINE=InnoDB"""
         
-        self.create["wmbs_job_assoc"] = \
+        self.create["15wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (
              job    INT(11) NOT NULL,
              file   INT(11) NOT NULL,
              FOREIGN KEY (job) REFERENCES wmbs_job(id)
                ON DELETE CASCADE,
-             FOREIGN KEY (file) REFERENCES wmbs_file(id)
-               ON DELETE CASCADE)"""
+             FOREIGN KEY (file) REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE) ENGINE=InnoDB"""
         
         self.constraints["uniquewfname"] = \
           "CREATE UNIQUE INDEX uniq_wf_name on wmbs_workflow (name)"

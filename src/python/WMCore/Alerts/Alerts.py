@@ -5,8 +5,8 @@ _Alerts_
 WMCore alert system.
 """
 
-__revision__ = "$Id: Alerts.py,v 1.3 2008/11/12 21:49:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Alerts.py,v 1.4 2008/11/17 12:57:40 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.DataStructs.Alert import Alert
 from WMCore.WMFactory import WMFactory
@@ -30,7 +30,8 @@ class Alerts:
         """
         myThread = threading.currentThread()
         queryDialect = myThread.dialect + ".Queries"
-        self.query = myThread.factory["alerts"].loadObject(queryDialect)
+        factory = WMFactory("alerts", "WMCore.Alerts")
+        self.query = factory.loadObject(queryDialect)
 
         try:
             createDialect = myThread.dialect + ".Create"

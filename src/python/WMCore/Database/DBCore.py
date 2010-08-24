@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.13 2008/08/12 18:48:01 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: DBCore.py,v 1.14 2008/08/12 19:09:42 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -85,7 +85,7 @@ class DBInterface(WMObject):
             self.logger.debug ('DBInterface.executebinds - sql : %s' % s)
             self.logger.debug ('DBInterface.executebinds - binds : %s' % b)
             #Maybe need to get the cursor???
-            result = connection.executemany(s, b)
+            result = connection.execute(s, b)
             return result
         except Exception, e:
             self.logger.exception('DBInterface.executebinds - exception type: %s' % type(e))

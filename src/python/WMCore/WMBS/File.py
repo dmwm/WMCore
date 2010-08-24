@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.26 2008/10/28 15:23:38 metson Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: File.py,v 1.27 2008/10/28 17:42:54 metson Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -100,8 +100,10 @@ class File(BusinessObject, WMFile):
         """
         Save a file to the database 
         """
+        newtrans = False
         if not trans:
             trans = Transaction(dbinterface = self.dbfactory.connect())
+            newtrans = True
         try:
             try:
                 self.daofactory(classname='Files.Add').execute(
@@ -125,7 +127,8 @@ class File(BusinessObject, WMFile):
                 pass #Ignore that the file exists
             except Exception, e:
                 raise e
-            trans.commit()
+            if newtrans:
+                trans.commit()
         except Exception, e:
             trans.rollback()
             raise e

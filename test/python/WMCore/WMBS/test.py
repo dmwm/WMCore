@@ -28,45 +28,11 @@ factory = SQLFactory(logger)
 wmbs = factory.connect(engine)
 # TODO: Drop tables first!
 
-try: wmbs.createFilesetTable()
+try: 
+    wmbs.createWMBS()
+    print "Created a WMBS instance in %s" % database
 except:
-    print "Couldn't create Fileset table - probably already exists, check the log" 
-try: wmbs.createFileTable()
-except:
-    print "Couldn't create File table - probably already exists, check the log"
-try:
-    wmbs.createFileParentTable()
-except:
-    print "Couldn't create File Parent table - probably already exists, check the log"
-try: wmbs.createFileDetailsTable()
-except:
-    print "Couldn't create File Details table - probably already exists, check the log"
-try: wmbs.createLocationTable()
-except:
-    print "Couldn't create Location table - probably already exists, check the log"
-try: wmbs.createFileLocationsTable()
-except:
-    print "Couldn't create File Locations table - probably already exists, check the log"
-try: wmbs.createSubscriptionsTable()
-except:
-    print "Couldn't create Subscriptions table - probably already exists, check the log"
-try: wmbs.createSubscriptionAcquiredFilesTable()
-except:
-    print "Couldn't create Acquired Files table - probably already exists, check the log"
-try: wmbs.createSubscriptionFailedFilesTable()
-except:
-    print "Couldn't create Failed Files table - probably already exists, check the log"
-try: wmbs.createSubscriptionCompletedFilesTable()
-except:
-    print "Couldn't create Complete Files table - probably already exists, check the log"
-try: wmbs.createJobTable()
-except:
-    print "Couldn't create Job table - probably already exists, check the log"
-try: wmbs.createJobAssociationTable()
-except:
-    print "Couldn't create Job Association table - probably already exists, check the log"
-
-print "Created a WMBS instance in %s" % database
+    print "Couldn't create WMBS tables - probably already exists, check the log" 
 
 wmbs.insertFileset('/Higgs/SimonsCoolData/RECO')
 wmbs.insertFileset(['dataset1', 'dataset2'])
@@ -96,10 +62,14 @@ fs = wmbs.showFilesInFileset(fileset='dataset1')
 for f in fs:
     for i in f.fetchall():
         print i
+        
+wmbs.newWorkflow('file.xml', 'metson')
+wmbs.newWorkflow('file2.xml', 'metson')
 
-wmbs.newSubscription(fileset='/Higgs/SimonsCoolData/RECO')
-wmbs.newSubscription(fileset='/Higgs/SimonsCoolData/RECO', subtype='merge')
-wmbs.newSubscription(fileset=['dataset1', 'dataset2'])
+wmbs.newSubscription(fileset='/Higgs/SimonsCoolData/RECO', spec='file.xml', owner = 'metson')
+wmbs.newSubscription(fileset='/Higgs/SimonsCoolData/RECO', spec='file.xml', owner = 'metson', subtype='merge')
+wmbs.newSubscription(fileset=['dataset1', 'dataset2'], spec='file2.xml', owner = 'metson')
+
 
 fs = wmbs.subscriptionsForFileset(fileset='/Higgs/SimonsCoolData/RECO')
 print 'all subscriptions on /Higgs/SimonsCoolData/RECO - should be a processing and a merge'

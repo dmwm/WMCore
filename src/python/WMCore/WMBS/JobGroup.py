@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.21 2009/02/03 20:44:55 sryu Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: JobGroup.py,v 1.22 2009/02/12 16:22:14 sryu Exp $"
+__version__ = "$Revision: 1.22 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -213,11 +213,9 @@ class JobGroup(WMBSBase, WMJobGroup):
         _recordAcquire_
         
         Mark a set of jobs that are associated with the job group as acquired.
-        If no list of jobs is passed in then mark all jobs as acquired.
+        If no list of jobs is passed in then mark all files in jobGroup 
+        as acquired.
         """
-        if self.status() != "ACTIVE":
-            return False
-
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
                 
@@ -231,11 +229,13 @@ class JobGroup(WMBSBase, WMJobGroup):
         _recordComplete_
 
         Mark a set of jobs that are associated with the job group as complete.
-        If no list of jobs is passed in then mark all jobs as complete.
+        If no list of jobs is passed in then mark all files in jobGroup 
+        as complete.
+        
+        calling recordComplete without jobs parameter only make sense when 
+        JobGroup is completed. but it will be responsible the one who calls this 
+        function to check jobGroup complete status
         """
-        if self.status() != "COMPLETE":
-            return False
-
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
                 
@@ -249,11 +249,13 @@ class JobGroup(WMBSBase, WMJobGroup):
         _recordFail_
 
         Mark a set of jobs that are associated with the job group as failed.
-        If no list of jobs is passed in then mark all jobs as failed.
+        If no list of jobs is passed in then mark all files in jobGroup 
+        as failed.
+        
+        calling recordFail without jobs parameter only make sense when 
+        JobGroup is failed. but it will be responsible the one who calls this 
+        function to check jobGroup failed status
         """
-        if self.status() != "FAILED":
-            return False
-
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
             

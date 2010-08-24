@@ -6,8 +6,8 @@ Oracle implementation of Subscription.LoadFromID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.1 2009/01/14 16:35:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromID.py,v 1.2 2009/01/16 22:28:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.LoadFromID import LoadFromID as LoadFromIDMySQL
 
@@ -23,12 +23,7 @@ class LoadFromID(LoadFromIDMySQL):
         Rename the name column to type to maintain compatibility with the
         MySQL DAO objects.
         """
-        formattedResults = LoadFromIDMySQL.formatDict(self, result)
-
-        output = []
-        for formattedResult in formattedResults:
-            formattedResult["type"] = formattedResult["name"]
-            del formattedResult["name"]
-            output.append(formattedResult)
-            
-        return output
+        formattedResult = LoadFromIDMySQL.formatDict(self, result)
+        formattedResult["type"] = formattedResult["name"]
+        del formattedResult["name"]
+        return formattedResult

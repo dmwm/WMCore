@@ -6,8 +6,8 @@ Oracle implementation of Subscription.LoadFromFilesetWorkflow
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromFilesetWorkflow.py,v 1.1 2009/01/14 16:35:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromFilesetWorkflow.py,v 1.2 2009/01/16 22:29:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.LoadFromFilesetWorkflow \
      import LoadFromFilesetWorkflow as LoadFromFilesetWorkflowMySQL
@@ -25,12 +25,7 @@ class LoadFromFilesetWorkflow(LoadFromFilesetWorkflowMySQL):
         Rename the name column to type to maintain compatibility with the
         MySQL DAO objects.
         """
-        formattedResults = LoadFromFilesetWorkflowMySQL.formatDict(self, result)
-
-        output = []
-        for formattedResult in formattedResults:
-            formattedResult["type"] = formattedResult["name"]
-            del formattedResult["name"]
-            output.append(formattedResult)
-            
-        return output
+        formattedResult = LoadFromFilesetWorkflowMySQL.formatDict(self, result)
+        formattedResult["type"] = formattedResult["name"]
+        del formattedResult["name"]
+        return formattedResult

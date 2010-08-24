@@ -5,9 +5,10 @@ _WMBSSQLLite_
 SQLite specific implementations
 
 """
-__revision__ = "$Id: SQLite.py,v 1.1 2008/04/11 15:56:11 metson Exp $"
-__version__ = "$Revision: 1.1 $"
-
+__revision__ = "$Id: SQLite.py,v 1.2 2008/04/14 01:59:07 metson Exp $"
+__version__ = "$Revision: 1.2 $"
+import datetime
+import time
 from WMCore.WMBS.MySQL import MySQLDialect
 
 class SQLiteDialect(MySQLDialect):
@@ -29,6 +30,7 @@ class SQLiteDialect(MySQLDialect):
         self.create['wmbs_fileset_files'] = """CREATE TABLE wmbs_fileset_files (
                 file    int(11)      NOT NULL,
                 fileset int(11) NOT NULL,
+                insert_time timestamp NOT NULL,
                 status int(11),
                 FOREIGN KEY(fileset) references wmbs_fileset(id)
                 FOREIGN KEY(status) references wmbs_file_status(id)
@@ -60,6 +62,9 @@ class SQLiteDialect(MySQLDialect):
                 ON DELETE CASCADE)"""    
         
         self.insert['fileset'] = "insert into wmbs_fileset (name, last_update) values (:fileset, :timestamp)"
+        self.insert['fileforfileset'] = """insert into wmbs_fileset_files (file, fileset, insert_time) 
+            values ((select id from wmbs_file_details where lfn = :file),
+            (select id from wmbs_fileset where name = :fileset), :timestamp)"""
         self.insert['newsubscription'] = """insert into wmbs_subscription (fileset, type, last_update) 
                 values ((select id from wmbs_fileset where name =:fileset), 
                 (select id from wmbs_subs_type where name = :type), :timestamp)"""
@@ -74,6 +79,11 @@ class SQLiteDialect(MySQLDialect):
         self.select['subscriptionsforfilesetoftype'] = """select id from wmbs_subscription 
                 where type=(select id from wmbs_subs_type where name = :type) 
                 and fileset=(select id from wmbs_fileset where name =:fileset)"""
+    
+    def timestamp(self):
+        t = datetime.datetime.now()
+        return time.mktime(t.timetuple())
+        
                                      
     def createFileTable(self):
         sql = """CREATE TABLE wmbs_file_status (
@@ -102,32 +112,41 @@ class SQLiteDialect(MySQLDialect):
              
     def insertFileset(self, fileset = None):
         # insert a (list of) fileset(s) to WMBS
-        import datetime
-        import time
-        t = datetime.datetime.now()
-        timestamp = time.mktime(t.timetuple())
         binds = None
         if type(fileset) == type('string'):
-            binds = {'fileset':fileset, 'timestamp':timestamp}
+            binds = {'fileset':fileset, 'timestamp':self.timestamp()}
             self.processData(self.insert['fileset'], binds)
         elif type(fileset) == type([]):
             binds = []
             for f in fileset:
-                binds.append({'fileset':f, 'timestamp':timestamp})
+                binds.append({'fileset':f, 'timestamp':self.timestamp()})
             self.logger.debug( binds )
             self.processData(self.insert['fileset'], binds)
+
+    def insertFilesForFileset(self, files=None, size=0, events=0, run=0, lumi=0, fileset=None, conn = None, transaction = False):
+        # Add the file to wmbs_file_details 
+        self.logger.debug ("inserting %s for fileset %s" % (files, fileset))
+        self.insertFiles(files, size, events, run, lumi, conn, transaction)
+        
+        #Now add the files into the mapping table
+        if type(files) == type('string'):            
+            binds = {'file': files, 'fileset':fileset, 'timestamp':self.timestamp()}
+            self.processData(self.insert['fileforfileset'], binds, conn = conn, transaction = transaction)
+        elif type(files) == type([]):
+            binds = []
+            for f in files:
+                binds.append({'file': f[0], 'fileset':fileset, 'timestamp':self.timestamp()})
+            # Replace with some bulk operation
+            self.processData(self.insert['fileforfileset'], binds, conn = conn, transaction = transaction)
+            
             
     def newSubscription(self, fileset = None, subtype='processing'):
-        import datetime
-        import time
-        t = datetime.datetime.now()
-        timestamp = time.mktime(t.timetuple())
         if type('string') == type(fileset):
-            binds = {'fileset': fileset, 'type': subtype, 'timestamp':timestamp}
+            binds = {'fileset': fileset, 'type': subtype, 'timestamp':self.timestamp()}
             self.processData(self.insert['newsubscription'], binds)
         elif type(fileset) == type([]):
             binds = []
             for f in fileset:
-                binds.append({'fileset': f, 'type': subtype, 'timestamp':timestamp})
+                binds.append({'fileset': f, 'type': subtype, 'timestamp':self.timestamp()})
             self.processData(self.insert['newsubscription'], binds)             
             

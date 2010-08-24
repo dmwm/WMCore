@@ -6,7 +6,7 @@ import logging
 
 database = "sqlite:///database.lite"
 # mysql
-database = 'mysql://metson@localhost/wmbs'
+#database = 'mysql://metson@localhost/wmbs'
 "make a connection to a database"
 "for some weird reason my sql wants pool_size > 1"
 "something to do with the number of sub queries?" 
@@ -199,10 +199,15 @@ for i in range(5):
     print 'number of failed files: %s' % len( fs[0].fetchall() )
 
 
-
-
-
-
+fs = wmbs.newFilesSinceDate('dataset1', 1208137347)
+for f in fs:
+    print len( f.fetchall() )
+    
+fs = wmbs.filesInDateRange('dataset1', 1208137347, 1208147347)
+for f in fs:
+    print len( f.fetchall() )
+    
+print 'test ended'
 
 
 

@@ -7,8 +7,8 @@ MySQL Compatibility layer for WMBS
 
 """
 
-__revision__ = "$Id: MySQL.py,v 1.1 2008/04/11 15:56:11 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MySQL.py,v 1.2 2008/04/14 01:59:07 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBCore import DBInterface
 
@@ -47,6 +47,8 @@ class MySQLDialect(DBInterface):
                 file    int(11)      NOT NULL,
                 fileset int(11) NOT NULL,
                 status ENUM ("active", "inactive", "invalid"),
+                insert_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY(fileset) references wmbs_fileset(id)
                     ON DELETE CASCADE,
                 FOREIGN KEY(file) REFERENCES wmbs_file_details(id)
@@ -172,6 +174,15 @@ class MySQLDialect(DBInterface):
             and file not in (select file from wmbs_sub_files_complete where subscription=:subscription)"""
         self.select['failedfiles'] = "select file from wmbs_sub_files_failed where subscription=:subscription"
         self.select['completedfiles'] = "select file from wmbs_sub_files_complete where subscription=:subscription"
+        self.select['newfilessincedateforset'] = """select id, lfn, size, events, run, lumi from wmbs_file_details 
+                where id in (select file from wmbs_fileset_files where 
+                fileset = (select id from wmbs_fileset where name = :fileset)
+                and insert_time > :timestamp)"""
+        self.select['filesindaterangeforset'] = """select id, lfn, size, events, run, lumi from wmbs_file_details 
+                where id in (select file from wmbs_fileset_files where 
+                fileset = (select id from wmbs_fileset where name = :fileset)
+                and insert_time > :oldstamp
+                and insert_time < :newstamp)"""
                
         self.logger = logger
         self.logger.info ("Instantiating base SQL WMBS object")
@@ -291,9 +302,9 @@ class MySQLDialect(DBInterface):
     def showAllFilesets(self, conn = None, transaction = False):
         return self.processData(self.select['allfileset'], conn = conn, transaction = transaction)
             
-    def insertFilesForFileset(self, files=None, size=0, events=0, run=0, lumi=0, fileset=None, conn = None, transaction = False):
+    def insertFiles(self, files=None, size=0, events=0, run=0, lumi=0, conn = None, transaction = False):
         # Add the file to wmbs_file_details 
-        self.logger.debug ("inserting %s for fileset %s" % (files, fileset))
+        self.logger.debug ("inserting %s " % (files))
         if type(files) == type('string'):
             binds = {'lfn': files, 'size': size, 'events': events, 'run': run, 'lumi':lumi}
             self.processData(self.insert['newfile'], binds, conn = conn, transaction = transaction)  
@@ -303,6 +314,11 @@ class MySQLDialect(DBInterface):
             for f in files:
                  binds.append({'lfn': f[0], 'size': f[1], 'events': f[2], 'run': f[3], 'lumi':f[4]})
             self.processData(self.insert['newfile'], binds, conn = conn, transaction = transaction)
+                
+    def insertFilesForFileset(self, files=None, size=0, events=0, run=0, lumi=0, fileset=None, conn = None, transaction = False):
+        # Add the file to wmbs_file_details 
+        self.logger.debug ("inserting %s for fileset %s" % (files, fileset))
+        self.insertFiles(files, size, events, run, lumi, conn, transaction)
         
         #Now add the files into the mapping table
         if type(files) == type('string'):            
@@ -430,6 +446,14 @@ class MySQLDialect(DBInterface):
         else:
             self.logger.exception("completeFiles requires a single id number for subscription")
             raise "non-integer subscription id given"        
+
+    def newFilesSinceDate(self, fileset = None, timestamp=0, conn = None, transaction = False):
+        binds = {'fileset':fileset, 'timestamp':timestamp}
+        return self.processData(self.select['newfilessincedateforset'], binds)
+
+    def filesInDateRange(self, fileset = None, oldstamp=0, newstamp=0, conn = None, transaction = False):
+        binds = {'fileset':fileset, 'oldstamp':oldstamp, 'newstamp':newstamp}
+        return self.processData(self.select['filesindaterangeforset'], binds)
 
     def listAcquiredFiles(self, subscription=None, conn = None, transaction = False):
         if isinstance(subscription, int):

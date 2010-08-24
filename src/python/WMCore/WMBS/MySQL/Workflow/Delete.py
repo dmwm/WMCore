@@ -6,12 +6,12 @@ MySQL implementation of DeleteWorkflow
 
 """
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.3 2008/06/23 16:01:16 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Delete.py,v 1.4 2008/11/20 21:52:32 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class Delete(MySQLBase):
+class Delete(DBFormatter):
     """
     Create a workflow ready for subscriptions
     """

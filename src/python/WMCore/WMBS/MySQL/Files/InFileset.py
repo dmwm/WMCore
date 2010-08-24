@@ -1,9 +1,9 @@
 """
 MySQL implementation of Files.InFileset
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class InFileset(MySQLBase):
+class InFileset(DBFormatter):
     sql = """select distinct file.id, file.lfn, file.size, file.events, map.run, map.lumi
             from wmbs_file_details as file join wmbs_file_runlumi_map as map on map.file = file.id 
             where id in (select file from wmbs_fileset_files where 

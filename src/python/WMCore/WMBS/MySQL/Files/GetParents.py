@@ -3,9 +3,9 @@ MySQL implementation of File.GetParents
 
 Return a list of lfn's which are parents for a file.
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class GetParents(MySQLBase):
+class GetParents(DBFormatter):
     sql = """select lfn from wmbs_file_details where id IN (
             select parent from wmbs_file_parent where child = (
                 select id from wmbs_file_details where lfn = :file

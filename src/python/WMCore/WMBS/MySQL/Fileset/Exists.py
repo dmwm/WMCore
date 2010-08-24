@@ -5,17 +5,17 @@ _Exists_
 MySQL implementation of Fileset.Exists
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.1 2008/06/12 10:01:59 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Exists.py,v 1.2 2008/11/20 21:52:33 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class Exists(MySQLBase):
+class Exists(DBFormatter):
     sql = """select count(*) from wmbs_fileset 
             where name = :name"""
     
     def format(self, result):
-        result = MySQLBase.format(self, result)
+        result = DBFormatter.format(self, result)
         self.logger.debug( result )
         if result[0][0] > 0:
             return True

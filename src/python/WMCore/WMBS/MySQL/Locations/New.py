@@ -4,9 +4,9 @@ _New_
 
 MySQL implementation of Locations.New
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class New(MySQLBase):
+class New(DBFormatter):
     sql = "insert into wmbs_location (se_name) values (:location)"
     
     def getBinds(self, location = None):

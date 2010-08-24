@@ -6,12 +6,12 @@ MySQL implementation of NewWorkflow
 
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.1 2008/06/12 10:02:06 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2008/11/20 21:52:33 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class New(MySQLBase):
+class New(DBFormatter):
     """
     Create a workflow ready for subscriptions
     """

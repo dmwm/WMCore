@@ -1,15 +1,15 @@
 """
 MySQL implementation of Subscriptions.ForFileset
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class ForFileset(MySQLBase):
+class ForFileset(DBFormatter):
     sql = """select id from wmbs_subscription
                 where fileset IN (select id from wmbs_fileset where name = :fileset)
           """
                 
     def format(self, result):
-        result = MySQLBase.format(self, result)
+        result = DBFormatter.format(self, result)
         self.logger.debug( result )
         return [x[0] for x in result]
                 

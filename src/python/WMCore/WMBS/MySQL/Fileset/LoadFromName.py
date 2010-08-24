@@ -6,12 +6,12 @@ MySQL implementation of LoadFileset
 
 """
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.2 2008/07/03 09:55:02 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadFromName.py,v 1.3 2008/11/20 21:52:33 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class LoadFromName(MySQLBase):
+class LoadFromName(DBFormatter):
     sql = """select id, open, last_update from wmbs_fileset 
             where name = :fileset"""
             

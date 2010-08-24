@@ -7,12 +7,12 @@ MySQL implementation of Jobs.Delete
 """
 
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.1 2008/11/20 17:19:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Delete.py,v 1.2 2008/11/20 21:52:32 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class Delete(MySQLBase):
+class Delete(DBFormatter):
     sql = "delete from wmbs_job where id = :id"
     
     def getBinds(self, id = None):

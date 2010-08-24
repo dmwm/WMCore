@@ -5,12 +5,12 @@ MySQL implementation of File.Heritage
 Make the parentage link between two file id's
 """
 __all__ = []
-__revision__ = "$Id: Heritage.py,v 1.2 2008/06/24 11:44:28 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Heritage.py,v 1.3 2008/11/20 21:52:33 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class Heritage(MySQLBase):
+class Heritage(DBFormatter):
     sql = """insert into wmbs_file_parent (child, parent) values (:child, :parent)"""
     
     def getBinds(self, parent=0, child=0):

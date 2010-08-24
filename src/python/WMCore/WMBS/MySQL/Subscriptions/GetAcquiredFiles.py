@@ -7,12 +7,12 @@ MySQL implementation of Subscription.GetAcquiredFiles
 Return a list of files that are available for processing
 """
 __all__ = []
-__revision__ = "$Id: GetAcquiredFiles.py,v 1.3 2008/11/11 14:01:29 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetAcquiredFiles.py,v 1.4 2008/11/20 21:52:32 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class GetAcquiredFiles(MySQLBase):
+class GetAcquiredFiles(DBFormatter):
 #    sql = """select lfn from wmbs_file_details
 #                where id in (select file from wmbs_sub_files_acquired where subscription=:subscription) 
 #        """

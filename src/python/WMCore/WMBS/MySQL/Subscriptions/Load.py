@@ -12,12 +12,12 @@ TABLE wmbs_subscription
 """
 
 __all__ = []
-__revision__ = "$Id: Load.py,v 1.4 2008/11/20 16:56:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Load.py,v 1.5 2008/11/20 21:52:32 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class Load(MySQLBase):
+class Load(DBFormatter):
     
     def getSQL(self, **kwargs):
         sql = ""

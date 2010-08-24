@@ -7,12 +7,12 @@ MySQL implementation of Subscriptions.Delete
 """
 
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.1 2008/11/20 16:55:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Delete.py,v 1.2 2008/11/20 21:52:32 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class Delete(MySQLBase):
+class Delete(DBFormatter):
     """
 
     """

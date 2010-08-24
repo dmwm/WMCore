@@ -6,12 +6,12 @@ MySQL implementation of ListFileset
 
 """
 __all__ = []
-__revision__ = "$Id: List.py,v 1.2 2008/06/16 16:05:42 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: List.py,v 1.3 2008/11/20 21:52:34 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class List(MySQLBase):
+class List(DBFormatter):
     sql = "select id, se_name from wmbs_location order by se_name"
     
     def format(self, result):

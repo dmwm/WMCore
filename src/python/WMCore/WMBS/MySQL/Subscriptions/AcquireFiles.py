@@ -5,12 +5,12 @@ _AcquireFiles_
 MySQL implementation of Subscription.AcquireFiles
 """
 __all__ = []
-__revision__ = "$Id: AcquireFiles.py,v 1.3 2008/10/30 11:06:28 jcgon Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: AcquireFiles.py,v 1.4 2008/11/20 21:52:32 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class AcquireFiles(MySQLBase):
+class AcquireFiles(DBFormatter):
     sql = """insert into wmbs_sub_files_acquired 
                 (subscription, file) values (:subscription, :file)"""
         

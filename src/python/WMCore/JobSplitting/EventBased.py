@@ -7,15 +7,13 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 
 """
-__revision__ = "$Id: EventBased.py,v 1.5 2008/10/01 22:01:33 metson Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: EventBased.py,v 1.6 2008/12/01 22:14:14 sfoulkes Exp $"
+__version__  = "$Revision: 1.6 $"
 
 
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
-
-
 
 class EventBased(JobFactory):
     """
@@ -44,12 +42,12 @@ class EventBased(JobFactory):
         #//
         eventsPerJob = kwargs['events_per_job']
         carryOver = 0
+
         currentJob = job_instance(name = '%s-%s' % (jobname, len(jobs) + 1))
         currentJob.mask.setMaxAndSkipEvents(eventsPerJob, 0)
 
-
         for f in fileset:
-            eventsInFile = f.dict['events']
+            eventsInFile = f['events']
 
             #  //
             # // Take into account offset.

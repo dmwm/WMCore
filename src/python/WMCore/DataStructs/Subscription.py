@@ -8,24 +8,29 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.13 2008/10/01 14:57:42 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Subscription.py,v 1.14 2008/10/24 14:43:57 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 import copy
+from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset 
 
-class Subscription(Pickleable):
+class Subscription(Pickleable, dict):
     def __init__(self, fileset = Fileset(), workflow = None, 
+               whitelist = Set(), blacklist = Set(),
                split_algo = 'FileBased', type = "Processing"):
-        self.fileset = fileset
-        self.workflow = workflow
-        self.type = type
+        self.setdefault('fileset', fileset)
+        self.setdefault('workflow', workflow)
+        self.setdefault('type', type)
+        
         self.split_algo = split_algo
+        self.whitelist = whitelist
+        self.blacklist = blacklist
         
         self.available = Fileset(name=fileset.name, 
                                  files = fileset.listFiles(), 
                                  logger = fileset.logger)  
-        #copy.deepcopy(fileset)
+        
         self.acquired = Fileset(name='acquired', logger = fileset.logger)
         self.completed = Fileset(name='completed', logger = fileset.logger)
         self.failed = Fileset(name='failed', logger = fileset.logger)
@@ -125,13 +130,40 @@ class Subscription(Pickleable):
             return self.completed.getFiles(type='set')
         elif status == 'FailedFiles':
             return self.failed.getFiles(type='set')
+    
+    
+    def markLocation(self, location, whitelist = True):
+        if whitelist:
+            self.whitelist.add(location)
+        else:
+            self.blacklist.add(location)
         
     def availableFiles(self):
         """
         Return a Set of files that are available for processing 
-        (e.g. not already in use)
+        (e.g. not already in use) and at sites that are white listed 
+        or not black listed
         """
-        return self.filesOfStatus(status='AvailableFiles')
+        def locationMagic(files, locations):
+            """
+            files and locations are sets. method returns the subset of files 
+            that are at the locations - this is a lot simpler with the database
+            """
+            magicfiles = Set()
+            for f in files:
+                if len(f['locations'] & locations) > 0:
+                    magicfiles.add(f)
+            return magicfiles
+            
+        files = self.filesOfStatus(status='AvailableFiles')
+        if len(self.whitelist) > 0:
+            # Return files at white listed sites
+            return locationMagic(files, self.whitelist)
+        elif len(self.blacklist) > 0:
+            # Return files not at black listed sites
+            return files - locationMagic(files, self.blacklist)
+        #Return all files, because you're crazy and just don't care
+        return files 
             
     def acquiredFiles(self):
         """

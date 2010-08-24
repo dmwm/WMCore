@@ -1,18 +1,88 @@
+#!/usr/bin/env python
+#pylint: disable-msg=W0613
+"""
+_EventBased_
+
+Event based splitting algorithm that will chop a fileset into
+a set of jobs based on event counts
+
+"""
+__revision__ = "$Id: EventBased.py,v 1.2 2008/09/20 12:39:34 evansde Exp $"
+__version__  = "$Revision: 1.2 $"
+
+
+
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
+
+
 
 class EventBased(JobFactory):
     """
     Split jobs by number of events
     """
-    def algorithm(self, job_instance=None, *args, **kwargs):
+    def algorithm(self, jobInstance=None, *args, **kwargs):
+        """
+        _algorithm_
+
+        Implement event based splitting algorithm
+
+        """
+        #  //
+        # // Resulting job set (shouldnt this be a JobGroup??)
+        #//
         jobs = Set()
-        #### Algorithm here
-        kwargs['total_number_of_events']
-        if kwargs['events_per_job']:
-            # make jobs with kwargs['events_per_job'] events per job
-            pass
-        elif kwargs['number_of_jobs']:
-            # make kwargs['number_of_jobs'] jobs, with 
-            #kwargs['total_number_of_events'] / kwargs['number_of_jobs'] events per job
-            pass
+
+
+        #  //
+        # // get the fileset
+        #//
+        fileset = self.subscription.availableFiles()
+
+        #  //
+        # // get the event total
+        #//
+        eventsPerJob = kwargs['events_per_job']
+        carryOver = 0
+        currentJob = jobInstance(self.subscription)
+        currentJob.mask.setMaxAndSkipEvents(eventsPerJob, 0)
+
+
+        for f in fileset:
+            eventsInFile = f.dict['events']
+
+            #  //
+            # // Take into account offset.
+            #//
+            startEvent = eventsPerJob - carryOver
+
+            #  //Edge Effect:
+            # // if start event is 0, we need to add this file
+            #//  otherwise it will be picked up automatically
+            if startEvent != 0:
+                currentJob.addFile(f)
+            #  //
+            # // Keep creating job defs while accumulator is within
+            #//  file event range
+            accumulator = startEvent
+            while accumulator < eventsInFile:
+                jobs.add(currentJob)
+                currentJob = jobInstance(subscription = self.subscription)
+                currentJob.addFile(f)
+                currentJob.mask.setMaxAndSkipEvents(eventsPerJob, 0)
+                accumulator += eventsPerJob
+
+            #  //
+            # // if there was a shortfall in the last job
+            #//  pass it on to the next job
+            accumulator -= eventsPerJob
+            carryOver = eventsInFile - accumulator
+
+        #  //
+        # // remainder
+        #//
+        jobs.add(currentJob)
+
+        return jobs
+
+

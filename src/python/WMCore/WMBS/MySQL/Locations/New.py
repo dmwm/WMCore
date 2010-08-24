@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 """
-MySQL implementation of Location.New
+_New_
+
+MySQL implementation of Locations.New
 """
 from WMCore.WMBS.MySQL.Base import MySQLBase
 

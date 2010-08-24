@@ -1,6 +1,7 @@
 from WMCore.DataStructs.Fileset import Fileset 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Subscription import Subscription 
+from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.JobGroup import JobGroup
 from sets import Set
 
@@ -22,6 +23,7 @@ class JobGroupTest(unittest.TestCase):
          
     def testInit(self):
         fileset = Fileset(logger=self.logger)
+        l = []
         for i in range(1,1000):
             lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999), 
                                               random.randint(1000, 9999))
@@ -32,6 +34,8 @@ class JobGroupTest(unittest.TestCase):
             
             file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
             fileset.addFile(file)
+            if i < 11:
+                l.append(i)
         
         print "Fileset made"    
         
@@ -40,10 +44,10 @@ class JobGroupTest(unittest.TestCase):
         
         # pretend we've got the job group from a factory
         set = Set()
-        for i in range(1,10):
+        for i in l:
             fs = Fileset()
-            fs.addFile(fileset.listFiles()[i])
-            job = Job(workflow=sub.workflow, fileset=fs)
+            fs.addFile(i)
+            job = Job(workflow=sub.workflow, files=fs)
             set.add(job)
             
         group = JobGroup(subscription = sub, jobs=set) 

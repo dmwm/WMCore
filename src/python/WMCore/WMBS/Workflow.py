@@ -16,13 +16,15 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.14 2008/10/22 20:32:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Workflow.py,v 1.15 2008/11/20 16:15:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
-from WMCore.WMBS.BusinessObject import BusinessObject
+import threading
+
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
+from WMCore.DAOFactory import DAOFactory
 
-class Workflow(BusinessObject,WMWorkflow):
+class Workflow(WMWorkflow):
     """
     A simple object representing a Workflow in WMBS.
 
@@ -37,29 +39,33 @@ class Workflow(BusinessObject,WMWorkflow):
     workflow + fileset = subscription
     """
 
-    def __init__(self, spec=None, owner=None, name=None, id=-1, logger=None, 
-                        dbfactory=None):
-        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        WMWorkflow.__init__(self, spec=spec, owner=owner, name=name)
+    def __init__(self, spec = None, owner = None, name = None, id = -1):
+        WMWorkflow.__init__(self, spec = spec, owner = owner, name = name)
+
+        myThread = threading.currentThread()
+        self.logger = myThread.logger
+        self.dialect = myThread.dialect
+        self.dbi = myThread.dbi        
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
+        
         self.id = id
         
     def exists(self):
         """
         Does a workflow exist with this spec and owner, return the id
         """
-        action = self.daofactory(classname='Workflow.Exists')
-        return action.execute(spec=self.spec, 
-                              owner=self.owner, 
-                              name=self.name)
+        action = self.daofactory(classname = "Workflow.Exists")
+        return action.execute(spec = self.spec, owner = self.owner,
+                              name = self.name)
     
     def create(self):
         """
         Write a workflow to the database
         """
-        action = self.daofactory(classname='Workflow.New')
-        action.execute(spec=self.spec, 
-                       owner=self.owner, 
-                       name=self.name)
+        action = self.daofactory(classname = "Workflow.New")
+        action.execute(spec = self.spec, owner = self.owner, name = self.name)
         self.id = self.exists()
 
     def delete(self):
@@ -69,20 +75,19 @@ class Workflow(BusinessObject,WMWorkflow):
         self.logger.warning(
         'You are removing the following workflow from WMBS %s (%s) owned by %s'
                                  % (self.name, self.spec, self.owner))
-        action = self.daofactory(classname='Workflow.Delete')
-        action.execute(id=self.id)
+        action = self.daofactory(classname = "Workflow.Delete")
+        action.execute(id = self.id)
         
-    def load(self, method='Workflow.LoadFromName'):
+    def load(self, method = "Workflow.LoadFromName"):
         """
         Load a workflow from WMBS
         """
-        action = self.daofactory(classname=method)
-        if method == 'Workflow.LoadFromName':
+        action = self.daofactory(classname = method)
+        if method == "Workflow.LoadFromName":
             result = action.execute(workflow = self.name)
-
-        elif method == 'Workflow.LoadFromID':
+        elif method == "Workflow.LoadFromID":
             result = action.execute(workflow = self.id)
-        elif method == 'Workflow.LoadFromSpecOwner':
+        elif method == "Workflow.LoadFromSpecOwner":
             result = action.execute(spec = self.spec, owner = self.owner)
         else:
             raise TypeError, "load method not supported"

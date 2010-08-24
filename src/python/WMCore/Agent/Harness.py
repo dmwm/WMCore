@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.9 2008/10/03 07:29:36 fvlingen Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Harness.py,v 1.10 2008/10/07 13:54:04 fvlingen Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -29,12 +29,14 @@ import os
 import threading
 import time
 
+from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 from WMCore.WMFactory import WMFactory
 from WMCore import WMLogging
+
 
 class Harness:
     """
@@ -360,6 +362,26 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             return
         self.__call__(type, payload)
 
+    def startDeamon(self, keepParent = False):
+        """
+        Same result as start component, except that the comopnent
+        is started as a deamon, after which you can close your xterm
+        and the process will still run.
+ 
+        The keepParent option enables us to keep the parent process
+        which is used during testing,
+        """
+        msg = "Starting %s as a deamon " % (self.config.Agent.componentName)
+        print(msg)
+        # put the daemon config file in the work dir of this component.
+        # FIXME: this file will be replaced by a database table.
+        compSect = getattr(self.config, self.config.Agent.componentName , None)
+        pid = createDaemon(compSect.componentDir, keepParent)
+        # if this is not the parent start the component
+        if pid == 0: 
+            self.startComponent()
+        # if this is the parent return control to the testing environment.
+
     def startComponent(self):
         """
         _startComponent_
@@ -367,7 +389,8 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         returns: Nothing
 
         Start up the component, performs initialization an waits 
-        for messages.
+        for messages. Calling this method results in the application
+        running in the xterm (not in deamon mode)
  
         """
         myThread = threading.currentThread()

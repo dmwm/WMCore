@@ -7,6 +7,7 @@ echo "-->Starting MySQL server"
 mkdir -p $TESTDIR/mysqldata
 mysql_install_db --datadir=$TESTDIR/mysqldata
 #mysqld_safe --datadir=$TESTDIR/mysqldata --socket=$TESTDIR/mysqldata/mysql.sock --skip-networking --log-error=$TESTDIR/mysqldata/error.log --pid-file=$TESTDIR/mysqldata/mysqld.pid &
+#mysqld_safe --defaults-file=$WMCOREBASE/standards/my.cnf --datadir=$TESTDIR/mysqldata --socket=$TESTDIR/mysqldata/mysql.sock --log-error=$TESTDIR/mysqldata/error.log --pid-file=$TESTDIR/mysqldata/mysqld.pid --port=3306 &
 mysqld_safe --datadir=$TESTDIR/mysqldata --socket=$TESTDIR/mysqldata/mysql.sock --log-error=$TESTDIR/mysqldata/error.log --pid-file=$TESTDIR/mysqldata/mysqld.pid --port=3306 &
 echo 'sleeping to make sure the db exists'
 sleep 10

@@ -4,19 +4,21 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.5 2008/10/03 07:30:06 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Harness_t.py,v 1.6 2008/10/07 13:54:05 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
 import logging
 import os
 import threading
+import time
 import unittest
 
 from WMCore_t.Agent_t.TestComponent import TestComponent
 
 from WMCore.Agent.Configuration import Configuration
+from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMFactory import WMFactory
 
@@ -111,26 +113,8 @@ class HarnessTest(unittest.TestCase):
         config.CoreDatabase.hostname = os.getenv("DBHOST")
         config.CoreDatabase.name = os.getenv("DBNAME")
 
-        testComponent = TestComponent(config)
-        testComponent.prepareToStart()
-        testComponent.handleMessage('LogState','')
-        testComponent.handleMessage('TestMessage1','TestMessag1Payload')
-        testComponent.handleMessage('TestMessage2','TestMessag2Payload')
-        testComponent.handleMessage('TestMessage3','TestMessag3Payload')
-        testComponent.handleMessage('TestMessage4','TestMessag4Payload')
-        testComponent.handleMessage('Logging.DEBUG','')
-        testComponent.handleMessage('Logging.WARNING','')
-        testComponent.handleMessage('Logging.CRITICAL','')
-        testComponent.handleMessage('Logging.ERROR','')
-        testComponent.handleMessage('Logging.INFO','')
-        testComponent.handleMessage('Logging.SQLDEBUG','')
-        testComponent.handleMessage('TestComponent:Logging.DEBUG','')
-        testComponent.handleMessage('TestComponent:Logging.WARNING','')
-        testComponent.handleMessage('TestComponent:Logging.CRITICAL','')
-        testComponent.handleMessage('TestComponent:Logging.ERROR','')
-        testComponent.handleMessage('TestComponent:Logging.INFO','')
-        testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
-
+        testComponent1 = TestComponent(config)
+        testComponent1.prepareToStart()
         # now we have a config file that passes on a full database
         # connection string from the start.
 
@@ -145,27 +129,43 @@ class HarnessTest(unittest.TestCase):
         config.CoreDatabase.hostname = None
         config.CoreDatabase.name = None
 
-        testComponent1 = TestComponent(config)
-        testComponent1.prepareToStart()
-        testComponent1.handleMessage('LogState','')
-        testComponent1.handleMessage('TestMessage1','TestMessag1Payload')
-        testComponent1.handleMessage('TestMessage2','TestMessag2Payload')
-        testComponent1.handleMessage('TestMessage3','TestMessag3Payload')
-        testComponent1.handleMessage('TestMessage4','TestMessag4Payload')
-        testComponent1.handleMessage('Logging.DEBUG','')
-        testComponent1.handleMessage('Logging.WARNING','')
-        testComponent1.handleMessage('Logging.CRITICAL','')
-        testComponent1.handleMessage('Logging.ERROR','')
-        testComponent1.handleMessage('Logging.INFO','')
-        testComponent1.handleMessage('Logging.SQLDEBUG','')
-        testComponent1.handleMessage('TestComponent:Logging.DEBUG','')
-        testComponent1.handleMessage('TestComponent:Logging.WARNING','')
-        testComponent1.handleMessage('TestComponent:Logging.CRITICAL','')
-        testComponent1.handleMessage('TestComponent:Logging.ERROR','')
-        testComponent1.handleMessage('TestComponent:Logging.INFO','')
-        testComponent1.handleMessage('TestComponent:Logging.SQLDEBUG','')
+        testComponent2 = TestComponent(config)
+        testComponent2.prepareToStart()
 
-        
+        for testComponent in [testComponent1, testComponent2]:
+            testComponent.handleMessage('LogState','')
+            testComponent.handleMessage('TestMessage1','TestMessag1Payload')
+            testComponent.handleMessage('TestMessage2','TestMessag2Payload')
+            testComponent.handleMessage('TestMessage3','TestMessag3Payload')
+            testComponent.handleMessage('TestMessage4','TestMessag4Payload')
+            testComponent.handleMessage('Logging.DEBUG','')
+            testComponent.handleMessage('Logging.WARNING','')
+            testComponent.handleMessage('Logging.CRITICAL','')
+            testComponent.handleMessage('Logging.ERROR','')
+            testComponent.handleMessage('Logging.INFO','')
+            testComponent.handleMessage('Logging.SQLDEBUG','')
+            testComponent.handleMessage('TestComponent:Logging.DEBUG','')
+            testComponent.handleMessage('TestComponent:Logging.WARNING','')
+            testComponent.handleMessage('TestComponent:Logging.CRITICAL','')
+            testComponent.handleMessage('TestComponent:Logging.ERROR','')
+            testComponent.handleMessage('TestComponent:Logging.INFO','')
+            testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
+
+       
+        # try starting a component as a deamon:
+        testComponent = TestComponent(config)
+        # we set the parent to true as we are testing
+        testComponent.startDeamon(keepParent = True)
+        print('trying to kill the component')
+        time.sleep(2)
+        daemonFileDir = os.path.join(config.General.workDir, "TestComponent")
+        daemonFile = os.path.join(daemonFileDir, "Daemon.xml")
+        details = Details(daemonFile)
+        print('Is component alive: '+str(details.isAlive()))
+        time.sleep(2)
+        details.killWithPrejudice()
+        print('Daemon killed')
+
 
         HarnessTest._teardown = True
 

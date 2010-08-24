@@ -5,11 +5,11 @@ export DBUSER=some_user
 export DBPASS=some_pass
 export DIALECT=MySQL
 # if you want to remote connect, change the dbhost
-#export DBHOST=localhost
-export DBHOST=localhost.localdomain
+export DBHOST=localhost
+#export DBHOST=localhost.localdomain
 # to ensure your not using the socket, point it to a nonexisting file
-#export DBSOCK=$TESTDIR/mysqldata/mysql.sock
-export DBSOCK=/this/file/does/not/exist.txt
+export DBSOCK=$TESTDIR/mysqldata/mysql.sock
+#export DBSOCK=/this/file/does/not/exist.txt
 # if you connect to remote you might need a 'master acount'
 export DBMASTERUSER=root
 export DBMASTERPASS=

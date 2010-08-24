@@ -13,7 +13,7 @@ class Add(AddFileMySQL):
         binds = {}
         if type(files) == type('string'):
             binds = {'lfn': files, 
-                     'size': size, 
+                     'filesize': size, 
                      'events': events} 
         elif type(files) == type([]):
         # files is a list of tuples containing lfn, size, events, run and lumi

@@ -7,6 +7,7 @@ import unittest
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree
 from WMCore.WMSpec.ConfigSectionTree import TreeHelper
+from WMCore.WMSpec.ConfigSectionTree import findTopNode, addNode
 
 
 class ConfigSectionTreeTest(unittest.TestCase):
@@ -95,6 +96,51 @@ class ConfigSectionTreeTest(unittest.TestCase):
                              cst3i.name())
 
         self.assertEqual(cst1.listNodes(), nodeNameOrder)
+
+    def testC(self):
+        """parent hunting"""
+
+
+
+
+        node1 = ConfigSectionTree("node1")
+        node2 = ConfigSectionTree("node2")
+        node3 = ConfigSectionTree("node3")
+
+
+        addNode(node1, node2)
+        addNode(node2, node3)
+
+
+        topNode = TreeHelper(findTopNode(node3))
+        self.assertEqual(topNode.name(), "node1")
+
+        topNode = TreeHelper(findTopNode(node2))
+        self.assertEqual(topNode.name(), "node1")
+
+        topNode = TreeHelper(findTopNode(node1))
+        self.assertEqual(topNode.name(), "node1")
+
+        helper = TreeHelper(node2)
+        helper.setTopOfTree()
+
+        # searching for the tree top above the set tree top
+        # means you cant even find the tree.
+        # not sure if this is a problem....
+        topNode = TreeHelper(findTopNode(node1))
+        self.assertEqual(topNode.name(), "node1")
+
+        topNode = TreeHelper(findTopNode(node2))
+        self.assertEqual(topNode.name(), "node2")
+        topNode = TreeHelper(findTopNode(node3))
+        self.assertEqual(topNode.name(), "node2")
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':

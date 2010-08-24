@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.4 2008/10/30 15:45:41 ewv Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.5 2008/10/30 16:24:22 ewv Exp $"
+__version__  = "$Revision: 1.5 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -46,8 +46,12 @@ class BlackWhiteListParser(object):
         else:
             blackList = []
 
+        logger.debug(5,'Input whitelist: %s' % ', '.join(whiteList))
+        logger.debug(5,'Input blacklist: %s' % ', '.join(blackList))
         self.blacklist = sets.Set(self.expandList(blackList))
         self.whitelist = sets.Set(self.expandList(whiteList))
+        logger.debug(5,'Converted whitelist: %s' % ', '.join(self.whitelist))
+        logger.debug(5,'Converted blacklist: %s' % ', '.join(self.blacklist))
 
 
     def expandList(self, userList):

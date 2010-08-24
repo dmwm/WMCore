@@ -6,8 +6,8 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.7 2008/11/12 16:15:02 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMFactory.py,v 1.8 2009/02/06 10:15:37 fvlingen Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -62,8 +62,11 @@ namespace (package): %s """ % (name, str(namespace))
             # check if we need to include the namespace 
             if self.namespace == '':
                 module = classname
+                #FIXME: hoky way of doing this! Change this please!
+                errModule = classname
             else:
                 module = "%s.%s" % (self.namespace, classname)
+                errModule = "%s.%s" % (self.namespace, classname)
             logging.debug("Trying to load: "+module)
             module = __import__(module, globals(), locals(), [classname])
             obj = getattr(module, classname.split('.')[-1])
@@ -76,4 +79,4 @@ namespace (package): %s """ % (name, str(namespace))
             logging.debug("Created instance for class: "+classname)
             return classinstance
         except Exception,ex:
-            raise WMException(WMEXCEPTION['WMCORE-4']+' '+classname +':'+ str(ex), 'WMCORE-4')
+            raise WMException(WMEXCEPTION['WMCORE-4']+' '+errModule+' : '+ str(ex), 'WMCORE-4')

@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.4 2009/02/04 15:26:41 evansde Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Configuration.py,v 1.5 2009/02/06 10:15:37 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import imp
@@ -107,7 +107,7 @@ class ConfigSection(object):
             settingInstance = getattr(otherSection, setting)
             if setting in self._internal_settings:
                 currentSetting = getattr(self, setting)
-                if type(currentSetting) != type(settingInstance):
+                if type(currentSetting) != type(settingInstance) and currentSetting != None and settingInstance != None:
                     msg = "Trying to overwrite a setting with mismatched types"
                     msg += "%s.%s is not the same type as %s.%s" % (
                         self._internal_name, setting,

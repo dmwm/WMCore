@@ -18,14 +18,15 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.16 2009/01/26 16:11:58 fvlingen Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Harness.py,v 1.17 2009/02/06 10:15:38 fvlingen Exp $"
+__version__ = "$Revision: 1.17 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
 
 import logging
 import os
+import sys
 import threading
 import time
 
@@ -56,6 +57,22 @@ class Harness:
         messages
         """
         self.config = config
+        compName = self.__class__.__name__
+        if not compName in self.config.listComponents_():
+            raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
+        self.config.Agent.componentName = compName 
+        compSect = getattr(self.config, compName, None) 
+        compSect.componentDir =  os.path.join(self.config.General.workDir, \
+            self.config.Agent.componentName)
+        # we have name and location of the log files. Now make sure there
+        # is a directory.
+        try:
+            os.makedirs(compSect.componentDir)
+        except :
+            print('Component dir already exists. ')
+            print('--> '+compSect.componentDir)
+            print('Continue on with initialization')
+        print('Component Initialized')
 
     def initInThread(self):
         """
@@ -63,29 +80,15 @@ class Harness:
         messages. This method is called when we call 'prepareToStart'
         """
         try:
-            self.state = 'startup'
             self.messages = {}
             # the component name is the last part of its module name
             # and it should override any name give through the arguments.
             compName = self.__class__.__name__
-            if not compName in self.config.listComponents_():
-                raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
-            self.config.Agent.componentName = compName 
             compSect = getattr(self.config, compName, None) 
-            compSect.componentDir =  os.path.join(self.config.General.workDir, \
-                self.config.Agent.componentName)
             if not hasattr(compSect, "logFile"):
                 compSect.logFile = os.path.join(compSect.componentDir, \
                     "ComponentLog")
             print('Log file is: '+compSect.logFile)
-            # we have name and location of the log files. Now make sure there
-            # is a directory.
-            try:
-                os.makedirs(compSect.componentDir)
-            except :
-                print('Component dir already exists. ')
-                print('--> '+compSect.componentDir)
-                print('Continue on with initialization')
             logHandler = RotatingFileHandler(compSect.logFile,
                 "a", 1000000, 3)
             logFormatter = \
@@ -117,6 +120,8 @@ class Harness:
             myThread.logger = logging.getLogger()
             logging.info(">>>Setting config for thread: ")
             myThread.config = self.config
+            # set attribute for transaction objects.
+            myThread.transactions = {}
             options = {}
             coreSect = self.config.CoreDatabase
             if hasattr(coreSect, "socket"):
@@ -377,6 +382,10 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         """
         msg = "Starting %s as a deamon " % (self.config.Agent.componentName)
         print(msg)
+        compName = self.__class__.__name__
+        compSect = getattr(self.config, compName, None) 
+        msg = "Log will be in %s " %(compSect.componentDir)
+        print(msg)
         # put the daemon config file in the work dir of this component.
         # FIXME: this file will be replaced by a database table.
         compSect = getattr(self.config, self.config.Agent.componentName , None)
@@ -440,20 +449,21 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                         time.sleep(5)
                     break
         except Exception,ex:
-            logging.info(\
-                ">>>Fatal error, rollback all non-committed transactions")
-            logging.info(">>>Closing all connections")
-            for transaction in myThread.transactions.keys():
-                transaction.rollback()
             if self.state == 'initialize':
-                msg = """ 
+                errormsg = """ 
 PostMortem: choked when initializing with error: %s
                 """ % (str(ex))
             else:
+                logging.info(\
+                    ">>>Fatal error, rollback all non-committed transactions")
+                logging.info(">>>Closing all connections")
+                for transaction in myThread.transactions.keys():
+                    transaction.rollback()
                 errormsg = """ 
 PostMortem: choked while handling messages  with error: %s
 while trying to handle msg: %s
                 """ % (str(ex), str(msg))
+            print(errormsg)
             logging.critical(errormsg)
             raise
         logging.info("System shutdown complete!")

@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.5 2009/01/15 13:48:11 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WMInit.py,v 1.6 2009/02/06 10:15:37 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -155,7 +155,8 @@ class WMInit:
         """
         Enables clearing particular tables in the database
         Associated to modules. Note this only works if there 
-        is the module has a Destroy class.
+        is the module has a Destroy class. Beware that this 
+        might not work if there are table dependencies.
         """
         myThread = threading.currentThread()
         for module in modules:

@@ -24,11 +24,8 @@ class MyWorker(BaseWorkerThread):
     def terminate(self, parameters):
         print "Terminating worker with parameters:", parameters
 
-# Fake a DB Factory
-threading.currentThread().dbFactory = None
-
 # Create and pause a worker manager
-manager = WorkerThreadManager(None)
+manager = WorkerThreadManager(parentComponent)
 manager.pauseWorkers()
 
 # Add a MyWorker() instance to run every 2 seconds and one every 3 seconds
@@ -44,6 +41,6 @@ manager.terminateWorkers()
 
 """
 
-__revision__ = "$Id: __init__.py,v 1.3 2009/02/01 17:52:46 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: __init__.py,v 1.4 2009/02/01 18:24:01 jacksonj Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "james.jackson@cern.ch"

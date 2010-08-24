@@ -7,8 +7,8 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.5 2009/02/01 17:26:20 jacksonj Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.6 2009/02/01 18:24:01 jacksonj Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -45,14 +45,37 @@ class BaseWorkerThread:
         if hasattr(myThread,'msgService'):
             self.procid = myThread.msgService.procid
     
+    def initInThread(self, parameters):
+        """
+        Called when the thread is actually running in its own thread
+        """
+        myThread = threading.currentThread()
+        
+        # Get the DB Factory we were passed by parent thread
+        myThread.dbFactory = self.dbFactory
+
+        # Set up database connection and transactions
+        if self.component.config.CoreDatabase.dialect == 'mysql': 
+            myThread.dialect = 'MySQL'
+
+        logging.info("BaseWorkerThread: Initializing default database")
+        myThread.dbi = myThread.dbFactory.connect()
+        logging.info("BaseWorkerThread: Initialize transaction dictionary")
+        myThread.transactions = {}
+        logging.info("BaseWorkerThread: Initializing default transaction")
+        myThread.transaction = Transaction(myThread.dbi)
+        
+        # Call worker setup
+        self.setup(parameters)
+    
     def __call__(self, parameters):
         """
         Thread entry point; handles synchronisation with run and terminate
         conditions
         """
         try:
-            # Call specific thread startup method
-            self.setup(parameters)
+            # Call thread startup method
+            self.initInThread(parameters)
             
             msg = "BaseWorkerThread: Worker thread %s started" % str(self)
             logging.info(msg)

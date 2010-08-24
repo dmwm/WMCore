@@ -5,8 +5,8 @@ class JobFactory(WMObject):
     """
     A JobFactory is created with a subscription (which has a fileset). It is a
     base class of an object instance of an object representing some job 
-    splitting algorithm. It is called with a job type (at least) to return a Set
-    of Job objects. The JobFactory should be subclassed by real splitting 
+    splitting algorithm. It is called with a job type (at least) to return a 
+    JobGroup object. The JobFactory should be subclassed by real splitting 
     algorithm implementations.
     """
     def __init__(self, package='WMCore.DataStructs', subscription=None):
@@ -23,7 +23,10 @@ class JobFactory(WMObject):
         job_instance = getattr(module, jobtype.split('.')[-1])
         
         group = JobGroup(subscription = self.subscription)
-        group.add(self.algorithm(job_instance=job_instance, *args, **kwargs))
+        basename = "%s-%s" % (self.subscription.name(), group.id)
+        
+        group.add(self.algorithm(job_instance=job_instance, name=basename,
+                                  *args, **kwargs))
         return group
     
     def algorithm(self, job_instance=None, *args, **kwargs):

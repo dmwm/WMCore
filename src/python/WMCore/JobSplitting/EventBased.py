@@ -7,8 +7,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 
 """
-__revision__ = "$Id: EventBased.py,v 1.3 2008/09/20 13:07:36 evansde Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: EventBased.py,v 1.4 2008/09/29 13:22:31 metson Exp $"
+__version__  = "$Revision: 1.4 $"
 
 
 
@@ -21,7 +21,7 @@ class EventBased(JobFactory):
     """
     Split jobs by number of events
     """
-    def algorithm(self, job_instance = None, *args, **kwargs):
+    def algorithm(self, job_instance = None, jobname = None, *args, **kwargs):
         """
         _algorithm_
 
@@ -44,7 +44,8 @@ class EventBased(JobFactory):
         #//
         eventsPerJob = kwargs['events_per_job']
         carryOver = 0
-        currentJob = job_instance(self.subscription)
+        currentJob = job_instance(subscription=self.subscription,
+                                  name = '%s-%s' % (jobname, len(jobs) + 1))
         currentJob.mask.setMaxAndSkipEvents(eventsPerJob, 0)
 
 

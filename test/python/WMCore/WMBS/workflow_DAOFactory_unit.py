@@ -7,14 +7,15 @@ are database dialect neutral
 
 """
 
-__revision__ = "$Id: workflow_DAOFactory_unit.py,v 1.1 2008/06/12 10:04:09 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: workflow_DAOFactory_unit.py,v 1.2 2008/06/12 11:05:07 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.Workflow import Workflow
 #pylint --rcfile=../../../../standards/.pylintrc  ../../../../src/python/WMCore/WMBS/Fileset.py
 
 class BaseWorkflowTestCase(unittest.TestCase):
@@ -70,7 +71,7 @@ class BaseWorkflowTestCase(unittest.TestCase):
             pass
         self.testlogger.debug("WMBS SQLite database deleted")
         
-class WorkflowExistsTestCase(BaseWorkflowTestCase):
+class WorkflowDAOObjectTestCase(BaseWorkflowTestCase):
     def setUp(self):
         BaseWorkflowTestCase.setUp(self)
         
@@ -143,6 +144,34 @@ class WorkflowExistsTestCase(BaseWorkflowTestCase):
         sqlite = self.action3[1].execute(spec='spec.xml', owner='Simon', name='wf001')
         assert mysql == sqlite, 'dialect difference mysql: %s, sqlite: %s' % (mysql, sqlite)
     
+class WorkflowBusinessObjectTestCase(BaseWorkflowTestCase):
+    
+    
+    def setUp(self):
+        BaseWorkflowTestCase.setUp(self)
+        
+        self.workflow = Workflow(spec='/home/metson/workflow.xml', 
+                                 owner='metson', 
+                                 name='My Analysis', 
+                                 logger=self.testlogger, 
+                                 dbfactory=self.dbf1)
 
+    def testExists(self):
+        assert self.workflow.exists() == False, \
+            'Workflow exists before creating it'
+            
+    def testCreate(self):
+        self.workflow.create()
+        assert self.workflow.exists() == True, \
+            'Workflow does not exist after creating it'
+            
+    def testDelete(self):
+        assert self.workflow.exists() == False, \
+            'Workflow exists before creating it'
+        self.workflow.create()
+        assert self.workflow.exists() == True, \
+            'Workflow does not exist after creating it'
+        self.workflow.delete()
+        
 if __name__ == "__main__":
     unittest.main()

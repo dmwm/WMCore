@@ -5,8 +5,8 @@ _Alerts_
 WMCore alert system.
 """
 
-__revision__ = "$Id: Alerts.py,v 1.2 2008/10/23 19:16:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Alerts.py,v 1.3 2008/11/12 21:49:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.DataStructs.Alert import Alert
 from WMCore.WMFactory import WMFactory
@@ -15,8 +15,6 @@ from WMCore.Database.Transaction import Transaction
 from WMCore.WMException import WMException
 
 import threading
-import os
-import logging
 
 class Alerts:
     """
@@ -28,33 +26,20 @@ class Alerts:
         """
         ___init___
 
-        Setup the database connections and try to create the tables that are
-        needed for the alert system.  This expects the following environment
-        variables to be defined:
-          DIALECT - Currently must be MySQL
-          DATABASE - A connection string to the MySQL database
-          DBSOCK - Path the the MySQL socket
+        Initialize the DAO factory and try to create the tables.
         """
         myThread = threading.currentThread()
-        myThread.dialect = os.getenv("DIALECT")
-        myThread.logger = logging
-                                                           
-        options = {"unix_socket": os.getenv("DBSOCK")}
-        dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), options)
-        myThread.dbi = dbFactory.connect()
-        myThread.transaction = Transaction(myThread.dbi)
-                                                            
-        alertDAOFactory = WMFactory("alerts", "WMCore.Alerts")
+        queryDialect = myThread.dialect + ".Queries"
+        self.query = myThread.factory["alerts"].loadObject(queryDialect)
 
         try:
-            alertCreate = alertDAOFactory.loadObject(myThread.dialect + ".Create")
+            createDialect = myThread.dialect + ".Create"
+            alertCreate = myThread.factory["alerts"].loadObject(createDialect)
             alertCreate.execute(conn = myThread.transaction.conn)
-            createTransaction.commit()
+            myThread.transaction.commit()
         except WMException, ex:
-            logging.debug("Looks like the alert tables already exists...")
+            myThread.logger.debug("Looks like the alert tables already exist.")
         
-        self.query = alertDAOFactory.loadObject(myThread.dialect + ".Queries")
-
     def publishAlert(self, severity, component, message):
         """
         _publishAlert_

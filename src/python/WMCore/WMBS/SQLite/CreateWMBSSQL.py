@@ -5,9 +5,10 @@ from WMCore.WMBS.MySQL.CreateWMBSSQL import CreateWMBS as CreateWMBSMySQL
 from WMCore.WMBS.SQLite.Base import SQLiteBase
 
 class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
-    create = {}
+    
     def __init__(self, logger, dbinterface):
         CreateWMBSMySQL.__init__(self, logger, dbinterface)
+        
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name varchar(255) NOT NULL,

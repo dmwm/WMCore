@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.9 2008/11/04 11:02:10 jacksonj Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DBFormatter.py,v 1.10 2008/11/04 12:25:19 jacksonj Exp $"
+__version__ = "$Revision: 1.10 $"
 import datetime
 import time
 
@@ -59,7 +59,6 @@ class DBFormatter(WMObject):
             if r.rowcount == 0:
                 return []
             for i in r.fetchone():
-                print "****", i, type(i)
                 out.append(i)
         return out
         

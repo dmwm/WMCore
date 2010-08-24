@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.23 2008/10/22 17:51:53 metson Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: File.py,v 1.24 2008/10/22 19:08:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -30,7 +30,13 @@ class File(BusinessObject, WMFile):
         if locations != None:
             self.setdefault("locations", locations)
         self.dict = self
-    #pylint: enable-msg=R0913
+
+    def exists(self):
+        """
+        Does a file exist with this lfn, return the id
+        """
+        action = self.daofactory(classname='Files.Exists')
+        return action.execute(lfn = self['lfn'])
         
     def getInfo(self):
         """
@@ -162,8 +168,13 @@ class File(BusinessObject, WMFile):
         self.dict = self
         
     def setLocation(self, se):
+<<<<<<< File.py
+        self.daofactory(classname='Files.SetLocation').execute(file=self['lfn'], sename=se)
+        self['locations'] = self.daofactory(classname='Files.GetLocation').execute(self['lfn']) 
+        self.dict = self
+=======
         self.daofactory(classname='Files.SetLocation').execute(file=self['lfn'],
                                                                sename=se)
         action = self.daofactory(classname='Files.GetLocation')
         self['locations'] = action.execute(self['lfn']) 
-        self.dict = self
+        self.dict = self>>>>>>> 1.23

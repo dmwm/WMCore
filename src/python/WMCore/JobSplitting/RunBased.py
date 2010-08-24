@@ -9,8 +9,8 @@ creation and/or tracking.
 
 If file spans a run will need to create a mask for that file.
 """
-__revision__ = "$Id: RunBased.py,v 1.10 2009/01/29 20:42:24 jacksonj Exp $"
-__version__  = "$Revision: 1.10 $"
+__revision__ = "$Id: RunBased.py,v 1.11 2009/02/02 23:42:03 jacksonj Exp $"
+__version__  = "$Revision: 1.11 $"
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -30,6 +30,8 @@ class RunBased(JobFactory):
         # Set default inputs if required
         if 'files_per_job' not in kwargs.keys():
             kwargs['files_per_job'] = 300
+        if 'require_run_closed' not in kwargs.keys():
+            kwargs['require_run_closed'] = False
         
         # Resulting job set
         jobs = Set()

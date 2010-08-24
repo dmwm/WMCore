@@ -15,8 +15,8 @@ import logging
 import os
 import cherrypy
 from cherrypy.lib.static import serve_file
-from ProdAgentCore.Configuration import prodAgentName
-from ProdAgentCore.Configuration import loadProdAgentConfiguration
+#from ProdAgentCore.Configuration import prodAgentName
+#from ProdAgentCore.Configuration import loadProdAgentConfiguration
 from WMCore.Agent.Configuration import loadConfigurationFile
 from MessageService.MessageService import MessageService
 
@@ -29,6 +29,8 @@ from WMCore.WMFactory import WMFactory
 
 from cherrypy.lib.static import serve_file
 import logging
+
+factory = WMFactory('generic')
 
 class Downloader:
     """
@@ -63,25 +65,21 @@ class Root:
     """
     def __init__(self, myUrl):
         self.myUrl = myUrl
-        self.factory = WMFactory('generic')
         self.components = []
  
     def addComponent(self, componentPath, config):
         # take the last field of the module name for the web page name
         oneWordName = componentPath.split('.')[-1]
-        self.__dict__[oneWordName] = self.factory.loadObject(componentPath, config)
+        self.__dict__[oneWordName] = factory.loadObject(componentPath, config)
         self.components.append(oneWordName)
 
     def index(self):
-        html = """<html><body><h2>ProdAgent Instance: %s </h2>\n """ % (
-            
-            prodAgentName(), )
-
+        html = "<html><body><h2>HTTPFrontEnd </h2>\n "
         html += "<table>\n"
         html += "<tr><th>Service</th><th>Description</th></tr>\n"
         for component in self.components:
-          html += "<tr><td><a href=\"%s/%s\">%s</a></td><td>Description</td></tr>\n" % (
-            self.myUrl, component, component)
+          html += "<tr><td><a href=\"%s/%s\">%s</a></td><td>%s</td></tr>\n" % (
+            self.myUrl, component, component, self.__dict__[component].__doc__)
         html += """</table></body></html>"""
         return html
 
@@ -109,24 +107,11 @@ class HTTPFrontEnd(Harness):
         """
         Initializes plugins for different messages
         """
-        print "PREIN"
-        # in case nothing was configured we have a fallback.
-        if not hasattr(self.config.HTTPFrontEnd, "startHandler"):
-            self.config.HTTPFrontEnd.startHandler =  \
-                'WMComponent.HTTPFrontend.HTTPFrontendStartHandler'
-        # in case nothing was configured we have a fallback.
-        if not hasattr(self.config.HTTPFrontEnd, "stopHandler"):
-            self.config.HTTPFrontEnd.stopHandler =  \
-                'WMComponent.HTTPFrontend.HTTPFrontendStopHandler'
-
-        # use a factory to dynamically load handlers.
-        factory = WMFactory('generic')
         self.messages['HTTPFrontendStart'] = \
-            factory.loadObject(self.config.HTTPFrontEnd.startHandler, self)
+            factory.loadObject('WMComponent.HTTPFrontend.HTTPFrontendStartHandler', self)
         self.messages['HTTPFrontendStop'] = \
-            factory.loadObject(self.config.HTTPFrontEnd.stopHandler, self)
-
-
+            factory.loadObject('WMComponent.HTTPFrontend.HTTPFrontendStopHandler', self)
+ 
 
     def start(self):
         """
@@ -152,6 +137,7 @@ class HTTPFrontEnd(Harness):
         root = Root(baseUrl)
         for component in self.config.HTTPFrontEnd.components:
             root.addComponent(component, self.config)
+        root.download = Downloader(self.config.Downloader.dir)
         cherrypy.tree.mount(root)
         cherrypy.server.quickstart()
         cherrypy.engine.start()

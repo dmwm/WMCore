@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.6 2009/02/02 11:51:49 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Controllers.py,v 1.7 2009/02/02 21:07:24 valya Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
@@ -77,7 +77,7 @@ class Controllers(Page):
         cherryconf.update ({'tools.encode.on': True, 'tools.gzip.on': True})
         
         args = list(args)
-        scripts = self.checkScripts(args, self.cssmap)
+        scripts = self.checkScripts(args, self.jsmap)
         id = "-".join(scripts)
         
         if id not in self.cache.keys():
@@ -102,7 +102,7 @@ class Controllers(Page):
                     context='SITEDB', severity=logging.WARNING)
                 scripts.remove(script)
             else:
-                path = os.path.join(sys.path[0], self.cssmap[script])
+                path = os.path.join(sys.path[0], map[script])
                 path = os.path.normpath(path)
                 if not os.path.exists(path):
                     log("%s not found at %s" % (script, path), 

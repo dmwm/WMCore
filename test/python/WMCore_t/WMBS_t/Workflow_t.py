@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.3 2008/12/18 15:00:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Workflow_t.py,v 1.4 2009/01/08 22:48:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import os
@@ -79,6 +79,72 @@ class WorkflowTest(unittest.TestCase):
 
         assert testWorkflow.exists() == False, \
                "ERROR: Workflow exists after it has been deleted"        
+        return
+
+    def testCreateTransaction(self):
+        """
+        _testCreateTransaction_
+
+        Create a workflow and commit it to the database and then roll the
+        transaction back.  Use the workflow's exists() method to verify that the
+        workflow does not exist before create() is called, exists after create()
+        is called and does not exist after the transaction is rolled back.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+
+        assert testWorkflow.exists() == False, \
+               "ERROR: Workflow exists before it was created"
+
+        testWorkflow.create()
+
+        assert testWorkflow.exists() > 0, \
+               "ERROR: Workflow does not exist after it has been created"
+
+        myThread.transaction.rollback()
+
+        assert testWorkflow.exists() == False, \
+               "ERROR: Workflow exists after the transaction was rolled back."
+        return
+
+    def testDeleteTransaction(self):
+        """
+        _testDeleteTransaction_
+
+        Create a workflow and commit it to the database.  Begin a transaction
+        and delete the workflow, then rollback the transaction.  Use the
+        workflow's exists() method to verify that the workflow doesn't exist
+        in the database before create() is called, it does exist after create()
+        is called, it doesn't exist after delete() is called and it does exist
+        after the transaction is rolled back.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+
+        assert testWorkflow.exists() == False, \
+               "ERROR: Workflow exists before it was created"
+
+        testWorkflow.create()
+
+        assert testWorkflow.exists() > 0, \
+               "ERROR: Workflow does not exist after it has been created"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testWorkflow.delete()
+
+        assert testWorkflow.exists() == False, \
+               "ERROR: Workflow exists after it has been deleted"
+
+        myThread.transaction.rollback()
+
+        assert testWorkflow.exists() > 0, \
+               "ERROR: Workflow does not exist transaction was rolled back"
+        
         return
 
     def testLoad(self):

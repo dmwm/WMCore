@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.4 2008/10/02 14:31:38 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Harness_t.py,v 1.5 2008/10/03 07:30:06 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -130,6 +130,42 @@ class HarnessTest(unittest.TestCase):
         testComponent.handleMessage('TestComponent:Logging.ERROR','')
         testComponent.handleMessage('TestComponent:Logging.INFO','')
         testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
+
+        # now we have a config file that passes on a full database
+        # connection string from the start.
+
+        # as this is a test we build the string from our global environment
+        # parameters normally you put this straight into the DefaultConfig.py file:
+
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        # make the other parameters none, to ensure we testing the right connection:
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
+        config.CoreDatabase.user = None
+        config.CoreDatabase.passwd = None
+        config.CoreDatabase.hostname = None
+        config.CoreDatabase.name = None
+
+        testComponent1 = TestComponent(config)
+        testComponent1.prepareToStart()
+        testComponent1.handleMessage('LogState','')
+        testComponent1.handleMessage('TestMessage1','TestMessag1Payload')
+        testComponent1.handleMessage('TestMessage2','TestMessag2Payload')
+        testComponent1.handleMessage('TestMessage3','TestMessag3Payload')
+        testComponent1.handleMessage('TestMessage4','TestMessag4Payload')
+        testComponent1.handleMessage('Logging.DEBUG','')
+        testComponent1.handleMessage('Logging.WARNING','')
+        testComponent1.handleMessage('Logging.CRITICAL','')
+        testComponent1.handleMessage('Logging.ERROR','')
+        testComponent1.handleMessage('Logging.INFO','')
+        testComponent1.handleMessage('Logging.SQLDEBUG','')
+        testComponent1.handleMessage('TestComponent:Logging.DEBUG','')
+        testComponent1.handleMessage('TestComponent:Logging.WARNING','')
+        testComponent1.handleMessage('TestComponent:Logging.CRITICAL','')
+        testComponent1.handleMessage('TestComponent:Logging.ERROR','')
+        testComponent1.handleMessage('TestComponent:Logging.INFO','')
+        testComponent1.handleMessage('TestComponent:Logging.SQLDEBUG','')
+
+        
 
         HarnessTest._teardown = True
 

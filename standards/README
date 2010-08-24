@@ -2,7 +2,10 @@ TOC
 ===
 -CODE STANDARD
 -RESERVED WORDS
+-DEVELOPMENT
 -TESTING
+
+Quality Officer: TBD
 
 CODE STANDARD:
 =============
@@ -12,7 +15,7 @@ WMCORE/standards/.pylintrc
 Test files need to be located under WMCORE/test/python/ and
 need to mirror the structure you use for the packages under
 WMCORE/src/python where every directory and test file is 
-augmented with a _t
+augmented with a _t and the class should be augmented with 'TEST'
 
 E.g.: if you have a package:
 
@@ -20,11 +23,13 @@ src/python/WMCORE/MsgService/MsgService.py
 
 you will have a test in the pacakge:
 
-test/python/WMCORE_t/MsgService_t/MsgService_t.py
+test/python/WMCORE_t/MsgService_t/MsgService_t.py and in it
+class: MsgserviceTest.
 
-All files should be tested against this and get a minimum score of 8 
-or higher. In case that is not possible due to certain language constructs 
-being used, the pylint style file can be accomodated to reflect this.
+All files should be tested against the .pylintrc format and need 
+to get a minimum score of 8 or higher. In case that is not possible 
+due to certain language constructs being used, the pylint style file 
+can be accomodated to reflect this.
 
 Potential log files for tests should have a name: <testfile>.log
 So in case of the MsgService_t.py you get a MsgService_t.log file
@@ -62,10 +67,91 @@ myThread.args
 # to synchronize commits to multiple databases (or the same database)
 myThread.transactions
 
+DEVELOPMENT:
+===========
+
+Development follows typically the following (iterative) cycle:
+
+(1) Develop your module(s) in src/python/WMCore or src/python/WMComponent
+
+(2) Use the WMCORE/standards/test_style.sh script to generate a style
+report and improve your code until it (at least) reaches the rating threshold
+(currently 8)
+
+(3) Check/edit the WMCORE/setup.py file to see if your package is listed.
+If not add it to the packages list. This is used by the package builder 
+for new releases.
+
+(4) Develop your tests in test/python mirroring the structure in src/python
+(4.1) Make sure that the database access parameters (and other relevant
+parameters)  are extracted from the environment variables of the setup* files. 
+Currently it assumes that there is one database assume per backend (except
+for the proxy test case). If you need more databases than are currently defined
+in the setup files, add these environment variables to the appropriate setup files
+Unless: these variables will be specific to this one test .
+
+(5) Add your module and/or files (including your tests) you develop to 
+the WMCore/standards/test_style file, with your unique identifier in the 
+packages list. This is used by the quality officer to find the responsible 
+person in case of quality audits (e.g. testing). Note that you can add either 
+individual files or whole subdirs.  If you responsible for a whole subdir add 
+this whole subdir.
+
+(6) Develop your tests in test/python mirroring the structure in src/python
+(6.1) Make sure that the database access parameters (and other relevant
+parameters)  are extracted from the environment variables of the setup* files. 
+Currently it assumes that there is one database assume per backend (except
+for the proxy test case). If you need more databases than are currently defined
+in the setup files, add these environment variables to the appropriate setup files
+Unless: these variables will be specific to this one test .
+
+(7) Add your module and/or files (including your tests) you develop to 
+the WMCore/standards/test_style file, with your unique identifier in the 
+packages list. This is used by the quality officer to find the responsible 
+person in case of quality audits (e.g. testing). Note that you can add either 
+individual files or whole subdirs.  If you responsible for a whole subdir add 
+this whole subdir.
+
+(8) When your test is finalized add it to the appropriate backend (some 
+test might need to be added to multiple backends) in the config_<backend>.py
+file. You import the test module and add a tuple (test instance, and your unique
+id) to the test array. Your id (e.g. name) is used by the quality officer in 
+case of anomalies during testing.
+
+
 TESTING:
 =======
 
-This directory also contains a set of .sh files to setup and run tests
+This directory also contains several files. The following prefixes
+are used:
+
+setup  : files for setting your environment. These are the only 
+files you need to edit when running the tests on your machine. Different 
+backends (mysql and oracle) have there own setup files (setup_mysql.sh, 
+setup_oracle.sh) that are used in the various test files (to prevent 
+having to hardcode these variables in the tests themselves.
+
+clean  : cleans generated log files, pyc files, etc... Separate files 
+are available for the different backends.
+
+start  : startup scripts for the various backends.
+
+config_test : enables you to config the different tests for different backends
+ before running
+
+test   : actually test scripts. Currently there are two scripts. Two 
+for the code style, and one for the code itself.
+
+Once all files are set you typically do:
+
+(1) source setup.sh
+(2) ./test_style
+(3) ./test_code
+
+The test scripts generate an summary when anomalies occur.
+
+
+a set of .sh files to setup and run tests
 
 -edit the setup*.sh scripts to reflect your settings (it assumes you use the cms packages 
 for running the tests (e.g. mysql, sqlalchemy).

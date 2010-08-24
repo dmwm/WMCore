@@ -2,8 +2,16 @@
 
 """
 A temporary interface to the proxy message queue. This is a stripped
-down version of the old message service in the prodagent.
+down version of the old message service in the prodagent that
+is compliant with the old schema.
 """
+
+__revision__ = "$Id: ProxyMsgs.py,v 1.2 2008/09/26 14:48:03 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "fvlingen@caltech.edu"
+
+
+
 
 import time
 import os

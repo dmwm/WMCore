@@ -4,10 +4,11 @@
 Proxy test TestProxy module and the harness
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.1 2008/09/19 15:34:36 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Proxy_t.py,v 1.2 2008/09/26 14:48:06 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
+import commands
 import cPickle
 import logging
 import os
@@ -33,6 +34,7 @@ class ProxyTest(unittest.TestCase):
     """
 
     _setup_done = False
+    _teardown = False
     _maxMessage = 10
 
     def setUp(self):
@@ -95,6 +97,31 @@ class ProxyTest(unittest.TestCase):
  
 
             ProxyTest._setup_done = True
+
+    def tearDown(self):
+        """
+        Database deletion
+        """
+        myThread = threading.currentThread()
+        if ProxyTest._teardown and myThread.dialect == 'MySQL':
+            command = 'mysql -u root --socket='\
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "drop database ' \
+            + os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
+            + os.getenv('SQLCREATE') + '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "create database ' \
+            +os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+        ProxyTest._teardown = False
+
 
     def testA(self):
         """
@@ -197,6 +224,10 @@ class ProxyTest(unittest.TestCase):
         while threading.activeCount() > 1:
             time.sleep(3)
             print(str(threading.activeCount())+' threads active')
+        ProxyTest._teardown = True
+
+    def runTest(self):
+        self.testA()
 if __name__ == '__main__':
     unittest.main()
 

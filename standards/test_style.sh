@@ -15,6 +15,6 @@ fi
 echo "starting scan for $1"
 echo "using config file: $STYLE"
 
-find $1 -name "*.py" |xargs pylint --rcfile=$STYLE > codeQuality.txt
+exec find $1 -name "*.py" |xargs pylint --rcfile=$STYLE > codeQuality.txt
 
 

@@ -243,6 +243,13 @@ class ConfigurationTest(unittest.TestCase):
         #print docConfig.documentedString_()
         print docConfig.commentedString_()
 
+    def runTest(self):
+        self.testA()
+        self.testB()
+        self.testC()
+        self.testD()
+        self.testE()
+
 if __name__ == '__main__':
     #config = loadConfigurationFile("/home/evansde/work/cmssrv49/WMCORE/src/python/WMCore/Agent/testConfigs/test2.py")
 

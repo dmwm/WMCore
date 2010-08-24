@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.1 2008/09/25 13:14:01 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.2 2008/09/26 14:48:06 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import logging
@@ -77,12 +77,25 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         Delete the databases
         """
         myThread = threading.currentThread()
-        if DBFormatterTest._teardown:
-            myThread.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root --socket='+os.getenv("DBSOCK")+' drop '+os.getenv("DBNAME")))
-            myThread.logger.debug(commands.getstatusoutput('mysqladmin -u root --socket='+os.getenv("DBSOCK")+' create '+os.getenv("DBNAME")))
-            myThread.logger.debug("database deleted")
+        if DBFormatterTest._teardown and myThread.dialect == 'MySQL':
+            command = 'mysql -u root --socket='\
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "drop database ' \
+            + os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
 
-    
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
+            + os.getenv('SQLCREATE') + '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "create database ' \
+            +os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+        DBFormatterTest._teardown = False
+
     def testAPrepare(self):
         """
         Prepare database by inserting schema and values
@@ -120,6 +133,10 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         output = dbformatter.formatOneDict(result)
         assert output ==  {'bind2': 'value2a', 'bind1': 'value1a'}
         DBFormatterTest.__teardown = True
+
+    def runTest(self):
+        self.testAPrepare()
+        self.testBFormatting()
             
 if __name__ == "__main__":
     unittest.main()     

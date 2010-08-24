@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.1 2008/09/25 13:14:01 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MsgService_t.py,v 1.2 2008/09/26 14:48:07 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -78,10 +78,29 @@ class MsgServiceTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Deletion of the databases is external
+        Deletion of the databases 
         """
-        pass
-               
+        myThread = threading.currentThread()
+        if MsgServiceTest._teardown and myThread.dialect == 'MySQL':
+            command = 'mysql -u root --socket='\
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "drop database ' \
+            + os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
+            + os.getenv('SQLCREATE') + '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "create database ' \
+            +os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+
+        MsgServiceTest._teardown = False
+
                
     def testA(self):
         """
@@ -418,5 +437,11 @@ class MsgServiceTest(unittest.TestCase):
         # purge everything.
         MsgServiceTest._teardown = True
 
+    def runTest(self):
+        self.testA()
+        self.testB()
+        self.testC()
+        self.testD()
+        self.testE()
 if __name__ == "__main__":
     unittest.main()

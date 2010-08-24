@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.1 2008/09/25 13:14:02 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.2 2008/09/26 14:48:07 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -75,9 +75,27 @@ class ThreadPoolTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Deletion is external
+        Deletion of database
         """
-        pass 
+        myThread = threading.currentThread()
+        if ThreadPoolTest._teardown and myThread.dialect == 'MySQL':
+            command = 'mysql -u root --socket='\
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "drop database ' \
+            + os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
+            + os.getenv('SQLCREATE') + '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "create database ' \
+            +os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+        ThreadPoolTest._teardown = False
                
     def testA(self):
         """
@@ -153,6 +171,9 @@ class ThreadPoolTest(unittest.TestCase):
         myThread.transaction.commit()
     
         ThreadPoolTest._teardown = True
-    
+  
+    def runTest(self):
+        self.testA()
+
 if __name__ == "__main__":
     unittest.main()

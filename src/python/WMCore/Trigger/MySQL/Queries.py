@@ -8,9 +8,9 @@ This module implements the mysql backend for the trigger.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.3 2008/09/19 15:34:35 fvlingen Exp $"
+    "$Id: Queries.py,v 1.4 2008/09/26 14:48:04 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.3 $"
+    "$Revision: 1.4 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -159,38 +159,6 @@ SELECT action_name,trigger_id,id, payload FROM tr_action WHERE
             result = self.formatDict(result) 
             self.execute(sqlStr2, {})
             return result
-
-    def createTriggerTables(self, triggerName):
-        trigger = "tr_trigger_"+triggerName
-        sqlStr1 = """
-CREATE TABLE %s(
-   id VARCHAR(32) NOT NULL,
-   trigger_id VARCHAR(32) NOT NULL,
-   flag_id VARCHAR(32) NOT NULL,
-   time timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-   UNIQUE(id,trigger_id,flag_id),
-   INDEX(trigger_id)
-   ) TYPE=InnoDB;
-        """ %trigger
-        action = "tr_action_"+triggerName
-        sqlStr2 = """
-CREATE TABLE %s(
-   id VARCHAR(32) NOT NULL,
-   trigger_id VARCHAR(32) NOT NULL,
-   /* Action name associated to this trigger. This name
-   is associated to some python code in an action registery
-   */
-   action_name VARCHAR(255) NOT NULL,
-   payload text,
-   UNIQUE(id,trigger_id)
-   ) TYPE=InnoDB;
-        """ %action
-        self.execute(sqlStr1, {})
-        self.execute(sqlStr2, {})
-
-
-
-
 
     def execute(self, sqlStr, args):
         """"

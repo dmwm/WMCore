@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.2 2008/09/18 14:48:34 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.3 2008/09/26 14:48:05 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -83,9 +83,28 @@ class ErrorHandlerTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Deletion of databases is external
+        Database deletion
         """
-        pass
+        myThread = threading.currentThread()
+        if ErrorHandlerTest._teardown and myThread.dialect == 'MySQL':
+            command = 'mysql -u root --socket='\
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "drop database ' \
+            + os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
+            + os.getenv('SQLCREATE') + '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "create database ' \
+            +os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+        ErrorHandlerTest._teardown = False
+
 
     def testA(self):
         """
@@ -133,6 +152,8 @@ class ErrorHandlerTest(unittest.TestCase):
             time.sleep(1)
         ErrorHandlerTest._teardown = True
 
+    def runTest(self):
+        self.testA()
 if __name__ == '__main__':
     unittest.main()
 

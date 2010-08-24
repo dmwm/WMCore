@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.1 2008/09/25 13:14:00 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Harness_t.py,v 1.2 2008/09/26 14:48:06 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -65,9 +65,27 @@ class HarnessTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Deletion is external
+        Delete database 
         """
-        pass
+        myThread = threading.currentThread()
+        if HarnessTest._teardown and myThread.dialect == 'MySQL':
+            command = 'mysql -u root --socket='\
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "drop database ' \
+            + os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
+            + os.getenv('SQLCREATE') + '"'
+            commands.getstatusoutput(command)
+
+            command = 'mysql -u root --socket=' \
+            + os.getenv('TESTDIR') \
+            + '/mysqldata/mysql.sock --exec "create database ' \
+            +os.getenv('DBNAME')+ '"'
+            commands.getstatusoutput(command)
+        HarnessTest._teardown = False
 
     def testA(self):
         """
@@ -102,6 +120,10 @@ class HarnessTest(unittest.TestCase):
         testComponent.handleMessage('TestMessage4','TestMessag4Payload')
 
         HarnessTest._teardown = True
+
+    def runTest(self):
+        self.testA()
+
 if __name__ == '__main__':
     unittest.main()
 

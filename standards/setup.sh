@@ -11,9 +11,11 @@ export CVSBASE=/home/fvlingen/programFiles/CMS_CVS
 export TESTDIR=/home/fvlingen/programFiles/CMS_CVS/WMCORE_TEST
 export WMCOREBASE=$CVSBASE/WMCORE
 export PYTHONPATH=$WMCOREBASE/src/python:$PYTHONPATH
+export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
 #export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
 echo "-->Sourcing CMS environment"
 source $PRODAGENTBASE/etc/profile.d/init.sh
 source setup_mysql.sh
+source setup_mysql_proxy.sh
 ./start_mysql.sh
-./start_mysql.proxy.sh
+./start_mysql_proxy.sh

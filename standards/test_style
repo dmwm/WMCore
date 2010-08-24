@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import os
+
+from WMQuality.Code import Code
+
+# output of the log files
+# prefix of the files in cvs
+# quality script for using pylint:
+qualityScript = os.path.join(os.getenv('WMCOREBASE'), 'standards/test_style.sh')
+# output file:
+qualityReport = os.path.join(os.getenv('WMCOREBASE'), 'standards/codeQuality.txt')
+# rating threshold (min: 0, max 10)
+threshold = 8
+
+# package to responsible mapping
+packages = {\
+    'src/python/WMComponent/Proxy':'fvlingen',\
+    'src/python/WMComponent/ErrorHandler':'fvlingen',\
+    'src/python/WMComponent':'fvlingen',\
+    'src/python/WMCore/MsgService':'fvlingen',\
+    'src/python/WMCore/Trigger':'fvlingen',\
+    'src/python/WMCore/Agent':'fvlingen',\
+    'src/python/WMCore/JobSplitting':'metson',\
+    'src/python/WMCore/WMBS/Actions':'metson',\
+    'src/python/WMCore/WMBS/WMBSAccountant':'metson',\
+    'src/python/WMCore/WMBS/WMBSAllocater':'metson',\
+    'src/python/WMCore/WMBS/WMBSFeeder':'metson',\
+    'src/python/WMCore/WMBS/T0AST':'metson',\
+    'src/python/WMCore/WMBS':'metson',\
+    'src/python/WMCore/DataStructs':'metson',\
+    'src/python/WMCore/WMBSFeeder':'metson',\
+    'src/python/WMCore/ThreadPool':'fvlingen',\
+    'src/python/WMCore/Services':'metson',\
+    'src/python/WMCore/Database':'metson',\
+    'src/python/WMCore':'fvlingen,metson',\
+    'src/python/WMQuality':'fvlingen',\
+    'test/python/WMComponent_t/Proxy_t':'fvlingen',\
+    'test/python/WMComponent_t/ErrorHandler_t':'fvlingen',\
+    'test/python/WMComponent_t':'fvlingen',\
+    'test/python/WMCore_t/MsgService_t':'fvlingen',\
+    'test/python/WMCore_t/Trigger_t':'fvlingen',\
+    'test/python/WMCore_t/DataStructs_t':'metson',\
+    'test/python/WMCore_t/WMBSFeeder_t':'metson',\
+    'test/python/WMCore_t/WMRegistry_t':'fvlingen',\
+    'test/python/WMCore_t/JobSplitting_t':'metson',\
+    'test/python/WMCore_t/ThreadPool_t':'fvlingen',\
+    'test/python/WMCore_t/Database_t':'metson',\
+    'test/python/WMCore_t/Agent_t':'fvlingen',\
+    'test/python/WMCore_t/WMBS_t/WMBSAccountant_t':'metson',\
+    'test/python/WMCore_t/WMBS_t':'metson',\
+    'test/python/WMCore_t':'fvlingen,metson',\
+    }
+
+code = Code(qualityScript, qualityReport, os.getenv('WMCOREBASE'), packages, threshold)
+code.run()
+code.summaryText()

@@ -4,12 +4,12 @@
 """
 _Create_
 
-Class for creating MySQL specific schema for the trigger
+Class for destroying MysQL specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.1 2008/09/19 15:34:35 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Destroy.py,v 1.2 2008/09/26 14:48:04 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import threading
@@ -20,7 +20,7 @@ class Destroy(DBCreator):
     """
     _Create_
     
-    Class for creating MySQL specific schema for the trigger.
+    Class for destroying MysQL specific schema for the trigger
     """
     
     

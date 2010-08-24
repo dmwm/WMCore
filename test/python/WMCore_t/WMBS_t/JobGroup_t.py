@@ -1,157 +1,169 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.4
 """
 _JobGroup_t_
 
-Test creates one WMBS database instance which is used for all tests.
-
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.2 2008/10/28 18:18:21 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.3 2008/11/20 17:00:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
-import unittest, logging, os, commands
+import unittest
+import logging
+import os
+import commands
+import threading
+import random
 from sets import Set
-#from WMCore_t.DataStructs_t.JobGroup_t import JobGroup_t
+
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
+from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Fileset import Fileset 
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Subscription import Subscription 
+from WMCore.WMBS.Fileset import Fileset as WMBSFileset
 from WMCore.WMBS.Job import Job
-from sets import Set
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMFactory import WMFactory
+from WMQuality.TestInit import TestInit
 
-from unittest import TestCase
-import logging
-import random
-
-import time
-from datetime import datetime
-
-class JobGroupTest(unittest.TestCase):
+class Job_t(unittest.TestCase):
+    _setup = False
+    _teardown = False
+    
     def setUp(self):
-        "make a logger instance"
+        """
+        _setUp_
+
+        Setup the database and logging connection.  Try to create all of the
+        WMBS tables.
+        """
+        if self._setup:
+            return
+
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
         
-        logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename='%s.log' % __file__.replace('.py',''),
-                    filemode='w')
-        self.logger = logging.getLogger('JobGroupTest')
+        self._setup = True
+        return
+          
+    def tearDown(self):        
+        """
+        _tearDown_
         
-        self.dbfile = 'sqlite:///jobgrouptest.lite'
-        self.dbfile = 'mysql://metson@localhost/wmbs'
-        self.tearDown()
+        Drop all the WMBS tables.
+        """
+        myThread = threading.currentThread()
         
-        self.dbf = DBFactory(self.logger, self.dbfile)
-        self.daofactory = DAOFactory(package='WMCore.WMBS', 
-                                      logger=self.logger, 
-                                      dbinterface=self.dbf.connect())
+        if self._teardown:
+            return
         
-        creator = self.daofactory(classname='CreateWMBS')
-        creator.execute()
-        #assert createworked, "create output: %s" % createworked 
-    
-    def tearDown(self):
-        #Should really move the file...
-        #stamp = time.mktime(datetime.now().timetuple())
-        #dbfile = 'sqlite:///jobgrouptest_%s.lite' % stamp
-        self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs'))
-        self.logger.debug(commands.getstatusoutput('mysqladmin -u root create wmbs'))
-        self.logger.debug("WMBS MySQL database deleted")
-        try:
-            os.remove(self.dbfile.replace('sqlite:///', ''))
-        except OSError:
-            #Don't care if the file doesn't exist
-            pass
-        
-    def testInit(self):
-        fileset = Fileset(name='jobgrouptest_files', 
-                          logger=self.logger, 
-                          dbfactory=self.dbf)
-        workflow = Workflow(spec='/home/metson/workflow.xml', 
-                                     owner='metson', 
-                                     name='My Analysis', 
-                                     logger=self.logger, 
-                                     dbfactory=self.dbf)
-        fileset.create()
-        workflow.create()
-        
-        l = []
-        for i in range(0,10):
-            lfn = '/store/data/%s/%s/file%s.root' % (random.randint(1000, 9999), 
-                                      random.randint(1000, 9999), i)
-            size = random.randint(1000, 2000)
-            events = 1000
-            run = random.randint(0, 2000)
-            lumi = random.randint(0, 8)
+        factory = WMFactory("WMBS", "WMCore.WMBS")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete WMBS tear down.")
+        myThread.transaction.commit()
             
-            file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi,
-                        logger=self.logger, dbfactory=self.dbf)
-            file.save()
-            file.load()
-            l.append(file)
-            fileset.addFile(file)
-        
-        fileset.commit()
-        print "Fileset made"    
-        
-        sub = Subscription(fileset=fileset, workflow=workflow,
-                        logger=self.logger, dbfactory=self.dbf)
-        sub.create()
-        print "Subscription made"
-        
-        # pretend we've got the job group from a factory
-        set = Set()
-        group = JobGroup(subscription = sub)
-        
-        for i in l:
-            fs = Fileset(name='tmp', logger=self.logger, dbfactory=self.dbf)
-            fs.addFile(i)
-            job = Job(files=fs, logger=self.logger, dbfactory=self.dbf)
-            set.add(job)
+        self._teardown = True
             
-        group.add(set)
-        return group
-    
-    def testFileCycle(self):
-        print "testFileCycle"
-        group = self.testInit()
-        jobs = list(group.jobs)
-        maxacquire = 10
-        fail_prob = 1/4.
-        complete_prob = 1/2.
-        print "probabilities: complete %s, fail %s" % (complete_prob, fail_prob)
-        i=0
-        while group.status() != 'COMPLETE':
-            i = i + 1
-            print "group status: %s" % group.status(detail=True)
-            # Decide if jobs have completed or failed
-            for j in jobs:
-                if j.status in ['QUEUED', 'FAILED']:
-                    print "submitting"
-                    j.submit()
-                if j.status == 'ACTIVE':
-                    dice = random.randint(0 , 10) / 10.
-                    if dice <= complete_prob:
-                        self.logger.debug( "#job completes" )
-                        j.complete('complete report')
-                        j.addOutput(File(lfn='iter%s_job%s' % (i, jobs.index(j)), \
-                                     logger=self.logger, dbfactory=self.dbf))                 
-                    elif random.randint(0 , 10) / 10. < fail_prob:
-                        self.logger.debug(  "#job fails" )
-                        j.fail('fail report')
-                
-        print group.output().listLFNs()
+    def testCreateDeleteExists(self):
+        """
+        _testCreateDeleteExists_
+
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
         
-    def testOutput(self):
-        group = self.testInit()
+        testFileset = WMBSFileset(name = "TestFileset")
+        testFileset.create()
         
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+
+        assert testJobGroup.exists() == False, \
+               "ERROR: Job group exists before it was created"
+        
+        testJobGroup.create()
+
+        assert testJobGroup.exists() >= 0, \
+               "ERROR: Job group does not exist after it was created"
+        
+        testJobGroup.delete()
+
+        assert testJobGroup.exists() == False, \
+               "ERROR: Job group exists after it was deleted"
+
+        testSubscription.delete()
+        testFileset.delete()
+        testWorkflow.delete()
+        return
+
+    def testLoad(self):
+        """
+        _testLoad_
+
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                         run = 1, lumi = 45)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                         run = 1, lumi = 45)
+        testFileA.create()
+        testFileB.create()
+
+        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
+        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
+        
+        testJobA = Job(name = "TestJobA", files = testFilesetA)
+        testJobB = Job(name = "TestJobB", files = testFilesetB)
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+
+        testJobGroupB = JobGroup(id = testJobGroupA.id)
+        testJobGroupB.load()
+
+        assert testJobGroupB.subscription["id"] == testSubscription["id"], \
+               "ERROR: Job group did not load subscription correctly"
+
+        goldenJobs = [testJobA.id, testJobB.id]
+        for job in testJobGroupB.jobs:
+            assert job.id in goldenJobs, \
+                   "ERROR: JobGroup loaded an unknown job"
+            goldenJobs.remove(job.id)
+
+        assert len(goldenJobs) == 0, \
+            "ERROR: JobGroup didn't load all jobs"
+
+        assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
+               "ERROR: Output fileset didn't load properly"
+        
+        return
+
     
-    def testStatus(self):
-        group = self.testInit()
     
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    unittest.main() 

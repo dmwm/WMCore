@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Reivison: $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "anzar@fnal.gov"
 
 import commands

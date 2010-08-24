@@ -5,8 +5,8 @@ __init__
 """
 __all__ = []
 
-__revision__ = "$Id: __init__.py,v 1.1 2008/10/02 19:57:14 afaq Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: __init__.py,v 1.2 2008/11/11 19:47:49 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 

@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.5 2008/11/11 19:27:58 afaq Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.6 2008/11/11 19:47:50 afaq Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "anzar@fnal.gov"
 
 import commands

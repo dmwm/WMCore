@@ -4,8 +4,8 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.8 2008/11/07 03:49:04 afaq Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: BufferSuccess.py,v 1.9 2008/11/11 19:47:49 afaq Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.Configuration import loadConfigurationFile

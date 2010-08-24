@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.13 2009/02/02 12:07:02 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Root.py,v 1.14 2009/02/02 12:10:43 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -77,7 +77,10 @@ class Root(WMObject):
         #cpconfig.update ({'request.error_response': self.handle_error})
         #cpconfig.update ({'tools.proxy.on': True})
         #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})
-        log("loading config: %s" % cpconfig, context=self.app, severity=logging.DEBUG, traceback=False)
+        log("loading config: %s" % cpconfig, 
+                                   context=self.app, 
+                                   severity=logging.DEBUG, 
+                                   traceback=False)
 
     def loadPages(self):
         factory = WMFactory('webtools_factory')
@@ -104,20 +107,21 @@ class Root(WMObject):
                 severity=logging.INFO, traceback=False)
             
             log("configuration for %s: %s" % (component._internal_name, 
-                                      component), 
-                                      context=self.app, 
-                                      severity=logging.INFO, traceback=False)
+                                    component), 
+                                    context=self.app, 
+                                    severity=logging.INFO, traceback=False)
                         
             if hasattr(component, 'database'):
                 log("loading database for %s" % (component._internal_name), 
-                    context=self.app, 
-                severity=logging.INFO, traceback=False)
+                                    context=self.app, 
+                                    severity=logging.INFO, 
+                                    traceback=False)
                 component.database = self.loadDatabase(component)
         
             log("Loading %s" % (component._internal_name), 
-                                context=self.app,
-                                severity=logging.DEBUG, 
-                                traceback=False)
+                                    context=self.app,
+                                    severity=logging.DEBUG, 
+                                    traceback=False)
             # Load the object
             obj = factory.loadObject(component.object, component)
             # Attach the object to cherrypy's root, at the name of the component 

@@ -19,10 +19,11 @@ the previous implementation:
 inserts in large tables
 -table that specifies if there is a message in the queue for a component
 to prevent unecessary queries on a large message queue
--mutli queue option (can be turned of/on): each component creates his own tables, 
-based on the name it registers with and messages for this component are stored
-in these tables, thereby keeping the queue length managable. This option
-creates 6 tables per component (e.g. 10 components create 60 tables)
+-mutli queue option (can be turned of/on): each component creates his own 
+tables, based on the name it registers with and messages for this 
+component are stored in these tables, thereby keeping the queue 
+length managable. This option creates 6 tables per component 
+(e.g. 10 components create 60 tables)
 -priority messages: separate tables whos messages are examined before
 the normal messages.
 -periodic purging of history queue with option to keep always the last
@@ -32,9 +33,9 @@ messages after it is handled.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.4 2008/08/29 20:00:44 fvlingen Exp $"
+    "$Id: MsgService.py,v 1.5 2008/09/01 08:57:52 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.4 $"
+    "$Revision: 1.5 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -86,11 +87,11 @@ class MsgService:
         self.instantMsg = {}
         self.instantPriorityMsg = {}
         # buffer sizes 
-        self.buffer_size = 400
+        self.bufferSize = 400
         # history_dump size
-        self.history_size = 1000
+        self.historySize = 1000
         # minimum amount of history we want to keep
-        self.history_min = 100
+        self.historyMin = 100
         # this means we can have one queue (with buffers)
         # or separate queues (one per component). The latter
         # will lead to more tables (6 per component)
@@ -120,10 +121,12 @@ class MsgService:
         # logging
         logging.info("Try registerAs "+str(name))
         # check if component name does not contain a reserved word:
-        reserved = ['ms_message','ms_priority_message','buffer_out','buffer_in']
+        reserved = ['ms_message', 'ms_priority_message', \
+                    'buffer_out', 'buffer_in']
         for word in reserved:
             if name.find(word) >=0:
-                raise WMException(WMEXCEPTION['WMCORE-7']+ ">>"+word+"<<",'WMCORE-7')
+                raise WMException(WMEXCEPTION['WMCORE-7']+ \
+                    ">>"+word+"<<",'WMCORE-7')
         # set component name
         self.name = name
         # get process data
@@ -154,7 +157,8 @@ class MsgService:
         self.query.initializeAvailable(args = {'procid' : self.procid})
 
         if not self.oneQueue:
-            logging.debug("Create additional tables for this component: multiQueue")
+            msg = "Create additional tables for this component: multiQueue"
+            logging.debug(msg)
             self.query.insertComponentMsgTables(name) 
         
     ##########################################################################
@@ -221,8 +225,8 @@ class MsgService:
             # get id
             typeid = self.query.lastInsertId()
         # check if there is an entry in subscription table
-        result = self.query.checkPrioritySubscription(args = {'procid' : self.procid, \
-            'typeid' : typeid})
+        result = self.query.checkPrioritySubscription(args = \
+            {'procid' : self.procid, 'typeid' : typeid})
         # entry registered before, just return
         if result != {}:
             return
@@ -288,7 +292,8 @@ class MsgService:
         # format messages
         for message in args:
             destinations = messageTypes[message['name']]['destinations']
-            priorityDestinations = messageTypes[message['name']]['priorityDestinations']
+            priorityDestinations = \
+                messageTypes[message['name']]['priorityDestinations']
             typeid = messageTypes[message['name']]['typeid']
             payload = message['payload']
             if message.has_key('delay'):
@@ -303,7 +308,9 @@ class MsgService:
                     tableDest = 'ms_message_buffer_in'
                 else:
                     tableDest = 'ms_message_'+dest[1]+'_buffer_in'
-                msg = {'type':str(typeid),'source':str(self.procid),'dest':str(dest[0]),'payload':str(payload),'delay':str(delay)}
+                msg = {'type':str(typeid), 'source':str(self.procid), \
+                       'dest':str(dest[0]), 'payload':str(payload), \
+                       'delay':str(delay)}
                 if message['instant']:
                     if not self.instantMsg.has_key(tableDest):
                         self.instantMsg[tableDest] = []  
@@ -318,7 +325,9 @@ class MsgService:
                     tableDest = 'ms_priority_message_buffer_in'
                 else:
                     tableDest = 'ms_priority_message_'+dest[1]+'_buffer_in'
-                msg = {'type':str(typeid),'source':str(self.procid),'dest':str(dest[0]),'payload':str(payload),'delay':str(delay)}
+                msg = {'type':str(typeid), 'source':str(self.procid), \
+                       'dest':str(dest[0]), 'payload':str(payload), \
+                       'delay':str(delay)}
                 if message['instant']:
                     if not self.instantPriorityMsg.has_key(tableDest):
                         self.instantPriorityMsg[tableDest] = []  
@@ -331,7 +340,7 @@ class MsgService:
         # deliver messages that need to be delivered immediately.
         self.deliver(instant = True)
 
-    def deliver(self,instant = False):
+    def deliver(self, instant = False):
         """
         __deliver__
 
@@ -385,17 +394,19 @@ class MsgService:
             if len(priority[tableDest])>0:
                 args = {'table' : tableDest, 'msgs' : priority[tableDest]}
                 self.query.insertMsg(args = args)
-                args = {'table' : 'ms_history_priority_buffer', 'msgs' : priority[tableDest]}
+                args = {'table' : 'ms_history_priority_buffer', \
+                        'msgs' : priority[tableDest]}
                 self.query.insertMsg(args = args)
 
         # check if we need to emtpty the buffer.
-        logging.debug("Checking if following buffers are full: "+str(checkBuffers))
-        for table_name in checkBuffers:
-            buffer_size = self.query.tableSize(args = table_name)
-            if buffer_size > self.buffer_size:
-                logging.debug("Buffer full for: "+table_name+". Purging")
-                target = table_name[0:table_name.find("_buffer")]
-                args = {'source' : table_name, 'target' : target}
+        logging.debug("Checking if following buffers are full: " \
+            + str(checkBuffers))
+        for tableName in checkBuffers:
+            bufferSize = self.query.tableSize(args = tableName)
+            if bufferSize > self.bufferSize:
+                logging.debug("Buffer full for: "+tableName+". Purging")
+                target = tableName[0:tableName.find("_buffer")]
+                args = {'source' : tableName, 'target' : target}
                 logging.debug("moving messages: " + str(args))
                 self.query.moveMsgFromBufferIn(args = args)
         if instant:
@@ -440,7 +451,7 @@ class MsgService:
         for message in args:
             messageTypes[message['name']] = {}
 
-        no_go = {}
+        noGo = {}
         for messageType in messageTypes.keys():
             # check if message type is in database
             result = self.query.checkMessageType(args = {'name' : messageType})
@@ -456,19 +467,20 @@ class MsgService:
 
             # check if this message is still in the queue(s)
             for tableName in tableNames:
-                arg = {'tableName' : tableName, 'sqlArgs' : {'typeid': messageTypes[messageType]['typeid']}}
+                arg = {'tableName' : tableName, \
+                    'sqlArgs' : {'typeid': messageTypes[messageType]['typeid']}}
                 nrOfMsg = self.query.inQueue(arg)
                 if nrOfMsg > 0:
-                    no_go[messageType] = 'no_go'
+                    noGo[messageType] = 'no_go'
                     break 
 
         # filter out the messages that have a no go and pass on the others.
-        message_go = []
+        messageGo = []
         for message in args:
-            if not message['name'] in no_go.keys():      
-                message_go.append(message)
+            if not message['name'] in noGo.keys():      
+                messageGo.append(message)
         # publish unique messages.
-        self.publish(message_go)
+        self.publish(messageGo)
 
     ##########################################################################
     # get method 
@@ -485,86 +497,102 @@ class MsgService:
         messages.
         """
         # check if there are any unfinished messages we want to get them first.
-        pass
          # logging
         logging.debug("Get requested for: "+self.name)
         # start looking in the correct tables.
-        buffer_in = 'ms_message_buffer_in'
+        bufferIn = 'ms_message_buffer_in'
         queue = 'ms_message'
-        buffer_out = 'ms_message_buffer_out'
-        priority_buffer_in = 'ms_priority_message_buffer_in'
-        priority_queue = 'ms_priority_message'
-        priority_buffer_out = 'ms_priority_message_buffer_out'
+        bufferOut = 'ms_message_buffer_out'
+        priorityBufferIn = 'ms_priority_message_buffer_in'
+        priorityQueue = 'ms_priority_message'
+        priorityBufferOut = 'ms_priority_message_buffer_out'
 
         if not self.oneQueue: 
             queue = 'ms_message_'+self.name
-            buffer_in = 'ms_message_'+self.name+'_buffer_in'
-            buffer_out = 'ms_message_'+self.name+'_buffer_out'
-            priority_buffer_in = 'ms_priority_message_'+self.name+'_buffer_in'
-            priority_queue = 'ms_priority_message_'+self.name
-            priority_buffer_out = 'ms_priority_message_'+self.name+'_buffer_out'
+            bufferIn = 'ms_message_'+self.name+'_buffer_in'
+            bufferOut = 'ms_message_'+self.name+'_buffer_out'
+            priorityBufferIn = 'ms_priority_message_'+self.name+'_buffer_in'
+            priorityQueue = 'ms_priority_message_'+self.name
+            priorityBufferOut = 'ms_priority_message_'+self.name+'_buffer_out'
 
         message = None
         while True:
             logging.debug("Checking messages for: "+self.name)
             # check if there are any messages at all for us:
-            args = {'table':'ms_available_priority','procid':self.procid}
+            args = {'table':'ms_available_priority', 'procid':self.procid}
             result = self.query.msgAvailable(args)
             # there is a message, lets look for it
             if result[0] == 'there':
-                self.currentMsgTable = priority_buffer_out
+                self.currentMsgTable = priorityBufferOut
                 # try buffer out.
-                message = self.query.getMsg({'table':priority_buffer_out,'procid':self.procid}) 
+                message = self.query.getMsg({'table':priorityBufferOut, \
+                                             'procid':self.procid}) 
                 if message != {}:
                     break 
                 #nothing from buffer, move (if any) from big table to buffer_out
-                args = {'source': priority_queue, 'target':priority_buffer_out,'procid':self.procid,'buffer_size':self.buffer_size}
+                args = {'source': priorityQueue, \
+                        'target':priorityBufferOut, \
+                        'procid':self.procid, \
+                        'buffer_size':self.bufferSize}
                 self.query.moveMsgToBufferOut(args)
-                message = self.query.getMsg({'table':priority_buffer_out,'procid':self.procid}) 
+                message = self.query.getMsg({'table':priorityBufferOut, \
+                                             'procid':self.procid}) 
                 if message != {}:
                     break 
-                args = {'source': priority_buffer_in, 'target':priority_buffer_out,'procid':self.procid,'buffer_size':self.buffer_size}
+                args = {'source': priorityBufferIn, \
+                        'target':priorityBufferOut, \
+                        'procid':self.procid, \
+                        'buffer_size':self.bufferSize}
                 self.query.moveMsgToBufferOut(args)
-                message = self.query.getMsg({'table':priority_buffer_out,'procid':self.procid}) 
+                message = self.query.getMsg({'table':priorityBufferOut, \
+                                             'procid':self.procid}) 
                 if message != {}:
                     break 
-                # there was a message but we did not find it, this means it can be
-                # a delayed message. If we know the minimum deleay we can
-                # wait that long. For the moment we assume that there is a continous
-                # stream of messages to a component.
-                args = {'table':'ms_available_priority','procid':self.procid}
+                # there was a message but we did not find it, this means 
+                # it can be a delayed message. If we know the minimum 
+                # delay we can
+                # wait that long. For the moment we assume that there 
+                # is a continous stream of messages to a component.
+                args = {'table':'ms_available_priority', 'procid':self.procid}
                 self.query.noMsgs(args)
-            args = {'table':'ms_available','procid':self.procid}
+            args = {'table':'ms_available', 'procid':self.procid}
             result = self.query.msgAvailable(args)
             # there is a message, lets look for it
             if result[0] == 'there':
                 # try buffer out.
-                self.currentMsgTable = buffer_out
-                message = self.query.getMsg({'table':buffer_out,'procid':self.procid}) 
+                self.currentMsgTable = bufferOut
+                message = self.query.getMsg({'table':bufferOut, \
+                                             'procid':self.procid}) 
                 if message != {}:
                     break 
                 #nothing from buffer, move (if any) from big table to buffer_out
-                args = {'source': queue, 'target':buffer_out,'procid':self.procid,'buffer_size':self.buffer_size}
+                args = {'source': queue, 'target':bufferOut, \
+                        'procid':self.procid, 'buffer_size':self.bufferSize}
                 self.query.moveMsgToBufferOut(args)
-                message = self.query.getMsg({'table':buffer_out,'procid':self.procid}) 
+                message = self.query.getMsg({'table':bufferOut, \
+                                             'procid':self.procid}) 
                 if message != {}:
                     break 
-                args = {'source': buffer_in, 'target':buffer_out,'procid':self.procid,'buffer_size':self.buffer_size}
+                args = {'source': bufferIn, 'target':bufferOut, \
+                        'procid':self.procid, 'buffer_size':self.bufferSize}
                 self.query.moveMsgToBufferOut(args)
-                message = self.query.getMsg({'table':buffer_out,'procid':self.procid}) 
+                message = self.query.getMsg({'table':bufferOut, \
+                                             'procid':self.procid}) 
                 if message != {}:
                     break 
-                # there was a message but we did not find it, this means it can be
-                # a delayed message. If we know the minimum deleay we can
-                # wait that long. For the moment we assume that there is a continous
-                # stream of messages to a component.
-                args = {'table':'ms_available','procid':self.procid}
+                # there was a message but we did not find it, this means it 
+                # can be a delayed message. If we know the minimum 
+                # delay we can
+                # wait that long. For the moment we assume that there is a 
+                # continous stream of messages to a component.
+                args = {'table':'ms_available', 'procid':self.procid}
                 self.query.noMsgs(args)
 
             if not wait:
                 # return immediately with no message
                 return (None, None)
-            logging.debug("Sleeping "+str(self.pollTime)+" seconds and check for messages again")
+            logging.debug("Sleeping "+str(self.pollTime)+ \
+                " seconds and check for messages again")
             time.sleep(self.pollTime)      
 
         self.currentMsg = message
@@ -599,9 +627,10 @@ class MsgService:
         self.deliver()
         # check if the history tables are not too large
         self.cleanHistory()
-        # remove the message from the queu
+        # remove the message from the queu that we where working on.
         if self.currentMsgTable != None and self.currentMsg != None:
-            args = {'table' : self.currentMsgTable, 'msgId' : self.currentMsg['messageid']}
+            args = {'table' : self.currentMsgTable, \
+                    'msgId' : self.currentMsg['messageid']}
             self.query.removeMsg(args)
             self.currentMsgTable = None
             self.currentMsg = None
@@ -647,11 +676,21 @@ class MsgService:
             return
         tables = []
         if self.oneQueue:
-            tables = ['ms_message','ms_message_buffer_in','ms_message_buffer_out','ms_priority_message','ms_priority_message_buffer_in','ms_priority_message_buffer_out']
+            tables = ['ms_message', 'ms_message_buffer_in', \
+                      'ms_message_buffer_out', 'ms_priority_message', \
+                      'ms_priority_message_buffer_in', \
+                      'ms_priority_message_buffer_out']
         else:
-            tables = ['ms_message_'+self.name,'ms_message_'+self.name+'_buffer_in','ms_message_'+self.name+'_buffer_out','ms_priority_message_'+self.name,'ms_priority_message_'+self.name+'_buffer_in','ms_priority_message_'+self.name+'_buffer_out']
+            tables = ['ms_message_'+self.name, \
+                      'ms_message_'+self.name+'_buffer_in', \
+                      'ms_message_'+self.name+'_buffer_out', \
+                      'ms_priority_message_'+self.name, \
+                      'ms_priority_message_'+self.name+'_buffer_in', \
+                      'ms_priority_message_'+self.name+'_buffer_out']
         for table in tables:
-            args = {'tablename' : table, 'sqlArgs' : {'typeid' : result['typeid'], 'procid' : str(self.procid)}}
+            args = {'tablename' : table, \
+                'sqlArgs' : {'typeid' : result['typeid'], \
+                             'procid' : str(self.procid)}}
             self.query.removeMessageType(args = args)
 
     ##########################################################################
@@ -667,11 +706,11 @@ class MsgService:
         
         """
         if maxSize == 0:
-            maxSize = self.history_size
+            maxSize = self.historySize
         for table in ['ms_history', 'ms_history_priority']:
             size = self.query.tableSize(args = table)
             if size > maxSize:
-                newSize = min(self.history_min,size)
+                newSize = min(self.historyMin, size)
                 if newSize > 0:
                     args = {'table' : table}
                     maxId = self.query.maxId(args = args)[0]
@@ -692,7 +731,7 @@ class MsgService:
 
         Returns a list (array) of subscriptions for priority messages
         """
-        return self.query.prioritySubscriptions(args = {'procid' : self.procid}) 
+        return self.query.prioritySubscriptions({'procid' : self.procid}) 
 
     def pendingMsgs(self, componentName = None):
         """
@@ -711,7 +750,9 @@ class MsgService:
                 if table[0].rfind('ms_priority_message') == 0:
                     tableNames.append(table[0])  
         else:
-            tableNames = ['ms_message_'+componentName, 'ms_message_'+componentName+'_buffer_in', 'ms_message_'+componentName+'_buffer_out'] 
+            tableNames = ['ms_message_'+componentName, \
+                          'ms_message_'+componentName+'_buffer_in', \
+                          'ms_message_'+componentName+'_buffer_out'] 
         for tableName in tableNames: 
             pending += self.query.tableSize(args = tableName)
         return pending

@@ -9,9 +9,9 @@ service.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.3 2008/08/29 19:00:15 fvlingen Exp $"
+    "$Id: Queries.py,v 1.4 2008/09/01 08:57:52 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.3 $"
+    "$Revision: 1.4 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -69,7 +69,7 @@ INSERT INTO ms_process(host,pid,name) VALUES (:host,:pid,:name)
 """
         self.execute(sqlStr, args)
 
-    def lastInsertId(self, args = {}):
+    def lastInsertId(self):
         """
         __lastInsertId__
 
@@ -79,10 +79,10 @@ INSERT INTO ms_process(host,pid,name) VALUES (:host,:pid,:name)
         sqlStr = """
 SELECT LAST_INSERT_ID()
 """
-        result = self.execute(sqlStr, args)
+        result = self.execute(sqlStr, {})
         return self.formatOne(result)[0]
 
-    def checkMessageType(self, args = {}):
+    def checkMessageType(self, args):
         """
         __checkMessageType__
  
@@ -93,7 +93,7 @@ SELECT typeid,name FROM ms_type WHERE name = :name """
         result = self.execute(sqlStr, args)
         return self.formatOneDict(result)
 
-    def insertMessageType(self,args = {}):
+    def insertMessageType(self, args ):
         """
         __insertMessageType__
  
@@ -104,7 +104,7 @@ INSERT INTO ms_type(name) VALUES(:name)
 """
         self.execute(sqlStr, args)
 
-    def checkSubscription(self, args = {}):
+    def checkSubscription(self, args ):
         """
 
         __checkSubscription__
@@ -118,7 +118,7 @@ AND typeid = :typeid
         result = self.execute(sqlStr, args)
         return self.formatOneDict(result)
 
-    def insertSubscription(self, args = {}):
+    def insertSubscription(self, args):
         """
         __insertSubscription__
 
@@ -130,7 +130,7 @@ INSERT INTO ms_subscription(procid,typeid) VALUES(:procid,:typeid)
 """
         self.execute(sqlStr, args)
 
-    def checkPrioritySubscription(self, args = {}):
+    def checkPrioritySubscription(self, args):
         """
 
         __checkPrioritySubscription__
@@ -144,7 +144,7 @@ AND typeid = :typeid
         result = self.execute(sqlStr, args)
         return self.formatOneDict(result)
 
-    def insertPrioritySubscription(self, args = {}):
+    def insertPrioritySubscription(self, args):
         """
         __insertPrioritySubscription__
 
@@ -156,7 +156,7 @@ INSERT INTO ms_subscription_priority(procid,typeid) VALUES(:procid,:typeid)
 """
         self.execute(sqlStr, args)
 
-    def subscriptions(self, args ={}):
+    def subscriptions(self, args):
         """
         __subscriptions__
 
@@ -169,7 +169,7 @@ AND ms_subscription.typeid = ms_type.typeid
         result = self.execute(sqlStr, args)
         return self.format(result)
 
-    def prioritySubscriptions(self, args ={}):
+    def prioritySubscriptions(self, args):
         """
         __prioritySubscriptions__
 
@@ -182,7 +182,7 @@ AND ms_subscription_priority.typeid = ms_type.typeid
         result = self.execute(sqlStr, args)
         return self.format(result)
 
-    def getDestinations(self, args = {}):
+    def getDestinations(self, args):
         """
         __getDestinations__
 
@@ -190,13 +190,14 @@ AND ms_subscription_priority.typeid = ms_type.typeid
         """
 
         sqlStr = """
-SELECT ms_subscription.procid,ms_process.name FROM ms_subscription, ms_process WHERE ms_subscription.typeid = :typeid AND 
+SELECT ms_subscription.procid,ms_process.name FROM ms_subscription, ms_process 
+WHERE ms_subscription.typeid = :typeid AND 
 ms_subscription.procid = ms_process.procid
  """ 
         result = self.execute(sqlStr, args)
         return self.format(result)
 
-    def getPriorityDestinations(self, args={}):
+    def getPriorityDestinations(self, args):
         """
         __getPriorityDestinations__
 
@@ -204,13 +205,14 @@ ms_subscription.procid = ms_process.procid
         """
 
         sqlStr = """
-SELECT ms_subscription_priority.procid,ms_process.name FROM ms_subscription_priority, ms_process WHERE ms_subscription_priority.typeid = :typeid AND 
+SELECT ms_subscription_priority.procid,ms_process.name FROM ms_subscription_priority, ms_process 
+WHERE ms_subscription_priority.typeid = :typeid AND 
 ms_subscription_priority.procid = ms_process.procid
 """ 
         result = self.execute(sqlStr, args)
         return self.format(result)
 
-    def initializeAvailable(self, args= {}):
+    def initializeAvailable(self, args):
         """
         __initializeArrive__
 
@@ -225,20 +227,31 @@ INSERT INTO ms_available_priority(procid) VALUES(:procid)
         self.execute(sqlStr1, args)        
         self.execute(sqlStr2, args)        
 
-    def msgAvailable(self, args ={}):
+    def msgAvailable(self, args):
+        """"
+        __msgAvailable__
+
+        Sets meta data table that there are messages in the queue.
+        """
+
         sqlStr = """
 SELECT status FROM %s WHERE procid = :procid
-""" %(args['table'])
+""" % (args['table'])
         result = self.execute(sqlStr, {'procid': args['procid']})
         return self.formatOne(result) 
 
     def noMsgs(self, args):
+        """
+        _noMsgs_
+
+        Sets meta data table that there are no messages.
+        """
         sqlStr = """
 UPDATE %s SET status='not_there' WHERE procid=:procid 
-""" %(args['table'])
-        result = self.execute(sqlStr, {'procid': args['procid']})
+""" % (args['table'])
+        self.execute(sqlStr, {'procid': args['procid']})
 
-    def msgArrived(self, args = {}):
+    def msgArrived(self, args):
         """
         __msgArrived__
 
@@ -248,15 +261,15 @@ UPDATE %s SET status='not_there' WHERE procid=:procid
         """
         sqlStr = """
 INSERT INTO %s(procid) VALUES(:procid) ON DUPLICATE KEY UPDATE status = 'there'
-""" %(args['table'])
+""" % (args['table'])
 
         # format for bind input
-        input = []
+        target = []
         for dest in args['msgs'].keys():
-            input.append({'procid':dest})
-        self.execute(sqlStr, input)
+            target.append({'procid':dest})
+        self.execute(sqlStr, target)
 
-    def insertMsg(self, args = {}):
+    def insertMsg(self, args):
         """
         __insertMsg__
 
@@ -264,7 +277,7 @@ INSERT INTO %s(procid) VALUES(:procid) ON DUPLICATE KEY UPDATE status = 'there'
         """
         sqlStr = """
 INSERT INTO %s(type,source,dest,payload,delay) VALUES(:type,:source,:dest,:payload,:delay)
-""" %(args['table'])
+""" % (args['table'])
 
         # we need to cut things up as mysql can not deal with very large 
         # inserts (over 500). We are conservative and stop at 100
@@ -280,34 +293,64 @@ INSERT INTO %s(type,source,dest,payload,delay) VALUES(:type,:source,:dest,:paylo
             return 
         self.execute(sqlStr, args['msgs'])
 
-    def processMsg(self,args):
+    def processMsg(self, args):
+        """
+        __processMsg__
+
+        Sets the state of a message in the queue to 'processing' which
+        happens when it is being processed by a component.
+        """
+
         sqlStr = """
 UPDATE %s SET state='processing' WHERE messageid = :msgId
-""" %(args['table'])
+""" % (args['table'])
         self.execute(sqlStr, {'msgId':args['msgId']})
 
-    def removeMsg(self,args):
+    def removeMsg(self, args):
+        """
+        __removeMsg__
+  
+        Removes a message from a queue table (table is configurable).
+        """
+
         sqlStr = """
 DELETE FROM %s WHERE messageid = :msgId 
-""" %(args['table'])
+""" % (args['table'])
         self.execute(sqlStr, {'msgId':args['msgId']})
      
 
-    def getMsg(self,args):
+    def getMsg(self, args):
+        """
+        _getMsg_
+
+        Gets the actual messages keeping in mind possible delays.
+        """
+
         sqlStr = """
-SELECT %s.messageid as messageid, ms_type.name as name, %s.payload as payload, ms_process.name as source FROM %s, ms_type,ms_process
-WHERE ms_type.typeid=%s.type and  ms_process.procid=%s.source and ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP and
-%s.dest=:procid ORDER BY time,messageid LIMIT 1 """ %(args['table'],args['table'],args['table'],args['table'],args['table'],args['table'],args['table'],args['table'])
-        result = self.execute(sqlStr,{'procid':args['procid']})
+SELECT %s.messageid as messageid, ms_type.name as name, %s.payload as payload,
+ ms_process.name as source FROM %s, ms_type,ms_process
+WHERE ms_type.typeid=%s.type and  ms_process.procid=%s.source 
+AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP and
+%s.dest=:procid ORDER BY time,messageid LIMIT 1 """ % (args['table'], \
+        args['table'], args['table'], args['table'], args['table'], \
+        args['table'], args['table'], args['table'])
+        result = self.execute(sqlStr, {'procid':args['procid']})
         return self.formatOneDict(result)
 
 
     def insertComponentMsgTables(self, componentName):
+        """
+        __insertComponetMsgTables__
+ 
+        Inserts tables for components when in multiQueue mode.
+        Each component will have its own buffers and queu tables.
+        """
+
         prefix1 = 'ms_message_'+componentName
         prefix2 = 'ms_priority_message_'+componentName
 
-        for prefix in [prefix1,prefix2]:
-            for postfix in ['','_buffer_in']:
+        for prefix in [prefix1, prefix2]:
+            for postfix in ['', '_buffer_in']:
                 tableName = prefix+postfix
                 sqlStr = """
 CREATE TABLE `%s` (
@@ -324,9 +367,9 @@ CREATE TABLE `%s` (
    FOREIGN KEY(`source`) references `ms_process`(`procid`),
    FOREIGN KEY(`dest`) references `ms_process`(`procid`)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-""" %(tableName)
+""" % (tableName)
                 self.execute(sqlStr, {})
-        for prefix in [prefix1,prefix2]:
+        for prefix in [prefix1, prefix2]:
             postfix = '_buffer_out'
             tableName = prefix+postfix
             sqlStr = """
@@ -346,7 +389,7 @@ CREATE TABLE `%s` (
    FOREIGN KEY(`source`) references `ms_process`(`procid`),
    FOREIGN KEY(`dest`) references `ms_process`(`procid`)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-""" %(tableName)
+""" % (tableName)
             self.execute(sqlStr, {})
 
     def tableSize(self, args):
@@ -356,33 +399,51 @@ CREATE TABLE `%s` (
         returns the table size to deal with buffer movements.
         """
         sqlStr = """
-SELECT COUNT(*) FROM %s """  %(args)
+SELECT COUNT(*) FROM %s """  % (args)
         result = self.execute(sqlStr, {})
         result = self.formatOne(result)[0]
         return result
 
     def showTables(self):
+        """
+        __showTables__
+
+        Shows tables in database, used to filter out message queues and their
+        buffers by matchin patterns
+        """
+
         result = self.execute("show tables", {})
         return self.format(result)
 
     def purgeTable(self, tableName):
+        """
+        __purgeTable__
+ 
+        Purges a table (used for message queues and buffers).
+        """
         # some messages in the buffer_out tables
         # might being processed so we do not want
         # to delete them.
         if tableName.rfind('_buffer_out') >= 0:
             sqlStr = """
 DELETE FROM %s WHERE state<>'processing'
-""" %(tableName)
+""" % (tableName)
         else: 
             sqlStr = """
 DELETE FROM %s 
-""" %(tableName)
+""" % (tableName)
         self.execute(sqlStr, {})
 
     def inQueue(self, args):
+        """
+        __inQueue__
+   
+        Checks if a certain message is in a queue.
+        """
+
         sqlStr = """
 SELECT COUNT(*) FROM %s WHERE type = :typeid
-""" %(args['tableName'])
+""" % (args['tableName'])
 
         result = self.execute(sqlStr, args['sqlArgs'])
         result = self.formatOne(result)
@@ -396,44 +457,79 @@ SELECT COUNT(*) FROM %s WHERE type = :typeid
 
         """
         sqlStr1 = """
-INSERT INTO %s(type,source,dest,payload,time,delay) SELECT type,source,dest,payload,time,delay FROM %s
-""" %(str(args['target']), str(args['source']))
+INSERT INTO %s(type,source,dest,payload,time,delay) 
+SELECT type,source,dest,payload,time,delay FROM %s
+""" % (str(args['target']), str(args['source']))
         sqlStr2 = """ 
 DELETE FROM %s 
-""" %(str(args['source']))
+""" % (str(args['source']))
 
         self.execute(sqlStr1, {})
         self.execute(sqlStr2, {})
 
-    def moveMsgToBufferOut(self,args):
+    def moveMsgToBufferOut(self, args):
+        """
+        _moveMsgToBufferOut_
+  
+        Moves messages from buffer in or the main queue to buffer out
+
+        """
+
         sqlStr1 = """
 INSERT INTO %s(type,source,dest,payload,delay,time) 
-SELECT type,source,dest,payload,delay,time FROM %s WHERE dest=:procid AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP
-ORDER BY messageid LIMIT %s """ % (args['target'], args['source'], args['source'], args['source'],args['buffer_size'])
+SELECT type,source,dest,payload,delay,time FROM %s 
+WHERE dest=:procid AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP
+ORDER BY messageid LIMIT %s 
+""" % (args['target'], args['source'], args['source'], \
+        args['source'], args['buffer_size'])
 
         sqlStr2 = """
-DELETE FROM %s WHERE dest=:procid  AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP ORDER BY messageid LIMIT %s 
-""" %(args['source'], args['source'],args['source'],args['buffer_size'])  
-        self.execute(sqlStr1,{'procid':args['procid']})
-        self.execute(sqlStr2,{'procid':args['procid']})
+DELETE FROM %s WHERE dest=:procid  
+AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP 
+ORDER BY messageid LIMIT %s 
+""" % (args['source'], args['source'], args['source'], args['buffer_size'])  
+        self.execute(sqlStr1, {'procid':args['procid']})
+        self.execute(sqlStr2, {'procid':args['procid']})
 
     def removeMessageType(self, args):
+        """
+        __removeMessageType__
+
+        Removes all messages of a certain type send to a certain destination
+        from a message table.
+        """
+
         sqlStr = """
 DELETE FROM %s WHERE type=:typeid AND dest=:procid 
-""" %(args['tablename'])
+""" % (args['tablename'])
         self.execute(sqlStr, args['sqlArgs'])
 
     def maxId(self, args):
+        """
+        __maxId__
+  
+        Determines the max id for the messages in a table.
+        This is used for purging the history while keeping the tail of 
+        history.
+        """
+ 
         sqlStr = """
 SELECT MAX(messageid) from %s
-""" %(args['table'])
+""" % (args['table'])
         result = self.execute(sqlStr, {})
         return self.formatOne(result)
 
     def purgeHistory(self, args):
+        """
+        __purgeHistory__
+
+        Purges a history of messages with an id
+        smaller than a certain value.
+        """
+
         sqlStr = """
 DELETE FROM %s WHERE messageid < %s
-""" %(args['table'], str(args['maxId']))
+""" % (args['table'], str(args['maxId']))
         self.execute(sqlStr, {})
 
     def execute(self, sqlStr, args):

@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.10 2008/11/04 12:25:19 jacksonj Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: DBFormatter.py,v 1.11 2008/11/24 21:45:12 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 import datetime
 import time
 
@@ -19,7 +19,7 @@ class DBFormatter(WMObject):
         self.dbi = dbinterface
     
     def truefalse(self, value):
-        if value in ('False', 'FALSE', 'n', 'NO', 'No'):
+        if value in ('False', 'FALSE', 'n', 'N', 'NO', 'No'):
             value = 0
         return bool(value)
         

@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.11 2009/01/26 13:45:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Job_t.py,v 1.12 2009/01/26 14:02:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import logging
@@ -33,6 +33,14 @@ from WMCore.DataStructs.Run import Run
 class JobTest(unittest.TestCase):
     _setup = False
     _teardown = False
+
+    def runTest(self):
+        """
+        _runTest_
+
+        Run all the unit tests.
+        """
+        unittest.main()
     
     def setUp(self):
         """

@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.2 2008/12/18 15:00:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Locations_t.py,v 1.3 2009/01/26 14:02:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import unittest
@@ -19,6 +19,14 @@ from WMQuality.TestInit import TestInit
 class LocationsTest(unittest.TestCase):
     _setup = False
     _teardown = False
+
+    def runTest(self):
+        """
+        _runTest_
+
+        Run all the unit tests.
+        """
+        unittest.main()
     
     def setUp(self):
         """

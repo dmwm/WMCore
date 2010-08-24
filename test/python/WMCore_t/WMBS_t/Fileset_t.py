@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.9 2009/01/26 13:45:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Fileset_t.py,v 1.10 2009/01/26 14:02:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import logging
@@ -24,6 +24,14 @@ from WMQuality.TestInit import TestInit
 class FilesetTest(unittest.TestCase):
     _setup = False
     _teardown = False
+
+    def runTest(self):
+        """
+        _runTest_
+
+        Run all the unit tests.
+        """
+        unittest.main()        
     
     def setUp(self):
         """

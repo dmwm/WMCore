@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.15 2009/01/26 13:45:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: File_t.py,v 1.16 2009/01/26 14:02:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import logging
@@ -27,6 +27,14 @@ from WMCore.DataStructs.Run import Run
 class FileTest(unittest.TestCase):
     _setup = False
     _teardown = False
+
+    def runTest(self):
+        """
+        _runTest_
+
+        Run all the unit tests.
+        """
+        unittest.main()
     
     def setUp(self):
         """

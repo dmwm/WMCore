@@ -1,15 +1,18 @@
 """
-MySQL implementation of FilesetExists
+SQLite implementation of FilesetExists
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.WMBS.SQLite.Base import SQLiteBase
+from WMCore.WMBS.MySQL.FilesetExistsSQL import FilesetExists as FilesetExistsMySQL
 
-class FilesetExists(MySQLBase):
-    sql = """select count(*) from wmbs_fileset where name = :fileset"""
-                
-    def getBinds(self, fileset = None):
-        return self.dbi.buildbinds(fileset, 'fileset')
+class FilesetExists(SQLiteBase, FilesetExistsMySQL):
+    sql = FilesetExistsMySQL.sql
     
     def execute(self, fileset = None, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, self.getBinds(fileset), 
-                         conn = conn, transaction = transaction)
-        return self.format(result)
+        return FilesetExistsMySQL.execute(self, fileset = fileset, 
+                                          conn = conn, transaction = transaction)
+    
+    def getBinds(self, fileset = None):
+        return FilesetExistsMySQL.getBinds(self, fileset = fileset)
+    
+    def format(self, result):
+        return FilesetExistsMySQL.format(self, result)

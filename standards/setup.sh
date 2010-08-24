@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Edit the first variables to fit your environment
+# Edit the init.sh file of the prodagent/prodcommon/wmcore in the cms package you download
+# such that it does not include prodagent, prodcommon or wmcore lib in the pythonpath
+# (we do want the other dependencies as we want to the cvs versions as a proper intstallation)
+export STYLE=/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/.pylintrc
+export CMSBASE=/home/fvlingen/programFiles/CMSBASE/ROOT/slc4_ia32_gcc345
+export PRODAGENTBASE=$CMSBASE/cms/prodagent/PRODAGENT_0_11_6-cmp
+export CVSBASE=/home/fvlingen/programFiles/CMS_CVS
+export TESTDIR=/home/fvlingen/programFiles/CMS_CVS/WMCORE_TEST
+export WMCOREBASE=$CVSBASE/WMCORE
+export PYTHONPATH=$WMCOREBASE/src/python:$PYTHONPATH
+#export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
+export DBNAME=wmbs
+export DBUSER=some_user
+export DBPASS=some_pass
+
+#DO NOT TOUCH FROM HERE !
+echo "-->Creating MySQL database access string"
+export DBSOCK=$TESTDIR/mysqldata/mysql.sock
+export DBHOST=localhost
+export MYSQLDATABASE=mysql://${DBUSER}:${DBPASS}@${DBHOST}/${DBNAME}
+echo '-->Using mysql DB: ' $MYSQLDATABASE
+export SQLCREATE="GRANT ALL PRIVILEGES ON ${DBNAME}.* TO '${DBUSER}'@'localhost' IDENTIFIED BY '${DBPASS}' WITH GRANT OPTION;"
+
+echo "-->Sourcing CMS environment"
+source $PRODAGENTBASE/etc/profile.d/init.sh
+

@@ -1,4 +1,11 @@
+TOC
+===
+-CODE STANDARD
+-RESERVED WORDS
+-TESTING
 
+CODE STANDARD:
+=============
 Use pylint and the pylint test file located under:
 WMCORE/standards/.pylintrc
 
@@ -14,3 +21,74 @@ src/python/WMCORE/MsgService/MsgService.py
 you will have a test in the pacakge:
 
 test/python/WMCORE_t/MsgService_t/MsgService_t.py
+
+All files should be tested against this and get a minimum score of 8 
+or higher. In case that is not possible due to certain language constructs 
+being used, the pylint style file can be accomodated to reflect this.
+
+Potential log files for tests should have a name: <testfile>.log
+So in case of the MsgService_t.py you get a MsgService_t.log file
+ 
+RESERVED WORDS:
+==============
+To prevent having to pass (a potential growing) number of parameters to 
+classes, there will be several reserved attributes in the thread class 
+to facilitate ease of use of much used objects. Below a list and how 
+you can assign them. These attributes enable (on a thread level) to 
+change values of certain often used objects (e.g. switching database 
+access parameters). It is not obligatory to use them just do not use 
+them in any other way than described here.
+
+import threading
+myThread = threading.currentThread()
+# pointer to the logger used in the module
+myThread.logger
+# pointer to current database interface object (WMCore.Database.DBInterface)
+myThread.dbi
+# the current database transaction object used (WMCore.Database.Transaction)
+myThread.transaction
+# A dictionary of factories. Factories are instantiated with a namespace (e.g. WMCore.MsgService.MySQL) and load the appropriate objects. This is especially useful if you  work with multiple backends.
+myThread.factory
+# A String representing the backend. Currently there are 3: "MySQL", "Oracle", "SQLite" . These backends are used to define the proper namespace for importing data access objects (DAO) from factories.
+# E.g. I can define a namespace: "WMCore.MsgService"+myThread.backend . 
+myThread.backend
+# pointer to current message service object being used
+myThread.msgService
+# pointer to current trigger service object being used
+myThread.trigger
+# pointer to arguments used by this component
+myThread.args
+#  dictionary of transactions. It is an (optional) possibility 
+# to synchronize commits to multiple databases (or the same database)
+myThread.transactions
+
+TESTING:
+=======
+
+This directory also contains a set of .sh files to setup and run tests
+
+-edit the setup.sh to reflect your settings (it assumes you use the cms packages 
+for running the tests (e.g. mysql, sqlalchemy).
+-source the setup.sh file
+
+You can then test using the folowing workflow:
+
+|----->./startup_dbs.sh
+|             |
+|            \|/
+| |--->./test (comment out what you do not need)
+| |           |
+| |          \|/
+| |----./cleanup.sh
+|             |
+|            \|/
+|------./stop_dbs
+
+After setup.sh you can also test your code quality
+using the quality.sh command. Either invoke
+quality.sh with a file or directory, or edit 
+the myfiles.sh script to run quality tests on several
+dirs. If you name your output files quality*.txt, 
+cleanup.sh will automatically remove them when invoked.
+
+

@@ -8,17 +8,19 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.4 2008/07/04 16:48:20 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Subscription.py,v 1.5 2008/07/07 09:39:54 metson Exp $"
+__version__ = "$Revision: 1.5 $"
+import copy
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset 
 class Subscription(Pickleable):
-    def __init__(self, fileset = None, workflow = None, 
+    def __init__(self, fileset = Fileset(), workflow = None, 
                split_algo = 'FileBased', type = "Processing"):
         self.fileset = fileset
         self.workflow = workflow
         self.type = type
         self.split_algo = split_algo
+        self.available = copy.copy(fileset)
         self.acquired = Fileset()
         self.completed = Fileset()
         self.failed = Fileset()
@@ -34,28 +36,28 @@ class Subscription(Pickleable):
         Return a Set of files that are available for processing 
         (e.g. not already in use)
         """
-        return self.fileset.listFiles() - self.acquiredFiles
+        return self.available.listFiles() - self.acquiredFiles.listFiles() - \
+            self.completed.listFiles() - self.failed.listFiles() 
     
     def acquireFiles(self, size=1):
-        print "DataStruct Subscription acquireFiles"
-        files = self.availableFiles()
-        self.acquiredFiles.commit()
-        if len(files) < size or size == 0:
-            size = len(files)
+        self.acquired.commit()
+        if len(self.available.files) < size or size == 0:
+            size = len(self.available.files)        
         for i in range(size):
-            self.acquiredFiles.addFile(files.pop())
-            i = i + 1
-        return self.acquiredFiles.listNewFiles()  
+            self.acquired.addFile(self.available.files.pop())            
+        retval = self.acquired.listNewFiles() 
+        return retval 
     
     def filesOfStatus(self, status=None):
         if status == 'AvailableFiles':
-            return self.fileset - (self.acquired | self.completed | self.failed)
+            return self.available.listFiles() - \
+            (self.acquiredFiles() | self.completedFiles() | self.failedFiles())
         elif status == 'AcquiredFiles':
-            return self.acquired
+            return self.acquired.listFiles()
         elif status == 'CompletedFiles':
-            return self.completed
+            return self.completed.listFiles()
         elif status == 'FailedFiles':
-            return self.failed
+            return self.failed.listFiles()
         
     def availableFiles(self):
         """

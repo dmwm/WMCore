@@ -46,7 +46,7 @@ include-ids=no
 enable-basic=yes
 
 # Maximum number of arguments for function / method
-max-args=5
+max-args=7
 
 # Maximum number of locals for function / method body
 max-locals=30
@@ -143,7 +143,7 @@ init-import=no
 #
 [CLASSES]
 # Enable / disable this checker
-enable-classes=yes
+enable-classes=no
 
 # List of interface methods to ignore, separated by a comma. This is used for
 # instance to not check methods defines in Zope's Interface base class.

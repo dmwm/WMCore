@@ -6,8 +6,8 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.1 2008/08/22 13:20:10 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMFactory.py,v 1.2 2008/09/05 12:41:32 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 #FIXME: need a test for this. But this can only be done if 
@@ -63,7 +63,7 @@ namespace (package): %s """ % (name, str(namespace))
             logging.debug("Not in cache")
         logging.debug("Searching class name: "+ classname)
         try:
-          
+             
             module = "%s.%s" % (self.namespace, classname)
             module = __import__(module, globals(), locals(), [classname])
             obj = getattr(module, classname.split('.')[-1])

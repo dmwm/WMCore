@@ -22,6 +22,7 @@ class ConfigurationTest(unittest.TestCase):
 
     def tearDown(self):
         """clean up"""
+        return
         if os.path.exists(self.normalSave):
             os.remove(self.normalSave)
         if os.path.exists(self.docSave):

@@ -12,8 +12,8 @@ to pass arbitrary objects if needed through the parameters
 attribute.
 """
 
-__revision__ = "$Id: ThreadSlave.py,v 1.2 2008/09/04 14:32:06 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ThreadSlave.py,v 1.3 2008/09/05 12:41:32 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -38,7 +38,7 @@ class ThreadSlave:
     attribute.
     """
 
-    def __init__(self, component):
+    def __init__(self ):
         """
         The constructor creates separate instances
         for objects that we do not want to share.
@@ -53,14 +53,13 @@ class ThreadSlave:
         self.args = {}
         # we also keep a reference to our component (we can
         # use this for read only things in the argument list).
-        self.component = component
-        
+        # assign this later
+        self.component = None 
         #a slave is created in its master thread so we can exploit
         #this to get a reference to its dbfactory object.
         myThread = threading.currentThread()
         self.dbFactory = myThread.dbFactory
-       
-        self.args.update(self.component.args)
+      
         # we can potentially use mapping from messages to handlers
         # to have one thread handling multiple message types.
         self.messages = {}
@@ -90,7 +89,7 @@ class ThreadSlave:
         # to here:
         myThread.dbFactory = self.dbFactory
 
-        if self.args['db_dialect'] == 'mysql':
+        if self.component.config.CoreDatabase.dialect == 'mysql': 
             myThread.dialect = 'MySQL'
 
         #TODO: remove as much as possible logging statements or make them debug
@@ -98,9 +97,6 @@ class ThreadSlave:
 
         logging.info("THREAD: Initializing default database")
         logging.info("THREAD: Check if connection is through socket")
-        options = {}
-        if self.args.has_key("db_socket"):
-            options['unix_socket'] = self.args['db_socket']
         logging.info("THREAD: Building database connection string")
         # we ensured that we use the dbFactory object from our parent
         # thread so we have only one engine in the application.

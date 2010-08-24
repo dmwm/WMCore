@@ -9,8 +9,8 @@ components.
 
 """
 
-__revision__ = "$Id: TestComponent.py,v 1.2 2008/09/04 14:32:07 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TestComponent.py,v 1.3 2008/09/05 12:41:33 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -31,9 +31,9 @@ class TestComponent(Harness):
     
     """
 
-    def __init__(self, **args):
+    def __init__(self, config):
         # call the base class
-        Harness.__init__(self, **args)
+        Harness.__init__(self, config)
 
 
         aHandlerInstance = BaseHandler(self)

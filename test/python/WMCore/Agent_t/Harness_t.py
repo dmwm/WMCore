@@ -3,8 +3,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.4 2008/09/04 14:32:07 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Harness_t.py,v 1.5 2008/09/05 12:41:33 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -12,12 +12,11 @@ import os
 import threading
 import unittest
 
+from TestComponent import TestComponent
 
+from WMCore.Agent.Configuration import Configuration
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMFactory import WMFactory
-
-
-from TestComponent import TestComponent
 
 class HarnessTest(unittest.TestCase):
     """
@@ -65,18 +64,27 @@ class HarnessTest(unittest.TestCase):
         """
         Mimics creation of component and handles come messages.
         """
-        
-        # parameters for test component:
-        args = {}
-        args['workDir'] = os.getenv("TESTDIR")
-        args['db_dialect'] = 'mysql'
-        args['db_socket'] = os.getenv("DBSOCK")
-        args['db_user'] = os.getenv("DBUSER")
-        args['db_pass'] = os.getenv("DBPASS")
-        args['db_hostname'] = os.getenv("DBHOST")
-        args['db_name'] = os.getenv("DBNAME")
+        # we want to read this from a file for the actual components.
+        config = Configuration()
+        config.Agent.contact = "fvlingen@caltech.edu"
+        config.Agent.teamName = "Lakers"
+        config.Agent.agentName = "Lebron James"
 
-        testComponent = TestComponent(**args)
+        config.section_("General")
+        config.General.workDir = os.getenv("TESTDIR")
+
+        config.component_("TestComponent")
+        config.TestComponent.logLevel = 'DEBUG'
+
+        config.section_("CoreDatabase")
+        config.CoreDatabase.dialect = 'mysql' 
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
+        config.CoreDatabase.user = os.getenv("DBUSER")
+        config.CoreDatabase.passwd = os.getenv("DBPASS")
+        config.CoreDatabase.hostname = os.getenv("DBHOST")
+        config.CoreDatabase.name = os.getenv("DBNAME")
+
+        testComponent = TestComponent(config)
         testComponent.prepareToStart()
         testComponent.handleMessage('LogState','')
         testComponent.handleMessage('TestMessage1','TestMessag1Payload')

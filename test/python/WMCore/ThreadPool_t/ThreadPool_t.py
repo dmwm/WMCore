@@ -6,8 +6,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.2 2008/09/04 14:32:08 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.3 2008/09/05 12:41:33 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import unittest
@@ -16,6 +16,7 @@ import os
 import threading
 import time
 
+from WMCore.Agent.Configuration import Configuration
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
@@ -34,8 +35,8 @@ class ThreadPoolTest(unittest.TestCase):
 
     _setup = False
     _teardown = False
-    _nrOfThreads = 100
-    _nrOfPools = 5 
+    _nrOfThreads = 10
+    _nrOfPools = 5
 
     def setUp(self):
         "make a logger instance and create tables"
@@ -91,15 +92,24 @@ class ThreadPoolTest(unittest.TestCase):
         myThread = threading.currentThread()
         # create a 'fake' component that contains a arg dictionary.
         component = Dummy()
-        args = {}
-        args['db_dialect'] = 'mysql'
-        args['db_socket'] = os.getenv("DBSOCK")
-        args['db_user'] = os.getenv("DBUSER")
-        args['db_pass'] = os.getenv("DBPASS")
-        args['db_hostname'] = os.getenv("DBHOST")
-        args['db_name'] = os.getenv("DBNAME")
-        args['componentName'] = 'TestComponent'
-        component.args = args
+
+        # we want to read this from a file for the actual components.
+        config = Configuration()
+        config.Agent.contact = "fvlingen@caltech.edu"
+        config.Agent.teamName = "Lakers"
+        config.Agent.agentName = "Lebron James"
+        # normally assigned by the harness of the test component.
+        config.Agent.componentName = "TestComponent"
+
+        config.section_("CoreDatabase")
+        config.CoreDatabase.dialect = 'mysql'
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
+        config.CoreDatabase.user = os.getenv("DBUSER")
+        config.CoreDatabase.passwd = os.getenv("DBPASS")
+        config.CoreDatabase.hostname = os.getenv("DBHOST")
+        config.CoreDatabase.name = os.getenv("DBNAME")
+
+        component.config = config
 
         threadPools = []
         for i in xrange(0, ThreadPoolTest._nrOfPools):

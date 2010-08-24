@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.2 2008/09/04 12:31:24 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Harness.py,v 1.3 2008/09/05 12:41:32 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -41,7 +41,7 @@ class Harness:
     components
     """
 
-    def __init__(self, **args):
+    def __init__(self, config):
         """
         init
 
@@ -50,44 +50,55 @@ class Harness:
         """
         try:
             self.state = 'startup'
-            self.args = {}
+            self.config = config
             self.messages = {}
-            self.args['logFile'] = None
-            self.args.update(args)
             # the component name is the last part of its module name
             # and it should override any name give through the arguments.
-            self.args['componentName'] = str(self.__class__.__name__)
-            self.args['componentDir'] = os.path.join(self.args['workDir'], \
-                self.args['componentName'])
-            if self.args['logFile'] == None:
-                self.args['logFile'] = os.path.join(self.args['componentDir'], \
+            compName = self.__class__.__name__
+            if not compName in self.config.listComponents_():
+                raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
+     
+            self.config.Agent.componentName = compName 
+            compSect = getattr(self.config, compName, None) 
+            compSect.componentDir =  os.path.join(self.config.General.workDir, \
+                self.config.Agent.componentName)
+            if not hasattr(compSect, "logFile"):
+                compSect.logFile = os.path.join(compSect.componentDir,\
                     "ComponentLog")
             # we have name and location of the log files. Now make sure there
             # is a directory.
             try:
-                os.makedirs(self.args['componentDir'])
+                os.makedirs(compSect.componentDir)
             except :
-                print('component dir already exists. Moving on')
-            logHandler = RotatingFileHandler(self.args['logFile'],
+                print('component dir already exists. Continue on with initialization')
+            logHandler = RotatingFileHandler(compSect.logFile,
                 "a", 1000000, 3)
             logFormatter = \
                 logging.Formatter("%(asctime)s:%(module)s:%(message)s")
             logHandler.setFormatter(logFormatter)
             logging.getLogger().addHandler(logHandler)
             logging.getLogger().setLevel(logging.INFO)
-            logging.info(">>>Starting: "+self.args['componentName']+'<<<')
+            if hasattr(compSect, "logLevel"):
+                if compSect.logLevel == 'DEBUG':
+                   logging.getLogger().setLevel(logging.DEBUG)
+                elif compSect.logLevel == 'ERROR':
+                   logging.getLogger().setLevel(logging.ERROR)
+                elif compSect.logLevel == 'NOTSET':
+                   logging.getLogger().setLevel(logging.NOTSET)
+             
+            logging.info(">>>Starting: "+compName+'<<<')
             # check which backend to use: MySQL, Oracle, etc... for core 
             # services.
-            if not self.args.has_key('db_dialect'):
+            coreSect = self.config.CoreDatabase
+            if not hasattr(coreSect, "dialect"):
                 raise WMException(WMEXCEPTION['WMCORE-5'],'WMCORE-5')
             myThread = threading.currentThread()
-            logging.info(">>>Determining Dialect: "+self.args['db_dialect'])
-            if self.args['db_dialect'] == 'mysql':
+            logging.info(">>>Determining Dialect: "+coreSect.dialect)
+            if coreSect.dialect == 'mysql':
                 myThread.dialect = 'MySQL'
             myThread.logger = logging.getLogger()
-            logging.info(">>>Setting arguments for main thread: "+ \
-                str(self.args))
-            myThread.args = self.args
+            logging.info(">>>Setting config for main thread: ")
+            myThread.config = self.config
             logging.info(">>>Initializing Msgservice Factory")
             WMFactory("msgService", "WMCore.MsgService."+ \
                 myThread.dialect)
@@ -99,12 +110,12 @@ class Harness:
             logging.info(">>>Initializing default database")
             logging.info(">>>Check if connection is through socket")
             options = {}
-            if self.args.has_key("db_socket"):
-                options['unix_socket'] = self.args['db_socket']
+            if hasattr(coreSect, "socket"):
+                options['unix_socket'] = coreSect.socket
             logging.info(">>>Building database connection string")
-            dbStr = self.args['db_dialect'] + '://' + self.args['db_user'] + \
-                ':' + self.args['db_pass']+"@"+self.args['db_hostname']+'/'+\
-                self.args['db_name']
+            dbStr = coreSect.dialect + '://' + coreSect.user + \
+                ':' + coreSect.passwd+"@"+coreSect.hostname+'/'+\
+                coreSect.name
             # we only want one DBFactory per database so we will need to 
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
@@ -117,24 +128,20 @@ class Harness:
             self.diagnosticMessages = []
             # can be used to print out the parameter 
             # and handlers used by an agent
-            self.diagnosticMessages.append(self.args['componentName']+\
-                ':LogState')
+            self.diagnosticMessages.append(compName + ':LogState')
             self.diagnosticMessages.append('LogState')
             # start/stop debug
-            self.diagnosticMessages.append(self.args['componentName']+\
-                ':Logging.DEBUG')
-            self.diagnosticMessages.append(self.args['componentName']+\
-                ':Logging.INFO')
-            self.diagnosticMessages.append(self.args['componentName']+\
-                ':Logging.ERROR')
+            self.diagnosticMessages.append(compName + ':Logging.DEBUG')
+            self.diagnosticMessages.append(compName + ':Logging.INFO')
+            self.diagnosticMessages.append(compName + ':Logging.ERROR')
+            self.diagnosticMessages.append(compName + ':Logging.NOTSET')
             self.diagnosticMessages.append('Logging.DEBUG')
             self.diagnosticMessages.append('Logging.INFO')
             self.diagnosticMessages.append('Logging.ERROR')
+            self.diagnosticMessages.append('Logging.NOTSET')
             # events to stop the component.
-            self.diagnosticMessages.append(self.args['componentName']+\
-                ':Stop')
+            self.diagnosticMessages.append(compName + ':Stop')
             self.diagnosticMessages.append('Stop')
-
 
             logging.info(">>>Instantiating trigger service")
             #FIXME: add when trigger service is ready
@@ -184,7 +191,7 @@ class Harness:
         (should return atring)
         """
         msg = 'No additional state information for ' + \
-            self.args['componentName']
+            self.config.Agent.componentName
         return msg
 
     def publishItem(self, items = {}):
@@ -204,6 +211,7 @@ class Harness:
         """
         Loads the correct handler and performs the apropiate actions
         """
+        compName = self.config.Agent.componentName
         # check if it is not a diagnostic event.
         if not event in self.diagnosticMessages:
             if not event in self.messages.keys():
@@ -223,19 +231,23 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         # diagnostics are tiny operations so we put them here rather 
         # than in separate handlers
         else:
-            if(event == self.args['componentName']+':Logging.DEBUG') or \
+            if(event == compName+':Logging.DEBUG') or \
                 (event == 'Logging.DEBUG'):
                 logging.getLogger().setLevel(logging.DEBUG)
                 logging.info("Log level set to DEBUG")
-            elif(event == self.args['componentName']+':Logging.INFO') or \
+            elif(event == compName+':Logging.INFO') or \
                 (event == 'Logging.INFO'):
                 logging.getLogger().setLevel(logging.INFO)
                 logging.info("Log level set to INFO")
-            elif(event == self.args['componentName']+':Logging.ERROR') or \
+            elif(event == compName+':Logging.ERROR') or \
                 (event == 'Logging.ERROR'):
                 logging.getLogger().setLevel(logging.ERROR)
                 logging.info("Log level set to ERROR")
-            elif(event == self.args['componentName']+':LogState') or \
+            elif(event == compName+':Logging.NOTSET') or \
+                (event == 'Logging.NOTSET'):
+                logging.getLogger().setLevel(logging.NOTSET)
+                logging.info("Log level set to ERROR")
+            elif(event == compName+':LogState') or \
                 (event == 'LogState'):
                 logging.info(str(self))
 
@@ -257,7 +269,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             myThread = threading.currentThread()
             # register this component
             logging.info(">>>Registering this component to msgService")
-            myThread.msgService.registerAs(self.args['componentName'])
+            myThread.msgService.registerAs(self.config.Agent.componentName)
             logging.info(">>>Subscribing to events:")
             # subscribe to messages (or generate a warning:
             if len(self.messages.keys())==0:
@@ -279,7 +291,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             logging.info(">>>Before I start I purge any stop messages send "+\
                 "to me")
             myThread.msgService.remove("Stop")
-            myThread.msgService.remove(self.args["componentName"]+":Stop")
+            myThread.msgService.remove(self.config.Agent.componentName+":Stop")
         except Exception,ex:
             logging.critical("Prolem initializing : "+str(ex))
             raise
@@ -297,7 +309,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         type = None
         payload = None
         # note: every component gets a (unique) name: 
-        # self.args['componentName']
+        # self.config.Agent.componentName
         logging.info('>>>Starting initialization\n')
 
         logging.info('>>>Setting default transaction')
@@ -333,7 +345,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         logging.debug("Receiving message of type: "+str(type)+\
         ", payload: "+str(payload))
          # check if it is a stop message:
-        if type == 'Stop' or type == self.args['componentName']+':Stop':
+        if type == 'Stop' or type == self.config.Agent.componentName+':Stop':
             return
         self.__call__(type, payload)
 
@@ -371,7 +383,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                     transaction.commit()
                 logging.debug(">>>Finished handling message of type "+ \
                     str(type)+ " \n")
-                if type == 'Stop' or type == self.args['componentName']+':Stop':
+                if type == 'Stop' or type == self.config.Agent.componentName+':Stop':
                     logging.info(">>>Gracefully shutting down component")
                     break
         except Exception,ex:
@@ -411,8 +423,7 @@ while trying to handle event/payload: %s/%s
         msg += '\n'
         msg += '>>Parameters --> Values<<\n'
         msg += '-------------------------\n'
-        for parameter in self.args.keys():
-            msg += parameter+'-->'+str(self.args[parameter])+'\n\n'
+        msg += str(self.config)
         additionalMsg = self.logState()
         if additionalMsg != '':
             msg += '\n'

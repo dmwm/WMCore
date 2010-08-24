@@ -7,7 +7,10 @@ from WMCore.WMBS.MySQL.Base import MySQLBase
 
 class GetParents(MySQLBase):
     sql = """select lfn from wmbs_file_details where id IN (
-        select parent from wmbs_file_parent where child = :file)"""
+            select parent from wmbs_file_parent where child = (
+                select id from wmbs_file_details where lfn = :file
+            )
+        )"""
         
     def getBinds(self, files=None):
         binds = []
@@ -16,12 +19,11 @@ class GetParents(MySQLBase):
             binds.append({'file': f})
         return binds
     
-    def format(self, result):
+    def format(self, result):        
         out = [] 
         for r in result:
             for f in r.fetchall():
-                out.append(f)
-        print out
+                out.append(f[0])
         return out 
         
     def execute(self, files=None, conn = None, transaction = False):

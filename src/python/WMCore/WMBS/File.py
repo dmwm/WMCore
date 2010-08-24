@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.21 2008/09/19 16:29:14 metson Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: File.py,v 1.22 2008/09/29 16:09:28 metson Exp $"
+__version__ = "$Revision: 1.22 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -23,11 +23,10 @@ class File(BusinessObject, WMFile):
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
                  parents=Set(), locations=None, logger=None, dbfactory=None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        WMFile.__init__(self, lfn=lfn, size=size, events=events, run=run, lumi=lumi, parents=parents)
+        WMFile.__init__(self, lfn=lfn, id=id, size=size, events=events, run=run, lumi=lumi, parents=parents)
         """
         Create the file object
         """
-        self.setdefault("id", int(id))
         if locations != None:
             self.setdefault("locations", locations)
         self.dict = self
@@ -63,6 +62,8 @@ class File(BusinessObject, WMFile):
             result = self.daofactory(classname='Files.GetByID').execute(self['id'])
         else:
             result = self.daofactory(classname='Files.GetByLFN').execute(self['lfn'])
+        assert len(result) == 1, "Found %s files, not one" % len(result)
+        result = result[0]
         self['id'] = result[0]
         self['lfn'] = result[1]
         self['size'] = result[2]

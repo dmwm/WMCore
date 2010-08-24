@@ -107,7 +107,7 @@ class WMBSBase(Performance):
             rangemax = number
 
         for i in range(rangemax):        
-            workflow = Workflow(spec='Test', owner='PerformanceTestCase', name='TestWorkflow'+str(i), logger=self.logger, dbfactory=self.dbf)
+            workflow = Workflow(spec='TestWorkflow'+str(i), owner='PerformanceTestCase', name='TestWorkflow'+str(i), logger=self.logger, dbfactory=self.dbf)
             workflow.create()
             list.append(workflow)
 
@@ -202,8 +202,8 @@ class WMBSBase(Performance):
         self.baseexec=''
 
         #Threshold settings:
-        self.threshold = 0 
-        self.totalthreshold = 0
+        self.threshold = 0.1
+        self.totalthreshold = 2
 
         #possibly deprecated, need to use selist instead
         self.sename='localhost'        

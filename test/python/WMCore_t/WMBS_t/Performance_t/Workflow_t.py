@@ -23,51 +23,68 @@ class WorkflowTest(WMBSBase):
         
         dbf = DBFactory(self.logger, sqlURI)
         
+        self.totaltime = 0
         WMBSBase.setUp(self,dbf=dbf)
 
     def tearDown(self):
         #Call superclass tearDown method
         WMBSBase.tearDown(self)
 
-    def testExists(self):         
+    def testExists(self, times=1):         
         print "testExists"
 
-        time = self.perfTest(dao=self.dao, action='Workflow.Exists', spec=self.testWorkflow.spec, owner=self.testWorkflow.owner, name=self.testWorkflow.name)
-        assert time <= self.threshold, 'Exists DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        list = self.genWorkflow(number=1)
+       
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Workflow.Exists', spec=list[0].spec, owner=list[0].owner, name=list[0].name)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'Exists DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
-    def testNew(self):         
+    def testNew(self, times=1):         
         print "testNew"
+       
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Workflow.New', spec="Test"+str(i), owner="PerformanceTestcase", name="testNew"+str(i))
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
-        #Can't use testWorkflow from WMBSBase
-        spec='TestSpec'
-        owner='WorkflowTest'
-        name='NewTestWorkflow'
-
-        #TODO - Confirm the exec input args
-        time = self.perfTest(dao=self.dao, action='Workflow.New', spec=spec, owner=owner, name=name)
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
-    def testDelete(self):         
+    def testDelete(self, times=1):         
         print "testDelete"
 
-        time = self.perfTest(dao=self.dao, action='Workflow.Delete', id=self.testWorkflow.id)
-        assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        list = self.genWorkflow(number=times)
+       
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Workflow.Delete', id=list[i].id)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'Delete DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
-    def testLoadFromID(self):         
+    def testLoadFromID(self, times=1):         
         print "testLoadFromID"
 
-        time = self.perfTest(dao=self.dao, action='Workflow.LoadFromID', workflow=self.testWorkflow.id)
-        assert time <= self.threshold, 'LoadFromID DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        list = self.genWorkflow(number=1)
 
-    def testLoadFromName(self):         
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Workflow.LoadFromID', workflow=list[0].id)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'LoadFromID DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testLoadFromName(self, times=1):         
         print "testLoadFromName"
 
-        time = self.perfTest(dao=self.dao, action='Workflow.LoadFromName', workflow=self.testWorkflow.name)
-        assert time <= self.threshold, 'LoadFromName DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        list = self.genWorkflow(number=1)
 
-    def testLoadSpecOwner(self):         
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Workflow.LoadFromName', workflow=list[0].name)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'LoadFromName DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testLoadSpecOwner(self, times=1):         
         print "testLoadSpecOwner"
 
-        time = self.perfTest(dao=self.dao, action='Workflow.LoadSpecOwner', spec=self.testWorkflow.spec, owner=self.testWorkflow.owner)
-        assert time <= self.threshold, 'LoadSpecOwner DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        list = self.genWorkflow(number=times)
+
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Workflow.LoadSpecOwner', spec=list[i].spec, owner=list[i].owner)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'LoadSpecOwner DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 

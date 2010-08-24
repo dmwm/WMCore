@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.13 2009/01/11 17:53:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobGroup.py,v 1.14 2009/01/14 16:56:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -57,16 +57,13 @@ class JobGroup(WMBSBase, WMJobGroup):
     """
     A group (set) of Jobs
     """
-    def __init__(self, subscription = None, jobs=None, id = -1, uid = None):
+    def __init__(self, subscription = None, jobs = None, id = -1, uid = None):
         WMBSBase.__init__(self)
         WMJobGroup.__init__(self, subscription=subscription, jobs = jobs)
 
         self.id = id
-
-        if uid == None:
-            self.uid = makeUUID()
-        else:
-            self.uid = uid
+        self.lastUpdate = None
+        self.uid = uid
 
         return
     
@@ -78,6 +75,9 @@ class JobGroup(WMBSBase, WMJobGroup):
         
         self.groupoutput = Fileset(name = makeUUID())
         self.groupoutput.create()
+
+        if self.uid == None:
+            self.uid = makeUUID()
 
         action = self.daofactory(classname="JobGroup.New")
         action.execute(self.uid, self.subscription["id"],
@@ -115,35 +115,55 @@ class JobGroup(WMBSBase, WMJobGroup):
     
     def load(self):
         """
-        Load the JobGroup from the database
+        _load_
+
+        Load all meta data associated with the JobGroup.  This includes the
+        JobGroup id, uid, last_update time, subscription id and output fileset
+        id.  Either the JobGroup id or uid must be specified for this to work.
         """
-        if self.id == -1:
-            idAction = self.daofactory(classname = "JobGroup.LoadIDFromUID")
-            self.id = idAction.execute(self.uid, conn = self.getReadDBConn(),
-                                       transaction = self.existingTransaction())
+        if self.id > 0:
+            loadAction = self.daofactory(classname = "JobGroup.LoadFromID")
+            result = loadAction.execute(self.id, conn = self.getReadDBConn(),
+                                        transaction = self.existingTransaction())
+        else:
+            loadAction = self.daofactory(classname = "JobGroup.LoadFromUID")
+            result = loadAction.execute(self.uid, conn = self.getReadDBConn(),
+                                        transaction = self.existingTransaction())            
+
+        self.id = int(result["id"])
+        self.uid = result["uid"]
+        self.lastUpdate = result["last_update"]
             
-        subAction = self.daofactory(classname = "JobGroup.LoadSubscription")
-        subID = subAction.execute(self.id, conn = self.getReadDBConn(),
-                                  transaction = self.existingTransaction())
+        self.subscription = Subscription(id = int(result["subscription"]))
+        self.groupoutput = Fileset(id = int(result["output"]))
+
+        self.jobs.clear()
+        return
+
+    def loadData(self):
+        """
+        _loadData_
+        
+        Load all data that is associated with the jobgroup.  This includes
+        loading all the subscription information, the output fileset
+        information and all the jobs that are associated with the group.
+        """
+        if self.id < 0 or self.uid == None:
+            self.load()
+
+        self.subscription.loadData()
+        self.groupoutput.loadData()
+
         jobAction = self.daofactory(classname = "JobGroup.LoadJobs")
         jobIDs = jobAction.execute(self.id, conn = self.getReadDBConn(),
                                    transaction = self.existingTransaction())
-        outputAction = self.daofactory(classname = "JobGroup.LoadOutput")
-        outputID = outputAction.execute(self.id, conn = self.getReadDBConn(),
-                                        transaction = self.existingTransaction())
 
-        self.subscription = Subscription(id = subID)
-        self.subscription.load()
-
-        self.jobs.clear()
         for jobID in jobIDs:
-            newJob = Job(id = jobID)
-            newJob.load()
+            newJob = Job(id = int(jobID["id"]))
+            newJob.loadData()
             self.jobs.add(newJob)
 
-        self.groupoutput = Fileset(id = outputID)
-        self.groupoutput.load(method = "Fileset.LoadFromID")
-        return
+        return    
         
     def commit(self):
         """

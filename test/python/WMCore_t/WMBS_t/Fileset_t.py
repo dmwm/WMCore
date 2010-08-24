@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 """ 
-Testcase for Fileset
+_Fileset_t_
 
-Instantiate a Fileset, with an initial file on its Set. After being populated with 1000 random files,
-its access methods and additional file insert methods are tested
+Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.6 2009/01/08 22:00:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Fileset_t.py,v 1.7 2009/01/13 16:41:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import logging
@@ -125,6 +124,10 @@ class Fileset_t(unittest.TestCase):
         """
         _testDeleteTransaction_
 
+        Create a fileset and commit it to the database.  Delete the fileset
+        and verify that it is no longer in the database using the exists()
+        method.  Rollback the transaction and verify with the exists() method
+        that the fileset is in the database.
         """
         testFileset = Fileset(name = "TestFileset")
 
@@ -155,8 +158,31 @@ class Fileset_t(unittest.TestCase):
         """
         _testLoad_
 
-        Create a fileset and load it from the database using the two
-        load methods.
+        Test retrieving fileset metadata via the id and the
+        name.
+        """
+        testFilesetA = Fileset(name = "TestFileset")
+        testFilesetA.create()
+
+        testFilesetB = Fileset(name = testFilesetA.name)
+        testFilesetB.load()        
+        testFilesetC = Fileset(id = testFilesetA.id)
+        testFilesetC.load()
+
+        assert testFilesetB.id == testFilesetA.id, \
+               "ERROR: Load from name didn't load id"
+
+        assert testFilesetC.name == testFilesetA.name, \
+               "ERROR: Load from id didn't load name"
+
+        testFilesetA.delete()
+        return
+
+    def testLoadData(self):
+        """
+        _testLoadData_
+
+        Test saving and loading all fileset information.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, cksum = 3)
@@ -180,9 +206,9 @@ class Fileset_t(unittest.TestCase):
         testFilesetA.commit()
 
         testFilesetB = Fileset(name = testFilesetA.name)
-        testFilesetB.load(method = "Fileset.LoadFromName")        
+        testFilesetB.loadData()        
         testFilesetC = Fileset(id = testFilesetA.id)
-        testFilesetC.load(method = "Fileset.LoadFromID")
+        testFilesetC.loadData()
 
         assert testFilesetB.id == testFilesetA.id, \
                "ERROR: Load from name didn't load id"
@@ -211,7 +237,7 @@ class Fileset_t(unittest.TestCase):
         testFilesetA.delete()
         testFileA.delete()
         testFileB.delete()
-        testFileC.delete()
+        testFileC.delete()        
         
     def testGetFiles(self):
         """
@@ -313,9 +339,9 @@ class Fileset_t(unittest.TestCase):
         testFilesetA.commit()
 
         testFilesetB = Fileset(name = testFilesetA.name)
-        testFilesetB.load(method = "Fileset.LoadFromName")        
+        testFilesetB.loadData()        
         testFilesetC = Fileset(id = testFilesetA.id)
-        testFilesetC.load(method = "Fileset.LoadFromID")
+        testFilesetC.loadData()
 
         assert testFilesetB.id == testFilesetA.id, \
                "ERROR: Load from name didn't load id"
@@ -380,9 +406,9 @@ class Fileset_t(unittest.TestCase):
         testFilesetA.commit()
 
         testFilesetB = Fileset(name = testFilesetA.name)
-        testFilesetB.load(method = "Fileset.LoadFromName")
+        testFilesetB.loadData()
         testFilesetC = Fileset(id = testFilesetA.id)
-        testFilesetC.load(method = "Fileset.LoadFromID")
+        testFilesetC.loadData()
 
         assert testFilesetB.id == testFilesetA.id, \
                "ERROR: Load from name didn't load id"
@@ -410,8 +436,8 @@ class Fileset_t(unittest.TestCase):
 
         myThread.transaction.rollback()
 
-        testFilesetB.load(method = "Fileset.LoadFromName")
-        testFilesetC.load(method = "Fileset.LoadFromID")
+        testFilesetB.load()
+        testFilesetC.load()
 
         assert len(testFilesetB.files) == 0, \
                "ERROR: Fileset B has too many files"

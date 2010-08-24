@@ -88,6 +88,40 @@ class FilesetClassTest (unittest.TestCase):
         for x in filesettemp:
             assert x in (self.fileset.files | self.fileset.newfiles), \
             'Missing file %s from file list returned from fileset.ListFiles' % x.dict["lfn"]
+            
+    def testSetFiles(self):
+        """
+        Check that all files returned by the set are the same as those added to 
+        the fileset
+        """
+        filesettemp = self.fileset.setFiles()
+        for x in filesettemp:
+            assert x in (self.fileset.files | self.fileset.newfiles), \
+            'Missing file %s from file list returned from fileset.ListFiles' % x.dict["lfn"]
+            
+    def testSetListCompare(self):
+        """
+        Test that all files in fileset.setFiles are in fileset.listFiles()
+        """
+        thelist = self.fileset.listFiles()
+        theset = self.fileset.setFiles()
+        for x in thelist:
+            assert x in (theset), \
+            'Missing file %s from file list returned from fileset.ListFiles' % x.dict["lfn"]
+    
+    def testSorting(self):
+        """
+        Fileset.listFiles() should be sorted the same as Fileset.listLFNs(), 
+        assert that this is the case here.
+        """
+        files = self.fileset.listFiles()
+        lfns = self.fileset.listLFNs()
+        for x in files:
+            assert x.dict["lfn"] in (lfns), \
+            'Missing file %s from file list returned ' % x.dict["lfn"]
+            assert lfns[files.index(x)] == x.dict["lfn"], \
+            'Sorting not consistent: lfn = %s, file = %s' % (lfns[files.index(x)], x.dict["lfn"])
+            
     def testListLFNs(self):
         """
             Testcase for the listLFN method of the Fileset class
@@ -103,6 +137,7 @@ class FilesetClassTest (unittest.TestCase):
             assert x.dict['lfn'] in self.fileset.listLFNs(), 'Missing %s from ' \
             'list returned from fileset.ListLFNs' % x.dict["lfn"] 
         #Im a bit confused with this method, leave to discuss it at the meeting with Simon
+        
     def testListNewFiles(self):
         """
             Testcase for the listNewFiles method of the Fileset class

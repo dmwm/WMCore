@@ -15,8 +15,8 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Workflow.py,v 1.17 2009/01/14 16:46:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Workflow.py,v 1.18 2009/01/16 22:42:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -95,7 +95,7 @@ class Workflow(WMBSBase, WMWorkflow):
                                     conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())
 
-        self.id = int(result["id"])
+        self.id = result["id"]
         self.spec = result["spec"]
         self.name = result["name"]
         self.owner = result["owner"]

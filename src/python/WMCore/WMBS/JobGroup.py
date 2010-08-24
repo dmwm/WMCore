@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.14 2009/01/14 16:56:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: JobGroup.py,v 1.15 2009/01/16 22:43:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -130,12 +130,12 @@ class JobGroup(WMBSBase, WMJobGroup):
             result = loadAction.execute(self.uid, conn = self.getReadDBConn(),
                                         transaction = self.existingTransaction())            
 
-        self.id = int(result["id"])
+        self.id = result["id"]
         self.uid = result["uid"]
         self.lastUpdate = result["last_update"]
             
-        self.subscription = Subscription(id = int(result["subscription"]))
-        self.groupoutput = Fileset(id = int(result["output"]))
+        self.subscription = Subscription(id = result["subscription"])
+        self.groupoutput = Fileset(id = result["output"])
 
         self.jobs.clear()
         return
@@ -159,7 +159,7 @@ class JobGroup(WMBSBase, WMJobGroup):
                                    transaction = self.existingTransaction())
 
         for jobID in jobIDs:
-            newJob = Job(id = int(jobID["id"]))
+            newJob = Job(id = jobID["id"])
             newJob.loadData()
             self.jobs.add(newJob)
 

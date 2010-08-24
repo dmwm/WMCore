@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.30 2009/01/16 17:04:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Subscription.py,v 1.31 2009/01/16 22:43:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 
 from sets import Set
 import logging
@@ -106,15 +106,15 @@ class Subscription(WMBSBase, WMSubscription):
                                     transaction = self.existingTransaction())            
 
         self["type"] = result["type"]
-        self["id"] = int(result["id"])
+        self["id"] = result["id"]
         self["split_algo"] = result["split_algo"]
 
         # Only load the fileset and workflow if they haven't been loaded
         # already.  
         if self["fileset"].id < 0:
-            self["fileset"] = Fileset(id = int(result["fileset"]))
+            self["fileset"] = Fileset(id = result["fileset"])
         if self["workflow"].id < 0:
-            self["workflow"] = Workflow(id = int(result["workflow"]))
+            self["workflow"] = Workflow(id = result["workflow"])
             
         return
 
@@ -151,16 +151,16 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitIfNew()
         return
           
-    def filesOfStatus(self, status = None):
+    def filesOfStatus(self, status):
         """
         fids will be a set of id's, we'll then load the corresponding file 
         objects.
         """
         files = Set()
         action = self.daofactory(classname = "Subscriptions.Get%s" % status)
-        for f in action.execute(self, conn = self.getReadDBConn(),
+        for f in action.execute(self["id"], conn = self.getReadDBConn(),
                                 transaction = self.existingTransaction()):
-            fl = File(id=f[0])
+            fl = File(id = f["file"])
             fl.load()
             files.add(fl)
             

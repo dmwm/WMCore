@@ -6,13 +6,18 @@ ProdAgent Component to notify clients of new transfers
 
 """
 __all__ = []
-__revision__ = "$Id: PhEDExNotifierComponent.py,v 1.9 2008/07/30 11:57:51 gowdy Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: PhEDExNotifierComponent.py,v 1.10 2008/07/30 13:09:49 gowdy Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import logging
 
 from WMCore.DataStructs.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl
+
+from DBSAPI.dbsApi import DbsApi
+from DBSAPI.dbsException import *
+from DBSAPI.dbsApiException import *
+from DBSAPI.dbsOptions import DbsOptionParser
 
 from urllib import urlopen
 from urllib import quote
@@ -23,7 +28,7 @@ class PhEDExNotifierComponent(FeederImpl):
 
     """
     
-    def __init__( self, nodes, phedexURL = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas", dbsURL = "http://cmsweb.cern.ch/dbs_discovery/aSearch?dbsInst=cms_dbs_prod_global&html=0&caseSensitive=on&_idx=0&pagerStep=10&xml=0&details=0&cff=0&method=dd&userInput=", dbsQuery = "find %s where file=%s" ):
+    def __init__( self, nodes, phedexURL = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas", dbsURL = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" ):
         
         # Add the node specification the URL
         nodeList = self.makelist( nodes )
@@ -34,7 +39,17 @@ class PhEDExNotifierComponent(FeederImpl):
             else:
                 self.nodeURL += "&node=%s" % node
         self.dbsURL = dbsURL
-        self.dbsQuery = dbsQuery
+
+        try:
+            #optManager  = DbsOptionParser()
+            #(opts,args) = optManager.getOpt()
+            #opts[ 'url' ] = dbsURL
+            self.dbsapi = DbsApi( {'url': dbsURL } )#opts.__dict__)
+        except DbsApiException, ex:
+            print "Caught API Exception %s: %s "  % (ex.getClassName(), ex.getErrorMessage() )
+            if ex.getErrorCode() not in (None, ""):
+                print "DBS Exception Error Code: ", ex.getErrorCode()
+
 
     def __call__( self, filesets ):
         """
@@ -94,11 +109,9 @@ class PhEDExNotifierComponent(FeederImpl):
         files = blocks[0][ 'file' ]
         for file in files:
             lfn = file[ 'name' ]
-            # Comment this out as the query https connection doesn't work
-            # This needs reworked anyway SJG 30/7/2008
-            # events = self.getEvents( lfn )
-            # fileToAdd = File( lfn, file[ 'bytes'], events )
-            fileToAdd = File( lfn, file[ 'bytes'] )
+            events = self.getEvents( lfn )
+            (runs,lumis) = self.getRunLumi( lfn )
+            fileToAdd = File( lfn, file[ 'bytes'], events, runs[0], lumis[0] )
             replicas = file[ 'replica' ]
             if len( replicas ) > 0:
                 locations = []
@@ -108,17 +121,37 @@ class PhEDExNotifierComponent(FeederImpl):
                 fileset.addFile( fileToAdd )
 
     def getEvents( self, lfn ):
-        query = self.dbsQuery % ( "file.numevents", lfn )
-        return self.doQuery( quote( query ) )
+        try:
+            # Get the file object, I hope there is only one!
+            files = self.dbsapi.listFiles( patternLFN = lfn )
+            if len ( files ) != 1:
+                print "LFN doesn't map to single file!"
+            return files[0][ 'NumberOfEvents' ]
 
-    def doQuery(self, query ):
-        connection = urlopen( self.dbsURL + query )
-        aString = connection.read()
-        connection.close()
-        
-        # now we need to get the actual result out of the text
-        lines = aString.splitlines()
-        answer = lines[3].strip()
+        except DbsDatabaseError,e:
+            print e
 
-        return answer
-    
+
+
+
+    def getRunLumi( self, lfn ):
+        try:
+            # List all lumi sections of the file
+            lumiSections = self.dbsapi.listFileLumis( lfn )
+                
+        except DbsDatabaseError,e:
+            print e
+
+        lumiSecNumbers = []
+        runNumbers = []
+        # if there is no information set it to -1 for now
+        # till WMBSFile takes a list of runs and lumi sections
+        if len( lumiSections ) == 0:
+            lumiSecNumbers.append( -1 )
+            runNumbers.append( -1 )
+        else:
+            for lumiSection in lumiSections:
+                lumiSecNumbers.append( lumiSection[ 'LumiSectionNumber' ] )
+                runNumbers.append( lumiSection[ 'RunNumber' ] )
+
+        return (runNumbers, lumiSecNumbers )

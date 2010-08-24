@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.6 2008/10/30 20:30:02 ewv Exp $"
-__version__  = "$Revision: 1.6 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.7 2008/11/04 16:06:04 ewv Exp $"
+__version__  = "$Revision: 1.7 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -33,21 +33,27 @@ class BlackWhiteListParser(object):
         self.mapper = mapper
         self.siteDBAPI = SiteDBJSON()
         if type(whiteList) == type("string"):
-            whiteList = whiteList.split(',')
+            if whiteList:
+                whiteList = whiteList.split(',')
+            else:
+                whiteList = []
         elif type(whiteList) == type([]):
             pass
         else:
             whiteList = []
 
         if type(blackList) == type("string"):
-            blackList = blackList.split(',')
+            if blackList:
+                blackList = blackList.split(',')
+            else:
+                blackList = []
         elif type(blackList) == type([]):
             pass
         else:
             blackList = []
 
-        logger.debug(5,'Input whitelist: %s' % ', '.join(whiteList))
-        logger.debug(5,'Input blacklist: %s' % ', '.join(blackList))
+        logger.debug(7,'Input whitelist: %s' % ', '.join(whiteList))
+        logger.debug(7,'Input blacklist: %s' % ', '.join(blackList))
         self.blacklist = sets.Set(self.expandList(blackList))
         self.whitelist = sets.Set(self.expandList(whiteList))
         logger.debug(5,'Converted whitelist: %s' % ', '.join(self.whitelist))

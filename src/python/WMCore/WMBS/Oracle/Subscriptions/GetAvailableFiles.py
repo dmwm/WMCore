@@ -8,8 +8,8 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.5 2008/12/05 21:06:25 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.6 2009/01/16 22:31:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import \
      GetAvailableFiles as GetAvailableFilesMySQL
@@ -18,7 +18,7 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
     
     def getSQLAndBinds(self, subscription, conn = None, transaction = None):
         sql = ""
-        binds = {'subscription': subscription['id']}
+        binds = {'subscription': subscription}
         
         sql = '''select count(valid), valid from wmbs_subscription_location
         where subscription = :subscription group by valid'''
@@ -52,7 +52,7 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                         valid = 1)
                 )
                 """
-            binds = {'subscription': subscription['id']}
+            binds = {'subscription': subscription}
             
         elif blacklist:
             sql = """select fileid from wmbs_fileset_files where

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-import logging
+import logging, random
 from WMCore_t.WMBS_t.Performance_t.Base_t import Base_t
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.File import File
 from WMCore.Database.DBFactory import DBFactory
 
 class Fileset_t(Base_t):
@@ -60,14 +62,22 @@ class Fileset_t(Base_t):
         time = self.perfTest(dao=self.dao, action='Fileset.LoadFromName', fileset=self.testFileset.name)
         assert time <= self.threshold, 'LoadFromName DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testParentage(self):
-        print "testParentage"
+    #Waiting for fileset parentage to be needed 
 
-        childname = "ChildFileset1234"
+#    def testParentage(self):
+#        print "testParentage"
+
+#        childname = "ChildFileset1234"
+
+#        childFileset = Fileset(name=childname,                         
+#                        logger=self.logger, 
+#                        dbfactory=self.dbf) 
+#        childFileset.create()
 
         #Add the child fileset to the DB
-        self.dao(classname='Fileset.New').execute(name=childname)
+        #self.dao(classname='Fileset.New').execute(name=childname)
+        
 
-        time = self.perfTest(dao=self.dao, action='Fileset.Parentage', child=childname, parent=self.testFileset.name)
-        assert time <= self.threshold, 'Parentage DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+#        time = self.perfTest(dao=self.dao, action='Fileset.Parentage', parent=childname, child=self.testFileset.name)
+#        assert time <= self.threshold, 'Parentage DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 

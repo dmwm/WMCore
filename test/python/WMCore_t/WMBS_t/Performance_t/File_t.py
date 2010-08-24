@@ -98,7 +98,7 @@ class File_t(Base_t):
 
     def testSetLocation(self):
         print "testSetLocation"
-        print self.testFile['lfn'], self.selist[0]
+
         time = self.perfTest(dao=self.dao, action='Files.SetLocation', file=self.testFile["lfn"], sename=self.selist[0])#+self.baseexec)
         assert time <= self.threshold, 'SetLocation DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 

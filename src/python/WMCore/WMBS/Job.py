@@ -42,8 +42,8 @@ TODO: Test/complete load
 TODO: Load/Save Mask
 """
 
-__revision__ = "$Id: Job.py,v 1.7 2008/10/01 21:59:28 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Job.py,v 1.8 2008/10/06 11:02:20 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import datetime
 from sets import Set
@@ -78,14 +78,20 @@ class Job(BusinessObject, WMJob):
         """
         Load the job and it's input from the database for a job of known id
         """
-        self.file_set = Fileset()
-        file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
-        for i in file_ids:
-            file = File(id=i, logger=self.logger, dbfactory=self.dbfactory)
-            file.load()
-            self.file_set.addFile(file)
         # load the mask
 
+    def getFiles(self, type='list'):
+        file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
+        if file_ids == WMJob.getFiles(self, type='id'):
+            return WMJob.getFiles(self, type)
+        else:
+            self.file_set = Fileset()
+            for i in file_ids:
+                file = File(id=i, logger=self.logger, dbfactory=self.dbfactory)
+                file.load()
+                self.file_set.addFile(file)
+            return WMJob.getFiles(self, type)
+            
     def submit(self, name=None):
         """
         Once submitted to a batch queue set status to active and set the job's
@@ -99,8 +105,6 @@ class Job(BusinessObject, WMJob):
         """
         update the wmbs_job_assoc table with the files in self.file_set
         """
-        def getFileId(file):
-             return file.dict["id"]
         files = self.file_set.getFiles(type='id')
         self.daofactory(classname='Jobs.AddFiles').execute(self.id, files)
     

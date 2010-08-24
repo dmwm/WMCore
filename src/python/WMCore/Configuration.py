@@ -253,12 +253,6 @@ class Configuration(object):
         object.__init__(self)
         self._internal_components = []
         self._internal_sections = []
-        self._internal_sections.append("Agent")
-        self.Agent = ConfigSection("Agent")
-        self.Agent.agentName = None
-        self.Agent.teamName = None
-        self.Agent.hostName = None
-        self.Agent.contact = None
 
     def __add__(self, otherConfig):
         """
@@ -345,7 +339,7 @@ class Configuration(object):
         document = options.get('document', False)
         comment  = options.get('comment',  False)
 
-        result = "from WMCore.Agent.Configuration import Configuration\n"
+        result = "from WMCore.Configuration import Configuration\n"
         result += "config = Configuration()\n"
         for sectionName in self._internal_sections:
             if sectionName not in self._internal_components:

@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.16 2009/02/13 11:27:46 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Root.py,v 1.17 2009/02/13 18:49:29 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -113,12 +113,12 @@ class Root(WMObject):
                                     context=self.app, 
                                     severity=logging.INFO, traceback=False)
                         
-            if hasattr(component, 'database'):
-                log("loading database for %s" % (component._internal_name), 
-                                    context=self.app, 
-                                    severity=logging.INFO, 
-                                    traceback=False)
-                component.database = self.loadDatabase(component)
+#            if hasattr(component, 'database'):
+#                log("loading database for %s" % (component._internal_name), 
+#                                    context=self.app, 
+#                                    severity=logging.INFO, 
+#                                    traceback=False)
+#                component.database = self.loadDatabase(component)
         
             log("Loading %s" % (component._internal_name), 
                                     context=self.app,

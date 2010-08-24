@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.3 2008/10/03 12:36:05 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.4 2008/10/08 15:34:16 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import logging
@@ -34,7 +34,7 @@ class DBFormatterTest(unittest.TestCase):
         "make a logger instance and create tables"
      
         if not DBFormatterTest._setup:
-            logging.basicConfig(level=logging.DEBUG,
+            logging.basicConfig(level=logging.NOTSET,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename='%s.log' % __file__.replace('.py',''),

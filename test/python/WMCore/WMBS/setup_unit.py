@@ -7,8 +7,8 @@ including checks to see that calls are database dialect neutral
 
 """
 
-__revision__ = "$Id: setup_unit.py,v 1.1 2008/06/10 11:52:34 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: setup_unit.py,v 1.2 2008/06/10 16:51:14 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from pylint import lint
@@ -130,6 +130,46 @@ class AddLocationsTestCase(BaseSetupTestCase):
         assert len(themysqllist) == len(thesqllitelist)
         assert len(themysqllist) == sizemysql - 1
         assert len(thesqllitelist) == sizesqlite - 1
-      
+        
+        def strim(tuple): return tuple[1]
+        themysqllist = map(strim, themysqllist)
+        thesqllitelist = map(strim, thesqllitelist)
+
+        self.action3.execute(sename=themysqllist, dbinterface=self.dbf1.connect())
+        self.action3.execute(sename=thesqllitelist, dbinterface=self.dbf2.connect())
+
+        #Run the checks
+        themysqllist = self.action2.execute(dbinterface=self.dbf1.connect())
+        thesqllitelist = self.action2.execute(dbinterface=self.dbf2.connect())
+        assert len(themysqllist) == len(thesqllitelist)
+        assert len(themysqllist) == 0
+        assert len(thesqllitelist) == 0
+    
+    def testListAsInput(self):
+        selist = []
+        size = 100
+        for i in range(size):
+            se = "lcgse%s.phy.bris.ac.uk" % i
+            selist.append(se)
+        
+        self.action1.execute(sename=selist, dbinterface=self.dbf1.connect())
+        self.action1.execute(sename=selist, dbinterface=self.dbf2.connect())
+            
+        themysqllist = self.action2.execute(dbinterface=self.dbf1.connect())
+        thesqllitelist = self.action2.execute(dbinterface=self.dbf2.connect())
+        assert len(themysqllist) == len(thesqllitelist)
+        assert len(themysqllist) == len(selist)
+        assert len(thesqllitelist) == len(selist)
+        
+        self.action3.execute(sename=selist, dbinterface=self.dbf1.connect())
+        self.action3.execute(sename=selist, dbinterface=self.dbf2.connect())
+
+        #Run the checks
+        themysqllist = self.action2.execute(dbinterface=self.dbf1.connect())
+        thesqllitelist = self.action2.execute(dbinterface=self.dbf2.connect())
+        assert len(themysqllist) == len(thesqllitelist)
+        assert len(themysqllist) == 0
+        assert len(thesqllitelist) == 0
+        
 if __name__ == "__main__":
     unittest.main()            

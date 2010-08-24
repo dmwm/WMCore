@@ -6,9 +6,9 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.9 2008/06/23 16:24:56 swakef Exp $"
-__version__ = "$Revision: 1.9 $"
-from WMCore.DAOFactory import DAOFactory
+__revision__ = "$Id: File.py,v 1.10 2008/06/24 10:49:42 metson Exp $"
+__version__ = "$Revision: 1.10 $"
+
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class File(BusinessObject):
@@ -17,7 +17,7 @@ class File(BusinessObject):
     """
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
                  parents=set(), locations=set(), logger=None, dbfactory=None):
-        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
+        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         
         """
         Create the file object

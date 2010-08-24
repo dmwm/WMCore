@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.15 2008/09/25 13:40:27 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Fileset.py,v 1.16 2008/09/29 16:04:57 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject 
 
@@ -31,12 +31,11 @@ class Fileset(WMObject):
             e.g. to handle updated location
         Else add the file to self.newfiles
         """
-        if not isinstance(file, Set):
-            file = Set(self.makelist(file))
-        new = file - self.listFiles()
+        file = self.makeset(file)
+        new = file - self.getFiles(type='set')
         self.newfiles = self.newfiles | new
         
-        updated = Set(self.makelist(file)) & self.listFiles()
+        updated = self.makeset(file) & self.getFiles(type='set')
         "updated contains the original location information for updated files"
         
         self.files = self.files.union(updated)
@@ -49,22 +48,43 @@ class Fileset(WMObject):
         #                    len(self.files), len(self.newfiles)
         #self.commit()
     
+    def getFiles(self, type='list'):
+        if type == 'list':
+            """
+            List all files in the fileset - returns a set of file objects 
+            sorted by lfn.
+            """
+            files = list(self.getFiles(type='set'))
+            try:
+                files.sort(lambda x, y: cmp(x['lfn'], y['lfn']))
+            except Exception, e:
+                print 'Problem with listFiles for fileset:', self.name
+                print files.pop()
+                raise e
+            return files
+        elif type == 'set':
+            return self.makeset(self.files) | self.makeset(self.newfiles)
+        elif type == 'lfn':
+            """
+            All the lfn's for files in the filesets 
+            """
+            def getLFN(file):
+                return file.dict["lfn"]
+            files = map(getLFN, self.getFiles(type='set'))
+            files.sort()
+            return files
+    
     def listFiles(self):
         """
-        List all files in the fileset - returns a set of file objects 
-        sorted by lfn.
+        To be deprecated
         """
-        files = list(self.files | self.newfiles)
-        files.sort(lambda x, y: cmp(x['lfn'], y['lfn']))
-        return files
+        return self.getFiles()
     
     def listLFNs(self):
         """
-        All the lfn's for files in the filesets 
+        To be deprecated
         """
-        def getLFN(file):
-            return file.dict["lfn"]
-        return map(getLFN, self.listFiles()).sort()
+        return self.getFiles(type='lfn')
             
     def listNewFiles(self):  
         """
@@ -76,11 +96,11 @@ class Fileset(WMObject):
         """
         Add contents of self.newfiles to self, empty self.newfiles
         """
-        self.files = self.files | self.newfiles
+        self.files = self.makeset(self.files) | self.makeset(self.newfiles)
         self.newfiles = Set()
     
     def __len__(self):
-        return len(self.listFiles())
+        return len(self.getFiles(type='set'))
     
     def __iter__(self):
         for file in self.listFiles():

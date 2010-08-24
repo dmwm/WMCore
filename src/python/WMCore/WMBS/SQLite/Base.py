@@ -11,12 +11,6 @@ class SQLiteBase(MySQLBase):
             for i in r.fetchall():
                 out.append(i)
         return out
-    
-    def getBinds(self):
-        """
-        Return the appropriately formatted binds for the sql
-        """
-        return {}
         
     def execute(self, conn = None, transaction = False):
         """

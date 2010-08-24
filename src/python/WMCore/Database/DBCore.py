@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.19 2008/09/09 10:34:11 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: DBCore.py,v 1.20 2008/09/10 13:02:38 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -64,8 +64,7 @@ class DBInterface(WMObject):
                 result = connection.execute(s, b)
             return result
         except Exception, e:
-            self.logger.exception(e.message)
-            self.logger.info('DBInterface.executemanybinds - exception type: %s' % type(e))
+            self.logger.exception('DBInterface.executemanybinds - exception:%s' % e)
             self.logger.debug('DBInterface.executemanybinds - connection type: %s' % type(connection))
             self.logger.debug('DBInterface.executemanybinds - connection %s' % connection)
             self.logger.info('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
@@ -109,8 +108,7 @@ class DBInterface(WMObject):
             result = connection.execute(s, b)
             return self.makelist(result)
         except Exception, e:
-            self.logger.exception(e.message)
-            self.logger.info('DBInterface.executemanybinds - exception type: %s' % type(e))
+            self.logger.exception('DBInterface.executemanybinds - exception:%s' % e)
             self.logger.debug('DBInterface.executemanybinds - connection type: %s' % type(connection))
             self.logger.debug('DBInterface.executemanybinds - connection %s' % connection)
             self.logger.info('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)

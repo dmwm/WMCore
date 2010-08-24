@@ -1,13 +1,15 @@
 """
 SQLite implementation of NewFileset
 """
-from WMCore.WMBS.MySQL.CreateWMBSSQL import CreateWMBS as CreateWMBSMySQL
+from WMCore.WMBS.MySQL.CreateWMBS import CreateWMBS as CreateWMBSMySQL
 from WMCore.WMBS.SQLite.Base import SQLiteBase
 
 class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
     
     def __init__(self, logger, dbinterface):
         CreateWMBSMySQL.__init__(self, logger, dbinterface)
+        
+        self.insert = {}
         
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,6 +41,12 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
                 spec         VARCHAR(255) NOT NULL,
                 name         VARCHAR(255) NOT NULL,
                 owner        VARCHAR(255))"""
+        self.create['wmbs_subs_type'] = """CREATE TABLE wmbs_subs_type (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name varchar(255) NOT NULL)"""
+        for subtype in ('Processing', 'Merge', 'Job'):
+            self.insert['wmbs_subs_type_%s' % subtype] = """insert into
+                            wmbs_subs_type (name) values (%s)""" % subtype
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fileset INT(11) NOT NULL,
@@ -56,4 +64,14 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
                 subscription INT(11) NOT NULL,
                 last_update timestamp NOT NULL,
                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-                ON DELETE CASCADE)"""   
+                ON DELETE CASCADE)"""
+                
+    def execute(self, conn = None, transaction = False):
+        CreateWMBSMySQL.execute(self, conn, transaction)
+        
+        # insert sqlite only values (i.e. enum's)
+        keys = self.insert.keys()
+        self.logger.debug( keys )
+        self.dbi.processData(self.insert.values(), conn = conn, transaction = transaction)
+        
+        

@@ -4,8 +4,8 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.10 2008/12/11 20:32:04 afaq Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobSuccess.py,v 1.11 2008/12/11 21:12:01 afaq Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -119,10 +119,9 @@ class JobSuccess(BaseHandler):
                             # 
                             addToBuffer.updateAlgo(dataset, pset)
                 print "\n\nDetermine if there can be more than one datasets in a File and which one to pick here"
-                dataset=aFile.dataset[0]
+                #dataset=aFile.dataset[0]
                
 		addToBuffer.addFJRFile(aFile) 
-                addToBuffer.addFile(aFile, dataset)
                 
                 """
 			    print "\n\n\n"

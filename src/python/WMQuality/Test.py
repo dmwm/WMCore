@@ -8,8 +8,8 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.6 2008/12/18 14:53:16 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Test.py,v 1.7 2009/01/26 14:08:06 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -93,9 +93,12 @@ Test framework error! Did you use the proper test classes? """
         vote = 0
         # a list on who we should vote
         curFile = ''
+        firstAuthor = True
         while nl:
             # locate the cvs files
+            first = 0
             if nl.find('RCS file:') == 0:
+                firstAuthor = True
                 # reset our vote structure
                 vote = 0
                 # filter the file path:
@@ -122,16 +125,25 @@ Test framework error! Did you use the proper test classes? """
                 vote = 0
             if nl.find('date:') == 0 and state == 'authors':
                 author = nl.split(' ')[6].split(';')[0]
-                # start voting:
-                if not self.testFile[curFile].has_key(author):
-                    self.testFile[curFile][author] = 0
-                self.testFile[curFile][author] += 1
-                # we voted
-                vote += 1
-                # if we reach maxVotes where done
-                if vote < maxVotes:
-                    state = 'file'
-                    vote = 0
+                # if this is the first author, check if the file has not been removed.
+                if firstAuthor: 
+                    firstAuthor = False
+                    modState = nl.split(' ')[9].split(';')[0] 
+                    # if removed, remove it hear too.
+                    if modState == 'dead' :
+                        del self.testFile[curFile]
+                        state = 'file'
+                if state != 'file':
+                    # start voting:
+                    if not self.testFile[curFile].has_key(author):
+                        self.testFile[curFile][author] = 0
+                    self.testFile[curFile][author] += 1
+                    # we voted
+                    vote += 1
+                    # if we reach maxVotes where done
+                    if vote < maxVotes:
+                        state = 'file'
+                        vote = 0
             nl = logFile.readline()
         # we are done voting
 

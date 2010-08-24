@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+"""
+__MySQLDAOTest__
+
+DB Performance testcase for WMBS File class
+
+
+"""
+
 import commands
 from ConfigParser import ConfigParser  
 class MySQLDAOTest():
@@ -12,8 +20,11 @@ class MySQLDAOTest():
     """
 
     def setUp(self):
+        """
+        MySQL specific setUp method
+
+        """    
         cfg = ConfigParser()
-#        cfg.read('mysql.ini')
         cfg.read('test.ini')
         #Set specific user for mysqladmin here        
         self.logname = 'MySQL'
@@ -22,10 +33,14 @@ class MySQLDAOTest():
         self.dbhost = cfg.get('mysql', 'host')
         self.dbinst = cfg.get('mysql', 'instance')
         self.verbose = cfg.get('output','verbose')
-        self.sqlURI = 'mysql://%s:%s@%s/%s' % (self.dbuser, self.dbpass, self.dbhost, self.dbinst)
+        self.sqlURI = 'mysql://%s:%s@%s/%s' % (self.dbuser, self.dbpass, 
+                                                self.dbhost, self.dbinst)
 
     def tearDown(self):
-        #Call superclass tearDown method
+        """
+        MySQL specific tearDown Method
+
+        """
         #DB Specific tearDown code        
         if self.dbpass != '':        
             self.logger.debug(

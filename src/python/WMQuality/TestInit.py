@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.2 2008/11/18 15:14:53 fvlingen Exp $"
+    "$Id: TestInit.py,v 1.3 2008/11/19 11:15:56 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.2 $"
+    "$Revision: 1.3 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -48,14 +48,14 @@ class TestInit:
         """
         Sets logging parameters
         """
-        self.init.setLogging(self.testClassName)
+        self.init.setLogging(self.testClassName, self.testClassName)
 
     def setDatabaseConnection(self):
         """
         Set up the database connection by retrieving the environment
         parameters.
         """
-        self.init.setDatabaseConnection(self.backend, os.getenv("DATABASE"), os.getenv("DBSOCK"))
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), self.backend, os.getenv("DBSOCK"))
 
     def setSchema(self, customModules = [], useDefault = True):
         """

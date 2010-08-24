@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.1 2008/11/18 15:14:53 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMInit.py,v 1.2 2008/11/19 11:15:56 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -23,27 +23,55 @@ class WMInit:
         # pass for the moment
         pass
 
-    def setLogging(self,logName):
+    def setLogging(self,logFile = None, logName = None, logLevel = logging.INFO, logExists = True):
         """
-        Sets logging parameters
+        Sets logging parameters, depending on the settings,
+        this method will create a logging file.
         """
-        logging.basicConfig(level=logging.DEBUG,\
+        # use logName as name for file is no log file is given
+        if not logExists:
+            logging.basicConfig(level=logLevel,\
             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',\
             datefmt='%m-%d %H:%M',\
-            filename='%s.log' % logName,\
+            filename='%s.log' % logFile,\
             filemode='w')
-        logging.debug("Log file ready")
+            logging.debug("Log file ready")
+
         myThread = threading.currentThread()
-        myThread.logger = logging.getLogger(logName)
+        if logName != None:
+            myThread.logger = logging.getLogger(logName)
+        else:
+            myThread.logger = logging.getLogger()
 
 
-    def setDatabaseConnection(self, dialect, connectionString, socketLoc = None):
+    def setDatabaseConnection(self, dbConfig, dialect = None, socketLoc = None, flavor = 'ProdAgent'):
         """
         Sets the default connection parameters, without having to worry
         much on what attributes need to be set. This is esepcially 
         advantagous for developers of third party projects that want
         to use only parts of the WMCore lib.
+
+        The class differentiates between different formats used by external 
+        projects. External project formats that are supported can activated 
+        it by setting the flavor flag.
         """
+
+        # check if connection string is  a string, if not it might be a dictionary.
+        if not type(dbConfig) == str and flavor == 'ProdAgent':
+            # modify db params to new WMCore conventions
+            wmDbConf = {}
+            wmDbConf['dialect'] =  dbConfig['dbType'].lower()
+            dialect  =  dbConfig['dbType']
+            wmDbConf['user'] = dbConfig['user']
+            wmDbConf['password'] = dbConfig['passwd']
+            wmDbConf['database'] = dbConfig['dbName']
+            wmDbConf['host'] = dbConfig['host']
+            
+            if dbConfig['portNr']:
+                wmDbConf['port'] = dbConfig['portNr']
+            if dbConfig['socketFileLocation']:
+                wmDbConf['unix_socket'] = dbConfig['socketFileLocation']
+
         # note: setLogging needs to have been set prior to calling this!
         myThread = threading.currentThread()
         if dialect == 'mysql':
@@ -54,17 +82,18 @@ class WMInit:
         myThread.dialect = dialect
 
         options = {}
-        if myThread.dialect == 'MySQL':
-            if socketLoc != None:
-                options['unix_socket'] = socketLoc
-            myThread.dbFactory = DBFactory(myThread.logger, connectionString, \
-                options)
+        if not type(dbConfig) == str:
+            myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDBConf)
         else:
-            myThread.dbFactory = DBFactory(myThread.logger, connectionString)
+            if myThread.dialect == 'MySQL':
+                if socketLoc != None:
+                    options['unix_socket'] = socketLoc
+            myThread.dbFactory = DBFactory(myThread.logger, dbConfig, options)
 
         myThread.dbi = myThread.dbFactory.connect()
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.commit()
+
 
 
     def setSchema(self, modules = []):

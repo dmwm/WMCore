@@ -39,8 +39,8 @@ TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
           for example.
         * Exception handling (especially as propagated from DBS query errors)
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.6 2008/10/28 11:44:31 jacksonj Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.7 2008/10/28 12:05:33 jacksonj Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import logging
 
@@ -86,7 +86,7 @@ class RunTransferNotifier(FeederImpl):
             if isinstance(node, list):
                 self.datasetCompletion[dataset].extend(nodes)
             else:
-                self.datasetCompletion[dataset].add(nodes)
+                self.datasetCompletion[dataset].append(nodes)
             self.accessTime = int(time())
         
         def getNewSites(self, dataset, sitesWithRun):
@@ -160,7 +160,7 @@ class RunTransferNotifier(FeederImpl):
                     
                     # Final list of all required blocks
                     allBlocks = blocks[:]
-                    allBlocks.extend(parentBlocks)
+                    allBlocks.update(parentBlocks)
                     
                     # Find all sites where all blocks are complete
                     sites = self.getCompleteSites(blocks)
@@ -244,7 +244,7 @@ class RunTransferNotifier(FeederImpl):
         runs = self.dbsHelper.getRuns(self.lastRun)
         runs.sort()
         for run in runs:
-            watchedRuns.add(WatchedRun(run))
+            watchedRuns.append(WatchedRun(run))
             self.lastRun = run
     
     def purgeWatchedRuns(self):
@@ -254,5 +254,5 @@ class RunTransferNotifier(FeederImpl):
         validRuns = []
         for run in self.watchedRuns:
             if int(time) - run.accessTime < self.purgeTime:
-                validRuns.add(run)
+                validRuns.append(run)
         self.watchedRuns = validRuns

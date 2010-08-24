@@ -127,9 +127,9 @@ except Exception,ex:
 
 try:
    x=TransactionTest()
-   tests.append((x,"metson"))
+   tests.append((x,"fvlingen"))
 except Exception,ex:
-   if not errors.has_key("metson"):
+   if not errors.has_key("fvlingen"):
        errors["metson"] = []
    errors["metson"].append(("TransactionTest",str(ex)))
 
@@ -260,7 +260,6 @@ except Exception,ex:
    if not errors.has_key("jcgon"):
        errors["jcgon"] = []
    errors["jcgon"].append(("SubscriptionTest",str(ex)))
-
 
 raw_input('Writing level 2 failures to file: failures2.log (press key to continue)')
 failures = open('failures2_mysql.rep','w')

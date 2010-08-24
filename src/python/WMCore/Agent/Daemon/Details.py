@@ -9,12 +9,13 @@ Also, provides utils to shutdown the daemon process
 
 """
 
-__revision__ = "$Id: Details.py,v 1.1 2008/10/07 13:54:04 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Details.py,v 1.2 2008/11/11 16:49:18 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 
 import os
+import shutil
 import time
 #FIXME: needs to be replaced with persistent backend.
 from xml.dom.minidom import parse
@@ -36,6 +37,7 @@ class Details(dict):
     def __init__(self, daemonXmlFile):
         dict.__init__(self)
         self.load(daemonXmlFile)
+        self.daemonXmlFile = daemonXmlFile
 
 
     def load(self, xmlFile):
@@ -75,6 +77,7 @@ class Details(dict):
         """
         os.kill(self['ProcessID'], signal)
         time.sleep(1)
+        self.removeAndBackupDeamonFile()
         return
 
     def killWithPrejudice(self, signal = 15):
@@ -89,7 +92,23 @@ class Details(dict):
         for count in range(0, 3):
             time.sleep(1)
             if not self.isAlive():
+                self.removeAndBackupDeamonFile()
                 return
             continue
         os.kill(self['ProcessID'], 9)
+        self.removeAndBackupDeamonFile()
         return
+
+    def removeAndBackupDeamonFile(self):
+        """
+        Removes the daemon file (after a kill) and backs it up
+        for post mortem.
+        """
+        path, file = os.path.split(self.daemonXmlFile)
+        timeStamp = time.strftime("%d-%M-%Y")
+        newFile = "%s.BAK.%s" %(file, str(timeStamp))
+        newLocation = os.path.join(path, newFile) 
+        try:    
+            shutil.move(self.daemonXmlFile, newLocation)
+        except Exception,ex:
+            print('Move failed. Remove manual: '+str(ex))

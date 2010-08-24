@@ -1,267 +1,184 @@
-"""Disk And Execution MONitor (Daemon)
+'''
+    This module is used to fork the current process into a daemon.
+    Almost none of this is necessary (or advisable) if your daemon
+    is being started by inetd. In that case, stdin, stdout and stderr are
+    all set up for you to refer to the network connection, and the fork()s
+    and session manipulation should not be done (to avoid confusing inetd).
+    Only the chdir() and umask() steps remain as useful.
+    References:
+        UNIX Programming FAQ
+            1.7 How do I get my program to act like a daemon?
+                http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
+        Advanced Programming in the Unix Environment
+            W. Richard Stevens, 1992, Addison-Wesley, ISBN 0-201-56317-7.
 
-Configurable daemon behaviors:
+    History:
+      2001/07/10 by Jorgen Hermann
+      2002/08/28 by Noah Spurrier
+      2003/02/24 by Clark Evans
 
-   1.) The current working directory set to the "/" directory.
-   2.) The current file creation mode mask set to 0.
-   3.) Close all open files (1024). 
-   4.) Redirect standard I/O streams to "/dev/null".
-
-A failed call to fork() now raises an exception.
-
-References:
-   1) Advanced Programming in the Unix Environment: W. Richard Stevens
-   2) Unix Programming Frequently Asked Questions:
-         http://www.erlenstar.demon.co.uk/unix/faq_toc.html
-
-
---- Yoinked from ActiveState and tweaked slightly to fire up
-    ProdAgent Components as Daemons
-    
-"""
-
-__author__ = "Chad J. Schroeder"
-__copyright__ = "Copyright (C) 2005 Chad J. Schroeder"
-__revision__ = "$Id: Create.py,v 1.2 2008/11/04 15:42:40 fvlingen Exp $"
-__version__ = "0.2"
-
-# Standard Python modules.
-import os               # Miscellaneous OS interfaces.
-import sys              # System-specific parameters and functions.
-
+      http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/66012
+'''
+import logging
+from logging.handlers import RotatingFileHandler
+import sys, os, time
+from signal import SIGTERM
 from xml.dom.minidom import Document, Element
 
-# Default daemon parameters.
 # File mode creation mask of the daemon.
 UMASK = 0
 
-
-# Default maximum for the number of available file descriptors.
-MAXFD = 1024
-
-# Disable/enable stdout/stderr.
-# Usually silenced, this is for developers testing & debugging
-NOISY_DAEMON = False
-
-# The standard I/O file descriptors are redirected to /dev/null by default.
-if (hasattr(os, "devnull")):
-    REDIRECT_TO = os.devnull
-else:
-    REDIRECT_TO = "/dev/null"
-
-def createDaemon(workdir, keepParent = False):
-    """Detach a process from the controlling terminal and run it in the
-    background as a daemon.
-    """
-
+def deamonize(stdout= '/dev/null', stderr= None, stdin= '/dev/null', \
+              workdir= None, startmsg = 'started with pid %s', \
+              keepParent = False ):
+    '''
+        This forks the current process into a daemon.
+        The stdin, stdout, and stderr arguments are file names that
+        will be opened and be used to replace the standard file descriptors
+        in sys.stdin, sys.stdout, and sys.stderr.
+        These arguments are optional and default to /dev/null.
+        Note that stderr is opened unbuffered, so
+        if it shares a file with stdout then interleaved output
+        may not appear in the order that you expect.
+    '''
+    # Do first fork.
     try:
-        # Fork a child process so the parent can exit.  This returns control to
-        # the command-line or shell.  It also guarantees that the child will not
-        # be a process group leader, since the child receives a new process ID
-        # and inherits the parent's process group ID.  This step is required
-        # to insure that the next call to os.setsid is successful.
         pid = os.fork()
-    except OSError, e:
-        raise Exception, "%s [%d]" % (e.strerror, e.errno)
-
-    if (pid == 0):	# The first child.
-        # To become the session leader of this new session and the process group
-        # leader of the new process group, we call os.setsid().  The process is
-        # also guaranteed not to have a controlling terminal.
-        os.setsid()
-  
-        #Is ignoring SIGHUP necessary?
-        #
-        #It's often suggested that the SIGHUP signal should be ignored before
-        #the second fork to avoid premature termination of the process.  The
-        #reason is that when the first child terminates, all processes, e.g.
-        #the second child, in the orphaned group will be sent a SIGHUP.
-        #
-        #"However, as part of the session management system, there are exactly
-        #two cases where SIGHUP is sent on the death of a process:
-        #
-        # 1) When the process that dies is the session leader of a session that
-        #      is attached to a terminal device, SIGHUP is sent to all processes
-        #      in the foreground process group of that terminal device.
-        #   2) When the death of a process causes a process group to become
-        #      orphaned, and one or more processes in the orphaned group are
-        #      stopped, then SIGHUP and SIGCONT are sent to all members of the
-        #      orphaned group." [2]
-        #
-        #The first case can be ignored since the child is guaranteed not to have
-        #a controlling terminal.  The second case isn't so easy to dismiss.
-        #The process group is orphaned when the first child terminates and
-        #POSIX.1 requires that every STOPPED process in an orphaned process
-        #group be sent a SIGHUP signal followed by a SIGCONT signal.  Since the
-        #second child is not STOPPED though, we can safely forego ignoring the
-        #SIGHUP signal.  In any case, there are no ill-effects if it is ignored.
-        #
-        #import signal           # Set handlers for asynchronous events.
-        #signal.signal(signal.SIGHUP, signal.SIG_IGN)
-  
-        try:
-            #Fork a second child and exit immediately to prevent zombies.  This
-            #causes the second child process to be orphaned, making the init
-            #process responsible for its cleanup.  And, since the first child is
-            #a session leader without a controlling terminal, it's possible for
-            #it to acquire one by opening a terminal in the future (System V-
-            #based systems).  This second fork guarantees that the child is no
-            #longer a session leader, preventing the daemon from ever acquiring
-            #a controlling terminal.
-            pid = os.fork()	# Fork a second child.
-        except OSError, e:
-            raise Exception, "%s [%d]" % (e.strerror, e.errno)
-
-        if (pid == 0):	# The second child.
-            #Since the current working directory may be a mounted filesystem, we
-            #avoid the issue of not being able to unmount the filesystem at
-            #shutdown time by changing it to the root directory.
-            os.chdir(workdir)
-            #We probably don't want the file mode creation mask inherited from
-            #the parent, so we give the child complete control over permissions.
-            os.umask(UMASK)
-
-            daemon = Element("Daemon")
-            processId = Element("ProcessID")
-            processId.setAttribute("Value", str(os.getpid()))
-            daemon.appendChild(processId)
-
-            parentProcessId = Element("ParentProcessID")
-            parentProcessId.setAttribute("Value", str(os.getppid()))
-            daemon.appendChild(parentProcessId)
-   
-            processGroupId = Element("ProcessGroupID")
-            processGroupId.setAttribute("Value", str(os.getpgrp()))
-            daemon.appendChild(processGroupId)
-   
-   
-            userId = Element("UserID")
-            userId.setAttribute("Value", str(os.getuid()))
-            daemon.appendChild(userId)
-   
-   
-            effectiveUserId = Element("EffectiveUserID")
-            effectiveUserId.setAttribute("Value", str(os.geteuid()))
-            daemon.appendChild(effectiveUserId)
-
-
-            groupId = Element("GroupID")
-            groupId.setAttribute("Value", str(os.getgid()))
-            daemon.appendChild(groupId)
-
-
-            effectiveGroupId = Element("EffectiveGroupID")
-            effectiveGroupId.setAttribute("Value", str(os.getegid()))
-            daemon.appendChild(effectiveGroupId)
-
-         
-            dom = Document()
-            dom.appendChild(daemon)
-            open("Daemon.xml", "w").write(daemon.toprettyxml())
-
-            print "Started Daemon: Process %s" % os.getpid()
-         
-        else:
-            # exit() or _exit()?  See below.
-            os._exit(0)	# Exit parent (the first child) of the second child.
-    else:
-        # exit() or _exit()?
-        # _exit is like exit(), but it doesn't call any functions registered
-        # with atexit (and on_exit) or any registered signal handlers.  It also
-        # closes any open file descriptors.  Using exit() may cause all stdio
-        # streams to be flushed twice and any temp. files may be unexpectedly
-        # removed.  It's therefore recommended that child branches of a fork()
-        # and the parent branch(es) of a daemon use _exit().
-        if not keepParent:
-            os._exit(0)	# Exit parent of the first child.
-        else:
-            # for testing purposes we want to keep the parent
-            # so our test suite does not disspear
+        if pid > 0: 
+            if not keepParent:
+                os._exit(0) # Exit first parent.
             return pid
+    except OSError, e:
+        sys.stderr.write("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror))
+        print("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror))
+        sys.exit(1)
+    # Decouple from parent environment.
+    os.chdir("/")
+    os.umask(0)
+    os.setsid()
 
-    # Close all open file descriptors.  This prevents the child from keeping
-    # open any file descriptors inherited from the parent.  There is a variety
-    # of methods to accomplish this task.  Three are listed below.
-    #
-    # Try the system configuration variable, SC_OPEN_MAX, to obtain the maximum
-    # number of open file descriptors to close.  If it doesn't exists, use
-    # the default value (configurable).
-    #
-    # try:
-    #    maxfd = os.sysconf("SC_OPEN_MAX")
-    # except (AttributeError, ValueError):
-    #    maxfd = MAXFD
-    #
-    # OR
-    #
-    # if (os.sysconf_names.has_key("SC_OPEN_MAX")):
-    #    maxfd = os.sysconf("SC_OPEN_MAX")
-    # else:
-    #    maxfd = MAXFD
-    #
-    # OR
-    #
-    # Use the getrlimit method to retrieve the maximum file descriptor number
-    # that can be opened by this process.  If there is not limit on the
-    # resource, use the default value.
-    #
-    import resource		# Resource usage information.
-    maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
-    if (maxfd == resource.RLIM_INFINITY):
-        maxfd = MAXFD
-  
-    # Iterate through and close all file descriptors.
-    startDescriptor = 0
-    if NOISY_DAEMON:
-        startDescriptor = 3
-    for fd in range(startDescriptor, maxfd):
-        try:
-            os.close(fd)
-        except OSError, err:	# ERROR, fd wasn't open to begin with (ignored)
-            pass
-        except Exception,ex:
-            print('Daemon problem: '+str(ex))
+    # Do second fork.
+    try:
+        pid = os.fork()
+        if pid > 0: os._exit(0) # Exit second parent.
+    except OSError, e:
+        sys.stderr.write("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror))
+        print("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror))
+        sys.exit(1)
 
-    # Redirect the standard I/O file descriptors to the specified file.  Since
-    # the daemon has no controlling terminal, most daemons redirect stdin,
-    # stdout, and stderr to /dev/null.  This is done to prevent side-effects
-    # from reads and writes to the standard I/O file descriptors.
- 
-    # This call to open is guaranteed to return the lowest file descriptor,
-    # which will be 0 (stdin), since it was closed above.
-    os.open(REDIRECT_TO, os.O_RDWR)	# standard input (0)
- 
-    if not NOISY_DAEMON:
-        # Duplicate standard input to standard output and standard error.
-        os.dup2(0, 1)			# standard output (1)
-        os.dup2(0, 2)			# standard error (2)
-      
+    # Open file descriptors and print start message
+    if not stderr: stderr = stdout
+    si = file(stdin, 'r')
+    so = file(stdout, 'a+')
+    se = file(stderr, 'a+', 0)
+    pid = str(os.getpid())
+    sys.stderr.write("\n%s\n" % startmsg % pid)
+    sys.stderr.flush()
+    if workdir: 
+        #file(pidfile,'w+').write("%s\n" % pid)
+        #Since the current working directory may be a mounted filesystem, we
+        #avoid the issue of not being able to unmount the filesystem at
+        #shutdown time by changing it to the root directory.
+        os.chdir(workdir)
+        #We probably don't want the file mode creation mask inherited from
+        #the parent, so we give the child complete control over permissions.
+        os.umask(UMASK)
+
+        daemon = Element("Daemon")
+        processId = Element("ProcessID")
+        processId.setAttribute("Value", str(os.getpid()))
+        daemon.appendChild(processId)
+
+        parentProcessId = Element("ParentProcessID")
+        parentProcessId.setAttribute("Value", str(os.getppid()))
+        daemon.appendChild(parentProcessId)
+
+        processGroupId = Element("ProcessGroupID")
+        processGroupId.setAttribute("Value", str(os.getpgrp()))
+        daemon.appendChild(processGroupId)
+
+        userId = Element("UserID")
+        userId.setAttribute("Value", str(os.getuid()))
+        daemon.appendChild(userId)
+
+        effectiveUserId = Element("EffectiveUserID")
+        effectiveUserId.setAttribute("Value", str(os.geteuid()))
+        daemon.appendChild(effectiveUserId)
+
+        groupId = Element("GroupID")
+        groupId.setAttribute("Value", str(os.getgid()))
+        daemon.appendChild(groupId)
+
+        effectiveGroupId = Element("EffectiveGroupID")
+        effectiveGroupId.setAttribute("Value", str(os.getegid()))
+        daemon.appendChild(effectiveGroupId)
+
+        dom = Document()
+        dom.appendChild(daemon)
+        props = open("Daemon.xml", "w")
+        props.write(daemon.toprettyxml())
+        props.close()
+
+# Redirect standard file descriptors.
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
     return 0
 
-if __name__ == "__main__":
 
-    retCode = createDaemon()
+def test():
+    '''
+        This is an example main function run by the daemon.
+        This prints a count and timestamp once per second.
+    '''
+    logFile = os.path.join("/tmp/daemon.logging")
+    logHandler = RotatingFileHandler(logFile, "a", 1000000, 3)
+    logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
+    logHandler.setFormatter(logFormatter)
+    logging.getLogger().addHandler(logHandler)
+    logging.getLogger().setLevel(logging.INFO)
+    logging.info("Message to log file")
 
-    # The code, as is, will create a new file in the root directory, when
-    # executed with superuser privileges.  The file will contain the following
-    # daemon related process parameters: return code, process ID, parent
-    # process group ID, session ID, user ID, effective user ID, real group ID,
-    # and the effective group ID.  Notice the relationship between the daemon's 
-    # process ID, process group ID, and its parent's process ID.
+    sys.stdout.write ('Message to stdout...')
+    sys.stderr.write ('Message to stderr...')
+    c = 0
+    while 1:
+        sys.stdout.write ('%d: %s\n' % (c, time.ctime(time.time())) )
+        logging.info('%d: %s\n' % (c, time.ctime(time.time())) )
+        sys.stdout.flush()
+        c = c + 1
+        time.sleep(1)
+    logging.info(">>>Starting: "+compName+'<<<')
+
+def createDaemon(workdir, keepParent = False):
+    """
+    This is a wrapper over the new deamon methods.
+    That follows the same interface.
+
+    """
+    pidfile = os.path.join(workdir, 'Daemon.xml')
+    startmsg = 'started with pid %s' 
+    try:
+        pf  = file(pidfile,'r')
+        pid = (pf.read().strip())
+        pf.close()
+    except IOError:
+        pid = None
+    if pid :
+        mess = """
+Start aborded since pid file '%s' exists. 
+Please kill process and remove file first. 
+If process is still running this file contains
+information on that.
+"""
+        print(mess % pidfile)
+        sys.exit(1)
+#    return deamonize(stdout = '/tmp/daemon.log', workdir = workdir,startmsg = startmsg, keepParent = keepParent)
+    return deamonize(workdir = workdir,startmsg = startmsg, keepParent = keepParent)
  
-    procParams = """
-    return code = %s
-    process ID = %s
-    parent process ID = %s
-    process group ID = %s
-    session ID = %s
-    user ID = %s
-    effective user ID = %s
-    real group ID = %s
-    effective group ID = %s
-    """ % (retCode, os.getpid(), os.getppid(), os.getpgrp(), os.getsid(0),
-    os.getuid(), os.geteuid(), os.getgid(), os.getegid())
+if __name__ == "__main__":
+    parent_id = createDeamon('/tmp', keepParent = False)
+    if parent_id == 0:
+        test()
+    print('Kept parent: '+str(parent_id))
 
-    open("Daemon.log", "w").write(procParams + "\n")
-     
-    sys.exit(retCode)

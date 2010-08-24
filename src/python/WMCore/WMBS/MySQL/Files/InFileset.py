@@ -4,17 +4,11 @@ MySQL implementation of Files.InFileset
 from WMCore.Database.DBFormatter import DBFormatter
 
 class InFileset(DBFormatter):
-    sql = """select distinct file.id, file.lfn, file.size, file.events, map.run, map.lumi
-            from wmbs_file_details as file join wmbs_file_runlumi_map as map on map.file = file.id 
-            where id in (select file from wmbs_fileset_files where 
-            fileset = (select id from wmbs_fileset where name = :fileset))"""
+    sql = """SELECT DISTINCT id FROM wmbs_file_details WHERE id IN
+             (SELECT file FROM wmbs_fileset_files WHERE fileset =
+             (SELECT id FROM wmbs_fileset WHERE name = :fileset))"""
                 
-    def getBinds(self, fileset = None):
-        return self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset')
-            
-    def execute(self, fileset=None, conn = None, transaction = False):
-        binds = self.getBinds(fileset)
-        
-        result = self.dbi.processData(self.sql, binds, 
+    def execute(self, fileset = None, conn = None, transaction = False):
+        result = self.dbi.processData(self.sql, {"fileset": fileset}, 
                          conn = conn, transaction = transaction)
-        return self.format(result)
+        return self.formatDict(result)

@@ -5,12 +5,15 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.3 2009/02/01 11:41:40 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.4 2009/02/01 12:30:57 jacksonj Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
 import logging
+import time
+
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 class WorkerThreadManager:
     """
@@ -18,7 +21,7 @@ class WorkerThreadManager:
     """
     def __init__(self):
         """
-        Set up the event used to terminate worker threads
+        Set up the events used to pause, resume and terminate worker threads
         """
         self.terminateSlaves = threading.Event()
         self.pauseSlaves = threading.Event()
@@ -46,13 +49,13 @@ class WorkerThreadManager:
         worker.frequency = frequency
         
         # Thread synchronisation
-        worker.terminate = self.terminateSlaves
+        worker.notifyTerminate = self.terminateSlaves
         worker.terminateCallback = self.slaveTerminateCallback
-        worker.pause = self.pauseSlaves
-        worker.resume = self.resumeSlaves
+        worker.notifyPause = self.pauseSlaves
+        worker.notifyResume = self.resumeSlaves
         
         # Parent component
-        worker.component = self.component
+        #worker.component = self.component
 
     def addWorker(self, worker, frequency = 60, parameters = None):
         """
@@ -60,10 +63,27 @@ class WorkerThreadManager:
         frequency seconds between runs. Parameters, if present, are passed into
         the worker thread's setup, algorithm and terminate methods
         """
-        self.PrepareWorker(worker, frequency)
+        # Check type of worker
+        if not isinstance(worker, BaseWorkerThread):
+            msg = """WorkerThreadManager: Attempting to add worker that does not
+            inherit from BaseWorkerThread"""
+            logging.critical(msg)
+            return
+        
+        # Prepare the new worker thread
+        self.prepareWorker(worker, frequency)
         workerThread = threading.Thread(target = worker, args = (parameters,))
         msg = "WorkerThreadManager: Created worker thread %s" % str(worker)
         logging.info(msg)
+        
+        # Increase the active thread count - note this must be done before
+        # starting the thread so the callback can decrease back in case of
+        # startup failure
+        self.lock.acquire()
+        self.activeThreadCount += 1
+        self.lock.release()
+        
+        # Actually start the thread
         workerThread.start()
 
     def terminateWorkers(self):
@@ -86,7 +106,7 @@ class WorkerThreadManager:
             if self.activeThreadCount == 0:
                 finished = True
             self.lock.release()
-            sleep(5)
+            time.sleep(5)
         logging.info("WorkerThreadManager: All worker threads terminated")
     
     def pauseWorkers(self):
@@ -96,6 +116,7 @@ class WorkerThreadManager:
         # Don't change order without looking at BaseWorkerThread!
         self.resumeSlaves.clear()
         self.pauseSlaves.set()
+        logging.info("WorkerThreadManager: All worker threads paused")
     
     def resumeWorkers(self):
         """
@@ -104,3 +125,4 @@ class WorkerThreadManager:
         # Don't change order without looking at BaseWorkerThread!
         self.pauseSlaves.clear()
         self.resumeSlaves.set()
+        logging.info("WorkerThreadManager: All worker threads resumed")

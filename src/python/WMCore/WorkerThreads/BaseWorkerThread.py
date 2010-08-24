@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 """
-_BaseWorkerThread
+_BaseWorkerThread_
 
 Base class for all regular worker threads managed by WorkerThreadManager.
 Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.3 2009/02/01 11:41:40 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.4 2009/02/01 12:30:57 jacksonj Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
 import logging
+import time
 
 class BaseWorkerThread:
     """
@@ -24,9 +25,9 @@ class BaseWorkerThread:
         Creates the worker, called from parent thread
         """
         self.frequency = None
-        self.terminate = None
-        self.pause = None
-        self.resume = None
+        self.notifyTerminate = None
+        self.notifyPause = None
+        self.notifyResume = None
         
         # Reference to the owner component
         self.component = None 
@@ -57,20 +58,20 @@ class BaseWorkerThread:
             logging.info(msg)
             
             # Run event loop while termination is not flagged
-            while not self.terminate.isSet():
+            while not self.notifyTerminate.isSet():
                 # Check manager hasn't paused threads
-                if self.pause.isSet():
-                    self.resume.wait()
+                if self.notifyPause.isSet():
+                    self.notifyResume.wait()
                 else:
                     # Catch case where threads were paused and then terminated
                     #  - threads should not run in this case!
-                    if not self.terminate.isSet():
+                    if not self.notifyTerminate.isSet():
                         # Do some work!
                         try:
                             self.algorithm(parameters)
                         except Exception, ex:
-                            msg = "BaseWorkerThread: Error in worker thread: "
-                            msg += str(ex)
+                            msg = "BaseWorkerThread: Error in worker algorithm:"
+                            msg += (" %s %s" % (str(self), str(ex)))
                             logging.error(msg)
                 
                         # Put the thread to sleep
@@ -78,11 +79,16 @@ class BaseWorkerThread:
                         
             # Call specific thread termination method
             self.terminate(parameters)
+        except Exception, ex:
+            # Notify error
+            msg = "BaseWorkerThread: Error in event loop: %s %s"
+            msg = msg % (str(self), str(ex))
+            logging.error(msg)
         finally:
             # Notify manager
             self.terminateCallback()
             
-            #ÊAll done!
+            # All done
             msg = "BaseWorkerThread: Worker thread %s terminated" % str(self)
             logging.info(msg)
     

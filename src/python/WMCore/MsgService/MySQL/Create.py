@@ -7,8 +7,8 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2008/08/28 20:40:50 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Create.py,v 1.5 2008/09/04 12:30:50 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -39,6 +39,8 @@ Fields:
  name     message name
         """
         logging.debug(msg)
+        self.create['taa'] = """      
+SET AUTOCOMMIT = 0; """
         self.create['ta_ms_type'] = """      
 CREATE TABLE `ms_type` (
     `typeid` int(11) NOT NULL auto_increment,

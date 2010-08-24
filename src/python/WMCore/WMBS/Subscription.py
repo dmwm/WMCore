@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.31 2009/01/16 22:43:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Subscription.py,v 1.32 2009/02/05 18:07:56 jacksonj Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from sets import Set
 import logging
@@ -68,6 +68,15 @@ class Subscription(WMBSBase, WMSubscription):
                        workflow = self["workflow"].id,
                        conn = self.getWriteDBConn(),
                        transaction = self.existingTransaction())
+        
+        # Reload so we pick up the ID for location entries
+        self.load()
+        
+        # Add white / blacklist entries
+        for whiteEntry in self['whitelist']:
+            self.markLocation(whiteEntry, True)
+        for blackEntry in self['blacklist']:
+            self.markLocation(blackEntry, False)
         
         self.load()        
         self.commitIfNew()

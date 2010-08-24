@@ -63,10 +63,6 @@ class DBSUploadTest(unittest.TestCase):
         	myThread.transaction.commit()
         	DBSUploadTest._setup_done = True
 
-
-
-
-
     def tearDown(self):
         """
         Database deletion
@@ -131,7 +127,6 @@ class DBSUploadTest(unittest.TestCase):
 
 	testDBSUpload.handleMessage('BufferSuccess', \
 				'/home/anzar/devWMCore/WMCORE/test/python/WMComponent_t/DBSUpload_t/FJR/FrameworkJobReport.xml')
-
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\

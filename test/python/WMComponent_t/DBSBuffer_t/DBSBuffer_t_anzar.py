@@ -4,7 +4,7 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.2 2008/10/23 19:17:29 afaq Exp $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.3 2008/10/27 21:41:11 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -194,11 +194,12 @@ class DBSBufferTest(unittest.TestCase):
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # for testing purposes we use this method instead of the
         # StartComponent one.
+        #testDBSBuffer.handleMessage('JobSuccess', \
+        #        'C:\WORK\FJR\fjr_01.xml')
         testDBSBuffer.handleMessage('JobSuccess', \
-				'C:\WORK\FJR\FrameworkJobReport.xml')
+                'C:\WORK\FJR\FrameworkJobReport.xml')
         myThread.transaction.commit()
-        import pdb
-        pdb.set_trace()
+         
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\
                 ' Threads. Wait until all our threads have finished')

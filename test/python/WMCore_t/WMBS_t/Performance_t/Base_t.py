@@ -52,7 +52,6 @@ class Base_t():
         assert self.sqlitedao(classname='CreateWMBS').execute()
 
     def tearDown(self):
-        print "tear it up"
         #Base tearDown method for the DB Performance test
         self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs'))
         self.logger.debug(commands.getstatusoutput('mysqladmin -u root create wmbs'))

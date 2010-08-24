@@ -59,6 +59,6 @@ active.rest.object = 'WMCore.WebTools.RESTApi'
 active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
 active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
 active.rest.section_('model')
-active.rest.model.object = 'REST.Model'
+active.rest.model.object = 'RESTModel'
 active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
 active.rest.model.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'

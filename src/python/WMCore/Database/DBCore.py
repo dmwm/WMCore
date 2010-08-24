@@ -6,13 +6,11 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.3 2008/04/11 16:03:50 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBCore.py,v 1.4 2008/04/14 16:26:10 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 from sqlalchemy.databases.mysql import MySQLDialect
-from sqlalchemy.databases.sqlite import SQLiteDialect 
-from sqlalchemy.databases.oracle import OracleDialect
     
 class DBInterface(object):    
     """
@@ -41,15 +39,16 @@ class DBInterface(object):
     def executebinds(self, s=None, b=None, connection=None):
         """
         _executebinds_
-
         """
         try:
             if isinstance(self.engine.dialect, MySQLDialect) and b is not None:
-                s, b = self.__substitute(s, b)
+                s, b = self.substitute(s, b)
             self.logger.debug (s)
             self.logger.debug (b)
-            if b == None: result = connection.execute(s)
-            else: result = connection.execute(s, b)
+            if b == None: 
+                result = connection.execute(s)
+            else: 
+                result = connection.execute(s, b)
             return result
         except Exception, e:
             self.logger.exception(e)
@@ -57,7 +56,7 @@ class DBInterface(object):
             self.logger.exception(b)
             raise e
     
-    def __substitute(self, sql, binds):
+    def substitute(self, sql, binds):
         """
         Horrible hacky thing to handle MySQL's lack of bind variable support
         takes a single sql statment and its associated binds
@@ -72,45 +71,53 @@ class DBInterface(object):
                     transaction = False):
         """
         set conn if you already have an active connection to reuse
-        set transaction = True if you already have an active transaction
-        
+        set transaction = True if you already have an active transaction        
         TODO: convert resultset stuff into lists of tuples/dictionaries
         """
-        if not conn: connection = self.engine.connect()
-        else: connection = conn
+        if not conn: 
+            connection = self.engine.connect()
+        else: 
+            connection = conn
         result = []
-        "Can take either a single statement or a list of staments and binds"
+        # Can take either a single statement or a list of statements and binds
         if type(sqlstmt) == type("string") and binds is None:
-            """
-            Should never get executed - should be using binds!!
-            """
+            # Should never get executed - should be using binds!!
             self.logger.warning('%s is not using binds!!' % sqlstmt)
-            result.append(self.executebinds(sqlstmt, binds, connection=connection))            
+            result.append(self.executebinds(sqlstmt, binds, 
+                                            connection=connection))            
         elif type(sqlstmt) == type("string") and isinstance(binds, dict):
             # single statement plus binds
-            result.append(self.executebinds(sqlstmt, binds, connection=connection))
+            result.append(self.executebinds(sqlstmt, binds, 
+                                            connection=connection))
         elif type(sqlstmt) == type("string") and isinstance(binds, list):
             #Run single SQL statement for a list of binds
-            if not transaction: trans = connection.begin()
+            if not transaction: 
+                trans = connection.begin()
             try:
                 for b in binds:
                     result.append(self.executebinds(sqlstmt, b,
-                                                    connection=connection))
-                if not transaction: trans.commit()
+                                            connection=connection))
+                if not transaction: 
+                    trans.commit()
             except Exception, e:
-                if not transaction: trans.rollback()
+                if not transaction: 
+                    trans.rollback()
                 raise e
-        elif isinstance(sqlstmt, list) and isinstance(binds, list) and len(binds) == len(sqlstmt):            
+        elif isinstance(sqlstmt, list) and isinstance(binds, list) \
+                and len(binds) == len(sqlstmt):            
             # Run a list of SQL for a list of binds
-            if not transaction: trans = connection.begin()
+            if not transaction: 
+                trans = connection.begin()
             try:
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
                     result.append(self.executebinds(sqlstmt, b,
-                                                    connection=connection))
-                if not transaction: trans.commit()
+                                            connection=connection))
+                if not transaction: 
+                    trans.commit()
             except Exception, e:
-                if not transaction: trans.rollback()
+                if not transaction: 
+                    trans.rollback()
                 raise e
         else:
             self.logger.exception(
@@ -124,8 +131,7 @@ class DBInterface(object):
                                type("string"), type({}),
                                type(connection), type(transaction))
             raise 'some clever exception type'
-        if not conn: connection.close() # Return connection to the pool
-        if result:
-            return result
-        else: 
-            return []
+        if not conn: 
+            connection.close() # Return connection to the pool
+        return result
+        

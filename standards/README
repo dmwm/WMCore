@@ -60,6 +60,21 @@ you will have a test in the pacakge:
 test/python/WMCORE_t/MsgService_t/MsgService_t.py and in it
 class: MsgserviceTest.
 
+When developing a component use the following structure:
+
+for component file that inherits from the harness:
+....WMComponent/<component name>/<component name.py>
+
+for config file:
+....WMComponent/<component name>/DefaultConfig.py
+
+for storing the message handlers:
+
+...WMComponent/<component name>/Handler
+
+If you work on an external project you will work with a different 
+root than .../WMComponent
+
 All files should be tested against the .pylintrc format and need 
 to get a minimum score of 8 or higher. In case that is not possible 
 due to certain language constructs being used, the pylint style file 

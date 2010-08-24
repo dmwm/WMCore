@@ -34,9 +34,9 @@ messages after it is handled.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.8 2008/12/23 22:17:07 afaq Exp $"
+    "$Id: MsgService.py,v 1.9 2009/01/16 20:21:51 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.8 $"
+    "$Revision: 1.9 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -119,9 +119,7 @@ class MsgService:
         name will result in an update of its hostname and PID, since it is
         assumed that the old process crashed and it was started again.
         """
-
-
-
+        myThread = threading.currentThread()
         # logging
         logging.info("Try registerAs "+str(name))
         # check if component name does not contain a reserved word:

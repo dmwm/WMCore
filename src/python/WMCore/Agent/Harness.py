@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.14 2008/11/18 15:14:53 fvlingen Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Harness.py,v 1.15 2009/01/16 20:21:51 fvlingen Exp $"
+__version__ = "$Revision: 1.15 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -82,8 +82,9 @@ class Harness:
             try:
                 os.makedirs(compSect.componentDir)
             except :
-                print('Component dir already exists. '+\
-                ' Continue on with initialization')
+                print('Component dir already exists. ')
+                print('--> '+compSect.componentDir)
+                print('Continue on with initialization')
             logHandler = RotatingFileHandler(compSect.logFile,
                 "a", 1000000, 3)
             logFormatter = \

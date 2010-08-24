@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.10 2009/01/26 14:02:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Fileset_t.py,v 1.11 2009/03/03 14:48:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import logging
@@ -463,6 +463,45 @@ class FilesetTest(unittest.TestCase):
         testFileA.delete()
         testFileB.delete()
         testFileC.delete()
-            
+
+    def testMarkOpen(self):
+        """
+        _testMarkOpen_
+
+        Test that setting the openess of a fileset in the constructor works as
+        well as changing it with the markOpen() method.
+        """
+        testFilesetA = Fileset(name = "TestFileset1", is_open = False)
+        testFilesetA.create()
+        testFilesetB = Fileset(name = "TestFileset2", is_open = True)
+        testFilesetB.create()
+        
+        testFilesetC = Fileset(name = testFilesetA.name)
+        testFilesetC.load()
+        testFilesetD = Fileset(name = testFilesetB.name)
+        testFilesetD.load()
+
+        assert testFilesetC.open == False, \
+               "ERROR: FilesetC should be closed."
+
+        assert testFilesetD.open == True, \
+               "ERROR: FilesetD should be open."
+
+        testFilesetA.markOpen(True)
+        testFilesetB.markOpen(False)
+
+        testFilesetE = Fileset(name = testFilesetA.name)
+        testFilesetE.load()
+        testFilesetF = Fileset(name = testFilesetB.name)
+        testFilesetF.load()
+
+        assert testFilesetE.open == True, \
+               "ERROR: FilesetE should be open."
+
+        assert testFilesetF.open == False, \
+               "ERROR: FilesetF should be closed."        
+
+        return
+
 if __name__ == "__main__":
         unittest.main()

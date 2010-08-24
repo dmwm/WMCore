@@ -4,8 +4,8 @@ MySQL implementation of File.Get
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetByID(DBFormatter):
-    sql = """SELECT id, lfn, size, events, cksum FROM wmbs_file_details  
-             WHERE id = :fileid"""
+    sql = """SELECT id, lfn, size, events, cksum, first_event, last_event
+             FROM wmbs_file_details WHERE id = :fileid"""
 
     def formatDict(self, result):
         """
@@ -18,6 +18,8 @@ class GetByID(DBFormatter):
         formattedResult["id"] = int(formattedResult["id"])
         formattedResult["events"] = int(formattedResult["events"])
         formattedResult["cksum"] = int(formattedResult["cksum"])
+        formattedResult["first_event"] = int(formattedResult["first_event"])
+        formattedResult["last_event"] = int(formattedResult["last_event"])
 
         if "size" in formattedResult.keys():
             formattedResult["size"] = int(formattedResult["size"])

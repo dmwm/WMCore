@@ -17,11 +17,11 @@ TABLE wmbs_subscription
     id      INT(11) NOT NULL AUTO_INCREMENT,
     fileset INT(11) NOT NULL,
     workflow INT(11) NOT NULL,
-    type    ENUM("merge", "processing")
+    type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.23 2008/11/20 16:52:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Subscription.py,v 1.24 2008/11/24 21:48:40 sryu Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import threading
 
@@ -36,7 +36,7 @@ from WMCore.DAOFactory import DAOFactory
 
 class Subscription(WMSubscription):
     def __init__(self, fileset = None, workflow = None, id = -1,
-                 whitelist = None, blacklist = None, type = "processing",
+                 whitelist = None, blacklist = None, type = "Processing",
                  split_algo = "FileBased"): 
 
         if whitelist == None:

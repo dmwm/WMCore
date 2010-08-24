@@ -15,12 +15,12 @@ def input():
                       help="User INSTANCE", metavar="INSTANCE")
     parser.add_option("-u", "--user", dest="user", metavar="USER",
                       help="Conect to the database as USER")
-    parser.add_option("-h", "--host", dest="host", metavar="HOST", 
+    parser.add_option("-o", "--host", dest="host", metavar="HOST", 
                       help="Database is running on HOST")
     
     return parser.parse_args()
 
-def config(inifile, options):
+def config(options):
     config = ConfigParser ()
     config.add_section("database")
     
@@ -28,14 +28,11 @@ def config(inifile, options):
     config.set("database", "host", options.host)
     config.set("database", "instance", options.inst)
     
-    config.write(file ('%.ini' % options.dbtype, 'w'))
+    config.write(file ('%s.ini' % options.dbtype, 'w'))
 
 def main():
     options, args = input()
     config(options)
-    setReadOnly(options.inifile)
-    if options.schema:
-        database(options.inifile)
-        
+    
 if __name__ == "__main__":
     main()   

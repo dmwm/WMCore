@@ -22,6 +22,11 @@ class WebAPI(DatabasePage):
         dict = self.runMethod(args[0], kwargs)
         return dict
     
+    @exposedasjson
+    def das(self, *args, **kwargs):
+        dict = self.runMethod(args[0], kwargs)
+        return dict
+    
     @exposexml
     def xml(self, *args, **kwargs):
         dict = self.runMethod(args[0], kwargs)

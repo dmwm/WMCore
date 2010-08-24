@@ -8,10 +8,9 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.19 2008/11/25 17:41:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Subscription.py,v 1.20 2009/01/16 22:50:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.20 $"
 
-import logging
 import copy
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable
@@ -27,11 +26,11 @@ class Subscription(Pickleable, dict):
             whitelist = Set()
         if blacklist == None:
             blacklist = Set()
-            
+
         self.setdefault('fileset', fileset)
         self.setdefault('workflow', workflow)
         self.setdefault('type', type)
-        
+
         self.setdefault('split_algo', split_algo)
         self.setdefault('whitelist', whitelist)
         self.setdefault('blacklist', blacklist)

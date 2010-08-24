@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.7 2009/01/06 15:53:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.8 2009/01/12 16:50:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import logging
@@ -107,6 +107,96 @@ class Job_t(unittest.TestCase):
 
         assert testJobGroup.exists() == False, \
                "ERROR: Job group exists after it was deleted"
+
+        testSubscription.delete()
+        testFileset.delete()
+        testWorkflow.delete()
+        return
+
+    def testCreateTransaction(self):
+        """
+        _testCreateTransaction_
+
+        Create a JobGroup and commit it to the database.  Rollback the database
+        transaction and verify that the JobGroup is no longer in the database.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testFileset = WMBSFileset(name = "TestFileset")
+        testFileset.create()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+
+        assert testJobGroup.exists() == False, \
+               "ERROR: Job group exists before it was created"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testJobGroup.create()
+
+        assert testJobGroup.exists() >= 0, \
+               "ERROR: Job group does not exist after it was created"
+        
+        myThread.transaction.rollback()
+
+        assert testJobGroup.exists() == False, \
+               "ERROR: Job group exists after transaction was rolled back."
+
+        testSubscription.delete()
+        testFileset.delete()
+        testWorkflow.delete()
+        return    
+
+    def testDeleteTransaction(self):
+        """
+        _testDeleteTransaction_
+
+        Create a JobGroup and then commit it to the database.  Begin a
+        transaction and the delete the JobGroup from the database.  Using the
+        exists() method verify that the JobGroup is not in the database.
+        Finally, roll back the transaction and verify that the JobGroup is
+        in the database.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testFileset = WMBSFileset(name = "TestFileset")
+        testFileset.create()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+
+        assert testJobGroup.exists() == False, \
+               "ERROR: Job group exists before it was created"
+        
+        testJobGroup.create()
+
+        assert testJobGroup.exists() >= 0, \
+               "ERROR: Job group does not exist after it was created"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testJobGroup.delete()
+
+        assert testJobGroup.exists() == False, \
+               "ERROR: Job group exists after it was deleted"
+
+        myThread.transaction.rollback()
+
+        assert testJobGroup.exists() >= 0, \
+               "ERROR: Job group does not exist after transaction was rolled back."        
 
         testSubscription.delete()
         testFileset.delete()
@@ -294,6 +384,81 @@ class Job_t(unittest.TestCase):
 
         assert len(testJobGroupC.jobs) == 2, \
                "ERROR: Loaded object has too few jobs."
+
+    def testCommitTransaction(self):
+        """
+        _testCommitTransaction_
+
+        Create a JobGroup and then add some jobs to it.  Begin a transaction
+        and then call commit() on the JobGroup.  Verify that the newly committed
+        jobs can be loaded from the database.  Rollback the transaction and then
+        verify that the jobs that were committed before are no longer associated
+        with the JobGroup.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                         cksum=1)
+        testFileA.addRun(Run(1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                         cksum=1)
+        testFileB.addRun(Run(1, *[45]))
+        testFileA.create()
+        testFileB.create()
+
+        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
+        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
+
+        testJobA = Job(name = "TestJobA", files = testFilesetA)
+        testJobB = Job(name = "TestJobB", files = testFilesetB)
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+
+        testJobGroupB = JobGroup(id = testJobGroupA.id)
+        testJobGroupB.load()
+
+        assert len(testJobGroupA.jobs) == 0, \
+               "ERROR: Original object commited too early"
+
+        assert len(testJobGroupB.jobs) == 0, \
+               "ERROR: Loaded JobGroup has too many jobs"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testJobGroupA.commit()
+
+        assert len(testJobGroupA.jobs) == 2, \
+               "ERROR: Original object did not commit jobs"
+
+        testJobGroupC = JobGroup(id = testJobGroupA.id)
+        testJobGroupC.load()
+
+        assert len(testJobGroupC.jobs) == 2, \
+               "ERROR: Loaded object has too few jobs."        
+
+        myThread.transaction.rollback()
+
+        testJobGroupD = JobGroup(id = testJobGroupA.id)
+        testJobGroupD.load()
+
+        assert len(testJobGroupD.jobs) == 0, \
+               "ERROR: Loaded object has too many jobs."        
+
+        return
 
 if __name__ == "__main__":
     unittest.main() 

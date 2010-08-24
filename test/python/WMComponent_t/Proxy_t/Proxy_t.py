@@ -1,11 +1,107 @@
 #!/usr/bin/env python
 #pylint: disable-msg=E1101,C0103,R0902
 """
-Proxy test TestProxy module and the harness
+Proxy test TestProxy module and the harness.
+
+This test verifies how the proxy module works. Below some text on how you can
+use it to actually integrate it with components using the old message service.
+
+Setup: the minimum setup is: 
+
+-one component using the old message service (lets call this OC)
+-an agent (which is a collection of components) based on the old 
+message service (lets call this OA)
+-database containing the old schema (lets call this OS)
+-proxy component based on the new WMCore libs (lets call this PC
+-database containing the new schema (lets call this NS)
+-component based on the new WMCore lib (lets call this NC)
+-an agent (which is a collection of components) based on the new
+message service and wmcore libs (lets call this NA)
+
+You want to either do one (or both) of the following:
+
+OC produces messages that the NC needs to receive
+NC produces messages that the OC needs to receive
+
+Note: in order to deploy the wmcore database schema you can 
+use the WMCORE/bin/wmcore-db-init (check options to augment this schema).
+
+Before you start your proxy component you need to make sure that it starts
+with the right configuration file (see for example: 
+WMCORE/src/python/WMComponent/Proxy/DefaultConfig.py
+
+Note: in order to generate a config file for a WMCore based agent you can use
+WMCORE/bin/wmcore-new-config script (check options for this script).
+
+Note: to start your new component(s) as daemons you can use the
+WMCORE/bin/wmcoreD script (check options for this script).
+
+In the config file proxy details (there is 1 set of details per agent to which 
+an OC belongs, you define: the database contact string ( the string needed by the proxy
+component to access the old message service) and a list of subscriptions (a set of messages
+that if they are published in the OA containing the OC and need to be forwarded to the proxy which 
+will publish them in the NA (consisting of NCs) that is based on the NS.
+
+Most of the time there is only one OA and one NA so the config file will contain
+one set of details. Below an example of a proxy details that you find in the config file:
+
+details['contact'] = os.getenv('PROXYDATABASE')
+# subscription contains the default diagnostic messages
+# Stop, Logging.Debug,.... and some special messages such
+# as ProxySubscribe the latter is a signal to this proxy
+# to subscribe the sender of this message to its payload message
+details['subscription'] = ['Logging.DEBUG','Logging.INFO','Logging.ERROR',\
+   'Logging.NOTSET','LogState','Stop','JobSuccess','JobFailure','JobCreate']
+config.Proxy.PXY_Classic_1 = cPickle.dumps(details)
+
+Note that the details are pickled  and the attribute it is assigned to is 
+prefix with PXY_
+
+The Proxy component will locate these attributes and assume it contains proxy
+details.
+
+The Proxy component has (per remote component) a so called proxy queue. This queue
+has an input buffer and output buffer. The output buffer is for messages that are 
+going to the other OA, the input buffer is for messages coming from the OA and need 
+to be dispatched to the NC in the NA.
+
+When it locates the subscription messages in the config file it will send a message to the
+output buffer of the form: name="ProxySubscribe" payload=<subscription message> . 
+ProxySubscribe is a 'meta message and the output buffer knows that this means it has to 
+subscribe to messages of type <subscription message> in the OA. 
+
+It then also does a special subscription of the form: name="ProxySubscribe" 
+payload="ProxySubscribe" . This means that components in the OA can publish messages
+of type "ProxySubscribe" and with the value (or payload) the message type that they want
+to receive in the OA whenever a NC in the NA publishes this message type.
+
+To summarize: 
+
+-message(types) a NC in the NA wants to receive from OC in OA are defined
+in the configuration file and the proxy component makes sure it subscribes for them 
+in the old message service.
+
+-message(types) a OC in the OA wants to receive from a NC in the NA need to 
+be published through the "ProxySubscribe" message as this is the message that the proxy
+component (which lives in the NA) picks up.
+
+-Whether you want N OCs in an OC to communicate with M NC in an NA you only need one proxy component
+but you do need to define which of the messages need to be passed through the proxy component.
+
+-In order for the proxy component to communicate with the old message service it uses the 
+WMComponent.Proxy.ProxyMsgs module. This is a wrapper for queries and is compliant wit the old 
+message service tables.
+
+
+Note: this proxy component is specific for communication between OC and NC and the proxy component
+directly interfaces with the OS. If we want to generalize this we would need to have a generic ProxyMsgs
+module and proxies in both components where the proxies communicate with eachother through the ProxyMsgs
+module and via for example http requests.
+
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.9 2009/02/09 21:00:14 fvlingen Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Proxy_t.py,v 1.10 2009/02/13 12:39:21 fvlingen Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands

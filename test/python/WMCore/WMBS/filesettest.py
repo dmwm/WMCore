@@ -10,6 +10,7 @@ from WMCore.WMBS.Workflow import Workflow
 
 database = 'sqlite://'
 #database = 'sqlite:///filesettest.lite'
+# mysql
 #database = 'mysql://metson@localhost/wmbs'
 
 engine = create_engine(database)
@@ -56,7 +57,7 @@ print "list of files, should have one file:\n\t %s" % fs.listFiles()
 print "list of new files, should have one file:\n\t %s" % fs.listNewFiles()
 fs.commit()
 print "list of files, should have one file:\n\t %s" % fs.listFiles()
-print "list of files, should be empty:\n\t %s" % fs.listNewFiles()
+print "list of new files, should be empty:\n\t %s" % fs.listNewFiles()
 fs.addFile(file2)
 print "list of files, should have two files:\n\t %s" % fs.listFiles()
 print "list of new files, should have one file:\n\t %s" % fs.listNewFiles()
@@ -71,7 +72,7 @@ print "list of files, should be empty:\n\t %s" % fs2.listNewFiles()
 print 'add a bunch of files to the fileset'
 size = 10
 for x in range(size):
-    f = File(lfn='/store/user/metson/file%s' % x, size=5 *x, events=10* x, run=x, lumi=x+3)
+    f = File(lfn='/store/user/metson/myfile%s' % x, size=5 *x, events=10* x, run=x, lumi=x+3)
     fs.addFile(f) 
 fs.commit()
 
@@ -105,7 +106,7 @@ try:
 except:
     print "\t Exception - This should be thrown"
 
-print "\nTesting files in subscriptions"
+print "\n#### Testing files in subscriptions"
 print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))
 
 print "\nAcquire two files"
@@ -134,7 +135,12 @@ print "\t completed files: %s" % sub2.completedFiles()
 print "\t failed files: %s" % sub2.failedFiles()
 
 
-
+print '\n#### delete tests'
+print "\t available files: %s (%s)" % (sub1.availableFiles(), len(sub1.availableFiles()))
+print 'Workflow %s exists?: %s' % (wf.spec, wf.exists())
+wf.delete()
+print 'Workflow %s exists?: %s' % (wf.spec, wf.exists())
+print "\t available files: %s (%s)" % (sub1.availableFiles(), len(sub1.availableFiles()))
 
 print '\n\n#### test ended'
 

@@ -12,8 +12,8 @@ to pass arbitrary objects if needed through the parameters
 attribute.
 """
 
-__revision__ = "$Id: ThreadSlave.py,v 1.4 2008/09/08 19:38:02 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ThreadSlave.py,v 1.5 2008/09/16 15:03:03 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -59,6 +59,11 @@ class ThreadSlave:
         #this to get a reference to its dbfactory object.
         myThread = threading.currentThread()
         self.dbFactory = myThread.dbFactory
+        # get the procid from the mainthread msg service
+        # if we use this in testing it might not be there.
+        self.procid = 0
+        if hasattr(myThread,'msgService'):
+            self.procid = myThread.msgService.procid
       
         # we can potentially use mapping from messages to handlers
         # to have one thread handling multiple message types.
@@ -109,7 +114,11 @@ class ThreadSlave:
         logging.info("THREAD: Instantiating message queue for thread")
         factory = WMFactory("msgService", "WMCore.MsgService."+ \
             myThread.dialect)
+        # we instantiate a message service here but we do not register it.
+        # the main thread represents us in the msg service. We copy the 
+        # the main thread procid to our object.
         myThread.msgService = factory.loadObject("MsgService")
+        myThread.msgService.procid = self.procid
         logging.info("THREAD: Instantiating trigger service for thread")
         WMFactory("trigger", "WMCore.Trigger")
         myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")

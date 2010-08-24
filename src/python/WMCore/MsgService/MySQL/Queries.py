@@ -10,9 +10,9 @@ service.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.5 2008/09/09 13:50:35 fvlingen Exp $"
+    "$Id: Queries.py,v 1.6 2008/09/16 15:03:03 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.5 $"
+    "$Revision: 1.6 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -249,7 +249,7 @@ SELECT status FROM %s WHERE procid = :procid
         """
         sqlStr = """
 UPDATE %s SET status='not_there' WHERE procid=:procid 
-""" % (args['table'])
+        """ % (args['table'])
         self.execute(sqlStr, {'procid': args['procid']})
 
     def msgArrived(self, args):
@@ -446,6 +446,21 @@ DELETE FROM %s
 
         sqlStr = """
 SELECT COUNT(*) FROM %s WHERE type = :typeid
+""" % (args['tableName'])
+
+        result = self.execute(sqlStr, args['sqlArgs'])
+        result = self.formatOne(result)
+        return result[0]
+
+    def inQueueForComponent(self, args):
+        """
+        __inQueue__
+   
+        Checks if there are messages for a component in the queue.
+        """
+
+        sqlStr = """
+SELECT COUNT(*) FROM %s WHERE dest= :procid
 """ % (args['tableName'])
 
         result = self.execute(sqlStr, args['sqlArgs'])

@@ -9,8 +9,8 @@ components.
 
 """
 
-__revision__ = "$Id: TestComponent.py,v 1.3 2008/09/05 12:41:33 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TestComponent.py,v 1.4 2008/09/16 15:03:04 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -35,16 +35,6 @@ class TestComponent(Harness):
         # call the base class
         Harness.__init__(self, config)
 
-
-        aHandlerInstance = BaseHandler(self)
-        # obviously this does not have to be a 1 on 1 mapping.
-        # we can have one instance for several messages
-        self.messages['TestMessage1'] = aHandlerInstance
-        self.messages['TestMessage2'] = aHandlerInstance
-        # or multiple instances for different messages.
-        self.messages['TestMessage3'] = BaseHandler(self)
-        self.messages['TestMessage4'] = BaseHandler(self)
-
     def logState(self):
         """
         Augment standard logging message.
@@ -58,6 +48,14 @@ class TestComponent(Harness):
         """
         Override pre initialization.
         """
+        aHandlerInstance = BaseHandler(self)
+        # obviously this does not have to be a 1 on 1 mapping.
+        # we can have one instance for several messages
+        self.messages['TestMessage1'] = aHandlerInstance
+        self.messages['TestMessage2'] = aHandlerInstance
+        # or multiple instances for different messages.
+        self.messages['TestMessage3'] = BaseHandler(self)
+        self.messages['TestMessage4'] = BaseHandler(self)
 
         logging.debug("TestComponent pre initialization")
 

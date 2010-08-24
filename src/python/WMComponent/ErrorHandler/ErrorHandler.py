@@ -13,8 +13,8 @@ the different failure handlers are configurable in the config file and
 relate to the three stages of a job: create, submit, run 
 """
 
-__revision__ = "$Id: ErrorHandler.py,v 1.1 2008/09/12 13:02:09 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ErrorHandler.py,v 1.2 2008/09/16 15:03:02 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -45,27 +45,28 @@ class ErrorHandler(Harness):
         # call the base class
         Harness.__init__(self, config)
 
+    def preInitialization(self):
         # in case nothing was configured we have a fallback.
-        if not hasattr(config.ErrorHandler, "submitFailureHandler"):
+        if not hasattr(self.config.ErrorHandler, "submitFailureHandler"):
             logging.warning("Using default submit failure handler!")
-            config.ErrorHandler.submitFailureHandler =  \
+            self.config.ErrorHandler.submitFailureHandler =  \
                 'WMComponent.ErrorHandler.Handler.DefaultSubmit'
-        if not hasattr(config.ErrorHandler, "createFailureHandler"):
+        if not hasattr(self.config.ErrorHandler, "createFailureHandler"):
             logging.warning("Using default create failure handler!")
-            config.ErrorHandler.createFailureHandler =  \
+            self.config.ErrorHandler.createFailureHandler =  \
                 'WMComponent.ErrorHandler.Handler.DefaultCreate'
-        if not hasattr(config.ErrorHandler, "runFailureHandler"):
+        if not hasattr(self.config.ErrorHandler, "runFailureHandler"):
             logging.warning("Using default run failure handler!")
-            config.ErrorHandler.runFailureHandler =  \
+            self.config.ErrorHandler.runFailureHandler =  \
                 'WMComponent.ErrorHandler.Handler.DefaultRun'
 
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')
         self.messages['SubmitFailure'] = \
-            factory.loadObject(config.ErrorHandler.submitFailureHandler, self)
+            factory.loadObject(self.config.ErrorHandler.submitFailureHandler, self)
         self.messages['CreateFailure'] = \
-            factory.loadObject(config.ErrorHandler.createFailureHandler, self)
+            factory.loadObject(self.config.ErrorHandler.createFailureHandler, self)
         self.messages['RunFailure'] = \
-            factory.loadObject(config.ErrorHandler.runFailureHandler, self)
+            factory.loadObject(self.config.ErrorHandler.runFailureHandler, self)
 
 

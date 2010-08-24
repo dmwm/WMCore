@@ -12,6 +12,8 @@ export TESTDIR=/home/fvlingen/programFiles/CMS_CVS/WMCORE_TEST
 export WMCOREBASE=$CVSBASE/WMCORE
 export PYTHONPATH=$WMCOREBASE/src/python:$PYTHONPATH
 #export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
+# source oracle environment (if you have it/need it):
+source /usr/lib/oracle/xe/app/oracle/product/10.2.0/server/bin/oracle_env.sh
 export DBNAME=wmbs
 export DBUSER=some_user
 export DBPASS=some_pass

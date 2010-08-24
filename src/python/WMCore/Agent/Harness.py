@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.4 2008/09/08 19:34:52 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Harness.py,v 1.5 2008/09/16 15:03:03 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -44,20 +44,29 @@ class Harness:
     def __init__(self, config):
         """
         init
+   
+        The constructor is empty as we have an initalization method
+        that can be called inside new threads (we use thread local attributes
+        at startup.
 
         Default intialization of the harness including setting some diagnostic
         messages
         """
+        self.config = config
+
+    def initInThread(self):
+        """
+        Default intialization of the harness including setting some diagnostic
+        messages. This method is called when we call 'prepareToStart'
+        """
         try:
             self.state = 'startup'
-            self.config = config
             self.messages = {}
             # the component name is the last part of its module name
             # and it should override any name give through the arguments.
             compName = self.__class__.__name__
             if not compName in self.config.listComponents_():
                 raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
-     
             self.config.Agent.componentName = compName 
             compSect = getattr(self.config, compName, None) 
             compSect.componentDir =  os.path.join(self.config.General.workDir, \
@@ -89,27 +98,16 @@ class Harness:
             logging.info(">>>Starting: "+compName+'<<<')
             # check which backend to use: MySQL, Oracle, etc... for core 
             # services.
-            coreSect = self.config.CoreDatabase
-            if not hasattr(coreSect, "dialect"):
-                raise WMException(WMEXCEPTION['WMCORE-5'],'WMCORE-5')
-            myThread = threading.currentThread()
-            logging.info(">>>Determining Dialect: "+coreSect.dialect)
-            if coreSect.dialect == 'mysql':
-                myThread.dialect = 'MySQL'
-            myThread.logger = logging.getLogger()
-            logging.info(">>>Setting config for main thread: ")
-            myThread.config = self.config
-            logging.info(">>>Initializing MsgService Factory")
-            WMFactory("msgService", "WMCore.MsgService."+ \
-                myThread.dialect)
-            myThread.msgService = \
-                myThread.factory['msgService'].loadObject("MsgService")
-
             # we recognize there can be more than one database.
             # be we offer a default database that is used for core services.
             logging.info(">>>Initializing default database")
             logging.info(">>>Check if connection is through socket")
+            myThread = threading.currentThread()
+            myThread.logger = logging.getLogger()
+            logging.info(">>>Setting config for thread: ")
+            myThread.config = self.config
             options = {}
+            coreSect = self.config.CoreDatabase
             if hasattr(coreSect, "socket"):
                 options['unix_socket'] = coreSect.socket
             logging.info(">>>Building database connection string")
@@ -120,7 +118,19 @@ class Harness:
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
             myThread.dbi = myThread.dbFactory.connect()
+
             logging.info(">>>Initialize transaction dictionary")
+            if not hasattr(coreSect, "dialect"):
+                raise WMException(WMEXCEPTION['WMCORE-5'],'WMCORE-5')
+            logging.info(">>>Determining Dialect: "+coreSect.dialect)
+            if coreSect.dialect == 'mysql':
+                myThread.dialect = 'MySQL'
+            logging.info(">>>Initializing MsgService Factory")
+            WMFactory("msgService", "WMCore.MsgService."+ \
+                myThread.dialect)
+            myThread.msgService = \
+                myThread.factory['msgService'].loadObject("MsgService")
+
             myThread.transactions = {}
             # diagnostic messages are ones that most of the time
             # bypass the other messages. 
@@ -307,6 +317,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         so it can easily used in tests.
         """
         self.state = 'initialize'
+        self.initInThread()
         type = None
         payload = None
         # note: every component gets a (unique) name: 
@@ -316,13 +327,17 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         logging.info('>>>Setting default transaction')
         myThread = threading.currentThread()
         myThread.transaction = Transaction(myThread.dbi)
+        myThread.transaction.commit()
 
         self.preInitialization()
+        myThread.transaction.begin()
         self.initialization()
         self.postInitialization()
+        myThread.transaction.commit()
 
         logging.info('>>>Committing default transaction')
-        myThread.transaction.commit()
+        logging.info(">>>Flushing messages")
+        myThread.msgService.finish()
 
         logging.info('>>>Committing possible other transactions')
         # if we have multiple database we might want to synchronize
@@ -362,29 +377,24 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         """
         myThread = threading.currentThread()
         try:
+            msg = 'None'
             self.prepareToStart()
-            # wait for messages
-            myThread.transaction = Transaction(myThread.dbi)
             while True:
-                myThread.transaction.begin()
-                type, payload = myThread.msgService.get()
+                msg = myThread.msgService.get()
                 # we commit here as we do not want long standing open 
                 # database connections (but we keep track of the last get 
                 # message state
-                myThread.transaction.commit()
-                self.handleMessage(type, payload)
+                self.handleMessage(msg['name'], msg)
                 logging.debug(">>>Closing and commit all database sessions" \
                     +" that have been registered")
                 # when we call the msgService.finish we finally remove the msg
                 # from the queu.
-                myThread.transaction.begin()
                 myThread.msgService.finish()
-                myThread.transaction.commit()
                 for transaction in myThread.transactions.keys():
                     transaction.commit()
                 logging.debug(">>>Finished handling message of type "+ \
-                    str(type)+ " \n")
-                if type == 'Stop' or type == self.config.Agent.componentName+':Stop':
+                    str(msg['name'])+ " \n")
+                if msg['name'] == 'Stop' or msg['name'] == self.config.Agent.componentName+':Stop':
                     logging.info(">>>Gracefully shutting down component")
                     break
         except Exception,ex:
@@ -398,11 +408,11 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
 PostMortem: choked when initializing with error: %s
                 """ % (str(ex))
             else:
-                msg = """ 
+                errormsg = """ 
 PostMortem: choked while handling messages  with error: %s
-while trying to handle event/payload: %s/%s
-                """ % (str(ex), type, payload)
-            logging.critical(msg)
+while trying to handle msg: %s
+                """ % (str(ex), str(msg))
+            logging.critical(errormsg)
             raise
         logging.info("System shutdown complete!")
 

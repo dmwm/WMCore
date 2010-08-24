@@ -34,9 +34,9 @@ messages after it is handled.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.6 2008/09/09 13:50:35 fvlingen Exp $"
+    "$Id: MsgService.py,v 1.7 2008/09/16 15:03:03 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.6 $"
+    "$Revision: 1.7 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -260,8 +260,9 @@ class MsgService:
          
         {'name' : 'myMessage', 'payload' : 'myPayload', 'delay' : '10:30:45', 'instant' : False}
         """
-        
         # logging
+        #myThread = threading.currentThread()
+        #myThread.transaction.begin()
         logging.debug("publish requested")
         if type(args) == dict:
             args = [args]
@@ -298,7 +299,7 @@ class MsgService:
             typeid = messageTypes[message['name']]['typeid']
             payload = message['payload']
             if message.has_key('delay'):
-                delay = args['delay']
+                delay = message['delay']
             else:
                 delay = "00:00:00"
             if not message.has_key('instant'):
@@ -340,6 +341,7 @@ class MsgService:
 
         # deliver messages that need to be delivered immediately.
         self.deliver(instant = True)
+        #myThread.transaction.commit()
 
     def deliver(self, instant = False):
         """
@@ -517,7 +519,9 @@ class MsgService:
             priorityBufferOut = 'ms_priority_message_'+self.name+'_buffer_out'
 
         message = None
+        myThread = threading.currentThread()
         while True:
+            myThread.transaction.begin()
             logging.debug("Checking messages for: "+self.name)
             # check if there are any messages at all for us:
             args = {'table':'ms_available_priority', 'procid':self.procid}
@@ -529,6 +533,7 @@ class MsgService:
                 message = self.query.getMsg({'table':priorityBufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
+                    myThread.transaction.commit()
                     break 
                 #nothing from buffer, move (if any) from big table to buffer_out
                 args = {'source': priorityQueue, \
@@ -539,6 +544,7 @@ class MsgService:
                 message = self.query.getMsg({'table':priorityBufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
+                    myThread.transaction.commit()
                     break 
                 args = {'source': priorityBufferIn, \
                         'target':priorityBufferOut, \
@@ -548,14 +554,22 @@ class MsgService:
                 message = self.query.getMsg({'table':priorityBufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
+                    myThread.transaction.commit()
                     break 
-                # there was a message but we did not find it, this means 
-                # it can be a delayed message. If we know the minimum 
-                # delay we can
-                # wait that long. For the moment we assume that there 
-                # is a continous stream of messages to a component.
-                args = {'table':'ms_available_priority', 'procid':self.procid}
-                self.query.noMsgs(args)
+                msgs = 0
+                sqlArgs = {'procid':self.procid}
+                args ={'tableName':priorityBufferIn,'sqlArgs':sqlArgs}
+                msgs += self.query.inQueueForComponent(args)
+                args ={'tableName':priorityBufferOut,'sqlArgs':sqlArgs}
+                msgs += self.query.inQueueForComponent(args)
+                args ={'tableName':priorityQueue,'sqlArgs':sqlArgs}
+                msgs += self.query.inQueueForComponent(args)
+                # there was a message but we did not find it, this means it 
+                # can be a delayed message. Count if there are messages for us
+                # if not set ms_available flag.
+                if msgs == 0:
+                    args = {'table':'ms_available_priority', 'procid':self.procid}
+                    self.query.noMsgs(args)
             args = {'table':'ms_available', 'procid':self.procid}
             result = self.query.msgAvailable(args)
             # there is a message, lets look for it
@@ -565,6 +579,7 @@ class MsgService:
                 message = self.query.getMsg({'table':bufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
+                    myThread.transaction.commit()
                     break 
                 #nothing from buffer, move (if any) from big table to buffer_out
                 args = {'source': queue, 'target':bufferOut, \
@@ -573,6 +588,7 @@ class MsgService:
                 message = self.query.getMsg({'table':bufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
+                    myThread.transaction.commit()
                     break 
                 args = {'source': bufferIn, 'target':bufferOut, \
                         'procid':self.procid, 'buffer_size':self.bufferSize}
@@ -580,30 +596,42 @@ class MsgService:
                 message = self.query.getMsg({'table':bufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
+                    myThread.transaction.commit()
                     break 
                 # there was a message but we did not find it, this means it 
-                # can be a delayed message. If we know the minimum 
-                # delay we can
-                # wait that long. For the moment we assume that there is a 
-                # continous stream of messages to a component.
-                args = {'table':'ms_available', 'procid':self.procid}
-                self.query.noMsgs(args)
+                # can be a delayed message. Count if there are messages for us
+                # if not set ms_available flag.
+                msgs = 0
+                sqlArgs = {'procid':self.procid}
+                args ={'tableName':bufferIn,'sqlArgs':sqlArgs}
+                msgs += self.query.inQueueForComponent(args)
+                args ={'tableName':bufferOut,'sqlArgs':sqlArgs}
+                msgs += self.query.inQueueForComponent(args)
+                args ={'tableName':queue,'sqlArgs':sqlArgs}
+                msgs += self.query.inQueueForComponent(args)
+                if msgs == 0: 
+                    args = {'table':'ms_available', 'procid':self.procid}
+                    self.query.noMsgs(args)
 
             if not wait:
                 # return immediately with no message
+                myThread.transaction.commit()
                 return (None, None)
             logging.debug("Sleeping "+str(self.pollTime)+ \
                 " seconds and check for messages again")
+            myThread.transaction.commit()
             time.sleep(self.pollTime)      
 
         self.currentMsg = message
 
+        myThread.transaction.begin()
         args = {'table' : self.currentMsgTable, 'msgId' : message['messageid']}
         # change state message
         self.query.processMsg(args)
         # add destination for testing purposes only
         message['target'] = self.name
         # return message
+        myThread.transaction.commit()
         
         return message
 
@@ -625,6 +653,8 @@ class MsgService:
         MsgService.finish()
         """
         # publish unpublished messages.
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
         self.deliver()
         # check if the history tables are not too large
         self.cleanHistory()
@@ -635,6 +665,7 @@ class MsgService:
             self.query.removeMsg(args)
             self.currentMsgTable = None
             self.currentMsg = None
+        myThread.transaction.commit()
 
     ##########################################################################
     # purgeMessages method 

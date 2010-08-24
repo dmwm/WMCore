@@ -6,8 +6,8 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.4 2008/09/09 13:50:35 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMFactory.py,v 1.5 2008/09/16 15:03:02 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 #FIXME: need a test for this. But this can only be done if 
@@ -79,4 +79,4 @@ namespace (package): %s """ % (name, str(namespace))
             logging.debug("Created instance for class: "+classname)
             return classinstance
         except Exception,ex:
-            raise WMException(WMEXCEPTION['WMCORE-4'] + str(ex), 'WMCORE-4')
+            raise WMException(WMEXCEPTION['WMCORE-4']+' '+classname +':'+ str(ex), 'WMCORE-4')

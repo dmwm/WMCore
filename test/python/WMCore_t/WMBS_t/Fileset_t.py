@@ -7,8 +7,8 @@ its access methods and additional file insert methods are tested
 
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.2 2008/11/20 16:49:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Fileset_t.py,v 1.3 2008/11/25 15:53:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import logging
@@ -218,6 +218,64 @@ class Fileset_t(unittest.TestCase):
 
         assert len(goldenIDs) == 0, \
                "ERROR: Not all ids in fileset"        
+
+    def testFileCreate(self):
+        """
+        _testFileCreate_
+
+        Create several files and add them to the fileset.  Test to make sure
+        that the commit() fileset method will add the files to the database
+        if they are not in the database.
+        """
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, run = 1, lumi = 45)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20, run = 1, lumi = 45)
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20, run = 1, lumi = 45)
+        testFileB.create()
+
+        testFilesetA = Fileset(name = "TestFileset")
+        testFilesetA.create()
+
+        testFilesetA.addFile(testFileA)
+        testFilesetA.addFile(testFileB)
+        testFilesetA.addFile(testFileC)
+        testFilesetA.commit()
+
+        testFilesetB = Fileset(name = testFilesetA.name)
+        testFilesetB.load(method = "Fileset.LoadFromName")        
+        testFilesetC = Fileset(id = testFilesetA.id)
+        testFilesetC.load(method = "Fileset.LoadFromID")
+
+        assert testFilesetB.id == testFilesetA.id, \
+               "ERROR: Load from name didn't load id"
+
+        assert testFilesetC.name == testFilesetA.name, \
+               "ERROR: Load from id didn't load name"
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testFilesetB.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testFilesetC.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+        
+        testFilesetA.delete()
+        testFileA.delete()
+        testFileB.delete()
+        testFileC.delete()
         
     # test parentage
     

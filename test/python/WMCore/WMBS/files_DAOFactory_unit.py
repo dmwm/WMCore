@@ -7,14 +7,15 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: files_DAOFactory_unit.py,v 1.1 2008/06/12 10:04:09 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: files_DAOFactory_unit.py,v 1.2 2008/06/14 15:35:12 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.File import File
 #pylint --rcfile=../../../../standards/.pylintrc  ../../../../src/python/WMCore/WMBS/Fileset.py
 
 class BaseFilesTestCase(unittest.TestCase):
@@ -53,6 +54,11 @@ class BaseFilesTestCase(unittest.TestCase):
         else:
             self.testlogger.debug("WMBS SQLite database could not be created, already exists?")
         
+        self.selist = ['lcgse01.phy.bris.ac.uk', 'lcgse02.phy.bris.ac.uk', 'se01.fnal.gov', 'se02.fnal.gov']
+        
+        for se in self.selist:
+            self.daofactory1(classname='Locations.New').execute(sename=se)
+            self.daofactory2(classname='Locations.New').execute(sename=se)
                                               
     def tearDown(self):
         """
@@ -68,7 +74,7 @@ class BaseFilesTestCase(unittest.TestCase):
             pass
         self.testlogger.debug("WMBS SQLite database deleted")
         
-class CreateListDeleteTestCase(BaseFilesTestCase):
+class FilesDAOObjectTestCase(BaseFilesTestCase):
     def setUp(self):
         BaseFilesTestCase.setUp(self)
         
@@ -88,7 +94,7 @@ class CreateListDeleteTestCase(BaseFilesTestCase):
         self.action3a = self.daofactory2(classname='Files.InFileset')
         self.action4a = self.daofactory2(classname='Files.SetLocation')
         
-    def testCreate(self, notest=False):
+    def testCreaate(self, notest=False):
         file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1231.root"
         
         self.action1.execute(files=file, size=1000, events=2000, run=10, lumi=12312)
@@ -138,11 +144,7 @@ class CreateListDeleteTestCase(BaseFilesTestCase):
         
     def testLocateFiles(self):
         self.testListCreate(notest=True)
-        
-        se1 = 'lcgse01.phy.bris.ac.uk'
-        se2 = 'lcgse02.phy.bris.ac.uk'
-        selist = ['se01.fnal.gov', 'se02.fnal.gov']
-        
+                
         list = self.action3.execute(fileset='fs001')
         lista = self.action3a.execute(fileset='fs001')
         
@@ -151,18 +153,85 @@ class CreateListDeleteTestCase(BaseFilesTestCase):
         list = map(strim, list)
         lista = map(strim, lista)
         
-        self.action4.execute(file=list, sename=se1)
-        self.action4a.execute(file=lista, sename=se1)
+        self.action4.execute(file=list, sename=self.selist[0])
+        self.action4a.execute(file=lista, sename=self.selist[0])
         
         for i in list:
-            self.action4.execute(file=i, sename=se2)
+            self.action4.execute(file=i, sename=self.selist[1])
             
         for i in lista:    
-            self.action4a.execute(file=i, sename=se2)
+            self.action4a.execute(file=i, sename=self.selist[1])
             
-        self.action4.execute(file=list, sename=selist)
-        self.action4a.execute(file=list, sename=selist)
-          
-            
+        self.action4.execute(file=list, sename=self.selist[2:])
+        self.action4a.execute(file=list, sename=self.selist[2:])
+    
+class FileBusinessObjectTestCase(BaseFilesTestCase):
+    def setUp(self):
+        BaseFilesTestCase.setUp(self)
+        
+    def testFile(self):
+        file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1231.root"
+        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
+        
+        myfile1 = File(lfn=file, logger=self.mysqllogger, dbfactory=self.dbf1)
+        myfile2 = File(lfn=file, logger=self.sqlitelogger, dbfactory=self.dbf2)
+        
+        myfile1.load()
+        myfile2.load()
+        
+        assert myfile1 == myfile2, "Files not the same"
+        
+        file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1645.root"
+        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=2000, events=1000, run=10, lumi=12312)
+        
+        myfile3 = File(lfn=file, logger=self.mysqllogger, dbfactory=self.dbf1)
+        myfile4 = File(lfn=file, logger=self.sqlitelogger, dbfactory=self.dbf2)
+        
+        assert myfile1 != myfile3, "Different files are equal!"
+        assert myfile2 != myfile4, "Different files are equal!"
+    
+    def testFileParents(self):
+        pass
+    
+    def testFileLocation(self):
+        logger = logging.getLogger('FileLocation_unit_test')
+         
+        file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1231.root"
+        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
+        
+        myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile1.load()
+        myfile2.load()
+                
+        myfile1.setLocation(self.selist[0])
+        myfile2.setLocation(self.selist[0]) 
+        
+        assert len(myfile1.locations) == 1
+        assert len(myfile2.locations) == 1
+           
+        myfile1.setLocation(self.selist[1:])
+        myfile2.setLocation(self.selist[1:]) 
+        
+        assert len(myfile1.locations) == len(self.selist)
+        assert len(myfile2.locations) == len(self.selist)
+        
+        # Check that the persistency is correct
+        myfile3 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile4 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile3.load()
+        myfile4.load()
+        
+        assert len(myfile1.locations) == len(myfile3.locations)
+        assert len(myfile2.locations) == len(myfile4.locations)
+        
 if __name__ == "__main__":
     unittest.main()

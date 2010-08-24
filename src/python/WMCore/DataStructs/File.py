@@ -6,19 +6,29 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.10 2008/09/25 12:57:28 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: File.py,v 1.11 2008/09/29 15:34:09 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 from sets import Set
+import datetime
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Run import Run
+
 class File(WMObject, dict):
     """
     _File_
     Data object that contains details for a single file
     """
-    def __init__(self, lfn='', size=0, events=0, run=0, lumi=0, parents=Set()):
+    def __init__(self, lfn='', id = -1, size=0, events=0, run=0, lumi=0, parents=Set()):
         dict.__init__(self)
         self.setdefault("lfn", lfn)
+        if id == -1:
+            self.setdefault("id", datetime.datetime.now().__hash__())
+            # made up id's need to be negative
+            if self['id'] > 0:
+                self['id'] = -1 * self['id']
+        else:
+            self.setdefault("id", id)
+        
         self.setdefault("size", size)
         self.setdefault("events", events)
         self.setdefault("run", run)
@@ -55,7 +65,8 @@ class File(WMObject, dict):
         A DataStructs file has nothing to load from, other implementations will
         over-ride this method.
         """
-        pass
+        if self['id']:
+            self['lfn'] = '/store/testing/%s' % self['id']
 
     def save(self):
         """

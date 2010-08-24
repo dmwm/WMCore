@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.8 2008/11/18 23:25:30 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.9 2008/12/16 20:46:33 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -119,11 +119,11 @@ class NewWorkflowHandler(BaseHandler):
             algoInDBS=0 #Using binary values 0/1 
             if dataset['PSetHash'] != None:  #Which probably is not the case
                 algo = DBSWriterObjects.createAlgorithm(dataset, None, dbswriter)
+		processed = DBSWriterObjects.createProcessedDataset(primary, algo, dataset, dbswriter)
                 algoInDBS=1
-            else: algo = DBSWriterObjects.createAlgorithm(dataset) #Just create the object, do not upload in DBS
-                            
-            processed = DBSWriterObjects.createProcessedDataset(
-                primary, algo, dataset, dbswriter)
+            else: 
+		algo = DBSWriterObjects.createAlgorithm(dataset) #Just create the object, do not upload in DBS
+            	processed = DBSWriterObjects.createProcessedDataset(primary, None, dataset, dbswriter)
             # RECORD ALGO in DBSBuffer, do not create in DBS if PSetHASH is not present
             # Record this dataset in DBSBuffer
             #First ADD Algo (dataset object contains ALGO information)

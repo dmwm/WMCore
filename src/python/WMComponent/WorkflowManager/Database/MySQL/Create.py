@@ -1,5 +1,5 @@
-#!/usr/bin/python
-
+#!/usr/bin/env python
+#pylint: disable-msg=E1103
 """
 _Create_
 
@@ -7,8 +7,8 @@ Class for creating MySQL specific schema for the WorkflowManager
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/02/05 14:45:03 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/02/05 23:21:44 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading

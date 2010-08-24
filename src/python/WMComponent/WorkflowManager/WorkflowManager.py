@@ -1,5 +1,12 @@
 #!/usr/bin/env
-import logging
+#pylint: disable-msg=C0301
+"""
+The workflow manager itself, set up event listeners and work event thread
+"""
+__all__ = []
+__revision__ = "$Id: WorkflowManager.py,v 1.3 2009/02/05 23:21:44 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
+
 import threading
 
 from WMCore.Agent.Harness import Harness

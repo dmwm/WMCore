@@ -5,8 +5,8 @@ Default slave, handles loading of shared DB code
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultSlave.py,v 1.2 2009/02/05 15:47:14 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+    "$Id: DefaultSlave.py,v 1.3 2009/02/05 23:21:43 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import pickle
@@ -16,9 +16,20 @@ from WMCore.ThreadPool.ThreadSlave import ThreadSlave
 
 class DefaultSlave(ThreadSlave):
     """
-    The default slave for a WorkerManager handles
+    Base class for all WorkflowManager slave handlers
     """
+    def __init__(self):
+        """
+        Setup the slave data members
+        """
+        ThreadSlave.__init__(self)
+        self.messageArgs = None
+        self.queries = None
+
     def initInThread(self):
+        """
+        Load shared queries
+        """
         # Call superclass setup
         ThreadSlave.initInThread(self)
         

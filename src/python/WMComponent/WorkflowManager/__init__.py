@@ -34,7 +34,8 @@ RemoveFromWorkflowManagementLocationList - Removes locations from the white /
                                            blacklist of created subscriptions
     FilesetMatch : string (as passed to AddWorkflowToManage)
     WorkflowId : string (as passed to AddWorkflowToManage)
-    Locations : string (comma separated list of locations to remove from whitelist)
+    Locations : string (comma separated list of locations to remove from
+                        whitelist)
 
 Note there is one potential concurrency problem. If a managment request is made,
 and filesets become available before messages to handle location white / black
@@ -43,6 +44,6 @@ complete.
 """
 
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.2 2009/02/05 14:45:03 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: __init__.py,v 1.3 2009/02/05 23:21:44 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "james.jackson@cern.ch"

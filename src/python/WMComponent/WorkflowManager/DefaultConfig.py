@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101,E1103,C0103,R0902
+"""
+Defines default config values for WorkflowManager specific
+parameters.
+"""
+__all__ = []
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/02/05 23:21:44 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
+
 import os
 
 from WMCore.Agent.Configuration import Configuration

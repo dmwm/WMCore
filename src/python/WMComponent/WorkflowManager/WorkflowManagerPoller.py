@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0613
+"""
+The actual subscription creation algorithm
+"""
+__all__ = []
+__revision__ = "$Id: WorkflowManagerPoller.py,v 1.5 2009/02/05 23:21:44 jacksonj Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
@@ -18,6 +25,13 @@ class WorkflowManagerPoller(BaseWorkerThread):
     Regular worker for the WorkflowManager. Constructs subscriptions as filesets
     that have been added for watching become available
     """
+    def __init__(self):
+        """
+        Initialise class members
+        """
+        BaseWorkerThread.__init__(self)
+        self.queries = None
+    
     def setup(self, parameters):
         """
         Load DB objects required for queries

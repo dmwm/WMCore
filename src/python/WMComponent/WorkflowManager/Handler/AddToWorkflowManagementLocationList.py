@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+#pylint: disable-msg=C0301,R0903
 """
 Handler for add workflow location info
 """
 __all__ = []
-__revision__ = "$Id: AddToWorkflowManagementLocationList.py,v 1.1 2009/02/05 14:45:02 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: AddToWorkflowManagementLocationList.py,v 1.2 2009/02/05 23:21:43 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool

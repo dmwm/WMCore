@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103
-
+#pylint: disable-msg=E1103,W0222
 """
 _Queries_
 
@@ -9,11 +8,8 @@ WorkflowManager
 
 """
 
-import time
-import logging
-
-__revision__ = "$Id: Queries.py,v 1.4 2009/02/05 18:08:18 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Queries.py,v 1.5 2009/02/05 23:21:44 jacksonj Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -32,7 +28,7 @@ class Queries(DBFormatter):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
         
-    def addManagedWorkflow(self, workflowId, filesetMatch, splitAlgo, type):
+    def addManagedWorkflow(self, workflowId, filesetMatch, splitAlgo, wfType):
         """
         Adds a workflow to be managed
         """
@@ -43,7 +39,7 @@ class Queries(DBFormatter):
         self.execute(sqlStr, {'workflow' : workflowId, \
                               'fileset_match' : filesetMatch, \
                               'split_algo' : splitAlgo, \
-                              'type' : type})
+                              'type' : wfType})
 
     def removeManagedWorkflow(self, workflowId, filesetMatch):
         """
@@ -64,7 +60,7 @@ class Queries(DBFormatter):
         sqlStr = """SELECT id, workflow, fileset_match, split_algo, type
                     FROM wm_managed_workflow
                     """
-        result = self.execute(sqlStr)
+        result = self.execute(sqlStr, {})
         return self.formatDict(result)
     
     def getUnsubscribedFilesets(self):
@@ -76,7 +72,7 @@ class Queries(DBFormatter):
                     WHERE NOT EXISTS (SELECT 1 FROM wmbs_subscription WHERE 
                                    wmbs_subscription.fileset = wmbs_fileset.id)
                     """
-        result = self.execute(sqlStr)
+        result = self.execute(sqlStr, {})
         return self.formatDict(result)
     
     def getLocations(self, managedWorkflowId):
@@ -124,7 +120,7 @@ class Queries(DBFormatter):
                               'fsmatch' : filesetMatch, \
                               'location' : location})
 
-    def execute(self, sqlStr, args = {}):
+    def execute(self, sqlStr, args):
         """"
         Executes the queries by getting the current transaction
         and dbinterface object that is stored in the reserved words of

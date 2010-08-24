@@ -23,6 +23,9 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from sets import Set
 
+__revision__ = "$Id: WMBSBase.py,v 1.12 2008/11/10 13:12:14 jcgon Exp $"
+__version__ = "$Reivison: $"
+
 class WMBSBase(Performance):
     """
     __WMBSBase__

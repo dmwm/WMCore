@@ -7,8 +7,8 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.9 2009/02/02 11:39:38 jacksonj Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.10 2009/02/05 16:42:13 jacksonj Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -124,6 +124,7 @@ class BaseWorkerThread:
         try:
             msg = "Initialising worker thread %s" % str(self)
             logging.info(msg)
+            myThread = threading.currentThread()
             
             # Call thread startup method
             self.initInThread(parameters)
@@ -142,11 +143,16 @@ class BaseWorkerThread:
                     if not self.notifyTerminate.isSet():
                         # Do some work!
                         try:
+                            # Get a database transaction
+                            myThread.transaction.begin() 
                             self.algorithm(parameters)
                         except Exception, ex:
                             msg = "Error in worker algorithm:"
                             msg += (" %s %s" % (str(self), str(ex)))
                             logging.error(msg)
+                        finally:
+                            # Tidy up database connections
+                            myThread.transaction.commit() 
                 
                         # Put the thread to sleep
                         time.sleep(self.idleTime)

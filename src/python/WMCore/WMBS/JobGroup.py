@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.2 2008/10/01 21:28:41 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobGroup.py,v 1.3 2008/10/01 22:00:05 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -58,7 +58,7 @@ class JobGroup(WMJobGroup, BusinessObject):
         WMJobGroup.__init__(self, subscription=subscription, jobs = jobs)
         self.id = id
         if self.id <= 0:
-            print "Creating WMBS JobGroup"
+            self.logger.debug("Creating WMBS JobGroup")
             self.create()
         else:
             self.load()
@@ -72,7 +72,6 @@ class JobGroup(WMJobGroup, BusinessObject):
                               logger=self.logger, 
                               dbfactory=self.dbfactory)
         self._ouput.create()
-        print self.id, self.uid
         return self
     
     def load(self):
@@ -134,5 +133,5 @@ class JobGroup(WMJobGroup, BusinessObject):
             "load output from DB" 
             self._ouput.load()
             return self._output
-        print self.status(detail=True)
+        self.logger.debug(self.status(detail=True))
         return False

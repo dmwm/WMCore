@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.5 2008/11/04 15:42:41 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.6 2009/02/09 21:00:15 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import commands
 import logging
@@ -18,6 +18,7 @@ import threading
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.Transaction import Transaction
+from WMQuality.TestInit import TestInit
 
 class DBFormatterTest(unittest.TestCase):
     """
@@ -34,35 +35,19 @@ class DBFormatterTest(unittest.TestCase):
         "make a logger instance and create tables"
      
         if not DBFormatterTest._setup:
-            logging.basicConfig(level=logging.NOTSET,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename='%s.log' % __file__.replace('.py',''),
-                    filemode='w')
-        
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('DBFormatterTest')
-            myThread.dialect = 'MySQL'
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema()
 
-            options = {}
-            dburl = ''
-            if os.getenv("DATABASE"):
-                dburl = os.getenv("DATABASE")
-                options['unix_socket'] = os.getenv("DBSOCK")
+            myThread = threading.currentThread()
+            if os.getenv("DIALECT") == 'MySQL':
                 myThread.create = """
 create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
-            else:
-                dburl = 'sqlite:///:memory:'
+            if os.getenv("DIALECT") == 'SQLite':
                 myThread.create = """
                     create table test (bind1 varchar(20), bind2 varchar(20))"""
                 
-            dbFactory = DBFactory(myThread.logger, dburl, \
-                options)
-
-            myThread.dbi = dbFactory.connect()
-
-            
-        
             myThread.insert = """
 insert into test (bind1, bind2) values (:bind1, :bind2) """
             myThread.insert_binds = \

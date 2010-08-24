@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.8 2008/11/04 15:42:41 fvlingen Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Harness_t.py,v 1.9 2009/02/09 21:00:14 fvlingen Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -21,7 +21,9 @@ from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.DBFactory import DBFactory
+from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
+from WMQuality.TestInit import TestInit
 
 class HarnessTest(unittest.TestCase):
     """
@@ -37,33 +39,10 @@ class HarnessTest(unittest.TestCase):
         setup for test.
         """
         if not HarnessTest._setup_done:
-            logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
-
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('HarnessTest')
-            myThread.dialect = 'MySQL'
-
-            options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-
-            myThread.dbi = dbFactory.connect()
-
-            factory = WMFactory("msgService", "WMCore.MsgService."+ \
-                myThread.dialect)
-            create = factory.loadObject("Create")
-            createworked = create.execute()
-            if createworked:
-                logging.debug("MsgService tables created")
-            else:
-                logging.debug("MsgService tables could not be created, \
-                    already exists?")
-
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema()
             HarnessTest._setup_done = True
 
     def tearDown(self):
@@ -90,11 +69,7 @@ class HarnessTest(unittest.TestCase):
             commands.getstatusoutput(command)
         HarnessTest._teardown = False
 
-    def testA(self):
-        """
-        Mimics creation of component and handles come messages.
-        """
-        # we want to read this from a file for the actual components.
+    def setConfig(self):
         config = Configuration()
         config.Agent.contact = "fvlingen@caltech.edu"
         config.Agent.teamName = "Lakers"
@@ -113,12 +88,49 @@ class HarnessTest(unittest.TestCase):
         config.CoreDatabase.passwd = os.getenv("DBPASS")
         config.CoreDatabase.hostname = os.getenv("DBHOST")
         config.CoreDatabase.name = os.getenv("DBNAME")
+        return config
 
-        testComponent1 = TestComponent(config)
-        testComponent1.prepareToStart()
-        # now we have a config file that passes on a full database
-        # connection string from the start.
 
+    def testA(self):
+        """
+        Mimics creation of component and handles come messages.
+        """
+        # we want to read this from a file for the actual components.
+        config = self.setConfig()
+        testComponent = TestComponent(config)
+        testComponent.prepareToStart()
+
+        testComponent.handleMessage('LogState','')
+        testComponent.handleMessage('TestMessage1','TestMessag1Payload')
+        testComponent.handleMessage('TestMessage2','TestMessag2Payload')
+        testComponent.handleMessage('TestMessage3','TestMessag3Payload')
+        testComponent.handleMessage('TestMessage4','TestMessag4Payload')
+        testComponent.handleMessage('Logging.DEBUG','')
+        testComponent.handleMessage('Logging.WARNING','')
+        testComponent.handleMessage('Logging.CRITICAL','')
+        testComponent.handleMessage('Logging.ERROR','')
+        testComponent.handleMessage('Logging.INFO','')
+        testComponent.handleMessage('Logging.SQLDEBUG','')
+        testComponent.handleMessage('TestComponent:Logging.DEBUG','')
+        testComponent.handleMessage('TestComponent:Logging.WARNING','')
+        testComponent.handleMessage('TestComponent:Logging.CRITICAL','')
+        testComponent.handleMessage('TestComponent:Logging.ERROR','')
+        testComponent.handleMessage('TestComponent:Logging.INFO','')
+        testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
+        # test a non existing message (to generate an error)
+        errorMsg = ''
+        try:
+            testComponent.handleMessage('NonExistingMessageType','')
+        except Exception,ex:
+            errorMsg = str(ex)
+        assert errorMsg.startswith('Message NonExistingMessageType with payload')
+
+        HarnessTest._setup_done = False
+        HarnessTest._teardown = True
+
+    def testB(self):
+
+        config = self.setConfig()
         # as this is a test we build the string from our global environment
         # parameters normally you put this straight into the DefaultConfig.py file:
 
@@ -130,49 +142,89 @@ class HarnessTest(unittest.TestCase):
         config.CoreDatabase.hostname = None
         config.CoreDatabase.name = None
 
-        testComponent2 = TestComponent(config)
-        testComponent2.prepareToStart()
+        testComponent = TestComponent(config)
+        testComponent.prepareToStart()
 
-        for testComponent in [testComponent1, testComponent2]:
-            testComponent.handleMessage('LogState','')
-            testComponent.handleMessage('TestMessage1','TestMessag1Payload')
-            testComponent.handleMessage('TestMessage2','TestMessag2Payload')
-            testComponent.handleMessage('TestMessage3','TestMessag3Payload')
-            testComponent.handleMessage('TestMessage4','TestMessag4Payload')
-            testComponent.handleMessage('Logging.DEBUG','')
-            testComponent.handleMessage('Logging.WARNING','')
-            testComponent.handleMessage('Logging.CRITICAL','')
-            testComponent.handleMessage('Logging.ERROR','')
-            testComponent.handleMessage('Logging.INFO','')
-            testComponent.handleMessage('Logging.SQLDEBUG','')
-            testComponent.handleMessage('TestComponent:Logging.DEBUG','')
-            testComponent.handleMessage('TestComponent:Logging.WARNING','')
-            testComponent.handleMessage('TestComponent:Logging.CRITICAL','')
-            testComponent.handleMessage('TestComponent:Logging.ERROR','')
-            testComponent.handleMessage('TestComponent:Logging.INFO','')
-            testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
-            # test a non existing message (to generate an error)
-            errorMsg = ''
-            try:
-                testComponent.handleMessage('NonExistingMessageType','')
-            except Exception,ex:
-                errorMsg = str(ex)
-            assert errorMsg.startswith('Message NonExistingMessageType with payload')
-                 
+        testComponent.handleMessage('LogState','')
+        testComponent.handleMessage('TestMessage1','TestMessag1Payload')
+        testComponent.handleMessage('TestMessage2','TestMessag2Payload')
+        testComponent.handleMessage('TestMessage3','TestMessag3Payload')
+        testComponent.handleMessage('TestMessage4','TestMessag4Payload')
+        testComponent.handleMessage('Logging.DEBUG','')
+        testComponent.handleMessage('Logging.WARNING','')
+        testComponent.handleMessage('Logging.CRITICAL','')
+        testComponent.handleMessage('Logging.ERROR','')
+        testComponent.handleMessage('Logging.INFO','')
+        testComponent.handleMessage('Logging.SQLDEBUG','')
+        testComponent.handleMessage('TestComponent:Logging.DEBUG','')
+        testComponent.handleMessage('TestComponent:Logging.WARNING','')
+        testComponent.handleMessage('TestComponent:Logging.CRITICAL','')
+        testComponent.handleMessage('TestComponent:Logging.ERROR','')
+        testComponent.handleMessage('TestComponent:Logging.INFO','')
+        testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
+        # test a non existing message (to generate an error)
+        errorMsg = ''
+        try:
+            testComponent.handleMessage('NonExistingMessageType','')
+        except Exception,ex:
+            errorMsg = str(ex)
+        assert errorMsg.startswith('Message NonExistingMessageType with payload')
+
+        HarnessTest._setup_done = False
+        HarnessTest._teardown = True
+
+    def testC(self):
+        config = self.setConfig()
         # try starting a component as a deamon:
+        config.TestComponent.componentDir = os.path.join(config.General.workDir, "TestComponent1")
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
         testComponent.startDeamon(keepParent = True)
         print('trying to kill the component')
         time.sleep(2)
-        daemonFileDir = os.path.join(config.General.workDir, "TestComponent")
-        daemonFile = os.path.join(daemonFileDir, "Daemon.xml")
+        daemonFile = os.path.join(config.TestComponent.componentDir, "Daemon.xml")
         details = Details(daemonFile)
         print('Is component alive: '+str(details.isAlive()))
         time.sleep(2)
         details.killWithPrejudice()
         print('Daemon killed')
 
+        HarnessTest._setup_done = False
+        HarnessTest._teardown = True
+
+    def testD(self):
+        config = self.setConfig()
+        # try starting a component as a deamon:
+        config.TestComponent.componentDir = os.path.join(config.General.workDir, "TestComponent2")
+        testComponent = TestComponent(config)
+        # we set the parent to true as we are testing
+        testComponent.startDeamon(keepParent = True)
+        time.sleep(2)
+        daemonFile = os.path.join(config.TestComponent.componentDir, "Daemon.xml")
+        details = Details(daemonFile)
+        print('Is component alive: '+str(details.isAlive()))
+
+        #create msgService to send stop message.
+        myThread = threading.currentThread()
+        factory = WMFactory("msgService", "WMCore.MsgService."+ \
+            myThread.dialect)
+        myThread.transaction = Transaction(myThread.dbi)
+        msgService = factory.loadObject("MsgService")
+        msgService.registerAs("HarnessTest")
+        myThread.transaction.commit()
+
+        print('Publish a stop message to test if the component shutsdown gracefully')
+        myThread.transaction.begin()
+        msg = {'name' : 'Stop', 'payload' : ''}
+        msgService.publish(msg)
+        myThread.transaction.commit()
+
+        msgService.finish()
+
+        while details.isAlive():
+            print('Component has not received stop message')
+            time.sleep(2)
+        print('Daemon shutdown gracefully')
 
         HarnessTest._teardown = True
 
@@ -182,6 +234,9 @@ class HarnessTest(unittest.TestCase):
         """
 
         self.testA()
+        self.testB()
+        self.testC()
+        self.testD()
 
 if __name__ == '__main__':
     unittest.main()

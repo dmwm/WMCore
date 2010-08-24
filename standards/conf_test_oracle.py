@@ -8,6 +8,7 @@ from WMCore_t.WorkerThreads_t.WorkerThreads_t import WorkerThreadsTest
 from WMCore_t.FwkJobReport_t.FJR_t import FJRTest
 from WMCore_t.FwkJobReport_t.FileInfo_t import FileInfoTest
 from WMCore_t.Agent_t.Configuration_t import ConfigurationTest
+from WMCore_t.Configuration_t import ConfigurationTest as ConfigurationTest2
 from WMCore_t.WMFactory_t.WMFactory_t import WMFactoryTest
 
 errors = {}
@@ -61,6 +62,14 @@ except Exception,ex:
    if not errors.has_key("jacksonj"):
        errors["jacksonj"] = []
    errors["jacksonje"].append(("WorkerThreadsTest",str(ex)))
+
+try:
+   x=ConfigurationTest2()
+   tests.append((x,"fvlingen"))
+except Exception,ex:
+   if not errors.has_key("fvlingen"):
+       errors["fvlingen"] = []
+   errors["fvlingen"].append(("ConfigurationTest2",str(ex)))
 
 
 

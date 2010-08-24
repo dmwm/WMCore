@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.17 2009/02/06 10:15:38 fvlingen Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Harness.py,v 1.18 2009/02/09 21:00:13 fvlingen Exp $"
+__version__ = "$Revision: 1.18 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -37,6 +37,7 @@ from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 from WMCore.WMFactory import WMFactory
 from WMCore import WMLogging
+from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 
 
 class Harness:
@@ -62,8 +63,12 @@ class Harness:
             raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
         self.config.Agent.componentName = compName 
         compSect = getattr(self.config, compName, None) 
-        compSect.componentDir =  os.path.join(self.config.General.workDir, \
-            self.config.Agent.componentName)
+        # check if componentDir is set if not assign.
+        try:
+            compSect.componentDir
+        except:
+            compSect.componentDir =  os.path.join(self.config.General.workDir, \
+                self.config.Agent.componentName)
         # we have name and location of the log files. Now make sure there
         # is a directory.
         try:
@@ -140,6 +145,11 @@ class Harness:
             myThread.dbi = myThread.dbFactory.connect()
             myThread.transaction = Transaction(myThread.dbi)
             myThread.transaction.commit()
+
+
+            # Attach a worker manager object to the main thread
+            myThread.workerThreadManager = WorkerThreadManager(self)
+            myThread.workerThreadManager.pauseWorkers()
 
             logging.info(">>>Initialize transaction dictionary")
             if not hasattr(coreSect, "dialect"):
@@ -354,9 +364,40 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         for transaction in myThread.transactions.keys():
             transaction.commit()
 
+        logging.info(">>>Starting worker threads")
+        myThread.workerThreadManager.resumeWorkers()
+
         logging.info(">>>Initialization finished!\n")    
         # wait for messages
         self.state = 'active'
+
+    def prepareToStop(self, wait = False, stopPayload = ""):
+        """
+        _stopComponent
+
+        Stops the component, including all worker threads. Allows call from
+        test framework
+        """
+        # Stop all worker threads
+        logging.info(">>>Terminating worker threads")
+        myThread = threading.currentThread()
+        myThread.workerThreadManager.terminateWorkers()
+
+        if(wait):
+            logging.info(">>>Shut down of component "+\
+            "while waiting for threads to finish")
+            # check if nr of threads is specified.
+            activeThreads = 1
+            if stopPayload != "":
+                activeThreads = int(stopPayload)
+                if activeThreads < 1:
+                    activeThreads = 1
+            while threading.activeCount() > activeThreads:
+                logging.info('>>>Currently '\
+                +str(threading.activeCount())+' threads active')
+                logging.info('>>>Waiting for less then ' \
+                +str(activeThreads)+' to be active')
+                time.sleep(5)
 
 
     def handleMessage(self, type, payload):
@@ -430,23 +471,14 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                 if msg['name'] == 'Stop' or \
                 msg['name'] == self.config.Agent.componentName+':Stop':
                     logging.info(">>>Quick shut down of component")
+                    self.prepareToStop(False)
                     break
                 if msg['name'] == 'StopAndWait' or  \
                 msg['name'] == self.config.Agent.componentName+':StopAndWait':
                     logging.info(">>>Shut down of component "+\
                     "while waiting for threads to finish")
                     # check if nr of threads is specified.
-                    activeThreads = 1
-                    if msg['payload'] != "":
-                        activeThreads = int(msg['payload'])
-                        if activeThreads < 1:
-                            activeThreads = 1
-                    while threading.activeCount() > activeThreads: 
-                        logging.info('>>>Currently '\
-                        +str(threading.activeCount())+' threads active')
-                        logging.info('>>>Waiting for les then ' \
-                        +str(activeThreads)+' to be active')
-                        time.sleep(5)
+                    self.prepareToStop(True, msg['payload']) 
                     break
         except Exception,ex:
             if self.state == 'initialize':
@@ -459,6 +491,7 @@ PostMortem: choked when initializing with error: %s
                 logging.info(">>>Closing all connections")
                 for transaction in myThread.transactions.keys():
                     transaction.rollback()
+                self.prepareToStop(False)
                 errormsg = """ 
 PostMortem: choked while handling messages  with error: %s
 while trying to handle msg: %s
@@ -467,6 +500,8 @@ while trying to handle msg: %s
             logging.critical(errormsg)
             raise
         logging.info("System shutdown complete!")
+        # this is to ensure exiting when in daemon mode. 
+        sys.exit()
 
     def __str__(self):
         """

@@ -6,14 +6,15 @@ General test for FileInfo
 
 """
 
-__revision__ = "$Id: FileInfo_t.py,v 1.2 2008/12/18 14:53:17 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FileInfo_t.py,v 1.3 2009/02/09 21:00:15 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
 import unittest
 
 from WMCore.FwkJobReport.FileInfo import FileInfo
+from WMQuality.TestInit import TestInit
 
 class FileInfoTest(unittest.TestCase):
     """
@@ -23,14 +24,8 @@ class FileInfoTest(unittest.TestCase):
         """
         setup log file output.
         """
-        logging.basicConfig(level=logging.NOTSET,
-            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-            datefmt='%m-%d %H:%M',
-            filename='%s.log' % __file__,
-            filemode='w')
-        
-        self.logger = logging.getLogger('FileInfoTest')
-        
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
             
     def tearDown(self):
         """

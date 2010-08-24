@@ -78,10 +78,10 @@ module-rgx=[A-Z][a-zA-Z0-9]+$
 class-rgx=[A-Z][a-zA-Z0-9]+$
 
 # Regular expression which should only match correct function names
-function-rgx=[a-z][a-zA-Z0-9]*$
+function-rgx=([a-z][a-zA-Z0-9]*$)|([a-z][a-zA-Z0-9]*_$)
 
 # Regular expression which should only match correct method names
-method-rgx=([a-z][a-zA-Z0-9]*$)|([_]{2}[a-z]+[_]{2}$)
+method-rgx=([a-z][a-zA-Z0-9]*$)|([_]{2}[a-z]+[_]{2}$)|([a-z][a-zA-Z0-9]*_$)
 
 # Regular expression which should only match correct argument names
 argument-rgx=[a-z][a-zA-Z0-9]*$

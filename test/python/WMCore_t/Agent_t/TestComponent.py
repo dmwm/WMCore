@@ -9,8 +9,8 @@ components.
 
 """
 
-__revision__ = "$Id: TestComponent.py,v 1.1 2008/09/25 13:14:00 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TestComponent.py,v 1.2 2009/02/09 21:00:14 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -20,7 +20,6 @@ from WMCore.Agent.Harness import Harness
 
 # just the base handler for some tests.
 from WMCore.Agent.BaseHandler import BaseHandler
-
 
 class TestComponent(Harness):
     """

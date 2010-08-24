@@ -24,6 +24,7 @@ from WMCore_t.WMException_t import WMExceptionTest
 from WMCore_t.WMBS_t.Performance_t.File_t import FileTest
 from WMCore_t.MsgService_t.MsgService_t import MsgServiceTest
 from WMCore_t.Agent_t.Configuration_t import ConfigurationTest
+from WMCore_t.Configuration_t import ConfigurationTest as ConfigurationTest2
 from WMCore_t.WMFactory_t.WMFactory_t import WMFactoryTest
 from WMCore_t.Services_t.SiteDB_t.SiteDB_t import SiteDBTest
 from WMCore_t.Database_t.DBFormatter_t import DBFormatterTest
@@ -443,7 +444,15 @@ try:
 except Exception,ex:
    if not errors.has_key("jacksonj"):
        errors["jacksonj"] = []
-   errors["jacksonje"].append(("WorkerThreadsTest",str(ex)))
+   errors["jacksonj"].append(("WorkerThreadsTest",str(ex)))
+
+try:
+   x=ConfigurationTest2()
+   tests.append((x,"fvlingen"))
+except Exception,ex:
+   if not errors.has_key("fvlingen"):
+       errors["fvlingen"] = []
+   errors["fvlingen"].append(("ConfigurationTest2",str(ex)))
 
 print('Writing level 2 failures to file: failures_mysql_2.rep')
 failures = open('failures_mysql_2.rep','w')

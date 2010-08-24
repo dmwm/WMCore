@@ -4,8 +4,8 @@
 Proxy test TestProxy module and the harness
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.8 2009/02/06 10:17:31 fvlingen Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Proxy_t.py,v 1.9 2009/02/09 21:00:14 fvlingen Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -23,6 +23,7 @@ from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
+from WMQuality.TestInit import TestInit
 
 
 # local import to re-create the schema
@@ -48,48 +49,14 @@ setup in a different database and its contact parameters
 need to be defined in the PROXYDATABASE variable (press key to continue")
             """
             #raw_input(msg)
-            logging.basicConfig(level=logging.NOTSET,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema()
 
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('ProxyTest')
-            myThread.dialect = 'MySQL'
-
-            options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-
-            myThread.dbi = dbFactory.connect()
-            myThread.transaction = Transaction(myThread.dbi)
-
-
-            # need to create these tables for testing.
-            factory = WMFactory("msgService", "WMCore.MsgService."+ \
-                myThread.dialect)
-            create = factory.loadObject("Create")
-            createworked = create.execute(conn = myThread.transaction.conn)
-            if createworked:
-                logging.debug("MsgService tables created")
-            else:
-                logging.debug("MsgService tables could not be created, \
-                    already exists?")
-            # as the example uses threads we need to create the thread
-            # tables too.
-            factory = WMFactory("threadpool", "WMCore.ThreadPool."+ \
-                myThread.dialect)
-            create = factory.loadObject("Create")
-            createworked = create.execute(conn = myThread.transaction.conn)
-            if createworked:
-                logging.debug("ThreadPool tables created")
-            else:
-                logging.debug("ThreadPool tables could not be created, \
-                    already exists?")
-            myThread.transaction.commit()
             # create the schema in the proxy database
+            myThread = threading.currentThread()
+            options = {}
             options['unix_socket'] = os.getenv("DBSOCK")
             dbFactory = DBFactory(myThread.logger, os.getenv("PROXYDATABASE"), \
                 options)
@@ -100,7 +67,6 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
             create.execute(conn = transaction.conn)
             transaction.commit()
  
-
             ProxyTest._setup_done = True
 
     def tearDown(self):

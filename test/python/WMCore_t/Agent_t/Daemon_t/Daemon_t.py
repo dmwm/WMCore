@@ -6,8 +6,8 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.3 2008/11/11 16:49:19 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Daemon_t.py,v 1.4 2009/02/09 21:00:15 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -21,6 +21,7 @@ from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMFactory import WMFactory
+from WMQuality.TestInit import TestInit
 
 class DaemonTest(unittest.TestCase):
     """
@@ -43,33 +44,10 @@ class DaemonTest(unittest.TestCase):
         "make a logger instance and create tables"
        
         if not DaemonTest._setup: 
-            logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
-
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('DaemonTest')
-            myThread.dialect = 'MySQL'
-        
-            options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-        
-            myThread.dbi = dbFactory.connect() 
-
-            factory = WMFactory("daemon", "WMCore.Agent.Daemon."+ \
-                myThread.dialect)
-            create = factory.loadObject("Create")
-            createworked = create.execute()
-            if createworked:
-                logging.debug("Daemon tables created")
-            else:
-                logging.debug("Daemon tables could not be created, \
-                    already exists?")
-                                              
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema(['WMCore.Agent.Daemon'])
             DaemonTest._setup = True
 
     def tearDown(self):

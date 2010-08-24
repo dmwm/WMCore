@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.11 2008/11/20 17:09:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Job.py,v 1.12 2008/12/05 21:05:22 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import datetime
 import threading
@@ -124,8 +124,13 @@ class Job(WMJob):
 
         Does a job exist with this name.
         """
-        action = self.daofactory(classname='Jobs.Exists')
-        return action.execute(name = self.name)
+        # if id is available check with id
+        if self.id != -1:
+            action = self.daofactory(classname='Jobs.ExistsByID')
+            return action.execute(id = self.id)
+        else:
+            action = self.daofactory(classname='Jobs.Exists')
+            return action.execute(name = self.name)
                 
     def load(self, method = "Jobs.LoadFromID"):
         """

@@ -24,8 +24,8 @@ class SetLocation(SetLocationMySQL):
             raise Exception, "Type of location argument is not allowed: %s" \
                                 % type(location)
         
-    def execute(self, file = None, sename = None, conn = None, transaction = False):
-        binds = self.getBinds(file, sename)
+    def execute(self, file = None, location = None, conn = None, transaction = False):
+        binds = self.getBinds(file, location)
         self.logger.debug('File.SetLocation binds: %s' % binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)

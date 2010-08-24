@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.7 2009/01/20 23:49:51 rpw Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Root.py,v 1.8 2009/01/21 13:40:28 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -151,8 +151,9 @@ class Root(WMObject):
         return eval('self.%s.default(*args, **kwargs)' % index)
 
 if __name__ == "__main__":
+    config = __file__.rsplit('/', 1)[0] + '/DefaultConfig.py'
     parser = OptionParser()
-    parser.add_option("-i", "--ini", dest="inifile", default='DefaultConfig.py',
+    parser.add_option("-i", "--ini", dest="inifile", default=config,
                       help="write the configuration to FILE", metavar="FILE")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,

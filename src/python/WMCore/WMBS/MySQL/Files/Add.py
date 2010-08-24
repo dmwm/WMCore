@@ -5,21 +5,21 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class Add(DBFormatter):
     sql = """insert into wmbs_file_details (lfn, size, events) 
-                values (:lfn, :size, :events)"""
+                values (:lfn, :filesize, :events)"""
                 
     def getBinds(self, files=None, size=0, events=0):
         # Can't use self.dbi.buildbinds here...
         binds = {}
         if type(files) == type('string'):
             binds = {'lfn': files, 
-                     'size': size, 
+                     'filesize': size, 
                      'events': events} 
         elif type(files) == type([]):
         # files is a list of tuples containing lfn, size, events, run and lumi
             binds = []
             for f in files:
                 binds.append({'lfn': f[0], 
-                              'size': f[1], 
+                              'filesize': f[1], 
                               'events': f[2]})
         return binds
     

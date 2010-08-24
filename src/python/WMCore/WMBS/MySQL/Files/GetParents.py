@@ -8,7 +8,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetParents(DBFormatter):
     sql = """select lfn from wmbs_file_details where id IN (
             select parent from wmbs_file_parent where child = (
-                select id from wmbs_file_details where lfn = :file
+                select id from wmbs_file_details where lfn = :lfn
             )
         )"""
         
@@ -16,7 +16,7 @@ class GetParents(DBFormatter):
         binds = []
         files = self.dbi.makelist(files)
         for f in files:
-            binds.append({'file': f})
+            binds.append({'lfn': f})
         return binds
     
     def format(self, result):        

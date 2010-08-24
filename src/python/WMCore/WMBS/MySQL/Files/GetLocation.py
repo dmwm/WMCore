@@ -7,14 +7,14 @@ from sets import Set
 class GetLocation(DBFormatter):
     sql = """select se_name from wmbs_location 
                 where id in (select location from wmbs_file_location 
-                    where file in (select id from wmbs_file_details where lfn=:file))"""
+                    where file in (select id from wmbs_file_details where lfn=:lfn))"""
                     
     
     def getBinds(self, file=None):
         binds = []
         file = self.dbi.makelist(file)
         for f in file:
-            binds.append({'file': f})
+            binds.append({'lfn': f})
         return binds
     
     def format(self, result):

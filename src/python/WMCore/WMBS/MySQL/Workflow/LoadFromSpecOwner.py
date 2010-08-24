@@ -2,13 +2,13 @@
 """
 _LoadFromSpecOwner_
 
-MySQL implementation of Workflow.LoadFromSpecOwner
+Oracle implementation of Workflow.LoadFromSpecOwner
 
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromSpecOwner.py,v 1.1 2008/11/20 16:18:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromSpecOwner.py,v 1.2 2008/11/24 21:47:12 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Workflow.LoadFromID import LoadFromID
     

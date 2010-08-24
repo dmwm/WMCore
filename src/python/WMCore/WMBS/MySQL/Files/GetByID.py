@@ -6,13 +6,13 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetByID(DBFormatter):
     sql = """select file.id, file.lfn, file.size, file.events, map.run, map.lumi
              from wmbs_file_details as file join wmbs_file_runlumi_map as map on map.file = file.id 
-             where file.id = :file"""
+             where file.id = :fileid"""
     
     def getBinds(self, files=None):
         binds = []
         files = self.dbi.makelist(files)
         for f in files:
-            binds.append({'file': f})
+            binds.append({'fileid': f})
         return binds
     
     def format(self, result):

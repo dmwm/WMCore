@@ -17,8 +17,8 @@ CREATE TABLE wmbs_subscription_location (
 """
 
 __all__ = []
-__revision__ = "$Id: MarkLocation.py,v 1.3 2008/11/21 17:08:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MarkLocation.py,v 1.4 2008/11/24 21:46:59 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -27,6 +27,9 @@ class MarkLocation(DBFormatter):
             (subscription, location, valid)
         select :subscription, id, :valid from wmbs_location 
         where se_name = :location"""
+    
+    def format(self, result):
+        return True
             
     def execute(self, subscription=None, location=None, valid = None, 
                 conn = None, transaction = False):

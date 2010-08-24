@@ -6,14 +6,17 @@ MySQL implementation of Jobs.Active
 move file into wmbs_group_job_acquired
 """
 __all__ = []
-__revision__ = "$Id: Active.py,v 1.2 2008/11/20 21:52:32 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Active.py,v 1.3 2008/11/24 21:47:05 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Active(DBFormatter):
     sql = """insert into wmbs_group_job_acquired (job, jobgroup) 
              values (select id, jobgroup from wmbs_job where id = :job)"""
+    
+    def format(self, result):
+        return True
         
     def execute(self, job=0, conn = None, transaction = False):
         binds = self.getBinds(job=job)

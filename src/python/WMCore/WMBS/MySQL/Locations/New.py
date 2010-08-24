@@ -12,6 +12,9 @@ class New(DBFormatter):
     def getBinds(self, location = None):
         return self.dbi.buildbinds(self.dbi.makelist(location), 'location')
     
+    def format(self, result):
+        return True
+    
     def execute(self, sename = None, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, self.getBinds(sename), 
                          conn = conn, transaction = transaction)

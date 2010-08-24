@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Masthead.py,v 1.1 2009/01/24 01:32:24 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Masthead.py,v 1.2 2009/01/24 01:36:31 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 from Page import TemplatedPage, exposejs, exposecss
@@ -21,7 +21,7 @@ class Masthead(TemplatedPage, Controllers):
         
     @expose
     def index(self):
-        return "this is the web tools masthead"
+        return self.masthead()
      
     @exposejs
     def masthead (self):

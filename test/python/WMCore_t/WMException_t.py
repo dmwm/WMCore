@@ -6,8 +6,8 @@ General test for WMException
 
 """
 
-__revision__ = "$Id: WMException_t.py,v 1.1 2008/09/25 13:13:59 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMException_t.py,v 1.2 2008/09/25 14:35:11 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -54,6 +54,8 @@ class WMExceptionTest(unittest.TestCase):
         exception.addInfo(**data)
         self.logger.debug("String version of exception: "+ str(exception))
         
+    def runTest(self):
+        self.testException()
             
 if __name__ == "__main__":
     unittest.main()     

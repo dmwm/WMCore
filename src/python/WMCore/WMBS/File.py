@@ -6,11 +6,12 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.19 2008/09/01 16:11:31 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: File.py,v 1.20 2008/09/18 20:42:14 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
+from WMCore.Database.Transaction import Transaction
 from sqlalchemy.exceptions import IntegrityError
 
 from sets import Set
@@ -82,24 +83,34 @@ class File(BusinessObject, WMFile):
         """
         Save a file to the database 
         """
+        trans = Transaction(dbinterface = self.dbfactory.connect())
         try:
-            self.daofactory(classname='Files.Add').execute(files=self.dict['lfn'], 
+            try:
+                self.daofactory(classname='Files.Add').execute(files=self.dict['lfn'], 
                                                        size=self.dict['size'], 
-                                                       events=self.dict['events'])
-        except IntegrityError, e:
-            self.logger.exception('File %s exists' % (self.dict['lfn']))
-        except Exception, e:
-            raise e
-        try:
-            self.daofactory(classname='Files.AddRunLumi').execute(files=self.dict['lfn'],  
+                                                       events=self.dict['events'],
+                                                       conn = trans.conn, 
+                                                       transaction = True)
+            except IntegrityError, e:
+                self.logger.exception('File %s exists' % (self.dict['lfn']))
+            except Exception, e:
+                raise e
+            try:
+                self.daofactory(classname='Files.AddRunLumi').execute(files=self.dict['lfn'],  
                                                        run=self.dict['run'], 
-                                                       lumi=self.dict['lumi'])
-        except IntegrityError, e:
-            pass #Ignore that the file exists
+                                                       lumi=self.dict['lumi'],
+                                                       conn = trans.conn, 
+                                                       transaction = True)
+            except IntegrityError, e:
+                pass #Ignore that the file exists
+            except Exception, e:
+                raise e
+            trans.commit()
         except Exception, e:
+            trans.rollback()
             raise e
         
-        self.load()
+        #self.load()
     
     def delete(self):
         """

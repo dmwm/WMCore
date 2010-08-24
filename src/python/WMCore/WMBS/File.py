@@ -6,29 +6,42 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.28 2008/11/03 10:13:15 jacksonj Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: File.py,v 1.29 2008/11/20 16:39:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.29 $"
 
-from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.Database.Transaction import Transaction
+from WMCore.DAOFactory import DAOFactory
 from sqlalchemy.exceptions import IntegrityError
 
 from sets import Set
+import threading
 
-class File(BusinessObject, WMFile):
+class File(WMFile):
     """
     A simple object representing a file in WMBS
     """
     #pylint: disable-msg=R0913
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
-                 parents=Set(), locations=Set(), logger=None, dbfactory=None):
-        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        WMFile.__init__(self, lfn=lfn, id=id, size=size, events=events, run=run,
+                 parents=None, locations=None):
+        WMFile.__init__(self, lfn=lfn, size=size, events=events, run=run,
                         lumi=lumi, parents=parents)
+
+        myThread = threading.currentThread()
+        self.logger = myThread.logger
+        self.dialect = myThread.dialect
+        self.dbi = myThread.dbi
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
+
         # Create the file object
-        self.setdefault("locations", locations)
-        self.dict = self
+        if locations == None:
+            self.setdefault("locations", Set())
+        else:
+            self.setdefault("locations", locations)
+            
+        self.setdefault("id", id)
         self['newlocations'] = Set()
 
     def exists(self):
@@ -56,7 +69,7 @@ class File(BusinessObject, WMFile):
             result.extend(parents)
             temp = []
             for parent in parents:
-                temp.extend(parent.dict["parents"])
+                temp.extend(parent["parents"])
             parents = temp
         result.sort()   # ensure SecondaryInputFiles are in order
         return [x['lfn'] for x in result]
@@ -90,28 +103,28 @@ class File(BusinessObject, WMFile):
         if parentage > 0:
             action = self.daofactory(classname='Files.GetParents')
             for lfn in action.execute(self['lfn']):
-                f = File(lfn=lfn, 
-                    logger=self.logger, 
-                    dbfactory=self.dbfactory).load(parentage=parentage-1)
+                f = File(lfn=lfn).load(parentage=parentage-1)
                 self['parents'].add(f)
-        self.dict = self
         return self
     
-    def save(self, trans = None):
+    def create(self, trans = None):
         """
-        Save a file to the database 
+        Create a file.
         """
-        newtrans = False
         if not trans:
-            trans = Transaction(dbinterface = self.dbfactory.connect())
+            trans = Transaction(self.dbi)
+            conn = trans.conn
             newtrans = True
+        else:
+            newtrans = False
+            conn = None
         try:
             try:
                 self.daofactory(classname='Files.Add').execute(
                                                        files=self['lfn'], 
                                                        size=self['size'], 
                                                        events=self['events'],
-                                                       conn = trans.conn, 
+                                                       conn = conn,
                                                        transaction = True)
             except IntegrityError, e:
                 self.logger.exception('File %s exists' % (self['lfn']))
@@ -122,7 +135,7 @@ class File(BusinessObject, WMFile):
                                                        files=self['lfn'],  
                                                        run=self['run'], 
                                                        lumi=self['lumi'],
-                                                       conn = trans.conn, 
+                                                       conn = conn,
                                                        transaction = True)
             except IntegrityError, e:
                 pass #Ignore that the file exists
@@ -139,6 +152,9 @@ class File(BusinessObject, WMFile):
             if newtrans:
                 trans.rollback()
             raise e
+
+        self["id"] = self.exists()
+        return
     
     def delete(self):
         """
@@ -150,59 +166,62 @@ class File(BusinessObject, WMFile):
         """
         Set an existing file (lfn) as a child of this file
         """
-        child = File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory)
+        child = File(lfn=lfn)
         child.load()
         if not self['id'] > 0:
             raise Exception, "Parent file doesn't have an id %s" % self['lfn']
-        if not child.dict['id'] > 0:
+        if not child['id'] > 0:
             raise Exception, "Child file doesn't have an id %s" % child['lfn']
         
         self.daofactory(classname='Files.Heritage').execute(
-                                                        child=child.dict['id'], 
+                                                        child=child['id'], 
                                                         parent=self['id'])
         
     def addParent(self, lfn):
         """
         Set an existing file (lfn) as a parent of this file
         """
-        parent = File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory)
+        parent = File(lfn=lfn)
         parent.load()
         self['parents'].add(parent)
         if not self['id'] > 0:
             raise Exception, "Child file doesn't have an id %s" % self['lfn']
-        if not parent.dict['id'] > 0:
+        if not parent['id'] > 0:
             raise Exception, "Parent file doesn't have an id %s" % \
-                        parent.dict['lfn']
+                        parent['lfn']
         
         action = self.daofactory(classname='Files.Heritage')
-        action.execute(child=self['id'], parent=parent.dict['id'])
-        self.dict = self
+        action.execute(child=self['id'], parent=parent['id'])
     
     def updateLocations(self, trans = None):
         """
         Saves any new locations, and refreshes location list from DB
         """
-        newtrans = False
         if not trans:
-            trans = Transaction(dbinterface = self.dbfactory.connect())
+            trans = Transaction(self.dbi)
+            conn = trans.conn
             newtrans = True
+        else:
+            newtrans = False
+            conn = None
+            
         try:
             # Add new locations if required
             if len(self['newlocations']) > 0:
                 self.daofactory(classname='Files.SetLocation').execute(
-                                                    file=self['lfn'],
-                                                    sename=self['newlocations'],
-                                                    conn = trans.conn,
-                                                    transaction = True)
+                    file=self['lfn'],
+                    sename=self['newlocations'],
+                    conn = conn,
+                    transaction = True)
             
-            # Update locations from the DB    
-            action = self.daofactory(classname='Files.GetLocation')
-            self['locations'] = action.execute(self['lfn'], conn = trans.conn,
-                                               transaction = True)
-            self['newlocations'].clear()
+                # Update locations from the DB    
+                action = self.daofactory(classname='Files.GetLocation')
+                self['locations'] = action.execute(self['lfn'], conn = conn,
+                                                   transaction = True)
+                self['newlocations'].clear()
         
-            if newtrans:
-                trans.commit()
+                if newtrans:
+                    trans.commit()
         except Exception, e:
             # Only roll back transaction if it was created in this scope
             if newtrans:
@@ -223,6 +242,6 @@ class File(BusinessObject, WMFile):
         else:
             self['newlocations'].update(se)
             self['locations'].update(se)
-        
+
         if immediateSave:
             self.updateLocations()

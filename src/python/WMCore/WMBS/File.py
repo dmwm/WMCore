@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.8 2008/06/20 12:34:21 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: File.py,v 1.9 2008/06/23 16:24:56 swakef Exp $"
+__version__ = "$Revision: 1.9 $"
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.BusinessObject import BusinessObject
 
@@ -45,12 +45,13 @@ class File(BusinessObject):
         result = []
         parents = self.parents
         while parents:
-            result.extend([x.lfn for x in parents])
+            result.extend(parents)
             temp = []
             for parent in parents:
                 temp.extend(parent.parents)
             parents = temp
-        return result
+        result.sort()   # ensure SecondaryInputFiles are in order
+        return [x.lfn for x in result]
     
     def load(self, parentage=0):
         """

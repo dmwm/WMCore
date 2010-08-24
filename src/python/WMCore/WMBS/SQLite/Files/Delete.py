@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 """
-_DeleteFileset_
+_DeleteFile_
 
-SQLite implementation of Fileset.Delete
+SQLite implementation of File.Delete
 
 """
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.1 2008/06/16 16:03:54 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Delete.py,v 1.3 2008/06/24 11:44:40 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.SQLite.Base import SQLiteBase
-from WMCore.WMBS.MySQL.Fileset.Delete import Delete as DeleteFilesetMySQL
+from WMCore.WMBS.MySQL.Files.Delete import Delete as DeleteFileMySQL
 
-class Delete(DeleteFilesetMySQL, SQLiteBase):
-    sql = DeleteFilesetMySQL.sql
+class Delete(DeleteFileMySQL, SQLiteBase):
+    sql = DeleteFileMySQL.sql

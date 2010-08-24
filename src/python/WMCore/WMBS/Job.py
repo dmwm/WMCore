@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.15 2009/01/11 17:53:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Job.py,v 1.16 2009/01/13 17:35:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import datetime
 
@@ -53,6 +53,7 @@ from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.WMBS.File import File
 from WMCore.WMBS.WMBSBase import WMBSBase
+from WMCore.Services.UUID import makeUUID
 
 class Job(WMBSBase, WMJob):
     """
@@ -80,12 +81,15 @@ class Job(WMBSBase, WMJob):
         """
         self.job_group = group.id
 
+        if self.name == None:
+            self.name = makeUUID()
+
         jobAction = self.daofactory(classname = "Jobs.New")
         jobAction.execute(self.job_group, self.name,
                           conn = self.getWriteDBConn(),
                           transaction = self.existingTransaction())
 
-        self.id = self.exists()
+        self.load()
         
         maskAction = self.daofactory(classname = "Masks.New")
         maskAction.execute(jobid = self.id, conn = self.getWriteDBConn(),
@@ -130,7 +134,6 @@ class Job(WMBSBase, WMJob):
 
         Does a job exist with this name.
         """
-        # if id is available check with id
         if self.id != -1:
             action = self.daofactory(classname='Jobs.ExistsByID')
             return action.execute(id = self.id, conn = self.getReadDBConn(),
@@ -140,46 +143,57 @@ class Job(WMBSBase, WMJob):
             return action.execute(name = self.name, conn = self.getReadDBConn(),
                                   transaction = self.existingTransaction())
                 
-    def load(self, method = "Jobs.LoadFromID"):
+    def load(self):
         """
         _load_
-        
-        Given the job's ID load all information from the database including any
-        files that may be associated with the job and it's mask.
-        """
-        if method == "Jobs.LoadFromID":
-            loadAction = self.daofactory(classname = "Jobs.LoadFromID")
-            metaData = loadAction.execute(self.id, conn = self.getReadDBConn(),
-                                          transaction = self.existingTransaction())
-        elif method == "Jobs.LoadFromName":
-            loadAction = self.daofactory(classname = "Jobs.LoadFromName")
-            metaData = loadAction.execute(self.name, conn = self.getReadDBConn(),
-                                          transaction = self.existingTransaction())
-        else:
-            self.logger.error("Unknown load method: %s" % method)
-            return
 
-        self.id = metaData["ID"]
-        self.name = metaData["NAME"]
-        self.last_update = metaData["LAST_UPDATE"]
-        self.job_group = metaData["JOBGROUP"]
+        Load the job's name, id and jobgroup from the database.  Either the ID
+        or the name must be set before this is called.
+        """
+        if self.id > 0:
+            loadAction = self.daofactory(classname = "Jobs.LoadFromID")
+            results = loadAction.execute(self.id, conn = self.getReadDBConn(),
+                                         transaction = self.existingTransaction())
+        else:
+            loadAction = self.daofactory(classname = "Jobs.LoadFromName")
+            results = loadAction.execute(self.name, conn = self.getReadDBConn(),
+                                         transaction = self.existingTransaction())
+
+        self.id = results["id"]
+        self.name = results["name"]
+        self.last_update = results["last_update"]
+        self.job_group = results["jobgroup"]
+
+        return
+
+    def loadData(self):
+        """
+        _loadData_
+
+        Load all information about the job, including the mask and all input
+        files.  Either the ID or the name must be specified before this is
+        called.
+        """
+        if self.id < 0 or self.name == None:
+            self.load()
 
         jobMaskAction = self.daofactory(classname = "Masks.Load")
         jobMask = jobMaskAction.execute(self.id, conn = self.getReadDBConn(),
                                         transaction = self.existingTransaction())
-        for keyName in self.mask.keys():
-            self.mask[keyName] = jobMask.get(keyName, None)
+
+        self.mask.update(jobMask)
 
         fileAction = self.daofactory(classname = "Jobs.LoadFiles")
-        fileIDs = fileAction.execute(self.id, conn = self.getReadDBConn(),
+        files = fileAction.execute(self.id, conn = self.getReadDBConn(),
                                      transaction = self.existingTransaction())
 
         self.file_set = Fileset()
-        for fileID in fileIDs:
-            newFile = File(id = fileID)
-            newFile.load()
+        for file in files:
+            newFile = File(id = file["file"])
+            newFile.loadData(parentage = 0)
             self.file_set.addFile(newFile)
 
+        self.file_set.commit()
         return
 
     def getFiles(self, type = "list"):

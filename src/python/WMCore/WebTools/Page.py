@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.4 2009/01/11 11:58:19 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Page.py,v 1.5 2009/01/13 12:44:47 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import cherrypy
 from cherrypy import log as cplog
+from cherrypy import request
 from Cheetah.Template import Template
 from simplejson import JSONEncoder
 import logging, os, types
-
+import datetime, time
 class Page(object):
     """
     __Page__
@@ -116,6 +117,43 @@ def exposejson (func):
         except:
             Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
 #        return data
+    wrapper.__doc__ = func.__doc__
+    wrapper.__name__ = func.__name__
+    wrapper.exposed = True
+    return wrapper
+
+def exposedasjson (func):
+    """
+    This will prepend the DAS header to the data and calculate the checksum of 
+    the data to set the etag correctly
+    
+    TODO: pass in the call_time value, can we get this in a smart/neat way?
+    TODO: include the request_version in the data hash - a new version should 
+    result in an update in a cache
+    TODO: "inherit" from the exposejson
+    """
+    def wrapper (self, *args, **kwds):
+        encoder = JSONEncoder()
+        data = func (self, *args, **kwds)
+        now = time.mktime(datetime.datetime.utcnow().timetuple())
+        dasdata = {self.config['application']:{
+                        'request_timestamp': now,
+                        'request_url': request.base + request.path_info + \
+                                                    request.query_string,
+                        'request_version': 123,
+                        'request_call': func.__name__,
+                        'call_time': 0,
+                        func.__name__: data
+                        }
+                   }
+        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
+        cherrypy.response.headers['Content-Type'] = "application/json"
+        try:
+            jsondata = encoder.iterencode(dasdata)
+            return jsondata
+        except:
+            Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True

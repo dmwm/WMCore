@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.3 2008/10/29 20:19:17 ewv Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.4 2008/10/30 15:45:41 ewv Exp $"
+__version__  = "$Revision: 1.4 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -27,27 +27,27 @@ class BlackWhiteListParser(object):
     (and simple wildcards), but internally filters only on the CE/SE name.
     """
 
-    def __init__(self, whiteList=None, blackList=None, logger=None):
+    def __init__(self, whiteList=None, blackList=None, logger=None, mapper=None):
         self.logger = logger
         self.kind = 'se'
-        self.mapper = None # Defined by Super class
+        self.mapper = mapper
         self.siteDBAPI = SiteDBJSON()
         if type(whiteList) == type("string"):
             whiteList = whiteList.split(',')
         elif type(whiteList) == type([]):
             pass
         else:
-            raise TypeError
+            whiteList = []
 
         if type(blackList) == type("string"):
             blackList = blackList.split(',')
         elif type(blackList) == type([]):
             pass
         else:
-            raise TypeError
+            blackList = []
 
-        self.blacklist = sets.Set(self.expandList(whiteList))
-        self.whitelist = sets.Set(self.expandList(blackList))
+        self.blacklist = sets.Set(self.expandList(blackList))
+        self.whitelist = sets.Set(self.expandList(whiteList))
 
 
     def expandList(self, userList):
@@ -61,8 +61,7 @@ class BlackWhiteListParser(object):
             item = item.strip()
             try:
                 expandedItem = self.mapper(item)
-            except Exception:
-                # FIXME: WMCore SiteDB re-throws particular exception
+            except (RuntimeError, SyntaxError):
                 expandedItem = None
                 hadErrors = True
 
@@ -73,8 +72,8 @@ class BlackWhiteListParser(object):
 
         if hadErrors:
             self.logger.message("Problem connecting to SiteDB. " \
-                                + "%s " % self.kind.upper() \
-                                + "white/blacklist may be incomplete.")
+                                #+ "%s " % self.kind.upper() \
+                                + "White/blacklist may be incomplete.")
             self.logger.message("List is %s" % expandedList)
 
         return expandedList
@@ -224,9 +223,8 @@ class SEBlackWhiteListParser(BlackWhiteListParser):
     """
 
     def __init__(self, whiteList=None, blackList=None,  logger=None):
-        super(SEBlackWhiteListParser, self).__init__(whiteList, blackList, logger)
-        self.kind = 'se'
-        self.mapper = self.siteDBAPI.cmsNametoSE
+        self.siteDBAPI = SiteDBJSON()
+        super(SEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoSE)
 
 
 
@@ -237,6 +235,5 @@ class CEBlackWhiteListParser(BlackWhiteListParser):
     """
 
     def __init__(self, whiteList=None, blackList=None,  logger=None):
-        super(CEBlackWhiteListParser, self).__init__(whiteList, blackList, logger)
-        self.kind = 'ce'
-        self.mapper = self.siteDBAPI.cmsNametoCE
+        self.siteDBAPI = SiteDBJSON()
+        super(CEBlackWhiteListParser, self).__init__(whiteList, blackList, logger, self.siteDBAPI.cmsNametoCE)

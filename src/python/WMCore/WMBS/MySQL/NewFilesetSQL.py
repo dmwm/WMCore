@@ -10,7 +10,6 @@ class NewFileset(MySQLBase):
         return self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset')
     
     def execute(self, fileset = None, conn = None, transaction = False):
-        self.logger.debug('NewFileset binds: %s' % self.getBinds(fileset))
         result = self.dbi.processData(self.sql, self.getBinds(fileset), 
                          conn = conn, transaction = transaction)
         return self.format(result)

@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.5 2009/02/09 12:35:52 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.6 2009/02/09 20:58:02 jacksonj Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import threading
@@ -143,6 +143,8 @@ class WorkerThreadsTest(unittest.TestCase):
         manager.addWorker(DummyWorker1(), 1)
         time.sleep(3)
         assert WorkerThreadsTest._setupCalled == True
+        # Ensure the algo wasn't called whilst paused
+        assert WorkerThreadsTest._algoCalled == False
         
         print('resume workers')
         # Run the workers, pause, and check algo method gets called

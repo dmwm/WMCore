@@ -4,7 +4,7 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.4 2008/09/29 15:19:52 metson Exp $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.5 2008/10/01 15:42:01 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.Database.DBCreator import DBCreator
@@ -147,25 +147,24 @@ class CreateWMBSBase(DBCreator):
 
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
-             id           INT(11)    NOT NULL AUTO_INCREMENT,
+             id           INTEGER      PRIMARY KEY AUTOINCREMENT,
              subscription INT(11)    NOT NULL,
+             uid          VARCHAR(255),
              output       INT(11),
              last_update  TIMESTAMP NOT NULL,
-             PRIMARY KEY (id),
+             UNIQUE(uid),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
-             FOREIGN KEY (output) REFERENCES wmbs_fileset(id),
+             FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
                     ON DELETE CASCADE)"""
 
         self.create["14wmbs_job"] = \
           """CREATE TABLE wmbs_job (
              id          INTEGER   PRIMARY KEY AUTOINCREMENT,
              jobgroup    INT(11)   NOT NULL,
-             name        VARCHAR(255),             
-             start       INT(11),
-             completed   INT(11),
-             retries     INT(11),
+             name        VARCHAR(255),
              last_update TIMESTAMP NOT NULL,
+             UNIQUE(name),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE)"""
 
@@ -178,6 +177,46 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY (file) REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE)"""
 
+        self.create["16wmbs_group_job_acquired"] = \
+          """CREATE TABLE wmbs_group_job_acquired (
+              jobgroup INT(11) NOT NULL,
+              job         INT(11)     NOT NULL,
+              FOREIGN KEY (jobgroup)     REFERENCES wmbs_jobgroup(id)
+                ON DELETE CASCADE,
+              FOREIGN KEY (job)       REFERENCES wmbs_job(id)
+                ON DELETE CASCADE)"""
+
+        self.create["17wmbs_group_job_failed"] = \
+          """CREATE TABLE wmbs_group_job_failed (
+              jobgroup INT(11) NOT NULL,
+              job         INT(11)     NOT NULL,
+              FOREIGN KEY (jobgroup)     REFERENCES wmbs_jobgroup(id)
+                ON DELETE CASCADE,
+              FOREIGN KEY (job)       REFERENCES wmbs_job(id)
+                ON DELETE CASCADE)"""
+
+        self.create["18wmbs_group_job_complete"] = \
+          """CREATE TABLE wmbs_group_job_complete (
+              jobgroup INT(11) NOT NULL,
+              job         INT(11)     NOT NULL,
+              FOREIGN KEY (jobgroup)     REFERENCES wmbs_jobgroup(id)
+                ON DELETE CASCADE,
+              FOREIGN KEY (job)       REFERENCES wmbs_job(id)
+                ON DELETE CASCADE)"""
+             
+        self.create["19wmbs_job_mask"] = \
+          """CREATE TABLE wmbs_job_mask (
+              job           INT(11)     NOT NULL,
+              FirstEvent    INT(11),
+              LastEvent     INT(11),
+              FirstLumi     INT(11),
+              LastLumi      INT(11),
+              FirstRun      INT(11),
+              LastRun       INT(11),
+              inclusivemask BOOLEAN DEFAULT TRUE,
+              FOREIGN KEY (job)       REFERENCES wmbs_job(id)
+                ON DELETE CASCADE)"""
+             
     def execute(self, conn=None, transaction=None):
         """
         _execute_

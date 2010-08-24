@@ -7,7 +7,7 @@ Inherit from CreateWMBSBase, and add MySQL specific substituions (e.g. add
 INNODB) and specific creaetes (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.15 2008/09/29 15:18:43 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.16 2008/10/01 15:42:15 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -54,6 +54,7 @@ class CreateWMBS(CreateWMBSBase):
           """CREATE TABLE wmbs_jobgroup (
              id           INT(11)    NOT NULL AUTO_INCREMENT,
              subscription INT(11)    NOT NULL,
+             uid          VARCHAR(255),    
              output       INT(11),
              last_update  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
              ON UPDATE CURRENT_TIMESTAMP,
@@ -67,12 +68,10 @@ class CreateWMBS(CreateWMBSBase):
           """CREATE TABLE wmbs_job (
              id          INT(11)   NOT NULL AUTO_INCREMENT,
              jobgroup    INT(11)   NOT NULL,
-             name        VARCHAR(255),             
-             start       INT(11),
-             completed   INT(11),
-             retries     INT(11),
+             name        VARCHAR(255),
              last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                  ON UPDATE CURRENT_TIMESTAMP,
+             UNIQUE(name),
              PRIMARY KEY (id),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE)"""
@@ -94,5 +93,6 @@ class CreateWMBS(CreateWMBSBase):
         for i in self.create.keys():
             self.create[i] = self.create[i] + " ENGINE=InnoDB"
             self.create[i] = self.create[i].replace('AUTOINCREMENT', 'AUTO_INCREMENT')
+            self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
         CreateWMBSBase.execute(self)    
         

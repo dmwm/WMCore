@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-# Author:  Valentin Kuznetsov, 2008
 """
 REST service implementation
 """
-from services.rest.Resource import Resource
+
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id:"
+__version__ = "$Revision:"
+
+from WMCore.HTTPFrontEnd.REST.services.rest.Resource import Resource
 
 class RestService(Resource):
     """REST service base class"""

@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-# Author:  Valentin Kuznetsov, 2008
 """
 REST service Test Model implementation
 """
+
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id:"
+__version__ = "$Revision:"
+
 
 #
 # An example of underlying model, 

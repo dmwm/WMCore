@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-# Author:  Valentin Kuznetsov, 2008
 """
 Example of data formatter used by REST service
 """
+
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id:"
+__version__ = "$Revision:"
+
 
 import traceback
 import simplejson
@@ -12,8 +16,8 @@ import types
 
 # Cheetah template modules
 #from   Cheetah.Template import Template
-from   Templates   import templateTop
-from   Templates   import templateBottom
+from   WMCore.HTTPFrontEnd.REST.Templates   import templateTop
+from   WMCore.HTTPFrontEnd.REST.Templates   import templateBottom
 
 def tophtml(url, onload=""):
     """Create header of HTML response"""

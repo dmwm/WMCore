@@ -1,21 +1,24 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-# Author:  Valentin Kuznetsov, 2008
 """
 RestServer implemention within CMS WEBTOOLS.
 """
+
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id:"
+__version__ = "$Revision:"
 
 import os
 import time
 import cherrypy
 from cherrypy import expose
-from services.rest.RestService import RestService
+from WMCore.HTTPFrontEnd.REST.services.rest.RestService import RestService
 
-from utils.Utils import setsqlalchemylogger
-from utils.Utils import setcherrypylogger
+from WMCore.HTTPFrontEnd.REST.utils.Utils import setsqlalchemylogger
+from WMCore.HTTPFrontEnd.REST.utils.Utils import setcherrypylogger
 # test model and formatter
-from services.test.TestModel import TestModel
-from services.test.TestFormatter import TestFormatter
+from WMCore.HTTPFrontEnd.REST.services.test.TestModel import TestModel
+from WMCore.HTTPFrontEnd.REST.services.test.TestFormatter import TestFormatter
 
 # WEBTOOLS modules
 from Framework import Controller
@@ -37,7 +40,7 @@ class Service(object):
         """Service version"""
         return self._ver
 
-class RestServer(Controller):
+class RestServer(Controller, object):
     """REST server implementation within WEBTOOLS framework"""
     def __init__(self, context=None, verbose=0):
         self.name = "RestServer"

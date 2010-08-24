@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-# Author:  Valentin Kuznetsov, 2008
 #
 # This work based on example from 
 # CherryPy Essentials book, by Sylvain Hellegouarch
@@ -28,6 +27,10 @@ OPTIONS         YES             Requests the server to return details about
                                 towards a resource.
 -----------------------------------------------------------------------------
 """
+
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id:"
+__version__ = "$Revision:"
 
 import cherrypy
 import types

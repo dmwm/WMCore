@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-# Author:  Valentin Kuznetsov, 2006
 """
 Common utilities module used by REST services
 """
 
+__author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id:"
+__version__ = "$Revision:"
+
 # import system modules
-import logging, logging.handlers
+import logging
+import logging.handlers
 
 def setsqlalchemylogger(hdlr, level):
     """Set up logging for SQLAlchemy"""

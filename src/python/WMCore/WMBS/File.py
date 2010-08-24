@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.31 2008/11/26 19:42:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: File.py,v 1.32 2008/12/12 19:54:13 afaq Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.Database.Transaction import Transaction
@@ -22,10 +22,10 @@ class File(WMFile):
     A simple object representing a file in WMBS
     """
     #pylint: disable-msg=R0913
-    def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
+    def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0, cksum=0,
                  parents=None, locations=None):
         WMFile.__init__(self, lfn=lfn, size=size, events=events, run=run,
-                        lumi=lumi, parents=parents)
+                        lumi=lumi, cksum=cksum, parents=parents)
 
         myThread = threading.currentThread()
         self.logger = myThread.logger
@@ -56,7 +56,7 @@ class File(WMFile):
         Return the files attributes as a tuple
         """
         return self['lfn'], self['id'], self['size'], self['events'], \
-               self['run'], self['lumi'], list(self['locations']), \
+               self['run'], self['lumi'], self['cksum'], list(self['locations']), \
                list(self['parents'])
                                     
     def getParentLFNs(self):
@@ -93,6 +93,7 @@ class File(WMFile):
         self['events'] = result[3]
         self['run'] = result[4]
         self['lumi'] = result[5]
+	self['cksum'] = result[6]
         
         action = self.daofactory(classname='Files.GetLocation')
         self['locations'] = action.execute(self['lfn']) 
@@ -127,7 +128,7 @@ class File(WMFile):
 
         addAction = self.daofactory(classname="Files.Add")
         addAction.execute(files = self["lfn"], size = self["size"],
-                          events = self["events"], conn = conn,
+                          events = self["events"], cksum= self["cksum"], conn = conn,
                           transaction = True)
 
         lumiAction = self.daofactory(classname="Files.AddRunLumi")
@@ -168,6 +169,7 @@ class File(WMFile):
         """
         Set an existing file (lfn) as a parent of this file
         """
+
         parent = File(lfn=lfn)
         parent.load()
         self['parents'].add(parent)
@@ -178,6 +180,7 @@ class File(WMFile):
                         parent['lfn']
         
         action = self.daofactory(classname='Files.Heritage')
+
         action.execute(child=self['id'], parent=parent['id'])
     
     def updateLocations(self, trans = None):

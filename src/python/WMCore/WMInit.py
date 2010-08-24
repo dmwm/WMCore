@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.3 2008/11/19 14:55:20 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMInit.py,v 1.4 2008/12/12 19:54:12 afaq Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -109,6 +109,7 @@ class WMInit:
         # filter out unique modules
 
         myThread.transaction.begin()
+
         for factoryName in modules:
             # need to create these tables for testing.
             # notice the default structure: <dialect>/Create

@@ -6,8 +6,8 @@ _Run_
 container representing a run, and its constituent lumi sections
 
 """
-__revision__ = "$Id: Run.py,v 1.1 2008/09/21 12:06:45 evansde Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: Run.py,v 1.2 2008/12/12 19:54:13 afaq Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -75,6 +75,7 @@ class Run(WMObject, list):
         return not self.__eq__(rhs)
 
     def __hash__(self):
+
         value = self.run.__hash__()
         self.sort()
         for lumi in self:

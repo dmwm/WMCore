@@ -12,7 +12,7 @@ class MySQLInterface(DBInterface):
         if binds and isinstance(self.engine.dialect, MySQLDialect):
             for k, v in binds.items():
                 self.logger.debug("substituting bind %s, %s" % (k, v))
-                if type(v) == type('string'):
+                if type(v) == str or type(v) == unicode:
                     newsql = newsql.replace(':%s' % k, "'%s'" % v)
                 else:
                     newsql = newsql.replace(':%s' % k, '%s' % v)

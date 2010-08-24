@@ -183,12 +183,12 @@ class FileTest(WMBSBase):
         if self.testtimes != 0:
             times=self.testtimes
 
-        list = self.genLocations(number=times)
+        list = self.genLocation(number=1, name='SetLocation')
 
-        file = self.genFiles(number=1)[0]        
+        file = self.genFiles(number=times)        
 
         for i in range(times):
-            time = self.perfTest(dao=self.dao, action='Files.SetLocation', file=file["lfn"], sename=list[0]) 
+            time = self.perfTest(dao=self.dao, action='Files.SetLocation', file=file[i]["lfn"], sename=list[0]) 
             self.totaltime = self.totaltime + time            
             assert self.totaltime <= self.totalthreshold, 'SetLocation DAO \
            class - Operation too slow ( '+str(i+1)+' times, total elapsed \

@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.34 2009/01/13 16:49:46 sryu Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Fileset.py,v 1.35 2009/01/13 22:06:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
 
 from sets import Set
 
@@ -82,9 +82,8 @@ class Fileset(WMBSBase, WMFileset):
         """
         Add the new fileset to WMBS, and commit the files
         """
-        eflag = self.exists()
-        if eflag != False:
-            self["id"] = eflag
+        if self.exists() != False:
+            self.load()
             return
         
         createAction = self.daofactory(classname = "Fileset.New")
@@ -93,7 +92,6 @@ class Fileset(WMBSBase, WMFileset):
         self.commit()
         self.load()
         self.commitIfNew()
-        self["id"] = self.exists()
         
         return
     
@@ -125,7 +123,7 @@ class Fileset(WMBSBase, WMFileset):
                                     conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())
 
-        self.id = result["id"]
+        self.id = int(result["id"])
         self.name = result["name"]
         self.open = result["open"]
         self.lastUpdate = result["last_update"]
@@ -172,6 +170,7 @@ class Fileset(WMBSBase, WMFileset):
             if not f.exists():
                 f.create()
             lfns.append(f["lfn"])
+            self.files.add(f)
 
         #Add Files to DB only if there are any files on newfiles            
         if len(lfns) > 0:
@@ -179,6 +178,5 @@ class Fileset(WMBSBase, WMFileset):
             addAction.execute(file = lfns, fileset = self.name,
                               conn = self.getWriteDBConn(),
                               transaction = self.existingTransaction())
-        self.loadData()
         self.commitIfNew()
         return

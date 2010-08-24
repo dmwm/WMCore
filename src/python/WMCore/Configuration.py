@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable-msg=C0321,C0103
 """
 _Configuration_
 
@@ -6,6 +7,9 @@ Module dealing with Configuration file in python format
 
 
 """
+
+__revision__ = "$Id: Configuration.py,v 1.4 2009/02/04 15:26:41 evansde Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import imp
@@ -54,16 +58,18 @@ class ConfigSection(object):
         self._internal_settings = set()
         self._internal_docstrings = {}
         self._internal_children = set()
+        self._internal_parent_ref = None
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
             # skip test for internal settinsg
             object.__setattr__(self, name, value)
             return
-        if isinstance(value, self.__class__):
+        if isinstance(value, ConfigSection):
             # child ConfigSection
             self._internal_children.add(name)
             self._internal_settings.add(name)
+            value._internal_parent_ref = self
             object.__setattr__(self, name, value)
             return
 

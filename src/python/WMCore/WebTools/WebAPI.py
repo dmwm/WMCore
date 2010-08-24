@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson, exposedasjson 
+from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson, exposedasjson, exposedasxml
 from WMCore.Lexicon import sitetier, countrycode
 from cherrypy import expose, HTTPRedirect
 import sys
@@ -60,16 +60,39 @@ class WebAPI(DatabasePage):
         else:
             raise HTTPRedirect("doc")
     
+    def dasOutput(self, method, kwargs):
+        """
+        Make the API call and build a DAS compatible dictionary.
+        """
+        dict = {}
+        try:
+            dict['request_version'] = self.methods[method]['version']
+        except:
+            dict['request_version'] = 0
+        dict['request_call'] = method
+        dict[method] = self.runMethod(method, kwargs)
+        return dict
+    
     @exposedasjson
     def das(self, *args, **kwargs):
         """
         The das compatible json output. args is assumed to be length 1 and 
         contain the method name, kwargs are passed to the method
         """
-        if len(args) > 0:
-            dict = self.runMethod(args[0], kwargs)
-            return dict
-        else:
+        try:
+            return self.dasOutput(args[0], kwargs)
+        except:
+            raise HTTPRedirect("doc")
+    
+    @exposedasxml
+    def dasxml(self, *args, **kwargs):
+        """
+        The das compatible xml output. args is assumed to be length 1 and 
+        contain the method name, kwargs are passed to the method
+        """
+        try:
+            return self.dasOutput(args[0], kwargs)
+        except:
             raise HTTPRedirect("doc")
     
     @exposexml

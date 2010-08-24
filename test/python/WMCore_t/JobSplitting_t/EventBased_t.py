@@ -1,218 +1,292 @@
 #!/usr/bin/env python
 """
-_EventBased_
+_EventBased_t_
 
-Event based splitting test
-
+Event based splitting test.
 """
-__revision__ = "$Id: EventBased_t.py,v 1.3 2008/10/29 13:21:49 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+
+__revision__ = "$Id: EventBased_t.py,v 1.4 2009/02/19 19:51:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
-import logging
-import os
-import commands
-import random
-import datetime
-import math
-import hotshot, hotshot.stats
-#logging.getLogger().setLevel(logging.DEBUG)
-#logging.getLogger().addHandler(logging.StreamHandler())
 
-from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-
-from WMCore.DataStructs.Job import Job
-from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.Job import Job
+from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 
-
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.Services.UUID import makeUUID
 
 class EventBasedTest(unittest.TestCase):
     """
     _EventBasedTest_
 
-    Test event based splitting
-
+    Test event based job splitting.
     """
+    def runTest(self):
+        """
+        _runTest_
 
+        Run all the unit tests.
+        """
+        unittest.main()
+    
     def setUp(self):
-        """set up tests"""
-        self.statsFile = "/tmp/WMCore.JobSplitting.EventBased_t.stats"
-        self.fileset1 = Fileset(name='EventBasedFiles1')
-        for i in range(0, 10):
-            self.fileset1.addFile(
-                File("/store/MultipleFileSplit%s.root" % i, # lfn
-                     1000,   # size
-                     100,   # events
-                     10 + i, # run
-                     12312   # lumi
-                     )
-                )
+        """
+        _setUp_
 
-        self.fileset2 = Fileset(name='EventBasedFiles2')
-        self.fileset2.addFile(
-            File("/store/SingleFileSplit.root" , # lfn
-                 1000,   # size
-                 100,   # events
-                 10, # run
-                 12312   # lumi
-                 )
-            )
+        Create two subscriptions: One that contains a single file and one that
+        contains multiple files.
+        """
+        self.multipleFileFileset = Fileset(name = "TestFileset1")
+        for i in range(10):
+            newFile = File(makeUUID(), size = 1000, events = 100)
+            self.multipleFileFileset.addFile(newFile)
 
-        work = Workflow()
-        self.subscription1 = Subscription(
-            fileset = self.fileset1,
-            workflow = work,
-            split_algo = 'EventBased',
-            type = "Processing")
-        self.subscription2 = Subscription(
-            fileset = self.fileset2,
-            workflow = work,
-            split_algo = 'EventBased',
-            type = "Processing")
+        self.singleFileFileset = Fileset(name = "TestFileset2")
+        newFile = File("/some/file/name", size = 1000, events = 100)
+        self.singleFileFileset.addFile(newFile)
 
-
+        testWorkflow = Workflow()
+        self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
+                                                     workflow = testWorkflow,
+                                                     split_algo = "EventBased",
+                                                     type = "Processing")
+        self.singleFileSubscription = Subscription(fileset = self.singleFileFileset,
+                                                   workflow = testWorkflow,
+                                                   split_algo = "EventBased",
+                                                   type = "Processing")
+        return
 
     def tearDown(self):
-        """cleanup"""
-        if os.path.exists(self.statsFile):
-            os.remove(self.statsFile)
-
-
-
-
-    def testA(self):
         """
-        pedantic checks of algorithm with single file
+        _tearDown_
+
+        Nothing to do...
         """
-        #prof = hotshot.Profile(self.statsFile)
-        #prof.start()
+        pass
+
+    def testExactEvents(self):
+        """
+        _testExactEvents_
+
+        Test event based job splitting when the number of events per job is
+        exactly the same as the number of events in the input file.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.singleFileSubscription)
+
+        jobGroups = jobFactory(events_per_job = 100)
+
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 1, \
+               "ERROR: JobFactory didn't create a single job."
+
+        job = jobGroups[0].jobs.pop()
+
+        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+               "ERROR: Job contains unknown files."
+        
+        assert job.mask.getMaxEvents() == 100, \
+               "ERROR: Job's max events is incorrect."
+        
+        assert job.mask["FirstEvent"] == 0, \
+               "ERROR: Job's first event is incorrect."
+
+        return
+
+    def testMoreEvents(self):
+        """
+        _testMoreEvents_
+
+        Test event based job splitting when the number of events per job is
+        greater than the number of events in the input file.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.singleFileSubscription)
+        
+        jobGroups = jobFactory(events_per_job = 1000)
+        
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 1, \
+               "ERROR: JobFactory didn't create a single job."
+
+        job = jobGroups[0].jobs.pop()
+
+        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+               "ERROR: Job contains unknown files."
+        
+        assert job.mask.getMaxEvents() == 1000, \
+               "ERROR: Job's max events is incorrect."
+        
+        assert job.mask["FirstEvent"] == 0, \
+               "ERROR: Job's first event is incorrect."
+
+        return
+
+    def test50EventSplit(self):
+        """
+        _test50EventSplit_
+
+        Test event based job splitting when the number of events per job is
+        50, this should result in two jobs.        
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.singleFileSubscription)
+        
+        jobGroups = jobFactory(events_per_job = 50)
+        
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 2, \
+               "ERROR: JobFactory didn't create two jobs."
+
+        for job in jobGroups[0].jobs:
+            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+                   "ERROR: Job contains unknown files."
+        
+            assert job.mask.getMaxEvents() == 50, \
+                   "ERROR: Job's max events is incorrect."
+        
+            assert job.mask["FirstEvent"] in [0, 50], \
+                   "ERROR: Job's first event is incorrect."
+
+        return
+
+    def test99EventSplit(self):
+        """
+        _test99EventSplit_
+
+        Test event based job splitting when the number of events per job is
+        99, this should result in two jobs.        
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.singleFileSubscription)
+        
+        jobGroups = jobFactory(events_per_job = 99)
+        
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 2, \
+               "ERROR: JobFactory didn't create two jobs."
+
+        for job in jobGroups[0].jobs:
+            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+                   "ERROR: Job contains unknown files."
+        
+            assert job.mask.getMaxEvents() == 99, \
+                   "ERROR: Job's max events is incorrect."
+        
+            assert job.mask["FirstEvent"] in [0, 99], \
+                   "ERROR: Job's first event is incorrect."
+
+        return
+
+    def test100EventMultipleFileSplit(self):
+        """
+        _test100EventMultipleFileSplit_
+
+        Test job splitting into 100 event jobs when the input subscription has
+        more than one file available.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+
+        jobGroups = jobFactory(events_per_job = 100)
+
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 10, \
+               "ERROR: JobFactory didn't create 10 jobs."
+        
+        for job in jobGroups[0].jobs:
+            assert len(job.getFiles(type = "lfn")) == 1, \
+                   "ERROR: Job contains too many files."
+        
+            assert job.mask.getMaxEvents() == 100, \
+                   "ERROR: Job's max events is incorrect."
+        
+            assert job.mask["FirstEvent"] == 0, \
+                   "ERROR: Job's first event is incorrect."
+
+        return
+    
+    def test50EventMultipleFileSplit(self):
+        """
+        _test50EventMultipleFileSplit_
+
+        Test job splitting into 50 event jobs when the input subscription has
+        more than one file available.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)        
 
         splitter = SplitterFactory()
-        jobfactory = splitter(self.subscription2)
+        jobFactory = splitter(self.multipleFileSubscription)
 
-        #  //
-        # // test 1: split into single job with exact events
-        #//
-        jobs = jobfactory(events_per_job = 100)
-        self.assertEqual(len(jobs.jobs), 1)
-        job = jobs.jobs.pop()
-        self.assertEqual(job.getFiles(type='lfn'),['/store/SingleFileSplit.root'])
-        self.assertEqual(job.mask.getMaxEvents(), 100)
-        self.assertEqual(job.mask['FirstEvent'], 0)
+        jobGroups = jobFactory(events_per_job = 50)
 
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
 
-        #  //
-        # //  test 2: split into single job with >> events in file
-        #//
-        jobs = jobfactory(events_per_job = 1000)
-        self.assertEqual(len(jobs.jobs), 1)
-        job = jobs.jobs.pop()
-        self.assertEqual(job.getFiles(type='lfn'),['/store/SingleFileSplit.root'])
-        self.assertEqual(job.mask.getMaxEvents(), 1000)
-        self.assertEqual(job.mask['FirstEvent'], 0)
+        assert len(jobGroups[0].jobs) == 20, \
+               "ERROR: JobFactory didn't create 20 jobs."
+        
+        for job in jobGroups[0].jobs:
+            assert len(job.getFiles(type = "lfn")) == 1, \
+                   "ERROR: Job contains too many files."
+        
+            assert job.mask.getMaxEvents() == 50, \
+                   "ERROR: Job's max events is incorrect."
+        
+            assert job.mask["FirstEvent"] in [0, 50], \
+                   "ERROR: Job's first event is incorrect."
 
+        return
 
-        #  //
-        # // test3: two job split
-        #//
+    def test150EventMultipleFileSplit(self):
+        """
+        _test150EventMultipleFileSplit_
 
-        jobs = jobfactory(events_per_job = 50)
-        self.assertEqual(len(jobs.jobs), 2)
-        for job in jobs.jobs:
-            # 1 file per job, should be same LFN
-            self.assertEqual(len(job.file_set), 1)
-            self.assertEqual(job.getFiles(type='lfn'), ['/store/SingleFileSplit.root'])
-            self.assertEqual(job.mask.getMaxEvents(), 50)
-            self.failUnless(job.mask['FirstEvent'] in [0, 50])
-
-        #  //
-        # // test 4
-        #//
-        jobs = jobfactory(events_per_job = 99)
-        self.assertEqual(len(jobs.jobs), 2)
-        for job in jobs.jobs:
-            # 1 file per job, should be same LFN
-            self.assertEqual(len(job.file_set), 1)
-            self.assertEqual(job.getFiles(type='lfn'), ['/store/SingleFileSplit.root'])
-            self.assertEqual(job.mask.getMaxEvents(), 99)
-            self.failUnless(job.mask['FirstEvent'] in [0, 99])
-
-
-
-
-
-
-        #prof.stop()
-        #stats = hotshot.stats.load(self.statsFile)
-        #stats.strip_dirs()
-        #stats.sort_stats('time', 'calls')
-        #stats.print_stats(10)
-
-
-
-    def testB(self):
-        """multi file tests"""
+        Test job splitting into 150 event jobs when the input subscription has
+        more than one file available.  This test verifies that the job splitting
+        code will put at most one file in a job.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)        
 
         splitter = SplitterFactory()
-        jobfactory = splitter(self.subscription1)
+        jobFactory = splitter(self.multipleFileSubscription)
 
-        #  //
-        # // test 1: 1 job per file
-        #//
-        jobs = jobfactory(events_per_job = 100)
-        self.assertEqual(len(jobs.jobs), 10)
-        for job in jobs.jobs:
-            self.failUnless(len(job.getFiles(type='lfn')) == 1)
-            self.failUnless(
-                job.mask.getMaxEvents() == 100
-                )
-            self.failUnless(
-                job.mask['FirstEvent'] == 0
-                )
+        jobGroups = jobFactory(events_per_job = 150)
 
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
 
-        #  //
-        # // test 2: 2 jobs per file
-        #//
-        jobs = jobfactory(events_per_job = 50)
-        self.assertEqual(len(jobs.jobs), 20)
-        for job in jobs.jobs:
-            self.failUnless(len(job.getFiles(type='lfn')) == 1)
-            self.failUnless(
-                job.mask.getMaxEvents() == 50
-                )
-            self.failUnless(
-                job.mask['FirstEvent'] in (0, 50)
-                )
-        #  //
-        # // test 3:   jobs crossing file boundaries
-        #//
-        jobs = jobfactory(events_per_job = 125)
-        self.assertEqual(len(jobs.jobs), 8)
+        assert len(jobGroups[0].jobs) == 10, \
+               "ERROR: JobFactory didn't create 10 jobs."
+        
+        for job in jobGroups[0].jobs:
+            assert len(job.getFiles(type = "lfn")) == 1, \
+                   "ERROR: Job contains too many files."
+        
+            assert job.mask.getMaxEvents() == 150, \
+                   "ERROR: Job's max events is incorrect."
+        
+            assert job.mask["FirstEvent"] == 0, \
+                   "ERROR: Job's first event is incorrect."
 
-        firstEvents = []
-        for job in jobs.jobs:
-            self.failUnless(len(job.getFiles(type='lfn')) in (1,2))
-            self.failUnless(
-                job.mask.getMaxEvents() == 125
-                )
-            firstEvents.append(job.mask['FirstEvent'])
-
-        self.failUnless(firstEvents.count(0) == 2)
-        self.failUnless(firstEvents.count(25) == 2)
-        self.failUnless(firstEvents.count(50) == 2)
-        self.failUnless(firstEvents.count(75) == 2)
-
-
-
-
-
-
+        return    
 
 if __name__ == '__main__':
-
     unittest.main()

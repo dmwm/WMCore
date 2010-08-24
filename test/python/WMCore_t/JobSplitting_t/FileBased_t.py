@@ -1,212 +1,185 @@
 #!/usr/bin/env python
 """
-_FileBased_
+_FileBased_t_
 
-Unit tests for job splitting Factories. Should be one test per algorithm, 
-and one per job type.
-
+File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.4 2008/11/03 11:55:42 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
-from sets import Set
-import unittest, logging, os, commands, random, datetime, math
-from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+__revision__ = "$Id: FileBased_t.py,v 1.5 2009/02/19 19:51:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
-from WMCore.DataStructs.Job import Job
-from WMCore.DataStructs.Subscription import Subscription
+from sets import Set
+import unittest
+
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.Job import Job
+from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 
-from WMCore.WMBS.Job import Job as WMBSJob
-from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
-from WMCore.WMBS.File import File as WMBSFile
-from WMCore.WMBS.Fileset import Fileset as WMBSFileset
-from WMCore.WMBS.Workflow import Workflow as WMBSWorkflow
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.Services.UUID import makeUUID
 
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.DAOFactory import DAOFactory
-
-class FileBasedGenericObjectTest(unittest.TestCase):
+class FileBasedTest(unittest.TestCase):
     """
-    A test of the job splitting algorithm "FileBased" using generic WMObjects
-    """    
-    def setUp(self):
-        logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=__file__.replace('.py','.log'),
-                    filemode='w')
-        self.testlogger = logging.getLogger('wmbs_FileBasedGenericObjectTest')
-        self.fileset = Fileset(name='MyCoolFiles', logger = self.testlogger)
-        
-        for i in range(0, 993):
-            file = File(lfn="/store/data/Electrons/1234/5678/k123ljhkj2%s.root" % i, 
-                              size=1000, events=2000, lumi=10 + i, run=12312)
-            self.fileset.addFile(file)
-        self.fileset.commit()
-        work = Workflow()
-        self.subscription = Subscription(fileset = self.fileset, 
-                workflow = work, split_algo = 'FileBased', type = "Processing")
-        
-        self.package = 'WMCore.DataStructs'
-        
-        assert len(self.subscription.getFileset().getFiles(type='set')) == \
-                len(self.subscription.availableFiles())
+    _FileBasedTest_
+
+    Test file based job splitting.
+    """
+    def runTest(self):
+        """
+        _runTest_
+
+        Run all the unit tests.
+        """
+        unittest.main()
     
+    def setUp(self):
+        """
+        _setUp_
+
+        Create two subscriptions: One that contains a single file and one that
+        contains multiple files.
+        """
+        self.multipleFileFileset = Fileset(name = "TestFileset1")
+        for i in range(10):
+            newFile = File(makeUUID(), size = 1000, events = 100)
+            self.multipleFileFileset.addFile(newFile)
+
+        self.singleFileFileset = Fileset(name = "TestFileset2")
+        newFile = File("/some/file/name", size = 1000, events = 100)
+        self.singleFileFileset.addFile(newFile)
+
+        testWorkflow = Workflow()
+        self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
+                                                     workflow = testWorkflow,
+                                                     split_algo = "FileBased",
+                                                     type = "Processing")
+        self.singleFileSubscription = Subscription(fileset = self.singleFileFileset,
+                                                   workflow = testWorkflow,
+                                                   split_algo = "FileBased",
+                                                   type = "Processing")
+        return
+
     def tearDown(self):
+        """
+        _tearDown_
+
+        Nothing to do...
+        """
         pass
-    
-    def testMakeJobs(self):
-        files_size = len(self.fileset.getFiles(type='set'))
-        print "Number of files: %i" % files_size
-        assert len(self.subscription.getFileset().getFiles(type='set')) == \
-                len(self.subscription.availableFiles())
-        assert len(self.subscription.availableFiles()) == files_size
-        
-        splitsize = 89
+
+    def testExactFiles(self):
+        """
+        _testExactFiles_
+
+        Test file based job splitting when the number of files per job is
+        exactly the same as the number of files in the input fileset.
+        """
         splitter = SplitterFactory()
-        
-        jobfactory = splitter(subscription=self.subscription, package=self.package)
-        jobgroup = jobfactory(files_per_job=splitsize)
+        jobFactory = splitter(self.singleFileSubscription)
 
-        assert len(self.subscription.getFileset().getFiles(type='set')) == files_size
-        assert len(self.subscription.availableFiles()) == 0
+        jobGroups = jobFactory(files_per_job = 1)
 
-        print len(self.fileset.getFiles(type='set')), \
-                    len(self.subscription.getFileset().getFiles(type='set'))
-        print files_size, splitsize, len(jobgroup.jobs)
-        
-        number_jobs = divmod(files_size, splitsize)
-        print "should have %i jobs of %i files and 1 job of %i files" % \
-                    (number_jobs[0], splitsize, number_jobs[1])
-        job_test = 0 
-        if number_jobs[1] > 0:
-            job_test = 1
-        job_test = job_test + number_jobs[0]
-        assert job_test == len(jobgroup.jobs), \
-            "Factory made the wrong number of jobs; %s not %s" % (jobgroup.jobs, job_test)
-        c = 0
-        i = 0
-        for job in jobgroup.jobs:
-            i = i + 1
-            print "job %i : %i files" % (i, len(job.getFiles(type='set')))
-            c = c + len(job.getFiles())
-            assert len(job.getFiles(type='set')) <= splitsize, \
-                    "Job has more files than it should"
-        
-        assert c == files_size, "Jobs will run on the wrong number of files"
-        
-        # Now check that jobs have different files and that they have all 
-        # files in the original fileset.
-        #
-        # s symmetric_difference t = new set with elements in either s or t but 
-        # not both.
-        #
-        # So make a new Set using the symmetric_difference of the new (empty)
-        # Set and the file_set of each job. If all files for a particular job
-        # are added to test_set and by the end test_set contains all the file
-        # we are good to go!
-        
-        test_set = Set()
-        for job in jobgroup.jobs:
-            test_set_len = len(test_set)
-            job_set_len = len(job.file_set)
-            test_set = job.getFiles(type='set') ^ test_set
-            assert len(test_set) == test_set_len + job_set_len
-        assert len(test_set) == files_size
-        
-        print "JobGroup status: %s" % jobgroup.status(detail=True)
-        job = jobgroup.jobs.pop()
-        job.submit()
-        print "JobGroup status: %s" % jobgroup.status(detail=True)
-        job.fail()
-        print "JobGroup status: %s" % jobgroup.status(detail=True)
-        job.resubmit(name="job123")
-        print "JobGroup status: %s" % jobgroup.status(detail=True)
-        job.complete()
-        print "JobGroup status: %s" % jobgroup.status(detail=True)
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
 
-class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
-    """
-    A test of the job splitting algorithm "FileBased" using WMBS Objects
-    """
-    def setUp(self):
-        logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=__file__.replace('.py','.log'),
-                    filemode='w')
-        self.testlogger = logging.getLogger('wmbs_FileBasedWMBSObjectTest')
-        self.tearDown()
-        
-        self.dbf = DBFactory(logging.getLogger('wmbs_mysql'), 
-                             'mysql://jacksonj@localhost/wmbs')
-        daofactory = DAOFactory(package='WMCore.WMBS', 
-                                logger=logging.getLogger('wmbs_sql'), 
-                                dbinterface=self.dbf.connect())
-        
-        theCreator = daofactory(classname='CreateWMBS')
-        assert theCreator.execute(), "could not create database instance"
+        assert len(jobGroups[0].jobs) == 1, \
+               "ERROR: JobFactory didn't create a single job."
 
-        self.fileset = WMBSFileset(name='MyCoolFiles', 
-                                   logger=logging.getLogger('wmbs_fileset'), 
-                                   dbfactory=self.dbf)
+        job = jobGroups[0].jobs.pop()
 
-        self.fileset.create()
+        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+               "ERROR: Job contains unknown files."
+        
+        return
 
-        filecreate = datetime.datetime.now()
-        print "Creating files - %s" % filecreate
-        
-        for i in range(0, 993):
-            #if i/50. == i/50:
-            #    print i
-            file = WMBSFile(lfn="/store/data/Electrons/1234/5678/h1%s.root" % i, 
-                             size=1000, events=2000, lumi=10 + i, run=12312, 
-                             logger=logging.getLogger('wmbs_file'), 
-                             dbfactory=self.dbf)
+    def testMoreFiles(self):
+        """
+        _testMoreFiles_
 
-            self.fileset.addFile(file)
-        startsave = datetime.datetime.now()
-        print "Saving Fileset - %s" % startsave
-        self.fileset.commit()
-        complete = datetime.datetime.now()
-        assert len(self.fileset.listLFNs()) == 993, "Fileset has wrong number of files: %s"\
-                            % len(self.fileset.listLFNs())
-        work = WMBSWorkflow(spec='coolworkflow0001.xml', owner='JoeBloggs', 
-                            name='My Cool Workflow',
-                            logger=logging.getLogger('wmbs_workflow'), 
-                            dbfactory=self.dbf)
-        work.create()
-        assert work.exists()
-        self.subscription = WMBSSubscription(fileset = self.fileset, 
-                workflow = work, 
-                split_algo = 'FileBased', 
-                type = "Processing", 
-                logger=logging.getLogger('wmbs_subscription'), 
-                dbfactory=self.dbf)
-        self.subscription.create()
+        Test file based job splitting when the number of files per job is
+        greater than the number of files in the input fileset.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.singleFileSubscription)
         
-        print self.subscription.name() 
+        jobGroups = jobFactory(files_per_job = 10)
         
-        self.package = 'WMCore.WMBS'
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 1, \
+               "ERROR: JobFactory didn't create a single job."
+
+        job = jobGroups[0].jobs.pop()
+
+        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+               "ERROR: Job contains unknown files."
         
-        assert self.subscription.exists()
+        return
+
+    def test2FileSplit(self):
+        """
+        _test2FileSplit_
+
+        Test file based job splitting when the number of files per job is
+        2, this should result in five jobs.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
         
-        assert len(self.subscription.getFileset().getFiles(type='set')) == \
-                len(self.subscription.availableFiles())
-    
-    def tearDown(self):
-        commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs')
-        commands.getstatusoutput('mysqladmin -u root create wmbs')
-        try:
-            self.testlogger.debug(os.remove('FileBasedWMBSObjectTest.lite'))
-        except OSError:
-            #Don't care if the file doesn't exist
-            pass
-        self.testlogger.debug("WMBS SQLite database deleted")
-    
-            
-if __name__ == "__main__":
-    unittest.main()     
+        jobGroups = jobFactory(files_per_job = 2)
+        
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 5, \
+               "ERROR: JobFactory didn't create two jobs."
+
+        fileSet = Set()
+        for job in jobGroups[0].jobs:
+            assert len(job.getFiles(type = "set")) == 2, \
+                   "ERROR: Job contains incorrect number of files."
+
+            for file in job.getFiles(type = "lfn"):
+                fileSet.add(file)
+
+        assert len(fileSet) == 10, \
+               "ERROR: Not all files assinged to job."
+
+        return
+
+    def test3FileSplit(self):
+        """
+        _test3FileSplit_
+
+        Test file based job splitting when the number of files per job is
+        3, this should result in four jobs.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+        
+        jobGroups = jobFactory(files_per_job = 3)
+        
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 4, \
+               "ERROR: JobFactory didn't create four jobs."
+
+        fileSet = Set()
+        for job in jobGroups[0].jobs:
+            assert len(job.getFiles(type = "set")) in [3, 1], \
+                   "ERROR: Job contains incorrect number of files."
+
+            for file in job.getFiles(type = "lfn"):
+                fileSet.add(file)
+
+        assert len(fileSet) == 10, \
+               "ERROR: Not all files assinged to job."
+
+        return    
+
+if __name__ == '__main__':
+    unittest.main()

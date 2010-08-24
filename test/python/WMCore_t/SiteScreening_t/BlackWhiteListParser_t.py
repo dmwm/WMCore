@@ -2,8 +2,8 @@
 """
 Test case for SiteScreening
 """
-__revision__ = "$Id: BlackWhiteListParser_t.py,v 1.2 2008/10/16 07:20:16 ewv Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: BlackWhiteListParser_t.py,v 1.3 2008/11/04 17:01:28 ewv Exp $"
+__version__  = "$Revision: 1.3 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -51,9 +51,18 @@ class BlackWhiteListParserTest(unittest.TestCase):
         Setup for unit tests
         """
         self.separser = \
-            BlackWhiteListParser.SEBlackWhiteListParser(cfgParams, fakeLogger)
+            BlackWhiteListParser.SEBlackWhiteListParser(
+                whiteList=seWhiteList,
+                blackList=seBlackList,
+                logger=fakeLogger
+            )
+
         self.ceparser = \
-            BlackWhiteListParser.CEBlackWhiteListParser(cfgParams, fakeLogger)
+            BlackWhiteListParser.CEBlackWhiteListParser(
+                whiteList=ceWhiteList,
+                blackList=ceBlackList,
+                logger=fakeLogger
+            )
 
     def testSEBlackList(self):
         """
@@ -100,12 +109,11 @@ class BlackWhiteListParserTest(unittest.TestCase):
         self.failUnless(results == sets.Set(whitelist))
 
 
-cfgParams = {
-  'EDG.se_black_list': 'ccsrm.in2p3.fr, T1_*',
-  'EDG.se_white_list': 'srm.ihepa.ufl.edu, heplnx204.pp.rl.ac.uk, cluster142.knu.ac.kr',
-  'EDG.ce_black_list': 'lcg02.ciemat.es, bris.ac, *.fnal.gov',
-  'EDG.ce_white_list': 'vampire.accre.vanderbilt.edu, ic-kit-lcgce.rz.uni-karlsruhe.de',
-}
+seBlackList = 'ccsrm.in2p3.fr, T1_*'
+seWhiteList = 'srm.ihepa.ufl.edu, heplnx204.pp.rl.ac.uk, cluster142.knu.ac.kr'
+ceBlackList = 'lcg02.ciemat.es, bris.ac, *.fnal.gov'
+ceWhiteList = 'vampire.accre.vanderbilt.edu, ic-kit-lcgce.rz.uni-karlsruhe.de'
+
 
 
 if __name__ == '__main__':

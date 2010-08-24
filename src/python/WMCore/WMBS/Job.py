@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-#Turn off to many arguments
+#Turn off too many arguments
 #pylint: disable-msg=R0913
-#Turn off over riding built in id 
-#pylint: disable-msg=W0622
 """
 _Job_
 
@@ -18,15 +16,6 @@ CREATE TABLE wmbs_job (
              id          INTEGER   PRIMARY KEY AUTOINCREMENT,
              jobgroup    INT(11)   NOT NULL,
              name        VARCHAR(255),
-             FirstEvent  INT(11),
-             LastEvent   INT(11),
-             FirstLumi   INT(11),
-             LastLumi    INT(11),
-             FirstRun    INT(11),
-             LastRun     INT(11),
-             start       INT(11),
-             completed   INT(11),
-             retries     INT(11),
              last_update TIMESTAMP NOT NULL,
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE)
@@ -39,136 +28,197 @@ CREATE TABLE wmbs_job_assoc (
     FOREIGN KEY (file) REFERENCES wmbs_file(id)
                     ON DELETE CASCADE)
 
+CREATE TABLE wmbs_job_mask (
+    job           INT(11)     NOT NULL,
+    FirstEvent    INT(11),
+    LastEvent     INT(11),
+    FirstLumi     INT(11),
+    LastLumi      INT(11),
+    FirstRun      INT(11),
+    LastRun       INT(11),
+    inclusivemask BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (job)       REFERENCES wmbs_job(id)
+    ON DELETE CASCADE)
+    
 Jobs are added to the WMBS database by their parent JobGroup, but are 
 responsible for updating their state (and name).
-
-TODO: Test/complete load
-TODO: Load/Save Mask
 """
 
-__revision__ = "$Id: Job.py,v 1.10 2008/10/28 18:59:26 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Job.py,v 1.11 2008/11/20 17:09:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import datetime
+import threading
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
-from WMCore.WMBS.BusinessObject import BusinessObject
 
-class Job(BusinessObject, WMJob):
+class Job(WMJob):
     """
     A job in WMBS
     """
-    def __init__(self, name=None, files = None, id = -1, logger=None, dbfactory=None):
+    def __init__(self, name = None, files = None, id = -1):
         """
+        ___init___
+        
         jobgroup object is used to determine the workflow. 
         file_set is a set that contains the id's of all files 
         the job should use.
         """
-        WMJob.__init__(self, name=name, files = files)
-        BusinessObject.__init__(self, 
-                                logger=logger, 
-                                dbfactory=dbfactory)
+        WMJob.__init__(self, name = name, files = files)
+
+        myThread = threading.currentThread()
+        self.logger = myThread.logger
+        self.dialect = myThread.dialect
+        self.dbi = myThread.dbi
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
         
         self.id = id
-        if self.id > 0:
-            self.load()
+        return
             
     def create(self, group, trans = None):
         """
-        Write the job to the database, connection and logger are picked up from 
-        the JobGroup
-        """
+        _create_
         
-        newtrans = False
-        if not trans:
-            trans = Transaction(dbinterface = self.dbfactory.connect())
-            newtrans = True
-        try:    
-            action = self.daofactory(classname='Jobs.New')
-            self.id = action.execute(group.id, 
-                                 self.name,
-                                 conn = trans.conn, 
-                                 transaction = True)
-            if newtrans:
-                trans.commit()
-                print "created"
-        except Exception, e:
-            trans.rollback()
-            raise e
-                    
-    def load(self):
+        Write the job to the database.  If no database transaction is passed
+        to this method one will be created and commited.
         """
-        Load the job and it's input from the database for a job of known id
-        """
-        # load the mask
+        self.job_group = group.id
+        
+        jobAction = self.daofactory(classname = "Jobs.New")
+        self.id = jobAction.execute(self.job_group, self.name)
+        maskAction = self.daofactory(classname = "Masks.New")
+        maskAction.execute(jobid = self.id)
+        self.save()
 
-    def getFiles(self, type='list'):
+    def delete(self):
         """
-        Get the files associated to the job
+        Remove a job from WMBS
         """
+        self.daofactory(classname='Jobs.Delete').execute(id = self.id)
+
+    def save(self):
+        """
+        _save_
+
+        Flush all changes that have been made to the job to the database.
+        """
+        self.daofactory(classname = "Jobs.Save").execute(self.id,
+                                                         self.job_group,
+                                                         self.name)
+
+        maskAction = self.daofactory(classname = "Masks.Save")
+        maskAction.execute(jobid = self.id, mask = self.mask)
+
+        self.associateFiles()
+        return
+
+    def exists(self):
+        """
+        _exists_
+
+        Does a job exist with this name.
+        """
+        action = self.daofactory(classname='Jobs.Exists')
+        return action.execute(name = self.name)
+                
+    def load(self, method = "Jobs.LoadFromID"):
+        """
+        _load_
         
-        file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
-        if file_ids == WMJob.getFiles(self, type='id'):
-            return WMJob.getFiles(self, type)
-        else:
-            self.file_set = Fileset()
-            for i in file_ids:
-                file = File(id=i, logger=self.logger, dbfactory=self.dbfactory)
-                file.load()
-                self.file_set.addFile(file)
-            return WMJob.getFiles(self, type)
-            
-    def submit(self, name=None):
+        Given the job's ID load all information from the database including any
+        files that may be associated with the job and it's mask.
         """
+        if method == "Jobs.LoadFromID":
+            metaData = self.daofactory(classname = "Jobs.LoadFromID").execute(self.id)
+        elif method == "Jobs.LoadFromName":
+            metaData = self.daofactory(classname = "Jobs.LoadFromName").execute(self.name)
+        else:
+            self.logger.error("Unknown load method: %s" % method)
+            return
+
+        self.id = metaData["ID"]
+        self.name = metaData["NAME"]
+        self.last_update = metaData["LAST_UPDATE"]
+        self.job_group = metaData["JOBGROUP"]
+
+        jobMask = self.daofactory(classname = "Masks.Load").execute(self.id)
+        for keyName in self.mask.keys():
+            self.mask[keyName] = jobMask.get(keyName, None)
+
+        fileIDs = self.daofactory(classname = "Jobs.LoadFiles").execute(self.id)
+
+        self.file_set = Fileset()
+        for fileID in fileIDs:
+            newFile = File(id = fileID)
+            newFile.load()
+            self.file_set.addFile(newFile)
+
+        return
+
+    def getFiles(self, type = "list"):
+        """
+        _getFiles_
+
+        Retrieve the files that are associated with this job.  This checks to
+        make sure that the files in this object's file_set match the files that
+        are associated to the job in the database.  If the two do not match then
+        this object's fileset will be re-populated with files from the database.
+        """
+        fileIDs = self.daofactory(classname = "Jobs.LoadFiles").execute(self.id)
+        
+        if fileIDs != WMJob.getFiles(self, type = "id"):
+            self.load()
+
+        return WMJob.getFiles(self, type)
+            
+    def submit(self, name = None):
+        """
+        _submit_
+        
         Once submitted to a batch queue set status to active and set the job's
         name to some id from the batch system. Calling this method means the job
         has been submitted to the batch queue.
         """
-        WMJob.submit(self, name=name)
-        self.daofactory(classname='Jobs.UpdateName').execute(self.id, self.name)
+        WMJob.submit(self, name = name)
+        self.daofactory(classname = "Jobs.UpdateName").execute(self.id, name)
                     
-    def associateFiles(self, trans = None):
+    def associateFiles(self):
         """
-        update the wmbs_job_assoc table with the files in self.file_set
+        _associateFiles_
+        
+        Update the wmbs_job_assoc table with the files in the file_set for the
+        job.
         """
-        newtrans = False
-        if not trans:
-            trans = Transaction(dbinterface = self.dbfactory.connect())
-            newtrans = True
-        try:
-            files = self.file_set.getFiles(type='id')
-            self.daofactory(classname='Jobs.AddFiles').execute(self.id, 
-                                                           files,
-                                                           conn = trans.conn, 
-                                                           transaction = True)
-            if newtrans:
-                trans.commit()
-        except Exception, e:
-            trans.rollback()
-            raise e
-    
+        files = self.file_set.getFiles(type = "id")
+        self.daofactory(classname = "Jobs.AddFiles").execute(self.id, files)
+
     def changeStatus(self, status):
         """
-        possible states are: ACTIVE, FAILED, COMPLETE - files not in the state
-        tables are considered new.
+        _changeStatus_
+
+        Change the status of the job.  The new status can be one of the
+        following:
+          ACTIVE, COMPLETE, FAILED
         """
         self.last_update = datetime.datetime.now()
-        self.status = status
-        trans = Transaction(dbinterface = self.dbfactory.connect())
+        self.status = status.title()
+        
+        trans = Transaction(self.dbi)
         try:
-            self.daofactory(classname='Jobs.ClearStatus').execute(self.id,
-                                                       conn = trans.conn, 
-                                                       transaction = True)
-            self.daofactory(
-                    classname='Jobs.%s' % self.status.title()).execute(self.id,
-                                                       conn = trans.conn, 
-                                                       transaction = True)
+            statusClass = "Job.%s" % self.status
+            self.daofactory(classname = "Jobs.ClearStatus").execute(self.id,
+                                                                    conn = trans.conn,
+                                                                    transaction = True)
+            self.daofactory(classname = statusClass).execute(self.id,
+                                                             conn = trans.conn,
+                                                             transaction = True)
             trans.commit()
         except Exception, e:
             trans.rollback()
             raise e
-        
-        

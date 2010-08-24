@@ -1,12 +1,17 @@
 from WMCore.WMBS.Actions.Action import BaseAction
 from WMCore.WMBS.Actions.Fileset.New import NewFilesetAction
 from WMCore.WMBS.Actions.Fileset.List import ListFilesetAction
+from WMCore.DAOFactory import DAOFactory
+
 class AddAndListFilesetAction(BaseAction):
     name = "Fileset.AddAndList"
-        
+       
     def execute(self, fileset = None, dbinterface = None):
-        action1 = NewFilesetAction(self.logger)
-        action1.execute(fileset, dbinterface)
-        action2 = ListFilesetAction(self.logger)
-        return action2.execute(dbinterface)
+        conn = dbinterface.connect()
+        daofactory = DAOFactory(package='WMCore.WMBS', logger=self.logger, dbinterface=conn) 
+        
+        action1 = daofactory(classname='Fileset.New')
+        action1.execute(fileset)
+        action2 = daofactory(classname='Fileset.List')
+        return action2.execute()
         

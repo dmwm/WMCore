@@ -1,6 +1,4 @@
 from WMCore.WMBS.Actions.Action import BaseAction
-from WMCore.WMBS.Actions.Fileset.New import NewFilesetAction
-from WMCore.WMBS.Actions.Fileset.List import ListFilesetAction
 from WMCore.DAOFactory import DAOFactory
 
 class AddAndListFilesetAction(BaseAction):

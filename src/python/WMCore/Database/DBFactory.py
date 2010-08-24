@@ -1,3 +1,6 @@
+
+import threading
+
 from sqlalchemy import create_engine
 from sqlalchemy import __version__ as sqlalchemy_version
 from WMCore.Database.Dialects import MySQLDialect
@@ -73,8 +76,11 @@ class DBFactory(object):
                                strategy='threadlocal',
                                connect_args = options)
         self.dia = self.engine.dialect
+        self.lock = threading.Condition()
+
         
     def connect(self):
+        self.lock.acquire()
         self.logger.debug("Using SQLAlchemy v.%s" % sqlalchemy_version)
         self.logger.debug("creating DB engine %s" % self.dburl)
                 
@@ -82,5 +88,7 @@ class DBFactory(object):
             from WMCore.Database.MySQLCore import MySQLInterface as DBInterface
         else:
             from WMCore.Database.DBCore import DBInterface
-            
-        return DBInterface(self.logger, self.engine)
+        # we instantiate within the lock so we can safely return the local instance.
+        dbInterface =  DBInterface(self.logger, self.engine)
+        self.lock.release()
+        return dbInterface

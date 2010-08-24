@@ -5,8 +5,8 @@ _WMBSSQLLite_
 SQLite specific implementations
 
 """
-__revision__ = "$Id: SQLite.py,v 1.3 2008/04/14 16:51:06 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SQLite.py,v 1.4 2008/05/01 15:38:48 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 import datetime
 import time
 from WMCore.WMBS.MySQL import MySQLDialect
@@ -19,8 +19,8 @@ class SQLiteDialect(MySQLDialect):
     If necessary over ride the relevant methods for dialect specific operations
      e.g. creating sequences, indexes, timestamps.
     """
-    def __init__(self, logger, connection):
-        MySQLDialect.__init__(self, logger, connection)
+    def __init__(self, logger, engine):
+        MySQLDialect.__init__(self, logger, engine)
         self.logger.info ("Instantiating SQLite WMBS object")
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,12 +146,11 @@ and fileset=(select id from wmbs_fileset where name =:fileset)"""
         binds = None
         if type(fileset) == type('string'):
             binds = {'fileset':fileset, 'timestamp':self.timestamp()}
-            self.processData(self.insert['fileset'], binds)
         elif type(fileset) == type([]):
             binds = []
             for f in fileset:
                 binds.append({'fileset':f, 'timestamp':self.timestamp()})
-            self.logger.debug( binds )
+        if binds:
             self.processData(self.insert['fileset'], binds)
 
     def insertFilesForFileset(self, files=None, size=0, events=0, \
@@ -162,15 +161,13 @@ and fileset=(select id from wmbs_fileset where name =:fileset)"""
         """ 
         self.logger.debug ("inserting %s for fileset %s" % (files, fileset))
         self.insertFiles(files, size, events, run, lumi, conn, transaction)
-        
+        binds = None
         #Now add the files into the mapping table
         if type(files) == type('string'):            
             binds = {'file': files, 
                      'fileset':fileset, 
                      'timestamp':self.timestamp()}
             
-            self.processData(self.insert['fileforfileset'], binds, 
-                             conn = conn, transaction = transaction)
         elif type(files) == type([]):
             binds = []
             for f in files:
@@ -178,9 +175,9 @@ and fileset=(select id from wmbs_fileset where name =:fileset)"""
                               'fileset':fileset, 
                               'timestamp':self.timestamp()})
                 
-            # Replace with some bulk operation
-            self.processData(self.insert['fileforfileset'], binds, 
-                             conn = conn, transaction = transaction)
+        # Replace with some bulk operation
+        self.processData(self.insert['fileforfileset'], binds, 
+                         conn = conn, transaction = transaction)
                       
     def newSubscription(self, fileset = None, subtype='processing', 
                         conn = None, transaction = False):

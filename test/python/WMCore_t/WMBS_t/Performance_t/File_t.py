@@ -32,7 +32,7 @@ class File_t(Base_t):
     def testAdd(self):
         print "testAdd"
         
-        time = self.perfTest(dao=self.dao, action='Files.Add', execinput=['files=self.testFile["lfn"]', 'size=self.testFile["size"]', 'events=self.testFile["events"]'])
+        time = self.perfTest(dao=self.dao, action='Files.Add', execinput='files=%s, size=%s, events=%s' % (self.testFile["lfn"], self.testFile["size"], self.testFile["events"]))
         assert time <= self.threshold, 'Add DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testAddRunLumi(self): 
@@ -54,15 +54,15 @@ class File_t(Base_t):
         assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testGetByID(self):
-        print "testGetByID"
+        print "testGetByID (%s)" % self.testFile['id']
         
-        time = self.perfTest(dao=self.dao, action='Files.GetByID', execinput=['files=self.testFile.id'])
+        time = self.perfTest(dao=self.dao, action='Files.GetByID', execinput=['files=self.testFile["id"]'])
         assert time <= self.threshold, 'GetByID DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testGetByLFN(self):
-        print "testGetByLFN"
-         
-        time = self.perfTest(dao=self.dao, action='Files.GetByLFN', execinput=['files=self.testFile.lfn'])
+        print "testGetByLFN (%s)" % self.testFile['lfn']
+        
+        time = self.perfTest(dao=self.dao, action='Files.GetByLFN', execinput=['files=self.testFile["lfn"]'])
         assert time <= self.threshold, 'GetByLFN DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testGetLocation(self):

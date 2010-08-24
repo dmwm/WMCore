@@ -20,4 +20,8 @@ class NewFilesetAction(BaseAction):
             raise TypeError, "unknown connection type"
              
         action = NewFilesetSQL(self.logger, dbinterface)
-        return action.execute(fileset)
+        try:
+            action.execute(fileset)
+            return True
+        except:
+            return False

@@ -7,8 +7,8 @@ MySQL Compatibility layer for WMBS
 
 """
 
-__revision__ = "$Id: MySQL.py,v 1.6 2008/05/02 13:49:43 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: MySQL.py,v 1.7 2008/05/02 17:29:24 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.DBCore import DBInterface
 
@@ -68,6 +68,7 @@ class MySQLDialect(DBInterface):
                 events  int(11),
                 run     int(11),
                 lumi    int(11),
+                UNIQUE(lfn),
                 PRIMARY KEY(id),
                 INDEX (lfn))"""
         self.create['wmbs_location'] = """CREATE TABLE wmbs_location (
@@ -97,7 +98,7 @@ class MySQLDialect(DBInterface):
                     ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY(id),
                 FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
-                    ON DELETE CASCADE),
+                    ON DELETE CASCADE,
                 FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                     ON DELETE CASCADE)"""
         self.create['wmbs_sub_files_acquired'] = """
@@ -139,7 +140,6 @@ CREATE TABLE wmbs_sub_files_complete (
         
         # What history tables do we need?
         # What statistics/monitoring is needed?
-        
         self.insert['fileset'] = """
             insert into wmbs_fileset (name) values (:fileset)"""
         self.insert['newfile'] = """
@@ -182,7 +182,7 @@ CREATE TABLE wmbs_sub_files_complete (
                 where id in (select file from wmbs_fileset_files where 
                 fileset = (select id from wmbs_fileset where name = :fileset))
             """
-        self.select['filesetexists'] = """select count (*) from wmbs_fileset 
+        self.select['filesetexists'] = """select count(*) from wmbs_fileset 
             where name = :name"""
         self.select['subscriptionsoftype'] = """
             select id, fileset, workflow from wmbs_subscription where type=:type
@@ -250,9 +250,11 @@ CREATE TABLE wmbs_sub_files_complete (
                 fileset = (select id from wmbs_fileset where name = :fileset)
                 and insert_time > :oldstamp
                 and insert_time < :newstamp)"""
-        self.select['workflowexists'] = """select count (*) from wmbs_workflow
+        self.select['workflowexists'] = """select count(*) from wmbs_workflow
             where spec = :spec and owner = :owner"""
-            
+        
+        self.delete['fileset'] = "delete from wmbs_fileset where name = :fileset"
+        self.delete['workflow'] = "delete from wmbs_workflow where spec = :spec and owner = :owner"    
                
     def createFilesetTable(self):
         """
@@ -425,6 +427,14 @@ CREATE TABLE wmbs_sub_files_complete (
         return self.processData(self.select['filesetexists'], binds, 
                                 conn = conn, transaction = transaction)
     
+    def deleteFileset(self, fileset = None, conn = None, transaction = False):
+        """
+        delete a fileset from WMBS
+        """
+        binds = {'fileset':fileset}
+        self.processData(self.delete['fileset'], binds, 
+                         conn = conn, transaction = transaction)
+    
     def insertFiles(self, files=None, size=0, events=0, run=0, lumi=0, 
                     conn = None, transaction = False):
         """
@@ -496,7 +506,16 @@ CREATE TABLE wmbs_sub_files_complete (
         binds = {'spec':spec, 'owner':owner}
         return self.processData(self.select['workflowexists'], binds, 
                              conn = conn, transaction = transaction)
-                  
+    
+    def deleteWorkflow(self, spec=None, owner=None, 
+                           conn = None, transaction = False):
+        """
+        Delete a workflow
+        """
+        binds = {'spec':spec, 'owner':owner}
+        return self.processData(self.delete['workflow'], binds, 
+                             conn = conn, transaction = transaction)  
+               
     def newSubscription(self, fileset = None, spec = None, owner = None,
                         subtype='processing', 
                         conn = None, transaction = False):
@@ -629,11 +648,13 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         List the available files for a subscription
         """
-        if isinstance(subscription, int):
+        print type(subscription)
+        print subscription
+        if 0 < subscription:
             return self.processData(self.select['nextfiles'], 
                                     {'subscription':subscription})
         else:
-            self.logger.exception("listAvailableFiles requires a single id number for subscription")
+            self.logger.exception("listAvailableFiles requires a single id number for subscription, got: %s" % subscription)
             raise "non-integer subscription id given"
         
     def acquireNewFiles(self, subscription=0, files=None, 
@@ -641,7 +662,7 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         Acquire new files for a subscription
         """
-        if isinstance(subscription, int):
+        if 0 < subscription:
             binds = []
             if not isinstance(files, list): 
                 files = [files]
@@ -660,7 +681,7 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         Fail files for a subscription
         """
-        if isinstance(subscription, int):
+        if 0 < subscription:
             binds = []
             if not isinstance(files, list): 
                 files = [files]
@@ -677,7 +698,7 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         Complete files for a subscription
         """
-        if isinstance(subscription, int):
+        if 0 < subscription:
             binds = []
             if not isinstance(files, list): 
                 files = [files]
@@ -710,7 +731,7 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         List all acquired files for a subscription
         """
-        if isinstance(subscription, int):
+        if 0 < subscription:
             return self.processData(self.select['activefiles'], 
                                     {'subscription':subscription})
         else:
@@ -722,7 +743,7 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         List all failed files for a subscription
         """
-        if isinstance(subscription, int):
+        if 0 < subscription:
             return self.processData(self.select['failedfiles'], 
                                     {'subscription':subscription})
         else:
@@ -734,7 +755,7 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         List all completed files for a subscription
         """
-        if isinstance(subscription, int):
+        if 0 < subscription:
             return self.processData(self.select['completedfiles'], 
                                     {'subscription':subscription})
         else:

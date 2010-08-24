@@ -11,9 +11,11 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.3 2008/05/02 14:28:46 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Fileset.py,v 1.4 2008/05/02 17:29:24 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
+from sets import Set
+from sqlalchemy.exceptions import IntegrityError
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Subscription import Subscription
 
@@ -32,8 +34,8 @@ class Fileset(object):
         Create an empty fileset
         """
         self.name = name
-        self.files = []
-        self.newfiles = []
+        self.files = Set()
+        self.newfiles = Set()
         self.wmbs = wmbs
     
     def exists(self):
@@ -58,7 +60,15 @@ class Fileset(object):
         except Exception, e:
             self.wmbs.logger.exception('Fileset %s exists' % self.name)
             raise e
-        
+    
+    def delete(self):
+        """
+        Remove this fileset from WMBS
+        """
+        self.wmbs.logger.warning('you are removing the following fileset from WMBS %s %s'
+                                 % (self.name))
+        self.wmbs.deleteFileset(self.name)
+    
     def populate(self):
         """
         Load up the files in the file set from the database
@@ -67,22 +77,22 @@ class Fileset(object):
             for i in f.fetchall():
                 id, lfn, size, events, run, lumi = i
                 file = File(lfn, id, size, events, run, lumi)
-                self.files.append(file)
+                self.files.add(file)
                 
     def addFile(self, file):
         """
         Add a file to the fileset
         """
-        self.newfiles.append(file)
+        if file not in self.files:
+            self.newfiles.add(file)
     
     def listFiles(self):
         """
         List all files in the fileset
         """
-        list = []
-        list.extend(self.files)
-        list.extend(self.newfiles)
-        return list
+        l = list(self.files)
+        l.extend(list(self.newfiles))
+        return l
     
     def listNewFiles(self):  
         """
@@ -93,13 +103,19 @@ class Fileset(object):
     def commit(self):
         """
         Commit changes to the fileset
-        """ 
+        """
         comfiles = []
         for f in self.newfiles:
             comfiles.append(f.getInfo())
-        self.wmbs.logger.debug ( "commiting : %s" % comfiles )    
-        self.wmbs.insertFilesForFileset(files=comfiles, fileset=self.name)
-        self.newfiles = []
+        self.wmbs.logger.debug ( "commiting : %s" % comfiles )  
+        try:
+            self.wmbs.insertFilesForFileset(files=comfiles, fileset=self.name)
+        except IntegrityError:
+            self.wmbs.logger.exception('File already exists in the database')
+            for i in self.newfiles:
+                print i.getInfo()
+            raise IntegrityError, 'File already exists in the database'
+        self.newfiles = Set()
         self.populate()
     
     def createSubscription(self, workflow=None, subtype='processing'):

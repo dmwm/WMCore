@@ -9,8 +9,8 @@ creation and/or tracking.
 
 If file spans a run will need to create a mask for that file.
 """
-__revision__ = "$Id: RunBased.py,v 1.9 2009/01/29 09:14:56 spiga Exp $"
-__version__  = "$Revision: 1.9 $"
+__revision__ = "$Id: RunBased.py,v 1.10 2009/01/29 20:42:24 jacksonj Exp $"
+__version__  = "$Revision: 1.10 $"
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -30,13 +30,6 @@ class RunBased(JobFactory):
         # Set default inputs if required
         if 'files_per_job' not in kwargs.keys():
             kwargs['files_per_job'] = 300
-        logger = None
-        dbf = None
-        try:
-            logger = self.subscription.logger
-            dbf = self.subscription.dbfactory
-        except:
-            pass
         
         # Resulting job set
         jobs = Set()
@@ -73,8 +66,8 @@ class RunBased(JobFactory):
             num_files = num_files - len(jobFiles)
 
             # Create the job
-            job = job_instance(name = '%s-%s' % (jobname, len(jobs) + 1), 
-                               files=jobFiles, logger=logger, dbfactory=dbf)
+            job = job_instance(name = '%s-%s' % (jobname, len(jobs) + 1),
+                               files = jobFiles)
             jobs.add(job)
         
         # Return the jobs

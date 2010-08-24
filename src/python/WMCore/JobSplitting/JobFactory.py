@@ -39,6 +39,9 @@ class JobFactory(WMObject):
         # Acquire the files used in the job group, job groups should run on 
         # complete files.
         group.recordAcquire(list(jobs))
+        
+        # Commit the jobs to ensure the JobGroup is ready to use
+        group.commit()
 
         return group
     

@@ -5,12 +5,15 @@ _DBSBuffer.NewDataset_
 Add a new dataset to DBS Buffer
 
 """
-__revision__ = "$Id: NewDataset.py,v 1.3 2008/10/20 19:22:04 afaq Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: NewDataset.py,v 1.4 2008/10/20 20:03:26 afaq Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
 from WMCore.Database.DBFormatter import DBFormatter
+from sqlalchemy.exceptions import IntegrityError
+
+
 
 class NewDataset(DBFormatter):
     
@@ -53,9 +56,19 @@ class NewDataset(DBFormatter):
     def execute(self, dataset=None, conn=None, transaction = False):
         binds = self.getBinds(dataset)
 
-        result = self.dbi.processData(self.sql, binds,
+	try:
+        	result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
-        return self.format(result)
+
+	except IntegrityError, ex:
+		if ex.__str__().find("Duplicate entry") != -1 :
+			#print "DUPLICATE: so what !!"
+			return
+		else:
+			raise ex
+        return 
+        #return self.format(result)
+
 
 
 

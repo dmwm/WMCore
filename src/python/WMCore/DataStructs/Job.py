@@ -11,8 +11,8 @@ job in a batch system, it's more abstract - it's the piece of
 work that needs to get done.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.15 2008/10/28 18:46:24 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Job.py,v 1.16 2008/11/20 16:11:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -23,7 +23,7 @@ from sets import Set
 import datetime
 
 class Job(Pickleable):
-    def __init__(self, name=None, files=None, logger=None, dbfactory=None):
+    def __init__(self, name = None, files = None):
         """
         A job has a jobgroup which gives it its subscription and workflow.
         file_set is a Fileset containing files associated to a job
@@ -34,6 +34,7 @@ class Job(Pickleable):
         else:
             self.file_set = files
         self.last_update = datetime.datetime.now()
+        self.job_group = -1
         self.status = 'QUEUED'
         if name == None:
             # Job's need to be uniquely named, so generate a GUID
@@ -41,7 +42,7 @@ class Job(Pickleable):
         else:
             self.name = name
         
-        self.output = Fileset(name = 'output', logger = self.file_set.logger)
+        self.output = Fileset(name = 'output')
         self.report = None
         self.mask = Mask()
 

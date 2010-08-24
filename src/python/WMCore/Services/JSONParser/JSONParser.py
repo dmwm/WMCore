@@ -6,24 +6,37 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.2 2008/08/18 20:28:17 ewv Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JSONParser.py,v 1.3 2008/09/18 15:22:26 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import urllib
 import cStringIO
 import tokenize
+import logging
+
+from WMCore.Services.Service import Service
 
 class JSONParser:
     """
     API for dealing with retrieving information from SiteDB
     """
 
+    def __init__(self, url, logger = None):
+        if not logger:
+            logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename='/tmp/jsonparser/jsonparser.log',
+                    filemode='w')
+            logger = logging.getLogger('JSONParser')
+        dict = {}
+        dict['endpoint'] = url
+        dict['cachepath'] = '/tmp/jsonparser'
+        dict['type'] = 'text/json'
+        dict['logger'] = logger
+        self.service = Service(dict)
 
-    def __init__(self, url):
-        self.url = url
-
-
-    def getJSON(self, service, **args):
+    def getJSON(self, service, file='result.json', **args):
         """
         _getJSON_
 
@@ -31,16 +44,16 @@ class JSONParser:
         argument dictionaries
 
         """
-        query = self.url
-        query += "%s" % service
-
         params = urllib.urlencode(args)
+        query = service + '?' + params
+        
         try:
-            f = urllib.urlopen(query, params)
+            f = self.service.refreshCache(file, query)
+            #f = urllib.urlopen(service, params)
             result = f.read()
             f.close()
         except IOError:
-            raise RuntimeError("URL not available: %s" % query)
+            raise RuntimeError("URL not available: %s" % service )
 
         output = self.dictParser(result)
         return output

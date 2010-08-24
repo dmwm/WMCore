@@ -8,8 +8,8 @@ stub classes.
 
 """
 
-__revision__ = "$Id: Generate.py,v 1.1 2009/01/14 12:31:23 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Generate.py,v 1.2 2009/01/14 13:42:29 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import cPickle
@@ -115,14 +115,14 @@ Inheritance is preferred.
                     handler = self.components[componentName][handlerName]
                     if handler.has_key('configurable') and handler['configurable'] == 'yes':
                         if not importFact:
-                            stfile.write("# we do not import failure handlers as they are dynamicly\n")
+                            stfile.write("# we do not import handler " + self.convert(handlerName) + " as they are dynamicly\n")
                             stfile.write("# loaded from the config file.\n")
                             stfile.write("from WMCore.WMFactory import WMFactory\n")
                             importFact = True
                     else:
                         stfile.write('from ' + self.config.General.pythonPrefix + '.' )
-                        stfile.write(componentName +'.Handler.' + handlerName +' import')
-                        stfile.write(' ' + handlerName+'\n')
+                        stfile.write(componentName +'.Handler.' + self.convert(handlerName) +' import')
+                        stfile.write(' ' + self.convert(handlerName)+'\n')
             except Exception, ex:
                 print('No messages for component: '+ componentName)
             msg = """
@@ -155,11 +155,12 @@ class %s(Harness):
         self.messages['%s'] = \\
             factory.loadObject(\\
             self.config.%s.%sHandler, self)
-""" % (componentName, handlerName, componentName, handlerName, \
-      self.config.General.pythonPrefix, componentName, handlerName, \
-      handlerName, componentName, handlerName)
+""" % (componentName, self.convert(handlerName), componentName, self.convert(handlerName), \
+      self.config.General.pythonPrefix, componentName, self.convert(handlerName), \
+      handlerName, componentName, self.convert(handlerName))
+                        stfile.write(msg)
                     else:
-                        stfile.write("        self.messages['"+handlerName+"'] = "+ handlerName+"(self)\n\n")
+                        stfile.write("        self.messages['"+handlerName+"'] = "+ self.convert(handlerName)+"(self)\n\n")
             except Exception,ex:
                 print('is this an ERROR? :'+str(ex))
             stfile.flush()
@@ -197,8 +198,8 @@ config.%s.logLevel = "INFO"
         for handlerName in self.components[componentName].keys():
             handler = self.components[componentName][handlerName] 
             if handler.has_key('configurable') and handler['configurable'] == 'yes':
-                stfile.write('config.'+componentName+'.'+handlerName+'Handler =\\\n')
-                stfile.write('    "'+self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+handlerName+'"\n')
+                stfile.write('config.'+componentName+'.'+self.convert(handlerName)+'Handler =\\\n')
+                stfile.write('    "'+self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+self.convert(handlerName)+'"\n')
 
         stfile.flush()
         stfile.close()
@@ -225,7 +226,7 @@ config.%s.logLevel = "INFO"
                 if handler['threading'] == 'yes':
                     threaded = True
   
-            stfile = open(os.path.join(handlerDir, handlerName +'.py'),'w')
+            stfile = open(os.path.join(handlerDir, self.convert(handlerName) +'.py'),'w')
             stfile.write('#!/usr/bin/env python\n')
             stfile.write(self.stubmsg)
             if not threaded:
@@ -241,7 +242,7 @@ class %s(BaseHandler):
     def __init__(self, component):
         BaseHandler.__init__(self, component)
 
-""" % (handlerName)
+""" % (self.convert(handlerName))
             stfile.write(msg)
             if threaded:
                 msg = """
@@ -251,7 +252,7 @@ class %s(BaseHandler):
             self.component.config.%s.maxThreads)
 
 """ %(self.config.General.pythonPrefix, componentName, \
-                    handlerName, handlerName, componentName)
+                    self.convert(handlerName), self.convert(handlerName), componentName)
                 stfile.write(msg)
                 
             msg = """
@@ -272,7 +273,7 @@ class %s(BaseHandler):
         myThread = threading.currentThread()
 
 """ % (self.config.General.pythonPrefix, \
-                    componentName, handlerName)
+                    componentName, self.convert(handlerName))
                 stfile.write(msg)
                 self.triggers(stfile, componentName, handlerName)
                 self.messages(stfile, componentName, handlerName)       
@@ -289,7 +290,7 @@ class %s(BaseHandler):
         """
 
         slaveDir = os.path.join(self.currentDir, 'Handler')
-        className = handlerName + 'Slave'
+        className = self.convert(handlerName) + 'Slave'
         stfile = open(os.path.join(slaveDir, className + '.py'),'w')
         stfile.write('#!/usr/bin/env python\n')
         stfile.write(self.stubmsg)
@@ -308,7 +309,7 @@ class %s(BaseHandler):
         stfile.write('        """\n')
         stfile.write('\n')
         stfile.write('        print("Implement me:')
-        stfile.write(self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+handlerName + '")')
+        stfile.write(self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+self.convert(handlerName) + '")')
         stfile.write('\n\n')
         stfile.write('        myThread = threading.currentThread()\n\n')
         self.triggers(stfile, componentName, handlerName)
@@ -370,3 +371,13 @@ class %s(BaseHandler):
             stfile.write('        flag = '+flag+'\n')
             stfile.write('        myThread.trigger.addFlag(flags)\n')
 
+    def convert(self, textStr):
+        """
+        filters out unwanted symbols excluded in python
+        class names
+        """
+        no = [':','/']
+
+        for symbol in no:
+            textStr = textStr.replace(symbol, '_')
+        return textStr     

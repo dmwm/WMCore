@@ -5,6 +5,7 @@ TOC
 -DEVELOPMENT
 -->DEVELOPMENT (DATABASES)
 -TESTING
+-OTHER PROJECTS: PRODAGENT, T0, CRAB
 
 Quality Officer: TBD
 
@@ -184,4 +185,16 @@ the myfiles.sh script to run quality tests on several
 dirs. If you name your output files quality*.txt, 
 cleanup.sh will automatically remove them when invoked.
 
+OTHER PROJECTS
+==============
 
+To facilitate uniformity and reuse of code we strongly advise that you follow the structure
+outlined in this document for your project where possible. In particular following the same
+code style standards and layout.
+
+E.g. for the ProdAgent project components will be sub directories in:
+PRODAGENT/src/python/PA/PAComponent
+
+And tests for these components will be sub directories in:
+
+PRODAGENT/test/python/PA_t/PAComponent_t

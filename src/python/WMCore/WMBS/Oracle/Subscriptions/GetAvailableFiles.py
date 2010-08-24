@@ -8,8 +8,8 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.3 2008/11/24 21:51:46 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.4 2008/11/24 22:10:45 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles as GetAvailableFilesMySQL
 
@@ -30,9 +30,9 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
         
         for i in result:
             # i is a tuple with count and valid, 0 = False
-            if i[0] > 0 and i[1] == 0:
+            if i[0] > 0 and i[1] == '0':
                 blacklist = True
-            elif i[0] > 0 and i[1] == 1:
+            elif i[0] > 0 and i[1] == '1':
                 whitelist = True
         
         if whitelist:

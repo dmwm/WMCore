@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.18 2009/01/29 16:42:53 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: File_t.py,v 1.19 2009/02/03 22:32:38 sryu Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import unittest
 import logging
@@ -649,16 +649,25 @@ class FileTest(unittest.TestCase):
         level3 = ["/this/is/a/lfnE", "/this/is/a/lfnF"]
         level4 = level5 = []
         
-        assert testFileA.getAncestorLFNs(level=1) == level1, \
+        decs2 = ["/this/is/a/lfnA"]
+        
+        assert testFileA.getAncestors(level=1, type='lfn') == level1, \
               "ERROR: level 1 test failed"
-        assert testFileA.getAncestorLFNs(level=2) == level2, \
+        assert testFileA.getAncestors(level=2, type='lfn') == level2, \
               "ERROR: level 2 test failed"
-        assert testFileA.getAncestorLFNs(level=3) == level3, \
+        assert testFileA.getAncestors(level=3, type='lfn') == level3, \
               "ERROR: level 3 test failed"
-        assert testFileA.getAncestorLFNs(level=4) == level4, \
+        assert testFileA.getAncestors(level=4, type='lfn') == level4, \
               "ERROR: level 4 test failed"
-        assert testFileA.getAncestorLFNs(level=5) == level5, \
+        assert testFileA.getAncestors(level=5, type='lfn') == level5, \
               "ERROR: level 5 test failed"
+        
+        assert testFileD.getDescendants(level=1, type='lfn') == level1, \
+              "ERROR: level 1 desc test failed"
+        assert testFileD.getDescendants(level=2, type='lfn') == decs2, \
+              "ERROR: level 2 desc test failed"
+        assert testFileD.getDescendants(level=3, type='lfn') == level4, \
+              "ERROR: level 3 desc test failed"
               
 if __name__ == "__main__":
     unittest.main() 

@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.16 2008/08/21 17:29:42 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: DBCore.py,v 1.17 2008/08/22 01:45:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -140,7 +140,8 @@ class DBInterface(WMObject):
         
         # Can take either a single statement or a list of statements and binds
         sqlstmt = self.makelist(sqlstmt)
-        if len(sqlstmt) > 0 and len(binds) == 0:
+        binds = self.makelist(binds)
+        if len(sqlstmt) > 0 and (binds[0] == {} or binds[0] == None):
             # Should only be run by create statements
             if not transaction: 
                 self.logger.info("transaction created in DBInterface")
@@ -163,7 +164,7 @@ class DBInterface(WMObject):
                 self.logger.exception(e)
                 raise e 
             
-        elif len(binds) > len(sqlstmt) and len (sqlstmt) == 1:
+        elif len(binds) > len(sqlstmt) and len(sqlstmt) == 1:
             #Run single SQL statement for a list of binds - use execute_many()
             if not transaction: 
                 self.logger.info("transaction created in DBInterface")
@@ -181,7 +182,7 @@ class DBInterface(WMObject):
                 self.logger.exception(e)
                 raise e
             
-        elif len(binds) == len(sqlstmt):            
+        elif len(binds) == len(sqlstmt):
             # Run a list of SQL for a list of binds
             if not transaction: 
                 self.logger.info("DBInterface.processData transaction created")

@@ -3,10 +3,10 @@ from distutils.core import setup
 
 setup (name='wmcore',
        version='1.0',
-       package_dir={'WMCore': 'src/python/WMCore'},
-       packages=['WMComponent.ErrorHandler.Handler',
+       package_dir={'WMCore': 'src/python/WMCore','WMComponent' : 'src/python/WMComponent'},
+       packages=['WMComponent',
                  'WMComponent.ErrorHandler',
-                 'WMComponent',
+                 'WMComponent.ErrorHandler.Handler',
                  'WMCore.MsgService.MySQL',
                  'WMCore.MsgService',
                  'WMCore.Trigger.MySQL',

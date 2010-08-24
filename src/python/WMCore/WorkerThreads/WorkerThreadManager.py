@@ -5,8 +5,8 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.7 2009/02/02 11:11:34 jacksonj Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.8 2009/02/05 22:40:39 jacksonj Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -96,12 +96,12 @@ class WorkerThreadManager:
         self.resumeSlaves.set()
         
         # Wait for all threads to finished
-        msg = "Waiting for %s worker threads to terminate"
-        msg = msg % self.activeThreadCount
-        logging.info(msg)
         finished = False
         while not finished:
             self.lock.acquire()
+            msg = "Waiting for %s worker threads to terminate"
+            msg = msg % self.activeThreadCount
+            logging.info(msg)
             if self.activeThreadCount == 0:
                 finished = True
             self.lock.release()

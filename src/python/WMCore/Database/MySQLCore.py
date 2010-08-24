@@ -22,6 +22,7 @@ class MySQLInterface(DBInterface):
         """
         _executebinds_
         """
+        print "mysql executebinds"
         s, b = self.substitute(s, b)
         return DBInterface.executebinds(self, s, b, connection)
     
@@ -48,6 +49,8 @@ class MySQLInterface(DBInterface):
         we get the MySQLDB connection, make a cursor and interact with that 
         directly. 
         """
+        print "mysql executemanybinds"
+        
         b = self.makelist(b)
         try: 
             newsql = s
@@ -72,7 +75,9 @@ binds : %s
 exception : %s""" % (s, b, e.message))
             raise e
         cur = connection.connection.cursor()
+        
         result = cur.executemany(newsql, bind_list)
         result = self.makelist(result)
+        cur.close()
         return result
         #return DBInterface.executemanybinds(self, newsql, bind_list, connection)

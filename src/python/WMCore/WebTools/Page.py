@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.16 2009/02/16 12:48:33 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Page.py,v 1.17 2009/02/20 20:26:56 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import urllib
 import cherrypy
@@ -143,23 +143,21 @@ def exposedasxml (func):
     TODO: "inherit" from the exposejson
     """
     def wrapper (self, *args, **kwds):
-        itime = time.time()
-        data  = func (self, *args, **kwds)
-        ctime = time.time()-itime
-        now   = time.mktime(datetime.datetime.utcnow().timetuple())
-        url   = request.base + request.path_info + request.query_string
-        url   = urllib.quote(url)
-        ver   = 123
-        call  = func.__name__
+        das = runDas(self, func, *args, **kwds)
         header = """<?xml version='1.0' standalone='yes'?>
 <das request_timestamp="%s" 
      request_url="%s" 
      request_version="%s" 
      request_call="%s" 
-     call_time="%s">""" % (now, url, ver, call, ctime)
-        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
+     call_time="%s">""" % (das['request_timestamp'], 
+                           das['request_url'], 
+                           das['request_version'], 
+                           das['request_call'], 
+                           das['call_time'])
+        
+        cherrypy.response.headers['ETag'] = das[das['request_call']].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"
-        xmldata = header + data + "</das>"
+        xmldata = header + das[das['request_call']].__str__() + "</das>"
         return xmldata
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -204,25 +202,14 @@ def exposedasjson (func):
     """
     def wrapper (self, *args, **kwds):
         encoder = JSONEncoder()
-        data = func (self, *args, **kwds)
-        now = time.mktime(datetime.datetime.utcnow().timetuple())
-        dasdata = {self.config.application:{
-                        'request_timestamp': now,
-                        'request_url': request.base + request.path_info + \
-                                                    request.query_string,
-                        'request_version': 123,
-                        'request_call': func.__name__,
-                        'call_time': 0,
-                        func.__name__: data
-                        }
-                   }
+        data = runDas(self, func, *args, **kwds)
         cherrypy.response.headers['ETag'] = data.__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
-            jsondata = encoder.iterencode(dasdata)
+            jsondata = encoder.iterencode(data)
             return jsondata
         except:
-            Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+            Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
 
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -232,6 +219,7 @@ def exposedasjson (func):
 def exposejs (func):
     def wrapper (self, *args, **kwds):
         data = func (self, *args, **kwds)
+        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/javascript"
         return data
     wrapper.__doc__ = func.__doc__
@@ -248,3 +236,20 @@ def exposecss (func):
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
+
+def runDas(self, func, *args, **kwds):
+    """
+    Run a query and produce a dictionary for DAS formatting
+    """
+    start_time = time.time()
+    call_time = time.time() - start_time
+    dasdata = {'application':'%s.%s' % (self.config.application, func.__name__),
+               'request_timestamp': start_time,
+               'request_url': request.base + request.path_info + \
+                                            request.query_string,
+               'request_version': 0,
+               'request_call': func.__name__,
+               'call_time': call_time
+               }
+    dasdata.update(func(self, *args, **kwds))
+    return dasdata

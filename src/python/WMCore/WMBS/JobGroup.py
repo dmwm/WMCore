@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.16 2009/01/21 22:04:23 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobGroup.py,v 1.17 2009/01/26 20:52:38 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -205,15 +205,15 @@ class JobGroup(WMBSBase, WMJobGroup):
     
     def recordAcquire(self):
         for j in self.getJobIDs(type="JobList"):
-            self.subscription.acquireFiles(j.getFileIDs())
+            self.subscription.acquireFiles(j.getFileIDs(type="dict"))
             
     def recordComplete(self):
         for j in self.getJobIDs(type="JobList"):
-            self.subscription.completeFiles(j.getFileIDs())
+            self.subscription.completeFiles(j.getFileIDs(type="dict"))
             
     def recordFail(self):
         for j in self.getJobIDs(type="JobList"):
-            self.subscription.failFiles(j.getFileIDs())
+            self.subscription.failFiles(j.getFileIDs(type="dict"))
     
     def status(self, detail = False):
         """

@@ -4,8 +4,8 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.12 2008/12/30 17:47:06 afaq Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobSuccess.py,v 1.13 2009/01/12 23:02:41 afaq Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -85,31 +85,18 @@ class JobSuccess(BaseHandler):
         """
         # as we defined a threadpool we can enqueue our item
         # and move to the next.
-
         jobReports = self.readJobReportInfo(payload)
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
         addToBuffer=factory.loadObject("AddToBuffer")
-
         for aFJR in jobReports:
-            l=0
-            print "\n\n"
+            recorded=False
             for aFile in aFJR.files:
-                if l==0:
-                    l=1
+                if not recorded:
                     # This shouldn't be required any more
                     # Dataset is being added with workflow spec
                     for dataset in aFile.dataset:
-                        #Heck if it already exists in DBS Buffer
                         addToBuffer.addAlgo(dataset)                    
                         addToBuffer.addDataset(dataset, algoInDBS=0)
-
-                        """
-                        print "Dataset Path : " + \
-                        "/"+aFile.dataset[0]['PrimaryDataset']+ \
-                        "/"+aFile.dataset[0]['ProcessedDataset']+ \
-                        "/"+aFile.dataset[0]['DataTier']
-                        """
-
                         #Lets see if ALGO info is present in the dataset
                         #### Lets fake test it
                         #pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
@@ -118,21 +105,14 @@ class JobSuccess(BaseHandler):
                             #Pass in the dataset, that contains all info about Algo
                             # 
                             addToBuffer.updateAlgo(dataset, pset)
-                print "\n\nDetermine if there can be more than one datasets in a File and which one to pick here"
-                #dataset=aFile.dataset[0]
-               
-		addToBuffer.addFJRFile(aFile) 
-                
-                """
-			    print "\n\n\n"
-                print aFile['LFN']
-			    print aFile['TotalEvents']
-			    print aFile['Size']
-			    print aFile.checksums['cksum']
-			    print "aFile['Type']='UNKNOWN'"
-			    print "aFile['Block']='UNKNOWN'"
-			    print aFile.runs
-			    print aFile.getLumiSections()
-			    print "aFile['inputFiles']"
-                """
+			recorded=True
+		dataset=aFile.dataset[0]
+		datasetPath='/'+dataset['PrimaryDataset']+'/'+ \
+                                        dataset['ProcessedDataset']+'/'+ \
+                                        dataset['DataTier']
+		addToBuffer.addFile(aFile, datasetPath) 
+
+
+
+
                 

@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.15 2008/12/23 20:34:02 afaq Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Create.py,v 1.16 2009/01/12 23:02:34 afaq Exp $"
+__version__ = "$Revision: 1.16 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -27,7 +27,19 @@ class Create(DBCreator):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         
-        self.create["05dbsbuf_algo"] = \
+        self.create["01dbsbuffer_dataset"] = \
+              """CREATE TABLE dbsbuffer_dataset
+			(
+			   ID     BIGINT UNSIGNED not null auto_increment,
+			   Path   varchar(500)    unique not null,
+			   UnMigratedFiles BIGINT UNSIGNED Default 0,
+			   Algo bigint,
+			   AlgoInDBS    int, 
+			   LastModificationDate  BIGINT,
+			   primary key(ID)	
+			) ENGINE=InnoDB"""
+
+        self.create["03dbsbuffer_algo"] = \
               """CREATE TABLE dbsbuffer_algo
                 	(
                		   ID     BIGINT UNSIGNED not null auto_increment,   
@@ -41,60 +53,74 @@ class Create(DBCreator):
                		   unique (AppName,AppVer,AppFam,PSetHash) 
             		) ENGINE=InnoDB"""
                 
-        self.create["01dbsbuf_dataset"] = \
-              """CREATE TABLE dbsbuffer_dataset
-			(
-			   ID     BIGINT UNSIGNED not null auto_increment,
-			   Path   varchar(500)    unique not null,
-			   UnMigratedFiles BIGINT UNSIGNED Default 0,
-			   Algo bigint,
-			   AlgoInDBS    int, 
-			   LastModificationDate  BIGINT,
-			   primary key(ID)	
-			) ENGINE=InnoDB"""
+        self.create["04dbsbuffer_file"] = \
+          """CREATE TABLE dbsbuffer_file (
+             id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
+             lfn          VARCHAR(255) NOT NULL,
+             size         BIGINT,
+             events       INTEGER,
+             cksum        BIGINT UNSIGNED,
+	     dataset 	  BIGINT UNSIGNED   not null,
+	     status       varchar(20),
+             first_event  INTEGER,
+             last_event   INTEGER,
+             LastModificationDate  BIGINT)ENGINE=InnoDB"""
+        
+        self.create["05dbsbuffer_file_parent"] = \
+          """CREATE TABLE dbsbuffer_file_parent (
+             child  INTEGER NOT NULL,
+             parent INTEGER NOT NULL,
+             FOREIGN KEY (child)  references dbsbuffer_file(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY (parent) references dbsbuffer_file(id),
+             UNIQUE(child, parent))ENGINE=InnoDB"""
 
-        self.create["02dbsbuf_file"] = \
-		      """CREATE TABLE dbsbuffer_file
-			( 
-			   ID                    BIGINT UNSIGNED not null auto_increment,
-			   WMBS_File_ID          INTEGER  not null,
-			   Dataset 		 BIGINT UNSIGNED   not null,
-			   FileStatus            varchar(20),
-			   LastModificationDate  BIGINT,
-			   primary key(ID)
-		    ) ENGINE=InnoDB"""
+        self.create["06dbsbuffer_file_runlumi_map"] = \
+          """CREATE TABLE dbsbuffer_file_runlumi_map (
+             file    INTEGER NOT NULL,
+             run     INTEGER NOT NULL,
+             lumi    INTEGER NOT NULL,
+             FOREIGN KEY (file) references dbsbuffer_file(id)
+               ON DELETE CASCADE)ENGINE=InnoDB"""
 
-        self.constraints["FK_dbsbuf_file_ds"]=\
-		      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuf_file_ds
+        self.create["07dbsbuffer_location"] = \
+          """CREATE TABLE dbsbuffer_location (
+             id      INTEGER      PRIMARY KEY AUTO_INCREMENT,
+             se_name VARCHAR(255) NOT NULL,
+             UNIQUE(se_name))ENGINE=InnoDB"""
+
+        self.create["08dbsbuffer_file_location"] = \
+          """CREATE TABLE dbsbuffer_file_location (
+             file     INTEGER NOT NULL,
+             location INTEGER NOT NULL,
+             UNIQUE(file, location),
+             FOREIGN KEY(file)     REFERENCES dbsbuffer_file(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY(location) REFERENCES dbsbuffer_location(id)
+               ON DELETE CASCADE)ENGINE=InnoDB"""
+
+        self.constraints["FK_dbsbuffer_file_ds"]=\
+		      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_file_ds
     			 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
 
-        self.constraints["FK_dbsbuf_file_ds"]=\
-                      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuf_wmbsfile
-                         foreign key(WMBS_File_ID) references wmbs_file_details(ID)"""
+        self.constraints["FK_dbsbuffer_file_ds"]=\
+                      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_dbsbuffile
+                         foreign key(WMBS_File_ID) references dbsbuffer_file(ID)"""
 
-        self.constraints["FK_dbsbuf_ds_algo"]=\
-              """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuf_ds_algo
+        self.constraints["FK_dbsbuffer_ds_algo"]=\
+              """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuffer_ds_algo
                  foreign key(Algo) references dbsbuffer_algo(ID)"""
                  
 	#self.triggers IS NOT a member so I will just use self.create for now
-        self.create["03TR_dbsbuf_file_lud"]=\
-                """CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuffer_file
+        self.create["09TR_dbsbuffer_file_lud"]=\
+                """CREATE TRIGGER TR_dbsbuffer_file_lud BEFORE INSERT ON dbsbuffer_file
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
 
-        self.create["04TR_dbsbuf_ds_lud"]=\
-                """CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuffer_dataset
+        self.create["10TR_dbsbuffer_ds_lud"]=\
+                """CREATE TRIGGER TR_dbsbuffer_ds_lud BEFORE INSERT ON dbsbuffer_dataset
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
                         
-        self.create["06TR_dbsbuf_algo_lud"]=\
-                """CREATE TRIGGER TR_dbsbuf_algo_lud BEFORE INSERT ON dbsbuffer_algo
+        self.create["11TR_dbsbuffer_algo_lud"]=\
+                """CREATE TRIGGER TR_dbsbuffer_algo_lud BEFORE INSERT ON dbsbuffer_algo
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
-
-	#self.create["05TR_UnMigratedFiles"]=\
-	#	"""CREATE TRIGGER TR_UnMigratedFiles AFTER INSERT ON dbsbuffer_file
-	#		FOR EACH ROW 
-	#		UPDATE dbsbuffer_dataset SET dbsbuffer_dataset.UnMigratedFiles = dbsbuffer_dataset.UnMigratedFiles + 1 WHERE dbsbuffer_dataset.ID = NEW.Dataset;"""
-
-
-        
-
 

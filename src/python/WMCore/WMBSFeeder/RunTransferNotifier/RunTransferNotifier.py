@@ -25,7 +25,7 @@ Algorithm:
 4. Purge WatchedRuns older than n hours
 
 TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
-        * DBS and PhEDEx queries
+        * DBS Event query
         * DQ flags from DBS?
         * Handling of parent files - registering with child file
         * Adding new locations as they become available? What about file acquire
@@ -39,16 +39,14 @@ TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
           for example.
         * Factor out DBS queries into helper module
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.3 2008/10/28 11:25:59 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.4 2008/10/28 11:40:21 jacksonj Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 
 from sets import Set
 
-from xml.dom.minidom import parseString
-
-from DbsCli import sendMessage as callDbsWithOptions
+from DbsQueryHelper import DbsQueryHelper
 
 from WMCore.DataStructs.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl
@@ -105,11 +103,8 @@ class RunTransferNotifier(FeederImpl):
         """
         Configure the feeder
         """
-        # Record connection settings
-        self.phedexUrl = phedexUrl
-        self.dbsHost = dbsHost
-        self.dbsInstance = dbsInstance
-        self.dbsPort = dbsPort
+        # Configure data service look up components
+        self.dbsHelper = DbsQueryHelper(dbsHost, dbsPort, dbsInstance)
         
         # Runs that are being watched
         self.watchedRuns = []
@@ -121,7 +116,7 @@ class RunTransferNotifier(FeederImpl):
         # Bootstrap run list
         if not startRun:
             # Determine the last run registered in DBS
-            runs = self.dbsapi.listRuns()
+            runs = self.dbsHelper.getRuns()
             runs.sort(reverse=True)
             if len(runs) == 0:
                 msg = "Could not bootstrap RunTransferNotifier feeder"
@@ -152,16 +147,16 @@ class RunTransferNotifier(FeederImpl):
                 # Do per dataset work
                 for ds in watch.datasetCompletion:
                     # Query DBS to find all blocks for this run / dataset
-                    blocks = self.getDbsBlockInfo(watch.run, ds)
+                    blocks = self.dbsHelper.getBlockInfo(watch.run, ds)
                     
                     # Now determine all required parent blocks
                     # This is a prime candidate for caching as requires
                     # many per file lookups in DBS
                     parentBlocks = Set()
                     if fileset.requireParents:
-                        primaryFiles = self.getDbsBlockFiles(blocks)
-                        parentFiles = self.getDbsParentFiles(primaryFiles)
-                        parentBlocks = self.getDbsFileBlocks(parentFiles)
+                        primaryFiles = self.dbsHelper.getBlockFiles(blocks)
+                        parentFiles = self.dbsHelper.getParentFiles(primaryFiles)
+                        parentBlocks = self.dbsHelper.getFileBlocks(parentFiles)
                     
                     # Final list of all required blocks
                     allBlocks = blocks[:]
@@ -200,82 +195,6 @@ class RunTransferNotifier(FeederImpl):
         
         # Purge old runs
         self.purgeWatchedRuns()
-    
-    def getText(nodelist):
-        rc = ""
-        for node in nodelist:
-            if node.nodeType == node.TEXT_NODE:
-                rc = rc + node.data
-        return rc
-
-    def getXmlNodeValues(xml, nodelist):
-        if len(nodelist) == 1:
-            nodes = xml.getElementsByTagName(nodelist[0])
-            retList = []
-            for node in nodes:
-                retList.append(getText(node.childNodes))
-            return retList
-        else:
-            node = xml.getElementsByTagName(nodelist[0])[0]
-            return getXmlNodes(node, nodelist[1:])
-    
-    def queryDbs(self, query):
-        """
-        Queries DBS and returns XML
-        """
-        return parseString(callDbsWithOptions(self.dbsHost, self.dbsPort,
-                                              self.dbsInstance, query, 0, -1, 1))
-    
-    def queryDbsBlockInfo(self, query):
-        """
-        Queries DBS and extracts block info from the result
-        """
-        result = queryDbs(query)
-        return getXmlNodeValues(result, ["ddresponse","output","name"])
-    
-    def queryDbsFileInfo(self, query):
-        """
-        Queries DBS and extracts file info from the result
-        """
-        result = queryDbs(query)
-        return getXmlNodeValues(result, ["ddresponse","output","logicalfilename"])
-
-    def queryDbsRunInfo(self, query):
-        """
-        Queries DBS and extracts run info from the result
-        """
-        result = queryDbs(query)
-        return getXmlNodeValues(result, ["ddresponse","output","runnumber"])
-    
-    def getDbsParentFiles(self, files):
-        """
-        Returns all parent files for the given primary files
-        """
-        parentFiles = Set()
-        for f in files:
-            pars = self.queryDbsFileInfo("find file.parent where file = %s" % f)
-            parentFiles.update(pars)
-        return parentFiles
-    
-    def getDbsFileBlocks(self, files):
-        """
-        Queries DBS to get the blocks containing all the passed files
-        """
-        parentBlocks = Set()
-        for f in files:
-            blocks = self.queryDbsBlockInfo("find block where file = %s" % f)
-            parentBlocks.update(blocks)
-        return parentBlocks
-        
-    def getDbsBlockFiles(self, blocks):
-        """
-        Queries DBS to get all files in the listed blocks
-        """
-        files = []
-        for block in blocks:
-            bfs = self.queryDbsFileInfo("find file where block = %s" % block)
-            files.extend(bfs)
-        return files
 
     def getPhEDExBlockFiles(self, block):
         """
@@ -303,12 +222,6 @@ class RunTransferNotifier(FeederImpl):
         Queries PhEDEx to determine sites where all listed blocks are present
         """
         pass
-    
-    def getDbsBlockInfo(self, run, dataset):
-        """
-        Queries DBS to get all file blocks for a given run and dataset
-        """
-        return queryDbsBlockInfo("find block where dataset = %s and run = %d" % (dataset, run))
 
     def getEvents( self, lfn ):
         """
@@ -328,7 +241,7 @@ class RunTransferNotifier(FeederImpl):
         """
         Queries DBS to determine what new runs are present, and adds a watcher
         """
-        runs = self.dbsapi.listRuns("run > %s" % self.lastRun)
+        runs = self.getRuns(self.lastRun)
         runs.sort()
         for run in runs:
             watchedRuns.add(WatchedRun(run))

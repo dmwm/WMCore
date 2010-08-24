@@ -15,18 +15,20 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.29 2008/11/04 10:53:06 jcgon Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Fileset.py,v 1.30 2008/11/20 16:47:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.30 $"
+
+import threading
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 
 from WMCore.WMBS.File import File
-from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.Fileset import Fileset as WMFileset
+from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.Transaction import Transaction
 
-class Fileset(BusinessObject, WMFileset):
+class Fileset(WMFileset):
     """
     A simple object representing a Fileset in WMBS.
 
@@ -37,13 +39,20 @@ class Fileset(BusinessObject, WMFileset):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name=None, id=-1, is_open=True, files=Set(), 
-                 parents=Set(), parents_open=True, source=None, sourceUrl=None,
-                 logger=None, dbfactory = None):
-        # Set up the object
+    def __init__(self, name=None, id=-1, is_open=True, files=None, 
+                 parents=None, parents_open=True, source=None, sourceUrl=None):
         WMFileset.__init__(self, name = name, files=files)
-        # Set up all the surrounding WMBS stuff, logger, database etc
-        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
+
+        myThread = threading.currentThread()
+        self.logger = myThread.logger
+        self.dialect = myThread.dialect
+        self.dbi = myThread.dbi
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
+
+        if parents == None:
+            parents = Set()
         
         # Create a new fileset
         self.id = id
@@ -94,13 +103,13 @@ class Fileset(BusinessObject, WMFileset):
         Remove this fileset from WMBS
         """
         self.logger.warning(
-                        'you are removing the following fileset from WMBS %s %s'
+                        'you are removing the following fileset from WMBS %s'
                          % (self.name))
         
         action = self.daofactory(classname='Fileset.Delete')
         return action.execute(name=self.name)
     
-    def populate(self, method='Fileset.LoadFromName'): #, parentageLevel=0):
+    def load(self, method='Fileset.LoadFromName'): 
         """
         Load up the files in the file set from the database, this drops new 
         files that aren't in the database. If you want to keep them call commit,
@@ -125,7 +134,7 @@ class Fileset(BusinessObject, WMFileset):
         values = action.execute(fileset=self.name)
         
         for v in values:
-            file = File(id=v[0], logger=self.logger, dbfactory=self.dbfactory)
+            file = File(id=v[0])
             file.load()
             self.files.add(file)
 
@@ -140,28 +149,28 @@ class Fileset(BusinessObject, WMFileset):
             self.create()
         lfns = []
         
-        trans = Transaction(dbinterface = self.dbfactory.connect())
+        trans = Transaction(dbinterface = self.dbi)
         try:
             while len(self.newfiles) > 0:
                 #Check file objects exist in the database, save those that don't
                 f = self.newfiles.pop()
-                self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
+                self.logger.debug ( "commiting : %s" % f["lfn"] )  
                 try:
-                    f.save(trans)
+                    f.save()
                 except IntegrityError:
                     self.logger.warning(
                                 'File already exists in the database %s' 
-                                % f.dict["lfn"])
-                lfns.append(f.dict["lfn"])
+                                % f["lfn"])
+                lfns.append(f["lfn"])
 
             #Add Files to DB only if there are any files on newfiles            
             if( len(lfns) > 0 ):
                 self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
-                                                           fileset=self.name,
-                                                           conn = trans.conn, 
-                                                           transaction = True)
+                                                           fileset=self.name, conn = trans.conn,
+                                                                        transaction = True)
+
             trans.commit()
         except Exception, e:
             trans.rollback()
             raise e
-        self.populate()
+        self.load()

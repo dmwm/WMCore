@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2008/11/20 17:23:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2008/11/24 19:47:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -16,14 +16,14 @@ class Create(CreateWMBSBase):
     """
     Class to set up the WMBS schema in a MySQL database
     """
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None):
         """
         _init_
 
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """        
-        CreateWMBSBase.__init__(self)
+        CreateWMBSBase.__init__(self, logger, dbi)
 
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (

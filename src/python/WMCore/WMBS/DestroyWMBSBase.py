@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: DestroyWMBSBase.py,v 1.1 2008/11/20 21:44:21 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DestroyWMBSBase.py,v 1.2 2008/11/24 19:47:05 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -15,14 +15,20 @@ from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
 class DestroyWMBSBase(DBCreator):    
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None):
         """
         _init_
 
         Call the DBCreator constructor and create the list of required tables.
         """
         myThread = threading.currentThread()
-        DBCreator.__init__(self, myThread.logger, myThread.dbi)
+
+        if logger == None:
+            logger = myThread.logger
+        if dbi == None:
+            dbi = myThread.dbi
+            
+        DBCreator.__init__(self, logger, dbi)
                 
         self.create["20wmbs_fileset"] = "DROP TABLE wmbs_fileset"
         self.create["19wmbs_file_details"] = "DROP TABLE wmbs_file_details"

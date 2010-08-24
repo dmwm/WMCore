@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.10 2008/11/20 17:25:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.11 2008/11/24 19:47:05 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 
@@ -15,14 +15,20 @@ from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
 class CreateWMBSBase(DBCreator):    
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None):
         """
         _init_
 
         Call the DBCreator constructor and create the list of required tables.
         """
         myThread = threading.currentThread()
-        DBCreator.__init__(self, myThread.logger, myThread.dbi)
+
+        if logger == None:
+            logger = myThread.logger
+        if dbi == None:
+            dbi = myThread.dbi
+            
+        DBCreator.__init__(self, logger, dbi)
                 
         self.requiredTables = ["01wmbs_fileset",
                                "02wmbs_file_details",

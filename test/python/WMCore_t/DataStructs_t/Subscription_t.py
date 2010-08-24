@@ -39,7 +39,7 @@ class SubscriptionTest(unittest.TestCase):
         self.logger = logging.getLogger('SubscriptionClassTest')
 
         #Initial testcase environment
-        self.dummyFile = File('/tmp/dummyfile',9999,0,0,0,0)
+        self.dummyFile = File('/tmp/dummyfile',9999,0,0,0)
         self.dummySet = Set() 
         self.dummySet.add(self.dummyFile)
         self.dummyFileSet = Fileset(name = 'SubscriptionTestFileset', 
@@ -92,7 +92,7 @@ class SubscriptionTest(unittest.TestCase):
         # First test - Test if initial file (on available set) is inserted in the 
         # acquired set - no arguments
 
-        dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1,1)
+        dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1)
         #Insert dummyFile2 into the available files Set at dummySubscription
         self.dummySubscription.available.addFile(dummyFile2)
 
@@ -117,9 +117,8 @@ class SubscriptionTest(unittest.TestCase):
 
             file = File(lfn=lfn, 
                         size=size, 
-                        events=events, 
-                        run=run, 
-                        lumi=lumi)
+                        events=events,cksum = 1)
+            file.addRun(Run(run, *[lumi]))
             dummyFileList.add(file)
 
         #Check if return value is correct - with parameters
@@ -134,7 +133,7 @@ class SubscriptionTest(unittest.TestCase):
         #Third test - Test if a replicate file is erased from the other Sets, 
         #when a file is acquired
 
-        dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1,1)
+        dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1)
         dummyFileList = []
         dummyFileList.append(dummyFile3)
         
@@ -166,7 +165,7 @@ class SubscriptionTest(unittest.TestCase):
 
         dummyFileList = []
         for i in range(90,100):
-            dummyFileSize = File('/tmp/dummyfile'+str(i),7656,1,1,1,1)
+            dummyFileSize = File('/tmp/dummyfile'+str(i),7656,1,1,1)
             dummyFileList.append(dummyFileSize)         
         
         #Run the method:
@@ -197,7 +196,7 @@ class SubscriptionTest(unittest.TestCase):
         #First test - Test if initial file (on available set) is inserted in the 
         #completed set - no arguments
 
-        dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1,1)
+        dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1)
         #Insert dummyFile2 into the available files Set at dummySubscription
         self.dummySubscription.available.addFile(dummyFile2)
 
@@ -221,7 +220,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file.addRun(Run(run, *[lumi]))
             dummyFileList.append(file)
         #Add the new files
         self.dummySubscription.available.addFile(dummyFileList)
@@ -240,7 +240,7 @@ class SubscriptionTest(unittest.TestCase):
         #Third test - Test if a replicate file is erased from the other Sets, 
         #when a file is made completed
 
-        dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1,1)
+        dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1)
         dummyFileList = []
         dummyFileList.append(dummyFile3)
         
@@ -276,7 +276,7 @@ class SubscriptionTest(unittest.TestCase):
         #First test - Test if initial file (on available set) is inserted in the
         # failed set - no arguments
 
-        dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1,1)
+        dummyFile2 = File('/tmp/dummyfile2,8888',1,1,1)
         #Insert dummyFile2 into the available files Set at dummySubscription
         self.dummySubscription.available.addFile(dummyFile2)
 
@@ -300,7 +300,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file.addRun(Run(run, *[lumi]))
             dummyFileList.append(file)
         #Add the new files
         self.dummySubscription.available.addFile(dummyFileList)
@@ -319,7 +320,7 @@ class SubscriptionTest(unittest.TestCase):
         #Third test - Test if a replicate file is erased from the other Sets,
         # when a file is considered failed
 
-        dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1,1)
+        dummyFile3 = File('/tmp/dummyfile3,5555',1,1,1)
         dummyFileList = []
         dummyFileList.append(dummyFile3)
         
@@ -383,7 +384,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file.addRun(Run(run, *[lumi]))
             if random.randint(1, 2) > 1:
                 file.setLocation('goodse.cern.ch')
                 count += 1
@@ -412,7 +414,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file.addRun(Run(run, *[lumi]))
             if random.randint(1, 2) > 1:
                 file.setLocation('goodse.cern.ch')
             else:

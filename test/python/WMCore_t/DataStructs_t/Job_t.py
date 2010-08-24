@@ -50,7 +50,7 @@ class JobTest(unittest.TestCase):
             lumi = random.randint(0, 8)
 
             file = File(lfn=lfn, size=size, events=events, cksum = 1)
-            file.addRun(Run(1, *[45]))
+	    file.addRun(Run(run, *[lumi]))
             self.dummyFileSet2.addFile(file)
 		
         self.dummyJob = Job(files=self.dummyFileSet2)

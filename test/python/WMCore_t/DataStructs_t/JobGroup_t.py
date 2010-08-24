@@ -35,7 +35,8 @@ class JobGroupTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
             
-            file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            file = File(lfn=lfn, size=size, events=events, cksum=1)
+	    file.addRun(Run(run, *[lumi]))
             fileset.addFile(file)
             if i < 11:
                 l.append(file)

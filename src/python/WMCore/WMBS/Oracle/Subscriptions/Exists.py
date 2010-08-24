@@ -2,7 +2,7 @@
 """
 _Exists_
 
-SQLite implementation of Subscription.Exists
+Oracle implementation of Subscription.Exists
 
 TABLE wmbs_subscription
     id      INT(11) NOT NULL AUTO_INCREMENT,
@@ -12,8 +12,8 @@ TABLE wmbs_subscription
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.2 2008/11/24 21:51:48 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Exists.py,v 1.3 2008/12/05 21:06:25 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.Exists import Exists as ExistsMySQL
 

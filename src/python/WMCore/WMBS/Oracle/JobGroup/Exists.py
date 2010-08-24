@@ -2,12 +2,12 @@
 """
 _Exists_
 
-MySQL implementation of JobGroup.Exists
+Oracle implementation of JobGroup.Exists
 """
 
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.1 2008/11/24 21:51:43 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Exists.py,v 1.2 2008/12/05 21:06:25 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.JobGroup.Exists import Exists as ExistsJobGroupMySQL
 

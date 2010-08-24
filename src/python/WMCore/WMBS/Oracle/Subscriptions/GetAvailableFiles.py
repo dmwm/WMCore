@@ -2,16 +2,17 @@
 """
 _AcquireFiles_
 
-SQLite implementation of Subscription.GetAvailableFiles
+Oracle implementation of Subscription.GetAvailableFiles
 
 Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.4 2008/11/24 22:10:45 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.5 2008/12/05 21:06:25 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
-from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles as GetAvailableFilesMySQL
+from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import \
+     GetAvailableFiles as GetAvailableFilesMySQL
 
 class GetAvailableFiles(GetAvailableFilesMySQL):
     

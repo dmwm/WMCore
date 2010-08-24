@@ -2,13 +2,14 @@
 """
 _FailFiles_
 
-SQLite implementation of Subscription.FailFiles
+Oracle implementation of Subscription.FailFiles
 """
 __all__ = []
-__revision__ = "$Id: FailFiles.py,v 1.2 2008/11/24 21:51:46 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FailFiles.py,v 1.3 2008/12/05 21:06:25 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.MySQL.Subscriptions.FailFiles import FailFiles as FailFilesMySQL
+from WMCore.WMBS.MySQL.Subscriptions.FailFiles import FailFiles \
+     as FailFilesMySQL
 
 class FailFiles(FailFilesMySQL):
     sql = """insert into wmbs_sub_files_failed 

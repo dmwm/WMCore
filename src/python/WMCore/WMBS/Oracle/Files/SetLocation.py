@@ -1,5 +1,5 @@
 """
-SQLite implementation of SetFileLocation
+Oracle implementation of SetFileLocation
 """
 
 from WMCore.WMBS.MySQL.Files.SetLocation import SetLocation as SetLocationMySQL

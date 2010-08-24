@@ -1,5 +1,5 @@
 """
-SQLite implementation of Files.InFileset
+Oracle implementation of Files.InFileset
 """
 from WMCore.WMBS.MySQL.Files.InFileset import InFileset as InFilesetMySQL
 

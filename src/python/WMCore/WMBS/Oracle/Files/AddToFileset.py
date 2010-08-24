@@ -1,5 +1,5 @@
 """
-SQLite implementation of AddFileToFileset
+Oracle implementation of AddFileToFileset
 """
 from WMCore.WMBS.MySQL.Files.AddToFileset import AddToFileset as AddFileToFilesetMySQL
 

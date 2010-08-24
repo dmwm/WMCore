@@ -2,12 +2,12 @@
 """
 _Load_
 
-MySQL implementation of Masks.Load
+Oracle implementation of Masks.Load
 """
 
 __all__ = []
-__revision__ = "$Id: Load.py,v 1.1 2008/11/24 21:51:50 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Load.py,v 1.2 2008/12/05 21:06:24 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Masks.Load import Load as LoadMasksMySQL
 

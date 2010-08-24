@@ -2,11 +2,11 @@
 #!/usr/bin/env python
 """
 _UpdateName_
-MySQL implementation of Jobs.UpdateName
+Oracle implementation of Jobs.UpdateName
 """
 __all__ = []
-__revision__ = "$Id: UpdateName.py,v 1.1 2008/11/24 21:51:40 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: UpdateName.py,v 1.2 2008/12/05 21:06:25 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Jobs.UpdateName import UpdateName as UpdateNameJobMySQL
 

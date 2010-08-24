@@ -2,12 +2,12 @@
 """
 _Parentage_
 
-SQLite implementation of Fileset.Parentage
+Oracle implementation of Fileset.Parentage
 
 """
 __all__ = []
-__revision__ = "$Id: Parentage.py,v 1.2 2008/11/24 21:51:52 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Parentage.py,v 1.3 2008/12/05 21:06:26 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Fileset.Parentage import Parentage as FilesetParentageMySQL
 

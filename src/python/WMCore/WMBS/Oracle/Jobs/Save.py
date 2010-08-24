@@ -2,12 +2,12 @@
 """
 _Save_
 
-MySQL implementation of Jobs.Save
+Oracle implementation of Jobs.Save
 """
 
 __all__ = []
-__revision__ = "$Id: Save.py,v 1.1 2008/11/24 21:51:39 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Save.py,v 1.2 2008/12/05 21:06:25 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Jobs.Save import Save as SaveJobMySQL
 

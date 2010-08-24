@@ -1,5 +1,5 @@
 """
-SQLite implementation of AddFile
+Oracle implementation of AddFile
 """
 from WMCore.WMBS.MySQL.Files.Add import Add as AddFileMySQL
 

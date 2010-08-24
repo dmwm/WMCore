@@ -5,8 +5,8 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.5 2009/02/01 12:35:03 jacksonj Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.6 2009/02/01 17:26:20 jacksonj Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -42,12 +42,12 @@ class WorkerThreadManager:
         self.activeThreadCount -= 1
         self.lock.release()
     
-    def prepareWorker(self, worker, frequency):
+    def prepareWorker(self, worker, idleTime):
         """
         Prepares a worker thread before running
         """
         # Work timing
-        worker.frequency = frequency
+        worker.idleTime = idleTime
         worker.component = self.component
         
         # Thread synchronisation
@@ -56,21 +56,21 @@ class WorkerThreadManager:
         worker.notifyPause = self.pauseSlaves
         worker.notifyResume = self.resumeSlaves
 
-    def addWorker(self, worker, frequency = 60, parameters = None):
+    def addWorker(self, worker, idleTime = 60, parameters = None):
         """
         Adds a worker object and sets it running. Worker thread will sleep for
-        frequency seconds between runs. Parameters, if present, are passed into
+        idleTime seconds between runs. Parameters, if present, are passed into
         the worker thread's setup, algorithm and terminate methods
         """
         # Check type of worker
         if not isinstance(worker, BaseWorkerThread):
-            msg = """WorkerThreadManager: Attempting to add worker that does not
-            inherit from BaseWorkerThread"""
+            msg = "WorkerThreadManager: Attempting to add worker that does not "
+            msg += "inherit from BaseWorkerThread"
             logging.critical(msg)
             return
         
         # Prepare the new worker thread
-        self.prepareWorker(worker, frequency)
+        self.prepareWorker(worker, idleTime)
         workerThread = threading.Thread(target = worker, args = (parameters,))
         msg = "WorkerThreadManager: Created worker thread %s" % str(worker)
         logging.info(msg)

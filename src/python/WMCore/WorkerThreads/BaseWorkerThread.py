@@ -7,8 +7,8 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.4 2009/02/01 12:30:57 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.5 2009/02/01 17:26:20 jacksonj Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -24,7 +24,7 @@ class BaseWorkerThread:
         """
         Creates the worker, called from parent thread
         """
-        self.frequency = None
+        self.idleTime = None
         self.notifyTerminate = None
         self.notifyPause = None
         self.notifyResume = None
@@ -75,7 +75,7 @@ class BaseWorkerThread:
                             logging.error(msg)
                 
                         # Put the thread to sleep
-                        time.sleep(self.frequency)
+                        time.sleep(self.idleTime)
                         
             # Call specific thread termination method
             self.terminate(parameters)

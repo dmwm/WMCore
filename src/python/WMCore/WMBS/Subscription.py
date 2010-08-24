@@ -19,8 +19,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.12 2008/07/03 17:16:56 metson Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Subscription.py,v 1.13 2008/07/04 16:49:00 metson Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -32,7 +32,7 @@ from WMCore.DataStructs.Subscription import Subscription as WMSubscription
 
 class Subscription(BusinessObject, WMSubscription):
     def __init__(self, fileset = None, workflow = None, id = -1,
-                  type = "Processing", split_algo = 'File', 
+                  type = "Processing", split_algo = 'FileBased', 
                   logger=None, dbfactory = None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         WMSubscription.__init__(self, fileset=fileset, workflow=workflow, 
@@ -84,46 +84,12 @@ class Subscription(BusinessObject, WMSubscription):
         self.id = result['id']
         self.split_algo = result['split_algo']
              
-    def availableFiles(self, parents=0):
-        """
-        Return a Set of files that are available for processing 
-        (e.g. not already in use)
-        """
+    def filesOfStatus(self, status=None):
         files = Set()
-        action = self.daofactory(classname='Subscriptions.GetAvailableFiles')
+        action = self.daofactory(classname='Subscriptions.Get%s' % status)
         for f in action.execute(self.id):
             files.add(f[0])
-        return files
-            
-    def acquiredFiles(self):
-        """
-        Set of files marked as acquired.
-        """
-        files = Set()
-        action = self.daofactory(classname='Subscriptions.GetAcquiredFiles')
-        for f in action.execute(self.id):
-            files.add(f[0])
-        return files
-
-    def completedFiles(self):
-        """
-        Set of files marked as completed.
-        """
-        files = Set()
-        action = self.daofactory(classname='Subscriptions.GetCompletedFiles')
-        for f in action.execute(self.id):
-            files.add(f[0])
-        return files
-    
-    def failedFiles(self):
-        """
-        Set of files marked as failed. 
-        """
-        files = Set()
-        action = self.daofactory(classname='Subscriptions.GetFailedFiles')
-        for f in action.execute(self.id):
-            files.add(f[0])
-        return files
+        return files 
                      
     def acquireFiles(self, files = [], size = 0):
         """

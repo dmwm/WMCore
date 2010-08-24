@@ -1,0 +1,77 @@
+h1, h2, h3, p{
+	font-weight:400;
+	color:#1A1A1A;
+	padding: 10px;
+}
+
+pre{
+		padding: 10px;
+}
+
+h1, h2{
+	text-transform: capitalize;
+	font-family:georgia,serif;
+}
+
+h1{
+	font-size:30px;
+}
+
+h2{
+	font-size:22px;
+}
+
+h3, p, li, dt, dd{
+	font-family:'Helvetica Neue', 'HelveticaNeue', Helvetica, arial, sans-serif;
+}
+
+h3{
+	font-size:22px;
+}
+
+dt{
+	font-size:18px;
+}
+
+p, li{
+	font-size:16px;
+}
+
+li {
+	margin-left: 10px;
+	list-style-type: disc;
+	list-style-position: outside;
+}
+
+.small{
+	font-size:11px;
+}
+
+i{
+	color:#7da976;
+}
+
+b, a{
+	color: #E85514;
+}
+
+hr {
+	color: #D3D3D3;  
+	background-color:  #D3D3D3;
+	height: 1px;
+	width: 75%;
+	border: 0;
+}
+body {
+        background-color:  #D3D3D3;
+        padding: 10px;
+}
+
+table {
+        background-color:  #FFFFFF;
+        padding: 5px;
+}
+
+body, table {
+        margin: 10px;
+}

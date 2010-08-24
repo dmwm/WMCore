@@ -26,7 +26,7 @@ from sets import Set
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.13 2008/11/25 15:58:57 jcgon Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.14 2008/11/26 19:28:55 sfoulkes Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -341,8 +341,11 @@ class WMBSBase(Performance):
 
         self.dao = DAOFactory(package = 'WMCore.WMBS', logger = self.logger, 
                         dbinterface = self.dbf.connect())
-        
-        assert self.dao(classname = 'CreateWMBS').execute()       
+
+        try:
+            assert self.dao(classname = 'Create').execute()
+        except:
+            pass
 
         #Creating the Locations at the Database
         self.selist = ['localhost']        

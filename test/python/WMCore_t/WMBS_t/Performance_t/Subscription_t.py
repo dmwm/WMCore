@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 import logging
-from WMCore_t.WMBS_t.Performance_t.Base_t import BaseTest
+from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.Database.DBFactory import DBFactory
 
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 
-class SubscriptionTest(BaseTest):
+class SubscriptionTest(WMBSBase):
     """
     __SubscriptionTest__
 
@@ -20,17 +20,17 @@ class SubscriptionTest(BaseTest):
     """
     
     def setUp(self, sqlURI='', logarg=''):
-        #Call common setUp method from BaseTest
+        #Call common setUp method from WMBSBase
                 
         self.logger = logging.getLogger(logarg + 'SubscriptionPerformanceTest')
         
         dbf = DBFactory(self.logger, sqlURI)
         
-        BaseTest.setUp(self,dbf=dbf)
+        WMBSBase.setUp(self,dbf=dbf)
 
     def tearDown(self):
         #Call superclass tearDown method
-        BaseTest.tearDown(self)
+        WMBSBase.tearDown(self)
 
     def testAcquireFiles(self):         
         print "testAcquireFiles"

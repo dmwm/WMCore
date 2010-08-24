@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import logging
-from WMCore_t.WMBS_t.Performance_t.Base_t import BaseTest
+import logging, random
+from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.Database.DBFactory import DBFactory
 
-class FileTest(BaseTest):
+class FileTest(WMBSBase):
     """
     __FileTest__
 
@@ -23,16 +23,18 @@ class FileTest(BaseTest):
         
         dbf = DBFactory(self.logger, sqlURI)
         
-        BaseTest.setUp(self,dbf=dbf)
+        WMBSBase.setUp(self,dbf=dbf)
 
     def tearDown(self):
         #Call superclass tearDown method
-        BaseTest.tearDown(self)
+        WMBSBase.tearDown(self)
 
     def testAdd(self):
         print "testAdd"
         # Can't reuse testfile here - it's already in the database
-        lfn = "/store/user/testfile0001"
+        random.seed()
+        random.jumpahead(100)
+        lfn = "/store/user/testfile"+str(random.randint(1000, 9999))
         size = 25168286
         events = 10000
         time = self.perfTest(dao=self.dao, action='Files.Add', files=str(lfn), size=size, events=events)

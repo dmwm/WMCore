@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import logging, random
-from WMCore_t.WMBS_t.Performance_t.Base_t import BaseTest
+from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.File import File
 from WMCore.Database.DBFactory import DBFactory
 
-class FilesetTest(BaseTest):
+class FilesetTest(WMBSBase):
     """
     __FilesetTest__
 
@@ -18,17 +18,17 @@ class FilesetTest(BaseTest):
 
     """
     def setUp(self, sqlURI='', logarg=''):
-        #Call common setUp method from Base_t
+        #Call common setUp method from WMBSBase
                 
         self.logger = logging.getLogger(logarg + 'FilesetPerformanceTest')
         
         dbf = DBFactory(self.logger, sqlURI)
         
-        BaseTest.setUp(self,dbf=dbf)
+        WMBSBase.setUp(self,dbf=dbf)
 
     def tearDown(self):
         #Call superclass tearDown method
-        BaseTest.tearDown(self)
+        WMBSBase.tearDown(self)
 
     def testNew(self):
         print "testNew"

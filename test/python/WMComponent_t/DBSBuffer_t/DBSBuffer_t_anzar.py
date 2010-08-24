@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.8 2008/12/11 20:29:21 afaq Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.9 2008/12/30 17:46:00 afaq Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -142,8 +142,10 @@ class DBSBufferTest(unittest.TestCase):
                         myThread.dialect)
                 newMsgService = factory.loadObject("MsgService")
                 newMsgService.registerAs("DBSBufferTestComp")
-                msg = {'name':'JobSuccess', 'payload':'/uscms/home/anzar/work/FJR/forAnzar/Run68141/Calo/FrameworkJobReport-30.xml'}
-                newMsgService.publish(msg)
+
+               	msg = {'name':'JobSuccess', 'payload':'/uscms/home/anzar/work/FJR/forAnzar/Run68141/Calo/FrameworkJobReport-30.xml'}
+               	newMsgService.publish(msg)
+
                 newMsgService.finish()
                 
                 myThread.transaction.commit()
@@ -228,8 +230,15 @@ class DBSBufferTest(unittest.TestCase):
         # StartComponent one.
         #testDBSBuffer.handleMessage('JobSuccess', \
         #        'C:\WORK\FJR\fjr_01.xml')
-        testDBSBuffer.handleMessage('JobSuccess', \
-                '/uscms/home/anzar/work/FJR/forAnzar/Run68141/Calo/FrameworkJobReport-30.xml')
+
+
+	print "HAVE YOU DONE,  insert into wmbs_location (id, se_name) values (1, 'srm.cern.ch') ?????"
+
+
+        fjr_path='/uscms/home/anzar/work/FJR/forAnzar/Run68141/Calo'	
+	for aFJR in os.listdir(fjr_path):
+		if aFJR.endswith('.xml'):
+			testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
         #########myThread.transaction.commit()
          
         while threading.activeCount() > 1:

@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.10 $"
+__version__ = "$Revision: 1.1 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -79,13 +79,10 @@ class DBSUploadTest(unittest.TestCase):
 
         DBSUploadTest._teardown = False
 
-    def testA(self):
-        
+    def testB(self):
         """
         Mimics creation of component and handles come messages.
         """
-        
-        #return True
         
         # read the default config first.
         config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
@@ -109,18 +106,28 @@ class DBSUploadTest(unittest.TestCase):
         config.CoreDatabase.name = os.getenv("DBNAME")
 
         testDBSUpload = DBSUpload(config)
+        
         testDBSUpload.prepareToStart()
-
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # for testing purposes we use this method instead of the 
         # StartComponent one.
+        
+        #testDBSUpload.handleMessage('NewWorkflow', \
+        #        'C:\\WORK\\FJR\\workflow.xml')
 
-        testDBSUpload.handleMessage('BufferSuccess', \
-				'NoPayLoad')
+	#testDBSUpload.handleMessage('NewWorkflow', \
+	#	'/uscms/home/anzar/work/FJR/forAnzar/Run68141/PromptReco-Run68141-A-Calo-workflow.xml')
 
-        #for i in xrange(0, DBSUploadTest._maxMessage):
-        #    testDBSUpload.handleMessage('BufferSuccess', \
-        #        'YourMessageHere'+str(i))
+        #testDBSUpload.handleMessage('NewWorkflow', \
+        #                            'C:\\WORK\\FJR\\RepackMerge-Run58733-RAW-BarrelMuon-Merge-Workflow.xml')
+
+        wkflo_path='/uscms/home/anzar/work/FJR/forAnzar/Run68141'
+        for wkflo in os.listdir(wkflo_path):
+                if wkflo.endswith('.xml'):
+                        testDBSUpload.handleMessage('NewWorkflow', wkflo_path+'/'+wkflo)
+
+        for i in xrange(0, DBSUploadTest._maxMessage):
+            testDBSUpload.handleMessage('NewWorkflow', \
+                'YourMessageHere'+str(i))
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\
@@ -130,7 +137,7 @@ class DBSUploadTest(unittest.TestCase):
         DBSUploadTest._teardown = True
 
     def runTest(self):
-        self.testA()
+        self.testB()
 
 if __name__ == '__main__':
     unittest.main()

@@ -23,8 +23,10 @@ class WorkflowTest(WMBSBase):
         
         dbf = DBFactory(self.logger, sqlURI)
         
-        self.totaltime = 0
         WMBSBase.setUp(self,dbf=dbf)
+
+        #Type the number of times you want the tests to be run
+#        self.testtimes = 0
 
     def tearDown(self):
         #Call superclass tearDown method
@@ -34,6 +36,11 @@ class WorkflowTest(WMBSBase):
         print "testExists"
 
         list = self.genWorkflow(number=1)
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
        
         for i in range(times):        
             time = self.perfTest(dao=self.dao, action='Workflow.Exists', spec=list[0].spec, owner=list[0].owner, name=list[0].name)
@@ -42,6 +49,11 @@ class WorkflowTest(WMBSBase):
 
     def testNew(self, times=1):         
         print "testNew"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
        
         for i in range(times):        
             time = self.perfTest(dao=self.dao, action='Workflow.New', spec="Test"+str(i), owner="PerformanceTestcase", name="testNew"+str(i))
@@ -50,6 +62,11 @@ class WorkflowTest(WMBSBase):
 
     def testDelete(self, times=1):         
         print "testDelete"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genWorkflow(number=times)
        
@@ -61,6 +78,11 @@ class WorkflowTest(WMBSBase):
     def testLoadFromID(self, times=1):         
         print "testLoadFromID"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genWorkflow(number=1)
 
         for i in range(times):        
@@ -71,6 +93,11 @@ class WorkflowTest(WMBSBase):
     def testLoadFromName(self, times=1):         
         print "testLoadFromName"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genWorkflow(number=1)
 
         for i in range(times):        
@@ -80,6 +107,11 @@ class WorkflowTest(WMBSBase):
 
     def testLoadSpecOwner(self, times=1):         
         print "testLoadSpecOwner"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genWorkflow(number=times)
 

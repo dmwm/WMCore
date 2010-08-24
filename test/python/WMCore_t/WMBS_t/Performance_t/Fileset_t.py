@@ -26,11 +26,8 @@ class FilesetTest(WMBSBase):
         
         WMBSBase.setUp(self,dbf=dbf)
 
-        self.totaltime = 1
-
-        #Setting specific class test threshold
-        self.threshold = 0.1
-        self.totalthreshold = 5
+        #Type the number of times you want the tests to be run
+#        self.testtimes = 0
 
     def tearDown(self):
         #Call superclass tearDown method
@@ -38,6 +35,11 @@ class FilesetTest(WMBSBase):
 
     def testNew(self, times=1):
         print "testNew"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
         
         for i in range(times):        
             time = self.perfTest(dao=self.dao, action='Fileset.New', name="TestFileset"+str(i))
@@ -46,6 +48,11 @@ class FilesetTest(WMBSBase):
 
     def testDelete(self, times=1):
         print "testDelete"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genFileset(number=times)
 
@@ -57,6 +64,11 @@ class FilesetTest(WMBSBase):
     def testExists(self, times=1):
         print "testExists"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genFileset(number=times)
 
         for i in range(times):        
@@ -67,6 +79,11 @@ class FilesetTest(WMBSBase):
     def testLoadFromID(self, times=1):
         print "testLoadFromID"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genFileset(number=times)
 
         for i in range(times):        
@@ -76,6 +93,11 @@ class FilesetTest(WMBSBase):
 
     def testLoadFromName(self, times=1):
         print "testLoadFromName"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genFileset(number=times)
 

@@ -20,63 +20,127 @@ class JobTest(WMBSBase):
         #Call common setUp method from WMBSBase
                 
         self.logger = logging.getLogger(logarg + 'JobPerformanceTest')
-        
+                    
         dbf = DBFactory(self.logger, sqlURI)
         
         WMBSBase.setUp(self,dbf=dbf)
+
+        #Type the number of times you want the tests to be run
+#        self.testtimes = 0
 
     def tearDown(self):
         #Call superclass tearDown method
         WMBSBase.tearDown(self)
 
-    def testNew(self):         
+    def testNew(self, times=1):         
         print "testNew"
 
-        testJobName = 'TestNewJob'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-        time = self.perfTest(dao=self.dao, action='Jobs.New', jobgroup=self.testJobGroup.id, name=testJobName)
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        jobgroup = self.genJobGroup(number=1)[0]
+        joblist = self.genJobObjects(number=times, name='JobsNew')
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.New', jobgroup=jobgroup.id, name=joblist[i].name)
+            assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
-    def testActive(self):         
+    def testActive(self, times=1):         
         print "testActive"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Active', job=self.testJob.id)
-        assert time <= self.threshold, 'Active DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+    
+        jobs = self.genJob(number=times)
 
-    def testComplete(self):         
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.Active', job=jobs[i].id)
+            assert self.totaltime <= self.totalthreshold, 'Active DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testComplete(self, times=1):         
         print "testComplete"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Complete', job=self.testJob.id)
-        assert time <= self.threshold, 'Complete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-    def testFailed(self):         
+        jobs = self.genJob(number=times)
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.Complete', job=jobs[i].id)
+            assert self.totaltime <= self.totalthreshold, 'Complete DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testFailed(self, times=1):         
         print "testFailed"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Failed', job=self.testJob.id)
-        assert time <= self.threshold, 'Failed DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-    def testLoad(self):         
+        jobs = self.genJob(number=times)
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.Failed', job=jobs[i].id)
+            assert self.totaltime <= self.totalthreshold, 'Failed DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testLoad(self, times=1):         
         print "testLoad"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Load', id=self.testJob.id)
-        assert time <= self.threshold, 'Load DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-    def testClearStatus(self):         
+        jobs = self.genJob(number=times)
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.Load', id=jobs[i].id)
+            assert self.totaltime <= self.totalthreshold, 'Load DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testClearStatus(self, times=1):         
         print "testClearStatus"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.ClearStatus', job=self.testJob.id)
-        assert time <= self.threshold, 'ClearStatus DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-    def testUpdateName(self):         
+        jobs = self.genJob(number=times)
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.ClearStatus', job=jobs[i].id)
+            assert self.totaltime <= self.totalthreshold, 'ClearStatus DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testUpdateName(self, times=1):         
         print "testUpdateName"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.UpdateName', id=self.testJob.id, name='NewJobName')
-        assert time <= self.threshold, 'UpdateName DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-    def testAddFiles(self):         
+        jobs = self.genJob(number=times)
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.UpdateName', id=jobs[i].id, name="NewJobName"+str(i))
+            assert self.totaltime <= self.totalthreshold, 'UpdateName DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testAddFiles(self, times=1):         
         print "testAddFiles"
-        
-        time = self.perfTest(dao=self.dao, action='Jobs.AddFiles', id=self.testJob.id, file=self.testFile["id"])
-        assert time <= self.threshold, 'AddFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
+        jobs = self.genJob(number=times)
+        files = self.genFiles(number=times, name="testAddFiles")
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Jobs.AddFiles', id=jobs[i].id, file=files[i]["id"])
+            assert self.totaltime <= self.totalthreshold, 'AddFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'

@@ -86,7 +86,7 @@ class WMBSBase(Performance):
 
         
         for i in range(rangemax):        
-            filelist = self.genFileObjects(1, name=name+'Fileset')
+            filelist = self.genFileObjects(number=10, name=name+'Fileset')
             fileset = Fileset(name=name+str(i), 
                             files=set(filelist), 
                             logger=self.logger, 
@@ -114,7 +114,9 @@ class WMBSBase(Performance):
             rangemax = number
 
         for i in range(rangemax):        
-            workflow = Workflow(spec=name+'Spec'+str(i), owner=name+'Owner'+str(i), name=name+'Workflow'+str(i), logger=self.logger, dbfactory=self.dbf)
+            workflow = Workflow(spec=name+'Spec'+str(i), 
+                        owner=name+'Owner'+str(i), name=name+'Workflow'+str(i), 
+                        logger=self.logger, dbfactory=self.dbf)
             list.append(workflow)
 
         return list
@@ -137,15 +139,16 @@ class WMBSBase(Performance):
         else:
             rangemax = number
 
+#        workflow = self.genWorkflow(number=number, name=name+'Sub')
+        workflow = self.genWorkflow(number=1, name=name+'Sub')
+        fileset = self.genFileset(number=number, name=name+'Sub')
+
         for i in range(rangemax):        
-            listtemp = self.genWorkflow(number=1, name=name+'Sub')
-            workflow = listtemp[0]
 
-            listtemp = self.genFileset(number=1, name=name+'Sub')
-            fileset = listtemp[0]
 
-            subscription = Subscription(fileset=fileset, 
-                        workflow=workflow, logger=self.logger, 
+            subscription = Subscription(fileset=fileset[i], 
+#                        workflow=workflow[i], logger=self.logger, 
+                        workflow=workflow[0], logger=self.logger, 
                         dbfactory=self.dbf)
             subscription.create()
 
@@ -160,12 +163,14 @@ class WMBSBase(Performance):
         else:
             rangemax = number
 
+        fileset = self.genFileset(number=rangemax, name=name+'Job')
+        jobset = Set()
+#        subscription = self.genSubscription(number=rangemax, name=name+'Job'+str(i))[0]
+
         for i in range(rangemax):        
-            fileset = self.genFileset(number=1, name=name+'genJob')[0]
-            subscription = self.genSubscription(number=1, name=name+'genJob')[0]
-        
-            job = Job(name=name+'genJob'+str(i),files=fileset, logger=self.logger, dbfactory=self.dbf)
-            jobset = Set()
+         
+            job = Job(name=name+'Job'+str(i),files=fileset[i], 
+                        logger=self.logger, dbfactory=self.dbf)
             jobset.add(job)
 
         return list(jobset) 
@@ -174,13 +179,21 @@ class WMBSBase(Performance):
 
         list = []
 
-        for i in range(number):        
+        if number == 0:
+            rangemax = random.randint(1000,3000)
+        else:
+            rangemax = number
+        
+        joblist = self.genJobObjects(number=rangemax,name=name+'Job')
 
-            joblist = self.genJobObjects(number=number,name=name)
-            jobset = set(joblist)
-            jobgroup = JobGroup(subscription=subscription, jobs=jobset)
+        subscription = self.genSubscription(number=1,name=name+'Job')[0]
+
+        jobset = set(joblist)
+        jobgroup = JobGroup(subscription=subscription, jobs=jobset)
+        jobgroup.create()
+
+        for job in joblist:                    
             job.create(group = jobgroup)
-            
             list.append(job)
 
         return list
@@ -196,20 +209,80 @@ class WMBSBase(Performance):
         else:
             rangemax = number
 
+            subscription = self.genSubscription(number=1, 
+                            name=name+'JobGroup')[0]            
+
         for i in range(rangemax):        
-
-            subscription = self.genSubscription(number=1, name=name+'genJobGroup')[0]            
-
-            jobs = self.genJobObjects(number=0, name=name+'genJobGroup')
-
+            jobs = self.genJobObjects(number=1, name=name+'JobGroup'+str(i))
             for j in jobs:
                 set.add(j)
 
-                jobgroup = JobGroup(subscription=subscription, jobs=set)
-                list.append(jobgroup)
+            jobgroup = JobGroup(subscription=subscription, jobs=set)
+            list.append(jobgroup)
 
         return list
- 
+
+    def oldstuff(self):
+        #Method soon to be deprecated and erased from the class
+        #Just in case someone wants to test the old way of having dummy WMBS
+        #Objects to testcases
+
+        # Create a File to be used as argument for the performance test
+        file_lfn = '/tmp/file/fileexample'
+        file_events = 1111
+        file_size = 1111
+        file_run = 111
+        file_lumi = 0
+        
+        self.testFile = File(lfn=file_lfn, size=file_size, events=file_events, run=file_run,
+                    lumi=file_lumi, logger=self.logger, dbfactory=self.dbf)
+        self.testFile.save()
+        self.testFile.load()
+
+        # Create a Fileset of random, parentless, childless, unlocatied file
+        filelist = []
+
+        #Generating Files        
+        for x in range(random.randint(1000,3000)):
+            file = File(lfn='/store/data/%s/%s/file.root' % (random.randint(1000, 9999), 
+                                                  random.randint(1000, 9999)),
+                        size=random.randint(1000, 2000),
+                        events = 1000,
+                        run = random.randint(0, 2000),
+                        lumi = random.randint(0, 8), 
+                        logger=self.logger, 
+                        dbfactory=self.dbf)
+            
+            filelist.append(file)
+    
+        #Creating mySQL Fileset        
+        self.testFileset = Fileset(name='testFileSet', 
+                            files=filelist, 
+                            logger=self.logger, 
+                            dbfactory=self.dbf) 
+        self.testFileset.create()     
+
+        #Creating mySQL Workflow
+        self.testWorkflow = Workflow(spec='Test', owner='PerformanceTestCase', name='TestWorkflow', logger=self.logger, dbfactory=self.dbf)
+        self.testWorkflow.create()
+
+        #Creating MySQL Subscription
+        self.testSubscription = Subscription(fileset=self.testFileset, 
+                        workflow=self.testWorkflow, logger=self.logger, 
+                        dbfactory=self.dbf)
+        self.testSubscription.create()
+
+        #Instatiating mySQL Job
+        self.testJob = Job(name='TestJob',files=self.testFileset, logger=self.logger, dbfactory=self.dbf)
+
+        #Creating mySQL JobGroup
+        testSet = Set()
+        testSet.add(self.testJob)
+        self.testJobGroup = JobGroup(subscription=self.testSubscription, jobs=testSet)
+
+        #Creating mySQL Job for testing
+        self.testJob.create(group=self.testJobGroup.id) 
+
     def setUp(self, dbf):
         """
         Common setUp for all WMBS Performance tests
@@ -218,6 +291,10 @@ class WMBSBase(Performance):
         #Total time counter for Performance tests
         self.totaltime = 0
         
+        #Number of times each test method will run.
+        #Can be overriden at the specific testcases
+        self.testtimes = 0
+
         #Superclass setUp call
         Performance.setUp(self)
 

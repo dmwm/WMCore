@@ -25,29 +25,45 @@ class JobGroupTest(WMBSBase):
         
         WMBSBase.setUp(self,dbf=dbf)
 
+        #Type the number of times you want the tests to be run
+#        self.testtimes = 0
+
     def tearDown(self):
         #Call superclass tearDown method
         WMBSBase.tearDown(self)
 
-    def testNew(self):         
+    def testNew(self, times=1):         
         print "testNew"
-        
-        #Surprisingly it worked with the same Subscription
-        #TODO - Validate if its working properly
-        time = self.perfTest(dao=self.dao, action='JobGroup.New', subscription=self.testSubscription.id)
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testLoad(self):   
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
+        subscription=self.genSubscription(number=times, name='testNew')
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='JobGroup.New', subscription=subscription[i]['id'])
+            assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'        
+
+#    def testLoad(self):   
         # Still no complete JobGroup.Load class
-        print "testLoad"
-        
-        time = self.perfTest(dao=self.dao, action='JobGroup.Load')
-        assert time <= self.threshold, 'Load DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+#        print "testLoad"
 
-    def testStatus(self):         
+#        for i in range(times):             
+#            time = self.perfTest(dao=self.dao, action='Jobs.Load')
+#            assert self.totaltime <= self.totalthreshold, 'Load DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testStatus(self, times=1):         
         print "testStatus"
-        
-        time = self.perfTest(dao=self.dao, action='JobGroup.Status', group=self.testJobGroup.id)
-        assert time <= self.threshold, 'Status DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
+        jobgroup=self.genJobGroup(number=1, name='testStatus')[0]
+
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='JobGroup.Status', group=jobgroup.id)
+            assert self.totaltime <= self.totalthreshold, 'Status DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'

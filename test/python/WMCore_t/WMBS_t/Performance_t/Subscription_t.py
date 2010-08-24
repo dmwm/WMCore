@@ -24,10 +24,12 @@ class SubscriptionTest(WMBSBase):
                 
         self.logger = logging.getLogger(logarg + 'SubscriptionPerformanceTest')
         
-        self.totaltime = 0
         dbf = DBFactory(self.logger, sqlURI)
         
         WMBSBase.setUp(self,dbf=dbf)
+
+        #Type the number of times you want the tests to be run
+#        self.testtimes = 0
 
     def tearDown(self):
         #Call superclass tearDown method
@@ -35,6 +37,11 @@ class SubscriptionTest(WMBSBase):
 
     def testAcquireFiles(self, times=1):         
         print "testAcquireFiles"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         subscription = self.genSubscription(number=1)[0]
        
@@ -48,6 +55,11 @@ class SubscriptionTest(WMBSBase):
     def testCompleteFiles(self, times=1):         
         print "testCompleteFiles"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         subscription = self.genSubscription(number=1)[0]
        
         filelist = self.genFiles(number=times)
@@ -60,6 +72,11 @@ class SubscriptionTest(WMBSBase):
     def testFailFiles(self, times=1):         
         print "testFailFiles"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         subscription = self.genSubscription(number=1)[0]
        
         filelist = self.genFiles(number=times)
@@ -71,6 +88,11 @@ class SubscriptionTest(WMBSBase):
 
     def testDeleteAcquiredFiles(self, times=1):         
         print "testDeleteAcquiredFiles"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         subscription = self.genSubscription(number=1)[0]
        
@@ -87,6 +109,11 @@ class SubscriptionTest(WMBSBase):
     def testGetAcquiredFiles(self, times=1):         
         print "testGetAcquiredFiles"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         subscription = self.genSubscription(number=1)[0]
 
         filelist = self.genFiles(number=times)
@@ -102,6 +129,11 @@ class SubscriptionTest(WMBSBase):
     def testGetAvailableFiles(self, times=1):         
         print "testGetAvailableFiles"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         subscription = self.genSubscription(number=1)[0]
 
         for i in range(times):     
@@ -111,6 +143,11 @@ class SubscriptionTest(WMBSBase):
 
     def testGetCompletedFiles(self, times=1):         
         print "testGetCompletedFiles"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         subscription = self.genSubscription(number=1)[0]
 
@@ -127,6 +164,11 @@ class SubscriptionTest(WMBSBase):
     def testGetFailedFiles(self, times=1):         
         print "testGetFailedFiles"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         subscription = self.genSubscription(number=1)[0]
 
         filelist = self.genFiles(number=times)
@@ -142,6 +184,11 @@ class SubscriptionTest(WMBSBase):
     def testForFileset(self, times=1):         
         print "testForFileset"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         fileset = self.genFileset(number=1)[0]
 
         for i in range(times):     
@@ -153,6 +200,11 @@ class SubscriptionTest(WMBSBase):
         #TODO - Verify a possible overhead on this method
         print "testNew"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         workflow = self.genWorkflow(number=times, name='testNew')
         fileset = self.genFileset(number=times, name='testNew')
 
@@ -163,6 +215,11 @@ class SubscriptionTest(WMBSBase):
     def testLoad(self, times=1):         
         print "testLoad"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         subscription = self.genSubscription(number=1, name='testLoad')[0]
 
         for i in range(times):             
@@ -172,6 +229,11 @@ class SubscriptionTest(WMBSBase):
     def testJobs(self, times=1):         
         print "testJobs"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         subscription = self.genSubscription(number=1, name='testJobs')[0]
 
         for i in range(times):             
@@ -180,6 +242,11 @@ class SubscriptionTest(WMBSBase):
 
     def testExists(self, times=1):         
         print "testExists"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         subscription = self.genSubscription(number=1, name='testExists')[0]
 

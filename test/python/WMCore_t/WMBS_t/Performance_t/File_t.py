@@ -29,9 +29,8 @@ class FileTest(WMBSBase):
         
         WMBSBase.setUp(self,dbf=dbf)
 
-        #Setting specific class test threshold
-        self.threshold = 0.1
-        self.totalthreshold = 1
+        #Type the number of times you want the tests to be run
+#        self.testtimes = 0
 
     def tearDown(self):
         #Call superclass tearDown method
@@ -39,6 +38,11 @@ class FileTest(WMBSBase):
 
     def testAdd(self, times=1):
         print "testAdd"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genFileObjects(number=times)        
         for i in range(times):
@@ -48,6 +52,11 @@ class FileTest(WMBSBase):
 
     def testAddRunLumi(self, times=1): 
         print "testAddRunLumi"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genFileObjects(number=times)
 
@@ -59,6 +68,11 @@ class FileTest(WMBSBase):
     def testAddToFileset(self, times=1):
         print "testAddToFileset"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genFiles(number=times)
 
         for i in range(times):
@@ -69,6 +83,11 @@ class FileTest(WMBSBase):
     def testDelete(self, times=1):
         print "testDelete"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genFiles(number=times)
         for i in range(times):       
             time = self.perfTest(dao=self.dao, action='Files.Delete', file=list[i]['lfn'])
@@ -78,10 +97,14 @@ class FileTest(WMBSBase):
     def testGetByID(self, times=1):
         print "testGetByID"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genFiles(number=1)
 
         for i in range(times):
-           print list[0]['id']        
            time = self.perfTest(dao=self.dao, action='Files.GetByID', files=list[0]["id"])
            self.totaltime = self.totaltime + time                        
            assert self.totaltime <= self.totalthreshold, 'GetByID DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
@@ -89,16 +112,25 @@ class FileTest(WMBSBase):
     def testGetByLFN(self, times=1):
         print "testGetByLFN"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genFiles(number=1)
 
         for i in range(times):
-            print list[0]['id']                    
             time = self.perfTest(dao=self.dao, action='Files.GetByLFN', files=list[0]['lfn'])
             self.totaltime = self.totaltime + time                        
             assert self.totaltime <= self.totalthreshold, 'GetByLFN DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
     def testGetLocation(self, times=1):
         print "testGetLocation"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genFiles(number=1)
 
@@ -109,6 +141,11 @@ class FileTest(WMBSBase):
 
     def testGetParents(self, times=1):
         print "testGetParents"
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
         list = self.genFiles(number=1)
 
@@ -126,7 +163,13 @@ class FileTest(WMBSBase):
     def testInFileset(self, times=1):
         print "testInFileset"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genFileset(number=1)
+
         for i in range(times):        
             time = self.perfTest(dao=self.dao, action='Files.InFileset', fileset="TestFileset")
             self.totaltime = self.totaltime + time                        
@@ -135,9 +178,15 @@ class FileTest(WMBSBase):
     def testSetLocation(self, times=1):
         print "testSetLocation"
 
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
         list = self.genLocations(number=times)
 
         file = self.genFiles(number=1)[0]        
+
         for i in range(times):
             time = self.perfTest(dao=self.dao, action='Files.SetLocation', file=file["lfn"], sename=list[0]) 
             self.totaltime = self.totaltime + time            

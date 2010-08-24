@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.33 2009/01/13 16:41:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Fileset.py,v 1.34 2009/01/13 16:49:46 sryu Exp $"
+__version__ = "$Revision: 1.34 $"
 
 from sets import Set
 
@@ -82,13 +82,20 @@ class Fileset(WMBSBase, WMFileset):
         """
         Add the new fileset to WMBS, and commit the files
         """
+        eflag = self.exists()
+        if eflag != False:
+            self["id"] = eflag
+            return
+        
         createAction = self.daofactory(classname = "Fileset.New")
         createAction.execute(self.name, conn = self.getWriteDBConn(),
                              transaction = self.existingTransaction())
         self.commit()
         self.load()
         self.commitIfNew()
-        return self
+        self["id"] = self.exists()
+        
+        return
     
     def delete(self):
         """

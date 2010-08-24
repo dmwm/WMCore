@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.15 2009/01/16 22:43:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobGroup.py,v 1.16 2009/01/21 22:04:23 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -154,16 +154,37 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.subscription.loadData()
         self.groupoutput.loadData()
 
-        jobAction = self.daofactory(classname = "JobGroup.LoadJobs")
-        jobIDs = jobAction.execute(self.id, conn = self.getReadDBConn(),
-                                   transaction = self.existingTransaction())
-
+        jobIDs = self.getJobIDs(type="dict")
+        
         for jobID in jobIDs:
             newJob = Job(id = jobID["id"])
             newJob.loadData()
             self.jobs.add(newJob)
 
         return    
+    
+    def getJobIDs(self, type="dict"):
+        """
+        return list of Job IDs
+        If type is JobList return list of Job object with only id field is 
+        filled
+        """
+        jobAction = self.daofactory(classname = "JobGroup.LoadJobs")
+        jobIDs = jobAction.execute(self.id, conn = self.getReadDBConn(),
+                                   transaction = self.existingTransaction())
+        
+        if type == "JobList":
+            jobList = []
+            for jobID in jobIDs:
+                jobList.append(Job(id = jobID["id"]))
+            return jobList
+        elif type == "list":
+            idList = []
+            for jobID in jobIDs:
+                idList.append(jobID["id"])
+            return idList
+        else:
+            return jobIDs
         
     def commit(self):
         """
@@ -175,12 +196,24 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.beginTransaction()
         
         for j in self.newjobs:
+            # create() will also associate files
             j.create(group=self)
-            j.associateFiles()
             
         WMJobGroup.commit(self)
         self.commitIfNew()
         return
+    
+    def recordAcquire(self):
+        for j in self.getJobIDs(type="JobList"):
+            self.subscription.acquireFiles(j.getFileIDs())
+            
+    def recordComplete(self):
+        for j in self.getJobIDs(type="JobList"):
+            self.subscription.completeFiles(j.getFileIDs())
+            
+    def recordFail(self):
+        for j in self.getJobIDs(type="JobList"):
+            self.subscription.failFiles(j.getFileIDs())
     
     def status(self, detail = False):
         """
@@ -205,10 +238,16 @@ class JobGroup(WMBSBase, WMJobGroup):
             if detail:
                 report = ' (av %s, ac %s, fa %s, cm %s)' % (av, ac, fa, cm)
             if cm == total:
+                # update the File status to complete as a whole
+                self.recordComplete()
                 return 'COMPLETE%s' % report
-            elif fa == total:
+            elif fa > 0:
+                # update the File status to Fail as a whole
+                # even if there is some jobs are successful
+                self.recordFail()
                 return 'FAILED%s' % report
             else:
+                # all the file status should be acquired at this point
                 return 'ACTIVE%s' % report
     
     def output(self):

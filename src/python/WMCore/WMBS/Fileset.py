@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.37 2009/02/16 16:08:07 sryu Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: Fileset.py,v 1.38 2009/03/03 14:56:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
 
 from sets import Set
 
@@ -87,7 +87,7 @@ class Fileset(WMBSBase, WMFileset):
             return
         
         createAction = self.daofactory(classname = "Fileset.New")
-        createAction.execute(self.name, conn = self.getWriteDBConn(),
+        createAction.execute(self.name, self.open, conn = self.getWriteDBConn(),
                              transaction = self.existingTransaction())
         self.commit()
         self.load()
@@ -127,7 +127,7 @@ class Fileset(WMBSBase, WMFileset):
         self.name = result["name"]
         self.open = result["open"]
         self.lastUpdate = result["last_update"]
-        
+
         self.newfiles = Set()
         self.files = Set()
         return self
@@ -180,3 +180,19 @@ class Fileset(WMBSBase, WMFileset):
                               transaction = self.existingTransaction())
         self.commitIfNew()
         return
+
+    def markOpen(self, isOpen):
+        """
+        _markOpen_
+
+        Change the open status of this fileset.  The isOpen parameter is a bool
+        representing whether or not the fileset is open.
+        """
+        self.beginTransaction()
+
+        closeAction = self.daofactory(classname = "Fileset.MarkOpen")
+        closeAction.execute(fileset = self.id, isOpen = isOpen,
+                            conn = self.getWriteDBConn(),
+                            transaction = self.existingTransaction())
+
+        self.commitIfNew()

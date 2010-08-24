@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, logging, random, commands
+import os, logging, random, commands, time
 
 from WMCore_t.Database_t.Performance import Performance
 from WMCore.DAOFactory import DAOFactory
@@ -50,27 +50,17 @@ class WMBSBase(Performance):
         
         filelist = self.genFileObjects(number)
 
-#        for x in range(len(filelist)):
         setfiles = set(filelist)
-#        setfiles = Set()
-#        setfiles.add(filelist[0])
+
         fileset = Fileset(name='genFilesSet', 
                             files=setfiles, 
                             logger=self.logger, 
                             dbfactory=self.dbf)
+        print fileset.name
         fileset.create()
-        #print fileset.getFiles()
-#        print fileset.newfiles
-#        fileset.commit()
-#        fileset.populate()
-#        for x in filelist:
-#            x.save()
-#            x.load() 
-            #filelist[x].save()
-            #filelist[x].load()
-        print commands.getstatusoutput('mysql -e "select * from wmbs_file_details" wmbs')
     
         filelist = list(fileset.getFiles())
+
         return filelist
 
     def genLocations(self, number=0):
@@ -97,9 +87,9 @@ class WMBSBase(Performance):
 
         
         for i in range(rangemax):        
-            filelist = self.genFiles(10)
+            filelist = self.genFileObjects(1)
             fileset = Fileset(name='testFileSet'+str(i), 
-                            files=filelist, 
+                            files=set(filelist), 
                             logger=self.logger, 
                             dbfactory=self.dbf) 
             fileset.create()
@@ -231,63 +221,6 @@ class WMBSBase(Performance):
         self.selist = ['localhost']        
         for se in self.selist:
             self.dao(classname='Locations.New').execute(sename=se)      
-
-        # Create a File to be used as argument for the performance test
-#        file_lfn = '/tmp/file/fileexample'
-#        file_events = 1111
-#        file_size = 1111
-#        file_run = 111
-#        file_lumi = 0
-        
-#        self.testFile = File(lfn=file_lfn, size=file_size, events=file_events, run=file_run,
-#                    lumi=file_lumi, logger=self.logger, dbfactory=self.dbf)
-#        self.testFile.save()
-#        self.testFile.load()
-
-        # Create a Fileset of random, parentless, childless, unlocatied file
-        #filelist = []
-#        filelist = self.genFiles()
-        #Generating Files        
-        #for x in range(random.randint(1000,3000)):
-        #    file = File(lfn='/store/data/%s/%s/file.root' % (random.randint(1000, 9999), 
-        #                                          random.randint(1000, 9999)),
-        #                size=random.randint(1000, 2000),
-        #                events = 1000,
-        #                run = random.randint(0, 2000),
-        #                lumi = random.randint(0, 8), 
-        #                logger=self.logger, 
-        #                dbfactory=self.dbf)
-        #    
-        #    filelist.append(file)
-    
-        #Creating mySQL Fileset        
-#        self.testFileset = Fileset(name='testFileSet', 
-#                            files=filelist, 
-#                            logger=self.logger, 
-#                            dbfactory=self.dbf) 
-#        self.testFileset.create()     
-
-        #Creating mySQL Workflow
-#        self.testWorkflow = Workflow(spec='Test', owner='PerformanceTestCase', name='TestWorkflow', logger=self.logger, dbfactory=self.dbf)
-#        self.testWorkflow.create()
-
-        #Creating MySQL Subscription
-#        self.testSubscription = Subscription(fileset=self.testFileset, 
-#                        workflow=self.testWorkflow, logger=self.logger, 
-#                        dbfactory=self.dbf)
-#        self.testSubscription.create()
-
-        #Instatiating mySQL Job
-#        self.testJob = Job(name='TestJob',files=self.testFileset, logger=self.logger, dbfactory=self.dbf)
-
-        #Creating mySQL JobGroup
-#        testSet = Set()
-#        testSet.add(self.testJob)
-#        self.testJobGroup = JobGroup(subscription=self.testSubscription, jobs=testSet)
-
-        #Creating mySQL Job for testing
-#        self.testJob.create(group=self.testJobGroup.id)
-
 
     def tearDown(self):
         #Base tearDown method for the DB Performance test

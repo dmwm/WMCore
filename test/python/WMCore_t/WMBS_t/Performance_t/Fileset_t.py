@@ -26,41 +26,63 @@ class FilesetTest(WMBSBase):
         
         WMBSBase.setUp(self,dbf=dbf)
 
+        self.totaltime = 1
+
+        #Setting specific class test threshold
+        self.threshold = 0.1
+        self.totalthreshold = 5
+
     def tearDown(self):
         #Call superclass tearDown method
         WMBSBase.tearDown(self)
 
-    def testNew(self):
+    def testNew(self, times=1):
         print "testNew"
         
-        testname = 'TestFileset1234'
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Fileset.New', name="TestFileset"+str(i))
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
-        time = self.perfTest(dao=self.dao, action='Fileset.New', name=testname)
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'   
-
-    def testDelete(self):
+    def testDelete(self, times=1):
         print "testDelete"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.Delete', name=self.testFileset.name)
-        assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'   
+        list = self.genFileset(number=times)
 
-    def testExists(self):
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Fileset.Delete', name=list[i].name)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'Delete DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testExists(self, times=1):
         print "testExists"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.Exists', name=self.testFileset.name)
-        assert time <= self.threshold, 'Exists DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'   
+        list = self.genFileset(number=times)
 
-    def testLoadFromID(self):
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Fileset.Exists', name=list[i].name)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'Exists DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testLoadFromID(self, times=1):
         print "testLoadFromID"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.LoadFromID', fileset=self.testFileset.id)
-        assert time <= self.threshold, 'LoadFromID DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'  
+        list = self.genFileset(number=times)
 
-    def testLoadFromName(self):
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Fileset.LoadFromID', fileset=list[i].id)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'LoadFromID DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testLoadFromName(self, times=1):
         print "testLoadFromName"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.LoadFromName', fileset=self.testFileset.name)
-        assert time <= self.threshold, 'LoadFromName DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        list = self.genFileset(number=times)
+
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Fileset.LoadFromName', fileset=list[i].name)
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'LoadFromName DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
     #Waiting for fileset parentage to be needed 
 

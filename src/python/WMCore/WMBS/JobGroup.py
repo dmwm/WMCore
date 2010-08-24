@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.19 2009/01/29 20:46:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: JobGroup.py,v 1.20 2009/02/02 21:01:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -205,41 +205,58 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.commitIfNew()
         return
     
-    def recordAcquire(self):
+    def recordAcquire(self, jobs = None):
         """
-        __recordAcquire__
-        update the all the input file status as a whole
+        _recordAcquire_
+        
+        Mark a set of jobs that are associated with the job group as acquired.
+        If no list of jobs is passed in then mark all jobs as acquired.
         """
         if self.status() != "ACTIVE":
             return False
-        
-        for j in self.getJobIDs(type="JobList"):
-            self.subscription.acquireFiles(j.getFileIDs(type="dict"))
+
+        if jobs == None:
+            jobs = self.getJobIDs(type = "JobList")
+                
+        for job in jobs: 
+            self.subscription.acquireFiles(job.getFileIDs(type = "dict"))
+
         return True
     
-    def recordComplete(self):
+    def recordComplete(self, jobs = None):
         """
-        __recordComplete__
-        update the all the input file status as a whole
+        _recordComplete_
+
+        Mark a set of jobs that are associated with the job group as complete.
+        If no list of jobs is passed in then mark all jobs as complete.
         """
         if self.status() != "COMPLETE":
             return False
-        
-        for j in self.getJobIDs(type="JobList"):
-            self.subscription.completeFiles(j.getFileIDs(type="dict"))
+
+        if jobs == None:
+            jobs = self.getJobIDs(type = "JobList")
+                
+        for job in jobs:
+            self.subscription.completeFiles(job.getFileIDs(type = "dict"))
+
         return True
     
-    def recordFail(self):
+    def recordFail(self, jobs = None):
         """
-        __recordFail__
-        update the all the input file status as a whole
+        _recordFail_
+
+        Mark a set of jobs that are associated with the job group as failed.
+        If no list of jobs is passed in then mark all jobs as failed.
         """
-        
         if self.status() != "FAILED":
             return False
-        
-        for j in self.getJobIDs(type="JobList"):
-            self.subscription.failFiles(j.getFileIDs(type="dict"))
+
+        if jobs == None:
+            jobs = self.getJobIDs(type = "JobList")
+            
+        for job in jobs: 
+            self.subscription.failFiles(job.getFileIDs(type = "dict"))
+
         return True
     
     def status(self, detail = False):

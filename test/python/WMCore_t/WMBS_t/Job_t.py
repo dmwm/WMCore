@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.12 2009/01/26 14:02:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Job_t.py,v 1.13 2009/01/26 20:54:34 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import logging
@@ -81,6 +81,41 @@ class JobTest(unittest.TestCase):
         myThread.transaction.commit()
             
         self._teardown = True
+        
+        
+    def createTestJob(self):
+        """
+        create the testJobA with 2 files in it and 
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(1, *[46]))
+        testFileA.create()
+        testFileB.create()
+
+        testFileset = Fileset(name = "TestFileset",
+                              files = Set([testFileA, testFileB]))
+        testFileset.commit()
+
+        testJob = Job(name = "TestJob", files = testFileset)
+        testJob.create(group = testJobGroup)
+
+        return testJob
             
     def testCreateDeleteExists(self):
         """
@@ -112,7 +147,7 @@ class JobTest(unittest.TestCase):
         testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
 
         testJob = Job(name = "TestJob", files = testFileset)
-
+       
         assert testJob.exists() == False, \
                "ERROR: Job exists before it was created"
 
@@ -279,34 +314,7 @@ class JobTest(unittest.TestCase):
         database using the name and the id and then verify that all information
         was loaded correctly.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-        
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-        
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroup = JobGroup(subscription = testSubscription)
-        testJobGroup.create()
-        
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(1, *[45]))
-        testFileA.create()
-        testFileB.create()
-
-        testFileset = Fileset(name = "TestFileset",
-                              files = Set([testFileA, testFileB]))
-        testFileset.commit()
-
-        testJobA = Job(name = "TestJob", files = testFileset)
-        testJobA.create(group = testJobGroup)
-
+        testJobA = self.createTestJob()
         testJobB = Job(id = testJobA.id)
         testJobC = Job(name = "TestJob")
         testJobB.load()
@@ -344,32 +352,7 @@ class JobTest(unittest.TestCase):
         database using the name and the id.  Verify that all job information
         is correct including input files and the job mask.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-        
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-        
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroup = JobGroup(subscription = testSubscription)
-        testJobGroup.create()
-        
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(1, *[45]))
-        testFileA.create()
-        testFileB.create()
-
-        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
-        testFileset.commit()
-
-        testJobA = Job(name = "TestJob", files = testFileset)
-        testJobA.create(group = testJobGroup)
+        testJobA = self.createTestJob()
 
         testJobA.mask["FirstEvent"] = 1
         testJobA.mask["LastEvent"] = 2
@@ -401,7 +384,7 @@ class JobTest(unittest.TestCase):
         assert testJobA.mask == testJobC.mask, \
                "ERROR: Job mask did not load properly"        
 
-        goldenFiles = [testFileA, testFileB]
+        goldenFiles = testJobA.getFiles()
         for testFile in testJobB.file_set.getFiles():
             assert testFile in goldenFiles, \
                    "ERROR: Job loaded an unknown file"
@@ -410,7 +393,7 @@ class JobTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Job didn't load all files"
 
-        goldenFiles = [testFileA, testFileB]
+        goldenFiles = testJobA.getFiles()
         for testFile in testJobC.file_set.getFiles():
             assert testFile in goldenFiles, \
                    "ERROR: Job loaded an unknown file"
@@ -428,36 +411,11 @@ class JobTest(unittest.TestCase):
         Test the Job's getFiles() method.  This should load the files from
         the database if they haven't been loaded already.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
+        testJobA = self.createTestJob()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-        
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroup = JobGroup(subscription = testSubscription)
-        testJobGroup.create()
-        
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(1, *[45]))
-        testFileA.create()
-        testFileB.create()
-
-        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
-        testFileset.commit()
-
-        testJobA = Job(name = "TestJob", files = testFileset)
-        testJobA.create(group = testJobGroup)
-
         testJobB = Job(id = testJobA.id)
 
-        goldenFiles = [testFileA, testFileB]
+        goldenFiles = testJobA.getFiles()
         for testFile in testJobB.getFiles():
             assert testFile in goldenFiles, \
                    "ERROR: Job loaded an unknown file"
@@ -479,32 +437,7 @@ class JobTest(unittest.TestCase):
         transaction and reload the mask to verify that it is in the correct
         state.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-        
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-        
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroup = JobGroup(subscription = testSubscription)
-        testJobGroup.create()
-        
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(1, *[45]))
-        testFileA.create()
-        testFileB.create()
-
-        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
-        testFileset.commit()
-
-        testJobA = Job(name = "TestJob", files = testFileset)
-        testJobA.create(group = testJobGroup)
+        testJobA = self.createTestJob()
 
         testJobA.mask["FirstEvent"] = 1
         testJobA.mask["LastEvent"] = 2
@@ -547,6 +480,25 @@ class JobTest(unittest.TestCase):
                "ERROR: Job mask did not load properly"        
         
         return
+    
+    def testAddOutput(self):
+        """
+        _testAddOutput_
 
+        Create a job and save it to the database.  Test
+        """
+        testJobA = self.createTestJob()
+        testFile = File(lfn = "/this/is/a/lfnOut", size = 1024, events = 10)
+        testFile.create()
+        testJobA.addOutput(testFile)
+        testFile.loadData(parentage = 1)
+        inputFileSet = testJobA.getFiles(type = "set")
+        
+        assert inputFileSet - Set(testFile.getParentLFNs()) == Set(), \
+               "Error: parent relattion is not updated"
+        
+        assert testFile.getRuns() == [Run(1, *[45, 46])], \
+               "Error: output file run is not updated"
+               
 if __name__ == "__main__":
     unittest.main() 

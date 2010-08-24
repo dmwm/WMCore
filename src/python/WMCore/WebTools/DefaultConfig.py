@@ -18,7 +18,7 @@ config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
 config.WebtoolsDocs.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
 # Define the class that is the applications index
-config.WebtoolsDocs.index = 'welcome'
+#config.WebtoolsDocs.index = 'welcome'
 
 # Views are all pages 
 config.WebtoolsDocs.section_('views')
@@ -32,8 +32,8 @@ active.documentation.object = 'WMCore.WebTools.Documentation'
 # I could add a variable to the documenation object if I wanted to as follows:
 # active.documentation.foo = 'bar'
 
-active.section_('welcome')
-active.welcome.object = 'WMCore.WebTools.Welcome'
+#active.section_('welcome')
+#active.welcome.object = 'WMCore.WebTools.Welcome'
 
 # Controllers are standard way to return minified gzipped css and js
 active.section_('controllers')
@@ -50,3 +50,4 @@ maint = config.WebtoolsDocs.views.section_('maintenance')
 active.section_('masthead')
 active.masthead.object = 'WMCore.WebTools.Masthead'
 active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Masthead'
+

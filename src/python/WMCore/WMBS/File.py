@@ -6,11 +6,13 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.16 2008/08/09 22:20:16 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: File.py,v 1.17 2008/08/13 15:14:09 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
+from sqlalchemy.exceptions import IntegrityError
+
 from sets import Set
 
 class File(BusinessObject, WMFile):
@@ -80,12 +82,23 @@ class File(BusinessObject, WMFile):
         """
         Save a file to the database 
         """
-        self.daofactory(classname='Files.Add').execute(files=self.dict['lfn'], 
+        try:
+            self.daofactory(classname='Files.Add').execute(files=self.dict['lfn'], 
                                                        size=self.dict['size'], 
                                                        events=self.dict['events'])
-        self.daofactory(classname='Files.AddRunLumi').execute(files=self.dict['lfn'],  
+        except IntegrityError, e:
+            pass #Ignore that the file exists
+        except Exception, e:
+            raise e
+        try:
+            self.daofactory(classname='Files.AddRunLumi').execute(files=self.dict['lfn'],  
                                                        run=self.dict['run'], 
                                                        lumi=self.dict['lumi'])
+        except IntegrityError, e:
+            pass #Ignore that the file exists
+        except Exception, e:
+            raise e
+        
         self.load()
     
     def delete(self):

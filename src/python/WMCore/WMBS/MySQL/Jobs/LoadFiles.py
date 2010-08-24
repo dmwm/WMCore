@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFiles
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFiles.py,v 1.4 2009/01/16 22:38:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: LoadFiles.py,v 1.5 2009/01/21 22:00:01 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -28,14 +28,15 @@ class LoadFiles(DBFormatter):
         column name in Oracle from FILEID to FILE.
         """
         formattedResults = DBFormatter.formatDict(self, results)
-
+        
+        dictResults = []
         for formattedResult in formattedResults:
+            dictResult = {}
             if "file" in formattedResult.keys():
-                formattedResult["file"] = int(formattedResult["file"])
-            else:
-                formattedResult["file"] = int(formattedResult["fileid"])                
-
-        return formattedResults
+                dictResult["id"] = int(formattedResult["file"])
+                dictResults.append(dictResult)
+        
+        return dictResults
 
     def execute(self, id, conn = None, transaction = False):
         """
@@ -46,4 +47,5 @@ class LoadFiles(DBFormatter):
         """        
         result = self.dbi.processData(self.sql, {"jobid": id}, conn = conn,
                                       transaction = transaction)
+        
         return self.formatDict(result)

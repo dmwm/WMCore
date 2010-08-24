@@ -16,7 +16,15 @@ class Base_t():
 
 
     """
-    def setUp(self):        
+    def setUp(self):
+        """
+        Common setUp for all Performance tests
+
+        """
+        #Place common execute method arguments here        
+        self.baseexec=' '
+        
+        self.sename='localhost'        
         logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
@@ -32,15 +40,23 @@ class Base_t():
         self.mysqldbf = DBFactory(self.logger, mysqlURI)
         self.sqlitedbf = DBFactory(self.logger, sqliteURI)        
 
-        self.mysqldao = DAOFactory(package='WMCore.WMBS', logger=daologger, dbinterface=mysqldbf.connect())
-        self.sqlitedao = DAOFactory(package='WMCore.WMBS', logger=daologger, dbinterface=sqlitedbf.connect())        
+        self.mysqldao = DAOFactory(package='WMCore.WMBS', logger=daologger, 
+                        dbinterface=mysqldbf.connect())
+        self.sqlitedao = DAOFactory(package='WMCore.WMBS', logger=daologger, 
+                        dbinterface=sqlitedbf.connect())        
         
     def tearDown(self)
-    #Base tearDown method for the DB Performance test
-    #TODO - Database deleting,etc,etc
-    pass
+        #Base tearDown method for the DB Performance test
+        #TODO - Database deleting,etc,etc...
+        pass
 
     def getClassNames(self, dirname='.'):
+        """
+        Method that gets the DAO classnames from the directory tree
+        Still needs testing, only present here to illustrate the idea
+        of make these tests automatic.
+
+        """
         files = os.listdir(dirname)
         list = []
         for x in files:
@@ -48,9 +64,15 @@ class Base_t():
             if (x[-3:] == '.py') and (x[0] != '_'):
                 parts = x.split('.')
                 list.append(parts[0])
+
         return list
     
     def perfTest(self, dao, execinput=''):
+        """
+        Method that executes a dao class operation and measures its
+        execution time.
+        
+        """
         #POTENTIAL PITFALL:
         #dao object must be given as an argument ALREADY WITH A CLASSNAME LOADED ON IT
         #TODO - Exception that deals with uninitialized DAOs given as an argument
@@ -62,9 +84,4 @@ class Base_t():
         endTime = time.time()
         diffTime = endTime - startTime
         
-        return diffTime        
-
- 
-            
-        
-        
+        return diffTime

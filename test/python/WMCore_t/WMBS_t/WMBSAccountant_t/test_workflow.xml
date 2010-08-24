@@ -134,7 +134,7 @@
 				</MaxEvents>
 				<ConfigMetadata>
 					<version Value="$Revision: 1.1 $"/>
-					<name Value="$Source: /cvs_server/repositories/CMSSW/COMP/WMCORE/test/python/WMCore/WMBS/WMBSAccountant/Attic/test_workflow.xml,v $"/>
+					<name Value="$Source: /cvs_server/repositories/CMSSW/COMP/WMCORE/test/python/WMCore_t/WMBS_t/WMBSAccountant_t/Attic/test_workflow.xml,v $"/>
 					<annotation Value="Sim Example"/>
 				</ConfigMetadata>
 				<ConfigData Encoding="base64">

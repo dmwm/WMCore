@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.9 2008/09/19 13:44:20 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: subscription_DAOFactory_t.py,v 1.1 2008/09/25 13:31:27 fvlingen Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import unittest, logging, os, commands, random, datetime
 import sys, traceback

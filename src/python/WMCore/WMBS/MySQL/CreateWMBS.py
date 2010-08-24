@@ -59,6 +59,7 @@ class CreateWMBS(MySQLBase):
                 spec         VARCHAR(255) NOT NULL,
                 name         VARCHAR(255) NOT NULL,
                 owner        VARCHAR(255) NOT NULL,
+                UNIQUE(spec, name, owner),
                 PRIMARY KEY (id))""" 
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
                 id      INT(11) NOT NULL AUTO_INCREMENT,
@@ -67,6 +68,7 @@ class CreateWMBS(MySQLBase):
                 type    ENUM("merge", "processing"),
                 last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE(fileset, workflow, type),   
                 PRIMARY KEY(id),
                 FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
                     ON DELETE CASCADE,

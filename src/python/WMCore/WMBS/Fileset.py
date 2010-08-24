@@ -11,14 +11,14 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.11 2008/06/23 15:44:04 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Fileset.py,v 1.12 2008/06/23 16:42:44 swakef Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 
 from WMCore.WMBS.File import File
-from WMCore.WMBS.File import Subscription
+from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Fileset(BusinessObject):

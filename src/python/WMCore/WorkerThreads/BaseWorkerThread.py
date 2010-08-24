@@ -7,13 +7,15 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.6 2009/02/01 18:24:01 jacksonj Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.7 2009/02/01 19:50:11 jacksonj Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
 import logging
 import time
+
+from WMCore.Database.Transaction import Transaction
 
 class BaseWorkerThread:
     """
@@ -45,17 +47,38 @@ class BaseWorkerThread:
         if hasattr(myThread,'msgService'):
             self.procid = myThread.msgService.procid
     
+    def setup(self, parameters):
+        """
+        Called when thread is being run for the first time. Optional in derived
+        classes.
+        """
+        pass
+    
+    def terminate(self, parameters):
+        """
+        Called when thread is being terminated. Optional in derived classes.
+        """
+        pass
+    
+    def algorithm(self, parameters):
+        """
+        The method that performs the required work. Should be overridden in
+        derived classes.
+        """
+        logging.error("Calling algorithm on BaseWorkerThread: Override me!")
+    
     def initInThread(self, parameters):
         """
-        Called when the thread is actually running in its own thread
+        Called when the thread is actually running in its own thread. Performs
+        internal object setup.
         """
+        # Get the DB Factory we were passed by parent thread and assign to this
+        # thread
         myThread = threading.currentThread()
-        
-        # Get the DB Factory we were passed by parent thread
         myThread.dbFactory = self.dbFactory
 
-        # Set up database connection and transactions
-        if self.component.config.CoreDatabase.dialect == 'mysql': 
+        # Set up database connection and default transaction
+        if self.component.config.CoreDatabase.dialect == 'mysql':
             myThread.dialect = 'MySQL'
 
         logging.info("BaseWorkerThread: Initializing default database")
@@ -114,23 +137,3 @@ class BaseWorkerThread:
             # All done
             msg = "BaseWorkerThread: Worker thread %s terminated" % str(self)
             logging.info(msg)
-    
-    def setup(self, parameters):
-        """
-        Called when thread is being run for the first time. Optional in derived
-        classes.
-        """
-        pass
-    
-    def terminate(self, parameters):
-        """
-        Called when thread is being terminated. Optional in derived classes.
-        """
-        pass
-    
-    def algorithm(self, parameters):
-        """
-        The method that performs the required work. Should be overridden in
-        derived classes.
-        """
-        logging.error("Calling algorithm on BaseWorkerThread: Override me!")

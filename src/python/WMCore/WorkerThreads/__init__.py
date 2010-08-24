@@ -19,11 +19,18 @@ import time, threading
 class MyWorker(BaseWorkerThread):
     def __init__(self):
         BaseWorkerThread.__init__(self)
+        
     def algorithm(self, parameters):
         print "Doing work with parameters:", parameters
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        # Do DB work
+        myThread.transaction.commit()
+        
     def setup(self, parameters):
         print "Setting up worker with parameters:", parameters
     def terminate(self, parameters):
+    
         print "Terminating worker with parameters:", parameters
 
 # Create and pause a worker manager
@@ -43,6 +50,6 @@ manager.terminateWorkers()
 
 """
 
-__revision__ = "$Id: __init__.py,v 1.5 2009/02/01 18:24:45 jacksonj Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: __init__.py,v 1.6 2009/02/01 19:50:11 jacksonj Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "james.jackson@cern.ch"

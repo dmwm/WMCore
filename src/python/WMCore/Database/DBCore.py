@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.14 2008/08/12 19:09:42 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: DBCore.py,v 1.15 2008/08/21 10:27:49 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -95,7 +95,13 @@ class DBInterface(WMObject):
             self.logger.exception('DBInterface.executebinds - binds : %s' % b)
             self.logger.debug(e)
             raise e
-            
+    
+    def connection(self):
+        """
+        Return a connection to the engine (from the connection pool)
+        """
+        return self.engine.connect()
+    
     def processData(self, sqlstmt, binds = None, conn = None,
                     transaction = False):
         """
@@ -104,7 +110,7 @@ class DBInterface(WMObject):
         TODO: Make this code cleaner
         """
         if not conn: 
-            connection = self.engine.connect()
+            connection = self.connection()
         else: 
             connection = conn
         result = []

@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.11 2009/01/24 01:27:02 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Root.py,v 1.12 2009/01/26 23:45:17 rpw Exp $"
+__version__ = "$Revision: 1.12 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -37,8 +37,8 @@ class Root(WMObject):
         self.config = config.section_("Webtools")
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
-        self.configureCherryPy()
-        self.loadPages()
+        #self.configureCherryPy()
+        #self.loadPages()
  
     def configureCherryPy(self):
         #Configure CherryPy
@@ -116,7 +116,7 @@ class Root(WMObject):
                                 severity=logging.DEBUG, 
                                 traceback=False)
             # Load the object
-            obj = factory.loadObject(view.object, config)
+            obj = factory.loadObject(view.object, component)
             # Attach the object to cherrypy's root, at the name of the view 
             eval(compile("self.%s = obj" % view._internal_name, '<string>', 'single'))
         

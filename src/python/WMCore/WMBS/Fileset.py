@@ -11,14 +11,14 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.12 2008/06/23 16:42:44 swakef Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Fileset.py,v 1.13 2008/06/24 17:00:18 metson Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Subscription import Subscription
+#from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Fileset(BusinessObject):
@@ -68,23 +68,10 @@ class Fileset(BusinessObject):
         """
         return self.daofactory(classname='Fileset.Exists').execute(self.name)
         
-    def create(self, conn = None):
+    def create(self):
         """
         Add the new fileset to WMBS
         """
-            
-#        for parent in self.parents:
-#            if not parent.exists():
-#                parent.create()
-#        try:
-#            self.daofactory(classname='Fileset.New').execute(self.name)
-#            action = NewFilesetAction(self.logger)
-#            return action.execute(name=self.name,
-#                               dbinterface=conn)
-#        except IntegrityError:
-#            self.wmbs.logger.exception('Fileset %s exists' % self.name)
-#            #raise
-        #TODO: Add other fields soure etc..
         self.daofactory(classname='Fileset.New').execute(self.name)
         self.populate()
         return self
@@ -107,12 +94,11 @@ class Fileset(BusinessObject):
         #    self.parents.add(Fileset(parent[0], self.wmbs, bool(parent[1])).populate())
             
         #get my details
-        values = self.daofactory(classname='Fileset.Load').execute(name=self.name)
-        self.open = values[2]
-        self.lastUpdate = values[3]
-        self.id = values[0]
+        values = self.daofactory(classname='Fileset.Load').execute(fileset=self.name)
+        self.id, self.open, self.lastUpdate = values
         
-        values = self.daofactory(classname='File.InFileset').execute(name=self.name)
+        
+        values = self.daofactory(classname='Files.InFileset').execute(fileset=self.name)
         for id, lfn, size, events, run, lumi in values:
             #id, lfn, size, events, run, lumi = f
             file = File(lfn, id, size, events, run, lumi, \
@@ -160,32 +146,32 @@ class Fileset(BusinessObject):
                 raise IntegrityError, 'File %s already exists in the database' % f.lfn
         #self.newfiles = Set()
         self.populate()
-    
-    def createSubscription(self, workflow=None, subtype='Processing', parentage=0):
-        """
-        Create a subscription for the fileset using the given workflow 
-        """
-        s = Subscription(fileset = self, workflow = workflow, 
-                         type = subtype, parentage=parentage,
-                         logger=self.logger, dbfactory=self.dbfactory)
-        s.create()
-        return s
-        
-    def subscriptions(self, subtype=None):
-        """
-        Return all subscriptions for a fileset
-        """
-        #TODO: types should come from DB
-        if not type in (None, "Merge", "Processing", "Job"):
-            self.logger.exception('%s is an unknown subscription type' % 
-                                       subtype)
-            raise TypeError, '%s is an unknown subscription type' % subtype
-        
-        result = []
-        #TODO: change subscriptionsForFileset to return the workflow spec
-        #TODO: Add query for subtype
-        temp = self.daofactory(classname='Subscriptions.ForFileset').execute(fileset=self.name) #type=subtype)
-        for sub in temp:
-            result.append(Subscription(id=sub,
-                            logger=self.logger, dbfactory=self.dbfactory))
-        return result
+#    
+#    def createSubscription(self, workflow=None, subtype='Processing', parentage=0):
+#        """
+#        Create a subscription for the fileset using the given workflow 
+#        """
+#        s = Subscription(fileset = self, workflow = workflow, 
+#                         type = subtype, parentage=parentage,
+#                         logger=self.logger, dbfactory=self.dbfactory)
+#        s.create()
+#        return s
+#        
+#    def subscriptions(self, subtype=None):
+#        """
+#        Return all subscriptions for a fileset
+#        """
+#        #TODO: types should come from DB
+#        if not type in (None, "Merge", "Processing", "Job"):
+#            self.logger.exception('%s is an unknown subscription type' % 
+#                                       subtype)
+#            raise TypeError, '%s is an unknown subscription type' % subtype
+#        
+#        result = []
+#        #TODO: change subscriptionsForFileset to return the workflow spec
+#        #TODO: Add query for subtype
+#        temp = self.daofactory(classname='Subscriptions.ForFileset').execute(fileset=self.name) #type=subtype)
+#        for sub in temp:
+#            result.append(Subscription(id=sub,
+#                            logger=self.logger, dbfactory=self.dbfactory))
+#        return result

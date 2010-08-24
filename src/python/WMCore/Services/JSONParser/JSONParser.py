@@ -6,13 +6,15 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.4 2008/10/15 13:47:25 ewv Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JSONParser.py,v 1.5 2008/10/15 15:47:45 ewv Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import urllib
 import cStringIO
 import tokenize
 import logging
+import os
+import pwd
 
 from WMCore.Services.Service import Service
 
@@ -22,16 +24,19 @@ class JSONParser:
     """
 
     def __init__(self, url, logger = None):
+        dict = {}
+        dict['endpoint'] = url
+        dict['cachepath'] = '/tmp/jsonparser_' + pwd.getpwuid(os.getuid())[0]
+        if not os.path.isdir(dict['cachepath']):
+            os.mkdir(dict['cachepath'])
         if not logger:
             logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='/tmp/WMCoreJSONparser.log',
+                    filename=dict['cachepath'] + '/jsonparser.log',
                     filemode='w')
             logger = logging.getLogger('JSONParser')
-        dict = {}
-        dict['endpoint'] = url
-        dict['cachepath'] = '/tmp/jsonparser'
+
         dict['type'] = 'text/json'
         dict['logger'] = logger
         self.service = Service(dict)

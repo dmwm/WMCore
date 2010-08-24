@@ -2,14 +2,21 @@
 """
 Test case for SiteScreening
 """
-__revision__ = "$Id: test_unittest.py,v 1.3 2008/10/15 13:54:10 ewv Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: test_unittest.py,v 1.4 2008/10/15 15:47:45 ewv Exp $"
+__version__  = "$Revision: 1.4 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
 import unittest
+import logging
 
 from  WMCore.SiteScreening import BlackWhiteListParser
+
+logging.basicConfig(level=logging.DEBUG,
+format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+datefmt='%m-%d %H:%M',
+filename='%s.log' % __file__, filemode='w')
+fakeLogger  = logging.getLogger('SiteScreening')
 
 class FakeLogger:
     """
@@ -29,6 +36,8 @@ class FakeLogger:
         Dummy method
         """
         pass
+
+fakeLogger  = FakeLogger()
 
 class TestBlackWhiteList(unittest.TestCase):
     """
@@ -85,6 +94,7 @@ class TestBlackWhiteList(unittest.TestCase):
             'ic-kit-lcgce.rz.uni-karlsruhe.de']
         other = ['gridce2.pi.infn.it', 'lcg02.ciemat.es']
         results = self.ceparser.checkWhiteList(other + whitelist)
+        print results
         results = sets.Set(results)
         self.failUnless(results == sets.Set(whitelist))
 
@@ -96,7 +106,7 @@ cfgParams = {
   'EDG.ce_white_list': 'T3',
 }
 
-fakeLogger = FakeLogger()
+#= FakeLogger()
 
 
 

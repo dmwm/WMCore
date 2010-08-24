@@ -7,8 +7,8 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.7 2009/02/01 19:50:11 jacksonj Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.8 2009/02/02 11:11:34 jacksonj Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -16,11 +16,14 @@ import logging
 import time
 
 from WMCore.Database.Transaction import Transaction
+from WMCore.WMFactory import WMFactory
 
 class BaseWorkerThread:
     """
     A base class for worker threads, used for work that needs to occur at
-    regular intervals.
+    regular intervals. Framework (through WorkerThreadManager) ensures that
+    a default transaction, trigger and message service are available as in
+    event handler threads.
     """
     def __init__(self):
         """
@@ -32,7 +35,7 @@ class BaseWorkerThread:
         self.notifyResume = None
         
         # Reference to the owner component
-        self.component = None 
+        self.component = None
         
         # Termination callback function
         self.terminateCallback = None
@@ -40,6 +43,7 @@ class BaseWorkerThread:
         # Get the current DBFactory
         myThread = threading.currentThread()
         self.dbFactory = myThread.dbFactory
+        self.logger = myThread.logger
         
         # get the procid from the mainthread msg service
         # if we use this in testing it might not be there.
@@ -76,17 +80,33 @@ class BaseWorkerThread:
         # thread
         myThread = threading.currentThread()
         myThread.dbFactory = self.dbFactory
+        myThread.logger = self.logger
 
         # Set up database connection and default transaction
         if self.component.config.CoreDatabase.dialect == 'mysql':
             myThread.dialect = 'MySQL'
 
-        logging.info("BaseWorkerThread: Initializing default database")
+        logging.info("Initialising default database")
         myThread.dbi = myThread.dbFactory.connect()
-        logging.info("BaseWorkerThread: Initialize transaction dictionary")
+        logging.info("Initialise transaction dictionary")
         myThread.transactions = {}
-        logging.info("BaseWorkerThread: Initializing default transaction")
+        logging.info("Initialising default transaction")
         myThread.transaction = Transaction(myThread.dbi)
+        
+        # Set up message service and trigger
+        logging.info("Instantiating message queue for thread")
+        factory = WMFactory("msgService", "WMCore.MsgService."+ \
+            myThread.dialect)
+        # we instantiate a message service here but we do not register it.
+        # the main thread represents us in the msg service. We copy the 
+        # the main thread procid to our object.
+        myThread.msgService = factory.loadObject("MsgService")
+        myThread.msgService.procid = self.procid
+        msg = "Instantiating trigger service for thread"
+        logging.info(msg)
+        WMFactory("trigger", "WMCore.Trigger")
+        myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
+        # TODO: add trigger instantiation.
         
         # Call worker setup
         self.setup(parameters)
@@ -97,10 +117,13 @@ class BaseWorkerThread:
         conditions
         """
         try:
+            msg = "Initialising worker thread %s" % str(self)
+            logging.info(msg)
+            
             # Call thread startup method
             self.initInThread(parameters)
             
-            msg = "BaseWorkerThread: Worker thread %s started" % str(self)
+            msg = "Worker thread %s started" % str(self)
             logging.info(msg)
             
             # Run event loop while termination is not flagged
@@ -116,7 +139,7 @@ class BaseWorkerThread:
                         try:
                             self.algorithm(parameters)
                         except Exception, ex:
-                            msg = "BaseWorkerThread: Error in worker algorithm:"
+                            msg = "Error in worker algorithm:"
                             msg += (" %s %s" % (str(self), str(ex)))
                             logging.error(msg)
                 
@@ -127,7 +150,7 @@ class BaseWorkerThread:
             self.terminate(parameters)
         except Exception, ex:
             # Notify error
-            msg = "BaseWorkerThread: Error in event loop: %s %s"
+            msg = "Error in event loop: %s %s"
             msg = msg % (str(self), str(ex))
             logging.error(msg)
         finally:
@@ -135,5 +158,5 @@ class BaseWorkerThread:
             self.terminateCallback()
             
             # All done
-            msg = "BaseWorkerThread: Worker thread %s terminated" % str(self)
+            msg = "Worker thread %s terminated" % str(self)
             logging.info(msg)

@@ -5,8 +5,8 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.6 2009/02/01 17:26:20 jacksonj Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.7 2009/02/02 11:11:34 jacksonj Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -31,7 +31,7 @@ class WorkerThreadManager:
         self.lock.acquire()
         self.activeThreadCount = 0
         self.lock.release()
-        logging.info("WorkerThreadManager: Started")
+        logging.info("Started")
         return
     
     def slaveTerminateCallback(self):
@@ -64,15 +64,15 @@ class WorkerThreadManager:
         """
         # Check type of worker
         if not isinstance(worker, BaseWorkerThread):
-            msg = "WorkerThreadManager: Attempting to add worker that does not "
-            msg += "inherit from BaseWorkerThread"
+            msg = "Attempting to add worker that does not inherit from "
+            msg += "BaseWorkerThread"
             logging.critical(msg)
             return
         
         # Prepare the new worker thread
         self.prepareWorker(worker, idleTime)
         workerThread = threading.Thread(target = worker, args = (parameters,))
-        msg = "WorkerThreadManager: Created worker thread %s" % str(worker)
+        msg = "Created worker thread %s" % str(worker)
         logging.info(msg)
         
         # Increase the active thread count - note this must be done before
@@ -96,7 +96,7 @@ class WorkerThreadManager:
         self.resumeSlaves.set()
         
         # Wait for all threads to finished
-        msg = "WorkerThreadManager: Waiting for %s worker threads to terminate"
+        msg = "Waiting for %s worker threads to terminate"
         msg = msg % self.activeThreadCount
         logging.info(msg)
         finished = False
@@ -106,7 +106,7 @@ class WorkerThreadManager:
                 finished = True
             self.lock.release()
             time.sleep(5)
-        logging.info("WorkerThreadManager: All worker threads terminated")
+        logging.info("All worker threads terminated")
     
     def pauseWorkers(self):
         """
@@ -115,7 +115,7 @@ class WorkerThreadManager:
         # Don't change order without looking at BaseWorkerThread!
         self.resumeSlaves.clear()
         self.pauseSlaves.set()
-        logging.info("WorkerThreadManager: All worker threads paused")
+        logging.info("All worker threads paused")
     
     def resumeWorkers(self):
         """
@@ -124,4 +124,4 @@ class WorkerThreadManager:
         # Don't change order without looking at BaseWorkerThread!
         self.pauseSlaves.clear()
         self.resumeSlaves.set()
-        logging.info("WorkerThreadManager: All worker threads resumed")
+        logging.info("All worker threads resumed")

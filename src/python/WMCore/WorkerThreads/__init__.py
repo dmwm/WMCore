@@ -7,8 +7,8 @@ WorkerThreadManager to manage the worker threads. Derive worker classes from
 BaseWorkerThread, and override at least the algorithm(self, parameters) method.
 Run the workers by calling the WorkerThreadManager.addWorker method. Worker
 threads have access to the parent thread dbFactory and component as standard.
-The usual default transaction object (and transaction dictionary) are attached
-to the child thread.
+The usual default transaction object (and transaction dictionary), trigger and
+message service are attached to the child thread by the underlying framework.
 E.g.:
 
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
@@ -24,13 +24,13 @@ class MyWorker(BaseWorkerThread):
         print "Doing work with parameters:", parameters
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        # Do DB work
+        # Do DB work here
         myThread.transaction.commit()
         
     def setup(self, parameters):
         print "Setting up worker with parameters:", parameters
+        
     def terminate(self, parameters):
-    
         print "Terminating worker with parameters:", parameters
 
 # Create and pause a worker manager
@@ -50,6 +50,6 @@ manager.terminateWorkers()
 
 """
 
-__revision__ = "$Id: __init__.py,v 1.6 2009/02/01 19:50:11 jacksonj Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: __init__.py,v 1.7 2009/02/02 11:11:34 jacksonj Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "james.jackson@cern.ch"

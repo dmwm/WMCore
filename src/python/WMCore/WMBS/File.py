@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.33 2008/12/23 22:17:07 afaq Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: File.py,v 1.34 2009/01/02 19:24:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.Database.Transaction import Transaction
@@ -42,8 +42,12 @@ class File(WMFile):
         if locations == None:
             self.setdefault("newlocations", Set())
         else:
-            self.setdefault("newlocations", locations)
-            
+            if type(locations) == str:
+                self.setdefault("newlocations", Set())
+                self['newlocations'].add(locations)
+            else:
+                self.setdefault("newlocations", locations)
+                
         self.setdefault("id", id)
         self['locations'] = Set()
 

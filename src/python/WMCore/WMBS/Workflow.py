@@ -16,12 +16,13 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.10 2008/07/03 09:43:40 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Workflow.py,v 1.11 2008/07/03 17:06:29 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
+from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
 
-class Workflow(BusinessObject):
+class Workflow(BusinessObject,WMWorkflow):
     """
     A simple object representing a Workflow in WMBS.
 
@@ -38,11 +39,7 @@ class Workflow(BusinessObject):
 
     def __init__(self, spec=None, owner=None, name=None, id=-1, logger=None, dbfactory=None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        #TODO: define a url-like scheme for spec's and enforce it here
-        self.spec = spec
-        self.name = name
-        self.owner = owner
-        self.name = name
+        WMWorkflow.__init__(spec=spec, owner=owner, name=name)
         self.id = id
         
     def exists(self):

@@ -8,12 +8,13 @@ Jobs know their status (active, failed, complete) and know the files they run on
 but don't know the subscription or group. They do know their workflow.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.8 2008/09/20 12:02:48 evansde Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Job.py,v 1.9 2008/09/20 12:50:16 evansde Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.Subscription import Subscription
+from WMCore.DataStructs.Mask import Mask
 from sets import Set
 import datetime
 
@@ -35,6 +36,7 @@ class Job(Pickleable):
         self.name = None
         self.output = Fileset(name = 'output', logger = self.file_set.logger)
         self.report = None
+        self.mask = Mask()
 
     def listFiles(self):
         """

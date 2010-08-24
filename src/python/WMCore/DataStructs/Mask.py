@@ -10,8 +10,8 @@ job in two ways:
 
 """
 __author__ = "evansde@fnal.gov"
-__revision__ = "$Id: Mask.py,v 1.1 2008/09/20 12:03:31 evansde Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Mask.py,v 1.2 2008/09/20 12:50:16 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -25,7 +25,7 @@ class Mask(dict):
     """
     def __init__(self):
         dict.__init__(self)
-        self.inclusive = False
+        self.inclusive = True
         self.setdefault("FirstEvent", None)
         self.setdefault("LastEvent", None)
         self.setdefault("FirstLumi", None)
@@ -33,6 +33,28 @@ class Mask(dict):
         self.setdefault("FirstRun", None)
         self.setdefault("LastRun", None)
 
+
+    def setMaxAndSkipEvents(self, maxEvents, skipEvents):
+        """
+        _setMaxAndSkipEvents_
+
+        Set FirstEvent & LastEvent fields as max & skip events
+
+        """
+        self['FirstEvent'] = skipEvents
+        self['LastEvent']  = skipEvents + maxEvents
+        return
+
+    def getMaxEvents(self):
+        """
+        _getMaxEvents_
+
+        return maxevents setting
+
+        """
+        if (self['LastEvent'] == None) or (self['FirstEvent'] == None):
+            return None
+        return self['LastEvent'] - self['FirstEvent']
 
 
 

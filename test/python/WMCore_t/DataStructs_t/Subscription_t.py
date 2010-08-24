@@ -388,7 +388,7 @@ class SubscriptionTest(unittest.TestCase):
                 file.setLocation('goodse.cern.ch')
                 count += 1
             else:
-                file.setLocation('baddse.cern.ch')
+                file.setLocation('badse.cern.ch')
             #Add the new file
             self.dummySubscription.available.addFile(file)
             
@@ -398,6 +398,7 @@ class SubscriptionTest(unittest.TestCase):
         (len(self.dummySubscription.availableFiles()), count)
         
     def testAvailableFilesBlackList(self):
+    	
         """
         Testcase for the availableFiles method of the Subscription Class
         """
@@ -414,17 +415,19 @@ class SubscriptionTest(unittest.TestCase):
             file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
             if random.randint(1, 2) > 1:
                 file.setLocation('goodse.cern.ch')
-                count += 1
             else:
-                file.setLocation('baddse.cern.ch')
+                file.setLocation('badse.cern.ch')
+                count += 1
             #Add the new file
             self.dummySubscription.available.addFile(file)
         #Add the new files
         self.dummySubscription.available.addFile(dummyFileList)
-        self.dummySubscription.markLocation('goodse.cern.ch')
-        assert count == len(self.dummySubscription.availableFiles()), \
+        self.dummySubscription.markLocation('badse.cern.ch', whitelist=False)
+        
+        # added 99 files, plus the original file.
+        assert count == 100 - len(self.dummySubscription.availableFiles()), \
         "Subscription has %s files available, should have %s" %\
-        (len(self.dummySubscription.availableFiles()), count)   
+        (len(self.dummySubscription.availableFiles()), 100 - count)   
          
     def testAcquiredFiles(self):            
         """

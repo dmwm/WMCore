@@ -9,14 +9,16 @@ class MySQLInterface(DBInterface):
         takes a single sql statment and its associated binds
         """
         newsql = sql
-        if isinstance(self.engine.dialect, MySQLDialect) and binds is not None:
+        if binds and isinstance(self.engine.dialect, MySQLDialect):
             for k, v in binds.items():
+                self.logger.debug("substituting bind %s, %s" % (k, v))
                 newsql = newsql.replace(':%s' % k, "'%s'" % v)
-            return newsql, None
+                
+        return newsql, None
         
     def executebinds(self, s=None, b=None, connection=None):
         """
         _executebinds_
         """
         s, b = self.substitute(s, b)
-        DBCore.executebinds(s, b, connection)
+        return DBInterface.executebinds(self, s, b, connection)

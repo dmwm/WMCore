@@ -6,8 +6,8 @@ ProdAgent Component to notify clients of new transfers
 
 """
 __all__ = []
-__revision__ = "$Id: PhEDExNotifierComponent.py,v 1.10 2008/07/30 13:09:49 gowdy Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: PhEDExNotifierComponent.py,v 1.11 2008/08/15 15:29:44 gowdy Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import logging
 
@@ -125,7 +125,7 @@ class PhEDExNotifierComponent(FeederImpl):
             # Get the file object, I hope there is only one!
             files = self.dbsapi.listFiles( patternLFN = lfn )
             if len ( files ) != 1:
-                print "LFN doesn't map to single file!"
+                print "LFN doesn't map to single file in DBS! lfn=%s" % lfn
             return files[0][ 'NumberOfEvents' ]
 
         except DbsDatabaseError,e:

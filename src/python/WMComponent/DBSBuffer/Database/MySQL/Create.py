@@ -4,7 +4,7 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.5 2008/10/16 08:36:41 afaq Exp $"
+__revision__ = "$Id: Create.py,v 1.6 2008/10/20 22:05:08 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -32,6 +32,7 @@ class Create(DBCreator):
 			(
 			   ID     BIGINT UNSIGNED not null auto_increment,
 			   Path   varchar(500)    unique not null,
+			   UnMigratedFiles BIGINT UNSIGNED Default 0,
 			   LastModificationDate  BIGINT,
 			   primary key(ID)	
 			) ENGINE=InnoDB"""
@@ -53,17 +54,22 @@ class Create(DBCreator):
 		    ) ENGINE=InnoDB"""
 
         self.constraints["FK_dbsbuf_file_ds"]=\
-		      """ALTER TABLE dbsbuf_file ADD CONSTRAINT FK_dbsbuf_file_ds
+		      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuf_file_ds
     			 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
 
-	    #self.triggers IS NOT a member so I will just use self.create for now
+	#self.triggers IS NOT a member so I will just use self.create for now
         self.create["03TR_dbsbuf_file_lud"]=\
-                """CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuf_file
+                """CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuffer_file
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
 
         self.create["04TR_dbsbuf_ds_lud"]=\
-                """CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuf_dataset
+                """CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuffer_dataset
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
+
+	#self.create["05TR_UnMigratedFiles"]=\
+	#	"""CREATE TRIGGER TR_UnMigratedFiles AFTER INSERT ON dbsbuffer_file
+	#		FOR EACH ROW 
+	#		UPDATE dbsbuffer_dataset SET dbsbuffer_dataset.UnMigratedFiles = dbsbuffer_dataset.UnMigratedFiles + 1 WHERE dbsbuffer_dataset.ID = NEW.Dataset;"""
 
         self.create=sorted(self.create.iteritems(), key=lambda (k,v):(v,k))
 

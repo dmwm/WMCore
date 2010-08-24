@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2008/11/24 21:47:14 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2008/11/26 19:46:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -29,17 +29,15 @@ class Create(CreateWMBSBase):
           """CREATE TABLE wmbs_fileset (
              id          INTEGER      PRIMARY KEY AUTOINCREMENT,
              name        VARCHAR(255) NOT NULL,
-             open        INT(1)      NOT NULL DEFAULT 0,
-             last_update TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
-               ON UPDATE CURRENT_TIMESTAMP,
+             open        INT(1)       NOT NULL DEFAULT 0,
+             last_update INT(11)      NOT NULL,
              UNIQUE (name))"""
              
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (
              file        INT(11)   NOT NULL,
              fileset     INT(11)   NOT NULL,
-             insert_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-               ON UPDATE CURRENT_TIMESTAMP,
+             insert_time INT(11)   NOT NULL,
              FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE,
              FOREIGN KEY(file)    REFERENCES wmbs_file_details(id)
@@ -52,8 +50,7 @@ class Create(CreateWMBSBase):
              workflow    INT(11)      NOT NULL,
              split_algo  VARCHAR(255) NOT NULL DEFAULT 'File',
              type        ENUM('Merge', 'Processing'),
-             last_update TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
-             ON UPDATE CURRENT_TIMESTAMP,
+             last_update INT(11)      NOT NULL,
              UNIQUE(fileset, workflow, type),   
              PRIMARY KEY(id),
              FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
@@ -67,8 +64,7 @@ class Create(CreateWMBSBase):
              subscription INT(11)    NOT NULL,
              uid          VARCHAR(255),    
              output       INT(11),
-             last_update  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-             ON UPDATE CURRENT_TIMESTAMP,
+             last_update  INT(11)    NOT NULL,
              PRIMARY KEY (id),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
@@ -80,8 +76,7 @@ class Create(CreateWMBSBase):
              id          INT(11)   NOT NULL AUTO_INCREMENT,
              jobgroup    INT(11)   NOT NULL,
              name        VARCHAR(255),
-             last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                 ON UPDATE CURRENT_TIMESTAMP,
+             last_update INT(11)   NOT NULL,
              UNIQUE(name),
              PRIMARY KEY (id),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)

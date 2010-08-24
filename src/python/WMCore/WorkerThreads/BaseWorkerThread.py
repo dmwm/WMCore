@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=R0902,R0201,W0613,W0703,E1102
 """
 _BaseWorkerThread_
 
@@ -7,8 +8,9 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.11 2009/02/05 18:09:12 jacksonj Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = \
+        "$Id: BaseWorkerThread.py,v 1.12 2009/02/05 23:30:52 jacksonj Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -124,7 +126,6 @@ class BaseWorkerThread:
         try:
             msg = "Initialising worker thread %s" % str(self)
             logging.info(msg)
-            myThread = threading.currentThread()
             
             # Call thread startup method
             self.initInThread(parameters)

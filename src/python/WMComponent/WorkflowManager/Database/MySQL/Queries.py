@@ -8,8 +8,8 @@ WorkflowManager
 
 """
 
-__revision__ = "$Id: Queries.py,v 1.5 2009/02/05 23:21:44 jacksonj Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Queries.py,v 1.6 2009/02/05 23:34:23 jacksonj Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -80,11 +80,11 @@ class Queries(DBFormatter):
         Returns all marked locations for a watched workflow / fileset match
         """
         sqlStr = """
-            SELECT wmbs_location.se_name, wm_managed_workflow_location.valid
-            FROM wmbs_location, wm_managed_workflow_location
-            WHERE wmbs_location.id = wm_managed_workflow_location.location
-            AND wm_managed_workflow_location.managed_workflow = :managed_workflow;
-            """
+          SELECT wmbs_location.se_name, wm_managed_workflow_location.valid
+          FROM wmbs_location, wm_managed_workflow_location
+          WHERE wmbs_location.id = wm_managed_workflow_location.location
+          AND wm_managed_workflow_location.managed_workflow = :managed_workflow;
+          """
         result = self.execute(sqlStr, {'managed_workflow' : managedWorkflowId})
         return self.formatDict(result)
 
@@ -93,13 +93,13 @@ class Queries(DBFormatter):
         Adds a location to the created subscription white / black lists
         """
         sqlStr = """
-            INSERT INTO wm_managed_workflow_location (managed_workflow, location,
+           INSERT INTO wm_managed_workflow_location (managed_workflow, location,
                                                       valid) 
-            VALUES ((SELECT id from wm_managed_workflow
-                      WHERE workflow = :workflow AND fileset_match = :fsmatch),
-                    (SELECT id FROM wmbs_location WHERE se_name = :location),
-                    :valid);
-            """
+           VALUES ((SELECT id from wm_managed_workflow
+                     WHERE workflow = :workflow AND fileset_match = :fsmatch),
+                   (SELECT id FROM wmbs_location WHERE se_name = :location),
+                   :valid);
+           """
         self.execute(sqlStr, {'workflow' : workflowId, \
                               'fsmatch' : filesetMatch, \
                               'location' : location, \

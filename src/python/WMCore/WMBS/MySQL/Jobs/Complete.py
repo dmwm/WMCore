@@ -6,14 +6,17 @@ MySQL implementation of Jobs.Complete
 move file into wmbs_group_job_acquired
 """
 __all__ = []
-__revision__ = "$Id: Complete.py,v 1.2 2008/11/20 21:52:32 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Complete.py,v 1.3 2008/12/10 22:26:15 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Complete(DBFormatter):
     sql = """insert into wmbs_group_job_complete (job, jobgroup) 
-             values (select id, jobgroup from wmbs_job where id = :job)"""
+             (select id, jobgroup from wmbs_job where id = :job)"""
+    
+    def format(self, result):
+        return True
     
     def execute(self, job=0, conn = None, transaction = False):
         binds = self.getBinds(job=job)

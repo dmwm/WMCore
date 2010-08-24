@@ -5,31 +5,66 @@ from WMCore.Database.Dialects import SQLiteDialect
 from WMCore.Database.Dialects import OracleDialect
 
 class DBFactory(object):
-    def __init__(self, logger, dburl, options={}):
+    def __init__(self, logger, dburl=None, options={}):
         self.logger = logger
         if dburl:
             self.dburl = dburl
         else:
-            if 'port' in options.keys():
-                self.dburl = '%s://%s:%s@%s:%s' % (options['dialect'],
-                                                   options['user'],
-                                                   options['passwd'],
-                                                   options['port'],
-                                                   options['tnsName'])
+            """
+            Need to make the dburl here. Possible formats are:
+            
+            postgres://username:password@host:port/database
+            
+            sqlite:////absolute/path/to/database.txt
+            sqlite:///relative/path/to/database.txt
+            sqlite://
+            sqlite://:memory:
+            
+            mysql://host/database
+            mysql://username@host/database
+            mysql://username:password@host:port/database
+            
+            oracle://username:password@tnsName
+            oracle://username:password@host:port/sidname
+
+            """
+            hostjoin = ''
+            if 'dialect' in options.keys():
+                self.dburl = '%s://' % options['dialect']
                 del options['dialect']
+            if 'user' in options.keys():
+                self.dburl = '%s%s' % (self.dburl, options['user'])
+                hostjoin='@'
                 del options['user']
+            if 'username' in options.keys():
+                self.dburl = '%s%s' % (self.dburl, options['username'])
+                hostjoin='@'
+                del options['username']
+            if 'passwd' in options.keys():
+                self.dburl = '%s:%s' % (self.dburl, options['passwd'])
                 del options['passwd']
-                del options['port']
+            if 'password' in options.keys():
+                self.dburl = '%s:%s' % (self.dburl, options['password'])
+                del options['password']
+            if 'tnsName' in options.keys():
+                self.dburl = '%s%s%s' % (self.dburl, hostjoin, options['tnsName'])
                 del options['tnsName']
-            else:
-                self.dburl = '%s://%s:%s@%s' % (options['dialect'],
-                                                options['user'],
-                                                options['passwd'],
-                                                options['tnsName'])
-                del options['dialect']
-                del options['user']
-                del options['passwd']
-                del options['tnsName']
+            elif 'host' in options.keys():
+                self.dburl = '%s%s%s' % (self.dburl, hostjoin, options['host'])
+                del options['host']
+                if 'port' in options.keys():
+                    self.dburl = '%s:%s' % (self.dburl, options['port'])
+                    del options['port']
+            if 'host' in options.keys():
+                self.dburl = '%s/%s' % (self.dburl, options['host'])
+                del options['host']
+            if 'database' in options.keys():
+                self.dburl = '%s/%s' % (self.dburl, options['database'])
+                del options['database']
+            elif 'sid' in options.keys():
+                self.dburl = '%s/%s' % (self.dburl, options['sid'])
+                del options['sid']
+           
             
         self.engine = create_engine(self.dburl, 
                                #echo_pool=True,

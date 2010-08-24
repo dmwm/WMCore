@@ -1,9 +1,9 @@
-from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.Database.DBCreator import DBCreator
 
-class CreateWMBS(DBFormatter):
+class CreateWMBS(DBCreator):
     
     def __init__(self, logger, dbinterface):
-        DBFormatter.__init__(self, logger, dbinterface)
+        DBCreator.__init__(self, logger, dbinterface)
         self.create = {}
         self.constraints = {}
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
@@ -131,27 +131,3 @@ wmbs_sub_files_complete (
         self.constraints['uniquelfn'] = """
             CREATE UNIQUE INDEX uniq_lfn 
             on wmbs_file_details (lfn)"""
-            
-    def execute(self, fileset = None, conn = None, transaction = False):
-        for i in self.create.keys():
-            self.logger.debug( i )
-            try:
-                self.dbi.processData(self.create[i], 
-                                     conn = conn, 
-                                     transaction = transaction)
-            except Exception, e:
-                self.logger.debug( e )
-            
-            keys = self.constraints.keys()
-            self.logger.debug( keys )
-        for i in self.constraints.keys():
-            self.logger.debug( i )
-            try:
-                self.dbi.processData(self.constraints[i], 
-                                 conn = conn, 
-                                 transaction = transaction)
-            except Exception, e:
-                self.logger.debug( e )
-            
-        return True
-            

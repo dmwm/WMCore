@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.22 2009/01/26 20:51:35 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Job.py,v 1.23 2009/02/12 21:23:30 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import datetime
 from sets import Set
@@ -253,8 +253,9 @@ class Job(WMBSBase, WMJob):
         # this requires Jobgroup to call addOutput to commit to database
         WMJob.addOutput(self, file)
         
-        # This dosen't require JobGreoup to call addOutput seperately but need 
-        # to import JobGroup with in the job
+        # This dosen't require JobGreoup to call addOutput separately but need 
+        # to import JobGroup with in the job which might be worse than calling 
+        # JobGroup.addOutput after Job.addOutput
 #        from WMCore.WMBS.JobGroup import JobGroup
 #        
 #        jobGroup = JobGroup(id=self.job_group)

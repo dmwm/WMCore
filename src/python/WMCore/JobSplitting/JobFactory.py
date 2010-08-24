@@ -30,11 +30,12 @@ class JobFactory(WMObject):
         
         basename = "%s-%s" % (self.subscription.name(), group.id)
         
-        group.add(self.algorithm(job_instance=job_instance, jobname=basename,
-                                  *args, **kwargs))
+        jobs = self.algorithm(job_instance=job_instance, jobname=basename,
+                                  *args, **kwargs)
+        group.add(jobs)
         # Acquire the files used in the job group, job groups should run on 
         # complete files.
-        group.recordAcquire()
+        group.recordAcquire(list(jobs))
         return group
     
     def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):

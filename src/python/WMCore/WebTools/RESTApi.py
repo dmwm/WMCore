@@ -18,6 +18,8 @@ class RESTApi(WebAPI):
 
         self.set_model(config.section_('model'))
         
+        self.__doc__ = self.model.__doc__
+        
         WebAPI.__init__(self, config)
         self.methods.update({'GET':{'args':[],
                                  'call':self.model.handle_get,
@@ -91,4 +93,3 @@ class RESTApi(WebAPI):
         # TODO: Add other specific content types
         response.headers['Content-Length'] = len(data)
         return data
-        

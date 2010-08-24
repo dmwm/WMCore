@@ -109,7 +109,8 @@ wmbs_sub_files_complete (
                 file   INT(11) NOT NULL,
                 FOREIGN KEY (job) REFERENCES wmbs_job(id)
                     ON DELETE CASCADE,
-                FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
+                FOREIGN KEY (file) REFERENCES wmbs_file(id)
+                    ON DELETE CASCADE)"""
         
         self.constraints['uniquewfname'] = "CREATE UNIQUE INDEX uniq_wf_name on wmbs_workflow (name)"
         self.constraints['uniquewfspecowner'] = "CREATE UNIQUE INDEX uniq_wf_spec_owner on wmbs_workflow (spec, owner)"

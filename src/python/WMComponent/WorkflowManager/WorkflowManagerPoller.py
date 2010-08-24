@@ -27,48 +27,47 @@ class WorkflowManagerPoller(BaseWorkerThread):
             "WMComponent.WorkflowManager.Database." + myThread.dialect)
         self.queries = factory.loadObject("Queries")
     
-    def algorithm(self, parameters):
+    def databaseWork(self):
         """
         Queries DB for all watched filesets, if matching filesets become
         available, create the subscriptions
         """
-        logging.info("Running subscription / fileset matching algorithm")
-        
         # Get all watched mappings
         managedWorkflows = self.queries.getManagedWorkflows()
-        
-        logging.info("Have %s managed workflows" % len(managedWorkflows))
-        
-        if len(managedWorkflows) == 0:
-            return
+        logging.debug("Found %s managed workflows" % len(managedWorkflows))
         
         # Get the details of all unsubscribed filesets
         availableFilesets = self.queries.getUnsubscribedFilesets()
-        logging.info("Have %s unsubscribed filesets" % len(availableFilesets))
+        logging.debug("Found %s unsubscribed filesets" % len(availableFilesets))
             
-        # Match filesets to managed workflows
-        for fileset in availableFilesets:
-            # Fileset object cache to pass into Subscription constructor
-            fsObj = None
+        # Match filesets to managed workflows  
+        for managedWorkflow in managedWorkflows:
+            # Workflow object cache to pass into Subscription constructor
+            wfObj = None
             
-            for managedWorkflow in managedWorkflows:
-                # Workflow object cache
-                wfObj = None
-                
+            for fileset in availableFilesets:
+                # Fileset object cache
+                fsObj = None
+
                 # Load the location information
                 whitelist = Set()
                 blacklist = Set()
                 locations = self.queries.getLocations(managedWorkflow['id'])
                 for location in locations:
-                    logging.info(str(location))
-                    if location['valid'] == True:
+                    if bool(int(location['valid'])) == True:
                         whitelist.add(location['se_name'])
                     else:
-                        whitelist.add(location['se_name'])
+                        blacklist.add(location['se_name'])
+                logging.info(str(whitelist))
+                logging.info(str(blacklist))
                 
                 # Attempt to match workflows to filesets
                 if re.match(managedWorkflow['fileset_match'], fileset['name']):
-                    logging.info("Found a fileset match: %s" % fileset['name'])
+                    # Log in debug
+                    msg = "Creating subscription for %s to workflow id %s"
+                    msg %= (fileset['name'], managedWorkflow['workflow'])
+                    logging.debug(msg)
+                    
                     # Match found - Load the fileset if not already loaded
                     if not fsObj:
                         fsObj = Fileset(id = fileset['id'])
@@ -80,8 +79,6 @@ class WorkflowManagerPoller(BaseWorkerThread):
                         wfObj.load()
                         
                     # Create the subscription
-                    logging.info("Creating subscription for fileset %s" % \
-                                                            fileset['name'])
                     newSub = Subscription(fileset = fsObj, \
                                      workflow = wfObj, \
                                      whitelist = whitelist, \
@@ -89,3 +86,18 @@ class WorkflowManagerPoller(BaseWorkerThread):
                                      split_algo = managedWorkflow['split_algo'],
                                      type = managedWorkflow['type'])
                     newSub.create()
+    
+    def algorithm(self, parameters):
+        """
+        Queries DB for all watched filesets, if matching filesets become
+        available, create the subscriptions. Wraps in transaction.
+        """
+        logging.debug("Running subscription / fileset matching algorithm")
+        myThread = threading.currentThread()
+        try:
+            myThread.transaction.begin()
+            self.databaseWork()
+            myThread.transaction.commit()
+        except:
+            myThread.transaction.rollback()
+            raise

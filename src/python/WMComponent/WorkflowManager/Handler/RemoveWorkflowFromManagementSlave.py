@@ -5,8 +5,8 @@ Slave used for RemoveWorkflowFromManagement handler
 
 __all__ = []
 __revision__ = \
-    "$Id: RemoveWorkflowFromManagementSlave.py,v 1.2 2009/02/05 15:47:14 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+    "$Id: RemoveWorkflowFromManagementSlave.py,v 1.3 2009/02/05 18:08:17 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -24,12 +24,18 @@ class RemoveWorkflowFromManagementSlave(DefaultSlave):
 
         # Handle the message
         args = self.messageArgs
-        logging.debug("Handling RmoveWorkflowFromManagement message: %s" % str(args))
+        logging.debug("Handling RmoveWorkflowFromManagement message: %s" % \
+                                                                    str(args))
         
         # Validate arguments
         if args.has_key("FilesetMatch") and args.has_key("WorkflowId"):
-            self.queries.removeManagedWorkflow(args['WorkflowId'], \
-                                               args['FilesetMatch'])
+            try:
+                transaction.begin()
+                self.queries.removeManagedWorkflow(args['WorkflowId'], \
+                                                   args['FilesetMatch'])
+                transaction.commit()
+            except:
+                transaction.rollback()
         else:
             logging.error("Received malformed parameters: %s" % str(args))
 

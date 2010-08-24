@@ -12,8 +12,8 @@ WorkflowManager
 import time
 import logging
 
-__revision__ = "$Id: Queries.py,v 1.3 2009/02/05 15:47:14 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Queries.py,v 1.4 2009/02/05 18:08:18 jacksonj Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -54,7 +54,7 @@ class Queries(DBFormatter):
                     AND fileset_match = :fileset_match
                     """
         self.execute(sqlStr, {'workflow' : workflowId, \
-                              'fileset_match' : filsetMatch})
+                              'fileset_match' : filesetMatch})
     
     def getManagedWorkflows(self):
         """
@@ -92,7 +92,7 @@ class Queries(DBFormatter):
         result = self.execute(sqlStr, {'managed_workflow' : managedWorkflowId})
         return self.formatDict(result)
 
-    def markLocation(self, workflow, filesetMatch, location, valid):
+    def markLocation(self, workflowId, filesetMatch, location, valid):
         """
         Adds a location to the created subscription white / black lists
         """

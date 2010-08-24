@@ -5,8 +5,8 @@ Slave used for RemoveFromWorkflowManagementLocationList handler
 
 __all__ = []
 __revision__ = \
-    "$Id: RemoveFromWorkflowManagementLocationListSlave.py,v 1.2 2009/02/05 15:47:14 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+    "$Id: RemoveFromWorkflowManagementLocationListSlave.py,v 1.3 2009/02/05 18:08:17 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -27,15 +27,22 @@ class RemoveFromWorkflowManagementLocationListSlave(DefaultSlave):
         msg = "Handling RemoveFromWorkflowManagementLocationList message: %s" %\
                                                                     str(args)
         logging.debug(msg)
+        myThread = threading.currentThread()
         
         # Validate arguments
         if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
         and args.has_key("Locations"):
             locations = args['Locations'].split(",")
-            for loc in locations:
-                self.queries.unmarkLocation(args['WorkflowId'], \
-                                          args['FilesetMatch'], \
-                                          loc)
+            try:
+                myThread.transaction.begin()
+                for loc in locations:
+                    self.queries.unmarkLocation(args['WorkflowId'], \
+                                                args['FilesetMatch'], \
+                                                loc)
+                myThread.transaction.commit()
+            except:
+                logging.transaction.rollback()
+                raise
         else:
             logging.error("Received malformed parameters: %s" % str(args))
 

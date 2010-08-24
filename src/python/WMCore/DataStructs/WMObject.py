@@ -6,8 +6,8 @@ Helper class that other objects should inherit from
 
 """
 __all__ = []
-__revision__ = "$Id: WMObject.py,v 1.3 2008/11/03 10:13:15 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMObject.py,v 1.4 2008/11/11 11:26:47 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 
@@ -27,7 +27,7 @@ class WMObject(object):
     
     def makeset(self, theset):
         """
-        Simple method to ensure thelist is a set
+        Simple method to ensure theset is a set
         """
         if not isinstance(theset, Set):
             theset = Set(self.makelist(theset))

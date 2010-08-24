@@ -1,0 +1,99 @@
+<FrameworkJobReport>
+
+<InputFile>
+<State  Value="closed"/>
+<LFN>/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/F0875ECD-3347-DF11-9FE0-003048678A80.root</LFN>
+<PFN>dcap://cmsdca3.fnal.gov:24142/pnfs/fnal.gov/usr/cms/WAX/11/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/F0875ECD-3347-DF11-9FE0-003048678A80.root</PFN>
+<Catalog>trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap</Catalog>
+<ModuleLabel>source</ModuleLabel>
+<GUID>F0875ECD-3347-DF11-9FE0-003048678A80</GUID>
+<Branches>
+  <Branch>branch1</Branch>
+  <Branch>branch2</Branch>
+</Branches>
+<InputType>primaryFiles</InputType>
+<InputSourceClass>PoolSource</InputSourceClass>
+<EventsRead>2</EventsRead>
+<Runs>
+<Run ID="124216">
+   <LumiSection ID="1"/>
+</Run>
+
+</Runs>
+</InputFile>
+
+<InputFile>
+<State  Value="closed"/>
+<LFN>/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/626D74CE-3347-DF11-9363-0030486790C0.root</LFN>
+<PFN>dcap://cmsdca3.fnal.gov:24142/pnfs/fnal.gov/usr/cms/WAX/11/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/626D74CE-3347-DF11-9363-0030486790C0.root</PFN>
+<Catalog>trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap</Catalog>
+<ModuleLabel>source</ModuleLabel>
+<GUID>626D74CE-3347-DF11-9363-0030486790C0</GUID>
+<Branches>
+  <Branch>branch1</Branch>
+  <Branch>branch2</Branch>
+</Branches>
+<InputType>primaryFiles</InputType>
+<InputSourceClass>PoolSource</InputSourceClass>
+<EventsRead>2</EventsRead>
+<Runs>
+<Run ID="124216">
+   <LumiSection ID="2"/>
+</Run>
+
+</Runs>
+</InputFile>
+<StorageStatistics>
+<storage-factory-summary>
+ <storage-factory-params>
+  <param name='enabled' value='true' unit='boolean'/>
+  <param name='cache-hint' value='application-only' unit='string'/>
+  <param name='read-hint' value='auto-detect' unit='string'/>
+  <param name='stats' value='true' unit='boolean'/>
+ </storage-factory-params>
+ <storage-factory-stats>
+<storage-timing-summary>
+ <counter-value subsystem='dcap' counter-name='close' num-operations='49' num-successful-operations='49' total-megabytes='0' total-msecs='915.627' min-msecs='3.11603' max-msecs='48.779'/>
+ <counter-value subsystem='dcap' counter-name='construct' num-operations='49' num-successful-operations='49' total-megabytes='0' total-msecs='0.0512' min-msecs='0.000768' max-msecs='0.002048'/>
+ <counter-value subsystem='dcap' counter-name='destruct' num-operations='49' num-successful-operations='49' total-megabytes='0' total-msecs='0.242176' min-msecs='0.002816' max-msecs='0.039936'/>
+ <counter-value subsystem='dcap' counter-name='open' num-operations='49' num-successful-operations='49' total-megabytes='0' total-msecs='27546.8' min-msecs='130.52' max-msecs='2958.36'/>
+ <counter-value subsystem='dcap' counter-name='position' num-operations='520849' num-successful-operations='520849' total-megabytes='0' total-msecs='932.602' min-msecs='0.000768' max-msecs='9.01914'/>
+ <counter-value subsystem='dcap' counter-name='prefetch' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='dcap' counter-name='read' num-operations='520457' num-successful-operations='520457' total-megabytes='509.669' total-msecs='37423.2' min-msecs='0.000768' max-msecs='5571.68'/>
+ <counter-value subsystem='dcap' counter-name='readv' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='dcap' counter-name='stagein' num-operations='49' num-successful-operations='49' total-megabytes='0' total-msecs='7523.1' min-msecs='74.0209' max-msecs='425.157'/>
+ <counter-value subsystem='dcap' counter-name='write' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='dcap' counter-name='writev' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='file' counter-name='close' num-operations='1' num-successful-operations='1' total-megabytes='0' total-msecs='0.059904' min-msecs='0.059904' max-msecs='0.059904'/>
+ <counter-value subsystem='file' counter-name='construct' num-operations='1' num-successful-operations='1' total-megabytes='0' total-msecs='0.001024' min-msecs='0.001024' max-msecs='0.001024'/>
+ <counter-value subsystem='file' counter-name='destruct' num-operations='1' num-successful-operations='1' total-megabytes='0' total-msecs='0.01408' min-msecs='0.01408' max-msecs='0.01408'/>
+ <counter-value subsystem='file' counter-name='flush' num-operations='4' num-successful-operations='4' total-megabytes='0' total-msecs='207.365' min-msecs='1.07699' max-msecs='172.565'/>
+ <counter-value subsystem='file' counter-name='open' num-operations='1' num-successful-operations='1' total-megabytes='0' total-msecs='0.098048' min-msecs='0.098048' max-msecs='0.098048'/>
+ <counter-value subsystem='file' counter-name='position' num-operations='506652' num-successful-operations='506652' total-megabytes='0' total-msecs='758.903' min-msecs='0.000768' max-msecs='0.161024'/>
+ <counter-value subsystem='file' counter-name='prefetch' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='file' counter-name='read' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='file' counter-name='readv' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='file' counter-name='write' num-operations='506460' num-successful-operations='506460' total-megabytes='370.87' total-msecs='3425.88' min-msecs='0.002816' max-msecs='25.2731'/>
+ <counter-value subsystem='file' counter-name='writev' num-operations='0' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+ <counter-value subsystem='tstoragefile' counter-name='close' num-operations='50' num-successful-operations='50' total-megabytes='0' total-msecs='916.905' min-msecs='0.0832' max-msecs='48.801'/>
+ <counter-value subsystem='tstoragefile' counter-name='construct' num-operations='50' num-successful-operations='50' total-megabytes='0' total-msecs='39827.7' min-msecs='5.33709' max-msecs='6054.52'/>
+ <counter-value subsystem='tstoragefile' counter-name='flush' num-operations='4' num-successful-operations='4' total-megabytes='0' total-msecs='207.386' min-msecs='1.08211' max-msecs='172.571'/>
+ <counter-value subsystem='tstoragefile' counter-name='read' num-operations='520457' num-successful-operations='520457' total-megabytes='509.669' total-msecs='39047.7' min-msecs='0.00384' max-msecs='5571.69'/>
+ <counter-value subsystem='tstoragefile' counter-name='read-actual' num-operations='520457' num-successful-operations='520457' total-megabytes='509.669' total-msecs='38246.6' min-msecs='0.001792' max-msecs='5571.69'/>
+ <counter-value subsystem='tstoragefile' counter-name='seek' num-operations='1026917' num-successful-operations='1026917' total-megabytes='0' total-msecs='3197.28' min-msecs='0.001792' max-msecs='1.984'/>
+ <counter-value subsystem='tstoragefile' counter-name='stat' num-operations='146' num-successful-operations='146' total-megabytes='0' total-msecs='66.6591' min-msecs='0.009984' max-msecs='9.02989'/>
+ <counter-value subsystem='tstoragefile' counter-name='write' num-operations='506460' num-successful-operations='506460' total-megabytes='370.87' total-msecs='5389.83' min-msecs='0.006912' max-msecs='25.282'/>
+ <counter-value subsystem='tstoragefile' counter-name='write-actual' num-operations='506460' num-successful-operations='506460' total-megabytes='370.87' total-msecs='4238.86' min-msecs='0.004864' max-msecs='25.2772'/>
+ <counter-value subsystem='tstoragefile' counter-name='write-via-cache' num-operations='506460' num-successful-operations='0' total-megabytes='0' total-msecs='0' min-msecs='0' max-msecs='0'/>
+</storage-timing-summary>
+  <storage-root-summary>
+   <counter-value subsystem='tfile' counter-name='read' total-megabytes='0'/>
+   <counter-value subsystem='tfile' counter-name='write' total-megabytes='0'/>
+  </storage-root-summary>
+ </storage-factory-stats>
+</storage-factory-summary>
+</StorageStatistics>
+
+<GeneratorInfo>
+</GeneratorInfo>
+</FrameworkJobReport>

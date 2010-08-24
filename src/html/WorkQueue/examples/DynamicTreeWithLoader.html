@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<!-- initial source code taken from here
+     http://developer.yahoo.com/yui/examples/treeview/dynamic_tree.html - for dynamic tree
+	 
+	 this shows YUILoader feature (http://developer.yahoo.com/yui/yuiloader)
+-->
+
+
+<html>
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>Dynamically Loading WorkQueues Information</title>
+
+<style type="text/css">
+/*margin and padding on body element
+  can introduce errors in determining
+  element position and are not recommended;
+  we turn them off as a foundation for YUI
+  CSS treatments. */
+body {
+	margin:0;
+	padding:0;
+}
+</style>
+
+<!-- for deployment should use minified (*-min.js) versions of the libraries -->
+
+<script src="http://yui.yahooapis.com/2.8.1/build/yuiloader/yuiloader.js"></script>
+
+<!-- WebTools libraries -->
+<script src="../javascript/debugging.js"></script>
+
+
+<!--begin custom header content for this example-->
+<style>
+#treeDiv1 {background: #fff; margin-top:1em; padding:1em; min-height:7em;}
+</style>
+<!--end custom header content for this example-->
+
+</head>
+
+<body class="yui-skin-sam">
+
+
+<div id="treeDiv1"></div>
+    
+<script type="text/javascript">
+
+enableDebug();
+
+/*
+ * Function processes JSON response and creates corresponding nodes.
+ * Is used for both ordinary nodes as well as for the root node.
+ */
+function processNode(JSONInput, node)
+{
+	try 
+	{
+		var oResults = YAHOO.lang.JSON.parse(JSONInput);
+	}
+	catch(ex)
+	{
+		writeDebug("exception");
+		writeDebug("name: " + ex.name);
+		writeDebug("message: " + ex.message);
+		writeDebug("fileName: " + ex.fileName);
+		writeDebug("stack: " + ex.stack);
+		// writeDebugObject(ex);
+	}
+		
+    if((oResults) && (oResults.length)) {
+	    //Result is an array if more than one result, string otherwise
+	    if(YAHOO.lang.isArray(oResults)) {
+	        for (var i=0, j=oResults.length; i<j; i++) {
+	            var tempNode = new YAHOO.widget.TextNode(oResults[i].name, node, false);
+	        }
+	    } else {
+	        //there is only one result; comes as string:
+	        var tempNode = new YAHOO.widget.TextNode(oResults.name, node, false)
+	    }
+	}
+	
+	return oResults;
+}
+
+
+treeExample = function() {
+
+	var rootUrl = "/workqueue/workloads"
+	var sUrl = "/workqueue/workloadsbyname"
+    var tree, currentIconMode;
+
+        function loadNodeData(node, fnLoadComplete)  {
+            
+            //We'll load node data based on what we get back when we
+            //use Connection Manager topass the text label of the 
+            //expanding node to the Yahoo!
+            //Search "related suggestions" API.  Here, we're at the 
+            //first part of the request -- we'll make the request to the
+            //server.  In our success handler, we'll build our new children
+            //and then return fnLoadComplete back to the tree.
+            
+            //Get the node's label and urlencode it; this is the word/s
+            //on which we'll search for related words:
+            var nodeLabel = encodeURI(node.label);
+            
+            //prepare URL for XHR request:
+			var postData = "name=" + nodeLabel;
+            
+            //prepare our callback object
+            var callback = {
+            
+                //if our XHR call is successful, we want to make use
+                //of the returned data and create child nodes.
+                success: function(oResponse) {
+					// nothing written anywhere ...
+                    YAHOO.log("XHR transaction was successful.", "info", "example");
+                    YAHOO.log("logging info: " + oResponse.responseText);
+
+					// original example using eval() - first it complains at WMCore JSON
+					// and eval() is not recommended solution anyway					
+                    // var oResults = eval("(" + oResponse.responseText + ")");
+
+					// writeDebug(oResponse.responseText);
+	
+					var oResults = processNode(oResponse.responseText, node);
+                    
+                    //When we're done creating child nodes, we execute the node's
+                    //loadComplete callback method which comes in via the argument
+                    //in the response object (we could also access it at node.loadComplete,
+                    //if necessary):
+                    oResponse.argument.fnLoadComplete();
+                },
+                
+                //if our XHR call is not successful, we want to
+                //fire the TreeView callback and let the Tree
+                //proceed with its business.
+                failure: function(oResponse) {
+                    YAHOO.log("Failed to process XHR transaction.", "info", "example");
+                    oResponse.argument.fnLoadComplete();
+                },
+                
+                //our handlers for the XHR response will need the same
+                //argument information we got to loadNodeData, so
+                //we'll pass those along:
+                argument: {
+                    "node": node,
+                    "fnLoadComplete": fnLoadComplete
+                },
+                
+                //timeout -- if more than 7 seconds go by, we'll abort
+                //the transaction and assume there are no children:
+                timeout: 7000
+            };
+            
+			YAHOO.util.Connect.initHeader("Accept", "text/json", true);
+            //With our callback object ready, it's now time to 
+            //make our XHR call using Connection Manager's
+            //asyncRequest method:
+            YAHOO.util.Connect.asyncRequest('POST', sUrl, callback, postData);
+        }
+
+		/*
+		 * This function processes root node.
+		 */
+        function buildTree() 
+		{	
+           	//create a new tree:
+           	tree = new YAHOO.widget.TreeView("treeDiv1");
+           
+           	//turn dynamic loading on for entire tree:
+           	tree.setDynamicLoad(loadNodeData, currentIconMode);
+           
+           	//get root node for tree:
+           	var rootNode = tree.getRoot();
+         	  
+			YAHOO.util.Connect.initHeader("Accept", "text/json", true);
+			YAHOO.util.Connect.asyncRequest('GET', rootUrl,
+				{
+    				success: function(response) 
+					{
+						// writeDebug("success");
+						processNode(response.responseText, rootNode);
+			           	// Use the isLeaf property to force the leaf node presentation for a given node.
+			           	// This disables dynamic loading for the node.
+			           	//var tempNode = new YAHOO.widget.TextNode('This is a leaf node', root, false);
+           				//tempNode.isLeaf = true;
+           
+			           	//render tree with these toplevel nodes; all descendants of these nodes
+			           	//will be generated as needed by the dynamic loader.
+			           	tree.draw();
+    				},
+    				failure: function(response)
+					{
+						writeDebug("reading\n" + rootUrl + "\nfailed, message: " + response.statusText);
+    				}
+				});			
+        }
+
+
+    return {
+        init: function() {
+			// TODO
+			// currentIconMode could be either 0 or 1 based on the radio button selection
+			// in the original example - removed here
+			currentIconMode = 1;
+            buildTree();
+        }
+    }
+} ();
+
+
+
+// Instantiate and configure Loader:
+var loader = new YAHOO.util.YUILoader({
+ 
+    // Identify the components you want to load.  Loader will automatically identify
+    // any additional dependencies required for the specified components.
+	// remove "connection" and whole thing will end up with blank page, no complains ... terrible!
+    require: ["json", "treeview", "event", "yahoo-dom-event", "dom", "connection"],
+ 
+    // Configure loader to pull in optional dependencies.  For example, animation
+    // is an optional dependency for slider.
+    loadOptional: true,
+ 
+    // The function to call when all script/css resources have been loaded
+    onSuccess: postload,
+	
+    // should a failure occur, the onFailure function will be executed
+    onFailure: function(o) {
+        alert("error: " + YAHOO.lang.dump(o));
+    },
+ 
+    // Configure the Get utility to timeout after 10 seconds for any given node insert
+    timeout: 10000,
+ 
+    // Combine YUI files into a single request (per file type) by using the Yahoo! CDN combo service.
+    combine: true
+	// varName: ["JSON", "YAHOO"] // doens't seem to be necessary
+});
+loader.insert();
+
+
+
+/*
+ * Function is called after YUILoader did its job loading required libraries
+ */
+function postload()
+{
+	//once the DOM has loaded, we can go ahead and set up our tree:
+	YAHOO.util.Event.onDOMReady(treeExample.init, treeExample, true);
+}
+
+
+</script>
+
+</body>
+</html>

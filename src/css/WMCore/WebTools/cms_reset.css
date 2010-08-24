@@ -1,0 +1,12 @@
+h1{font-size:300%;}
+h2{font-size:300%;}
+h3{font-size:200%;}
+h4{font-size:200%;}
+h5{font-size:100%;}
+h6{font-size:100%;}
+
+h2, h4, h6{font-variant: small-caps}
+
+body{margin:0;padding:0;}
+
+img { -ms-interpolation-mode:bicubic; }

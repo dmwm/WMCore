@@ -1,0 +1,25 @@
+Complete SecurePage class - decide on how best to do it
+		probably write a custom tool, hooked into before_handler
+		
+Make starting better than ./Root.py - that could be done on an application level
+Use multiple namespaces for loading classes (e.g. enable running WMCore/WebTools/Controllers and SiteDB/SiteList)
+
+Support all CherryPy configurables from config file
+Implement verbose running (set logging level via this switch?)
+Improve config passing to classes (configure method?)
+		think about config vs context
+		minimise config to just the relevant pieces
+		
+Implement maintenance for views
+
+Correct minification of javascript
+Implement image support in controllers
+Let controllers serve files from directories instead of per file - needed for YUI or any other library
+Framework to define FRAMEWORK_ROOT for location of base css/js
+
+Write unit tests
+
+Determine what other functionality is needed for the framework (json/xml serialisers?)
+
+For REST/API type interactions calculate and set etag
+		tool hooked into before_finalise I think

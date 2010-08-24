@@ -1,0 +1,78 @@
+<html>
+<HEAD>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+</HEAD>
+<body>
+#if $docId != None
+<a href="../showOriginalConfig/$docId" >Original Config</a> &nbsp&nbsp&nbsp
+<a href="../showFullConfig/$docId" >Full Config</a> &nbsp&nbsp&nbsp
+<a href="../showTweakFile/$docId" >TweakFile</a><br><br>
+#end if
+
+<FORM ACTION="../modifyWorkload" METHOD="POST">
+<hr><table>
+#for $key, $value in $requestSchema.items()
+     ## make a hyperlink to workflow
+     #if $key == 'RequestWorkflow'
+         <tr><td> $key </td><td>  <a href="../showWorkload?filepath=$workloadDir/$value">$value</a> </td></tr>
+         <INPUT TYPE="HIDDEN" NAME="workload" VALUE=$workloadDir/$value>
+     #elif $key == 'RequestType'
+         <tr><td> $key </td><td> $value </td></tr>
+         <INPUT TYPE="HIDDEN" NAME="requestType" VALUE=$value>
+     #elif $key == 'RequestName'
+         <tr><td> $key </td><td> $value </td></tr>
+         <INPUT TYPE="HIDDEN" NAME="requestName" VALUE=$value>
+     #elif $key == 'RunWhitelist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="runWhitelist"></INPUT>
+     #elif $key == 'RunBlacklist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="runBlacklist"></INPUT>
+     #elif $key == 'BlockWhitelist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockWhitelist"></INPUT>
+     #elif $key == 'BlockBlacklist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockBlacklist"></INPUT>
+     #else
+         <tr><td> $key </td><td> $value </td></tr>
+     #end if
+#end for
+</table>
+<INPUT TYPE=submit VALUE="Modify">
+</FORM>
+
+<br>Assignments<br><hr>
+<table>
+#if $assignments != None:
+#for $assignment in $assignments
+     <tr><td>TeamName</td><td> $assignment</td></tr>
+#end for
+#end if
+
+
+Change the assignment or priority:<BR>
+</table>
+<form action="../doAdmin" method="POST">
+$adminHtml
+<input type=submit>
+</form>
+
+<br>Messages:<br>---------<br>
+#if $messages != None
+#for $message in $messages:
+    message[0]<br>
+#end for
+#end if
+## Updates
+<br><hr>
+<table>
+#if $updateDictList != None
+#for $updateDict in $updateDictList
+    <br>----------<br>
+    #for $key in $updateDict
+        <tr><td>$key</td><td>$updateDict[$key]</td></tr>
+    #end for
+#end for
+#end if
+<BR><A HREF="..">Back</A><BR>
+</table>
+</body>
+</html>
+

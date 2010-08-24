@@ -1,0 +1,28 @@
+<form action="handleAssignmentPage" method="POST">
+## pass the request name along silently
+<input type="HIDDEN" name="requestName" value="$requestName">
+Assign this request to teams<BR>
+#for $team in $teams:
+    #if $team in $assignments:
+        <input type="checkbox" name="$team" CHECKED>$team</INPUT><br> 
+    #else
+        <input type="checkbox" name="$team">$team</INPUT><BR>
+    #end if
+#end for
+
+Site Whitelist:
+<SELECT NAME="siteWhitelist" MULTIPLE SIZE=10>
+   #for $site in $sites:
+     <OPTION>$site</OPTION>
+   #end for
+</SELECT> &nbsp&nbsp&nbsp&nbsp
+Site Blacklist:
+<SELECT NAME="siteBlacklist" MULTIPLE SIZE=10>
+   #for $site in $sites:
+       <OPTION>$site</OPTION>
+   #end for
+</SELECT><BR/>
+
+<input type="submit"/>
+</form>
+

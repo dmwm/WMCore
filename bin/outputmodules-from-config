@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+"""
+_outputmodules-from-config_
+
+Pull output module metadata from a CMSSW config.
+"""
+
+import sys
+import tempfile
+import os
+import urllib
+import imp
+
+from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
+
+def loadConfig(configPath):
+    """
+    _loadConfig_
+
+    Import a config.
+    """
+    cfgBaseName = os.path.basename(configPath).replace(".py", "")
+    cfgDirName = os.path.dirname(configPath)
+    modPath = imp.find_module(cfgBaseName, [cfgDirName])
+    
+    loadedConfig = imp.load_module(cfgBaseName, modPath[0],
+                                   modPath[1], modPath[2])
+    
+    return loadedConfig
+
+def outputModulesFromConfig(configHandle):
+    """
+    _outputModulesFromConfig_
+
+    Go through all the output modules in a config and extract the meta data.
+    """
+    outputModules = {}
+    
+    for outputModuleName in configHandle.outputModules.keys():
+        outputModule = getattr(configHandle, outputModuleName)
+        outputModules[outputModuleName] = {}
+        if hasattr(outputModule, "dataset"):
+            dataTierAttr = getattr(outputModule.dataset, "dataTier", None)
+            filterNameAttr = getattr(outputModule.dataset, "filterName", None)
+
+            dataTier = None
+            filterName = None
+            if dataTierAttr:
+                dataTier = dataTierAttr.value()
+            if filterNameAttr:
+                filterName = filterNameAttr.value()
+                
+            outputModules[outputModuleName] = {"dataTier": dataTier,
+                                               "filterName": filterName}
+            
+    return outputModules
+
+if __name__ == "__main__":
+    try:
+        jsonDecoder = JSONDecoder()
+        jsonEncoder = JSONEncoder()
+
+        encodedConfig = sys.stdin.readline()
+        config = jsonDecoder.decode(encodedConfig)
+
+        print "Config passed in from the spec: %s" % config
+
+        if config.get("configUrl", None):
+            print "Have a URL for a config, trying to download..."
+            tempDir = tempfile.mkdtemp()
+            configPath = os.path.join(tempDir, "cmsswConfig.py")
+            compConfigPath = os.path.join(tempDir, "cmsswConfig.pyc")
+            configString = urllib.urlopen(config["configUrl"]).read(-1)
+            print "Config download successful.  Trying to open..."
+            configFile = open(configPath, "w")
+            configFile.write(configString)
+            configFile.close()
+            process = loadConfig(configPath).process
+            print "Opened config successfully, cleaning up..."
+            os.remove(configPath)
+            os.remove(compConfigPath)
+            os.rmdir(tempDir)
+        else:
+            print "Have a scenario for a Configuration.DataProcessing config, trying to create..."
+            from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+            mySetup = SetupCMSSWPset()
+            mySetup.createProcess(config["scenarioName"], config["scenarioFunc"],
+                                  config["scenarioArgs"])
+            process = mySetup.process
+            print "Create successful..."
+
+        print "Trying to determine output modules in the config..."
+        outputModules = outputModulesFromConfig(process)
+        print "Successfully determined output modules, saving..."
+        outputModulesJSON = jsonEncoder.encode(outputModules)
+
+        outputHandle = open("outputModules.json", "w")
+        outputHandle.write("%s\n" % outputModulesJSON)
+        outputHandle.close()
+        
+        sys.exit(0)
+    except Exception, ex:
+        print ex
+        sys.exit(1)

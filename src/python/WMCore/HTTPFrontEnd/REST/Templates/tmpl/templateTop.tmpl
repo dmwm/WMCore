@@ -1,0 +1,49 @@
+<!-- templateTop.tmpl -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head profile="http://www.w3.org/2005/11/profile">
+<title>RESTofUs</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Language" content="en-us" />
+<meta name="author" content="Valentin Kuznetsov (vkuznet at gmail dot com)" />
+<meta name="MSSmartTagsPreventParsing" content="true" />
+<meta name="ROBOTS" content="ALL" />
+<meta name="Copyright" content="(CC) 2008, CMS collaboration." />
+<meta http-equiv="imagetoolbar" content="no" />
+<meta name="Rating" content="General" />
+<link rel="icon" 
+      type="image/png" 
+      href="${host}/images/CMSLogo.png" />
+<link rel="stylesheet" type="text/css" href="/css/rest.css" />
+<style type="text/css">div.normalcontent { display:none }</style>
+<script type="text/javascript">
+function SetMain() {
+  var id=document.getElementById("main");
+  if (id) {
+      id.className="main";
+  }
+}
+</script>
+</head>
+<body onload="$onload" id="content">
+
+<noscript>
+<h1 class="box_red">Warning:</h1>
+<table width="50%" class="main">
+<tr>
+<td>
+<div class="sectionhead_tight">REST page
+is AJAX enabled and require that your browser have scripting 
+enabled and JavaScript support. Your browser either does not support JavaScript, 
+or it has JavaScript support disabled. Please enable JavaScript support or 
+use a different browser with JavaScript support to use this page.
+</div>
+</td>
+</tr>
+</table>
+</noscript>
+
+<div id="main" class="hide">
+<script type="text/javascript">SetMain()</script>
+
+<!-- end of templateTop.tmpl -->

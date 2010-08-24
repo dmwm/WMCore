@@ -1,0 +1,44 @@
+#try
+#set test = $path
+#except
+#set path = '/'
+#end try
+
+<?xml version="1.0" ?>
+<rss version="2.0">
+<channel>
+<title>$config.title</title>
+<description>$config.description</description>
+<link>$path</link>
+<language>en-us</language>
+<pubDate></pubDate>
+<lastBuildDate></lastBuildDate>
+<docs>http://en.wikipedia.org/wiki/RSS_(file_format)</docs>
+<generator>$config.title</generator>
+<managingEditor>$config.admin</managingEditor>
+<webMaster>$config.admin</webMaster>
+#try
+#for item in $data
+#assert $item.title
+#assert $item.desc
+#assert $item.link
+#assert $item.date
+#assert $item.guid
+<item>
+<title>$item.title</title>
+<description>$item.desc</description>
+<link>$item.link</link>
+<pubDate>$item.date</pubDate>
+<guid>$item.guid</guid>
+</item>
+#end for
+#except
+<item>
+<title>Error!</title>
+<description>Error processing data : $data</description>
+<link>$request.base$path</link>
+<pubDate></pubDate>
+<guid></guid>
+#end try
+</channel>
+</rss>

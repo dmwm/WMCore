@@ -1,0 +1,67 @@
+<html>
+	<head>
+		<title>ConfigFile</title>
+		<link rel="stylesheet" type="text/css" href="/controllers/css/reset/style"/>
+	</head>
+	<body>
+	<center>
+		<table width=700 cellspacing=12>
+		  <!--<tr>
+		    <td>
+		      <p class="small"><a href="#about" name="about">About</a> | <a href="#materials">Materials</a></p>
+		    </td>
+		  </tr>-->
+		  <tr>
+		    <td>
+		  		<h1>The Page class</h1>
+		  	</td>
+			</tr>
+			<tr>	  	
+		  	<td>
+					<p>The Page class is a very simple object. The classes you wish to 
+					expose as views to the web should inherit from it (though this is not 
+					required). This will get you simple access to the configuration of your 
+					view.</p>
+	 			</td>
+		  </tr>
+		  <tr>
+		    <td>
+		  		<h1>Subclasses of Page</h1>
+		  	</td>
+			</tr>
+		  <tr>
+		    <td>
+		  		<h3>TemplatedPage</h3>
+		  	</td>
+			</tr>
+			<tr>	  	
+		  	<td>
+					<p>A <b>TemplatedPage</b> give you the additional method 
+					<b>templatepage</b> (<i>TODO: make this a decorator?</i>). This will 
+					look in the templates directory (as defined in your <a 
+					href="documentation/ConfigFile">ConfigFile</a>) and use Cheetah to 
+					generate the page you wish to see.</p>
+				</td>
+			</tr>
+		  <tr>
+		    <td>
+		  		<h3>SecurePage</h3>
+		  	</td>
+			</tr>
+			<tr>	  	
+		  	<td>
+					<p><b>SecurePage</b> provides a set of decorators: </p>
+						<ol>
+							<li>is_authenticated</li>
+							<li>is_authorized</li>
+							<li>has_role</li>
+							<li>has_site</li>
+							<li>has_group</li>
+						</ol>
+					<p>Which use the security module to check that a person has appropriate
+					permissions to access a page.</p>
+					<p>Your class should be a subclass of SecurePage if you want to 
+					require authentication for its content.</p>
+				</td>
+			</tr>
+		</table>

@@ -1,0 +1,81 @@
+h1, h2, h3, p{
+	font-weight:400;
+	color:#1A1A1A;
+}
+
+pre{
+    padding: 0.5em;
+}
+
+h1, h2{
+	text-transform: capitalize;
+	font-family:georgia,serif;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
+}
+
+h1{
+	font-size:2.5em;
+}
+
+h2{
+	font-size:2em;
+}
+
+h3, p, li, dt, dd, fieldset, legend, label{
+	font-family:'Helvetica Neue', 'HelveticaNeue', Helvetica, arial, sans-serif;
+}
+
+h3{
+	font-size:2em;
+}
+
+dt{
+	font-size:1.5em;
+}
+
+p, li{
+	font-size:1em;
+}
+
+ol, li, dt, dd {
+	list-style-type: disc;
+	list-style-position: inside;
+}
+
+ol, li, dt {
+	margin-left: 0.5em;
+}
+
+.small{
+	font-size:0.75em;
+}
+
+i{
+	color:#7da976;
+}
+
+b, a, dt{
+	color: #E85514;
+}
+
+hr {
+	color: #D3D3D3;  
+	background-color:  #D3D3D3;
+	height: 1px;
+	width: 75%;
+	border: 0;
+    margin: 1em;
+}
+
+body {
+        background-color:  #D3D3D3;
+        margin: 0px;
+        padding: 0px;
+}
+
+table {
+        background-color:  #FFFFFF;
+        padding: 0.5em; 
+        margin-bottom: 2em;
+}

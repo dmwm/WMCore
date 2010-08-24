@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>Chart with Legend Example</title>
+
+<style type="text/css">
+/*margin and padding on body element
+  can introduce errors in determining
+  element position and are not recommended;
+  we turn them off as a foundation for YUI
+  CSS treatments. */
+body {
+    margin:0;
+    padding:0;
+}
+</style>
+
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.1/build/fonts/fonts-min.css" />
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/json/json-min.js"></script>
+<script src="http://yui.yahooapis.com/2.8.1/build/connection/connection-min.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/element/element-min.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/datasource/datasource-min.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/swf/swf-min.js"></script>
+<script type="text/javascript" src="http://yui.yahooapis.com/2.8.1/build/charts/charts-min.js"></script>
+
+<!-- WebTools library -->
+<script src="../javascript/namespace.js"></script>
+<script src="../javascript/dataTable.js"></script>
+
+<!--begin custom header content for this example-->
+<style type="text/css">
+    #chart
+    {
+        float: left;
+        width: 450px;
+        height: 300px;
+    }
+
+    .chart_title
+    {
+        display: block;
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 0.4em;
+    }
+</style>
+<!--end custom header content for this example-->
+
+</head>
+
+<body class="yui-skin-sam">
+
+
+<h1>Chart with Legend Example</h1>
+
+
+<!--BEGIN SOURCE CODE FOR EXAMPLE =============================== -->
+
+<div id="chart">Unable to load Flash content. The YUI Charts Control requires Flash Player 9.0.45 or higher. You can install the latest version at the <a href="http://www.adobe.com/go/getflashplayer">Adobe Flash Player Download Center</a>.</p></div>
+
+<script type="text/javascript">
+
+    YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.8.1/build/charts/assets/charts.swf";
+
+//--- data
+    
+	var dataSchema = {
+        fields: [{key: "status"}, {key: "count"}]
+        };
+
+    var dataUrl = "/workqueue/statusstat"
+
+    var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
+	
+//--- chart
+
+    var mychart = new YAHOO.widget.PieChart( "chart", dataSource,
+    {
+        dataField: "count",
+        categoryField: "status",
+        style:
+        {
+            padding: 20,
+            legend:
+            {
+                display: "right",
+                padding: 10,
+                spacing: 5,
+                font:
+                {
+                    family: "Arial",
+                    size: 13
+                }
+            }
+        },
+        //only needed for flash player express install
+        expressInstall: "assets/expressinstall.swf"
+    });
+
+
+</script>
+<!--END SOURCE CODE FOR EXAMPLE =============================== -->
+
+
+<!--MyBlogLog instrumentation-->
+
+<script type="text/javascript" src="http://track2.mybloglog.com/js/jsserv.php?mblID=2007020704011645"></script>
+
+</body>
+</html>
+<!-- p3.ydn.re1.yahoo.com compressed/chunked Mon May 17 13:48:28 PDT 2010 -->

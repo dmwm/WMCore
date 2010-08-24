@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+
+<head>
+<title>$instance Subscription Status</title>
+<!-- Combo-handled YUI CSS files: -->
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.0r4/build/reset-fonts/reset-fonts.css&2.8.0r4/build/assets/skins/sam/skin.css">
+<!-- Combo-handled YUI JS files: -->
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js&2.8.0r4/build/connection/connection-min.js&2.8.0r4/build/dragdrop/dragdrop-min.js&2.8.0r4/build/container/container-min.js&2.8.0r4/build/datasource/datasource-min.js&2.8.0r4/build/element/element-min.js&2.8.0r4/build/paginator/paginator-min.js&2.8.0r4/build/datatable/datatable-min.js&2.8.0r4/build/json/json-min.js&2.8.0r4/build/menu/menu-min.js"></script>
+
+<style type="text/css">
+/* custom styles for this example */
+.yui-skin-sam .yui-dt-liner { white-space:nowrap; } 
+
+h2 { font-family: arial; text-align: center; font-size: 1.75em;}
+h3 { font-family: arial; text-align: center; font-size: 1.5em;}
+</style>
+
+<body class="yui-skin-sam">
+<h2>$instance Subscription Status</h2>
+<h3><div id="updated"></div></h3>
+<div align="center" id="subscriptionStatus"></div>
+
+<script>
+var futonUrl = "http://cmssrv48:5984/_utils/document.html?tier1_skimming/";
+
+var currentSubType = "$subType";
+
+var subscriptionFormatter = function(elLiner, oRecord, oColumn, oData) {
+    var subId = oData;
+    subHTML = '<a href="/wmbs/monitoring/subscription/?return_type=text/html;subscriptionId=' + subId;
+    subHTML += '" target="_blank">' + subId + '</a>';
+    elLiner.innerHTML = subHTML;
+    };
+
+var myColumnDefs = [
+    {key:"subscription_id", label:"Sub", sortable:true, resizeable:true, formatter:subscriptionFormatter},
+    {key:"workflow_name", label:"Workflow", sortable:true, resizeable:true, width:550},
+    {key:"fileset_name", label:"Input Fileset", sortable:true, resizeable:true, width: 400},
+    {key:"percent_complete", label:"Complete", sortable:true, resizable:true},
+    {key:"percent_success", label:"Successful", sortable:true, resizable:true}]
+
+var sUrl = "/wmbs/subscriptionstatus/?return_type=text/json%2Bdas;subType=$subType";
+
+var myDataSource = new YAHOO.util.DataSource(sUrl);
+myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;
+myDataSource.connXhrMode = "queueRequests";
+myDataSource.responseSchema = {
+    resultsList: "results",
+    fields: ["subscription_id", "workflow_name","fileset_name","percent_complete", "percent_success"]
+    };
+
+var oConfigs = {paginator: new YAHOO.widget.Paginator({rowsPerPage: 15 })};
+var myDataTable = new YAHOO.widget.DataTable("subscriptionStatus", myColumnDefs, 
+                                             myDataSource, oConfigs);
+
+var mySuccessHandler = function(oRequest, oParsedResponse, oPayload) {
+    lastUpdateEl = document.getElementById("updated");
+    lastUpdateEl.innerHTML = "Last Updated: " + new Date().toString();
+    this.set("sortedBy", null);
+    this.onDataReturnInitializeTable(oRequest, oParsedResponse, oPayload);
+};
+
+var myFailureHandler = function() {
+    this.showTableMessage(YAHOO.widget.DataTable.MSG_ERROR, YAHOO.widget.DataTable.CLASS_ERROR);
+};
+
+var callbackObj = {
+    success: mySuccessHandler,
+    failure: myFailureHandler,
+    scope: myDataTable,
+    argument: myDataTable.getState()
+};
+
+myDataSource.setInterval(60000, "", callbackObj);
+
+var subTypesUrl = "/wmbs/listsubtypes?return_type=application/json";
+
+var handleSubTypeSuccess = function(o){
+    if(o.responseText !== undefined) {
+        var wmbsSubTypes = eval("(" + o.responseText + ")").results;
+	wmbsSubTypes.push("All");
+
+        subTypesEl = document.getElementById("subscriptionTypes");
+	subTypesEl.innerHTML = "Subscription types: ";
+
+        for (i = 0; i < wmbsSubTypes.length; i++) {
+            if (wmbsSubTypes[i] == currentSubType) {
+                subTypesEl.innerHTML += currentSubType + " ";
+                }
+            else if (wmbsSubTypes[i] == "All") {
+                subTypesEl.innerHTML += '<a href="/wmbs/monitoring/?return_type=text/html">All</a> ';
+                }
+            else {
+                subTypesEl.innerHTML += '<a href="/wmbs/monitoring/?return_type=text/html;subType=' + wmbsSubTypes[i] + '">' + wmbsSubTypes[i];
+                subTypesEl.innerHTML += '</a> ';
+                }
+            }
+        }
+    }
+
+var handleSubTypeFailure = function(o) {
+    if (o.responseText !== undefined) {
+        }
+    }
+
+var subTypeCallback = 
+{
+    success: handleSubTypeSuccess,
+    failure: handleSubTypeFailure,
+    argument: {}
+};
+
+//var request2 = YAHOO.util.Connect.asyncRequest('GET', subTypesUrl, subTypeCallback);
+</script>
+</body>
+</html>

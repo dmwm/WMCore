@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Group User</title>
+    <link rel="stylesheet" href="style/main.css" type="text/css">
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.1/build/datatable/assets/skins/sam/datatable.css&2.8.1/build/logger/assets/skins/sam/logger.css">
+    <script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.1/build/yahoo/yahoo-debug.js&2.8.1/build/dom/dom-debug.js&2.8.1/build/event/event-debug.js&2.8.1/build/element/element-debug.js&2.8.1/build/datasource/datasource-debug.js&2.8.1/build/datatable/datatable-debug.js&2.8.1/build/logger/logger-debug.js"></script>
+
+     <!-- Combo-handled YUI CSS files: -->
+     <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.1/build/treeview/assets/skins/sam/treeview.css">
+     <!-- Combo-handled YUI JS files: -->
+     <script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.1/build/yahoo-dom-event/yahoo-dom-event.js&2.8.1/build/treeview/treeview-min.js"></script>
+     <style type="text/css">
+     #header  {
+        background: #fff;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 950px;
+        height: 100px;
+     }
+     #leftcol {
+       background: #fff;
+       position: absolute;
+       top: 100px;
+       left: 0px;
+       width: 300px;
+       height: 500px;
+     }
+     #content {
+       background: #fff;
+       position: absolute;
+       top: 100px;
+       left: 300px;
+       width: 650px;
+       height: 500px;
+     }
+     </style>
+  </head>
+  <body class="yui-skin-sam">
+    <div id="header"><h1>GroupUser TreeView</div>
+    <div id="leftcol">
+    <div id="owners-tree"></div>
+    </div>
+    <div id="content"></div>
+</body>
+
+  <script src="/_utils/script/json2.js"></script>
+  <script src="/_utils/script/jquery.js?1.3.1"></script>
+  <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
+  <script src="vendor/groupuser/groupuser.js"></script>
+
+
+
+  <script>
+     // get the dbname from the document location & create the couch interface
+     var dbname = document.location.href.split('/')[3];
+     $db = $.couch.db(dbname);
+
+     // set up the groupuser instance
+     groupuser.setCouchDB($db);
+     // build the tree
+     groupuser.buildTree("owners-tree");
+     // build the table for the default output from the tree click response
+     groupuser.buildTable("content")
+     
+ 
+  </script>
+  
+
+</html>

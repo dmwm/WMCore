@@ -1,0 +1,137 @@
+<html>
+	<head>
+		<title>ConfigFile</title>
+		<link rel="stylesheet" type="text/css" href="/controllers/css/reset/style"/>
+	</head>
+	<body>
+		<center>
+			<table width=700 cellspacing=12>
+			  <!--<tr>
+			    <td>
+			      <p class="small"><a href="#about" name="about">About</a> | <a href="#materials">Materials</a></p>
+			    </td>
+			  </tr>-->
+			  <tr>
+			    <td>
+			  <h1>ConfigFile</h1>
+			  	</td>
+				</tr>
+				<tr>	  	
+			  	<td>
+				<p>At the core of the WEBTOOLS2 frame work is a single configuration file.
+				This file says what classes (and corresponding pages) to load, what settings
+				to give them (for instance the location of templates, if database access is
+				needed etc.) and server configuration (port number). Each application will 
+				have its own configuration file.
+				</p>
+				<p>The file is a standard <a href="http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/COMP/WMCORE/src/python/WMCore/Configuration.py?view=markup">WMCore configuration file</a>. 
+				The configuration that starts the default instance of WEBTOOLS2
+				(that you are looking at now) is shown below and described in the 
+				following text.</p>
+			    </td>
+			  </tr>
+			  <tr>
+			    <td>
+				<h3>Example</h3>
+				<pre>
+from WMCore.Configuration import Configuration
+config = Configuration()
+config.component_('Webtools')
+config.Webtools.application = 'webtools'
+config.Webtools.templates = '/Users/metson/WMCORE/src/templates/WMCore/WebTools'
+config.Webtools.index = 'welcome'
+
+config.Webtools.section_('views')
+config.Webtools.views.section_('active')
+config.Webtools.views.section_('maintenance')
+
+config.Webtools.views.active.section_('documentation')
+config.Webtools.views.active.documentation.object = 'WMCore.WebTools.Documentation'
+
+config.Webtools.views.active.section_('controllers')
+config.Webtools.views.active.controllers.object = 'WMCore.WebTools.Controllers'
+config.Webtools.views.active.controllers.css = {'reset': '/Users/metson/WT_Devel/osx105_ia32_gcc401/external/yui/2.2.2-wt/build/reset/reset.css', 
+                                                'cms_reset': '../../../css/WMCore/WebTools/cms_reset.css', 
+                                                'style': '../../../css/WMCore/WebTools/style.css'}
+config.Webtools.views.active.controllers.js = {}
+
+config.Webtools.views.active.section_('welcome')
+config.Webtools.views.active.welcome.object = 'WMCore.WebTools.Welcome'
+				</pre>
+				</td>
+		  </tr>
+		  <tr>
+		    <td>
+				<h3>[config.Webtools]</h3>
+				</td>
+		  </tr>
+			<tr>	  	
+		  	<td>
+		  		<p><b>application</b> defines the name of the application and the root 
+		  		location of the classes that the application comprises. It is used in 
+		  		<a href="/documentation/Logging">logging</a> to correctly identify where a
+					problem is coming from.</p> 
+					<p><b>port</b> and <b>environment</b> (production|development) are the 
+					standard cherrypy settings (<i>TODO: add other settings</i>) and should be
+					self explainatory.</p> 
+					<p><b>index</b> is the name of the default view the application presents.
+					This view must implement both index() and default(*args, **kwargs), though
+					of course can be static and ignore any input to the default() call.</p>
+					<p><b>templates</b> is the default directory for the applications Cheetah
+					templates. This can be over ridden by specific views, or unset. If unset 
+					the framework will assume the templates are in a directory called 
+					Templates under the source directory.
+		    </td>
+			</tr>
+		  <tr>
+		    <td>
+				<h3>[config.Webtools.views]</h3>
+				</td>
+		  </tr>
+			<tr>	  	
+		  	<td>
+		  		<p>This section contains a section per class to load. The class can be
+		  		active (config.Webtools.views.active) or in maintenance (config.Webtools.views.maintenance).
+		  		Currently maintenance views are just not loaded, in the future they will
+		  		return a standard maintenance page. (<i>TODO: implement maintenance for 
+		  		views</i>).</p>
+		    </td>
+			</tr>
+		  <tr>
+		    <td>
+				<h3>[config.Webtools.views.active.controllers]</h3>
+				</td>
+		  </tr>
+		  <tr>
+				<td>
+					<p>The <b>Controllers</b> class is a standard class from the framework. It
+					provides a standard way to access static content such as javascript or css
+					(<i>TODO: implement handling images</i>). Correct headers are set and 
+					content minified (<i>TODO: implement correct minification of 
+					javascript</i>) and gzipped for quick delivery. Content is cached so that 
+					repeat requests do not require manipulation. If a requested script is 
+					missing it is skipped, logged and not cached.</p>
+				</td>		
+		  </tr>
+		  <tr>
+		    <td>
+				<h3>[config.Webtools.views.active.welcome] & [config.Webtools.views.active.documentation]</h3>
+				</td>
+			</tr>
+			<tr>	  	
+		  	<td>
+		  		<p>The two basic pages. The object value is the name of the class to 
+		  		load. If your page needs additional arguements passed to it you can 
+		  		add them as follows:</p>
+		  		<pre>
+		  		config.Webtools.views.active.welcome.foo = bar
+		  		</pre>
+		  		<p>Such parameters will be added to the configuration passed into your
+		  		page object.</p>
+		    </td>
+			</tr>
+		</table>
+	</center>
+</body>
+</html>		
+		

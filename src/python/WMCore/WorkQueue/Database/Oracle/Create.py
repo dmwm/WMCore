@@ -1,0 +1,49 @@
+"""
+_CreateWorkQueue_
+
+Implementation of CreateWorkQueue for Oracle.
+
+Inherit from CreateWorkQueue, and add Oracle specific substitutions (e.g. 
+use trigger and sequence to mimic auto increment in MySQL.
+"""
+
+
+
+
+from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
+
+class Create(CreateWorkQueueBase):
+    """
+    Class to set up the WMBS schema in a MySQL database
+    """
+    sequenceTables = ["wq_wmspec",
+                      "wq_wmtask",
+                      "wq_data",
+                      "wq_queues",
+                      "wq_element",
+                      "wq_site"]
+    seqStartNum = 40
+    def __init__(self, logger = None, dbi = None, params = None):
+        """
+        _init_
+
+        Call the base class's constructor and create all necessary tables,
+        constraints and inserts.
+        """
+        CreateWorkQueueBase.__init__(self, logger, dbi, params)
+
+        for tableName in self.sequenceTables:
+            seqname = '%s_SEQ' % tableName
+            self.create["%s%s" % (self.seqStartNum, seqname)] = """
+            CREATE SEQUENCE %s start with 1 
+            increment by 1 nomaxvalue cache 100""" % seqname
+
+            triggerName = '%s_TRG' % tableName
+            self.create["%s%s" % (self.seqStartNum, triggerName)] = """
+                    CREATE TRIGGER %s
+                        BEFORE INSERT ON %s
+                        REFERENCING NEW AS newRow
+                        FOR EACH ROW
+                        BEGIN
+                            SELECT %s.nextval INTO :newRow.id FROM dual;
+                        END; """ % (triggerName, tableName, seqname)

@@ -1,0 +1,379 @@
+TOC
+===
+-SETUP
+-CODE STANDARD
+-RESERVED WORDS
+-DEVELOPMENT
+-->DEVELOPMENT (DATABASES)
+-TESTING
+-OTHER PROJECTS: PRODAGENT, T0, CRAB
+
+Quality Officer: fvlingen@caltech.edu
+
+The following are guidelines for development in WMCORE. 
+If you are working for an external project you are advized to
+follow these guidelines too for that project as it helps 
+to create a consistent structure for code development and testing
+which minimizes maintenance and debugging.
+
+If you have any problem with using the instructions in 
+this document, please contact the 
+quality officer as  he/she can assist you. The information in
+this document perhaps not always completete but giving your
+feedback will help improving it for all developers.
+
+SETUP
+=====
+To setup the library it is assumed the following conditions
+hold:
+
+-You have a recent version of the prodagent installed (this
+is mainly used for dependency package compliance such as mysql, 
+etcs..
+-Edit the WMCORE/standards/setup.sh file appropriately
+-If you are integrating this with an exterenal package make sure these
+settings are set correctly too
+
+so typically you would have something like this:
+
+source your external package setup.sh
+source the WMCORE setup.sh
+
+Also edit any other setup_* files as you see fit.
+
+If you want to run the tests. Read the section on Testing.
+
+Assuming you want to run a specific test with a sepcific backend you can 
+do the following:
+
+edit the 'test_code' file and comment out the backends you do not want to test
+(e.g. oracle)
+
+edit the 'conf_test_mysql.py' and locate the test you want to test. (e.g. ProxyTest)
+
+Copy paste this code after the last test is loaded. It empties the tests array and only
+inserts your speicific test:
+
+tests = []
+
+try:
+   x=ProxyTest()
+   tests.append((x,"fvlingen"))
+except Exception,ex:
+   if not errors.has_key("fvlingen"):
+       errors["fvlingen"] = []
+   errors["fvlingen"].append(("ProxyTest",str(ex)))
+
+Save the file and execute test_code
+
+Note: when you first run the tests mysql will initialize things and for some 
+reason some tests fail for the first time. Running them again (after mysql 
+is initialized) makes them succeed.
+
+CODE STANDARD:
+=============
+Use pylint and the pylint test file located under:
+WMCORE/standards/.pylintrc
+
+Test files need to be located under WMCORE/test/python/ and
+need to mirror the structure you use for the packages under
+WMCORE/src/python where every directory and test file is 
+augmented with a _t and the class should be augmented with 'TEST'
+If you develop for an external package you mimic this structure
+in the external package directory structure.
+
+E.g.: if you have a package:
+
+src/python/WMCORE/MsgService/MsgService.py
+
+you will have a test in the pacakge:
+
+test/python/WMCORE_t/MsgService_t/MsgService_t.py and in it
+class: MsgserviceTest which inherits from: unittest.TestCase.
+
+In order to ensure the testsuite can pick up the test implement 
+the runTest method in your test class which describes the sequence 
+in which tests need to be run.
+
+When developing a component use the following structure:
+
+for component file that inherits from the harness:
+....WMComponent/<component name>/<component name.py>
+
+for config file:
+....WMComponent/<component name>/DefaultConfig.py
+
+WMCORE/bin/wmcore-new-config is a config file aggregator that takes
+as input directories roots and aggregates the config files. This enables 
+operators to generate one config file and edit it as they see fit. Beware that 
+if you import a DefaultConfig.py file in your DefaultConfig.py file this
+can give errors when generating this file as it would overwrite existing
+values.
+
+for storing the message handlers:
+
+...WMComponent/<component name>/Handler
+
+If you work on an external project you will work with a different 
+root than .../WMComponent
+
+All files should be tested against the .pylintrc format and need 
+to get a minimum score of 8 or higher. In case that is not possible 
+due to certain language constructs being used, the pylint style file 
+can be accomodated to reflect this.
+
+Potential log files for tests should have a name: <testfile>.log
+So in case of the MsgService_t.py you get a MsgService_t.log file
+
+If components contain parameters they should be defined in a file 
+'DefaultConfig.py' using the WMCORE/src/python/WMCore/Agent/Configuration 
+module.
+
+the WMCORE WMQuality.TestInit class contains a set of methods used often
+in testing for doing mundane stuff such as setting up connections. It is 
+recommended that you use them to facilitate maintainability.
+
+The TestInit class is based on the WMCORE/src/python/WMCore/WMInit class. It 
+contains a set of often used methods for conveniently dealing with various 
+mundane things such as database setup or initialization.
+
+To facilitate using methods from the TestInit class for loading schemas put 
+create statements in a ...<backend>/Create.py method following a similar 
+structure as can be found in the Create.py methods in the wmcore module 
+MsgService and Trigger. Backend has either the value Oracle or MySQL
+ 
+RESERVED WORDS:
+==============
+To prevent having to pass (a potential growing) number of parameters to 
+classes, there will be several reserved attributes in the thread class 
+to facilitate ease of use of much used objects. Below a list and how 
+you can assign them. These attributes enable (on a thread level) to 
+change values of certain often used objects (e.g. switching database 
+access parameters). It is not obligatory to use them just do not use 
+them in any other way than described here.
+
+import threading
+myThread = threading.currentThread()
+# pointer to the logger used in the module
+myThread.logger
+# pointer to current database interface object (WMCore.Database.DBInterface)
+myThread.dbi
+# the current database transaction object used (WMCore.Database.Transaction)
+myThread.transaction
+# A dictionary of factories. Factories are instantiated with a namespace (e.g. WMCore.MsgService.MySQL) and load the appropriate objects. This is especially useful if you  work with multiple backends.
+myThread.factory
+# A String representing the backend. Currently there are 3: "MySQL", "Oracle", "SQLite" . These backends are used to define the proper namespace for importing data access objects (DAO) from factories.
+# E.g. I can define a namespace: "WMCore.MsgService"+myThread.backend . 
+myThread.backend
+# pointer to current message service object being used
+myThread.msgService
+# pointer to current trigger service object being used
+myThread.trigger
+# pointer to arguments used by this component
+myThread.args
+#  dictionary of transactions. It is an (optional) possibility 
+# to synchronize commits to multiple databases (or the same database)
+myThread.transactions
+
+DEVELOPMENT:
+===========
+
+Development follows typically the following (iterative) cycle:
+
+(1) Develop your module(s) in src/python/WMCore or src/python/WMComponent
+or if you develop for a dependent project something like: src/python/Component
+
+(2) Use the WMCORE/standards/test_style.sh script to generate a style
+report and improve your code until it (at least) reaches the rating threshold
+(currently 8)
+
+(3) Check/edit the WMCORE/setup.py file to see if your package is listed.
+If not add it to the packages list. This is used by the package builder 
+for new releases. If you develop for another project update that setup.py 
+file.
+
+(4) Develop your tests in .../test/python mirroring the structure in src/python
+(4.1) Make sure that the database access parameters (and other relevant
+parameters)  are extracted from the environment variables of the setup* files. 
+Currently it assumes that there is one database per backend (except
+for the proxy test case). If you need more databases than are currently defined
+in the setup files, add these environment variables to the appropriate setup files
+Unless: these variables will be specific to this one test , or these
+test are for an external package (in which case you need to update the
+setup files of that package).
+
+(5) (Optional as this can be autogenerated by package quality officer).
+Add your module and/or files (including your tests) you develop to 
+the WMCore/standards/test_style file, with your unique identifier in the 
+packages list. This is used by the quality officer to find the responsible 
+person in case of quality audits (e.g. testing). Note that you can add either 
+individual files or whole subdirs.  If your responsible for a whole subdir add 
+this whole subdir. External projects should create or generate their own 
+test_style file in their own project package. The test_style file can be generated
+using the test_generate script (this is the task of the quality officer).
+External projects need to create their own test_generate script (copy the
+WMCORE one and modify it, is the easiest way). This scripts also generates
+the test suite files.
+
+(6)Develop your tests in test/python mirroring the structure in src/python
+(6.1) Make sure that the database access parameters (and other relevant
+parameters)  are extracted from the environment variables of the setup* files. 
+Currently it assumes that there is one database assume per backend (except
+for the proxy test case). If you need more databases than are currently defined
+in the setup files, add these environment variables to the appropriate setup files
+Unless: these variables will be specific to this one test or if you develop
+for an external package in which case you need to add them to the settings 
+files of that project.
+
+(7) (Optional as this can be autogenerated by quality officer).
+When your test is finalized add it to the appropriate backend (some 
+test might need to be added to multiple backends) in the config_<backend>.py
+file. You import the test module and add a tuple (test instance, and your unique
+id) to the test array. Your id (e.g. name) is used by the quality officer in 
+case of anomalies during testing. If you work for an external project you 
+need to add it at the appropriate test suite for that project.
+
+DEVELOPMENT (DATABASES)
+======================
+
+Some components have their own database tables. In order to prevent name clashes
+prefix your tables with something that easily associates it to the component.
+
+Some examples that are being used:
+
+ms_  MsgService
+tp_  ThreadPool
+err_ ErrorHandler
+tr_  Trigger
+
+
+
+TESTING:
+=======
+
+(it is assumed you use the setup described in the SETUP section).
+
+
+This directory also contains several files. The following prefixes
+are used:
+
+setup  : files for setting your environment. These are the only 
+files you need to edit when running the tests on your machine. Different 
+backends (mysql and oracle) have there own setup files (setup_mysql.sh, 
+setup_oracle.sh) that are used in the various test files (to prevent 
+having to hardcode these variables in the tests themselves.
+
+clean  : cleans generated log files, pyc files, etc... Separate files 
+are available for the different backends.
+
+start  : startup scripts for the various backends.
+
+config_test : enables you to config the different tests for different backends
+ before running
+
+test   : actually test scripts. Currently there are 4 scripts. Two 
+for the code style, one for the code itself and a script (test_generate)
+which generates the actual test_style, test_code, config_test_mysql.py
+and config_test_oracle.py files by analyzing the cvs repository log
+(requires access to the cvs repository to generate log)
+
+NOTE: if you test ensure you are testing using the environment that is packaged
+with wmcore applications (e.g. you can install for example the latest prodagent
+rpms and source this environment (minus the prodagent and prodcommon python libraries).
+
+test_generate
+-------------
+
+This script generates various files to prepare for testing.
+During generation it also provides a report for test files that
+do not use the proper convention for importing tests (level 1 failure)
+it writes these to failures1.log
+
+Note: the test_generate script should be used mainly to generate
+the initial test configurations. After that these configuration
+can be tweeked manually and committed incrementally.
+
+The test_generate script generates various test configurations.
+Before running them edit them (e.g. you might want to remove 
+some tests for certain backends).
+
+When you run the actual tests using the test_code script
+it will again generate a report which highlights the tests that could
+not be instantiated (level 2 failure). By default these failures
+are written to failures2.log, however since we test with multiple 
+backends it it desirable to edit this filename in the 
+multiple generated conf_test*.py files (e.g. failure2_mysql.log
+and failures2_oracle.log)
+
+Finally the tests that are run can generate errors (level 3 failure).
+By default these errors and failures are written to failures3.log.
+Edit the name of this file so the different backends write to 
+unique files.
+
+Note: that some tests require an empty database. If tests preceding 
+a this test do not empty the database this might result in errors 
+for this test. The test framework cleans the default database
+but this might not be sufficient.
+
+Note: when generating the tests and style checks the mapping from 
+developer to module might not be correct. For example if user 'fvlingen'
+has moved files to a new directory for better organization he
+might be associated to modules he did not develop.
+
+After generation check the generated files and adapt them appropriately
+also check what tests you want to run for mysql, oracle or both.
+
+Once all files are configured appropriately you typically do:
+
+(1) source setup.sh
+(2) (optional and usually only done by the quality officer) ./test_generate.sh
+(3) (optional) edit the mapping in the generated files
+(4) ./test_style
+(5) ./test_code
+
+(repeat 4 and 5 if necessary)
+
+The test scripts generate a summary when anomalies occur.
+
+
+a set of .sh files to setup and run tests
+
+-edit the setup*.sh scripts to reflect your settings (it assumes you use the cms packages 
+for running the tests (e.g. mysql, sqlalchemy).
+-source the setup.sh file (once)
+
+(optional) edit the test.sh file to disable some tests.
+run test.sh  (repeat as necessary)
+
+After sourcing setup.sh you can also test your code quality
+using the quality.sh command. Either invoke
+quality.sh with a file or directory, or edit 
+the myfiles.sh script to run quality tests on several
+dirs. If you name your output files quality*.txt, 
+cleanup.sh will automatically remove them when invoked.
+
+OTHER PROJECTS
+==============
+
+To facilitate uniformity and reuse of code we strongly advise that you follow the structure
+outlined in this document for your project where possible. In particular following the same
+code style standards and layout.
+
+E.g. for the ProdAgent project components will be sub directories in:
+PRODAGENT/src/python/PA/PAComponent
+
+And tests for these components will be sub directories in:
+
+PRODAGENT/test/python/PA_t/PAComponent_t
+
+If components contain parameters they should be defined in a file 'DefaultConfig.py'
+using the WMCORE/src/python/WMCore/Agent/Configuration module.
+
+the WMCORE WMQuality.TestInit class contains a set of methods used often
+in testing for doing mundane stuff such as setting up connections. It is recommended
+that you use them to facilitate maintainability.
+
+To facilitate using methods from the TestInit class for loading schemas put create
+statements in a ...<backend>/Create.py method following a similar structure as can
+be found in the Create.py methods in the wmcore module MsgService and Trigger. Backend
+has either the value Oracle or MySQL

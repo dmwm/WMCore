@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>GraphaelPieChartExample</title>
+
+<!-- Graphael JavaScript chart library
+     http://g.raphaeljs.com/
+	 
+	 example prepared for usage from the client code
+	 interaction with the layout manager (coordinates and size attributes interaction) to
+	 	be adjusted
+-->
+ 
+
+<!-- for deployment - minified versions *-min.js of the libraries to be used -->
+<!-- Graphael JavaScript chart library - local resource -->
+<script src="../javascript/external/graphael/raphael.js"></script>
+<script src="../javascript/external/graphael/g.raphael.js"></script>
+<script src="../javascript/external/graphael/g.line.js"></script>
+
+<script src="../javascript/debugging.js"></script>
+
+
+
+</head>
+<body>
+
+<div id="graphaelExample"></div>
+
+
+<script type="text/javascript">
+
+
+
+/*
+	function which creates pie chart
+		valuesX - arrays of x values: (e.g. for three line charts in the plot):
+			[[x11, x12, x13], [x21, x22, x23], [x31, x32, x33]]
+		valuesY - arrays of y values: (e.g. for three line charts in the plot):
+			[[y11, y12, y13], [y21, y22, y23], [y31, y32, y33]]
+		conf - configuration object, attributes: divSectionName, title,
+			posX, posY, radius, legendOrient
+	TODO
+		legend doesn't work / show up
+*/
+function createLineChart(valuesX, valuesY, conf) {	
+	// we will draw in our div
+	var r = Raphael(conf.divSectionName);
+	// TODO
+    // text settings, this should be unified, via css
+    // legend text settings
+	r.g.txtattr.font = "12px 'Fontin Sans', Fontin-Sans, sans-serif";
+	// title text settings (title position)
+    r.g.text(conf.posX + (conf.width / 2), conf.posY - (conf.height * 0.2), conf.title).attr({"font-size":16});
+
+    // create line chart
+	var lines = r.g.linechart(conf.posX, conf.posY, conf.width, conf.height, valuesX, valuesY,
+			{nostroke: false, axis: "0 0 1 1", symbol: "o"}).hoverColumn(function () {
+				this.tags = r.set();
+				for (var i = 0, ii = this.y.length; i < ii; i++) {
+					this.tags.push(r.g.tag(this.x, this.y[i], this.values[i], 160, 10).insertBefore(this).attr([{fill: "#fff"}, {fill: this.symbols[i].attr("fill")}]));
+				}
+             }, function () {
+			 		this.tags && this.tags.remove();
+            });
+
+}
+
+
+
+// creating the line chart data
+
+// arrays of x, y values (for three line charts in the plot):
+//	[[x11, x12, x13], [x21, x22, x23], [x31, x32, x33]]
+//	[[y11, y12, y13], [y21, y22, y23], [y31, y32, y33]]
+var valuesX = [[1, 2, 3, 4, 5, 6, 7], [3.5, 4.5, 5.5, 6.5, 7, 8], [10, 3.4, 5, 8, 10, 12, 3]];
+var valuesY = [[12, 32, 23, 15, 17, 27, 22], [10, 20, 30, 25, 15, 28], [6.5, 8.5, 10.5, 2.5, 9, 13, 3]];
+ 			
+var config = {	divSectionName: "graphaelExample",
+			  	title: "Some line chart / graph",
+				// should be controlled by the layout anyway ...
+				posX: 520,
+				posY: 80,
+				height: 200,
+				width: 300,				
+				legendOrient: "east" };
+
+// lines below will draw the chart
+window.onload = new createLineChart(valuesX, valuesY, config);
+
+
+</script>
+	  
+</body>
+</html>

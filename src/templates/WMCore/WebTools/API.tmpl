@@ -1,0 +1,52 @@
+<html>
+	<head>
+		<title>$webapp API</title>
+		<link 
+			rel="stylesheet" 
+			type="text/css" 
+			href="/controllers/css/reset/style"/>
+	</head>
+ 	<body>
+ 		<center>
+			<table width=700 cellspacing=12>
+				<tr>
+			    <td>
+						<h1>$webapp API</h1><p>Auto generated API doc page</p>
+		    	</td>
+			  </tr>
+			</table>
+			<table width=700 cellspacing=12>
+				<tr>
+			    <td>
+				    <dl>
+				      #try
+					    #for m in $methods
+					    <dt>$m: </dt>
+					    <dd>
+					    $methods[$m]['call'].__doc__
+					    #if len($methods[$m]['args']) > 0
+					    <p>Arguments:</p>
+					    #for a in $methods[$m]['args']
+					    <li class="flat">$a</li>
+					    #end for
+					    #end if
+					    <p class="small">
+                            #try					    
+                            version $methods[$m]['version'] <a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
+					    	#except
+					    	<a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
+					    	#end try
+					    </p>
+					    </dd>
+					    <hr/>
+					    #end for
+					    #except
+					    <p>No API calls available, make sure you update self.methods() 
+					    with your API calls. <b>TODO: More documentation here</b>.</p>
+					    #end try
+				    </dl>
+	    	</td>
+		  </tr>
+		</table>
+ 	</body>
+</html>

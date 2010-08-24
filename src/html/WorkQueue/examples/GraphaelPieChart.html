@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>GraphaelPieChartExample</title>
+
+<!-- Graphael JavaScript chart library
+     http://g.raphaeljs.com/
+	 
+	 example prepared for usage from the client code
+	 interaction with the layout manager (coordinates and size attributes interaction) to
+	 	be adjusted
+-->
+ 
+
+<!-- for deployment - minified versions *-min.js of the libraries to be used -->
+<!-- Graphael JavaScript chart library - local resource -->
+<script src="../javascript/external/graphael/raphael.js"></script>
+<script src="../javascript/external/graphael/g.raphael.js"></script>
+<script src="../javascript/external/graphael/g.pie.js"></script>
+
+<script src="../javascript/debugging.js"></script>
+
+
+
+</head>
+<body>
+
+<div id="graphaelExample"></div>
+
+
+<script type="text/javascript">
+
+
+
+/*
+	function which creates pie chart
+		inputData - array of pairs  [ {label: "laberString", value: actualValue} ]
+		conf - configuration object, attributes: divSectionName, title,
+			posX, posY, radius, legendOrient
+*/
+function createPieChart(inputData, conf) {
+	// create separate arrays
+	var labels = [];
+	var values = [];
+	for(index in inputData) {
+		var item = inputData[index];
+		labels.push("%%.%% -- " + item.label);
+	    values.push(item.value);
+	}
+	
+	// we will draw in our div
+	var r = Raphael(conf.divSectionName);
+	// TODO
+    // text settings, this should be unified, via css
+    // legend text settings
+	r.g.txtattr.font = "12px 'Fontin Sans', Fontin-Sans, sans-serif";
+	// title text settings (title position)
+    r.g.text(conf.posX, conf.posY - conf.radius - (conf.radius * 0.25), conf.title).attr({"font-size":16});
+
+    // create pie
+	var pie = r.g.piechart(conf.posX, conf.posY, conf.radius, values, {legend: labels, legendpos: conf.legendOrient});
+	
+	// we will adjust UI when mouse over the chart sector (pie section enlargement)
+	pie.hover(
+		function () {
+			this.sector.stop();
+			this.sector.scale(1.1, 1.1, this.cx, this.cy);
+			if(this.label) {
+				this.label[0].stop();
+				this.label[0].scale(1.5);
+				this.label[1].attr({"font-weight": 800});
+			}
+    	},
+		function () {
+			this.sector.animate({scale: [1, 1, this.cx, this.cy]}, 500, "bounce");
+			if(this.label) {
+				this.label[0].animate({scale: 1}, 500, "bounce");
+				this.label[1].attr({"font-weight": 400});
+      		}
+		});
+}
+
+
+
+
+// creating the chart pie from the client code
+
+var data = [{label: 'Available', value: 12015},
+			{label: 'Negotiating', value: 23834},
+			{label: 'Acquired', value: 24689},
+			{label: 'Done', value: 72689},
+			{label: 'Failed', value: 2342},
+			{label: 'Canceled', value: 9342}];
+			
+var config = {	divSectionName: "graphaelExample",
+			  	title: "WorkQueue job elements",
+				// should be controlled by the layout anyway ...
+				posX: 520,
+				posY: 200,
+				radius: 80,
+				legendOrient: "east" };
+
+// lines below will draw the chart
+window.onload = new createPieChart(data, config);
+
+
+</script>
+	  
+</body>
+</html>

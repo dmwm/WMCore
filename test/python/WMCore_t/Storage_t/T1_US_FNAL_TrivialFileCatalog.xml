@@ -1,0 +1,117 @@
+<storage-mapping>
+
+	<!-- LOADTEST BEGIN -->
+
+	<lfn-to-pfn protocol="direct"
+	 path-match=".*/LoadTest07_FNAL_(.*)_.*_.*"   result="/pnfs/fs/usr/cms/WAX/11/store/PhEDEx_LoadTest07/LoadTest07_Prod_FNAL/LoadTest07_FNAL_$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match=".*/LoadTest07_FNAL_(.*)_.*_.*"   result="/pnfs/fs/usr/cms/WAX/11/store/PhEDEx_LoadTest07/LoadTest07_Prod_FNAL/LoadTest07_FNAL_$1"/>
+	<lfn-to-pfn protocol="srm"
+	 path-match=".*/LoadTest07_FNAL_(.*)_.*_.*"   result="srm://cmssrm.fnal.gov:8443/srm/managerv1?SFN=/11/store/PhEDEx_LoadTest07/LoadTest07_Prod_FNAL/LoadTest07_FNAL_$1"/>
+	<lfn-to-pfn protocol="srmv2"
+	 path-match=".*/LoadTest07_FNAL_(.*)_.*_.*"   result="srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/PhEDEx_LoadTest07/LoadTest07_Prod_FNAL/LoadTest07_FNAL_$1"/>
+	<lfn-to-pfn protocol="srm"
+	 path-match=".*/LoadTest07_FNAL_(.*)_.*_.*"   result="srm://cmsdca2.fnal.gov:8443/srm/managerv1?SFN=/11/store/PhEDEx_LoadTest07/LoadTest07_Prod_FNAL/LoadTest07_FNAL_$1"/>
+	<lfn-to-pfn protocol="srmv2"
+	 path-match=".*/LoadTest07_FNAL_(.*)_.*_.*"   result="srm://cmsdca2.fnal.gov:8443/srm/managerv2?SFN=/11/store/PhEDEx_LoadTest07/LoadTest07_Prod_FNAL/LoadTest07_FNAL_$1"/>
+
+	<!-- LoadTest SingleSource BEGIN -->
+
+	<lfn-to-pfn protocol="direct"
+	 path-match="(/store/PhEDEx_LoadTest_SingleSource/.*)\.LTgenerated.T1_US_FNAL.*"   result="/pnfs/fs/usr/cms/WAX/11$1"/>
+	<lfn-to-pfn protocol="dcap" 
+	 path-match="(/store/PhEDEx_LoadTest_SingleSource/.*)\.LTgenerated.T1_US_FNAL.*"   result="/pnfs/fs/usr/cms/WAX/11$1"/>
+	<lfn-to-pfn protocol="srm" 
+	 path-match="(/store/PhEDEx_LoadTest_SingleSource/.*)\.LTgenerated.T1_US_FNAL.*"   result="srm://cmssrm.fnal.gov:8443/srm/managerv1?SFN=/11$1"/>
+	<lfn-to-pfn protocol="srmv2" 
+	 path-match="(/store/PhEDEx_LoadTest_SingleSource/.*)\.LTgenerated.T1_US_FNAL.*"   result="srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11$1"/>
+
+	<!-- PRODUCTION BEGIN -->
+
+	<lfn-to-pfn protocol="dcap" 
+	 path-match="^/+store/(.*1.root)"   result="dcap://cmsdca.fnal.gov:24125/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*2.root)"   result="dcap://cmsdca.fnal.gov:24136/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*3.root)"   result="dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*4.root)"   result="dcap://cmsdca.fnal.gov:24137/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*5.root)"   result="dcap://cmsdca.fnal.gov:22125/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*6.root)"   result="dcap://cmsdca1.fnal.gov:24138/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*7.root)"   result="dcap://cmsdca1.fnal.gov:24139/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*8.root)"   result="dcap://cmsdca1.fnal.gov:24140/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*9.root)"   result="dcap://cmsdca1.fnal.gov:24141/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*0.root)"   result="dcap://cmsdca3.fnal.gov:24142/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*A.root)"   result="dcap://cmsdca3.fnal.gov:24143/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*B.root)"   result="dcap://cmsdca3.fnal.gov:24144/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap" 
+	 path-match="^/+store/(.*C.root)"   result="dcap://cmsdca.fnal.gov:24125/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap" 
+	 path-match="^/+store/(.*D.root)"   result="dcap://cmsdca.fnal.gov:24136/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap" 
+	 path-match="^/+store/(.*E.root)"   result="dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap" 
+	 path-match="^/+store/(.*F.root)"   result="dcap://cmsdca.fnal.gov:24137/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"
+	 path-match="^/+store/(.*)"         result="dcap://cmsdca.fnal.gov:24136/pnfs/fnal.gov/usr/cms/WAX/11/store/$1"/>
+
+	<!-- LFN-TO-PFN BEGIN -->
+
+	<lfn-to-pfn protocol="direct" path-match="^/+store/(.*)"   result="/pnfs/fs/usr/cms/WAX/11/store/$1"/>
+	<lfn-to-pfn protocol="dcap"   path-match="^/+store/(.*)"   result="/pnfs/fs/usr/cms/WAX/11/store/$1"/>
+
+	<lfn-to-pfn protocol="srm"    path-match="^/+store/(.*)"   result="srm://cmssrm.fnal.gov:8443/srm/managerv1?SFN=/11/store/$1"/>
+	<lfn-to-pfn protocol="srmv2"  path-match="^/+store/(.*)"   result="srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/$1"/>
+
+	<lfn-to-pfn protocol="srm"    path-match="^/+store/(.*)"   result="srm://cmsdca2.fnal.gov:8443/srm/managerv1?SFN=/11/store/$1"/>
+	<lfn-to-pfn protocol="srmv2"  path-match="^/+store/(.*)"   result="srm://cmsdca2.fnal.gov:8443/srm/managerv2?SFN=/11/store/$1"/>
+
+	<!-- PFN-TO-LFN BEGIN -->
+
+	<pfn-to-lfn protocol="direct" path-match="^/+pnfs/fs/usr/cms/WAX/11/store/preprod/(.*)" result="/store/preprod/$1"/>
+	<pfn-to-lfn protocol="srm"    path-match=".*\?SFN=/11/store/preprod/(.*)"               result="/store/preprod/$1"/>
+	<pfn-to-lfn protocol="srmv2"  path-match=".*\?SFN=/11/store/preprod/(.*)"               result="/store/preprod/$1"/>
+
+	<pfn-to-lfn protocol="direct" path-match="^/+pnfs/fs/usr/cms/WAX/11/store/(.*)"         result="/store/$1"/>
+	<pfn-to-lfn protocol="srm"    path-match=".*\?SFN=/11/store/(.*)"                       result="/store/$1"/>
+	<pfn-to-lfn protocol="srmv2"  path-match=".*\?SFN=/11/store/(.*)"                       result="/store/$1"/>
+
+	<!-- OTHER BEGIN -->
+
+	<lfn-to-pfn protocol="direct"
+	 path-match="^/+MTCC/(.*)"          result="/pnfs/fs/usr/cms/WAX/7/PHEDEX2/MTCC/$1"/>
+	<lfn-to-pfn protocol="srm"
+	 path-match="^/+MTCC/(.*)"          result="srm://cmssrm.fnal.gov:8443/srm/managerv1?SFN=/7/PHEDEX2/MTCC/$1"/>
+	<lfn-to-pfn protocol="srmv2"
+	 path-match="^/+MTCC/(.*)"          result="srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/7/PHEDEX2/MTCC/$1"/>
+
+	<lfn-to-pfn protocol="direct"
+	 path-match="^/+h2_testbeam/(.*)"   result="/pnfs/fs/usr/cms/WAX/7/PHEDEX2/h2_testbeam/$1"/>
+	<lfn-to-pfn protocol="srm"
+	 path-match="^/+h2_testbeam/(.*)"   result="srm://cmssrm.fnal.gov:8443/srm/managerv1?SFN=/7/PHEDEX2/h2_testbeam/$1"/>
+	<lfn-to-pfn protocol="srmv2"
+	 path-match="^/+h2_testbeam/(.*)"   result="srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/7/PHEDEX2/h2_testbeam/$1"/>
+
+	<pfn-to-lfn protocol="direct"
+	 path-match="^/+pnfs/fs/usr/cms/WAX/7/PHEDEX2/MTCC/(.*)"        result="/MTCC/$1"/>
+	<pfn-to-lfn protocol="srm"
+	 path-match=".*\?SFN=/7/PHEDEX2/MTCC/(.*)"                      result="/MTCC/$1"/>
+	<pfn-to-lfn protocol="srmv2"
+	 path-match=".*\?SFN=/7/PHEDEX2/MTCC/(.*)"                      result="/MTCC/$1"/>
+
+	<pfn-to-lfn protocol="direct"
+	 path-match="^/+pnfs/fs/usr/cms/WAX/7/PHEDEX2/h2_testbeam/(.*)" result="/h2_testbeam/$1"/>
+	<pfn-to-lfn protocol="srm"
+	 path-match=".*\?SFN=/7/PHEDEX2/h2_testbeam/(.*)"               result="/h2_testbeam/$1"/>
+	<pfn-to-lfn protocol="srmv2"
+	 path-match=".*\?SFN=/7/PHEDEX2/h2_testbeam/(.*)"               result="/h2_testbeam/$1"/>
+
+</storage-mapping>

@@ -1,0 +1,348 @@
+#!/usr/bin/env python
+
+"""
+Controls the daemons that represent the components.
+
+The following is a short a set of commands you can give to start
+and control the daemons:
+
+# generates a config file based on the root dirs (it looks for DefaultConfig.py files):
+# the component sections need a namespace attribute to the class can be loaded and daemonized.
+wmcore-new-config --roots=src/python/WMComponent/ErrorHandler/,src/python/WMComponent/DBSBuffer/ --output=WMCoreConfig.py
+
+#edit the generated config file to fit your needs.
+
+# loads default tables and tables from a specific module. The backend is automatically selected based on the config file.
+wmcore-db-init --config=WMCoreConfig.py --create --modules=WMComponent.DBSBuffer.Database 
+
+# start the daemons from components defined in the config file:
+wmcoreD --start --config=WMCoreConfig.py
+
+# prints status of components
+wmcoreD --status --config=WMCoreConfig.py
+
+# restarts components
+wmcoreD --restart --config=WMCoreConfig.py
+
+# shutdown the daemons:
+wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
+
+"""
+
+__revision__ = "$Id: wmcoreD,v 1.16 2010/05/26 21:09:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
+__author__ = "fvlingen@caltech.edu"
+
+import getopt
+import logging
+import os
+import subprocess
+import sys
+import time
+
+from WMCore.Agent.Daemon.Details import Details
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.WMFactory import WMFactory
+from WMCore.WMInit import WMInit
+
+def usage():
+
+    msg = """
+Usage: wmcoreD <--start|--shutdown|--status> --config <opts>
+
+You must provide either --start OR --shutdown OR --status
+
+You must either set the WMAGENT_CONFIG environment variable or specify the config file with
+--config 
+
+--start starts up the components
+--shutdown shutsdown the components
+--status prints the status of the components
+--restart restarts components 
+
+options:
+--cleanup-logs purges logs
+--cleanup-all purges component dirs
+
+"""
+    print(msg)
+
+
+valid = ['config=', 'start', 'shutdown', 'status', 'restart',
+         'components=', 'cleanup-logs', 'cleanup-all']
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "", valid)
+except getopt.GetoptError, ex:
+    print str(ex)
+    usage()
+    sys.exit(1)
+
+config = None
+command = None
+doLogCleanup = False
+doDirCleanup = False
+componentsList = None
+
+
+for opt, arg in opts:
+    if opt == "--config":
+        config = arg
+    if opt == "--start":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "start"
+    if opt == "--shutdown":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "shutdown"
+    if opt == "--status":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "status"
+    if opt == "--restart":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "restart"
+    if opt == "--cleanup-logs":
+        doLogCleanup = True
+    if opt == "--cleanup-all":
+        doDirCleanup = True
+    if opt == "--components":
+        compList = arg.split(',')
+        componentsList = []
+        for item in compList:
+            if item.strip == "":
+                continue
+            componentsList.append(item)
+           
+if command == None:
+    msg = "No command specified\n"
+    print(msg)
+    usage()
+    sys.exit(0)
+ 
+if config == None:            
+    config = os.environ.get("WMAGENT_CONFIG", None)
+
+    if config == None:
+        msg = "No Config file provided\n"
+        msg += "provide one with the --config option"
+        print(msg)
+        usage()
+        sys.exit(1)
+
+if not os.path.exists(config):
+    print "Can't find config: %s" % config
+    sys.exit(1)
+
+# load the config file here.
+cfgObject = loadConfigurationFile(config)
+#workingDir = os.path.expandvars(workingDir)
+
+if componentsList != None:
+    msg = "Components List Specified:\n"
+    msg += str(componentsList).replace('\'', '')
+    print msg
+    components = componentsList
+else:    
+    components = cfgObject.listComponents_() + cfgObject.listWebapps_()
+
+def connectionTest(configFile):
+    """
+    _connectionTest_
+
+    Create a DB Connection instance to test the connection specified
+    in the config file.
+
+    """
+    config = loadConfigurationFile(configFile)
+    wmInit = WMInit()    
+    print "Checking default database connection...",
+
+    if not hasattr(config, "CoreDatabase"):
+        print "skipped."
+        return
+
+    (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
+    socket = getattr(config.CoreDatabase, "socket", None)
+
+    try:
+       wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.DEBUG)
+       wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
+                                    dialect = dialect,
+                                    socketLoc = socket)
+    except Exception, ex:
+        msg = "Unable to make connection to using \n"
+        msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl 
+        msg += str(ex)
+        print msg
+        raise ex
+
+    print "ok."
+    return
+
+def startup(configFile):
+    """
+    _startup_
+
+    Start up the component daemons
+
+    """
+    print('Starting components: '+str(components))
+    config = loadConfigurationFile(configFile)
+        
+    for component in components:
+        print('Starting : '+component)
+        if component in config.listWebapps_():
+            from WMCore.WebTools.Root import Root            
+            webtoolsRoot = Root(config, webApp = component)
+            webtoolsRoot.startDaemon(keepParent = True, compName = component)            
+        else:
+            factory = WMFactory('componentFactory')
+            namespace = config.component_(component).namespace
+            componentObject = factory.loadObject(classname = namespace, args = config)
+            componentObject.startDaemon(keepParent = True)
+            
+        print('Waiting 1 seconds, to ensure daemon file is created')
+        time.sleep(1)
+        compDir = config.section_(component).componentDir
+        compDir = os.path.expandvars(compDir)
+        daemonXML = os.path.join( compDir, "Daemon.xml")
+        if os.path.exists(daemonXML):
+            daemon = Details(daemonXML)
+            if not daemon.isAlive():         
+                print "Error: Component %s Did not start properly..." % component
+                print "Check component log to see why"
+                sys.exit(1)
+        else:
+            print('Path for daemon file does not exist!')
+            sys.exit(1)
+
+    return
+    
+def shutdown(configFile):
+    """
+    _shutdown_
+
+    Shutdown the component daemons
+
+    If cleanup-logs option is specified, wipe out the component logs
+    If cleanup-all option is specified, wipe out all component dir
+    content and purge the ProdAgentDB
+
+    """
+    print('Stopping components: '+str(components))
+    config = loadConfigurationFile(configFile)
+
+    for component in components:
+        print('Stopping: '+component)
+        compDir = config.section_(component).componentDir
+        compDir = os.path.expandvars(compDir)
+        daemonXml = os.path.join(compDir, "Daemon.xml")
+        if not os.path.exists(daemonXml):
+            print "Cannot find Daemon.xml for component:", component
+            print "Unable to shut it down"
+        else:
+            daemon = Details(daemonXml)
+            if not daemon.isAlive():
+                print "Component %s with process id %s is not running" % (
+                    component, daemon['ProcessID'],
+                    )
+                daemon.removeAndBackupDaemonFile()
+            else:
+                daemon.killWithPrejudice()
+        if doLogCleanup:
+            #  //
+            # // Log Cleanup
+            #//
+            msg = "Removing %s/ComponentLog" % compDir
+            print msg
+            try:
+                os.remove("%s/ComponentLog" % compDir)
+            except StandardError, ex:
+                msg = "Unable to cleanup Component Log: "
+                msg += "%s/ComponentLog\n" % compDir
+                msg += str(ex)
+                
+        if doDirCleanup:
+            #  //
+            # // Cleanout everything in ComponentDir
+            #//  for this component
+            print "Removing %s\n" % compDir
+            exitCode = subprocess.call(["rm", "-rf", "%s" % compDir])
+            if exitCode:
+                msg = "Failed to clean up dir: %s\n" % compDir
+                msg += output
+                print msg
+
+    return
+
+
+def status(configFile):
+    """
+    _status_
+
+    Print status of all components in config file
+
+    """
+    print('Status components: '+str(components))
+    config = loadConfigurationFile(configFile)
+
+    for component in components:
+        compDir = config.section_(component).componentDir
+        compDir = os.path.expandvars(compDir)
+        daemonXml = os.path.join(compDir, "Daemon.xml")
+        if not os.path.exists(daemonXml):
+            print "Component:%s Not Running" % component
+            continue
+        daemon = Details(daemonXml)
+        if not daemon.isAlive():
+            print "Component:%s Not Running" % component
+        else:
+            print "Component:%s Running:%s" % (component, daemon['ProcessID'])
+
+    sys.exit(0)
+
+def restart(config):
+    """
+    _restart_
+
+    do a shutdown and startup again
+
+    """
+    shutdown(config)
+    startup(config)
+    return
+
+if command == "start":
+    connectionTest(config)
+    startup(config)
+    sys.exit(0)
+
+elif command == "shutdown":
+    connectionTest(config)
+    shutdown(config)
+    sys.exit(0)
+elif command == "status":
+    connectionTest(config)
+    status(config)
+    sys.exit(0)
+    
+elif command == "restart":
+    connectionTest(config)
+    restart(config)
+    sys.exit(0)
+

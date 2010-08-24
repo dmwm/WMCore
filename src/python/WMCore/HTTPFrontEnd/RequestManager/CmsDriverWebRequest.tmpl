@@ -1,0 +1,100 @@
+<html>
+<head>
+<title> Job request </title>
+</head>
+<body>
+<form action="CreateJob" method="post">
+
+<P>
+<SELECT NAME="version">
+#for $version in $versions
+  #if $version == $cmsswVersion
+    <OPTION SELECTED $version> $version </OPTION>
+  #else
+    <OPTION $version> $version </OPTION>
+  #end if
+#end for
+</SELECT>
+<SELECT NAME="arch">
+  #for $arch in ['slc4_ia32_gcc345', 'slc5_ia32_gcc434']
+    #if $arch == $defaultArch
+      <OPTION SELECTED>$arch</OPTION>
+    #else
+      <OPTION>$arch</OPTION>
+    #end if
+  #end for
+</SELECT>
+<select name="dataMC">
+  <option> data
+  <option selected> MC
+</select>
+
+Scenario <select name="scenario">
+  <option selected> pp
+  <option> cosmics
+  <option> nocoll
+</select>
+
+<input type="submit" value="Load Version" name="loadDefaults"/><BR>
+
+
+Process: <input type="text" name="name" size=20 value="ProcessName"/><br/>
+
+
+<input type="checkbox" name="GEN"
+#if $genchecked
+  CHECKED
+#end if
+/>GEN 
+
+<SELECT NAME="gencfi">
+#for $gencfi in $gencfis 
+  <OPTION $gencfi> $gencfi 
+#end for
+</SELECT>
+<BR>
+<input type="checkbox" name="SIM" />SIM<br/>
+<input type="checkbox" name="DIGI"/>DIGI<br/>
+<input type="checkbox" name="L1" />L1<br/>
+<input type="checkbox" name="DIGI2RAW" />DIGI2RAW<br/>
+<input type="checkbox" name="RAW2DIGI" />RAW2DIGI<br/>
+<input type="checkbox" name="RECO" 
+  #if $recochecked 
+    CHECKED 
+  #end if 
+/>RECO<br/>
+<input type="checkbox" name="POSTRECO" />POSTRECO<br/>
+<input type="checkbox" name="ALCA" />ALCA<br/>
+<input type="checkbox" name="DQM" />DQM<br/>
+
+
+Conditions: <input type="text" name="conditions" size=50 value="FrontierConditions_GlobalTag,START3X_V27::All"/></br>
+
+Event Content: <select name="eventcontent">
+  <option> RAW
+  <option> RECO
+  <option> AOD
+  <option> RAWSIM
+  <option> RECOSIM
+  <option> FEVT
+  <option> FEVTSIM
+  <option> RAWDEBUG
+  <option> FEVTDEBUGHLT
+  <option> RAWDEBUGHLT
+</select>
+
+# of events: <input type="text" name="number" size=10 value="$number"><br/>
+
+Input Dataset: <input type="text" name="filein" size=40 value="$filein"/><br/>
+
+Output Dataset: <input type="text" name="outfile_name" value="$outfile_name" size=40/><br/>
+
+<INPUT TYPE="hidden" NAME="requestName" VALUE=$requestName></INPUT>
+
+<p><input type="submit" value="Show Config" name="showConfig"/>
+   <input type="submit" value="Upload" name="upload"/>
+</p>
+</form>
+</body>
+</html>
+

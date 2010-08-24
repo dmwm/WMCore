@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+"""
+wmagent-resource-control
+
+Utility script for manipulating resource control.
+"""
+
+import sys
+import os
+
+from optparse import OptionParser
+
+from WMCore.WMInit import connectToDB
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+
+def createOptionParser():
+    """
+    _createOptionParser_
+
+    Create an option parser that knows about all the options for manipulating
+    and accessing resource control.
+    """
+    myOptParser = OptionParser()
+    myOptParser.add_option("-p", "--thresholds", dest = "printThresholds",
+                           default = False, action = "store_true",
+                           help = "Print out all known thresholds and site information.")
+    myOptParser.add_option("--site-name", dest = "siteName",
+                           help = "Specify the name of the site")
+    myOptParser.add_option("--job-slots", dest = "jobSlots",
+                           help = "Specify the number of job slots to use at the site")
+    myOptParser.add_option("--ce-name", dest = "ceName",
+                           help = "Specify the CEName for the site")
+    myOptParser.add_option("--se-name", dest = "seName",
+                           help = "Specify the SEName for the site")
+    myOptParser.add_option("--task-type", dest = "taskType",
+                           help = "Specify the name of the task to add/modify")
+    myOptParser.add_option("--max-slots", dest = "maxSlots",
+                           help = "Specify the maximum number of slots for the task type")
+    myOptParser.add_option("--plugin", dest = "plugin",
+                           help = "Specify submit plugin to use for specific site")
+
+    return myOptParser
+
+def printThresholds(resourceControl, desiredSiteName):
+    """
+    _printThresholds_
+
+    Print out the current resource control thresholds.
+    """
+    print "Thresholds and current status for all sites:\n"
+
+    thresholds = myResourceControl.listThresholdsForSubmit()
+
+    for siteName in thresholds.keys():
+        if desiredSiteName and desiredSiteName != siteName:
+            continue
+        siteThresholds = thresholds[siteName]
+
+        siteSlots = siteThresholds[siteThresholds.keys()[0]]["total_slots"]
+        siteJobs = siteThresholds[siteThresholds.keys()[0]]["total_running_jobs"]        
+        print "%s - %d running, %d slots total:" % (siteName, siteJobs, siteSlots)
+
+        for taskType in siteThresholds.keys():
+            print "  %s - %d running, %d max" % \
+                  (taskType, siteThresholds[taskType]["task_running_jobs"],
+                   siteThresholds[taskType]["max_slots"])
+            if siteThresholds[taskType]["task_running_jobs"] > 0:
+                tasks = myResourceControl.listWorkloadsForTaskSite(taskType, siteName)
+                for task in tasks:
+                    print "    %d - %s" % (task["running"], task["task"])
+            
+        print ""    
+
+def updateSiteInfo(resourceControl, siteName, jobSlots = None,
+                   ceName = None, seName = None, plugin = None):
+    """
+    _updateSiteInfo_
+
+    Add a site to the resource control database if it doesn't exist.  Update
+    information about sites in the database if it already exists.
+    """
+    if resourceControl.listSiteInfo(siteName) == None:
+        if jobSlots == None or ceName == None or seName == None:
+            print "You must specify the number of job slots, the SE name and"
+            print "the CE name when adding a site."
+            print ""
+            myOptParser.print_help()
+            sys.exit(1)
+
+        print "Adding %s to the resource control db..." % siteName
+        resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
+                                   seName = seName, ceName = ceName,
+                                   plugin = plugin)
+        return
+
+    if jobSlots != None:
+        print "Updating jobslots for %s to %s" % (siteName, jobSlots)
+        resourceControl.setJobSlotsForSite(siteName = siteName, jobSlots = jobSlots)
+
+    if seName != None:
+        print "It's not possible to change a site's SE name after the site has"
+        print "been added to the database."
+        sys.exit(1)
+
+    if ceName != None:
+        print "It's not possible to change a site's CE name after the site has"
+        print "been added to the database."
+        sys.exit(1)
+
+    return
+
+def updateThresholdInfo(resourceControl, siteName, taskType, maxSlots):
+    """
+    _updateThresholdInfo_
+
+    Add or update a task threshold in the database.
+    """
+    if resourceControl.listSiteInfo(siteName) == None:
+        print "You must add the site to the database before you can add"
+        print "thresholds."
+        print ""
+        myOptParser.print_help()
+        sys.exit(1)        
+
+    if maxSlots == None:
+        print "You must provide the maximum number of slots."
+        print ""
+        myOptParser.print_help()
+        sys.exit(1)
+    
+    resourceControl.insertThreshold(siteName = siteName, taskType = taskType,
+                                    maxSlots = int(maxSlots))
+    return
+
+myOptParser = createOptionParser()
+(options, args) = myOptParser.parse_args()
+connectToDB()
+myResourceControl = ResourceControl()
+
+if options.printThresholds:
+    printThresholds(myResourceControl, options.siteName)
+    sys.exit(0)
+else:
+    if options.siteName == None:
+        print "You must specify a site name."
+        myOptParser.print_help()
+        sys.exit(1)
+    if options.taskType == None:
+        updateSiteInfo(myResourceControl, options.siteName, options.jobSlots,
+                       options.ceName, options.seName, options.plugin)
+        sys.exit(0)
+    else:
+        updateThresholdInfo(myResourceControl, options.siteName,
+                            options.taskType, options.maxSlots)
+        sys.exit(0)

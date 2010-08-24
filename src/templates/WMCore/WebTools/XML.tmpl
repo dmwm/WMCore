@@ -1,0 +1,37 @@
+#try
+#set test = $path
+#except
+#set path = '/'
+#end try
+#try
+#set test = $data
+#except
+#set data = {}
+#end try
+<?xml version='1.0' standalone='yes'?>
+<$config.application>
+	<head>
+		<title>$config.title</title>
+		<desc>$config.description</desc>
+		<admin>$config.admin</admin>
+		<link>$path</link>
+	</head>
+#if type($data) == type({})
+#for k,v in $data.items()
+  #if type($v) == type([])
+	#for i in $v
+	<$k>$i</$k>
+	#end for
+	#else
+	<$k>$v</$k>
+	#end if
+#end for
+
+#else
+	<body>
+<pre>
+$data
+</pre>
+</body>
+#end if
+</$config.application>

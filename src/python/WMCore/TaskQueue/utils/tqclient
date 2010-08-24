@@ -1,0 +1,396 @@
+#!/usr/bin/env python
+
+"""
+========
+tqclient
+========
+Command Line Wrapper for the TaskQueue APIs
+-------------------------------------------
+
+Creates an interface object for the TQComp component (i.e. acquires
+an interface to its database) and translates given commands to calls
+to this API.
+
+Acceptable commands are those named like any of the methods of the 
+TQ API classes. 
+
+Arguments to the commands should be those expected by the methods, 
+and provided in the appropriate order. Every argument will be evaluated
+as a python expression, so that e.g. dicts can be passed to the
+methods. Notice that this means that strings should be quoted twice
+(as indicated by the examples below).
+
+
+SYNOPSIS
+========
+tqclient [-v] -c <conf-file> <command> ["<arg>" ..]
+
+tqclient --showcommands 
+
+tqclient [-v] --showargs <command>
+
+tqclient [-u | -h]
+
+
+OPTIONS
+=======
+-c, --config <conf-file>   Indicates configuration file for TQComp
+
+--showcommands    Lists acceptable command
+
+--showargs <cmd>  Lists argument names for command
+
+-v, --verbose   Print of extra informative messages in the run
+                of the command. 
+
+-u, --usage   Usage information is displayed.
+
+-h, --help    Help information is displayed.
+
+
+EXAMPLES
+========
+$> tqclient -c $TQCONF  getTasks "{'state': 0}"
+[
+['TestPA01-243', '/pool/pa/workdir/JobCreator/TestPA01/0000/243/TestPA01-243-Job
+Spec.xml', '/pool/pa/workdir/JobCreator/TestPA01/Processing/TestPA01-Processing.
+tar.gz', 'TestPA01', "(swarch == 'slc4_ia32_gcc345') and ('CMSSW_2_1_11' in 
+cmssw) and (se in ['storm.ifca.es'])", None, 0L, datetime.datetime(2009, 6, 30, 
+16, 6, 11), datetime.datetime(2009, 7, 8, 18, 27, 14), 'Processing', None],
+['TestPA01-244', '/pool/pa/workdir/JobCreator/TestPA01/0000/244/TestPA01-244-Job
+Spec.xml', '/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/TestPA01/Process
+ing/TestPA01-Processing.tar.gz', 'TestPA01', "(swarch == 'slc4_ia32_gcc345') and
+('CMSSW_2_1_11' in cmssw) and (se in ['storm.ifca.es'])", None, 0L, 
+datetime.datetime(2009, 6, 30, 16, 6, 11), datetime.datetime(2009, 7, 8, 18, 27,
+14), 'Processing', None]
+]
+
+
+$> tqclient -c $TQCONF  getTasks "{'id': '20'}" "[id, spec, reqs, pilot]" 5 True
+[
+{'spec': '/pool/TaskQueue/playground/specs/TestPA01-8-JobSpec.xml', 'reqs':
+None,
+'id': 20L, 'pilot': 1L}
+]
+
+
+$> tqclient -c $TQCONF  getPilots "{'se': 'srm.cern.ch'}" "['id', 'se', 'host']" 2 True
+[
+{'host': 'somehost.cern.ch', 'id': 1L, 'se': 'srm.cern.ch'},
+{'host': 'somehost.cern.ch', 'id': 2L, 'se': 'srm.cern.ch'}
+]
+
+
+$> tqclient -c $TQCONF  -f /tmp/insertTaskCmd
+
+# Where /tmp/insertTaskCmd contains (2 lines):
+-------------------------------------
+insertTask "{'id': 'abc21', 'spec': '/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDE
+AL_V9_TestPA01-8-JobSpec.xml', 'wkflow': 'prod_A' , 'type': 'Processing', 'sandbox': 
+'/pool/TaskQueue/playground/sandbox/TestPA01-Processing.tar.gz',
+'reqs': 'se==\\'srm.cern.ch\\'', 'req_se': 'srm.cern.ch'}"
+
+insertTask "{'id': 'efg22''spec': '/pool/TaskQueue/playground/specs/Some-Other-spec-file.
+xml', 'wkflow': 'test_3' , 'type': 'Processing', 'sandbox': '/pool/TaskQueue/playground/s
+andbox/Some-Other-sandbox-file.tgz', 'reqs': 'se==\\'srm.cern.ch\\' and \\'f1\\' in cache', 
+'req_se': 'srm.cern.ch'}"
+-------------------------------------
+
+
+$> tqclient -c $TQCONF getPilotsPerHost 
+{
+('fake.cern.ch', 'somehost.cern.ch') = [5L]
+('srm.cern.ch', 'other_host.cern.ch') = [3L]
+('srm.cern.ch', 'somehost.cern.ch') = [1L, 2L, 4L]
+}
+
+
+$> tqclient -c $TQCONF getDataPerHost 
+{
+('fake.cern.ch', 'somehost.cern.ch') = ['fa']
+('srm.cern.ch', 'other_host.cern.ch') = ['fd', 'fc', 'fg']
+('srm.cern.ch', 'somehost.cern.ch') = ['fb', 'fe']
+}
+
+$> tqclient -c $TQCONF getPilotLogs 1 
+[
+{'info': 'None', 'pilot_id': '1', 'task_id': 'None', 'event': 'PilotShutdown',
+'insert_time': '2009-07-31 10:53:14', 'error_code': '0', 'id': '7'},
+{'info': 'Testing2', 'pilot_id': '1', 'task_id': 'None', 'event':
+'ErrorReport', 'insert_time': '2009-07-31 10:51:53', 'error_code': '12', 'id':
+'6'},
+{'info': 'Host: somehost.cern.ch, SE: srm.cern.ch', 'pilot_id': '1', 'task_id':
+'None', 'event': 'RegisterRequest', 'insert_time': '2009-07-31 10:36:04',
+'error_code': '0', 'id': '1'}
+]
+"""
+
+
+####   IMPORTS   ####
+import sys
+import getopt
+import logging
+from WMCore import Configuration
+from TQComp.CommonUtil import commasLB
+
+
+####   CONSTANTS   ####
+namespace = 'TQComp.Apis.'
+#submitCmds = ['insertTask']
+#pollCmds = []
+#stateCmds = []
+#cmds = {'TQSubmitApi': submitCmds, \
+#        'TQPollApi': pollCmds, \
+#        'TQStateApi': stateCmds}
+modules = ['TQSubmitApi', 'TQPollApi', 'TQStateApi']
+
+
+####   FUNCTIONS   ####
+
+def err(msg):
+    """
+    Prints the specified string msg to standard error (with an added trailing newline)
+    """
+    sys.stderr.write(msg+'\n')
+
+
+def help():
+    """
+    Provides some information regarding this script functionality.
+   
+    """
+    print globals()['__doc__']
+   
+
+def usage():
+    """
+    Describes usage of the script.
+    
+    """
+    v = globals()['__doc__'].split('\n')
+    start = end = 0
+    for i in xrange(len(v)):
+        if(v[i].startswith("SYNOPSIS")):
+            start = i + 2
+        if(start and (i > start+1)):
+            if(v[i].startswith("====")):
+                end = i-2
+                break
+    print 'Usage:  '+reduce(lambda x,y: x+ '\n        '+y, v[start:end])
+
+
+def getAllowedCmds(modules):
+    result = {}
+    for mod in modules:
+        mymod = __import__(namespace+mod, globals(), locals(), mod)
+        myclass = getattr(mymod, mod)
+        result[mod] = [myclass, []]
+        for i in myclass.__dict__:
+            if not i.startswith('_'): 
+                result[mod][1].append(i)
+    return result
+
+def showcommands(cmds):
+    """
+    Lists the acceptable commands.
+    """
+    print
+    print "Acceptable commands, grouped by type of API:"
+    print
+    for cgroup in cmds:
+        print "  %s:" % cgroup, cmds[cgroup][1]
+        print
+        
+def setLogging(verb = False):
+    logHandler = logging.StreamHandler(sys.stdout)
+    logFormatter = \
+        logging.Formatter("%(asctime)s:%(levelname)s:%(filename)s:%(message)s")
+    logHandler.setFormatter(logFormatter)
+    mylogger = logging.getLogger("tqclient")
+    mylogger.addHandler(logHandler)
+    if verb:
+        mylogger.setLevel(logging.DEBUG)
+    else:
+        mylogger.setLevel(logging.WARNING)
+
+    return mylogger
+
+
+def parseLine(s, skipComments = False):
+    """
+    Splits passed string s using blank as separator, but joining
+    together those tokens enclosed within double commas (""). 
+    The double commas themselves are eliminated.
+
+    If skipComments is set to True, for strings starting with '#', 
+    returns an empty list.
+    """
+    if not s: 
+        return []
+    if skipComments:
+        s = s.strip()
+        if not s:
+           return []
+        if s[0] == '#':
+            return []
+    tokens = s.split()
+    to_del = []
+    vals = range(len(tokens))
+    for i in vals:
+        if tokens[i][0] == '"':
+             for j in vals[i+1:]:
+                 if tokens[j][-1] == '"':
+                     tokens[i] = tokens[i][1:]
+                     for k in vals[i+1:j]:
+                         tokens[i] += " "+tokens[k]
+                         to_del.insert(0, k)
+                     tokens[i] += " "+tokens[j][:-1]
+                     to_del.insert(0, j)
+                     vals = range(len(tokens))
+                     break
+
+    for item in to_del:
+       tokens.pop(item)
+
+    return tokens
+
+
+
+####   MAIN   ####
+def main():
+    """
+    Performes the main task of the script (invoked directly).
+    For information on its functionality, please call the help function.
+    """
+
+    # Before anything else, evaluate available commands
+    cmds = getAllowedCmds(modules)
+
+    # Options
+    longoptions=["help", "usage", "verbose", "showcommands", "config=", \
+                 "from-file=", "showargs"]
+    try:
+        # For options with args, just add ':' after the option letter here
+        optlist, args = getopt.getopt(sys.argv[1:], 'huvc:f:', longoptions)
+    except getopt.GetoptError, inst:
+        err ("Bad usage: %s" % inst)
+        usage()
+        return 1
+    
+    verb = False
+    confFile = None   
+    fname = None
+    showargs = False
+    for opt, val in optlist:
+        if opt in ("-h", "--help"):
+            help()
+            sys.exit(0)
+        elif opt in ("-u", "--usage"):
+            usage()
+            sys.exit(0)
+        elif opt in ("-v", "--verbose"):
+            verb = True
+        elif opt in ("-c", "--config"):
+            confFile = val
+        elif opt in ("--showcommands"):
+            showcommands(cmds)
+            sys.exit(0)
+        elif opt in ("--showargs"):
+            showargs = True
+        elif opt in ("-f", "--from-file"):
+            fname = val
+
+           
+    # Option checking
+    if (not confFile) and (not showargs):
+        err("You must use either --showcommands, --from-file or --config\n")
+        usage()
+        return 2
+
+    # Args           
+    if(len(args)<1) and (not fname):
+        err("Not enough input arguments!")
+        usage()
+        return 2
+
+
+
+    #### REAL MAIN ####
+
+    # Build command (from arguments or fname)
+    if fname:
+        myfile = open(fname, 'r')
+        lines = myfile.readlines()
+    else:
+        lines = [args[0]]
+        args = args[1:]
+ 
+
+    # Now run once per specified command
+    for line in lines:
+        tokens = parseLine(line, True)
+        if not tokens:
+            continue
+        thecmd = tokens[0]
+        if not args:
+            args = tokens[1:]
+
+        for i in xrange(len(args)):
+            args[i] = eval(args[i])
+
+        if verb:
+            print "\n--Command: %s %s\n" % (thecmd, args)
+
+        # Load API
+        myclass = None
+        for cgroup in cmds:
+            if thecmd in cmds[cgroup][1]:
+                myclass = cmds[cgroup][0]
+                
+        if not myclass:
+            err("Not supported command: %s" % thecmd)
+            continue
+   
+        # If showargs, just do it and exit
+        if showargs:
+            # Get reference to method without instance
+            mymethod = getattr(myclass, thecmd)
+            nargs = mymethod.func_code.co_argcount
+            print mymethod.func_code.co_varnames[:nargs]
+            return 0
+
+        # Instantiate API
+        mylogger = setLogging(verb)
+        myconfig = Configuration.loadConfigurationFile(confFile)
+        tqApi = myclass(mylogger, myconfig, None)
+
+        # Get indicated method
+        mymethod = getattr(tqApi, thecmd)
+       
+        # Call method
+        out = mymethod(*args)
+
+        args = None
+
+        if out:
+            if verb:
+                print "\n--Command output follows:"
+            if type(out) == dict:
+                print '{'
+                for i in out:
+                    print "%s = %s" % (i, out[i])
+                print '}'
+            elif hasattr(out, '__iter__'):
+                print '['
+                print reduce(commasLB, out)
+                print ']'
+            else:
+                print out
+
+    # Exit successfully
+    return 0
+
+
+###    SCRIPT    ####
+if __name__=="__main__":
+    sys.exit(main())

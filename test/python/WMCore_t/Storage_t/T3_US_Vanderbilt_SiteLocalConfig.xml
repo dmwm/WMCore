@@ -1,0 +1,27 @@
+ <site-local-config>
+ <site name="T3_US_Vanderbilt">
+    <event-data>
+      <catalog url="trivialcatalog_file://gpfs1/grid/grid-app/cmssoft/cms/SITECONF/local/PhEDEx/storage.xml?protocol=direct"/>
+    </event-data>
+    <local-stage-out>
+      <command value="srmv2" />
+      <option value="-debug" />
+      <catalog url="trivialcatalog_file://gpfs1/grid/grid-app/cmssoft/cms/SITECONF/local/PhEDEx/storage.xml?protocol=srmv2"/>
+      <se-name value="se1.accre.vanderbilt.edu" />
+    </local-stage-out>
+    <fallback-stage-out>
+      <command value="srmv2-lcg" />
+      <lfn-prefix value="srm://se1.accre.vanderbilt.edu:6288/srm/v2/server?SFN=" />
+      <se-name value="se1.accre.vanderbilt.edu" />
+    </fallback-stage-out>
+    <calib-data>
+      <frontier-connect>  
+         <proxy url="http://se1.accre.vanderbilt.edu:3128" />  
+         <server url="http://cmsfrontier.cern.ch:8000/FrontierInt" />   
+         <server url="http://cmsfrontier1.cern.ch:8000/FrontierInt" />  
+         <server url="http://cmsfrontier2.cern.ch:8000/FrontierInt" />  
+         <server url="http://cmsfrontier3.cern.ch:8000/FrontierInt" />  
+      </frontier-connect>  
+    </calib-data>
+ </site>
+ </site-local-config>

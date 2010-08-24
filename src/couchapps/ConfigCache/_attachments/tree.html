@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ConfigCache TreeView</title>
+    <link rel="stylesheet" href="style/main.css" type="text/css">
+   
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.1/build/datatable/assets/skins/sam/datatable.css&2.8.1/build/logger/assets/skins/sam/logger.css">
+    
+    <!-- Combo-handled YUI CSS files: -->
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.1/build/treeview/assets/skins/sam/treeview.css">
+    <!-- Combo-handled YUI JS files: -->
+    <script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.1/build/yahoo-dom-event/yahoo-dom-event.js&2.8.1/build/treeview/treeview-min.js"></script>
+    
+  </head>
+  <body class="yui-skin-sam">
+    <h1>ConfigCache TreeView</h1>
+    <div id="owners-tree"></div>
+    
+    
+  </body>
+  
+  <script src="/_utils/script/json2.js"></script>
+    <script src="/_utils/script/jquery.js?1.3.1"></script>
+    <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
+  
+  <script>
+    var tree;
+    $db = $.couch.db("configcache");
+    
+    
+    //
+    // This method builds the details for an owner
+    // by populating the node with the details of the configs, runs and seeds owned by 
+    // the owner ID
+    function buildOwner(ownerNode){
+       console.log("buildOwner called")
+       var ownerId = ownerNode["CC_couch_owner_id"];
+    
+       // add the configurations node for the owner
+       $db.view("ConfigCachefileset_id/config_by_owner", {startkey: [ownerId], endkey: [ownerId],
+           success: function(data){
+              var confNode = new YAHOO.widget.MenuNode("Configurations", ownerNode, false);
+              confNode["CC_couch_owner_id"] = ownerNode["CC_couch_owner_id"];
+              confNode["CC_owner_name"] = ownerNode["CC_couch_owner_name"];
+              confNode["CC_group_name"] = ownerNode["CC_couch_group_name"];
+              for (i in data.rows){
+                 var thisRow = data.rows[i];
+                 var label = thisRow.value.config_label;
+                 var docid = thisRow.value.config_doc;
+                 var ownerId = thisRow.key[0];
+                 if (label == undefined){ var label = thisRow.config_doc; }
+                 var docNode = new YAHOO.widget.MenuNode(label, confNode, false);
+              
+              }
+           }
+        });
+        // add the run sequences node
+        $db.view("ConfigCache/runseq_by_owner", {startkey: [ownerId], endkey: [ownerId],
+            success: function(data){
+                   var runsNode = new YAHOO.widget.MenuNode("Run Sequences", ownerNode, false);
+                   runsNode["CC_couch_owner_id"] = ownerNode["CC_couch_owner_id"];
+                   runsNode["CC_owner_name"] = ownerNode["CC_couch_owner_name"];
+                   runsNode["CC_group_name"] = ownerNode["CC_couch_group_name"];
+                   for (i in data.rows){
+                        var thisRow = data.rows[i];
+                        var label = thisRow.value.runseq_label;
+                        var docid = thisRow.value.runseq_doc;
+                        var ownerId = thisRow.key[0];
+                        if (label == undefined){ var label = thisRow.runseq_doc; }
+                        var docNode = new YAHOO.widget.MenuNode(label, runsNode, false);
+                        
+                    }
+                }
+         });    
+         // add the seed sequences node
+         $db.view("ConfigCache/seedseq_by_owner", {startkey: [ownerId], endkey: [ownerId],
+             success: function(data){
+                    var seedNode = new YAHOO.widget.MenuNode("Seed Sequences", ownerNode, false);
+                    seedNode["CC_couch_owner_id"] = ownerNode["CC_couch_owner_id"];
+                    seedNode["CC_owner_name"] = ownerNode["CC_couch_owner_name"];
+                    seedNode["CC_group_name"] = ownerNode["CC_couch_group_name"];
+                    for (i in data.rows){
+                         console.log(data.rows[i]); 
+                         var thisRow = data.rows[i];
+                         var label = thisRow.value.seedseq_label;
+                         var docid = thisRow.value.seedseq_doc;
+                         var ownerId = thisRow.key[0];
+                         if (label == undefined){ var label = thisRow.seedseq_doc; }
+                         var docNode = new YAHOO.widget.MenuNode(label, seedNode, false);
+
+                     }
+                 }
+          });    
+        
+       
+    }
+    
+    
+    function buildTree(groups){
+       tree = new YAHOO.widget.TreeView("owners-tree"); 
+       // top level Groups node
+       groupsNode = new YAHOO.widget.MenuNode("Groups", tree.getRoot(), false);
+       for (g in groups){
+           // build a node in Groups for each group
+           var groupName = groups[g];
+           var groupNode = new YAHOO.widget.MenuNode(groupName, groupsNode, false);
+           // build the owner nodes in each group
+           $db.view("ConfigCache/group_name", {startkey: [groupName], endkey: [groupName],
+               success :function(data){
+                  for (i in data.rows){
+                     // couch view returns [Group name] as the key and owner [name, docid]
+                     var groupName = data.rows[i].key[0];
+                     var ownerName = data.rows[i].value[0];
+                     var ownerId = data.rows[i].value[1]
+                     console.log(groupName + " " + ownerName + " " + ownerId);
+                     // get the group name by its label property from the global tree
+                     // may want to add group IDs to the group nodes to make this more bulletproof
+                     var groupNode = tree.getNodeByProperty("label", groupName);
+                     // add the owner node and make the owner document id a property of the node
+                     // so that we can use it to get the node later on
+                     var ownerNode = new YAHOO.widget.MenuNode(ownerName, groupNode, false);
+                     ownerNode["CC_couch_owner_id"] = ownerId;
+                     ownerNode["CC_owner_name"] = ownerName;
+                     ownerNode["CC_group_name"] = groupName
+                     ownerNode["CC_is_owner_node"] = "True";
+                     
+                     
+                     buildOwner(ownerNode);
+                  }
+               }
+           
+           });// end of building owner nodes
+      }// end of building group nodes
+      
+      
+      
+       
+      //draw the tree
+      tree.draw();
+    }// end buildTree function
+    
+    
+    
+    //
+    //  get the list of groups from the couch db and build the tree for the list
+    //  of groups
+    function loadGroups(){
+    $db.view("ConfigCache/groups", 
+             {  success: function(data) { 
+                var groups = new Array();
+                for (i in data.rows) { 
+                    for (g in data.rows[i].value) {
+                       groups.push(g);
+                    } 
+                }     
+                buildTree(groups);     
+             } // end of success function def 
+         });
+    }    
+    
+    
+    $(document).ready(function() { 
+       loadGroups();
+       
+       
+    });
+  
+  </script>
+  
+</html>

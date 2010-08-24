@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>$instance Job Status</title>
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.0r4/build/reset-fonts/reset-fonts.css&2.8.0r4/build/assets/skins/sam/skin.css">
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js&2.8.0r4/build/connection/connection-min.js&2.8.0r4/build/dragdrop/dragdrop-min.js&2.8.0r4/build/container/container-min.js&2.8.0r4/build/datasource/datasource-min.js&2.8.0r4/build/element/element-min.js&2.8.0r4/build/paginator/paginator-min.js&2.8.0r4/build/datatable/datatable-min.js&2.8.0r4/build/json/json-min.js&2.8.0r4/build/menu/menu-min.js"></script>
+
+<style type="text/css">
+.yui-skin-sam .yui-dt-liner { white-space:nowrap; } 
+h2 { font-family: arial; text-align: center; font-size: 1.75em;}
+h3 { font-family: arial; text-align: center; font-size: 1.5em;}
+</style>
+
+<body class="yui-skin-sam">
+<h2>$instance Job Status</h2>
+<h3><div id="infoLine"></div></h3>
+<h3><div id="lastUpdatedLine"></div></h3>
+<div id="jobStateChanges" align="center"></div>
+
+<div id="helpWindow" style="visibility: hidden;">
+<div class="hd">WMBS Job Status Help</div>
+<div class="bd">This page will display job state change information which is pulled out of the couch database.  It can display information about jobs entering a particular state as well as information about all running jobs.  The information on this page will be automatically updated every minute.  Note that the interval can bet set to any arbitrary value by updateing the interval parameter in the URL for this page.</div>
+</div>
+<script>
+var couchURL = "$couchURL";
+var currentJobState = "$jobState";
+var currentInterval = $interval;
+
+function updateInfoLine() {
+    // Update the 'infoLine' div that tells the user what state we are
+    // displaying as well as the display interval.
+    if (currentInterval < 60 * 60 * 2) {
+        var interval = currentInterval / 60;
+        var intervalString = interval.toString() + " minutes.";
+    } else {
+        var interval = currentInterval / (60 * 60);
+        var intervalString = interval.toString() + " hours.";
+    }
+
+    infoEl = document.getElementById("infoLine");
+    if (currentJobState != "running") {
+        infoEl.innerHTML = 'Displaying jobs that entered the "' + currentJobState;
+        infoEl.innerHTML += '" state in the last ' + intervalString;
+    } else {
+        infoEl.innerHTML = 'Displaying jobs that are currently running.';
+    }
+    return;
+}
+
+function updateLastUpdatedLine() {
+    // Update the 'lastUpdatedLine' div that tells the user when the database
+    // was last queried.
+    lastUpdateEl = document.getElementById("lastUpdatedLine");
+    lastUpdateEl.innerHTML = "Last updated: " + new Date().toString();
+    return;
+}
+
+function displayHelpWindow() {
+    // Make the help window visible.  The content of the help window is hidden
+    // inside the 'helpWindow' div.
+    var helpWindowOptions = {width: "320px", visible: true, 
+                             constraintoviewport: true};
+    myHelpWindow = new YAHOO.widget.Panel("helpWindow", helpWindowOptions);
+    myHelpWindow.render(document.body);
+    return;
+}
+
+function generateJobStatusRequest() {
+    // Generate the request string for the jobstatechanges call.  The request
+    // string needs to set the return_type to "text/json+das" and include
+    // the job state as well as the display interval.
+    var request = 'return_type=text/json%2Bdas&jobState=' + currentJobState;
+    request += '&interval=' + currentInterval;
+    return request;
+}
+
+// Create a data source to pull information about job state changes from the
+// WMBS DAS.  Turn off caching as it limits the automatic polled updates.
+var jstDataSource = new YAHOO.util.DataSource("/wmbs/listjobstatus?");
+jstDataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;
+jstDataSource.connXhrMode = "queueRequests";
+jstDataSource.maxCacheEntries = 0;
+jstDataSource.responseSchema = {
+    resultsList: "results",
+    fields: ["timestamp", "couch_record", "job_name", "state"]
+    };
+    
+var couchDocIDFormatter = function(elLiner, oRecord, oCoumn, oData) {
+    // Given the couch document ID which is passed in through the oData
+    // parameter construct a link to either the futon view of the document or
+    // the show routine for the document.  
+    //
+    // The couchURL parameter is inserted into this document by the templating
+    // system.  It is pulled from the "couchURL" parameter in the config.
+    var link = '<a href=' + couchURL + oData + ' target="_blank">' + oData + '</a>';
+    elLiner.innerHTML = link;
+    }
+
+var dateFormatter = function(elLiner, oRecord, oColumn, oData) {
+    // Given the date which is returned in seconds-since-unix-epoch form create
+    // a string and insert into the datatable.
+    //
+    // Note: There is no timezone information stored in WMBS.  This code assumes
+    // (probably wrongly) that the viewer of this page shares the same timezone
+    // as the system that's running WMBS.
+    var myDate = new Date();
+    myDate.setTime(oData * 1000);
+    elLiner.innerHTML = myDate.toString();
+    };
+
+// Create a data table that will display at most 15 rows at a time.  Put it in
+// the "jobStateChanges" div.
+var jobStatusColumnDefs = [
+    {key: 'job_name', label: 'Job Name', sortable: true, resizeable: true},
+    {key: 'state', label: 'State', sortable: true, resizeable: true},
+    {key: 'couch_record', label: 'Couch Document ID', sortable: false, 
+     resizeable: true, formatter: couchDocIDFormatter},
+    {key: 'timestamp', label: 'Timestamp', sortable:true, resizable:true, 
+     formatter: dateFormatter}];
+
+var dataTableConfig = {paginator: new YAHOO.widget.Paginator({rowsPerPage: 15}),
+                       initialRequest: generateJobStatusRequest()}
+var myDataTable = new YAHOO.widget.DataTable("jobStateChanges", 
+                                             jobStatusColumnDefs,
+                                             jstDataSource, dataTableConfig);
+
+var jobStatusSuccessHandler = function(oRequest, oParsedResponse, oPayload) {
+    // Update the info last and the last updated line.  Clear any sorting that
+    // may have been applied to the table and then fill it with data that was
+    // returned by the most recent request to the WMBS DAS. 
+    updateLastUpdatedLine();
+    updateInfoLine();
+    this.set("sortedBy", null);
+    this.onDataReturnInitializeTable(oRequest, oParsedResponse, oPayload);
+};
+
+var jobStatusFailureHandler = function() {
+    // Append a message to the data table so the user knows that the latest
+    // query to the WMBS DAS has failed.
+    this.showTableMessage(YAHOO.widget.DataTable.MSG_ERROR, 
+                          YAHOO.widget.DataTable.CLASS_ERROR);
+    this.onDataReturnAppendRows.apply(this, arguments);
+};
+
+var jobStatusCallbacks = {
+    success: jobStatusSuccessHandler,
+    failure: jobStatusFailureHandler,
+    scope: myDataTable,
+    argument: myDataTable.getState()
+};
+
+var menuItemHandler = function (p_sType, p_aArgs, p_oValue) {
+    // Handler for clicks on the menu bar.  This will either display the help
+    // window or adjust the state/interval that is shown on the page.  If the
+    // state or interval is changed this will force a refresh of the data and
+    // restart the periodic updated.
+    if (p_oValue.menu == "jobState") {
+        currentJobState = p_oValue.value;
+        }
+    else if (p_oValue.menu == "displayInterval") {
+        currentInterval = p_oValue.value;
+        }
+    else if (p_oValue.menu == "help") {
+        displayHelpWindow();
+        return;
+        }
+
+    jstDataSource.clearAllIntervals()
+    jstDataSource.sendRequest(generateJobStatusRequest(), jobStatusCallbacks);
+    jstDataSource.setInterval(60000, generateJobStatusRequest(), jobStatusCallbacks);
+}
+
+// Data structure containing items in the menu bar.  The job states should be
+// loaded from DAS so that they don't have to be hard coded here.
+var menuItems = [
+    {text: "Monitoring Pages",
+     submenu: {
+         id: "monitoringPageSubMenu",
+         itemdata: ["Subscription Status", "Job Status"]}},
+    {text: "Job State",
+     submenu: {
+         id: "jobStateSubMenu",
+         itemdata: [{text: "all", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "all"}}},
+                    {text: "running", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "running"}}},
+                    {text: "new", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "new"}}},
+                    {text: "complete", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "complete"}}},
+                    {text: "created", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "created"}}},
+                    {text: "none", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "none"}}},
+                    {text: "success", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "success"}}},
+                    {text: "createcooloff", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "createcooloff"}}},
+                    {text: "jobfailed", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "jobfailed"}}},
+                    {text: "submitcooloff", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "submitcooloff"}}},
+                    {text: "jobcooloff", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "jobcooloff"}}},
+                    {text: "createfailed", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "createfailed"}}},
+                    {text: "cleanout", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "cleanout"}}},
+                    {text: "submitfailed", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "submitfailed"}}},
+                    {text: "exhausted", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "exhausted"}}},
+                    {text: "executing", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "executing"}}}]
+         }
+     },
+    {text: "Display Interval",
+     submenu: {
+         id: "displayIntervalSubMenu",
+         itemdata: [{text: "30 minutes", onclick: {fn: menuItemHandler, obj: {menu: "displayInterval", value: 1800}}},
+                    {text: "2 hours", onclick: {fn: menuItemHandler, obj: {menu: "displayInterval", value: 7200}}},
+                    {text: "5 hours", onclick: {fn: menuItemHandler, obj: {menu: "displayInterval", value: 18000}}},
+                    {text: "12 hours", onclick: {fn: menuItemHandler, obj: {menu: "displayInterval", value: 43200}}},
+                    {text: "24 hours", onclick: {fn: menuItemHandler, obj: {menu: "displayInterval", value: 86400}}}]
+         }},
+    {text: "Help",
+     onclick: {fn: menuItemHandler, obj: {menu: "help"}}}];
+
+var menuConfig = {lazyload: true, itemdata: menuItems};
+var menuBar = new YAHOO.widget.MenuBar("mainMenu", menuConfig);
+menuBar.render(document.body);
+
+updateInfoLine();
+updateLastUpdatedLine();
+jstDataSource.setInterval(60000, generateJobStatusRequest(), jobStatusCallbacks);
+</script>
+</body>
+</html>

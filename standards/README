@@ -166,7 +166,7 @@ it writes these to failures1.log
 
 Note: the test_generate script should be used mainly to generate
 the initial test configurations. After that these configuration
-can be tweeked manually
+can be tweeked manually and committed incrementally.
 
 The test_generate script generates various test configurations.
 Before running them edit them (e.g. you might want to remove 
@@ -201,7 +201,7 @@ also check what tests you want to run for mysql, oracle or both.
 Once all files are configured appropriately you typically do:
 
 (1) source setup.sh
-(2) (optional) ./test_generate.sh
+(2) (optional and usually only done by the quality officer) ./test_generate.sh
 (3) (optional) edit the mapping in the generated files
 (4) ./test_style
 (5) ./test_code

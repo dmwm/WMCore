@@ -7,8 +7,8 @@ Base class for formatters that create tables.
 
 """
 
-__revision__ = "$Id: DBCreator.py,v 1.4 2008/09/18 13:04:54 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBCreator.py,v 1.5 2008/10/13 12:43:46 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -101,3 +101,16 @@ class DBCreator(DBFormatter):
 
         return True
    
+    def __str__(self):
+        """
+        _str_
+        
+        Return a well formatted text representation of the schema held in the
+        self.create, self.constraints, self.inserts, self.indexes dictionaries.
+        """
+        string = ''
+        for i in self.create, self.constraints, self.inserts, self.indexes:
+            for j in i.keys():
+                string = string + i[j].lstrip() + '\n'
+        return string
+        

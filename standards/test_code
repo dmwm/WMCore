@@ -2,19 +2,16 @@
 
 # setup backend
 source setup_mysql.sh
-source setup_mysql_proxy.sh
 # generic clean
 ./cleanup.sh
 # clean backend specific stuff
 ./cleanup_mysql.sh
-./cleanup_mysql_proxy.sh
 # test
 python conf_test_mysql.py
 # generic clean
-./cleanup.sh
+#./cleanup.sh
 # clean backend specific stuff
 ./cleanup_mysql.sh
-./cleanup_mysql_proxy.sh
 
 echo '\n'
 echo '======================================================'

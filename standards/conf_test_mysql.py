@@ -12,8 +12,10 @@ from WMCore_t.Database_t.DBFormatter_t import DBFormatterTest
 from WMCore_t.Agent_t.Harness_t import HarnessTest
 from WMComponent_t.Proxy_t.Proxy_t import ProxyTest
 from WMCore_t.Trigger_t.Trigger_t import TriggerTest
+from WMCore_t.WMFactory_t.WMFactory_t import WMFactoryTest
 
 tests = [\
+     (WMFactoryTest(), 'fvlingen'),\
      (ThreadPoolTest(),'fvlingen'),\
      (TriggerTest(),'fvlingen'),\
      (WMExceptionTest(),'fvlingen'),\

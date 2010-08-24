@@ -7,11 +7,10 @@ Class for creating MySQL specific schema old message service.
 
 """
 
-__revision__ = "$Id: OldMsgService.py,v 1.1 2008/09/19 15:34:36 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: OldMsgService.py,v 1.2 2008/10/01 11:09:13 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
-import logging
 import threading
 
 from WMCore.Database.DBCreator import DBCreator

@@ -11,7 +11,7 @@ qualityScript = '/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/test_style
 # output file:
 qualityReport = '/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/codeQuality.txt'
 # rating threshold (min: 0, max 10)
-threshold = 9
+threshold = 8
 
 packages = {\
         
@@ -71,7 +71,7 @@ packages = {\
         'src/python/WMCore/WMBS/SQLite/Workflow':'metson',\
         'src/python/WMComponent/ErrorHandler/Handler':'fvlingen',\
         'src/python/WMCore/Services':'metson',\
-        'test/python/WMCore_t/WMRegistry_t':'fvlingen',\
+        'test/python/WMCore_t/WMFactory_t':'fvlingen',\
         'src/python/WMCore/DataStructs':'metson',\
         'src/python/WMCore/Services/JSONParser':'metson',\
         'src/python/WMCore/WMBS/Actions/Fileset':'metson',\

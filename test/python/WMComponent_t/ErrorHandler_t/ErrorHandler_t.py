@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.4 2008/09/30 18:25:39 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.5 2008/10/01 11:09:12 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -54,7 +54,8 @@ class ErrorHandlerTest(unittest.TestCase):
             myThread.dbi = dbFactory.connect()
             myThread.transaction = Transaction(myThread.dbi)
 
-            for factoryName in ["WMCore.MsgService", "WMCore.ThreadPool","WMComponent.ErrorHandler.Database"]:
+            for factoryName in ["WMCore.MsgService", "WMCore.ThreadPool", \
+            "WMComponent.ErrorHandler.Database"]:
                 # need to create these tables for testing.
                 factory = WMFactory(factoryName, factoryName + "." + \
                     myThread.dialect)
@@ -63,8 +64,8 @@ class ErrorHandlerTest(unittest.TestCase):
                 if createworked:
                     logging.debug("Tables for "+ factoryName + " created")
                 else:
-                    logging.debug("Tables " + factoryName + " could not be created, \
-                        already exists?")
+                    logging.debug("Tables " + factoryName + \
+                    " could not be created, already exists?")
             myThread.transaction.commit()
 
             ErrorHandlerTest._setup_done = True
@@ -143,7 +144,7 @@ class ErrorHandlerTest(unittest.TestCase):
         # StartComponent one.
         testErrorHandler.handleMessage('LogState','')
         for i in xrange(0, ErrorHandlerTest._maxMessage):
-            for j in xrange(0,3):
+            for j in xrange(0, 3):
                 testErrorHandler.handleMessage('SubmitFailure', \
                     'JobID'+str(i))
                 testErrorHandler.handleMessage('CreateFailure', \
@@ -191,11 +192,11 @@ class ErrorHandlerTest(unittest.TestCase):
             msg = msgService.get()
             assert msg['name'] == 'FinalJobFailure'
             msgService.finish()
-        ErrorHandlerTest._teardown = True
 
         # also send some job success 
         print('Sending some job success messages')
-        for i in xrange(ErrorHandlerTest._maxMessage-5, ErrorHandlerTest._maxMessage):
+        for i in xrange(ErrorHandlerTest._maxMessage-5, \
+        ErrorHandlerTest._maxMessage):
             testErrorHandler.handleMessage('JobSuccess', \
                 'JobID'+str(i))
 
@@ -208,9 +209,14 @@ class ErrorHandlerTest(unittest.TestCase):
         retrySize = errQueries.count()
         myThread.transaction.commit()
         assert retrySize == 0
+        ErrorHandlerTest._teardown = True
 
     def runTest(self):
+        """
+        Run error handler test.
+        """
         self.testA()
+
 if __name__ == '__main__':
     unittest.main()
 

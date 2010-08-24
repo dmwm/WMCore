@@ -13,8 +13,8 @@ the different failure handlers are configurable in the config file and
 relate to the three stages of a job: create, submit, run 
 """
 
-__revision__ = "$Id: ErrorHandler.py,v 1.3 2008/09/30 18:25:38 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ErrorHandler.py,v 1.4 2008/10/01 11:09:10 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -46,6 +46,10 @@ class ErrorHandler(Harness):
         Harness.__init__(self, config)
 
     def preInitialization(self):
+        """
+        Initializes plugins for different messages
+        """
+
         # in case nothing was configured we have a fallback.
         if not hasattr(self.config.ErrorHandler, "submitFailureHandler"):
             logging.warning("Using default submit failure handler!")
@@ -67,11 +71,15 @@ class ErrorHandler(Harness):
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')
         self.messages['SubmitFailure'] = \
-            factory.loadObject(self.config.ErrorHandler.submitFailureHandler, self)
+            factory.loadObject(\
+                self.config.ErrorHandler.submitFailureHandler, self)
         self.messages['CreateFailure'] = \
-            factory.loadObject(self.config.ErrorHandler.createFailureHandler, self)
+            factory.loadObject(\
+                self.config.ErrorHandler.createFailureHandler, self)
         self.messages['RunFailure'] = \
             factory.loadObject(self.config.ErrorHandler.runFailureHandler, self)
+        # we need to subscribe to jobsuccess events as some jobs succeed after
+        # first failure.
         self.messages['JobSuccess'] = \
             factory.loadObject(self.config.ErrorHandler.jobSuccessHandler, self)
 

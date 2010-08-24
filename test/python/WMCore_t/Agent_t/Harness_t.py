@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.2 2008/09/26 14:48:06 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Harness_t.py,v 1.3 2008/10/01 11:09:13 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -14,7 +14,7 @@ import os
 import threading
 import unittest
 
-from TestComponent import TestComponent
+from WMCore_t.Agent_t.TestComponent import TestComponent
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Database.DBFactory import DBFactory
@@ -122,6 +122,10 @@ class HarnessTest(unittest.TestCase):
         HarnessTest._teardown = True
 
     def runTest(self):
+        """
+        Tests the harness.
+        """
+
         self.testA()
 
 if __name__ == '__main__':

@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.6 2008/09/17 15:17:04 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Harness.py,v 1.7 2008/10/01 11:09:10 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -27,7 +27,7 @@ from logging.handlers import RotatingFileHandler
 import logging
 import os
 import threading
-
+import time
 
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
@@ -72,14 +72,15 @@ class Harness:
             compSect.componentDir =  os.path.join(self.config.General.workDir, \
                 self.config.Agent.componentName)
             if not hasattr(compSect, "logFile"):
-                compSect.logFile = os.path.join(compSect.componentDir,\
+                compSect.logFile = os.path.join(compSect.componentDir, \
                     "ComponentLog")
             # we have name and location of the log files. Now make sure there
             # is a directory.
             try:
                 os.makedirs(compSect.componentDir)
             except :
-                print('Component dir already exists. Continue on with initialization')
+                print('Component dir already exists. '+\
+                ' Continue on with initialization')
             logHandler = RotatingFileHandler(compSect.logFile,
                 "a", 1000000, 3)
             logFormatter = \
@@ -89,11 +90,11 @@ class Harness:
             logging.getLogger().setLevel(logging.INFO)
             if hasattr(compSect, "logLevel"):
                 if compSect.logLevel == 'DEBUG':
-                   logging.getLogger().setLevel(logging.DEBUG)
+                    logging.getLogger().setLevel(logging.DEBUG)
                 elif compSect.logLevel == 'ERROR':
-                   logging.getLogger().setLevel(logging.ERROR)
+                    logging.getLogger().setLevel(logging.ERROR)
                 elif compSect.logLevel == 'NOTSET':
-                   logging.getLogger().setLevel(logging.NOTSET)
+                    logging.getLogger().setLevel(logging.NOTSET)
              
             logging.info(">>>Starting: "+compName+'<<<')
             # check which backend to use: MySQL, Oracle, etc... for core 
@@ -207,7 +208,7 @@ class Harness:
             self.config.Agent.componentName
         return msg
 
-    def publishItem(self, items = {}):
+    def publishItem(self, items ):
         """
         _publishItem_
 
@@ -320,8 +321,6 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         """
         self.state = 'initialize'
         self.initInThread()
-        type = None
-        payload = None
         # note: every component gets a (unique) name: 
         # self.config.Agent.componentName
         logging.info('>>>Starting initialization\n')
@@ -396,20 +395,25 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                     transaction.commit()
                 logging.debug(">>>Finished handling message of type "+ \
                     str(msg['name'])+ " \n")
-                if msg['name'] == 'Stop' or msg['name'] == self.config.Agent.componentName+':Stop':
+                if msg['name'] == 'Stop' or \
+                msg['name'] == self.config.Agent.componentName+':Stop':
                     logging.info(">>>Quick shut down of component")
                     break
-                if msg['name'] == 'StopAndWait' or msg['name'] == self.config.Agent.componentName+':StopAndWait':
-                    logging.info(">>>Shut down of component while waiting for threads to finish")
+                if msg['name'] == 'StopAndWait' or  \
+                msg['name'] == self.config.Agent.componentName+':StopAndWait':
+                    logging.info(">>>Shut down of component "+\
+                    "while waiting for threads to finish")
                     # check if nr of threads is specified.
                     activeThreads = 1
-                    if msg['payload'] !="":
+                    if msg['payload'] != "":
                         activeThreads = int(msg['payload'])
                         if activeThreads < 1:
                             activeThreads = 1
                     while threading.activeCount() > activeThreads: 
-                        logging.info('>>>Currently '+str(threading.activeCount())+' threads active')
-                        logging.info('>>>Waiting for les then '+str(activeThreads)+' to be active')
+                        logging.info('>>>Currently '\
+                        +str(threading.activeCount())+' threads active')
+                        logging.info('>>>Waiting for les then ' \
+                        +str(activeThreads)+' to be active')
                         time.sleep(5)
                     break
         except Exception,ex:

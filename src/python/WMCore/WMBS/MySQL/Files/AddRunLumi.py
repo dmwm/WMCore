@@ -1,11 +1,12 @@
 """
 MySQL implementation of AddRunLumi
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class AddRunLumi(MySQLBase):
-    sql = """insert into wmbs_file_runlumi_map (file, run, lumi) 
-                values ((select id from wmbs_file_details where lfn = :lfn), :run, :lumi)"""
+class AddRunLumi(DBFormatter):
+    sql = """insert wmbs_file_runlumi_map (file, run, lumi) 
+            select id, :run, :lumi from wmbs_file_details 
+            where lfn = :lfn"""
                 
     def getBinds(self, files=None, run=0, lumi=0):
         # Can't use self.dbi.buildbinds here...
@@ -25,6 +26,11 @@ class AddRunLumi(MySQLBase):
     
     def execute(self, files=None, run=0, lumi=0, conn = None, transaction = False):
         binds = self.getBinds(files, run, lumi)
+        print "made binds", binds[:1]
+        print "running ", self.sql
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
-        return self.format(result)
+        print "got result", result
+        result = self.format(result)
+        print "formatted result", result
+        return result

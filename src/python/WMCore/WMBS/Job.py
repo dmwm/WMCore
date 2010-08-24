@@ -26,8 +26,8 @@ CREATE TABLE wmbs_job_assoc (
 
 """
 
-__revision__ = "$Id: Job.py,v 1.3 2008/08/09 22:21:53 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Job.py,v 1.4 2008/08/13 15:15:59 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import datetime
 from sets import Set
@@ -43,9 +43,12 @@ class Job(BusinessObject, WMJob):
     def __init__(self, subscription=None, files = Fileset(), id = -1):
         """
         Subscription object is used to determine the workflow. 
-        file_set is a set that contains the id's of all files the job should use.
+        file_set is a set that contains the id's of all files 
+        the job should use.
         """
-        BusinessObject.__init__(self, logger=subscription.logger, dbfactory=subscription.dbfactory)
+        BusinessObject.__init__(self, 
+                                logger=subscription.logger, 
+                                dbfactory=subscription.dbfactory)
         WMJob.__init__(self, subscription=subscription, files = files)
         self.id = id
         if self.id == -1:
@@ -58,12 +61,14 @@ class Job(BusinessObject, WMJob):
         Add a new row to wmbs_job
         """
         action = self.daofactory(classname="Jobs.New")
-        self.id, self.last_update = action.execute(subscription = self.subscription.id)
+        self.id, self.last_update = \
+                action.execute(subscription = self.subscription.id)
         self.load()
     
     def load(self):
         """
-        Load the subscription and file id's from the database for a job of known id
+        Load the subscription and file id's from 
+        the database for a job of known id
         """
         self.file_set = Fileset()
         file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
@@ -91,12 +96,13 @@ class Job(BusinessObject, WMJob):
         """
         Job has failed, mark all files associated with it as failed
         """
-        pass
+        self.subscription.failFiles(self.file_set.listFiles())
     
     def complete(self):
         """
-        Job has completed successfully, mark all files associated with it as complete
+        Job has completed successfully, mark all files associated 
+        with it as complete
         """
-        pass
+        self.subscription.completeFiles(self.file_set.listFiles())
         
         

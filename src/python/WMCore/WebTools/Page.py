@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.5 2009/01/13 12:44:47 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Page.py,v 1.6 2009/01/23 19:05:34 rpw Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import cherrypy
 from cherrypy import log as cplog
@@ -32,7 +32,7 @@ class Page(object):
         self.log(msg, logging.INFO)
     
     def log(self, msg, severity):
-        cplog(msg, context=self.config['application'], 
+        cplog(msg, context=self.config.application, 
                 severity=severity, traceback=False)
         
 class TemplatedPage(Page):
@@ -45,8 +45,8 @@ class TemplatedPage(Page):
         Page.__init__(self, config)
         
         self.templatedir = ''
-        if 'templates' in self.config.keys():
-            self.templatedir = self.config['templates']
+        if hasattr(self.config, 'templates'):
+            self.templatedir = self.config.templates
         else:
             # Take a guess
             self.templatedir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'Templates')
@@ -136,7 +136,7 @@ def exposedasjson (func):
         encoder = JSONEncoder()
         data = func (self, *args, **kwds)
         now = time.mktime(datetime.datetime.utcnow().timetuple())
-        dasdata = {self.config['application']:{
+        dasdata = {self.config.application:{
                         'request_timestamp': now,
                         'request_url': request.base + request.path_info + \
                                                     request.query_string,

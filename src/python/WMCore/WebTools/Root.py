@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.8 2009/01/21 13:40:28 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Root.py,v 1.9 2009/01/23 19:05:10 rpw Exp $"
+__version__ = "$Revision: 1.9 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -33,6 +33,7 @@ from WMCore.DataStructs.WMObject import WMObject
 
 class Root(WMObject):
     def __init__(self, config):
+        self.config = config
         self.config = config.section_("Webtools")
         self.app = self.config.application
         self.configureCherryPy()
@@ -82,37 +83,25 @@ class Root(WMObject):
     def loadPages(self):
         factory = WMFactory('webtools_factory')
         
-        # Read in global configuration, to be over-ridden if needs be
-        globalconfig = {}
-        globalconfig['application'] = self.config.application
-        try:
-            globalconfig['templates'] = self.config.templates
-        except:
-            pass
-        try:
-            globalconfig['database'] = self.config.database
-        except:
-            pass
-        
         for view in self.config.views.active:
+            # the sub-classes seem to like having these things
+            view.application = self.config.application
+            view.templates = self.config.templates
+
             log("loading %s" % view._internal_name, context=self.app, 
                 severity=logging.INFO, traceback=False)
             
-            config = {} 
-            config.update(globalconfig)
-            config.update(view.dictionary_())
-            
-            log("configuration for %s: %s" % (view._internal_name, config), 
+            log("configuration for %s: %s" % (view._internal_name, view), 
                 context=self.app, 
                 severity=logging.INFO, traceback=False)
             
-            if 'database' in config.keys():
+            if hasattr(view, 'database'):
                 log("loading database for %s" % (view._internal_name), 
                     context=self.app, 
                 severity=logging.INFO, traceback=False)
-                config['database'] = self.loadDatabase(config)
-                    
-            obj = factory.loadObject(view.object, config)
+                view.database = self.loadDatabase(view)
+            print "DOING "+str(view) 
+            obj = factory.loadObject(view.object, view)
             eval(compile("self.%s = obj" % view._internal_name, '<string>', 'single'))
         
             log("%s available on %s/%s" % (view._internal_name, 
@@ -126,11 +115,11 @@ class Root(WMObject):
             #TODO: Show a maintenance page
             pass
     
-    def loadDatabase(self, config):
+    def loadDatabase(self, configSection):
         dblist = []
-        if 'database' in config.keys():
+        if hasattr(configSection, 'database'):
             #Configure the database if needed, replace with thread style?
-            for dburl in self.makelist(config['database']):
+            for dburl in self.makelist(configSection.database):
                 try:
                     conn = DBFactory(log.error_log, dburl).connect()
                     daofactory = DAOFactory(package=self.app, logger=log.error_log, dbinterface=conn)

@@ -92,8 +92,6 @@ class WMTaskTest(unittest.TestCase):
 
 
         self.assertEqual(task1.getStep("step1a").name(), "step1a")
-        print task2a.getStep("step2b")
-        print task2b.getStep("step3a")
         self.assertEqual(task2a.getStep("step2b").name(), "step2b")
         self.assertEqual(task2b.getStep("step3c").name(), "step3c")
         self.assertEqual(task2c.getStep("step4a").name(), "step4a")
@@ -103,6 +101,8 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(task2b.getStep("step2"), None)
         self.assertEqual(task2c.getStep("step1"), None)
 
+
+        print task1.data
 
 
 

@@ -11,8 +11,8 @@ in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
 you set {'isolation_level':None} all sql will be implicitly committed and the 
 Transaction object will be meaningless.
 """
-__revision__ = "$Id: Transaction.py,v 1.3 2008/08/21 16:11:22 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Transaction.py,v 1.4 2008/08/26 09:49:38 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -24,6 +24,9 @@ class Transaction(WMObject):
         Get the connection from the DBInterface and open a new transaction on it
         """
         self.dbi = dbinterface
+        self.begin()
+        
+    def begin(self):
         self.conn = self.dbi.connection()
         self.transaction = self.conn.begin()
 

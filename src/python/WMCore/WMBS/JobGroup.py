@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.8 2008/12/02 17:20:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobGroup.py,v 1.9 2008/12/05 21:05:51 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -104,10 +104,15 @@ class JobGroup(WMJobGroup):
 
     def exists(self):
         """
-        Does a jobgroup exist with this uid, return the id
+        Does a jobgroup exist with id if id is not provided, use the uid, 
+        return the id
         """
-        action = self.daofactory(classname='JobGroup.Exists')
-        return action.execute(uid = self.uid)
+        if self.id != -1:
+            action = self.daofactory(classname='JobGroup.ExistsByID')
+            return action.execute(id = self.id)
+        else:
+            action = self.daofactory(classname='JobGroup.Exists')
+            return action.execute(uid = self.uid)
     
     def load(self):
         """

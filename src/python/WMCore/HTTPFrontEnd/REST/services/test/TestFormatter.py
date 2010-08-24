@@ -5,8 +5,8 @@ Example of data formatter used by REST service
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id:"
-__version__ = "$Revision:"
+__revision__ = "$Id: TestFormatter.py,v 1.4 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 import traceback
@@ -51,7 +51,7 @@ class TestFormatter(object):
         self._data = data
         if  not data:
             return NODATA
-        elif type(data) is not types.StringType:
+        elif type(data) is types.StringType:
             msg  = """<?xml version='1.0' standalone='yes'?>"""
             msg += "<rest>%s</rest>" % data
             return msg
@@ -60,7 +60,9 @@ class TestFormatter(object):
             msg += "<return>%s</return>" % data
             return msg
         else:
-            return data
+            msg  = """<?xml version='1.0' standalone='yes'?>"""
+            msg += "<datatype>%s</datatype>" % data
+            return msg
 
     def to_txt(self, data):
         """This method shows how to convert input data into TXT form"""

@@ -7,8 +7,8 @@ We map it into CherryPy server.
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id:"
-__version__ = "$Revision:"
+__revision__ = "$Id: TestRestServer.py,v 1.9 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import cherrypy
 from WMCore.HTTPFrontEnd.REST.services.rest.RestServer import RestServer

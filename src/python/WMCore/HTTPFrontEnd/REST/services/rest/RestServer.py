@@ -5,8 +5,8 @@ RestServer implemention within CMS WEBTOOLS.
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id:"
-__version__ = "$Revision:"
+__revision__ = "$Id: RestServer.py,v 1.7 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import time

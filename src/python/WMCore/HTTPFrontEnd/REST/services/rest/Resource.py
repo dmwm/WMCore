@@ -29,11 +29,12 @@ OPTIONS         YES             Requests the server to return details about
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id:"
-__version__ = "$Revision:"
+__revision__ = "$Id: Resource.py,v 1.6 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import cherrypy
 import types
+import traceback
 from cherrypy.lib.cptools import accept
 
 __all__ = ['Resource']
@@ -68,6 +69,15 @@ def setheader(ctype, length=None):
     if  length: 
         cherrypy.response.headers['Content-Length'] = length
 
+def makemethod(args):
+    try:
+        method = '/'.join(args)
+    except:
+        traceback.print_exc()
+        method = ''
+        pass
+    return method
+
 class Resource(object):
     """
        Base class for REST server. It defines a list of resources, e.g.
@@ -88,6 +98,9 @@ class Resource(object):
         
     def response(self, idata, method):
         """Create server response"""
+#        print "rest.Resource.response"
+#        print cherrypy.response.headers
+#        print "#### accept", cherrypy.request.headers['Accept']
         # inspect Accept header for matching type
         datatype = accept(self.supporttypes)
         # look-up data in appropriate format for our object
@@ -107,7 +120,8 @@ class Resource(object):
             rtype = datatype
         else:
             data  = idata
-            rtype = self.defaulttype
+            rtype = datatype
+#            rtype = self.defaulttype
 
         if  method == "head":
             setheader(rtype, len(data))
@@ -164,10 +178,10 @@ class Resource(object):
             print "Calling handle_head %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        method = args[0][0] # request args='(('word',), {'test': '1'})'
-        data   = self._model.getdata(method, kwargs)
+        method = makemethod(args[0])
+        data = self._model.getdata(method, kwargs)
         # generate response
-        self.response(data,"head")
+        self.response(data, "head")
     
     def handle_get(self, *args, **kwargs):
         """
@@ -177,8 +191,8 @@ class Resource(object):
             print "Calling handle_get %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        method = args[0][0] # request args='(('word',), {'test': '1'})'
-        data   = self._model.getdata(method, kwargs)
+        method = makemethod(args[0])
+        data = self._model.getdata(method, kwargs)
         # generate response
         return self.response(data, "get")
 
@@ -190,17 +204,16 @@ class Resource(object):
             print "Calling handle_post %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        params = args[0]
-        method = args[0][0] # request args='(('word',), {'test': '1'})'
-        data   = self._model.createdata(method, kwargs)
+        method = makemethod(args[0])
+        data = self._model.createdata(method, kwargs)
 
         # set appropriate headers for POST method
         cherrypy.response.status = '201 Created'
-        location = '%s/%s' % (self._url, '/'.join(params))
+        location = '%s/%s' % (self._url, method)
         cherrypy.response.headers['Location'] = location
 
         # generate response
-        return self.response(data,"post")
+        return self.response(data, "post")
 
     def handle_put(self, *args, **kwargs):
         """
@@ -210,10 +223,10 @@ class Resource(object):
             print "Calling handle_put %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        method = args[0][0] # request args='(('word',), {'test': '1'})'
-        data   = self._model.updatedata(method, kwargs)
+        method = makemethod(args[0])
+        data = self._model.updatedata(method, kwargs)
         # generate response
-        return self.response(data,"put")
+        return self.response(data, "put")
 
     def handle_delete(self, *args, **kwargs):
         """
@@ -223,8 +236,8 @@ class Resource(object):
             print "Calling handle_delete %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        method = args[0][0] # request args='(('word',), {'test': '1'})'
-        data   = self._model.deletedata(method, kwargs)
+        method = makemethod(args[0])
+        data = self._model.deletedata(method, kwargs)
         # generate response
-        return self.response(data,"delete")
+        return self.response(data, "delete")
 

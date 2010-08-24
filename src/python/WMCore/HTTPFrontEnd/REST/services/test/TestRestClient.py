@@ -7,8 +7,8 @@ out results.
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id:"
-__version__ = "$Revision:"
+__revision__ = "$Id: TestRestClient.py,v 1.3 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.3 $"
 
 # system modules
 import os

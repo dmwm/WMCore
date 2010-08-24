@@ -5,8 +5,8 @@ REST service Test Model implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id:"
-__version__ = "$Revision:"
+__revision__ = "$Id: TestModel.py,v 1.5 2008/12/19 01:17:10 valya Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 #
@@ -17,24 +17,29 @@ __version__ = "$Revision:"
 class TestModel:
     """Example of model class implementation"""
     def __init__(self):
-        self.data = "DATA"
+        self.data = None
+
     def getdata(self, method, params=None):
         """Example of getdata implementation"""
-        self.data = "TestModel getdata method=%s params=%s" % \
-                    (str(method),str(params))
-        return self.data
+        data = "TestModel getdata method=%s params=%s" % \
+               (str(method),str(params))
+        return data
+
     def createdata(self, method, params=None):
         """Example of createdata implementation"""
-        self.data = "TestModel createdata method=%s params=%s" % \
-                    (str(method),str(params))
-        return self.data
+        data = "TestModel getdata method=%s params=%s" % \
+               (str(method),str(params))
+        return data
+
     def deletedata(self, method, params=None):
         """Example of deletedata implementation"""
-        self.data = "TestModel deletedata method=%s params=%s" % \
-                    (str(method),str(params))
-        return self.data
+        data = "TestModel getdata method=%s params=%s" % \
+               (str(method),str(params))
+        return data
+
     def updatedata(self, method, params=None):
         """Example of updatedata implementation"""
-        self.data = "TestModel updatedata method=%s params=%s" % \
-                    (str(method),str(params))
-        return self.data
+        data = "TestModel getdata method=%s params=%s" % \
+               (str(method),str(params))
+        return data
+

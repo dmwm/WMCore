@@ -56,7 +56,7 @@ class DbsQueryHelper:
                 retList = []
                 for node in nodes:
                     retList.append(self.getText(node.childNodes))
-                    return retList
+                return retList
             elif isinstance(nodelist[0], list):
                 # We want multiple data members, assume first in the list
                 # is the key, and 1:n entries are values to link to the key
@@ -93,7 +93,6 @@ class DbsQueryHelper:
         """
         ret = callDbs(self.dbsHost, self.dbsPort, self.dbsInstance, query, 0, -1, 1)
         ret = ret.replace("<>", "")
-        print ret
         return parseString(ret)
 
     def getParentDataset(self, dataset):

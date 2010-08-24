@@ -27,23 +27,22 @@ Algorithm:
 TODO:   * Make parent relations condition on actually requiring parent relation
              -- c.f. Talk with Simon about fileset name to specify datasets
         * DQ flags from DBS?
-        * Exception handling (especially as propagated from DBS query errors)
         * Finish tracking down DBS problems
+        * File location saving - move to save method?
+        * setlocation requires double save for new file - move to save method!
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.8 2008/10/29 20:16:18 jacksonj Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.9 2008/10/30 10:48:10 jacksonj Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import logging
 
 from sets import Set
 
 from WMCore.WMBSFeeder.RunTransferNotifier.DbsQueryHelper import DbsQueryHelper
+from WMCore.WMBSFeeder.RunTransferNotifier.PhEDExQueryHelper import PhEDExQueryHelper
 
 from WMCore.WMBS.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl
-
-from urllib import urlopen
-from urllib import quote
 
 from time import time
 
@@ -96,6 +95,7 @@ class RunTransferNotifier(FeederImpl):
         """
         # Configure data service look up components
         self.dbsHelper = DbsQueryHelper(dbsHost, dbsPort, dbsInstance)
+        self.phedexHelper = PhEDExQueryHelper(phedexUrl)
         
         # Runs that are being watched
         self.watchedRuns = []
@@ -126,109 +126,86 @@ class RunTransferNotifier(FeederImpl):
         # Update run list
         self.getNewRuns()
         
-        # Do per fileset work
+        # Do per fileset work, abandon fileset processing on exception
         for fileset in filesets:
-            dsName = fileset.name
-            
-            # Do per watcher work
-            for watch in self.watchedRuns:
-                # Ensure watcher has dataset listed
-                watch.addDatasetOfInterest(dsName)
-                
-                # Do per dataset work
-                for ds in watch.datasetCompletion:
+            ds = fileset.name
+            newFilesetFiles = []
+            watchCompleteFiles = []
+            fileLocations = []
+            try:
+                # Do per run work
+                for watch in self.watchedRuns:
+                    # Ensure watcher has dataset listed
+                    watch.addDatasetOfInterest(ds)
+                    
                     # Query DBS to find all blocks for this run / dataset
                     (files, blocks, fileInfoMap) = \
-                         self.dbsHelper.getFileInfo(watch.run, ds)
-                    blocks = self.dbsHelper.getBlockInfo(watch.run, ds)
-                    
+                        self.dbsHelper.getFileInfo(watch.run, ds)
+                        
                     # Now determine all required parent blocks
                     parentBlocks = Set()
                     if fileset.requireParents:
                         parentDs = self.dbsHelper.getParentDataset(ds)
                         parentBlocks = self.dbsHelper.getBlockInfo(watch.run,
-                                                                   parentDs)
-                    
+                                                                       parentDs)
+                        
                     # Final list of all required blocks
                     allBlocks = blocks[:]
                     allBlocks.update(parentBlocks)
-                    
+                        
                     # Find all sites where all blocks are complete
-                    sites = self.getCompleteSites(blocks)
-                    
+                    sites = self.phedexHelper.getCompleteSites(blocks)
+                        
                     # Get sites with newly completed transfers
                     newSites = watch.getNewSites(ds, sites)
-                    
+                        
                     if len(newSites) > 0:
                         # Add the files for these blocks to the fileset
                         for file in fileInfoMap:
                             fi = fileInfoMap[file]
-                            
+                                
                             # First add parent file
-                            parentFile = File(lfn=fi["file.parent"])
-                            if not parentFile.exists():
-                                parentFile.save()
-                            
+                            if fileset.requireParents:
+                                parentFile = File(lfn=fi["file.parent"])
+                                parentFile.setLocation(newSites) # Will fail?
+                                parentFile.save() # I don't want a double save..
+                                
                             # Add actual file
                             fileToAdd = File(lfn=file, size=fi["file.size"],
                                              events=fi["file.events"],
-                                             run=watch.run,
-                                             lumi=fi["file.lumi"])
-                            if not fileToAdd.exists():
+                                             run=watch.run, 
+                                             umi=fi["file.lumi"])
+                            if not fileToAdd.exists() and fileset.requireParents:
                                 fileToAdd.addParent(fi["file.parent"])
-
+    
                             # Add new locations
-                            fileToAdd.setLocation(newSites)
-                            
-                            # Finally add the file to the fileset
-                            fileset.addFile(fileToAdd)
-                    
-                    # Add the site info to the watcher
-                    watch.addCompletedNode(ds, newSites)
-        
+                            fileLocations.append([fileToAdd, newSites])
+                                
+                            # Add the file to the new file list
+                            newFilesetFiles.append(fileToAdd)
+                        
+                    # Add the site info to the watcher list
+                    watchCompleteFiles.append([watch, ds, newSites])
+            except:
+                # Reset the file and watch list so nothing gets added to the
+                # fileset or completed datasets records
+                newFilesetFiles = []
+                watchCompleteFiles = []
+                fileLocations = []
+                
+            # Add all new files to the fileset, locations to files and completed
+            # dataset info. Would like a global Trans object otherwise can be
+            # left with some files being picked up by Splitter, and some not.
+            # Only a problem for location information - why not save it in in
+            # save method rather than on addition?
+            fileset.addFile(newFilesetFiles)
+            for a in watchCompleteFiles:
+                a[0].addCompletedNodes(a[1], a[2])
+            for a in fileLocations:
+                a[0].setLocation(a[1])
+            
         # Purge old runs
         self.purgeWatchedRuns()
-
-    def getPhEDExBlockFiles(self, block):
-        """
-        Queries PhEDEx to get all files in a block
-        """
-        connection = urlopen(self.phedexUrl + "&block=%s" % quote(block))        
-        aString = connection.read()
-        connection.close()
-
-        if aString[2:8] != "phedex":
-            print "RunTransferNotifier: bad string from server follows."
-            print "%s" % aString
-
-        phedex = eval(aString.replace( "null", "None" ), {}, {})
-        
-        blocks = phedex['phedex']['block']
-        if len(blocks) != 1:
-            print "PhEDExNotifier: Found %d blocks, will only use first" % \
-                len(blocks)
-
-        return blocks[0]['file']
-    
-    def getCompleteSites(self, blocks):
-        """
-        Queries PhEDEx to determine sites where all listed blocks are present
-        """
-        pass
-
-    def getEvents( self, lfn ):
-        """
-        Query DBS to determine how many events are in a given file
-        """
-        try:
-            # Get the file object, I hope there is only one!
-            files = self.dbsapi.listFiles(patternLFN = lfn)
-            if len ( files ) != 1:
-                print "LFN doesn't map to single file in DBS! lfn=%s" % lfn
-            return files[0][ 'NumberOfEvents' ]
-
-        except DbsDatabaseError,e:
-            print e
         
     def getNewRuns(self):
         """

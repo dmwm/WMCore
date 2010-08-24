@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: File_t.py,v 1.9 2008/12/23 21:24:22 afaq Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: File_t.py,v 1.10 2009/01/02 19:27:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import logging
@@ -326,24 +326,43 @@ class File_t(unittest.TestCase):
         _testLocationsConstructor_
 
         Test to make sure that locations passed into the File() constructor
-        are loaded from and save to the database correctly.
+        are loaded from and save to the database correctly.  Also test to make
+        sure that the class behaves well when the location is passed in as a
+        single string instead of a set.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1, locations = Set(["se1.fnal.gov"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
-        testFileB = File(id = testFileA["id"])
-        testFileB.load()
+        testFileB = File(lfn = "/this/is/a/lfn2", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileB.addRun(Run( 1, *[45]))
+        testFileB.create()        
+
+        testFileC = File(id = testFileA["id"])
+        testFileC.load()
 
         goldenLocations = ["se1.fnal.gov"]
-        for location in testFileB["locations"]:
+        for location in testFileC["locations"]:
             assert location in goldenLocations, \
                    "ERROR: Unknown file location"
             goldenLocations.remove(location)
             
         assert len(goldenLocations) == 0, \
-              "ERROR: Some locations are missing"            
+              "ERROR: Some locations are missing"
+
+        testFileC = File(id = testFileB["id"])
+        testFileC.load()
+
+        goldenLocations = ["se1.fnal.gov"]
+        for location in testFileC["locations"]:
+            assert location in goldenLocations, \
+                   "ERROR: Unknown file location"
+            goldenLocations.remove(location)
+            
+        assert len(goldenLocations) == 0, \
+              "ERROR: Some locations are missing"        
         return
 
 if __name__ == "__main__":

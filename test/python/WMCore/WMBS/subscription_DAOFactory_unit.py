@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.7 2008/09/09 17:03:02 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.8 2008/09/09 17:04:13 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest, logging, os, commands, random, datetime
 import sys, traceback
@@ -95,7 +95,6 @@ class SubscriptionDAOObjectTestCase(BaseFilesTestCase):
 class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
     ran = False
     def setUp(self):
-        print '\nsetUp\n'
         if not self.ran:
             BaseFilesTestCase.setUp(self)
             c = 0
@@ -116,12 +115,10 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
             self.ran = True
         
     def tearDown(self):
-        print '\ntearDown\n'
         if not self.ran:
             BaseFilesTestCase.tearDown(self)
             
     def createSubs(self, testlogger):
-        print '\ncreateSubs\n'
         subscriptions = []
         c = 0
         for dbi in [self.dbf1, self.dbf2]:
@@ -134,7 +131,6 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
         return subscriptions
             
     def testCreate(self):
-        print '\ntestCreate\n'
         testlogger = logging.getLogger('testCreate')
         subscriptions = self.createSubs(testlogger)
          
@@ -142,7 +138,6 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
             assert i.exists(), "Subscription does not exist"
             
     def testLoad(self):
-        print '\ntestLoad\n'
         testlogger = logging.getLogger('testLoad')
         self.createSubs(testlogger) #Put some subscriptions into the database
         subscriptions = []
@@ -156,7 +151,6 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
             c = c + 1
     
     def testFileCycle(self):
-        print '\ntestFileCycle\n'
         testlogger = logging.getLogger('testFileCycle')
         self.createSubs(testlogger)
         filelist = []
@@ -174,12 +168,10 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
                          dbfactory = dbi)
                 filelist.append(f)
                 
-            print "len(filelist)", len(filelist)
             self.fileset[c] = Fileset(name='MyCoolFiles', 
                                       logger=testlogger, 
                                       dbfactory = dbi)
             self.fileset[c].addFile(filelist)
-            print len(self.fileset[c].listNewFiles())
             self.fileset[c].commit()
             c = c + 1
         

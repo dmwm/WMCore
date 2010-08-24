@@ -26,6 +26,7 @@ Algorithm:
 
 TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
         * DBS and PhEDEx queries
+        * DQ flags from DBS?
         * Handling of parent files - registering with child file
         * Adding new locations as they become available? What about file acquire
           status?
@@ -36,21 +37,21 @@ TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
         * Cache DBS block / file lookups? Depends on how / when blocks are migrated
           to global DBS. getEvents could use cached response from getDbsBlockFiles
           for example.
+        * Factor out DBS queries into helper module
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.2 2008/10/25 23:50:34 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.3 2008/10/28 11:25:59 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 
 from sets import Set
 
+from xml.dom.minidom import parseString
+
+from DbsCli import sendMessage as callDbsWithOptions
+
 from WMCore.DataStructs.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl
-
-from DBSAPI.dbsApi import DbsApi
-from DBSAPI.dbsException import *
-from DBSAPI.dbsApiException import *
-from DBSAPI.dbsOptions import DbsOptionParser
 
 from urllib import urlopen
 from urllib import quote
@@ -59,14 +60,10 @@ from time import time
 
 class RunTransferNotifier(FeederImpl):
     """
-    _PhEDExNotifierComponent_
-    
     Run / transfer feeder implementation
     """
     class WatchedRun:
         """
-        _WatchedRun_
-        
         Records a run that is being watched, and maintains state about
         transfered files for monitored datasets
         """
@@ -100,27 +97,26 @@ class RunTransferNotifier(FeederImpl):
             """
             return sitesWithRun - self.datasetCompletion[dataset]
             
-    def __init__( self, startRun = None, purgeTime = 48,
-                  phedexUrl = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas",
-                  dbsUrl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" ):
+    def __init__(self, startRun = None, purgeTime = 48,
+                 phedexUrl = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas",
+                 dbsHost = "cmsweb.cern.ch/dbs_discovery/",
+                 dbsInstance = "cms_dbs_prod_global",
+                 dbsPort = 443):
         """
         Configure the feeder
         """
+        # Record connection settings
+        self.phedexUrl = phedexUrl
+        self.dbsHost = dbsHost
+        self.dbsInstance = dbsInstance
+        self.dbsPort = dbsPort
+        
         # Runs that are being watched
         self.watchedRuns = []
         
         # The last run that was identified as new, and run purge time
         self.lastRun = 0
         self.purgeTime = purgeTime * 3600 # Convert hours to seconds
-        
-        # Configure DBS API
-        try:
-            self.dbsapi = DbsApi( {'url': dbsUrl } )
-        except DbsApiException, ex:
-            print "Caught API Exception %s: %s "  % (ex.getClassName(),
-                                                     ex.getErrorMessage() )
-            if ex.getErrorCode() not in (None, ""):
-                print "DBS Exception Error Code: ", ex.getErrorCode()
         
         # Bootstrap run list
         if not startRun:
@@ -145,8 +141,7 @@ class RunTransferNotifier(FeederImpl):
         self.getNewRuns()
         
         # Do per fileset work
-        filesetList = self.makelist(filesets)
-        for fileset in filesetList:
+        for fileset in filesets:
             dsName = fileset.name
             
             # Do per watcher work
@@ -160,10 +155,13 @@ class RunTransferNotifier(FeederImpl):
                     blocks = self.getDbsBlockInfo(watch.run, ds)
                     
                     # Now determine all required parent blocks
+                    # This is a prime candidate for caching as requires
+                    # many per file lookups in DBS
                     parentBlocks = Set()
                     if fileset.requireParents:
                         primaryFiles = self.getDbsBlockFiles(blocks)
-                        parentBlocks = self.getDbsParentBlocks(primaryFiles)
+                        parentFiles = self.getDbsParentFiles(primaryFiles)
+                        parentBlocks = self.getDbsFileBlocks(parentFiles)
                     
                     # Final list of all required blocks
                     allBlocks = blocks[:]
@@ -203,40 +201,87 @@ class RunTransferNotifier(FeederImpl):
         # Purge old runs
         self.purgeWatchedRuns()
     
-    def getDbsParentBlocks(self, files):
+    def getText(nodelist):
+        rc = ""
+        for node in nodelist:
+            if node.nodeType == node.TEXT_NODE:
+                rc = rc + node.data
+        return rc
+
+    def getXmlNodeValues(xml, nodelist):
+        if len(nodelist) == 1:
+            nodes = xml.getElementsByTagName(nodelist[0])
+            retList = []
+            for node in nodes:
+                retList.append(getText(node.childNodes))
+            return retList
+        else:
+            node = xml.getElementsByTagName(nodelist[0])[0]
+            return getXmlNodes(node, nodelist[1:])
+    
+    def queryDbs(self, query):
         """
-        Queries DBS to get the block for the parent of each file (if present)
-        Note requires lots of queries: DBS can't give parent block information
-        as it is braindead.
+        Queries DBS and returns XML
+        """
+        return parseString(callDbsWithOptions(self.dbsHost, self.dbsPort,
+                                              self.dbsInstance, query, 0, -1, 1))
+    
+    def queryDbsBlockInfo(self, query):
+        """
+        Queries DBS and extracts block info from the result
+        """
+        result = queryDbs(query)
+        return getXmlNodeValues(result, ["ddresponse","output","name"])
+    
+    def queryDbsFileInfo(self, query):
+        """
+        Queries DBS and extracts file info from the result
+        """
+        result = queryDbs(query)
+        return getXmlNodeValues(result, ["ddresponse","output","logicalfilename"])
+
+    def queryDbsRunInfo(self, query):
+        """
+        Queries DBS and extracts run info from the result
+        """
+        result = queryDbs(query)
+        return getXmlNodeValues(result, ["ddresponse","output","runnumber"])
+    
+    def getDbsParentFiles(self, files):
+        """
+        Returns all parent files for the given primary files
+        """
+        parentFiles = Set()
+        for f in files:
+            pars = self.queryDbsFileInfo("find file.parent where file = %s" % f)
+            parentFiles.update(pars)
+        return parentFiles
+    
+    def getDbsFileBlocks(self, files):
+        """
+        Queries DBS to get the blocks containing all the passed files
         """
         parentBlocks = Set()
         for f in files:
-            for p in f['Parents']:
-                parFile = self.dbsapi.listFiles(patternLFN=p)
-                if len (parFile) != 1:
-                    print "%s doesn't map to single file in DBS" % f['Parent']
-                parentBlocks.add(parFile[0]['Block'])
+            blocks = self.queryDbsBlockInfo("find block where file = %s" % f)
+            parentBlocks.update(blocks)
         return parentBlocks
         
     def getDbsBlockFiles(self, blocks):
         """
-        Queries DBS to get all files in a block
+        Queries DBS to get all files in the listed blocks
         """
         files = []
-        if isinstance(blocks, list):
-            for block in blocks:
-                files.extend(self.dbsapi.listFiles(block=block,
-                                          retriveList=['retrive_parent']))
-        else:
-            files = self.dbsapi.listFiles(block=blocks,
-                                          retriveList=['retrive_parent'])
+        for block in blocks:
+            bfs = self.queryDbsFileInfo("find file where block = %s" % block)
+            files.extend(bfs)
         return files
 
     def getPhEDExBlockFiles(self, block):
         """
         Queries PhEDEx to get all files in a block
         """
-        connection = urlopen(self.nodeURL + "&block=%s" % quote(block))        
+        connection = urlopen(self.phedexUrl + "&block=%s" % quote(block))        
         aString = connection.read()
         connection.close()
 
@@ -248,7 +293,8 @@ class RunTransferNotifier(FeederImpl):
         
         blocks = phedex['phedex']['block']
         if len(blocks) != 1:
-            print "PhEDExNotifier: Found %d blocks, expected 1, will only consider first block" % len(blocks)
+            print "PhEDExNotifier: Found %d blocks, will only use first" % \
+                len(blocks)
 
         return blocks[0]['file']
     
@@ -262,7 +308,7 @@ class RunTransferNotifier(FeederImpl):
         """
         Queries DBS to get all file blocks for a given run and dataset
         """
-        pass
+        return queryDbsBlockInfo("find block where dataset = %s and run = %d" % (dataset, run))
 
     def getEvents( self, lfn ):
         """

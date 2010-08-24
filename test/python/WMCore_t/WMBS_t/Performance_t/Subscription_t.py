@@ -24,6 +24,7 @@ class SubscriptionTest(WMBSBase):
                 
         self.logger = logging.getLogger(logarg + 'SubscriptionPerformanceTest')
         
+        self.totaltime = 0
         dbf = DBFactory(self.logger, sqlURI)
         
         WMBSBase.setUp(self,dbf=dbf)
@@ -32,83 +33,156 @@ class SubscriptionTest(WMBSBase):
         #Call superclass tearDown method
         WMBSBase.tearDown(self)
 
-    def testAcquireFiles(self):         
+    def testAcquireFiles(self, times=1):         
         print "testAcquireFiles"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.AcquireFiles', subscription=self.testSubscription.id,file=self.testFile["id"])
-        assert time <= self.threshold, 'AcquireFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1)[0]
+       
+        filelist = self.genFiles(number=times)
 
-    def testCompleteFiles(self):         
+        for i in range(times):     
+            time = self.perfTest(dao=self.dao, action='Subscriptions.AcquireFiles', subscription=subscription["id"],file=filelist[i]["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'AcquireFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testCompleteFiles(self, times=1):         
         print "testCompleteFiles"
-   
-        time = self.perfTest(dao=self.dao, action='Subscriptions.CompleteFiles', subscription=self.testSubscription.id,file=self.testFile["id"])
-        assert time <= self.threshold, 'CompleteFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testFailFiles(self):         
+        subscription = self.genSubscription(number=1)[0]
+       
+        filelist = self.genFiles(number=times)
+
+        for i in range(times):     
+            time = self.perfTest(dao=self.dao, action='Subscriptions.CompleteFiles', subscription=subscription["id"],file=filelist[i]["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'CompleteFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'   
+
+    def testFailFiles(self, times=1):         
         print "testFailFiles"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.FailFiles', subscription=self.testSubscription.id,file=self.testFile["id"])
-        assert time <= self.threshold, 'FailFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1)[0]
+       
+        filelist = self.genFiles(number=times)
 
-    def testDeleteAcquiredFiles(self):         
+        for i in range(times):     
+            time = self.perfTest(dao=self.dao, action='Subscriptions.FailFiles', subscription=subscription["id"],file=filelist[i]["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'FailFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testDeleteAcquiredFiles(self, times=1):         
         print "testDeleteAcquiredFiles"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.DeleteAcquiredFiles', subscription=self.testSubscription.id,file=self.testFile["id"])
-        assert time <= self.threshold, 'DeleteAcquiredFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1)[0]
+       
+        filelist = self.genFiles(number=times)
 
-    def testGetAcquiredFiles(self):         
+        for i in range(times):     
+
+            self.dao(classname='Subscriptions.AcquireFiles').execute(subscription=subscription["id"], file=filelist[i]["id"])
+
+            time = self.perfTest(dao=self.dao, action='Subscriptions.DeleteAcquiredFiles', subscription=subscription["id"],file=filelist[i]["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'DeleteAcquiredFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetAcquiredFiles(self, times=1):         
         print "testGetAcquiredFiles"
-        
-        time = self.perfTest(dao=self.dao, action='Subscriptions.GetAcquiredFiles', subscription=self.testSubscription.id)
-        assert time <= self.threshold, 'GetAcquiredFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testGetAvailableFiles(self):         
+        subscription = self.genSubscription(number=1)[0]
+
+        filelist = self.genFiles(number=times)
+
+        for i in range(times):     
+
+            self.dao(classname='Subscriptions.AcquireFiles').execute(subscription=subscription["id"], file=filelist[i]["id"])
+
+            time = self.perfTest(dao=self.dao, action='Subscriptions.GetAcquiredFiles', subscription=subscription["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'GetAcquiredFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetAvailableFiles(self, times=1):         
         print "testGetAvailableFiles"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.GetAvailableFiles', subscription=self.testSubscription.id)
-        assert time <= self.threshold, 'GetAvailableFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1)[0]
 
-    def testGetCompletedFiles(self):         
+        for i in range(times):     
+            time = self.perfTest(dao=self.dao, action='Subscriptions.GetAvailableFiles', subscription=subscription["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'GetAvailableFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetCompletedFiles(self, times=1):         
         print "testGetCompletedFiles"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.GetCompletedFiles', subscription=self.testSubscription.id)
-        assert time <= self.threshold, 'GetCompletedFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1)[0]
 
-    def testGetFailedFiles(self):         
+        filelist = self.genFiles(number=times)
+
+        for i in range(times):     
+
+            self.dao(classname='Subscriptions.CompleteFiles').execute(subscription=subscription["id"], file=filelist[i]["id"])
+
+            time = self.perfTest(dao=self.dao, action='Subscriptions.GetCompletedFiles', subscription=subscription["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'GetCompletedFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetFailedFiles(self, times=1):         
         print "testGetFailedFiles"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.GetFailedFiles', subscription=self.testSubscription.id)
-        assert time <= self.threshold, 'GetFailedFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1)[0]
 
-    def testForFileset(self):         
+        filelist = self.genFiles(number=times)
+
+        for i in range(times):     
+
+            self.dao(classname='Subscriptions.FailFiles').execute(subscription=subscription["id"], file=filelist[i]["id"])
+
+            time = self.perfTest(dao=self.dao, action='Subscriptions.GetFailedFiles', subscription=subscription["id"])
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'GetFailedFiles DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testForFileset(self, times=1):         
         print "testForFileset"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.ForFileset', fileset=self.testFileset.id)
-        assert time <= self.threshold, 'ForFileset DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        fileset = self.genFileset(number=1)[0]
 
-    def testNew(self):         
+        for i in range(times):     
+            time = self.perfTest(dao=self.dao, action='Subscriptions.ForFileset', fileset=fileset.id)
+            assert self.totaltime <= self.totalthreshold, 'ForFileset DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testNew(self, times=1):         
+        #TestNew is taking longer than expected to run
+        #TODO - Verify a possible overhead on this method
         print "testNew"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.New', fileset=self.testFileset.id, workflow=self.testWorkflow.id, type='Merge')
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        workflow = self.genWorkflow(number=times, name='testNew')
+        fileset = self.genFileset(number=times, name='testNew')
 
-    def testLoad(self):         
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Subscriptions.New', fileset=fileset[i].id, workflow=workflow[i].id, type='Merge')
+            assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testLoad(self, times=1):         
         print "testLoad"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.Load', workflow=self.testWorkflow.id, type='Processing', fileset=self.testFileset.id)
-        assert time <= self.threshold, 'Load DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1, name='testLoad')[0]
 
-    def testJobs(self):         
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Subscriptions.Load', workflow=subscription.getWorkflow().id, type='Processing', fileset=subscription.getFileset().id)
+            assert self.totaltime <= self.totalthreshold, 'Load DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testJobs(self, times=1):         
         print "testJobs"
 
-        time = self.perfTest(dao=self.dao, action='Subscriptions.Jobs', subscription=self.testSubscription.id)
-        assert time <= self.threshold, 'Jobs DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        subscription = self.genSubscription(number=1, name='testJobs')[0]
 
-    def testExists(self):         
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Subscriptions.Jobs', subscription=subscription["id"])
+            assert self.totaltime <= self.totalthreshold, 'Jobs DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testExists(self, times=1):         
         print "testExists"
-        
-        time = self.perfTest(dao=self.dao, action='Subscriptions.Exists', workflow=self.testWorkflow.id, fileset=self.testFileset.id,
-type='Processing')
-        assert time <= self.threshold, 'Exists DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
+        subscription = self.genSubscription(number=1, name='testExists')[0]
 
+        for i in range(times):             
+            time = self.perfTest(dao=self.dao, action='Subscriptions.Exists', workflow=subscription.getWorkflow().id, fileset=subscription.getFileset().id, type='Merge')
+            assert self.totaltime <= self.totalthreshold, 'Exists DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'

@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.5 2008/08/13 03:15:38 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: File.py,v 1.6 2008/09/01 15:17:50 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject 
 class File(WMObject):
@@ -39,31 +39,33 @@ class File(WMObject):
         """
         Sort files in run number and lumi section order
         """
-        if self.dict['run'] == rhs.run:
-            return cmp(self.dict['lumi'], rhs.lumi)
-        return cmp(self.dict['run'], rhs.run)
+        if self.dict['run'] == rhs.dict['run']:
+            return cmp(self.dict['lumi'], rhs.dict['lumi'])
+        return cmp(self.dict['run'], rhs.dict['run'])
     
     
     def __eq__(self, rhs):
         """
         File is equal if it has the same name, size, runs events and lumi
         """
-        eq = self.dict['lfn'] == rhs.dict['lfn'] 
-        eq = eq and self.dict['size'] == rhs.dict['size']
-        eq = eq and self.dict['events'] == rhs.dict['events']
-        eq = eq and self.dict['run'] == rhs.dict['run']
-        eq = eq and self.dict['lumi'] == rhs.dict['lumi']
+        eq = False
+        if type(rhs) == type(self):
+            eq = self.dict['lfn'] == rhs.dict['lfn'] 
+            eq = eq and self.dict['size'] == rhs.dict['size']
+            eq = eq and self.dict['events'] == rhs.dict['events']
+            eq = eq and self.dict['run'] == rhs.dict['run']
+            eq = eq and self.dict['lumi'] == rhs.dict['lumi']
+        elif type(rhs) == type('string'):
+            eq = self.dict['lfn'] == rhs
         return eq
     
     def __ne__(self, rhs):
         return not self.__eq__(rhs)
     
     def __hash__(self):
-        #print "I AM TEH HASH"
         hash = self.dict['lfn'].__hash__() 
         hash = hash + self.dict['size'].__hash__()
         hash = hash + self.dict['events'].__hash__()
         hash = hash + self.dict['run'].__hash__()
         hash = hash + self.dict['lumi'].__hash__()
-        #print hash, WMObject.__hash__(self)
         return hash

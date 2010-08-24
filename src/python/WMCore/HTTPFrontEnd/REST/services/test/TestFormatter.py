@@ -1,77 +1,99 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-#
-# Copyright 2008 Cornell University, Ithaca, NY 14853. All rights reserved.
-#
 # Author:  Valentin Kuznetsov, 2008
-#
-# This work based on example from CherryPy Essentials book, by Sylvain Hellegouarch
 """
 Example of data formatter used by REST service
 """
 
-import os, sys, string, traceback, simplejson, time, types
+import traceback
+import simplejson
+import time
+import types
 
 # Cheetah template modules
-from   Cheetah.Template import Template
-from   Templates   import *
+#from   Cheetah.Template import Template
+from   Templates   import templateTop
+from   Templates   import templateBottom
 
-def genTopHTML(host,url,mastheadUrl,footerUrl,onload=""):
-    nameSpace={
-               'host'        : host,
-               'baseUrl'     : url,
-               'mastheadUrl' : mastheadUrl,
-               'footerUrl'   : footerUrl,
-               'title'       : 'REST service',
-               'onload'      : onload
-              }
-    t = templateTop(searchList=[nameSpace]).respond()
-    return str(t)
+def tophtml(url, onload=""):
+    """Create header of HTML response"""
+    namespace = {
+                 'host'        : url,
+                 'title'       : 'REST service',
+                 'onload'      : onload
+                }
+    return str( templateTop(searchList=[namespace]).respond() )
 
-def genBottomHTML():
-    nameSpace = { 'localtime':time.asctime() }
-    t = templateBottom(searchList=[nameSpace]).respond()
-    return str(t)
+def endhtml():
+    """Create bottom of HTML response"""
+    namespace = { 'localtime':time.asctime() }
+    return str ( templateBottom(searchList=[namespace]).respond() )
 
-noDataXML="""<?xml version='1.0' standalone='yes'?>
+NODATA = """<?xml version='1.0' standalone='yes'?>
 <rest>
 <NO_DATA_FOUND />
 </rest>
 """
 class TestFormatter(object):
-    def to_xml(self,data):
-        if not data:
-            return noDataXML
+    """Simple formatter class. It should format input data according
+       to returned MIME type
+    """
+    def __init__(self):
+        self._data = 0 # hold some data
+
+    def to_xml(self, data):
+        """This method shows how to convert input data into XML form"""
+        # you can do something with data
+        self._data = data
+        if  not data:
+            return NODATA
         elif type(data) is not types.StringType:
-            return """<?xml version='1.0' standalone='yes'?><rest>%s</rest>"""%data
-        elif data.find("xml")!=-1:
-            return """<?xml version='1.0' standalone='yes'?><return>%s</return>"""%data
+            msg  = """<?xml version='1.0' standalone='yes'?>"""
+            msg += "<rest>%s</rest>" % data
+            return msg
+        elif data.find("xml") != -1:
+            msg  = """<?xml version='1.0' standalone='yes'?>"""
+            msg += "<return>%s</return>" % data
+            return msg
         else:
             return data
 
-    def to_txt(self,data):
-        if not data:
-           return {}
+    def to_txt(self, data):
+        """This method shows how to convert input data into TXT form"""
+        # you can do something with data
+        self._data = data
+        if  not data:
+            return {}
         try:
-            page = "CONVERT data %s into TEXT, need implementation"%data
+            page = "CONVERT data %s into TEXT, need implementation" % data
             return page
-        except:
+        except RuntimeError, err:
             traceback.print_exc()
-            return str(data)
+            page  = err.value
+            page += str(data)
+            return page
 
-    def to_json(self,data):
-        if not data:
-           return {}
+    def to_json(self, data):
+        """This method shows how to convert input data into JSON form"""
+        # you can do something with data
+        self._data = data
+        if  not data:
+            return {}
         return simplejson.dumps(data, sort_keys=True, indent=4)
 
-    def to_html(self,host,url,mastheadUrl,footerUrl,data):
+    def to_html(self, url, data):
+        """This method shows how to convert input data into HTML form"""
+        # you can do something with data
+        self._data = data
         try:
-            page = genTopHTML(host,url,mastheadUrl,footerUrl)
-            page+= "<h3>REST services: </h3>"
-            page+="HTML form for data='%s'"%data
-            page+= genBottomHTML()
-        except:
+            page  = tophtml(url)
+            page += "<h3>REST services: </h3>"
+            page += "HTML form for data='%s'" % data
+            page += endhtml()
+        except RuntimeError, err:
             traceback.print_exc()
-            page ="Unsupported accept type: <pre>%s</pre>"%data.replace("<","&lt;").replace(">","&rt;")
+            page  = err.value
+            page += "Unsupported accept type: <pre>%s</pre>" % \
+                    data.replace("<","&lt;").replace(">","&rt;")
         return page
 

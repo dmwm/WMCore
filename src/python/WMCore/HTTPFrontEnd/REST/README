@@ -49,7 +49,7 @@ Code has been divided into the following folders:
   - test
     a toy-implementation of your model and formatter for REST service,
     as well as stand-along (no WEBTOOLS) implementation of REST in
-    restServer.py and associated client test code, testRestServer.py
+    restServer.py and associated client test code, TestRestServer.py
 * utils
   a general set of utils used by REST modules.
 
@@ -70,7 +70,7 @@ Running REST:
 -------------
 
 I provided two ways to run REST server, in stand-alone mode, see
-services/test/restServer.py or as a part of WEBTOOLS framework, via
+services/test/RestServerExample.py or as a part of WEBTOOLS framework, via
 Controller/REST/__init__.py
 
 In stand-along mode you're only rely on CherryPy installed elsewhere on

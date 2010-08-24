@@ -1,30 +1,38 @@
 #!/usr/bin/env python
+#-*- coding: ISO-8859-1 -*-
+# Author:  Valentin Kuznetsov, 2008
+"""
+RestServer implemention within CMS WEBTOOLS.
+"""
 
 import os
-import sys
+import time
 import cherrypy
 from cherrypy import expose
-import types
-from services.rest import *
-from services.rest.RestService import *
+from services.rest.RestService import RestService
 
 # test model and formatter
-from services.test.TestModel import *
-from services.test.TestFormatter import *
+from services.test.TestModel import TestModel
+from services.test.TestFormatter import TestFormatter
 
-# specific modules
-from utils.webtools_modules import *
-from utils.Utils import *
+# WEBTOOLS modules
+from Framework import Controller
 
 class Service(object):
+    """Service implementation, we should have some default page"""
     @expose
     def default(self, *args, **kwargs):
+        """Default page implementation"""
+        if  kwargs.has_key('verbose') and kwargs['verbose']:
+            print args, kwargs
         return
 
 class RestServer(Controller):
-    def __init__(self,context=None,verbose=0):
-        self.name="RestServer"
-        if context:
+    """REST server implementation within WEBTOOLS framework"""
+    def __init__(self, context=None, verbose=0):
+        self.name = "RestServer"
+        self.baseurl = None
+        if  context:
             Controller.__init__ (self, context, __file__)
 #            setSQLAlchemyLogger(super(RestServer,self).getHandler(),
 #                                super(RestServer,self).getLogLevel())
@@ -38,83 +46,94 @@ class RestServer(Controller):
         self.rest._formatter = TestFormatter()
         self.rest._verbose = verbose
         # set server config
-        self.config=self.setConfig(base=self.name)
-        print "+++ %s is loaded, supported mime_types:"%self.name
-        print self.rest.supportTypes
+        self.config = self.setconfig(base=self.name)
+        print "+++ %s is loaded, supported mime_types:" % self.name
+        print self.rest.supporttypes
 
     def readyToRun(self):
-        opts=self.context.CmdLineArgs().opts
-        self.baseUrl   = opts.baseUrl
-        self.rest._url = opts.baseUrl
-        self.rest._mUrl= self.baseUrl+"base/Common/masthead"
-        self.rest._fUrl= self.baseUrl+"base/Common/footer"
-        self.rest._host= self.baseUrl
-        cherrypy.config.update ({'request.dispatch':cherrypy.dispatch.MethodDispatcher()})
+        """
+           this method called at run-time within WEBTOOLS framework
+           it uses to define run-time parameters such as base-url, etc.
+        """
+        opts = self.context.CmdLineArgs().opts
+        self.baseurl    = opts.baseUrl
+        self.rest._url  = self.baseurl
+#        self.rest._murl = self.baseurl+"/base/Common/masthead"
+#        self.rest._host = self.baseurl
+        cherrypy.config.update ( { 
+              'request.dispatch' : cherrypy.dispatch.MethodDispatcher()
+                                 } )
 
-    def setConfig(self,base=""):
-        # used thread_pool, queue_size parameters to tune up server performance
+    def setconfig(self, base=""):
+        """
+           Set configuration parameters for stand-along invocation
+           within CherryPy server
+        """
+        # used thread_pool, queue_size parameters to tune
+        # up server performance
         # see discussion on http://amix.dk/blog/viewEntry/119
         cherrypy.server.thread_pool = 30
         cherrypy.server.socket_queue_size = 15
-        mime_types=self.rest.supportTypes
-        httpHeader=[('Expires',time.strftime("%a, %d %b %Y %H:%M:%S GMT",time.gmtime(time.time()+315360000))),
-                               ('Accept-Encoding','gzip'),
-                               ('TE','deflate, gzip, x-gzip, identity, trailer'),
-                               ('Cache-Control','max-age=315360000'),
-                               ('Authorization','Basic')
+        mime_types = self.rest.supporttypes
+        cache_flags =  \
+             'no-store, no-cache, must-revalidate,post-check=0, pre-check=0'
+        httpheader = [('Expires', 
+                     time.strftime( "%a, %d %b %Y %H:%M:%S GMT",
+                                    time.gmtime(time.time()+315360000))
+                    ),
+                    ('Accept-Encoding', 'gzip'),
+                    ('TE','deflate, gzip, x-gzip, identity, trailer'),
+                    ('Cache-Control','max-age=315360000'),
+                    ('Authorization','Basic')
                    ]
-        conf = {'/'         : {'request.dispatch':cherrypy.dispatch.MethodDispatcher(),
-                               'tools.staticdir.root': os.getcwd(),
-                               'tools.response_headers.on':True,
-                               'tools.etags.on':True,
-                               'tools.etags.autotags':True,
-                               'tools.response_headers.headers':
-                              [('Expires','Mon, 26 Jul 1997 05:00:00 GMT'),
-                               ('Accept-Encoding','gzip'),
-                               ('TE','deflate, gzip, x-gzip, identity, trailer'),
-                               ('Cache-Control','no-store, no-cache, must-revalidate,post-check=0, pre-check=0')]
+        conf = {'/' : {'request.dispatch' :cherrypy.dispatch.MethodDispatcher(),
+                       'tools.staticdir.root' : os.getcwd(),
+                       'tools.response_headers.on' : True,
+                       'tools.etags.on' : True,
+                       'tools.etags.autotags' : True,
+                       'tools.response_headers.headers':
+                     [('Expires', 'Mon, 26 Jul 1997 05:00:00 GMT'),
+                      ('Accept-Encoding', 'gzip'),
+                      ('TE', 'deflate, gzip, x-gzip, identity, trailer'),
+                      ('Cache-Control', cache_flags )
+                     ]
                               },
-                '/images'   : {'tools.gzip.on': True, 
-                               'tools.gzip.mime_types':mime_types,
-                               'tools.staticdir.on':True,
-                               'tools.staticdir.root': os.getcwd(),
-                               'tools.staticdir.dir':'images',
-                               'tools.response_headers.on':True,
-                               'tools.response_headers.headers':httpHeader
-                              },
-                '/css'      : {'tools.gzip.on': True, 
-                               'tools.gzip.mime_types':mime_types,
-                               'tools.staticdir.on':True,
-                               'tools.staticdir.root': os.getcwd(),
-                               'tools.staticdir.dir':'css',
-                               'tools.response_headers.on':True,
-                               'tools.response_headers.headers':httpHeader
-                              },
-                '/js'       : {'tools.gzip.on': True, 
-                               'tools.gzip.mime_types':mime_types,
-                               'tools.staticdir.on':True,
-                               'tools.staticdir.dir':'js',
-                               'tools.staticdir.content_types':{'js':'text/javascript'},
-                               'tools.response_headers.on':True,
-                               'tools.response_headers.headers':httpHeader
-                              },
+                '/images': {'tools.gzip.on' : True, 
+                            'tools.gzip.mime_types' : mime_types,
+                            'tools.staticdir.on' : True,
+                            'tools.staticdir.root' : os.getcwd(),
+                            'tools.staticdir.dir':'images',
+                            'tools.response_headers.on' : True,
+                            'tools.response_headers.headers' : httpheader
+                           },
+                '/css'   : {'tools.gzip.on' : True, 
+                            'tools.gzip.mime_types' : mime_types,
+                            'tools.staticdir.on' : True,
+                            'tools.staticdir.root' : os.getcwd(),
+                            'tools.staticdir.dir' : 'css',
+                            'tools.response_headers.on' : True,
+                            'tools.response_headers.headers' : httpheader
+                           },
+                '/js'    : {'tools.gzip.on' : True, 
+                            'tools.gzip.mime_types' : mime_types,
+                            'tools.staticdir.on' : True,
+                            'tools.staticdir.dir' : 'js',
+                            'tools.staticdir.content_types' : 
+                             {'js':'text/javascript'},
+                            'tools.response_headers.on' : True,
+                            'tools.response_headers.headers' : httpheader
+                           },
                }
         if  base:
-            newConf={}
+            newconf = {}
             for key in conf.keys():
-                newConf[key]=conf[key]
-                if key=="/":
-                   newKey="/%s"%base.replace("/","")
+                newconf[key] = conf[key]
+                if  key == "/":
+                    newkey = "/%s" % base.replace("/","")
                 else:
-                   newKey="/%s/%s"%(base.replace("/",""),key.replace("/",""))
-                newConf[newKey]=conf[key]
-            return newConf
+                    newkey = "/%s/%s" % (base.replace("/",""), 
+                                         key.replace("/",""))
+                newconf[newkey] = conf[key]
+            return newconf
         return conf
 
-#
-# Main
-#
-if __name__=="__main__":
-    DDRest = RestServer(context,verbose=0)
-    conf = {'/':{'request.dispatch':cherrypy.dispatch.MethodDispatcher()}}
-    cherrypy.quickstart(rest_service,'/service',config=conf)

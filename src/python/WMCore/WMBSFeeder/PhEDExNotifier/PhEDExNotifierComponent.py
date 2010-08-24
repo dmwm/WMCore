@@ -119,7 +119,7 @@ class PhEDExNotifierComponent:
 
         """
 
-        updatedURL = self.baseURL + "&updated_since=%s" % self.timestamp
+        updatedURL = self.baseURL + "&update_since=%s" % self.timestamp
         createdURL = self.baseURL + "&create_since=%s" % self.timestamp
 
         updatedConnection = urlopen( updatedURL )
@@ -131,11 +131,11 @@ class PhEDExNotifierComponent:
         updatedConnection.close()
         createdConnection.close()
 
-        if updatedString[2:7] != "phedex":
+        if updatedString[2:8] != "phedex":
             logging.debug( "PhEDExNotifier: bad updated string from server follows." )
             logging.debug( "%s" % updatedString )
 
-        if createdString[2:7] != "phedex":
+        if createdString[2:8] != "phedex":
             logging.debug( "PhEDExNotifier: bad created string from server follows." )
             logging.debug( "%s" % createdString )
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import commands
-
+from ConfigParser import ConfigParser  
 class MySQLDAO_t():
     """
     __MySQLDAO_t__
@@ -12,15 +12,23 @@ class MySQLDAO_t():
     """
 
     def setUp(self):
+        cfg = ConfigParser()
+        cfg.read('mysql.ini')
         #Set specific user for mysqladmin here        
-        self.dbuser = 'jcg'
         self.logname = 'MySQL'
-        self.sqlURI = 'mysql://'+self.dbuser+'@localhost/wmbs'
+        self.dbuser = cfg.get('database', 'user')
+        self.dbhost = cfg.get('database', 'host')
+        self.dbinst = cfg.get('database', 'instance')
+        self.sqlURI = 'mysql://%s@%s/%s' % (self.dbuser, self.dbhost, self.dbinst)
 
     def tearDown(self):
         #Call superclass tearDown method
         #DB Specific tearDown code        
-        self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u '+self.dbuser+' drop wmbs'))
-        self.logger.debug(commands.getstatusoutput('mysqladmin -u '+self.dbuser+' create wmbs'))
+        self.logger.debug(
+              commands.getstatusoutput('echo yes | mysqladmin -u %s drop %s' %\
+                                       (self.dbuser, self.dbinst)))
+        self.logger.debug(
+              commands.getstatusoutput('mysqladmin -u %s create %s' %\
+                                       (self.dbuser, self.dbinst)))
         self.logger.debug("WMBS MySQL database deleted")
 

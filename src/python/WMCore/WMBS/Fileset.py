@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.21 2008/09/09 16:59:36 metson Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Fileset.py,v 1.22 2008/09/10 17:57:12 metson Exp $"
+__version__ = "$Revision: 1.22 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -134,7 +134,7 @@ class Fileset(BusinessObject, WMFileset):
         comfiles = []
         if not self.exists():
             self.create()
-        
+        #lfns=[]
         while len(self.newfiles) > 0:
             f = self.newfiles.pop()
             self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
@@ -142,8 +142,14 @@ class Fileset(BusinessObject, WMFileset):
                 f.save()
             except IntegrityError, ex:
                 self.logger.warning('File already exists in the database %s' % f.dict["lfn"])
-                
+            #lfns.append(f.dict["lfn"])
         
             self.daofactory(classname='Files.AddToFileset').execute(file=f.dict["lfn"], 
                                                                     fileset=self.name)
         self.populate()
+                
+        
+        #TODO: make the following bulk operation work
+        #print 'commit', len(lfns)
+        #self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
+        #                                                    fileset=self.name)

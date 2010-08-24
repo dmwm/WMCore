@@ -1,13 +1,13 @@
 #!/usr/bin/python
 """
-_WMException_unit_
+_WMException_t_
 
 General test for WMException
 
 """
 
-__revision__ = "$Id: WMException_t.py,v 1.1 2008/08/20 08:29:07 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMException_t.py,v 1.2 2008/08/26 13:55:16 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging

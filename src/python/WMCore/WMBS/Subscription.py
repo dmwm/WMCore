@@ -14,17 +14,19 @@ subscription + application logic = jobs
 
 """
 
-__revision__ = "$Id: Subscription.py,v 1.3 2008/06/19 11:30:58 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Subscription.py,v 1.4 2008/06/20 12:34:21 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 from WMCore.WMBS.File import File
+from WMCore.WMBS.BusinessObject import BusinessObject
 
-class Subscription(object):
+class Subscription(BusinessObject):
     def __init__(self, fileset = None, workflow = None, id = -1,
-                  type = "Processing", parentage=0, wmbs = None):
-        self.wmbs = wmbs
+                  type = "Processing", parentage=0, logger=None, dbfactory = None):
+        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
+        
         self.fileset = fileset
         self.workflow = workflow
         self.type = type

@@ -16,12 +16,13 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.7 2008/06/12 11:04:50 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Workflow.py,v 1.8 2008/06/20 12:34:21 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.BusinessObject import BusinessObject
 
-class Workflow(object):
+class Workflow(BusinessObject):
     """
     A simple object representing a Workflow in WMBS.
 
@@ -37,6 +38,7 @@ class Workflow(object):
     """
 
     def __init__(self, spec=None, owner=None, name=None, logger=None, dbfactory=None):
+        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
         #TODO: define a url-like scheme for spec's and enforce it here
         self.spec = spec
         self.name = name

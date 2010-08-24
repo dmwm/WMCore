@@ -6,17 +6,19 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.7 2008/06/16 16:04:32 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: File.py,v 1.8 2008/06/20 12:34:21 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.BusinessObject import BusinessObject
 
-
-class File(object):
+class File(BusinessObject):
     """
     A simple object representing a file in WMBS
     """
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
                  parents=set(), locations=set(), logger=None, dbfactory=None):
+        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
+        
         """
         Create the file object
         """
@@ -28,11 +30,6 @@ class File(object):
         self.lumi = lumi
         self.parents = parents
         self.locations = locations
-        self.dbfactory = dbfactory
-        self.logger = logger
-        self.daofactory = DAOFactory(package='WMCore.WMBS', 
-                                     logger=self.logger, 
-                                     dbinterface=self.dbfactory.connect())
         
     def getInfo(self):
         """

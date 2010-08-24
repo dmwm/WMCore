@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.9 2008/06/19 11:30:58 swakef Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Fileset.py,v 1.10 2008/06/20 12:34:21 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -20,8 +20,9 @@ from sqlalchemy.exceptions import IntegrityError
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.File import Subscription
+from WMCore.WMBS.BusinessObject import BusinessObject
 
-class Fileset(object):
+class Fileset(BusinessObject):
     """
     A simple object representing a Fileset in WMBS.
 
@@ -34,7 +35,8 @@ class Fileset(object):
     """
     def __init__(self, name=None, id=0, is_open=True, parents=None,
                  parents_open=True, source=None, sourceUrl=None,
-                 logger=None, dbfactory=None):
+                 logger=None, dbfactory = None):
+        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
         """
         Create a new fileset
         """
@@ -48,11 +50,6 @@ class Fileset(object):
         self.source = source
         self.sourceUrl = sourceUrl 
         self.lastUpdate = 0
-        self.dbfactory = dbfactory
-        self.logger = logger
-        self.daofactory = DAOFactory(package='WMCore.WMBS', 
-                                     logger=self.logger, 
-                                     dbinterface=self.dbfactory.connect())
     
     def setParentage(self, parents, parents_open):
         """

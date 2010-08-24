@@ -1,8 +1,13 @@
+#!/usr/bin/env python
 """
 MySQL implementation of File.Heritage
 
 Make the parentage link between two file id's
 """
+__all__ = []
+__revision__ = "$Id: Heritage.py,v 1.2 2008/06/24 11:44:28 metson Exp $"
+__version__ = "$Revision: 1.2 $"
+
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
 class Heritage(MySQLBase):

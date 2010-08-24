@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.11 2009/02/02 12:21:14 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Page.py,v 1.12 2009/02/03 17:32:54 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import urllib
 import cherrypy
@@ -11,6 +11,10 @@ from Cheetah.Template import Template
 from simplejson import JSONEncoder
 import logging, os, types
 import datetime, time
+
+from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.Database.DBFactory import DBFactory
+
 class Page(object):
     """
     __Page__
@@ -67,6 +71,15 @@ class TemplatedPage(Page):
         else:
             self.warning("%s not found at %s" % (file, self.templatedir))
             return "Template %s not known" % file
+
+class DatabasePage(TemplatedPage, DBFormatter):
+    def __init__(self, config = {}, database = ''):
+        DBFormatter.__init__(self, self, database)
+        TemplatedPage.__init__(self, config)
+        assert hasattr(self.config, 'database'), "No database configured"
+        conn = DBFactory(self, self.config.database).connect()
+        DBFormatter.__init__(self, self, conn)
+        self.prepareToStart()
 
 class SecuredPage(Page):
     def authenticate(self):

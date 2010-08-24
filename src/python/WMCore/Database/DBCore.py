@@ -6,11 +6,13 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.11 2008/07/03 11:33:29 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: DBCore.py,v 1.12 2008/07/03 17:01:02 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from copy import copy   
-class DBInterface(object):    
+from WMCore.DataStructs.WMObject import WMObject
+
+class DBInterface(WMObject):    
     """
     Base class for doing SQL operations using a SQLAlchemy engine, or
     pre-exisitng connection.
@@ -32,14 +34,6 @@ class DBInterface(object):
         self.logger = logger
         self.logger.info ("Instantiating base WM DBInterface")
         self.engine = engine
-    
-    def makelist(self, thelist):
-        """
-        Simple method to ensure thelist is a list
-        """
-        if not isinstance(thelist, list):
-            thelist = [thelist]
-        return thelist
     
     def buildbinds(self, sequence, thename, therest = [{}]):
         """

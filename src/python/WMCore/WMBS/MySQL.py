@@ -7,8 +7,8 @@ MySQL Compatibility layer for WMBS
 
 """
 
-__revision__ = "$Id: MySQL.py,v 1.8 2008/05/12 11:58:06 swakef Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: MySQL.py,v 1.9 2008/06/10 17:38:21 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBCore import DBInterface
 from sqlalchemy.exceptions import IntegrityError
@@ -44,153 +44,20 @@ class MySQLDialect(DBInterface):
         return "NOW()"
     
     def __init__(self, logger, engine):
+        print "THIS CLASS IS DEPRECATED!!"
+        
         DBInterface.__init__(self, logger, engine)
-        self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
-                id int(11) NOT NULL AUTO_INCREMENT,
-                name varchar(255) NOT NULL,
-                open boolean NOT NULL DEFAULT FALSE,
-                last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                ON UPDATE CURRENT_TIMESTAMP,  
-                PRIMARY KEY (id), UNIQUE (name))"""
-        self.create['wmbs_fileset_parent'] = """CREATE TABLE wmbs_fileset_parent (
-                child INT(11) NOT NULL,
-                parent INT(11) NOT NULL,
-                FOREIGN KEY (child) references wmbs_fileset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY (parent) references wmbs_fileset(id),
-                UNIQUE(child, parent))""" 
-        self.create['wmbs_fileset_files'] = """CREATE TABLE wmbs_fileset_files (
-                file    int(11)      NOT NULL,
-                fileset int(11) NOT NULL,
-                status ENUM ("active", "inactive", "invalid"),
-                insert_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY(fileset) references wmbs_fileset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(file) REFERENCES wmbs_file_details(id)
-                    ON DELETE CASCADE    
-                    )"""
-        self.create['wmbs_file_parent'] = """CREATE TABLE wmbs_file_parent (
-                child INT(11) NOT NULL,
-                parent INT(11) NOT NULL,
-                FOREIGN KEY (child) references wmbs_file(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY (parent) references wmbs_file(id),
-                UNIQUE(child, parent))"""  
-        self.create['wmbs_file_details'] = """CREATE TABLE wmbs_file_details (
-                id int(11) NOT NULL AUTO_INCREMENT,
-                lfn     VARCHAR(255) NOT NULL,
-                size    int(11),
-                events  int(11),
-                run     int(11),
-                lumi    int(11),
-                UNIQUE(lfn),
-                PRIMARY KEY(id),
-                INDEX (lfn))"""
-        self.create['wmbs_location'] = """CREATE TABLE wmbs_location (
-                id int(11) NOT NULL AUTO_INCREMENT,
-                se_name VARCHAR(255) NOT NULL,
-                UNIQUE(se_name),
-                PRIMARY KEY(id))"""
-        self.create['wmbs_file_location'] = """CREATE TABLE wmbs_file_location (
-                file     int(11),
-                location int(11),
-                UNIQUE(file, location),
-                FOREIGN KEY(file)     REFERENCES wmbs_file(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(location) REFERENCES wmbs_location(id)
-                    ON DELETE CASCADE)"""
-        self.create['wmbs_workflow'] = """CREATE TABLE wmbs_workflow (
-                id           INT(11) NOT NULL AUTO_INCREMENT,
-                spec         VARCHAR(255) NOT NULL,
-                owner        VARCHAR(255),
-                PRIMARY KEY (id))"""
-        self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
-                id      INT(11) NOT NULL AUTO_INCREMENT,
-                fileset INT(11) NOT NULL,
-                workflow INT(11) NOT NULL,
-                type    ENUM("Merge", "Processing", "Job"),
-                parentage INT(11) NOT NULL DEFAULT 0,
-                last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP,
-                PRIMARY KEY(id),
-                UNIQUE(fileset, workflow, type),
-                FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
-                    ON DELETE CASCADE)"""
-        self.create['wmbs_sub_files_acquired'] = """
-CREATE TABLE wmbs_sub_files_acquired (
-    subscription INT(11) NOT NULL,
-    file         INT(11) NOT NULL,
-    FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-        ON DELETE CASCADE,
-    FOREIGN KEY (file) REFERENCES wmbs_file(id))
-"""
-        self.create['wmbs_sub_files_failed'] = """
-CREATE TABLE wmbs_sub_files_failed (
-    subscription INT(11) NOT NULL,
-    file         INT(11) NOT NULL,
-    FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-        ON DELETE CASCADE,
-    FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
-        self.create['wmbs_sub_files_complete'] = """
-CREATE TABLE wmbs_sub_files_complete (
-    subscription INT(11) NOT NULL,
-    file         INT(11) NOT NULL,
-    FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-        ON DELETE CASCADE,
-    FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
-        self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
-                id           INT(11) NOT NULL AUTO_INCREMENT,
-                subscription INT(11) NOT NULL,
-                job_spec_id VARCHAR(255) NOT NULL,
-                last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP,
-                PRIMARY KEY (id),
-                FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-                    ON DELETE CASCADE)"""        
-        self.create['wmbs_job_assoc'] = """CREATE TABLE wmbs_job_assoc (
-                job    INT(11) NOT NULL,
-                file   INT(11) NOT NULL,
-                FOREIGN KEY (job) REFERENCES wmbs_job(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
         
         # What history tables do we need?
         # What statistics/monitoring is needed?
-        self.insert['fileset'] = """
-            insert %s into wmbs_fileset (name, open, last_update) values (:fileset, :is_open, :timestamp)""" % self.sqlIgnoreError
-        self.insert['fileset_parent'] = """
-            insert into wmbs_fileset_parent (child, parent) 
-                values ((select id from wmbs_fileset where name = :child),
-                (select id from wmbs_fileset where name = :parent))
-        """
-        self.insert['newfile'] = """
-            insert %s into wmbs_file_details (lfn, size, events, run, lumi) 
-                values (:lfn, :size, :events, :run, :lumi)""" % self.sqlIgnoreError
-        self.insert['fileforfileset'] = """
-            insert into wmbs_fileset_files (file, fileset) 
-                values ((select id from wmbs_file_details where lfn = :file),
-                (select id from wmbs_fileset where name = :fileset))
-        """
-        self.insert['newworkflow'] = """
-            insert into wmbs_workflow (spec, owner)
-                values (:spec, :owner)
-        """
+
+                        
         self.insert['newsubscription'] = """
             insert into wmbs_subscription (fileset, workflow, type, parentage, last_update) 
                 values ((select id from wmbs_fileset where name =:fileset),
                 (select id from wmbs_workflow where spec = :spec and owner = :owner), :type, 
                 :parentage, :timestamp)
         """
-        self.insert['newlocation'] = """
-            insert %s into wmbs_location (se_name) values (:location) % self.sqlIgnore
-        """
-        self.insert['putfileatlocation'] = """
-            insert into wmbs_file_location (file, location) 
-                values ((select id from wmbs_file_details where lfn = :file),
-                (select id from wmbs_location where se_name = :location))"""
         #TODO: The following should be bulk inserts
         self.insert['acquirefiles'] = """insert into wmbs_sub_files_acquired 
                 (subscription, file) values (:subscription, :file)"""
@@ -202,27 +69,12 @@ CREATE TABLE wmbs_sub_files_complete (
         ( (select id from wmbs_file_details where lfn = :child), 
           (select id from wmbs_file_details where lfn = :parent)
         )"""
-                        
-        self.select['allfileset'] = """
-            select * from wmbs_fileset order by last_update, name
-            """
-        self.select['fileset'] = """
-            select id, open, last_update from wmbs_fileset 
-            where name = :fileset
-            """
         self.select['filesetparentage'] = """
             select name, open, last_update from wmbs_fileset where id in 
             (select parent from wmbs_fileset_parent where child = (
             select id from wmbs_fileset where name = :fileset            
             ))
             """
-        self.select['filesinfileset'] = """
-            select id, lfn, size, events, run, lumi from wmbs_file_details 
-                where id in (select file from wmbs_fileset_files where 
-                fileset = (select id from wmbs_fileset where name = :fileset))
-            """
-        self.select['filesetexists'] = """select count(*) from wmbs_fileset 
-            where name = :name"""
         self.select['subscriptions'] = """
             select id, fileset, workflow, type, parentage from wmbs_subscription
         """
@@ -321,167 +173,11 @@ CREATE TABLE wmbs_sub_files_complete (
                 fileset = (select id from wmbs_fileset where name = :fileset)
                 and insert_time > :oldstamp
                 and insert_time < :newstamp)"""
-        self.select['workflowexists'] = """select count(*) from wmbs_workflow
-            where spec = :spec and owner = :owner"""
         self.select['workflows'] = """select spec, owner from wmbs_workflow"""
         self.select['workflowid'] = """select id from wmbs_workflow
             where spec = :spec and owner = :owner"""
         
-        self.delete['fileset'] = "delete from wmbs_fileset where name = :fileset"
-        self.delete['workflow'] = "delete from wmbs_workflow where spec = :spec and owner = :owner"    
                
-    def createFilesetTable(self):
-        """
-        Fileset.
-        Group a set of files
-        Map DBS dataset path/block path to an index for fast
-        referencing.
-        This is all we need to know about a dataset. Ever.
-
-        name - DBS Dataset Path/Block Path
-        id   - auto index that links a set of files to the fileset
-        """
-        self.processData(self.create['wmbs_fileset'])
-    
-    def createFilesetParentTable(self):
-        """ 
-        Express parent/child relations ship between files
-        constrain parent != child? 
-        """
-        self.processData(self.create['wmbs_fileset_parent'])
-    
-    def createFileTable(self):
-        """
-        File.
-        Create a unique index representing a file, give it a status
-        and partition the DB on that status so that only active
-        files are in use
-        
-        id       - auto index used to link the file to other details
-        fileset  - index of fileset to which file belongs
-        status   - active or inactive
-        """
-        self.processData(self.create['wmbs_fileset_files'])
-        
-    def createFileParentTable(self):
-        """ 
-        Express parent/child relations ship between files
-        constrain parent != child? 
-        """
-        self.processData(self.create['wmbs_file_parent'])
-        
-    def createFileDetailsTable(self): 
-        """ 
-        wmbs_file_details.
-        All the slow stuff that isnt needed for cross referencing
-         
-        file      - index of file entry in wmbs_file
-        lfn       - The LFN of the file
-        size      - Size of file in bytes
-        events    - events in file 
-        run       - run number of file
-        lumi      - lumi section of file
-        """
-        self.processData(self.create['wmbs_file_details'])
-        
-    def createLocationTable(self): 
-        """     
-        wmbs_location.
-        Entry representing a unique SE name and an index
-        to cross reference it
-        
-        id      - Auto index of the SE
-        se_name - DBS/PhEDEx SE Name
-        """
-        self.processData(self.create['wmbs_location'])
-
-    def createFileLocationsTable(self): 
-        """
-        wmbs_file_location
-        Track replicas of the file at storage elements
-        Note that this isnt a global replica tracker, just for
-        the WM tool that is processing the file within its cloud
-        of sites.
-        
-        file      - index of file entity
-        location  - index of location entity where file exists
-        """
-        self.processData(self.create['wmbs_file_location'])
-    
-    def createSubscriptionsTable(self):
-        """ 
-        Subscription
-        Entity representing a processing subscription to a set of files
-         
-        A subscription consists of a fileset, tracks the files
-        associated to that fileset through several state tables
-        and groups files into logical job definitions that
-        get turned into physical processing jobs for a PA/CS.
-        """
-        self.processData(self.create['wmbs_subscription'])
-               
-    def createSubscriptionAcquiredFilesTable(self):
-        """
-        Status of a file having been acquired by a subscription
-        If the file is in a fileset but does not appear in this 
-        table, then it is new and can be picked up
-        """
-        self.processData(self.create['wmbs_sub_files_acquired'])
-        
-    def createSubscriptionFailedFilesTable(self): 
-        """
-        A file that has failed as part of a subscription 
-        processing task.
-        """
-        self.processData(self.create['wmbs_sub_files_failed'])
-        
-    def createSubscriptionCompletedFilesTable(self):
-        """
-        A table of files that have been successfully 
-        processed by the subscription
-        """
-        self.processData(self.create['wmbs_sub_files_complete'])
-   
-    def createJobTable(self):       
-        """
-        Job Entity.
-        Logical subset of files belonging to a subscription
-        that will be used to define some physical processing
-        job. 
-        
-        May want to add some job status information, either in this
-        table or associated tables.
-        """
-        self.processData(self.create['wmbs_job'])
-        
-    def createJobAssociationTable(self):     
-        """
-        Create the table to link a file to a job instance
-        """
-        self.processData(self.create['wmbs_job_assoc'])
-    
-    def createWorkflowTable(self):     
-        """
-        Create the table to define workflows
-        """
-        self.processData(self.create['wmbs_workflow'])
-        
-    def createWMBS(self):
-        self.createFilesetTable()
-        self.createFilesetParentTable()
-        self.createFileTable()
-        self.createFileParentTable()
-        self.createFileDetailsTable()
-        self.createLocationTable()
-        self.createFileLocationsTable()
-        self.createWorkflowTable()
-        self.createSubscriptionsTable()
-        self.createSubscriptionAcquiredFilesTable()
-        self.createSubscriptionFailedFilesTable()
-        self.createSubscriptionCompletedFilesTable()
-        self.createJobTable()
-        self.createJobAssociationTable()
-
     def insertFileset(self, fileset = None, is_open=True, parents = None, conn = None, transaction = False):
         """
         insert a fileset to WMBS
@@ -510,16 +206,7 @@ CREATE TABLE wmbs_sub_files_complete (
             binds = {'child' : fileset, 'parent' : parent}
             self.processData(self.insert['fileset_parent'], binds, 
                          conn = conn, transaction = transaction)
-    
-    
-    
-    def showAllFilesets(self, conn = None, transaction = False):
-        """
-        List all the filesets in WMBS
-        """
-        return self.processData(self.select['allfileset'], 
-                                conn = conn, transaction = transaction)
-        
+            
     def getFileset(self, fileset, conn = None, transaction = False):
         """
         list fileset parents of given sub
@@ -535,19 +222,7 @@ CREATE TABLE wmbs_sub_files_complete (
         return self.processData(self.select['filesetparentage'], 
                                 {'fileset' : fileset},
                                 conn = conn, transaction = transaction)
-
-    def filesetExists(self, name = None, conn = None, transaction = False):
-        binds = {'name': name}
-        return self.processData(self.select['filesetexists'], binds, 
-                                conn = conn, transaction = transaction)   
-     
-    def deleteFileset(self, fileset = None, conn = None, transaction = False):
-        """
-        delete a fileset from WMBS
-        """
-        binds = {'fileset':fileset}
-        self.processData(self.delete['fileset'], binds, 
-                         conn = conn, transaction = transaction)                               
+                              
 
     def insertFiles(self, files=None, size=0, events=0, run=0, lumi=0, 
                     conn = None, transaction = False):

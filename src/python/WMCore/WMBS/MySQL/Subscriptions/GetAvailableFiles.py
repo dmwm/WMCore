@@ -27,23 +27,12 @@ CREATE TABLE wmbs_subscription_location (
                ON DELETE CASCADE)"
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.6 2008/11/21 17:07:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.7 2009/01/12 19:26:04 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
-#    sql = """select lfn from wmbs_file_details
-#                where id in (select file from wmbs_fileset_files where
-#            fileset = (select fileset from wmbs_subscription where id=:subscription)
-#            and file not in 
-#                (select file from wmbs_sub_files_acquired where subscription=:subscription)
-#            and file not in 
-#                (select file from wmbs_sub_files_failed where subscription=:subscription)
-#            and file not in 
-#                (select file from wmbs_sub_files_complete where subscription=:subscription)
-#                )
-#        """
     def getSQLAndBinds(self, subscription, conn = None, transaction = None):
         sql = ""
         binds = {'subscription': subscription['id']}
@@ -114,8 +103,8 @@ class GetAvailableFiles(DBFormatter):
         return sql, binds
            
     def execute(self, subscription=None, conn = None, transaction = False):
-        sql, binds = self.getSQLAndBinds(subscription, conn = conn, transaction = transaction)
-        
-        result = self.dbi.processData(sql, binds, 
-                                      conn = conn, transaction = transaction)
+        sql, binds = self.getSQLAndBinds(subscription, conn = conn,
+                                         transaction = transaction)
+        result = self.dbi.processData(sql, binds, conn = conn,
+                                      transaction = transaction)
         return self.format(result)

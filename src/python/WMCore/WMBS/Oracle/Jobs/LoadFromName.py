@@ -6,8 +6,8 @@ Oracle implementation of Jobs.LoadFromName.
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.1 2008/11/24 21:51:40 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromName.py,v 1.2 2009/01/12 19:26:04 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Jobs.LoadFromName import LoadFromName as LoadFromNameJobMySQL
 

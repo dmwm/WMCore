@@ -11,9 +11,10 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
+
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.3 2008/11/20 21:54:27 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Exists.py,v 1.4 2009/01/12 19:26:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.Exists import Exists as ExistsMySQL
 

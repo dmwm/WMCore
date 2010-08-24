@@ -10,6 +10,3 @@ from WMCore.WMBS.MySQL.Jobs.Complete import Complete as CompleteJobsMySQL
 
 class Complete(CompleteJobsMySQL):
     sql = CompleteJobsMySQL.sql
-        
-    def execute(self, job=0, conn = None, transaction = False):
-        CompleteJobsMySQL.execute(self, job=job, conn=conn, transaction=transaction)

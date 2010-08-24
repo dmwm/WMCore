@@ -6,8 +6,8 @@ MySQL implementation of Jobs.Failed
 move file into wmbs_group_job_acquired
 """
 __all__ = []
-__revision__ = "$Id: Failed.py,v 1.2 2008/11/20 21:52:32 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Failed.py,v 1.3 2009/01/12 19:26:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -17,7 +17,5 @@ class Failed(DBFormatter):
         
     def execute(self, job=0, conn = None, transaction = False):
         binds = self.getBinds(job=job)
-        self.logger.debug('Job.Failed sql: %s' % self.sql)
-        self.logger.debug('Job.Failed binds: %s' % binds)
-        
-        return self.format(self.dbi.processData(self.sql, binds))
+        return self.format(self.dbi.processData(self.sql, binds, conn = conn,
+                                                transaction = transaction))

@@ -6,8 +6,8 @@ MySQL implementation of JobGroup.LoadIDFromUID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadIDFromUID.py,v 1.1 2009/01/06 15:54:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadIDFromUID.py,v 1.2 2009/01/12 19:26:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -20,5 +20,6 @@ class LoadIDFromUID(DBFormatter):
 
     def execute(self, uid, conn = None, transaction = False):
         binds = self.getBinds(guid = uid)
-        result = self.dbi.processData(self.sql, binds)
+        result = self.dbi.processData(self.sql, binds, conn = conn,
+                                      transaction = transaction)
         return self.format(result)

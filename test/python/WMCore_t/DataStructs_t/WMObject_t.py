@@ -11,9 +11,9 @@ from WMCore.DataStructs.WMObject import WMObject
 from sets import Set
 from unittest import TestCase
 
-class WMObject_t(unittest.TestCase):
+class WMObjectTest(unittest.TestCase):
     """
-    _WMObject_t_
+    _WMObjectTest_
 
     Testcase for the WMObject class
 

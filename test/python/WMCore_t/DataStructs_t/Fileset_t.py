@@ -10,9 +10,9 @@ from sets import Set
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
 
-class FilesetClassTest (unittest.TestCase):
+class FilesetTest (unittest.TestCase):
     """ 
-    _Fileset_t_
+    _FilesetTest_
 
     Testcase for Fileset
     """

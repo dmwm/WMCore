@@ -16,9 +16,9 @@ from WMCore.DataStructs.Workflow import Workflow
 from WMCore.DataStructs.Subscription import Subscription
 from unittest import TestCase
 
-class Job_t(unittest.TestCase):
+class JobTest(unittest.TestCase):
     """
-    _Job_t_
+    _JobTest_
 
     Testcase for the Job class
 

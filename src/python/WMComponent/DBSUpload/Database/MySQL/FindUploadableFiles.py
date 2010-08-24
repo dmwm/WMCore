@@ -5,8 +5,8 @@ _DBSUpload.FindUploadableFiles_
 Find the files in a datasets that needs to be uploaded to DBS
 
 """
-__revision__ = "$Id: FindUploadableFiles.py,v 1.5 2008/12/30 17:47:33 afaq Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: FindUploadableFiles.py,v 1.6 2009/01/13 19:35:22 afaq Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -15,15 +15,15 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class FindUploadableFiles(DBFormatter):
     
-    sql = """SELECT wmbsfile.id as ID,
-		wmbsfile.lfn as LFN, 
-		wmbsfile.size as FileSize, 
-		wmbsfile.events as TotalEvents,
-		wmbsfile.cksum as Checksum
-		FROM dbsbuffer_file buffile 
-			join wmbs_file_details wmbsfile 
-				on wmbsfile.id=buffile.id 
-		where buffile.dataset=:dataset and buffile.FileStatus =:status LIMIT 10"""
+    sqlOld = """SELECT file.id as ID,
+		file.lfn as LFN, 
+		file.size as FileSize, 
+		file.events as TotalEvents,
+		file.cksum as Checksum
+		FROM dbsbuffer_file file 
+			where file.dataset=:dataset and file.status =:status LIMIT 10"""
+
+    sql = """SELECT file.id as ID FROM dbsbuffer_file file where file.dataset=:dataset and file.status =:status LIMIT 10""" 
 
     def __init__(self):
         myThread = threading.currentThread()
@@ -38,17 +38,15 @@ class FindUploadableFiles(DBFormatter):
         for r in results:
                 entry={}
                 entry['ID']=long(r['id'])
-                entry['LFN']=r['lfn']
-                entry['FileSize']=r['filesize']
-                entry['TotalEvents']=r['totalevents']
-                entry['Checksum']=r['checksum']
+                #entry['LFN']=r['lfn']
+                #entry['FileSize']=r['filesize']
+                #entry['TotalEvents']=r['totalevents']
+                #entry['Checksum']=r['checksum']
                 ret.append(entry)
         return ret
 
     def execute(self, datasetInfo=None, conn=None, transaction = False):
         binds = self.getBinds(datasetInfo)
-        print "SQL: %s" %(self.sql)
-        print "BINDS: %s" %str(binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.makeFile(self.formatDict(result))

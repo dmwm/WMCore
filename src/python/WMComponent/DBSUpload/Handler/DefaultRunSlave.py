@@ -5,8 +5,8 @@ Slave used for default run failure handler.
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultRunSlave.py,v 1.1 2008/10/08 21:19:34 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: DefaultRunSlave.py,v 1.2 2009/01/13 19:35:22 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import time
@@ -20,9 +20,6 @@ class DefaultRunSlave(ThreadSlave):
     """
 
     def __call__(self, parameters):
-
-	import pdb
-	pdb.set_trace()
 
         logging.debug("I am the default run slave called with parameters:"\
             +str(parameters))

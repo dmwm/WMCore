@@ -4,8 +4,8 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.13 2008/12/30 17:47:33 afaq Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: BufferSuccess.py,v 1.14 2009/01/13 19:35:22 afaq Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -21,7 +21,7 @@ from DBSAPI.dbsApi import DbsApi
 from DBSAPI.dbsException import *
 from DBSAPI.dbsApiException import *
 
-from WMCore.WMBS.File import *
+from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 from ProdCommon.DataMgmt.DBS import DBSWriterObjects
 
 import base64
@@ -49,9 +49,12 @@ class BufferSuccess(BaseHandler):
         BaseHandler.__init__(self, component)
 	#self.dbsurl="http://cmssrv18.fnal.gov:8989/DBSON18/servlet/DBSServlet"
         #self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_4')
+	#self.dbsurl='http://cmssrv17.fnal.gov:8989/DBSAnzar/servlet/DBSServlet'
 
-        self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS205Local/servlet/DBSServlet'
-        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_3')
+        self.dbsurl=self.component.config.DBSUpload.dbsurl
+	self.dbsversion=self.component.config.DBSUpload.dbsversion
+
+        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion)
 
         #args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" :'DBS_2_0_3'}
         #dbswriter = DbsApi(args)
@@ -66,7 +69,7 @@ class BufferSuccess(BaseHandler):
         #self.threadpool = ThreadPool(\
         #    "WMComponent.DBSBuffer.Handler.DefaultRunSlave", \
         #    self.component, 'BufferSuccess', \
-        #    self.component.config.DBSBuffer.maxThreads)
+             #self.component.config.DBSBuffer.maxThreads)
 
         # this we overload from the base handler
 
@@ -81,7 +84,6 @@ class BufferSuccess(BaseHandler):
         
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
         dbinterface=factory.loadObject("UploadToDBS")
-       
 
         datasets=dbinterface.findUploadableDatasets()
 
@@ -105,17 +107,17 @@ class BufferSuccess(BaseHandler):
 
             #Find files for each dataset and then UPLOAD 10 files at a time 
             #(10 is just a number of choice now, later it will be a configurable parameter)
+
             file_ids=dbinterface.findUploadableFiles(aDataset)
 	    files=[]
 
 	    for an_id in file_ids:
-		file=File(id=an_id['ID'])
+		file=DBSBufferFile(id=an_id['ID'])
 		file.load(parentage=1)
                 files.append(file) 
 
 	    if len(files) > 0:
             	print "Total files", len(files)
-            	#base64.decodestring(aFile['RunLumiInfo'])
 
             	self.dbswriter.insertFilesForDBSBuffer(files, dict(aDataset), algos, jobType = "NotMerge", insertDetectorData = False)
             	#Update UnMigratedFile Count here !!!!

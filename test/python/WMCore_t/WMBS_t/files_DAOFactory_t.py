@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: files_DAOFactory_t.py,v 1.2 2008/10/28 19:05:19 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: files_DAOFactory_t.py,v 1.3 2008/11/03 11:55:42 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -254,6 +254,183 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
            
         myfile1.setLocation(self.selist[1:])
         myfile2.setLocation(self.selist[1:]) 
+        
+        assert len(myfile1.dict['locations']) == len(self.selist)
+        assert len(myfile2.dict['locations']) == len(self.selist)
+        
+        # Check that the persistency is correct
+        myfile3 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile4 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile3.load()
+        myfile4.load()
+        
+        assert len(myfile1.dict['locations']) == len(myfile3.dict['locations'])
+        assert len(myfile2.dict['locations']) == len(myfile4.dict['locations'])
+    
+    def testFileLocation2(self):
+        """
+        Tests delayed addition of file locations - ensures can use
+        updateLocations method
+        """
+        logger = logging.getLogger('FileLocation_unit_test')
+         
+        file = "/store/data/Electrons/2345/3456/asdfljkeoivjlk2394587.root"
+        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        
+        myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile1.load()
+        myfile2.load()
+                
+        myfile1.setLocation(self.selist[0], immediateSave=False)
+        myfile2.setLocation(self.selist[0], immediateSave=False) 
+        
+        assert len(myfile1.dict['locations']) == 1
+        assert len(myfile2.dict['locations']) == 1
+           
+        myfile1.setLocation(self.selist[1:], immediateSave=False)
+        myfile2.setLocation(self.selist[1:], immediateSave=False) 
+        
+        assert len(myfile1.dict['locations']) == len(self.selist)
+        assert len(myfile2.dict['locations']) == len(self.selist)
+        
+        # Now perform the delayed update
+        myfile1.updateLocations()
+        myfile2.updateLocations()
+        
+        # Check that the persistency is correct
+        myfile3 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile4 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile3.load()
+        myfile4.load()
+        
+        assert len(myfile1.dict['locations']) == len(myfile3.dict['locations'])
+        assert len(myfile2.dict['locations']) == len(myfile4.dict['locations'])
+    
+    def testFileLocation3(self):
+        """
+        Tests delayed addition of file locations - ensures can use save method
+        """
+        logger = logging.getLogger('FileLocation_unit_test')
+         
+        file = "/store/data/Electrons/2345/3456/asdfljkeoivjlk2394587.root"
+        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        
+        myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile1.load()
+        myfile2.load()
+                
+        myfile1.setLocation(self.selist[0], immediateSave=False)
+        myfile2.setLocation(self.selist[0], immediateSave=False) 
+        
+        assert len(myfile1.dict['locations']) == 1
+        assert len(myfile2.dict['locations']) == 1
+           
+        myfile1.setLocation(self.selist[1:], immediateSave=False)
+        myfile2.setLocation(self.selist[1:], immediateSave=False) 
+        
+        assert len(myfile1.dict['locations']) == len(self.selist)
+        assert len(myfile2.dict['locations']) == len(self.selist)
+        
+        # Now perform the delayed update
+        myfile1.save()
+        myfile2.save()
+        
+        # Check that the persistency is correct
+        myfile3 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile4 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile3.load()
+        myfile4.load()
+        
+        assert len(myfile1.dict['locations']) == len(myfile3.dict['locations'])
+        assert len(myfile2.dict['locations']) == len(myfile4.dict['locations'])
+    
+    def testFileLocation4(self):
+        """
+        Tests delayed addition of file locations - ensures changes are not
+        persisted unless explicitly saved
+        """
+        logger = logging.getLogger('FileLocation_unit_test')
+         
+        file = "/store/data/Electrons/2345/3456/asdfljkeoivjlk2394587.root"
+        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        
+        myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile1.load()
+        myfile2.load()
+                
+        myfile1.setLocation(self.selist[0], immediateSave=False)
+        myfile2.setLocation(self.selist[0], immediateSave=False) 
+        
+        assert len(myfile1.dict['locations']) == 1
+        assert len(myfile2.dict['locations']) == 1
+           
+        myfile1.setLocation(self.selist[1:], immediateSave=False)
+        myfile2.setLocation(self.selist[1:], immediateSave=False) 
+        
+        assert len(myfile1.dict['locations']) == len(self.selist)
+        assert len(myfile2.dict['locations']) == len(self.selist)
+        
+        # Check that the persistency is correct
+        myfile3 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile4 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile3.load()
+        myfile4.load()
+        
+        assert len(myfile1.dict['locations']) > len(myfile3.dict['locations'])
+        assert len(myfile2.dict['locations']) > len(myfile4.dict['locations'])
+    
+    def testFileLocation5(self):
+        """
+        Ensures Sets can be passed as se arguments to a file location. Tests
+        both set and sets.Set
+        """
+        logger = logging.getLogger('FileLocation_unit_test')
+         
+        file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1231.root"
+        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        
+        myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
+        myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
+        
+        myfile1.load()
+        myfile2.load()
+                
+        myfile1.setLocation(set([self.selist[0]]))
+        myfile2.setLocation(set([self.selist[0]]))
+        
+        assert len(myfile1.dict['locations']) == 1, \
+                "Expected 1 location, found %d" % len(myfile1.dict['locations'])
+        assert len(myfile2.dict['locations']) == 1, \
+                "Expected 1 location, found %d" % len(myfile2.dict['locations'])
+           
+        myfile1.setLocation(Set(self.selist[1:]))
+        myfile2.setLocation(Set(self.selist[1:])) 
         
         assert len(myfile1.dict['locations']) == len(self.selist)
         assert len(myfile2.dict['locations']) == len(self.selist)

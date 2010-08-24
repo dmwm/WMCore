@@ -9,8 +9,8 @@ Test creates one WMBS database instance which is used for all tests.
 
 """
 
-__revision__ = "$Id: File_t.py,v 1.1 2008/09/25 13:14:02 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: File_t.py,v 1.2 2008/11/03 11:55:42 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -59,14 +59,13 @@ class FileClassTest(TestCase):
         else:
             sqlitelogger.debug("WMBS SQLite database could not be created, already exists?")
         
-        self.selist = ['lcgse01.phy.bris.ac.uk', 
+        self.selist = Set(['lcgse01.phy.bris.ac.uk', 
                        'lcgse02.phy.bris.ac.uk', 
                        'se01.fnal.gov', 
-                       'se02.fnal.gov']
+                       'se02.fnal.gov'])
         
-        for se in self.selist:
-            self.daofactory1(classname='Locations.New').execute(sename=se)
-            self.daofactory2(classname='Locations.New').execute(sename=se)  
+        self.daofactory1(classname='Locations.New').execute(sename=self.selist)  
+        self.daofactory2(classname='Locations.New').execute(sename=self.selist)
           
     def tearDown(self):        
         mysqllogger = logging.getLogger('wmbs_mysql')

@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.20 2009/01/16 22:50:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Subscription.py,v 1.21 2009/01/26 17:07:11 sryu Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import copy
 from sets import Set
@@ -36,7 +36,7 @@ class Subscription(Pickleable, dict):
         self.setdefault('blacklist', blacklist)
         
         self.available = Fileset(name=fileset.name, 
-                                 files = fileset.listFiles())  
+                                 files = fileset.getFiles())  
         
         self.acquired = Fileset(name='acquired')
         self.completed = Fileset(name='completed')

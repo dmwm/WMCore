@@ -4,6 +4,7 @@ from WMQuality.Test import Test
 
         
 from WMCore_t.Database_t.DBFactory_t import DBFactoryTest
+from WMCore_t.WorkerThreads_t.WorkerThreads_t import WorkerThreadsTest
 from WMCore_t.FwkJobReport_t.FJR_t import FJRTest
 from WMCore_t.FwkJobReport_t.FileInfo_t import FileInfoTest
 from WMCore_t.Agent_t.Configuration_t import ConfigurationTest
@@ -52,6 +53,15 @@ except Exception,ex:
    if not errors.has_key("fvlingen"):
        errors["fvlingen"] = []
    errors["fvlingen"].append(("WMFactoryTest",str(ex)))
+
+try:
+   x=WorkerThreadsTest()
+   tests.append((x,"jacksonj"))
+except Exception,ex:
+   if not errors.has_key("jacksonj"):
+       errors["jacksonj"] = []
+   errors["jacksonje"].append(("WorkerThreadsTest",str(ex)))
+
 
 
 print('Writing level 2 failures to file: failures_oracle_2.rep')

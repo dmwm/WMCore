@@ -5,6 +5,7 @@ from WMQuality.Test import Test
         
 from WMCore_t.Agent_t.Daemon_t.Daemon_t import DaemonTest
 from WMComponent_t.ErrorHandler_t.ErrorHandler_t import ErrorHandlerTest
+from WMCore_t.WorkerThreads_t.WorkerThreads_t import WorkerThreadsTest
 from WMCore_t.JobSplitting_t.EventBased_t import EventBasedTest
 from WMCore_t.DataStructs_t.Job_t import JobTest
 from WMCore_t.Database_t.DBFactory_t import DBFactoryTest
@@ -435,6 +436,14 @@ except Exception,ex:
    if not errors.has_key("jcgon"):
        errors["jcgon"] = []
    errors["jcgon"].append(("SQLiteDAOFileTest",str(ex)))
+
+try:
+   x=WorkerThreadsTest()
+   tests.append((x,"jacksonj"))
+except Exception,ex:
+   if not errors.has_key("jacksonj"):
+       errors["jacksonj"] = []
+   errors["jacksonje"].append(("WorkerThreadsTest",str(ex)))
 
 print('Writing level 2 failures to file: failures_mysql_2.rep')
 failures = open('failures_mysql_2.rep','w')

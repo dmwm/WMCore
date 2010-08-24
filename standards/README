@@ -251,6 +251,9 @@ tr_  Trigger
 TESTING:
 =======
 
+(it is assumed you use the setup described in the SETUP section).
+
+
 This directory also contains several files. The following prefixes
 are used:
 

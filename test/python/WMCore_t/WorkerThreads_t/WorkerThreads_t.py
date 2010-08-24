@@ -6,13 +6,14 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.4 2009/02/09 12:11:45 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.5 2009/02/09 12:35:52 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import threading
 import time
 import logging
+import os
 
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -100,7 +101,7 @@ class WorkerThreadsTest(unittest.TestCase):
         myThread.transaction = None
         myThread.dbFactory = None
         
-        self.testInit = TestInit(__file__)
+        self.testInit = TestInit(__file__, backend = os.getenv('DIALECT'))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
             
@@ -143,14 +144,14 @@ class WorkerThreadsTest(unittest.TestCase):
         time.sleep(3)
         assert WorkerThreadsTest._setupCalled == True
         
-        print('add resume workers')
+        print('resume workers')
         # Run the workers, pause, and check algo method gets called
         manager.resumeWorkers()
         time.sleep(3)
         manager.pauseWorkers()
         assert WorkerThreadsTest._algoCalled == True
         
-        print('add terminate workers')
+        print('terminate workers')
         # Terminate the workers, and check terminate method gets called
         manager.terminateWorkers()
         time.sleep(3)

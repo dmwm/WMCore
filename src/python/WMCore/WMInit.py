@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.6 2009/02/06 10:15:37 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMInit.py,v 1.7 2009/02/09 12:35:52 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -78,7 +78,6 @@ class WMInit:
             dialect = 'MySQL'
         elif dialect == 'oracle':
             dialect = 'Oracle'
-
         myThread.dialect = dialect
 
         options = {}

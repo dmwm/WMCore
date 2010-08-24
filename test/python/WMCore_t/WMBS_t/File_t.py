@@ -2,11 +2,13 @@
 """
 _File_t_
 
-Unit tests for the WMBS File class.
+Unit tests for File creation, location and exists, including checks to see that calls 
+are database dialect neutral.
+
 """
 
-__revision__ = "$Id: File_t.py,v 1.7 2008/12/18 15:00:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: File_t.py,v 1.8 2008/12/23 21:22:48 afaq Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import logging
@@ -22,8 +24,9 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
+from WMCore.DataStructs.Run import Run
 
-class FileTest(unittest.TestCase):
+class File_t(unittest.TestCase):
     _setup = False
     _teardown = False
     
@@ -85,12 +88,12 @@ class FileTest(unittest.TestCase):
         by creating and deleting a file.  The exists() method will be
         called before and after creation and after deletion.
         """
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        run = 1, lumi = 45)
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=1111)
 
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
 
+	testFile.addRun(Run(1, *[45]))
         testFile.create()
 
         assert testFile.exists() > 0, \
@@ -110,11 +113,13 @@ class FileTest(unittest.TestCase):
         returns the correct information.
         """
         testFileParent = File(lfn = "/this/is/a/parent/lfn", size = 1024,
-                              events = 20, run = 1, lumi = 45)
+                              events = 20, cksum=1111)
+	testFileParent.addRun(Run(1, *[45]))
         testFileParent.create()
 
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        run = 1, lumi = 45)        
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=222)
+	testFile.addRun(Run(1, *[45]))
+	testFile.addRun(Run(2, *[46, 47]))
         testFile.create()
         testFile.setLocation(se = "se1.fnal.gov", immediateSave = False)
         testFile.setLocation(se = "se1.cern.ch", immediateSave = False)
@@ -133,26 +138,23 @@ class FileTest(unittest.TestCase):
         assert info[3] == testFile["events"], \
                "ERROR: File returned wrong events"
         
-        assert info[4] == testFile["run"], \
-               "ERROR: File returned wrong run"
-
-        assert info[5] == testFile["lumi"], \
-               "ERROR: File returned wrong lumi"
-
-        assert info[6] == testFile["cksum"], \
+        assert info[4] == testFile["cksum"], \
                "ERROR: File returned wrong cksum"
+	
+	assert len(info[5]) == 2, \
+		"ERROR: File returned wrong runs"
 
-        assert len(info[7]) == 2, \
+        assert len(info[6]) == 2, \
                "ERROR: File returned wrong locations"
 
-        for testLocation in info[7]:
+        for testLocation in info[6]:
             assert testLocation in ["se1.fnal.gov", "se1.cern.ch"], \
                    "ERROR: File returned wrong locations"
 
-        assert len(info[8]) == 1, \
+        assert len(info[7]) == 1, \
                "ERROR: File returned wrong parents"
 
-        assert info[8][0] == testFileParent, \
+        assert info[7][0] == testFileParent, \
                "ERROR: File returned wrong parents"
 
         testFile.delete()
@@ -168,17 +170,22 @@ class FileTest(unittest.TestCase):
         LFNs.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                               events = 20, run = 1, lumi = 45)
+                               events = 20, cksum = 1)
+	testFileParentA.addRun(Run(1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                               events = 20, run = 1, lumi = 45)
+                               events = 20, cksum = 2)
+        testFileParentB.addRun(Run(1, *[45]))
         testFileParentC = File(lfn = "/this/is/a/parent/lfnC", size = 1024,
-                               events = 20, run = 1, lumi = 45)
+                               events = 20, cksum = 3)
+        testFileParentC.addRun(Run( 1, *[45]))
+
         testFileParentA.create()
         testFileParentB.create()
         testFileParentC.create()
 
         testFile = File(lfn = "/this/is/a/lfn", size = 1024,
-                               events = 10, run = 1, lumi = 45)
+                               events = 10, cksum = 1)
+        testFile.addRun(Run( 1, *[45]))
         testFile.create()
 
         testFile.addParent(testFileParentA["lfn"])
@@ -214,14 +221,17 @@ class FileTest(unittest.TestCase):
         correctly.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, run = 1, lumi = 45)
+                              events = 20, cksum = 1)
+        testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, run = 1, lumi = 45)
+                              events = 20, cksum = 1)
+        testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        run = 1, lumi = 45)
+                        cksum = 1)
+        testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileA.setLocation(se = "se1.fnal.gov", immediateSave = False)
         testFileA.setLocation(se = "se1.cern.ch", immediateSave = False)
@@ -253,14 +263,17 @@ class FileTest(unittest.TestCase):
         information is loaded/stored correctly from the database.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, run = 1, lumi = 45)
+                              events = 20, cksum = 1)
+        testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, run = 1, lumi = 45)
+                              events = 20, cksum = 1)
+        testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                         run = 1, lumi = 45)
+                         cksum = 1)
+        testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
         testFileParentA.addChild("/this/is/a/lfn")
@@ -287,7 +300,8 @@ class FileTest(unittest.TestCase):
         database to make sure that the locations were set correctly.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        run = 1, lumi = 45)
+                        cksum = 1)
+        testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
@@ -315,7 +329,8 @@ class FileTest(unittest.TestCase):
         are loaded from and save to the database correctly.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        run = 1, lumi = 45, locations = Set(["se1.fnal.gov"]))
+                        cksum = 1, locations = Set(["se1.fnal.gov"]))
+        testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
         testFileB = File(id = testFileA["id"])

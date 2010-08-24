@@ -41,9 +41,10 @@ class JobGroupTest(WMBSBase):
             times=self.testtimes
 
         subscription=self.genSubscription(number=times, name='testNew')
+        output = self.genFileset(number=1, name='testNew')[0]
 
         for i in range(times):             
-            time = self.perfTest(dao=self.dao, action='JobGroup.New', subscription=subscription[i]['id'])
+            time = self.perfTest(dao=self.dao, action='JobGroup.New', subscription=subscription[i]['id'], uid=999, output=output.id)
             assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'        
 
 #    def testLoad(self):   

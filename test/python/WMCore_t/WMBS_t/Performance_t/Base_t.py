@@ -67,7 +67,7 @@ class Base_t():
         self.testFile = File(lfn=file_lfn, size=file_size, events=file_events, run=file_run,
                     lumi=file_lumi, logger=self.logger, dbfactory=self.dbf)
         self.testFile.save()
-
+        self.testFile.load()
 
         # Create a Fileset of random, parentless, childless, unlocatied file
         filelist = []
@@ -128,7 +128,7 @@ class Base_t():
         
         #Test each of the DAO classes of the specific WMBS class directory        
         startTime = time.time()               
-        #Place execute method of the specific classname here            
+        #Place execute method of the specific classname here
         dao(classname=action).execute(execinput)
         endTime = time.time()
         diffTime = endTime - startTime

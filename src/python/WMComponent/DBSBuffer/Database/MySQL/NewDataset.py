@@ -5,33 +5,53 @@ _DBSBuffer.NewDataset_
 Add a new dataset to DBS Buffer
 
 """
-__revision__ = "$Id: NewDataset.py,v 1.4 2008/10/20 20:03:26 afaq Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: NewDataset.py,v 1.5 2008/11/03 23:01:10 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
 from WMCore.Database.DBFormatter import DBFormatter
 from sqlalchemy.exceptions import IntegrityError
 
-
-
 class NewDataset(DBFormatter):
-    
+        
     def __init__(self):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
-
-
-    sql = """INSERT INTO dbsbuffer_dataset (Path)
-                values (:path)"""
-
-    def getBinds(self, dataset=None):
+        
+    sql = """INSERT INTO dbsbuffer_dataset (Path, Algo, AlgoInDBS)
+                values (:path, 
+                (select ID from dbsbuffer_algo 
+                where AppName=:exeName 
+                    and AppVer=:appVersion 
+                    and AppFam=:appFamily 
+                    and PSetHash=:psetHash),
+                :algoIn)"""
+                
+                
+    def getBinds(self, datasetInfo=None):
         # binds a list of dictionaries
-
+        exeName = datasetInfo['ApplicationName']
+        appVersion = datasetInfo['ApplicationVersion']
+        appFamily = datasetInfo["ApplicationFamily"]
+        psetHash = datasetInfo.get('PSetHash',None)
+        if psetHash == None:
+            psetHash = "NO_PSET_HASH"
+        else:
+            if psetHash.find(";"):
+                # no need for fake hash in new schema
+                psetHash = psetHash.split(";")[0]
+                psetHash = psetHash.replace("hash=", "")
+                
         binds =  { 
-                        'path': "/"+dataset['PrimaryDataset']+ \
-                                "/"+dataset['ProcessedDataset']+ \
-                                "/"+dataset['DataTier']
+                        'path': "/"+datasetInfo['PrimaryDataset']+ \
+                                "/"+datasetInfo['ProcessedDataset']+ \
+                                "/"+datasetInfo['DataTier'],
+                        'exeName' : exeName,
+                        'appVersion' : appVersion,
+                        'appFamily' : appFamily,
+                        'psetHash' : psetHash,
+                        'algoIn' : 0
                 }
         return binds
 
@@ -68,9 +88,4 @@ class NewDataset(DBFormatter):
 			raise ex
         return 
         #return self.format(result)
-
-
-
-
-
 

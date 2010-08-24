@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.7 2009/01/26 14:02:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Workflow_t.py,v 1.8 2009/03/09 13:14:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import os
@@ -83,6 +83,7 @@ class WorkflowTest(unittest.TestCase):
         assert testWorkflow.exists() > 0, \
                "ERROR: Workflow does not exist after it has been created"
 
+        testWorkflow.create()
         testWorkflow.delete()
 
         assert testWorkflow.exists() == False, \

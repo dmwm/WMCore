@@ -293,6 +293,17 @@ class Configuration(object):
         comps = self._internal_components
         return comps
 
+    def listSections_(self):
+        """
+        _listSections_
+
+        Retrieve a list of components from the components
+        configuration section
+
+        """
+        comps = self._internal_sections
+        return comps
+
     def section_(self, sectionName):
         """
         _section_

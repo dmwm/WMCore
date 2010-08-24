@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.4 2009/02/19 19:51:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: EventBased_t.py,v 1.5 2009/03/03 13:12:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 import unittest
@@ -149,6 +149,7 @@ class EventBasedTest(unittest.TestCase):
         assert len(jobGroups[0].jobs) == 2, \
                "ERROR: JobFactory didn't create two jobs."
 
+        firstEvents = []
         for job in jobGroups[0].jobs:
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                    "ERROR: Job contains unknown files."
@@ -158,6 +159,10 @@ class EventBasedTest(unittest.TestCase):
         
             assert job.mask["FirstEvent"] in [0, 50], \
                    "ERROR: Job's first event is incorrect."
+
+            assert job.mask["FirstEvent"] not in firstEvents, \
+                   "ERROR: Job's first event is repeated."
+            firstEvents.append(job.mask["FirstEvent"])
 
         return
 
@@ -179,6 +184,7 @@ class EventBasedTest(unittest.TestCase):
         assert len(jobGroups[0].jobs) == 2, \
                "ERROR: JobFactory didn't create two jobs."
 
+        firstEvents = []
         for job in jobGroups[0].jobs:
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                    "ERROR: Job contains unknown files."
@@ -188,6 +194,10 @@ class EventBasedTest(unittest.TestCase):
         
             assert job.mask["FirstEvent"] in [0, 99], \
                    "ERROR: Job's first event is incorrect."
+
+            assert job.mask["FirstEvent"] not in firstEvents, \
+                   "ERROR: Job's first event is repeated."
+            firstEvents.append(job.mask["FirstEvent"])            
 
         return
 

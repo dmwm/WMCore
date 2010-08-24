@@ -6,8 +6,8 @@ Test creates one WMBS database instance which is used for all tests.
 
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.1 2008/10/01 22:06:24 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.2 2008/10/28 18:18:21 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -91,6 +91,7 @@ class JobGroupTest(unittest.TestCase):
             file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi,
                         logger=self.logger, dbfactory=self.dbf)
             file.save()
+            file.load()
             l.append(file)
             fileset.addFile(file)
         
@@ -137,7 +138,8 @@ class JobGroupTest(unittest.TestCase):
                     if dice <= complete_prob:
                         self.logger.debug( "#job completes" )
                         j.complete('complete report')
-                        j.addOutput(File(lfn='iter%s_job%s' % (i, jobs.index(j))))                 
+                        j.addOutput(File(lfn='iter%s_job%s' % (i, jobs.index(j)), \
+                                     logger=self.logger, dbfactory=self.dbf))                 
                     elif random.randint(0 , 10) / 10. < fail_prob:
                         self.logger.debug(  "#job fails" )
                         j.fail('fail report')

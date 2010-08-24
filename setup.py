@@ -7,6 +7,8 @@ setup (name='wmcore',
        packages=['WMCore',
                  'WMCore.MsgService',
                  'WMCore.MsgService.MySQL',
+                 'WMCore.ThreadPool.MySQL',
+                 'WMCore.ThreadPool',
                  'WMCore.JobFactory',
                  'WMCore.JobSplitting',
                  'WMCore.WMBS',
@@ -42,5 +44,3 @@ setup (name='wmcore',
                  'WMCore.Services.SiteDB',
                  'WMCore.Services',
                  'WMCore.Database'],)
-
-

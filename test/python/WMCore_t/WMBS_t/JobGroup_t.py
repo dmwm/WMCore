@@ -4,8 +4,8 @@ _JobGroup_t_
 
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.5 2008/12/26 15:31:19 afaq Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.6 2009/01/02 19:28:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import logging
@@ -144,6 +144,7 @@ class Job_t(unittest.TestCase):
 
         testJobGroupA.add(testJobA)
         testJobGroupA.add(testJobB)
+        testJobGroupA.commit()
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.load()

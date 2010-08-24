@@ -7,24 +7,36 @@
 			href="/controllers/css/reset/style"/>
 	</head>
  	<body>
-		<h1>API</h1>
-	  <p>Auto generated API doc page</p>
-    <dl>
-	    #for m in $methods
-	    <dt>$m: </dt>
-	    <dd>
-	    $methods[$m]['call'].__doc__
-	    #if len($methods[$m]['args']) > 0
-	    <li class="flat">Arguments:</li>
-	    #end if
-	    #for a in $methods[$m]['args']
-	    <li class="flat">$a</li>
-	    #end for
-	    <li class="flat small">
-	    	<a href='xml/$m'>xml</a> - <a href='json/$m'>json</a>
-	    </li>
-	    </dd>
-	    #end for
-    </dl>
+ 		<center>
+			<table width=700 cellspacing=12>
+				<tr>
+			    <td>
+						<h1>$application API</h1><p>Auto generated API doc page</p>
+		    	</td>
+			  </tr>
+			</table>
+			<table width=700 cellspacing=12>
+				<tr>
+			    <td>
+				    <dl>
+					    #for m in $methods
+					    <dt>$m: </dt>
+					    <dd>
+					    $methods[$m]['call'].__doc__
+					    #if len($methods[$m]['args']) > 0
+					    <li class="flat">Arguments:</li>
+					    #end if
+					    #for a in $methods[$m]['args']
+					    <li class="flat">$a</li>
+					    #end for
+					    <li class="flat small">
+					    	<a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
+					    </li>
+					    </dd>
+					    #end for
+				    </dl>
+	    	</td>
+		  </tr>
+		</table>
  	</body>
 </html>

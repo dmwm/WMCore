@@ -30,31 +30,44 @@ class Fileset_t(Base_t):
 
     def testNew(self):
         print "testNew"
+        
+        testname = 'TestFileset1234'
 
-        time = self.perfTest(dao=self.dao, action='Fileset.New', execinput=['name=self.testFileset.name'])
+        time = self.perfTest(dao=self.dao, action='Fileset.New', name=testname)
         assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'   
 
     def testDelete(self):
         print "testDelete"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.Delete', execinput=['name=self.testFileset.name'])
+        time = self.perfTest(dao=self.dao, action='Fileset.Delete', name=self.testFileset.name)
         assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'   
 
     def testExists(self):
         print "testExists"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.Exists', execinput=['name=self.testFileset.name'])
+        time = self.perfTest(dao=self.dao, action='Fileset.Exists', name=self.testFileset.name)
         assert time <= self.threshold, 'Exists DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'   
 
     def testLoadFromID(self):
         print "testLoadFromID"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.LoadFromID', execinput=['fileset=self.testFileset.id'])
+        time = self.perfTest(dao=self.dao, action='Fileset.LoadFromID', fileset=self.testFileset.id)
         assert time <= self.threshold, 'LoadFromID DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'  
 
     def testLoadFromName(self):
         print "testLoadFromName"
 
-        time = self.perfTest(dao=self.dao, action='Fileset.LoadFromName', execinput=['fileset=self.testFileset.name'])
-        assert time <= self.threshold, 'LoadFromName DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'  
+        time = self.perfTest(dao=self.dao, action='Fileset.LoadFromName', fileset=self.testFileset.name)
+        assert time <= self.threshold, 'LoadFromName DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+
+    def testParentage(self):
+        print "testParentage"
+
+        childname = "ChildFileset1234"
+
+        #Add the child fileset to the DB
+        self.dao(classname='Fileset.New').execute(name=childname)
+
+        time = self.perfTest(dao=self.dao, action='Fileset.Parentage', child=childname, parent=self.testFileset.name)
+        assert time <= self.threshold, 'Parentage DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 

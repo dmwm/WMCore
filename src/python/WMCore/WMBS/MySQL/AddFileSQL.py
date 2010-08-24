@@ -8,6 +8,7 @@ class AddFile(object):
                 values (:lfn, :size, :events, :run, :lumi)"""
                 
     def getBinds(self, files=None, size=0, events=0, run=0, lumi=0):
+        # Can't use self.dbi.buildbinds here...
         binds = {}
         if type(files) == type('string'):
             binds = {'lfn': files, 

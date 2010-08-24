@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.1 2008/06/24 17:01:16 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.2 2008/06/25 10:04:56 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 
@@ -80,9 +80,6 @@ class BaseFilesTestCase(unittest.TestCase):
 class SubscriptionDAOObjectTestCase(BaseFilesTestCase):
     def setUp(self):
         BaseFilesTestCase.setUp(self)
-        
-        
-        
     
 class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
     def setUp(self):
@@ -102,6 +99,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
                                  dbfactory=dbi))
             self.fileset[c].create()
             c = c + 1 
+            self.daofactory1(classname='Files.AddToFileset')
     
     def createSubs(self, testlogger):
         subscriptions = []
@@ -136,8 +134,34 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
             c = c + 1
     
     def testFileCycle(self):
-        pass
-             
+        testlogger = logging.getLogger('testFileCycle')
+        self.createSubs(testlogger)
+        filelist = []
+        for i in range(1,100):
+            filelist.append(("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
+                             1000, 2000, 10 + i, 12312))
+        for dao in self.daofactory1, self.daofactory2:
+            dao(classname='Files.Add').execute(files=filelist)
+            def strim(tuple): return tuple[0]
+            filelist = map(strim, filelist)
+            dao(classname='Files.AddToFileset').execute(file=filelist, fileset='MyCoolFiles')
+        c = 0
+        for dbi in [self.dbf1]:#, self.dbf2:
+            subscriptions.append(Subscription(fileset = self.fileset[c], 
+                                            workflow = self.workflow[c], 
+                                            logger=testlogger, 
+                                            dbfactory = dbi))
+            subscriptions[c].load()
+            avail = subscriptions[c].availableFiles()
+            acquired = subscriptions[c].acquiredFiles()
+            complete = subscriptions[c].completedFiles()
+            failed = subscriptions[c].failedFiles()
+            print avail, len(avail)
+            print acquired, len(acquired)
+            print complete, len(complete)
+            print failed, len(failed)
+            
+            c = c + 1
         
 if __name__ == "__main__":
     unittest.main()

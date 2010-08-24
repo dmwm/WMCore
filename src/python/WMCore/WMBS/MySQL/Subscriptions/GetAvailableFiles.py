@@ -26,16 +26,17 @@ CREATE TABLE wmbs_subscription_location (
              FOREIGN KEY(location)     REFERENCES wmbs_location(id)
                ON DELETE CASCADE)"
 """
+
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.7 2009/01/12 19:26:04 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.8 2009/01/16 22:42:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
     def getSQLAndBinds(self, subscription, conn = None, transaction = None):
         sql = ""
-        binds = {'subscription': subscription['id']}
+        binds = {'subscription': subscription}
         
         sql = '''select count(valid), valid from wmbs_subscription_location
         where subscription = :subscription group by valid'''
@@ -69,7 +70,7 @@ class GetAvailableFiles(DBFormatter):
                         valid = 1)
                 )
                 """
-            binds = {'subscription': subscription['id']}
+            binds = {'subscription': subscription}
             
         elif blacklist:
             sql = """select file from wmbs_fileset_files where
@@ -101,10 +102,28 @@ class GetAvailableFiles(DBFormatter):
                 (select file from wmbs_file_location)"""
                 
         return sql, binds
+
+    def formatDict(self, results):
+        """
+        _formatDict_
+
+        Cast the file column to an integer as the DBFormatter's formatDict()
+        method turns everything into strings.  Also, fixup the results of the
+        Oracle query by renaming "fileid" to file.
+        """
+        formattedResults = DBFormatter.formatDict(self, results)
+
+        for formattedResult in formattedResults:
+            if "file" in formattedResult.keys():
+                formattedResult["file"] = int(formattedResult["file"])
+            else:
+                formattedResult["file"] = int(formattedResult["fileid"])
+
+        return formattedResults
            
-    def execute(self, subscription=None, conn = None, transaction = False):
+    def execute(self, subscription = None, conn = None, transaction = False):
         sql, binds = self.getSQLAndBinds(subscription, conn = conn,
                                          transaction = transaction)
-        result = self.dbi.processData(sql, binds, conn = conn,
+        results = self.dbi.processData(sql, binds, conn = conn,
                                       transaction = transaction)
-        return self.format(result)
+        return self.formatDict(results)

@@ -1,5 +1,6 @@
 TOC
 ===
+-SETUP
 -CODE STANDARD
 -RESERVED WORDS
 -DEVELOPMENT
@@ -8,6 +9,23 @@ TOC
 -OTHER PROJECTS: PRODAGENT, T0, CRAB
 
 Quality Officer: TBD
+
+SETUP
+=====
+To setup the lirary it is assumed the following conditions
+hold:
+
+-You have a recent version of the prodagent installed (this
+is mainly used for dependency package compliance such as mysql, 
+etcs..
+-Edit the WMCORE/standards/setup.sh file appropriately
+-If you are integrating this in another package make sure these
+settings are set correctly to
+
+so typically you would have something like this:
+
+source your own setup.sh
+source the WMCORE setup.sh
 
 CODE STANDARD:
 =============
@@ -35,6 +53,18 @@ can be accomodated to reflect this.
 
 Potential log files for tests should have a name: <testfile>.log
 So in case of the MsgService_t.py you get a MsgService_t.log file
+
+If components contain parameters they should be defined in a file 'DefaultConfig.py'
+using the WMCORE/src/python/WMCore/Agent/Configuration module.
+
+the WMCORE WMQuality.TestInit class contains a set of methods used often
+in testing for doing mundane stuff such as setting up connections. It is recommended
+that you use them to facilitate maintainability.
+
+To facilitate using methods from the TestInit class for loading schemas put create
+statements in a ...<backend>/Create.py method following a similar structure as can
+be found in the Create.py methods in the wmcore module MsgService and Trigger. Backend
+has either the value Oracle or MySQL
  
 RESERVED WORDS:
 ==============
@@ -244,3 +274,15 @@ PRODAGENT/src/python/PA/PAComponent
 And tests for these components will be sub directories in:
 
 PRODAGENT/test/python/PA_t/PAComponent_t
+
+If components contain parameters they should be defined in a file 'DefaultConfig.py'
+using the WMCORE/src/python/WMCore/Agent/Configuration module.
+
+the WMCORE WMQuality.TestInit class contains a set of methods used often
+in testing for doing mundane stuff such as setting up connections. It is recommended
+that you use them to facilitate maintainability.
+
+To facilitate using methods from the TestInit class for loading schemas put create
+statements in a ...<backend>/Create.py method following a similar structure as can
+be found in the Create.py methods in the wmcore module MsgService and Trigger. Backend
+has either the value Oracle or MySQL

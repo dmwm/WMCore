@@ -6,12 +6,12 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.6 2008/08/09 22:14:44 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Fileset.py,v 1.7 2008/08/13 03:17:38 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 from sets import Set
-from WMCore.DataStructs.Pickleable import Pickleable 
+from WMCore.DataStructs.WMObject import WMObject 
 
-class Fileset(Pickleable):
+class Fileset(WMObject):
     """
     _Fileset_
     Data object that contains a set of files
@@ -20,6 +20,7 @@ class Fileset(Pickleable):
         self.files = files
         self.name = name
         self.newfiles = Set()
+        self.logger = None        
                 
     def addFile(self, file):
         """
@@ -32,10 +33,20 @@ class Fileset(Pickleable):
         """
         
         new = Set(self.makelist(file)) - self.listFiles()
-        updated = self.files & Set(self.makelist(file))
-        self.files = self.files | updated
         self.newfiles = self.newfiles | new
-        print "u n f nf", len(updated), len(new), len(self.files), len(self.newfiles)
+        
+        updated = Set(self.makelist(file)) & self.listFiles()
+        "updated contains the original location information for updated files"
+        
+        self.files = self.files.union(updated)
+        
+        if self.logger:
+            self.logger.debug ( "u n f nf %s %s %s %s" % (len(updated), len(new), 
+                            len(self.files), len(self.newfiles)))
+        else:
+            print "u n f nf", len(updated), len(new), \
+                            len(self.files), len(self.newfiles)
+        self.commit()
     
     def listFiles(self):
         """
@@ -48,7 +59,7 @@ class Fileset(Pickleable):
         All the lfn's for files in the filesets 
         """
         def getLFN(file):
-             return file.dict["lfn"]
+            return file.dict["lfn"]
         return map(getLFN, self.listFiles())   
             
     def listNewFiles(self):  

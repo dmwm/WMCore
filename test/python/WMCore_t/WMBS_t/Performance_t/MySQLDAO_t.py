@@ -13,12 +13,13 @@ class MySQLDAOTest():
 
     def setUp(self):
         cfg = ConfigParser()
-        cfg.read('mysql.ini')
+#        cfg.read('mysql.ini')
+        cfg.read('test.ini')
         #Set specific user for mysqladmin here        
         self.logname = 'MySQL'
-        self.dbuser = cfg.get('database', 'user')
-        self.dbhost = cfg.get('database', 'host')
-        self.dbinst = cfg.get('database', 'instance')
+        self.dbuser = cfg.get('mysql', 'user')
+        self.dbhost = cfg.get('mysql', 'host')
+        self.dbinst = cfg.get('mysql', 'instance')
         self.verbose = cfg.get('output','verbose')
         self.sqlURI = 'mysql://%s@%s/%s' % (self.dbuser, self.dbhost, self.dbinst)
 

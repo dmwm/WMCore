@@ -11,6 +11,8 @@ to run the test
 """
 import random
 
+from ConfigParser import ConfigParser
+
 from WMCore_t.Database_t.Performance import Performance
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
@@ -303,18 +305,26 @@ class WMBSBase(Performance):
         
         #Number of times each test method will run.
         #Can be overriden at the specific testcases
-        self.testtimes = 10
+#        self.testtimes = 10
 
         #Superclass setUp call
         Performance.setUp(self)
 
+        #Parsing threshold values
+        cfg = ConfigParser()
+
+        cfg.read('test.ini')
+
+        self.threshold = float(cfg.get('settings', 'threshold'))
+        self.totalthreshold = float(cfg.get('settings', 'total_threshold'))
+        self.testtimes = int(cfg.get('settings', 'times'))
         #Place common execute method arguments here        
         #TODO -Still to be implemented
         self.baseexec = ''
 
         #Threshold settings:
-        self.threshold = 0.1
-        self.totalthreshold = 2
+        #self.threshold = 0.1
+        #self.totalthreshold = 2
 
         #possibly deprecated, need to use selist instead
         self.sename = 'localhost'        
@@ -335,7 +345,7 @@ class WMBSBase(Performance):
 
     def tearDown(self):
         """
-        Common setUp for all WMBS Performance tests
+        Common tearDown for all WMBS Performance tests
 
         """
         #Base tearDown method for the DB Performance test

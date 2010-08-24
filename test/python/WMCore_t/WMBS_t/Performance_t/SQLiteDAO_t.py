@@ -13,12 +13,13 @@ class SQLiteDAOTest():
 
     def setUp(self):
         cfg = ConfigParser()
-        cfg.read('sqlite.ini')
+#        cfg.read('sqlite.ini')
+        cfg.read('test.ini')
         #Set specific user for mysqladmin here        
         self.logname = 'SQLite'
-        self.dbuser = cfg.get('database', 'user')
-        self.dbhost = cfg.get('database', 'host')
-        self.dbinst = cfg.get('database', 'instance')
+        self.dbuser = cfg.get('sqlite', 'user')
+        self.dbhost = cfg.get('sqlite', 'host')
+        self.dbinst = cfg.get('sqlite', 'instance')
         self.verbose = cfg.get('output','verbose')
         self.sqlURI = 'sqlite:///%s' % (self.dbinst+'.lite') 
 

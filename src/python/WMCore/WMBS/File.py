@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.24 2008/10/22 19:08:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: File.py,v 1.25 2008/10/22 19:09:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -168,13 +168,8 @@ class File(BusinessObject, WMFile):
         self.dict = self
         
     def setLocation(self, se):
-<<<<<<< File.py
-        self.daofactory(classname='Files.SetLocation').execute(file=self['lfn'], sename=se)
-        self['locations'] = self.daofactory(classname='Files.GetLocation').execute(self['lfn']) 
-        self.dict = self
-=======
         self.daofactory(classname='Files.SetLocation').execute(file=self['lfn'],
                                                                sename=se)
         action = self.daofactory(classname='Files.GetLocation')
         self['locations'] = action.execute(self['lfn']) 
-        self.dict = self>>>>>>> 1.23
+        self.dict = self

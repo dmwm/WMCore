@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.9 2009/01/23 19:05:10 rpw Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Root.py,v 1.10 2009/01/24 00:16:04 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -84,9 +84,13 @@ class Root(WMObject):
         factory = WMFactory('webtools_factory')
         
         for view in self.config.views.active:
-            # the sub-classes seem to like having these things
-            view.application = self.config.application
-            view.templates = self.config.templates
+            config = Configuration()
+            component = config.component_(view._internal_name)
+            component.application = self.config.application
+            # TODO: if the view has a template/database set override a global one
+            component.templates = self.config.templates
+            component.database = self.config.database
+            # TODO: Pull in all the other configs...
 
             log("loading %s" % view._internal_name, context=self.app, 
                 severity=logging.INFO, traceback=False)
@@ -100,16 +104,22 @@ class Root(WMObject):
                     context=self.app, 
                 severity=logging.INFO, traceback=False)
                 view.database = self.loadDatabase(view)
-            print "DOING "+str(view) 
+        
+            log("Loading %s" % (view._internal_name), 
+                                context=self.app,
+                                severity=logging.DEBUG, 
+                                traceback=False)
+            # Load the object
             obj = factory.loadObject(view.object, view)
+            # Attach the object to cherrypy's root, at the name of the view 
             eval(compile("self.%s = obj" % view._internal_name, '<string>', 'single'))
         
             log("%s available on %s/%s" % (view._internal_name, 
                                            server.base(), 
                                            view._internal_name), 
-                                        context=self.app, 
-                                        severity=logging.DEBUG, 
-                                        traceback=False)
+                                           context=self.app, 
+                                           severity=logging.INFO, 
+                                           traceback=False)
         
         for i in self.config.views.maintenance:
             #TODO: Show a maintenance page

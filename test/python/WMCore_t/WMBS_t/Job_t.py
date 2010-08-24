@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.8 2009/01/13 17:40:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Job_t.py,v 1.9 2009/01/14 18:18:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import logging
@@ -399,7 +399,54 @@ class Job_t(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Job didn't load all files"        
         
-        return    
+        return
+
+    def testGetFiles(self):
+        """
+        _testGetFiles_
+
+        Test the Job's getFiles() method.  This should load the files from
+        the database if they haven't been loaded already.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(1, *[45]))
+        testFileA.create()
+        testFileB.create()
+
+        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
+        testFileset.commit()
+
+        testJobA = Job(name = "TestJob", files = testFileset)
+        testJobA.create(group = testJobGroup)
+
+        testJobB = Job(id = testJobA.id)
+
+        goldenFiles = [testFileA, testFileB]
+        for testFile in testJobB.getFiles():
+            assert testFile in goldenFiles, \
+                   "ERROR: Job loaded an unknown file"
+            goldenFiles.remove(testFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Job didn't load all files"
+
+        return        
 
     def testSaveTransaction(self):
         """

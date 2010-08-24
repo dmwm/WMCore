@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.16 2008/10/28 18:41:43 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Subscription.py,v 1.17 2008/10/28 18:55:40 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 import copy
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable
@@ -23,9 +23,9 @@ class Subscription(Pickleable, dict):
         self.setdefault('workflow', workflow)
         self.setdefault('type', type)
         
-        self.split_algo = split_algo
-        self.whitelist = whitelist
-        self.blacklist = blacklist
+        self.setdefault('split_algo', split_algo)
+        self.setdefault('whitelist', whitelist)
+        self.setdefault('blacklist', blacklist)
         
         self.available = Fileset(name=fileset.name, 
                                  files = fileset.listFiles(), 
@@ -137,9 +137,9 @@ class Subscription(Pickleable, dict):
         Add a location to the subscriptions white or black list
         """
         if whitelist:
-            self.whitelist.add(location)
+            self['whitelist'].add(location)
         else:
-            self.blacklist.add(location)
+            self['blacklist'].add(location)
         
     def availableFiles(self):
         """
@@ -159,12 +159,12 @@ class Subscription(Pickleable, dict):
             return magicfiles
             
         files = self.filesOfStatus(status='AvailableFiles')
-        if len(self.whitelist) > 0:
+        if len(self['whitelist']) > 0:
             # Return files at white listed sites
-            return locationMagic(files, self.whitelist)
-        elif len(self.blacklist) > 0:
+            return locationMagic(files, self['whitelist'])
+        elif len(self['blacklist']) > 0:
             # Return files not at black listed sites
-            return files - locationMagic(files, self.blacklist)
+            return files - locationMagic(files, self['blacklist'])
         #Return all files, because you're crazy and just don't care
         return files 
             

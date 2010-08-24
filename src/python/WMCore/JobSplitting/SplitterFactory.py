@@ -16,7 +16,7 @@ class SplitterFactory(WMObject):
         Instantiate an Subscription.split_algo and 
         run that algorithm on subscription
         """
-        algorithm = subscription.split_algo
+        algorithm = subscription['split_algo']
         
         module = "%s.%s" % (self.package, algorithm)
         module = __import__(module, globals(), locals(), [algorithm])#, -1)

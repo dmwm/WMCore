@@ -19,8 +19,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.11 2008/07/03 17:06:04 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Subscription.py,v 1.12 2008/07/03 17:16:56 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -38,7 +38,6 @@ class Subscription(BusinessObject, WMSubscription):
         WMSubscription.__init__(self, fileset=fileset, workflow=workflow, 
                                 type=type, split_algo = split_algo)
         self.id = id
-        print self.type
         
     def create(self):
         try:

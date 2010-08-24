@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.19 2008/08/05 17:59:31 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Fileset.py,v 1.20 2008/08/13 15:15:22 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -33,11 +33,14 @@ class Fileset(BusinessObject, WMFileset):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name=None, id=-1, is_open=True, files=Set(), parents=Set(), 
-                 parents_open=True, source=None, sourceUrl=None,
+    def __init__(self, name=None, id=-1, is_open=True, files=Set(), 
+                 parents=Set(), parents_open=True, source=None, sourceUrl=None,
                  logger=None, dbfactory = None):
-        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
+        "Set up the object"
         WMFileset.__init__(self, name = name, files=files)
+        "Set up all the surrounding WMBS stuff, logger, database etc"
+        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
+        
         """
         Create a new fileset
         """
@@ -49,6 +52,17 @@ class Fileset(BusinessObject, WMFileset):
         self.sourceUrl = sourceUrl 
         self.lastUpdate = 0
     
+    def addFile(self, file):
+        WMFileset.addFile(self, file)
+
+        "Maybe remove these next two calls - probably wasteful"
+        try:
+            self.commit()
+        except IntegrityError, e:
+            pass #Ignore that the file exists
+        except Exception, e:
+            raise e
+    
     def setParentage(self, parents, parents_open):
         """
         Set parentage for this fileset - set parents to closed
@@ -58,8 +72,10 @@ class Fileset(BusinessObject, WMFileset):
                 if isinstance(parent, Fileset):
                     self.parents.add(parent)
                 else:
-                    self.parents.add(Fileset(name=parent, db_factory=self.dbfactory, 
-                            is_open=parents_open, parents_open=False))
+                    self.parents.add(Fileset(name=parent, 
+                                             db_factory=self.dbfactory, 
+                                             is_open=parents_open, 
+                                             parents_open=False))
     
     def exists(self):
         """
@@ -100,20 +116,21 @@ class Fileset(BusinessObject, WMFileset):
         else:
             raise TypeError, 'Chosen populate method not supported'
         
-        
-        
+        self.newfiles = Set()
+        self.files = Set()
         values = self.daofactory(classname='Files.InFileset').execute(fileset=self.name)
         for id, lfn, size, events, run, lumi in values:
-            #id, lfn, size, events, run, lumi = f
             file = File(lfn, id, size, events, run, lumi, \
                         logger=self.logger, dbfactory=self.dbfactory)
+            file.load()
             self.files.add(file)
 
         return self
     
     def commit(self):
         """
-        Add contents of self.newfiles to the database, empty self.newfiles, reload self
+        Add contents of self.newfiles to the database, 
+        empty self.newfiles, reload self
         """
         comfiles = []
         if not self.exists():
@@ -128,5 +145,6 @@ class Fileset(BusinessObject, WMFileset):
                 self.logger.warning('File already exists in the database %s' % f.dict["lfn"])
                 self.logger.warning(str(ex))
         
-            self.daofactory(classname='Files.AddToFileset').execute(file=f.dict["lfn"], fileset=self.name)
+            self.daofactory(classname='Files.AddToFileset').execute(file=f.dict["lfn"], 
+                                                                    fileset=self.name)
         self.populate()

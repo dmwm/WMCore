@@ -175,10 +175,13 @@ class Subscription_t(unittest.TestCase):
 		#Insert dummyFile2 into the available files Set at dummySubscription
 		self.dummySubscription.available.addFile(dummyFile2)
 
-		S = self.dummySubscription.available.listNewFiles()
-		#Check if Set returned by method is the same that was at the previous available FileSet
-		assert S == self.dummySubscription.completeFiles([]), 'Couldn\'t make file completed using method completeFiles - (no arguments test)'
+		S = self.dummySubscription.availableFiles()
+		#complete all files
+		self.dummySubscription.completeFiles(S)
 		
+		assert len(self.dummySubscription.availableFiles()) == 0, \
+		"completed subscription still has %s files, what's up with that?" %\
+		  len(self.dummySubscription.availableFiles())
 
 		#Second test - Test if target files are inserted at the completed files set		
 
@@ -194,10 +197,15 @@ class Subscription_t(unittest.TestCase):
 
             		file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
 			dummyFileList.append(file)
-
+		#Add the new files
+		self.dummySubscription.available.addFile(dummyFileList)
+		#and complete them
+		self.dummySubscription.completeFiles(files = dummyFileList)
 		#Check if return value is correct - with parameters		
-		assert self.dummySubscription.completeFiles(files = dummyFileList) == 0,'Return value for completeFiles method'\
-			+'not equal to 0'
+		assert len(self.dummySubscription.availableFiles()) == 0, \
+		"completed subscription still has %s files, what's up with that?" %\
+		  len(self.dummySubscription.availableFiles())
+		  
 		#Check if all files were inserted at subscription's completed files Set
 		for x in dummyFileList:		
 			assert x in self.dummySubscription.completed.listFiles(), 'Couldn\'t make file completed %s' % x.dict['lfn']
@@ -238,10 +246,13 @@ class Subscription_t(unittest.TestCase):
 		#Insert dummyFile2 into the available files Set at dummySubscription
 		self.dummySubscription.available.addFile(dummyFile2)
 
-		S = self.dummySubscription.available.listNewFiles()
-		#Check if Set returned by method is the same that was at the previous available FileSet
-		assert S == self.dummySubscription.failFiles([]), 'Couldn\'t make file failed using method failFiles - (no arguments test)'
+		S = self.dummySubscription.availableFiles()
+		# Fail all files
+		self.dummySubscription.failFiles(S)
 		
+		assert len(self.dummySubscription.availableFiles()) == 0, \
+		"failed subscription still has %s files, what's up with that?" %\
+		  len(self.dummySubscription.availableFiles())
 
 		#Second test - Test if target files are inserted at the failed set		
 
@@ -257,10 +268,15 @@ class Subscription_t(unittest.TestCase):
 
             		file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
 			dummyFileList.append(file)
-
-		#Check if return value is correct - with parameters		
-		assert self.dummySubscription.failFiles(files = dummyFileList) == 0,'Return value for failFiles method'\
-								+'not equal to 0'
+		#Add the new files
+		self.dummySubscription.available.addFile(dummyFileList)
+		#and complete them
+		self.dummySubscription.failFiles(files = dummyFileList)
+		#Check there are no files available - everything should be failed		
+		assert len(self.dummySubscription.availableFiles()) == 0, \
+		"failed subscription still has %s files, what's up with that?" %\
+		  len(self.dummySubscription.availableFiles())
+		  
 		#Check if all files were inserted at subscription's failed files Set
 		for x in dummyFileList:		
 			assert x in self.dummySubscription.failed.listFiles(), 'Couldn\'t make file failed %s' % x.dict['lfn']

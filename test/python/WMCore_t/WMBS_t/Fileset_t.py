@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.7 2009/01/13 16:41:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Fileset_t.py,v 1.8 2009/01/16 22:26:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import logging
@@ -168,6 +168,12 @@ class Fileset_t(unittest.TestCase):
         testFilesetB.load()        
         testFilesetC = Fileset(id = testFilesetA.id)
         testFilesetC.load()
+
+        assert type(testFilesetB.id) == int, \
+               "ERROR: Fileset id is not an int."
+
+        assert type(testFilesetC.id) == int, \
+               "ERROR: Fileset id is not an int."        
 
         assert testFilesetB.id == testFilesetA.id, \
                "ERROR: Load from name didn't load id"

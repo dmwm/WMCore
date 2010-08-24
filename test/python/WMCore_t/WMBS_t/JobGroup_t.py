@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.9 2009/01/14 17:01:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.10 2009/01/16 22:26:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import logging
@@ -207,6 +207,8 @@ class Job_t(unittest.TestCase):
         """
         _testLoad_
 
+        Test loading the JobGroup and any associated meta data from the
+        database.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -245,6 +247,24 @@ class Job_t(unittest.TestCase):
         testJobGroupC = JobGroup(uid = testJobGroupA.uid)
         testJobGroupC.load()
 
+        assert type(testJobGroupB.id) == int, \
+               "ERROR: Job group id is not an int."
+
+        assert type(testJobGroupC.id) == int, \
+               "ERROR: Job group id is not an int."        
+
+        assert type(testJobGroupB.subscription["id"]) == int, \
+               "ERROR: Job group subscription id is not an int."
+
+        assert type(testJobGroupC.subscription["id"]) == int, \
+               "ERROR: Job group subscription id is not an int."        
+
+        assert type(testJobGroupB.groupoutput.id) == int, \
+               "ERROR: Job group output id is not an int."
+
+        assert type(testJobGroupC.groupoutput.id) == int, \
+               "ERROR: Job group output id is not an int."        
+
         assert testJobGroupB.uid == testJobGroupA.uid, \
                "ERROR: Job group did not load uid correctly."
 
@@ -269,7 +289,8 @@ class Job_t(unittest.TestCase):
         """
         _testLoadData_
 
-
+        Test loading the JobGroup, it's meta data and any data associated with
+        its output fileset and jobs from the database.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")

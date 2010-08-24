@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.12 2009/01/12 21:39:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: File_t.py,v 1.13 2009/01/16 22:26:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import logging
@@ -300,6 +300,24 @@ class File_t(unittest.TestCase):
 
         assert testFileA == testFileC, \
                "ERROR: File load by ID didn't work"
+
+        assert type(testFileB["id"]) == int, \
+               "ERROR: File id is not an integer type."
+        assert type(testFileB["size"]) == int, \
+               "ERROR: File size is not an integer type."
+        assert type(testFileB["events"]) == int, \
+               "ERROR: File events is not an integer type."
+        assert type(testFileB["cksum"]) == int, \
+               "ERROR: File cksum is not an integer type."
+        
+        assert type(testFileC["id"]) == int, \
+               "ERROR: File id is not an integer type."
+        assert type(testFileC["size"]) == int, \
+               "ERROR: File size is not an integer type."
+        assert type(testFileC["events"]) == int, \
+               "ERROR: File events is not an integer type."
+        assert type(testFileC["cksum"]) == int, \
+               "ERROR: File cksum is not an integer type."
 
         testFileA.delete()
         return

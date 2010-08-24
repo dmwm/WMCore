@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.9 2009/01/14 18:18:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Job_t.py,v 1.10 2009/01/16 22:26:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import logging
@@ -303,6 +303,18 @@ class Job_t(unittest.TestCase):
         testJobC = Job(name = "TestJob")
         testJobB.load()
         testJobC.load()
+
+        assert type(testJobB.id) == int, \
+               "ERROR: Job id is not an int."
+
+        assert type(testJobC.id) == int, \
+               "ERROR: Job id is not an int."        
+
+        assert type(testJobB.job_group) == int, \
+               "ERROR: Job group id is not an int."
+
+        assert type(testJobC.job_group) == int, \
+               "ERROR: Job group id is not an int."        
 
         assert (testJobA.id == testJobB.id) and \
                (testJobA.name == testJobB.name) and \

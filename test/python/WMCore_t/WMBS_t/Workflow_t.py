@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.5 2009/01/14 16:58:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Workflow_t.py,v 1.6 2009/01/16 22:26:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -164,6 +164,9 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowB = Workflow(name = "wf001")
         testWorkflowB.load()
 
+        assert type(testWorkflowB.id) == int, \
+               "ERROR: Workflow id is not an int."
+
         assert (testWorkflowA.id == testWorkflowB.id) and \
                (testWorkflowA.name == testWorkflowB.name) and \
                (testWorkflowA.spec == testWorkflowB.spec) and \
@@ -172,6 +175,10 @@ class WorkflowTest(unittest.TestCase):
         
         testWorkflowC = Workflow(id = testWorkflowA.id)
         testWorkflowC.load()
+
+        assert type(testWorkflowC.id) == int, \
+               "ERROR: Workflow id is not an int."
+        
         assert (testWorkflowA.id == testWorkflowC.id) and \
                (testWorkflowA.name == testWorkflowC.name) and \
                (testWorkflowA.spec == testWorkflowC.spec) and \
@@ -180,6 +187,10 @@ class WorkflowTest(unittest.TestCase):
         
         testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon")
         testWorkflowD.load()
+
+        assert type(testWorkflowD.id) == int, \
+               "ERROR: Workflow id is not an int."
+        
         assert (testWorkflowA.id == testWorkflowD.id) and \
                (testWorkflowA.name == testWorkflowD.name) and \
                (testWorkflowA.spec == testWorkflowD.spec) and \

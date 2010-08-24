@@ -10,26 +10,26 @@ class DBFactory(object):
         if dburl:
             self.dburl = dburl
         else:
-            if options['port']:
-                self.dburl = '%s://%s@%s:%s/%s' % (options['dialect'],
-                                                options['user'],
-                                                options['password'],
-                                                options['port'],
-                                                options['database'])
+            if 'port' in options.keys():
+                self.dburl = '%s://%s:%s@%s:%s' % (options['dialect'],
+                                                   options['user'],
+                                                   options['passwd'],
+                                                   options['port'],
+                                                   options['tnsName'])
                 del options['dialect']
                 del options['user']
-                del options['password']
+                del options['passwd']
                 del options['port']
-                del options['database']
+                del options['tnsName']
             else:
-                self.dburl = '%s://%s@%s/%s' % (options['dialect'],
+                self.dburl = '%s://%s:%s@%s' % (options['dialect'],
                                                 options['user'],
-                                                options['password'],
-                                                options['database'])
+                                                options['passwd'],
+                                                options['tnsName'])
                 del options['dialect']
                 del options['user']
-                del options['password']
-                del options['database']
+                del options['passwd']
+                del options['tnsName']
             
         self.engine = create_engine(self.dburl, 
                                #echo_pool=True,

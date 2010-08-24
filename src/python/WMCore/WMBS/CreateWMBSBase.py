@@ -4,7 +4,7 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.2 2008/09/17 09:54:22 metson Exp $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.3 2008/09/18 13:26:13 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.Database.DBCreator import DBCreator
@@ -21,14 +21,21 @@ class CreateWMBSBase(DBCreator):
         """
         DBCreator.__init__(self, logger, dbinterface)
 
-        self.requiredTables = ["wmbs_fileset", "wmbs_fileset_files",
-                               "wmbs_file_parent", "wmbs_file_details",
-                               "wmbs_file_runlumi_map", "wmbs_location",
-                               "wmbs_file_location", "wmbs_workflow",
-                               "wmbs_subscription", "wmbs_sub_files_acquired",
-                               "wmbs_sub_files_failed", "wmbs_jobgroup",
-                               "wmbs_job", "wmbs_job_assoc",
-                               "wmbs_sub_files_complete"]
+        self.requiredTables = ["01wmbs_fileset",
+                               "02wmbs_file_details",
+                               "03wmbs_fileset_files",
+                               "04wmbs_file_parent",
+                               "05wmbs_file_runlumi_map",
+                               "06wmbs_location",
+                               "07wmbs_file_location",
+                               "08wmbs_workflow",
+                               "09wmbs_subscription",
+                               "10wmbs_sub_files_acquired",
+                               "11wmbs_sub_files_failed",
+                               "12wmbs_sub_files_complete",
+                               "13wmbs_jobgroup",
+                               "14wmbs_job",
+                               "15wmbs_job_assoc"]
 
     def execute(self, conn=None, transaction=None):
         """

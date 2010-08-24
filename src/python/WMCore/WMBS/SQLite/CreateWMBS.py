@@ -4,7 +4,7 @@ _CreateWMBS_
 Implementation of CreateWMBS for SQLite.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.8 2008/09/15 09:05:48 sfoulkes Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.9 2008/09/18 13:25:23 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -19,7 +19,7 @@ class CreateWMBS(CreateWMBSBase):
         """
         CreateWMBSBase.__init__(self, logger, dbInterface)
         
-        self.create["wmbs_fileset"] = \
+        self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          INTEGER      PRIMARY KEY AUTOINCREMENT,
              name        VARCHAR(255) NOT NULL,
@@ -27,7 +27,7 @@ class CreateWMBS(CreateWMBSBase):
              last_update TIMESTAMP    NOT NULL,
              UNIQUE (name))"""
         
-        self.create["wmbs_fileset_files"] = \
+        self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (
              file        INT(11)   NOT NULL,
              fileset     INT(11)   NOT NULL,
@@ -37,7 +37,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY(status)  references wmbs_file_status(id)
                ON DELETE CASCADE)"""
         
-        self.create["wmbs_file_details"] = \
+        self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
              id           INTEGER      PRIMARY KEY AUTOINCREMENT,
              lfn          VARCHAR(255) NOT NULL,
@@ -46,7 +46,7 @@ class CreateWMBS(CreateWMBSBase):
              first_event  INT(11),
              last_event   INT(11))"""
         
-        self.create["wmbs_file_runlumi_map"] = \
+        self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
              file    INT(11),
              run     INT(11),
@@ -54,20 +54,20 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY (file) references wmbs_file(id)
                ON DELETE CASCADE)"""
         
-        self.create["wmbs_location"] = \
+        self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
              id      INTEGER      PRIMARY KEY AUTOINCREMENT,
              se_name VARCHAR(255) NOT NULL,
              UNIQUE(se_name))"""
         
-        self.create["wmbs_workflow"] = \
+        self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id           INTEGER      PRIMARY KEY AUTOINCREMENT,
              spec         VARCHAR(255) NOT NULL,
              name         VARCHAR(255) NOT NULL,
              owner        VARCHAR(255))"""
 
-        self.create["wmbs_subscription"] = \
+        self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
              id          INTEGER      PRIMARY KEY AUTOINCREMENT,
              fileset     INT(11)      NOT NULL,
@@ -82,7 +82,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE)""" 
 
-        self.create["wmbs_jobgroup"] = \
+        self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
              id          INTEGER   PRIMARY KEY AUTOINCREMENT,
              subscription INT(11)   NOT NULL,
@@ -90,7 +90,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE)"""
 
-        self.create["wmbs_job"] = \
+        self.create["14wmbs_job"] = \
           """CREATE TABLE wmbs_job (
              id          INTEGER   PRIMARY KEY AUTOINCREMENT,
              jobgroup    INT(11)   NOT NULL,
@@ -100,7 +100,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE)"""
 
-        self.create["wmbs_file_parent"] = \
+        self.create["04wmbs_file_parent"] = \
           """CREATE TABLE wmbs_file_parent (
              child  INT(11) NOT NULL,
              parent INT(11) NOT NULL,
@@ -109,7 +109,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY (parent) references wmbs_file(id),
              UNIQUE(child, parent))"""  
 
-        self.create["wmbs_file_location"] = \
+        self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
              file     INT(11),
              location INT(11),
@@ -119,7 +119,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY(location) REFERENCES wmbs_location(id)
                ON DELETE CASCADE)"""
 
-        self.create["wmbs_sub_files_acquired"] = \
+        self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (
              subscription INT(11) NOT NULL,
              file         INT(11) NOT NULL,
@@ -128,7 +128,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY (file)         REFERENCES wmbs_file(id))
              """
 
-        self.create["wmbs_sub_files_failed"] = \
+        self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (
              subscription INT(11) NOT NULL,
              file         INT(11) NOT NULL,
@@ -136,7 +136,7 @@ class CreateWMBS(CreateWMBSBase):
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file(id))"""
 
-        self.create["wmbs_sub_files_complete"] = \
+        self.create["12wmbs_sub_files_complete"] = \
           """CREATE TABLE wmbs_sub_files_complete (
           subscription INT(11) NOT NULL,
           file         INT(11) NOT NULL,
@@ -144,7 +144,7 @@ class CreateWMBS(CreateWMBSBase):
             ON DELETE CASCADE,
           FOREIGN KEY (file)         REFERENCES wmbs_file(id))"""
 
-        self.create["wmbs_job_assoc"] = \
+        self.create["15wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (
              job    INT(11) NOT NULL,
              file   INT(11) NOT NULL,
@@ -153,7 +153,7 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY (file) REFERENCES wmbs_file(id)
                ON DELETE CASCADE)"""
 
-        self.create["wmbs_subs_type"] = \
+        self.create["20wmbs_subs_type"] = \
           """CREATE TABLE wmbs_subs_type (
              id   INTEGER      PRIMARY KEY AUTOINCREMENT,
              name VARCHAR(255) NOT NULL)"""

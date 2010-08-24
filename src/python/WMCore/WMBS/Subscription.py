@@ -12,70 +12,74 @@ workflow + fileset = subscription
 
 subscription + application logic = jobs
 
+TABLE wmbs_subscription
+    id      INT(11) NOT NULL AUTO_INCREMENT,
+    fileset INT(11) NOT NULL,
+    workflow INT(11) NOT NULL,
+    type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.4 2008/06/20 12:34:21 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Subscription.py,v 1.5 2008/06/24 11:45:32 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
+from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.File import File
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Subscription(BusinessObject):
     def __init__(self, fileset = None, workflow = None, id = -1,
-                  type = "Processing", parentage=0, logger=None, dbfactory = None):
-        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
+                  type = "Processing", logger=None, dbfactory = None):
+        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         
         self.fileset = fileset
         self.workflow = workflow
         self.type = type
         self.id = id
-        self.parentage = parentage
         
     def create(self):
         try:
-            self.wmbs.newSubscription(self.fileset.name, self.workflow.spec, 
-                                  self.workflow.owner, self.type, self.parentage)
+            action = self.daofactory(classname="Subscription.New")
+            action.execute(fileset = self.fileset.id, 
+                           type = self.type,
+                           workflow = self.workflow.id)
+            
         except IntegrityError:
-            self.wmbs.logger.exception('Subcription %s:%s exists' % (self.fileset, self.workflow))
+            self.logger.exception('Subcription %s:%s exists' % (self.fileset, self.workflow))
         
-        for i in self.wmbs.subscriptionID(self.fileset.name, self.workflow.spec, 
-                                  self.workflow.owner, self.type):
+        action = self.daofactory(classname="Subscription.Exists")
+        for i in action.execute(fileset = self.fileset.id, 
+                                type = self.type,
+                                workflow = self.workflow.id):
             self.id = i[0]
         return self
-                                  
-        
-#    def load(self, fileset, workflow, type='Processing'):
-#        self.id = self.wmbs.subscriptionID(self.fileset.name, self.workflow.spec, 
-#                                  self.workflow.owner, self.type)[0][0]
-#        return self
-    def load(self):
-        
-        if self.id != -1:
-            # load from db get filesets and workflow (use fileset.populate with parentage level of subscription)
-            pass
-        else:
-            result = self.wmbs.subscriptionID(self.fileset.name, self.workflow.spec, 
-                                  self.workflow.owner, self.type)
-            if not result:
-                raise RuntimeError, "Subscription for %s:%s unknown" % \
+
+    def load(self, id=None):
+        if id:
+            self.id = id
+        action = self.daofactory(classname='Subscription.Load')
+        result = action.execute(fileset = self.fileset.id, 
+                                workflow = self.workflow.id, 
+                                id = self.id, 
+                                type = self.type)
+        if not result:
+            raise RuntimeError, "Subscription for %s:%s unknown" % \
                                     (self.fileset.name, self.workflow.spec)
-            self.id = result[0][0]
-        return self
+        self.fileset = result['fileset']
+        self.workflow = result['workflow']
+        self.type = result['type']
+        self.id = result['id']
              
-    def availableFiles(self):
+    def availableFiles(self, parents=0):
         """
         Return a Set of file ids that are available for processing 
         (e.g. not already in use)
         """
         files = []
-        for f in self.wmbs.listAvailableFiles(self.id):
-            #files.add(f.file)
-            # files.add(f[0])
-            files.append(File(lfn=f[0], wmbs=self.wmbs).load(parentage=self.parentage))
-            #for i in f.fetchall():
-            #    files.add(i.file)
+        for f in self.daofactory:
+            files.append(File(lfn=f[0], wmbs=self.wmbs).load(parentage=parents))
         return files
             
     def acquiredFiles(self):
@@ -84,10 +88,7 @@ class Subscription(BusinessObject):
         """
         files = Set()
         for f in self.wmbs.listAcquiredFiles(self.id):
-            #files.add(f.file)
-            files.add(File(lfn=f[0], wmbs=self.wmbs).load(parentage=self.parentage))
-#           for i in f.fetchall():
-#                files.add(i.file)
+            files.add(File(lfn=f[0], wmbs=self.wmbs).load())
         return files
                      
     def acquireFiles(self, files = [], size = 0):
@@ -132,9 +133,6 @@ class Subscription(BusinessObject):
         files = Set()
         for f in self.wmbs.listCompletedFiles(self.id):
             files.add(File(lfn=f[0], wmbs=self.wmbs).load(parentage=self.parentage))
-            #files.add(f.file)
-#            for i in f.fetchall():
-#                files.add(i.file)
         return list(files)
     
     def failedFiles(self):
@@ -144,7 +142,4 @@ class Subscription(BusinessObject):
         files = Set()
         for f in self.wmbs.listFailedFiles(self.id):
             files.add(File(lfn=f[0], wmbs=self.wmbs).load(parentage=self.parentage))
-            #files.add(f.file)
-#            for i in f.fetchall():
-#                files.add(i.file)
         return list(files)

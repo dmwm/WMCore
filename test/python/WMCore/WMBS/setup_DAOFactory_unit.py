@@ -7,8 +7,8 @@ including checks to see that calls are database dialect neutral
 
 """
 
-__revision__ = "$Id: setup_DAOFactory_unit.py,v 1.1 2008/06/12 10:04:09 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: setup_DAOFactory_unit.py,v 1.2 2008/06/24 11:45:23 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 
@@ -53,7 +53,7 @@ class BaseSetupTestCase(unittest.TestCase):
                 
         theSQLiteCreator = self.daofactory2(classname='CreateWMBS')
         createworked = theSQLiteCreator.execute()
-        
+        self.testlogger.debug('createworked: %s' % createworked)
         assert createworked, \
             self.sqlitelogger.exception("Creating Schema Failed!!")
 

@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.3 2009/03/06 16:22:26 valya Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: CMSCouch.py,v 1.4 2009/03/09 17:11:34 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 try:
     # Python 2.6
@@ -38,33 +38,51 @@ class Requests:
     """ 
     
     def __init__(self, url = 'localhost'):
+        self.type = 'text/html'
         self.url = url
         self.conn = HTTPConnection(self.url)
         
     def post(self, uri=None, data=None):
+        """
+        POST some data
+        """
         return self.makeRequest(uri, data, 'POST')
     
     def put(self, uri=None, data=None):
+        """
+        PUT some data
+        """
         return self.makeRequest(uri, data, 'PUT')
         
     def delete(self, uri=None, data=None):
+        """
+        DELETE some data
+        """
         return self.makeRequest(uri, data, 'DELETE')
     
     def update(self, uri=None, data=None):
+        """
+        UPDATE some data
+        """
         return self.makeRequest(uri, data, 'UPDATE')
         
     def makeRequest(self, uri=None, data=None, type='GET'):
+        """
+        Make a request to the remote database. for a give URI. The type of 
+        request will determine the action take by the server (be careful with 
+        DELETE!). Data should be a dictionary of {dataname: datavalue}.
+        """
         headers = {}
         if type != 'GET':
             data = self.encode(data)
-            headers = {"Content-type": "application/json", 
+            headers = {"Content-type": self.type, 
                    "Content-length": len(data)}
         
         self.conn.connect()
         self.conn.request(type, uri, data, headers)
         response = self.conn.getresponse()
         
-#        print type, uri, response.status, response.reason  #TODO: log this not print
+        #print type, data, uri, response.status, response.reason  #TODO: log this not print
         data = response.read()
         self.conn.close()
         return self.decode(data)
@@ -77,23 +95,23 @@ class Requests:
     
     def encode(self, data):
         """
-        encode data into some appropriate format...
+        encode data into some appropriate format, for now make it a string...
         """
-        return data  
+        return data.__str__()
     
     def decode(self, data):
         """
-        decode data to some appropriate format...
+        decode data to some appropriate format, for now make it a string...
         """
-        return data   
+        return data.__str__()  
 
-class CouchRequests(Requests): 
+class JSONRequests(Requests): 
     """
-    CouchDB specific implementation of Requests
+    Implementation of Requests that encodes data to JSON
     """
     def __init__(self, url = 'localhost:5984'):
         Requests.__init__(self, url)
-       
+        self.type = "application/json"
     def encode(self, data):
         """
         encode data as json
@@ -106,7 +124,7 @@ class CouchRequests(Requests):
         """ 
         return json.loads(data)
         
-class Database(CouchRequests):
+class Database(JSONRequests):
     """
     Object representing a connection to a CouchDB Database instance
     """
@@ -198,7 +216,7 @@ class Database(CouchRequests):
     def info(self):
         return self.get('/%s/' % self.name)
     
-class CouchServer(CouchRequests):
+class CouchServer(JSONRequests):
     """
     An object representing the CouchDB server, use it to list, create, delete 
     and connect to databases. 

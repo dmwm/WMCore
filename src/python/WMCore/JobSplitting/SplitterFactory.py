@@ -11,7 +11,8 @@ class SplitterFactory(WMObject):
         
     def __call__(self, subscription=None, package='WMCore.DataStructs'):
         """
-        Instantiate an Subscription.split_algo and run that algorithm on subscription
+        Instantiate an Subscription.split_algo and 
+        run that algorithm on subscription
         """
         algorithm = subscription.split_algo
         #TODO: Import the algorithm

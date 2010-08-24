@@ -58,8 +58,6 @@ class WorkflowManagerPoller(BaseWorkerThread):
                         whitelist.add(location['se_name'])
                     else:
                         blacklist.add(location['se_name'])
-                logging.info(str(whitelist))
-                logging.info(str(blacklist))
                 
                 # Attempt to match workflows to filesets
                 if re.match(managedWorkflow['fileset_match'], fileset['name']):

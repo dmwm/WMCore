@@ -37,10 +37,10 @@ TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
         * Cache DBS block / file lookups? Depends on how / when blocks are migrated
           to global DBS. getEvents could use cached response from getDbsBlockFiles
           for example.
-        * Factor out DBS queries into helper module
+        * Exception handling (especially as propagated from DBS query errors)
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.5 2008/10/28 11:41:30 jacksonj Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.6 2008/10/28 11:44:31 jacksonj Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import logging
 
@@ -241,7 +241,7 @@ class RunTransferNotifier(FeederImpl):
         """
         Queries DBS to determine what new runs are present, and adds a watcher
         """
-        runs = self.getRuns(self.lastRun)
+        runs = self.dbsHelper.getRuns(self.lastRun)
         runs.sort()
         for run in runs:
             watchedRuns.add(WatchedRun(run))

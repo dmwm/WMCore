@@ -12,8 +12,8 @@ TABLE wmbs_subscription
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.5 2008/10/13 12:57:42 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: New.py,v 1.6 2008/10/13 13:03:39 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -42,7 +42,7 @@ class New(DBFormatter):
         
     def execute(self, fileset = None, workflow = None, 
                 split = 'File', timestamp = None, type = 'Processing',\
-                    spec = None, owner = None, conn = None, transaction = False):
+                conn = None, transaction = False):
         binds = self.getBinds(fileset = fileset, 
                               workflow = workflow,
                               timestamp = timestamp, 

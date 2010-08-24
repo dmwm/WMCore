@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.1 2008/10/29 18:00:54 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.2 2008/10/31 00:55:34 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -17,7 +17,9 @@ from ProdCommon.MCPayloads.WorkflowSpec import WorkflowSpec
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter
 from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+
 from DBSAPI.dbsApiException import DbsException
+from DBSAPI.dbsApi import DbsApi
 
 import os
 import string
@@ -34,6 +36,12 @@ class NewWorkflowHandler(BaseHandler):
     def __init__(self, component):
         BaseHandler.__init__(self, component)
         try:
+            self.args = {}
+            #self.args['DBSURL'] = 'http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
+            self.args['DBSURL'] = 'http://cmssrv17.fnal.gov:8989/DBS/servlet/DBSServlet'
+            #self.args['DBSURL'] = 'http://cmssrv48.fnal.gov:8383/DBS/servlet/DBSServlet'
+            args = { "url" :  self.args['DBSURL'], "level" : 'ERROR', 'USER': 'NORMAL'}
+            
             self.dbsApi = DbsApi(args)
         except DbsException, ex:
             msg = "Error in DBSWriterError with DbsApi\n"
@@ -62,7 +70,7 @@ class NewWorkflowHandler(BaseHandler):
         #factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
         #dbinterface=factory.loadObject("UploadToDBS")
         #datasets=dbinterface.findUploadableDatasets()
-        
+        #
         logging.debug("Reading the NewDataset event payload from WorkFlowSpec: ")
         workflowFile=string.replace(workflowFile,'file://','')
         if not os.path.exists(workflowFile):
@@ -77,6 +85,10 @@ class NewWorkflowHandler(BaseHandler):
         #  //                                                                      
         # //  Contact DBS using the DBSWriter
         #//`
+        #
+        import pdb
+        pdb.set_trace()
+        #
         logging.info("DBSURL %s"%self.args['DBSURL'])
         #dbswriter = DBSWriter('fakeurl') 
         dbswriter = DBSWriter(self.args['DBSURL'],level='ERROR')

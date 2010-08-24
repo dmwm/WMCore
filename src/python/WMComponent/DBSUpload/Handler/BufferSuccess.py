@@ -4,7 +4,7 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.5 2008/10/29 18:00:54 afaq Exp $"
+__revision__ = "$Id: BufferSuccess.py,v 1.6 2008/10/31 00:55:34 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -13,11 +13,12 @@ from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
 from WMCore.Agent.Configuration import loadConfigurationFile
 
-
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter
 from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+
 from DBSAPI.dbsApiException import DbsException
+from DBSAPI.dbsApi import DbsApi
 
 import os
 import string
@@ -82,8 +83,6 @@ class BufferSuccess(BaseHandler):
 
         Extract relevant info from the WorkFlowSpecification and loop over Dataset
         """
-
-UPDATE DATASET STATUS ???
         #  //                                                                      
         # //  Contact DBS using the DBSWriter
         #//`

@@ -8,8 +8,8 @@ Performs bulk DBS File(s) insertion by :
 	if buffer has hit the configured limit
 """
 
-__revision__ = "$Id: DBSUpload.py,v 1.2 2008/10/29 18:00:56 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSUpload.py,v 1.3 2008/10/31 00:55:34 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -40,7 +40,7 @@ class DBSUpload(Harness):
             factory.loadObject(self.config.DBSUpload.bufferSuccessHandler, self)
             
         self.messages['NewWorkflow'] = \
-            actory.loadObject(self.config.DBSUpload.newWorkflowHandler, self)
+            factory.loadObject(self.config.DBSUpload.newWorkflowHandler, self)
 
 
 

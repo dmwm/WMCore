@@ -1,11 +1,13 @@
 #!/bin/sh
 
+echo 'This is a local script to start the server!'
 
 echo "-->Starting MySQL server"
 # NOTE: do this only if there is no mysql database
 mkdir -p $TESTDIR/mysqldata
 mysql_install_db --datadir=$TESTDIR/mysqldata
-mysqld_safe --datadir=$TESTDIR/mysqldata --socket=$TESTDIR/mysqldata/mysql.sock --skip-networking --log-error=$TESTDIR/mysqldata/error.log --pid-file=$TESTDIR/mysqldata/mysqld.pid &
+#mysqld_safe --datadir=$TESTDIR/mysqldata --socket=$TESTDIR/mysqldata/mysql.sock --skip-networking --log-error=$TESTDIR/mysqldata/error.log --pid-file=$TESTDIR/mysqldata/mysqld.pid &
+mysqld_safe --datadir=$TESTDIR/mysqldata --socket=$TESTDIR/mysqldata/mysql.sock --log-error=$TESTDIR/mysqldata/error.log --pid-file=$TESTDIR/mysqldata/mysqld.pid --port=3306 &
 echo 'sleeping to make sure the db exists'
 sleep 10
 

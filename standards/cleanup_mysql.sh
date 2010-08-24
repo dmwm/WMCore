@@ -1,21 +1,30 @@
 #!/bin/sh
 
 echo "-->remove database from database server"
-mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "drop database ${DBNAME}"
-echo "-->Creating MySQL database access string"
-#export DBSOCK=$TESTDIR/mysqldata/mysql.sock
-#export DATABASE=mysql://${DBUSER}:${DBPASS}@localhost/${DBNAME}
-echo '-->Using mysql DB: ' $DATABASE
-mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "${SQLCREATE}"
-mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "create database ${DBNAME}"
+if test -r $DBSOCK 
+then
+    echo 'using socket'
+    echo "-->remove database from database server"
+    mysql -u $DBMASTERUSER --socket=$DBSOCK --exec "drop database ${DBNAME}"
+    echo '-->Using mysql DB: ' $DATABASE
+    mysql -u $DBMASTERUSER --socket=$DBSOCK --exec "${SQLCREATE}"
+    mysql -u $DBMASTERUSER --socket=$DBSOCK --exec "create database ${DBNAME}"
 
-# ADD BELOW OTHER DATABASES NEEDED FOR MYSQL BACKEND TESTS
-echo "-->remove database from database server"
-mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "drop database ${PROXYDB}"
-echo "-->Creating MySQL database access string"
-export DBSOCK=$TESTDIR/mysqldata/mysql.sock
-export MYSQLDATABASE=mysql://${DBUSER}:${DBPASS}@localhost/${DBNAME}
-echo '-->Using mysql DB: ' $PROXYDATABASE
-mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "${PROXYCREATE}"
-mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "create database ${PROXYDB}"
+    mysql -u $DBMASTERUSER --socket=$DBSOCK --exec "drop database ${PROXYDB}"
+    echo '-->Using mysql DB: ' $PROXYDATABASE
+    mysql -u $DBMASTERUSER --socket=$DBSOCK --exec "${PROXYCREATE}"
+    mysql -u $DBMASTERUSER --socket=$DBSOCK --exec "create database ${PROXYDB}"
+else
+    echo 'using host: ' $DBHOST
+    mysql -u $DBMASTERUSER --password=$DBMASTERPASS -h $DBHOST --exec "drop database ${DBNAME}"
+    echo '-->Using mysql DB: ' $DATABASE
+    mysql -u $DBMASTERUSER --password=$DBMASTERPASS -h $DBHOST --exec "${SQLCREATE}"
+    mysql -u $DBMASTERUSER --password= $DBMASTERPASS -h $DBHOST --exec "create database ${DBNAME}"
+
+    mysql -u $DBMASTERUSER --password=$DBMASTERPASS -h $DBHOST --exec "drop database ${PROXYDB}"
+    echo '-->Using mysql DB: ' $PROXYDATABASE
+    mysql -u $DBMASTERUSER --password=$DBMASTERPASS -h $DBHOST --exec "${PROXYCREATE}"
+    mysql -u $DBMASTERUSER --password=$DBMASTERPASS -h $DBHOST --exec "create database ${PROXYDB}"
+fi
+
 

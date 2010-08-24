@@ -18,4 +18,3 @@ source $PRODAGENTBASE/etc/profile.d/init.sh
 source setup_mysql.sh
 source setup_mysql_proxy.sh
 ./start_mysql.sh
-./start_mysql_proxy.sh

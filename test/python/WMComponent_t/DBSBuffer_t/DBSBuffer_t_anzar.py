@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.9 2008/12/30 17:46:00 afaq Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.10 2009/01/12 23:03:44 afaq Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -98,25 +98,6 @@ class DBSBufferTest(unittest.TestCase):
             	else:
                 	logging.debug("ThreadPool tables could not be created, \
                     	already exists?")
-
-
-                # need to create WMBS-DBSBuffer-Related (file and its entroage) tables for testing.
-                factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
-                        myThread.dialect)
-                create = factory.loadObject("ProxyCreateWMBSBase")
-		try:
-                	createworked = create.execute(conn = myThread.transaction.conn)
-                except Exception, ex:
-                        if ex.__str__().find("already exists") != -1 :
-                                print "WARNING: Table Already Exists Exception Raised, All Tables may not have been created"
-                                pass
-                        else:
-                                raise ex
-                if createworked:
-                        logging.debug("DBSBuffer tables created")
-                else:
-                        logging.debug("DBSBuffer tables could not be created, \
-                        already exists?")
 
 
             	# need to create DBSBuffer tables for testing.
@@ -231,14 +212,21 @@ class DBSBufferTest(unittest.TestCase):
         #testDBSBuffer.handleMessage('JobSuccess', \
         #        'C:\WORK\FJR\fjr_01.xml')
 
+	print "HAVE YOU DONE,  insert into dbsbuffer_location (id, se_name) values (1, 'srm.cern.ch'); ?????"
 
-	print "HAVE YOU DONE,  insert into wmbs_location (id, se_name) values (1, 'srm.cern.ch') ?????"
-
-
-        fjr_path='/uscms/home/anzar/work/FJR/forAnzar/Run68141/Calo'	
-	for aFJR in os.listdir(fjr_path):
+	"""
+        for fjr_dir in ['Calo', 'MinimumBias', 'Cosmics']: 	
+	    fjr_path='/uscms/home/anzar/work/FJR/forAnzar/Run67838/'+fjr_dir
+	    for aFJR in os.listdir(fjr_path):
 		if aFJR.endswith('.xml'):
 			testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
+	"""
+
+	fjr_path='/uscms/home/anzar/work/FJR/forAnzar/Run67838'
+	for aFJR in os.listdir(fjr_path):
+		if aFJR.endswith('.xml') and aFJR.startswith('FrameworkJobReport'):
+			testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
+			
         #########myThread.transaction.commit()
          
         while threading.activeCount() > 1:

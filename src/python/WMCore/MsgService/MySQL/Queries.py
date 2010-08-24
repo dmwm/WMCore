@@ -9,9 +9,9 @@ service.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.2 2008/08/28 20:40:50 fvlingen Exp $"
+    "$Id: Queries.py,v 1.3 2008/08/29 19:00:15 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.2 $"
+    "$Revision: 1.3 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -225,6 +225,19 @@ INSERT INTO ms_available_priority(procid) VALUES(:procid)
         self.execute(sqlStr1, args)        
         self.execute(sqlStr2, args)        
 
+    def msgAvailable(self, args ={}):
+        sqlStr = """
+SELECT status FROM %s WHERE procid = :procid
+""" %(args['table'])
+        result = self.execute(sqlStr, {'procid': args['procid']})
+        return self.formatOne(result) 
+
+    def noMsgs(self, args):
+        sqlStr = """
+UPDATE %s SET status='not_there' WHERE procid=:procid 
+""" %(args['table'])
+        result = self.execute(sqlStr, {'procid': args['procid']})
+
     def msgArrived(self, args = {}):
         """
         __msgArrived__
@@ -267,14 +280,36 @@ INSERT INTO %s(type,source,dest,payload,delay) VALUES(:type,:source,:dest,:paylo
             return 
         self.execute(sqlStr, args['msgs'])
 
+    def processMsg(self,args):
+        sqlStr = """
+UPDATE %s SET state='processing' WHERE messageid = :msgId
+""" %(args['table'])
+        self.execute(sqlStr, {'msgId':args['msgId']})
+
+    def removeMsg(self,args):
+        sqlStr = """
+DELETE FROM %s WHERE messageid = :msgId 
+""" %(args['table'])
+        self.execute(sqlStr, {'msgId':args['msgId']})
+     
+
+    def getMsg(self,args):
+        sqlStr = """
+SELECT %s.messageid as messageid, ms_type.name as name, %s.payload as payload, ms_process.name as source FROM %s, ms_type,ms_process
+WHERE ms_type.typeid=%s.type and  ms_process.procid=%s.source and ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP and
+%s.dest=:procid ORDER BY time,messageid LIMIT 1 """ %(args['table'],args['table'],args['table'],args['table'],args['table'],args['table'],args['table'],args['table'])
+        result = self.execute(sqlStr,{'procid':args['procid']})
+        return self.formatOneDict(result)
+
+
     def insertComponentMsgTables(self, componentName):
         prefix1 = 'ms_message_'+componentName
         prefix2 = 'ms_priority_message_'+componentName
 
         for prefix in [prefix1,prefix2]:
-              for postfix in ['','_buffer_in','_buffer_out']:
-                  tableName = prefix+postfix
-                  sqlStr = """
+            for postfix in ['','_buffer_in']:
+                tableName = prefix+postfix
+                sqlStr = """
 CREATE TABLE `%s` (
    `messageid` int(11) NOT NULL auto_increment,
    `type` int(11) NOT NULL default '0',
@@ -290,7 +325,29 @@ CREATE TABLE `%s` (
    FOREIGN KEY(`dest`) references `ms_process`(`procid`)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """ %(tableName)
-                  self.execute(sqlStr, {})
+                self.execute(sqlStr, {})
+        for prefix in [prefix1,prefix2]:
+            postfix = '_buffer_out'
+            tableName = prefix+postfix
+            sqlStr = """
+CREATE TABLE `%s` (
+   `messageid` int(11) NOT NULL auto_increment,
+   `type` int(11) NOT NULL default '0',
+   `source` int(11) NOT NULL default '0',
+   `dest` int(11) NOT NULL default '0',
+   `payload` text NOT NULL,
+   `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+   `delay` varchar(50) NOT NULL default '00:00:00',
+   `state` enum('wait', 'processing','finished') default 'wait',
+
+
+   PRIMARY KEY `messageid` (`messageid`),
+   FOREIGN KEY(`type`) references `ms_type`(`typeid`),
+   FOREIGN KEY(`source`) references `ms_process`(`procid`),
+   FOREIGN KEY(`dest`) references `ms_process`(`procid`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+""" %(tableName)
+            self.execute(sqlStr, {})
 
     def tableSize(self, args):
         """
@@ -308,7 +365,30 @@ SELECT COUNT(*) FROM %s """  %(args)
         result = self.execute("show tables", {})
         return self.format(result)
 
-    def moveMsg(self, args):
+    def purgeTable(self, tableName):
+        # some messages in the buffer_out tables
+        # might being processed so we do not want
+        # to delete them.
+        if tableName.rfind('_buffer_out') >= 0:
+            sqlStr = """
+DELETE FROM %s WHERE state<>'processing'
+""" %(tableName)
+        else: 
+            sqlStr = """
+DELETE FROM %s 
+""" %(tableName)
+        self.execute(sqlStr, {})
+
+    def inQueue(self, args):
+        sqlStr = """
+SELECT COUNT(*) FROM %s WHERE type = :typeid
+""" %(args['tableName'])
+
+        result = self.execute(sqlStr, args['sqlArgs'])
+        result = self.formatOne(result)
+        return result[0]
+
+    def moveMsgFromBufferIn(self, args):
         """
         __moveMsg__
 
@@ -324,6 +404,24 @@ DELETE FROM %s
 
         self.execute(sqlStr1, {})
         self.execute(sqlStr2, {})
+
+    def moveMsgToBufferOut(self,args):
+        sqlStr1 = """
+INSERT INTO %s(type,source,dest,payload,delay,time) 
+SELECT type,source,dest,payload,delay,time FROM %s WHERE dest=:procid AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP
+ORDER BY messageid LIMIT %s """ % (args['target'], args['source'], args['source'], args['source'],args['buffer_size'])
+
+        sqlStr2 = """
+DELETE FROM %s WHERE dest=:procid  AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP ORDER BY messageid LIMIT %s 
+""" %(args['source'], args['source'],args['source'],args['buffer_size'])  
+        self.execute(sqlStr1,{'procid':args['procid']})
+        self.execute(sqlStr2,{'procid':args['procid']})
+
+    def removeMessageType(self, args):
+        sqlStr = """
+DELETE FROM %s WHERE type=:typeid AND dest=:procid 
+""" %(args['tablename'])
+        self.execute(sqlStr, args['sqlArgs'])
 
     def maxId(self, args):
         sqlStr = """

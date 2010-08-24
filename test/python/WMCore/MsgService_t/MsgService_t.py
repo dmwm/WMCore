@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.3 2008/08/28 20:40:51 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MsgService_t.py,v 1.4 2008/08/29 19:00:16 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import unittest
@@ -33,14 +33,21 @@ class MsgServiceTest(unittest.TestCase):
 
     _setup = False
     _teardown = False
-    _maxMsg = 100
+    # max number of messages for initial tests.
+    _maxMsg = 1000
+    # buffersize used by message service to test message moving.
     _bufferSize = _maxMsg-2
+
+    # minimum number of messages that need to be in queue
+    _minMsg = 2000
+    # number of publish and gets from queue
+    _publishAndGet = 10
 
     def setUp(self):
         "make a logger instance and create tables"
        
         if not MsgServiceTest._setup: 
-            logging.basicConfig(level=logging.DEBUG,
+            logging.basicConfig(level=logging.NOTSET,
                 format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                 datefmt='%m-%d %H:%M',
                 filename='%s.log' % __file__,
@@ -102,6 +109,7 @@ class MsgServiceTest(unittest.TestCase):
         msgService2.registerAs("TestComponent2")
         myThread.transaction.commit()
 
+        # subscribe
         myThread.transaction.begin()
         msgService1.subscribeTo("Message4TestComponent1")
         msgService1.subscribeTo("Message4TestComponent2")
@@ -113,12 +121,14 @@ class MsgServiceTest(unittest.TestCase):
 
         myThread.transaction.begin()
         subscriptions = msgService1.subscriptions()
+        # check if subscription succeeded
         assert subscriptions == [('Message4TestComponent1',), \
             ('Message4TestComponent2',), \
             ('Message4TestComponent3',), \
             ('Message4TestComponent4',)]
         myThread.transaction.commit()
 
+        # subscribe to priority
         myThread.transaction.begin()
         msgService1.prioritySubscribeTo("PriorityMessage4TestComponent1")
         msgService1.prioritySubscribeTo("PriorityMessage4TestComponent2")
@@ -126,6 +136,7 @@ class MsgServiceTest(unittest.TestCase):
         msgService1.prioritySubscribeTo("PriorityMessage4TestComponent4")
         myThread.transaction.commit()
 
+        # check if subscription succeeded
         myThread.transaction.begin()
         subscriptions = msgService1.prioritySubscriptions()
         assert subscriptions == [('PriorityMessage4TestComponent1',), \
@@ -140,6 +151,7 @@ class MsgServiceTest(unittest.TestCase):
 
         Test subscription of a component.
         """
+        return
         myThread = threading.currentThread()
         myThread.transaction.begin()
         msgService1 = \
@@ -150,12 +162,13 @@ class MsgServiceTest(unittest.TestCase):
         msgService1.buffer_size = MsgServiceTest._bufferSize
         msgService2.registerAs("TestComponent2")
         myThread.transaction.commit()
+
         # create some messages.
         myThread.transaction.begin()
         for i in xrange(0,3*MsgServiceTest._maxMsg):
             msg = {'name' : 'Message4TestComponent1', 'payload' : 'aPayload_'+str(i)}
             msgService1.publish(msg)
-        # these message have an instant field and will be delivered
+        # these message have an instant field and will be delivered right away
         print('Inserting '+str(MsgServiceTest._maxMsg*3*3)+' Messages (single insert)')
         start = time.time()
         for i in xrange(0,3*MsgServiceTest._maxMsg):
@@ -164,20 +177,23 @@ class MsgServiceTest(unittest.TestCase):
         for i in xrange(0,3*MsgServiceTest._maxMsg):
             msg = {'name' : 'PriorityMessage4TestComponent1', 'payload' : 'aPayload_'+str(i), 'instant':True}
             msgService1.publish(msg)
+        # do some calulcations on insert time
         totalInsert = MsgServiceTest._maxMsg*3*3
         stop = time.time()
         interval = float(float(stop) - float(start) )
         timePerMessage = float ( float(interval) / float(totalInsert) )
         print('Inserting took: '+str(timePerMessage)+ ' seconds per message')
+        # check that the messages indeed have been delivered
         assert msgService1.pendingMsgs() == MsgServiceTest._maxMsg*3*3
         # messages without instant key have not been send yet 
         # as finsihed method has not been called
         myThread.transaction.commit()
-        myThread.transaction.begin()
 
+        myThread.transaction.begin()
         # finish transaction, this will add an additional set of messages
         print('Inserting '+str(MsgServiceTest._maxMsg*2*3)+' Messages (bulk insert)')
         start = time.time()
+        # here you actually deliver just before a commit.
         msgService1.finish()
         stop = time.time()
         interval = float(float(stop) - float(start) )
@@ -185,10 +201,202 @@ class MsgServiceTest(unittest.TestCase):
         timePerMessage = float ( float(interval) / float(totalInsert) )
         print('Inserting took: '+str(timePerMessage)+ ' seconds per message')
         myThread.transaction.commit()
+
         myThread.transaction.begin()
         pendingMsgs = msgService1.pendingMsgs()
+        # check if also other messages where delivered.
         assert msgService1.pendingMsgs() == MsgServiceTest._maxMsg*3*5
         myThread.transaction.commit()
+
+    def testC(self):
+        return
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        msgService1 = \
+            myThread.factory['msgService'].loadObject("MsgService")
+        # test use illegal name for component
+        for word in  ['ms_message','ms_priority_message','buffer_out','buffer_in']:
+            exReached = True
+            try:
+                msgService1.registerAs("ms_message")
+                exReached = False
+            except Exception,ex:
+                pass
+            assert exReached
+
+        msgService1.registerAs("TestComponent1")
+        myThread.transaction.commit()
+
+        myThread.transaction.begin()
+        msgService1.remove("Message4TestComponent1")
+        msgService1.remove("Message4TestComponentNotSubscribedTo")
+        myThread.transaction.commit()
+
+        myThread.transaction.begin()
+        # remove all messages
+        msgService1.purgeMessages()
+        assert msgService1.pendingMsgs() == 0
+        myThread.transaction.commit()
+        
+        # test publish unique.
+        myThread.transaction.begin()
+        for i in xrange(0,3*MsgServiceTest._maxMsg):
+            msg = {'name' : 'Message4TestComponent1', 'payload' : 'aPayload_'+str(i), 'instant':True}
+            msgService1.publishUnique(msg)
+        for i in xrange(0,3*MsgServiceTest._maxMsg):
+            msg = {'name' : 'PriorityMessage4TestComponent1', 'payload' : 'aPayload_'+str(i), 'instant':True}
+            msgService1.publishUnique(msg)
+        myThread.transaction.commit()
+        myThread.transaction.begin()
+        # as we published unique only 3 entries where made (1 messages is subscribed by two copmonents)
+        assert msgService1.pendingMsgs() == 3
+        myThread.transaction.commit()
+
+    def testD(self):
+        return
+        # do some insert and get tests and measure it.
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        msgServiceL = []
+        for i in xrange(0,10):
+            msgService = \
+                myThread.factory['msgService'].loadObject("MsgService")
+            msgService.registerAs("TestComponent"+str(i))
+            msgService.subscribeTo("msg_for_"+str(i))
+            msgService.subscribeTo("msg_for_all")
+            msgService.prioritySubscribeTo("priority_msg_for_"+str(i))
+            msgService.prioritySubscribeTo("priority_msg_for_all")
+            msgServiceL.append(msgService)
+        msgServiceL[0].purgeMessages()
+        myThread.transaction.commit()
+
+        myThread.transaction.begin()
+        # first we insert a lot of messages by one service
+        print('Inserting: '+str(2*MsgServiceTest._minMsg*10) +' messages')
+        start = time.time()
+        for i in xrange(0,MsgServiceTest._minMsg):
+            msg = {'name':'msg_for_all','payload':'from0_normal_'+str(i)}
+            msgServiceL[0].publish(msg)
+            msg = {'name':'priority_msg_for_all','payload':'from0_priority_'+str(i)}
+            msgServiceL[0].publish(msg)
+            msgServiceL[0].finish()
+        myThread.transaction.commit()
+        stop= time.time()
+        interval = float(float(stop) - float(start) )
+        totalInsert = 2*MsgServiceTest._minMsg*10
+        timePerMessage = float ( float(interval) / float(totalInsert) )
+        print('Inserting took: '+str(timePerMessage)+ ' seconds per message')
+
+        print('Retrieving: '+str(2*MsgServiceTest._minMsg*10) +' messages')
+        start = time.time()
+        for j in xrange(0,MsgServiceTest._minMsg):
+            for i in xrange(0,10):
+                myThread.transaction.begin()
+                msg = msgServiceL[i].get() 
+                assert msg['payload'] == 'from0_priority_'+str(j)
+                # we need to finish the message handling.
+                msgServiceL[i].finish()
+                myThread.transaction.commit()
+
+        # once we have them all we should get the normal messages
+        for j in xrange(0,MsgServiceTest._minMsg):
+            for i in xrange(0,10):
+                myThread.transaction.begin()
+                msg = msgServiceL[i].get() 
+                assert msg['payload'] == 'from0_normal_'+str(j)
+                # we need to finish the message handling.
+                msgServiceL[i].finish()
+                myThread.transaction.commit()
+        stop = time.time()
+        interval = float(float(stop) - float(start) )
+        totalInsert = 2*MsgServiceTest._minMsg*10
+        timePerMessage = float ( float(interval) / float(totalInsert) )
+        print('Retrieving took: '+str(timePerMessage)+ ' seconds per message')
+
+        myThread.transaction.begin()
+        # we should now have 0 messages left.
+        assert msgServiceL[0].pendingMsgs() == 0
+        myThread.transaction.commit()
+
+        # purge everything.
+    def testE(self):
+        # do some insert and get tests and measure it.
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        msgServiceL = []
+        for i in xrange(0,10):
+            msgService = \
+                myThread.factory['msgService'].loadObject("MsgService")
+            msgService.registerAs("TestComponent"+str(i))
+            msgService.subscribeTo("msg_for_"+str(i))
+            msgService.subscribeTo("msg_for_all")
+            msgService.prioritySubscribeTo("priority_msg_for_"+str(i))
+            msgService.prioritySubscribeTo("priority_msg_for_all")
+            msgServiceL.append(msgService)
+        msgServiceL[0].purgeMessages()
+        myThread.transaction.commit()
+
+        myThread.transaction.begin()
+        # first we insert a lot of messages by one service
+        print('Inserting: '+str(2*MsgServiceTest._minMsg*10) +' messages')
+        start = time.time()
+        for i in xrange(0,MsgServiceTest._minMsg):
+            msg = {'name':'msg_for_all','payload':'from0_normal_'+str(i)}
+            msgServiceL[0].publish(msg)
+            msg = {'name':'priority_msg_for_all','payload':'from0_priority_'+str(i)}
+            msgServiceL[0].publish(msg)
+            msgServiceL[0].finish()
+        myThread.transaction.commit()
+        stop= time.time()
+        interval = float(float(stop) - float(start) )
+        totalInsert = 2*MsgServiceTest._minMsg*10
+        timePerMessage = float ( float(interval) / float(totalInsert) )
+        print('Inserting took: '+str(timePerMessage)+ ' seconds per message')
+
+        print('Retrieving: '+str(2*MsgServiceTest._minMsg*10) +' messages (but everytime we insert one too)')
+        # then we do alternate insert / get to check the amount of time needed.
+        # first we should get the priority messages 
+        start = time.time()
+        for j in xrange(0,MsgServiceTest._minMsg):
+            myThread.transaction.begin()
+            msg = {'name':'msg_for_all','payload':'from0_normal_added'}
+            msgServiceL[0].publish(msg)
+            msgServiceL[0].finish()
+            myThread.transaction.commit()
+            for i in xrange(0,10):
+                myThread.transaction.begin()
+                msg = msgServiceL[i].get() 
+                assert msg['payload'] == 'from0_priority_'+str(j)
+                # we need to finish the message handling.
+                msgServiceL[i].finish()
+                myThread.transaction.commit()
+
+        # once we have them all we should get the normal messages
+        for j in xrange(0,MsgServiceTest._minMsg):
+            myThread.transaction.begin()
+            msg = {'name':'msg_for_all','payload':'from0_normal_added'}
+            msgServiceL[0].publish(msg)
+            msgServiceL[0].finish()
+            myThread.transaction.commit()
+            for i in xrange(0,10):
+                myThread.transaction.begin()
+                msg = msgServiceL[i].get() 
+                assert msg['payload'] == 'from0_normal_'+str(j)
+                # we need to finish the message handling.
+                msgServiceL[i].finish()
+                myThread.transaction.commit()
+        stop = time.time()
+        interval = float(float(stop) - float(start) )
+        totalInsert = 2*MsgServiceTest._minMsg*10
+        timePerMessage = float ( float(interval) / float(totalInsert) )
+        print('Insert/Retrieving took: '+str(timePerMessage)+ ' seconds per insert/retrieve message on queue with '+str(totalInsert)+' messages')
+
+        myThread.transaction.begin()
+        # we should now have 0 messages left.
+        assert msgServiceL[0].pendingMsgs() == 2*MsgServiceTest._minMsg*10
+        myThread.transaction.commit()
+
+        # purge everything.
 
 if __name__ == "__main__":
     unittest.main()

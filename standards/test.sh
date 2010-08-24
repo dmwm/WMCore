@@ -10,5 +10,6 @@ cd MsgService_t
 python MsgService_t.py
 cd ../Agent_t
 #python Harness_t.py
+#python PersistentThreadPool_t.py
 cd ../Database_t
 #python DBFormatter_t.py

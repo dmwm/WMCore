@@ -21,7 +21,7 @@ h2{
 	font-size:22px;
 }
 
-h3, p, li, dt, dd{
+h3, p, li, dt, dd, fieldset, legend, label{
 	font-family:'Helvetica Neue', 'HelveticaNeue', Helvetica, arial, sans-serif;
 }
 

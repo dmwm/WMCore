@@ -28,8 +28,6 @@ class GetByID(MySQLBase):
     def execute(self, files=None, conn = None, transaction = False):
         binds = self.getBinds(files)
         
-        self.logger.debug('File.Get binds: %s' % binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
-        self.logger.debug('File.Get result: %s' % result)
         return self.format(result)

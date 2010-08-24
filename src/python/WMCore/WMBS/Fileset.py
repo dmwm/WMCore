@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.18 2008/07/08 12:09:54 metson Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Fileset.py,v 1.19 2008/08/05 17:59:31 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -98,7 +98,7 @@ class Fileset(BusinessObject, WMFileset):
             values = action.execute(fileset=self.id)
             self.name, self.open, self.lastUpdate = values
         else:
-            raise TypeError, 'populate method not supported'
+            raise TypeError, 'Chosen populate method not supported'
         
         
         
@@ -116,17 +116,17 @@ class Fileset(BusinessObject, WMFileset):
         Add contents of self.newfiles to the database, empty self.newfiles, reload self
         """
         comfiles = []
+        if not self.exists():
+            self.create()
+        
         while len(self.newfiles) > 0:
             f = self.newfiles.pop()
             self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
             try:
                 f.save()
-                self.daofactory(classname='Files.AddToFileset').execute(file=f.dict["lfn"], fileset=self.name)
-                
             except IntegrityError, ex:
-                error = 'File %s already exists in the database' % f.dict["lfn"]
-                self.logger.exception(error)
-                self.logger.exception(str(ex))
-                raise IntegrityError, error
-        #self.newfiles = Set()
+                self.logger.warning('File already exists in the database %s' % f.dict["lfn"])
+                self.logger.warning(str(ex))
+        
+            self.daofactory(classname='Files.AddToFileset').execute(file=f.dict["lfn"], fileset=self.name)
         self.populate()

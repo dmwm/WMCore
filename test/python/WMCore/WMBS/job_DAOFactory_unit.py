@@ -7,11 +7,11 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: job_DAOFactory_unit.py,v 1.2 2008/07/21 15:21:35 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: job_DAOFactory_unit.py,v 1.3 2008/08/05 18:00:53 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands, random, datetime
-
+from sets import Set
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
@@ -123,7 +123,7 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
                                             dbfactory = dbi))
             self.subscriptions[c].create()
             c = c + 1
-            
+
     def testMakeJob(self):
         testlogger = logging.getLogger('testMakeJob')
         db_interfaces = [self.dbf1]#, self.dbf2:
@@ -132,16 +132,25 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
             num_files = len(sub.availableFiles())
             print "files available %s, files acquired %s" % (num_files,len(sub.acquiredFiles()))
             job1 = Job(subscription = sub, logger=testlogger, dbfactory = dbi)
-            print "job %s has %i files" % (job1.id, len(job1.file_set))
+            print "job %s has %i files" % (job1.id, len(job1.listLFNs()))
             before = len(sub.acquiredFiles())
             print "files available %s, files acquired %s" % (len(sub.availableFiles()),before)
             size = 10
-            job2 = Job(subscription = sub, files = sub.acquireFiles(size=size), logger=testlogger, dbfactory = dbi)
-            print "job %s has %i files" % (job2.id, len(job2.file_set))
+            fileset = Fileset(name='testMakeJobFileset', 
+                              logger=testlogger, 
+                              dbfactory=dbi)
+            for i in sub.acquireFiles(size=size):
+                file = File(id=i, logger=testlogger, dbfactory=dbi)
+                file.load()
+                fileset.addFile(file)
+            fileset.commit()
+            
+            job2 = Job(subscription = sub, files = fileset, logger=testlogger, dbfactory = dbi)
+            print "job %s has %i files" % (job2.id, len(job2.listLFNs()))
             print "files available %s, files acquired %s" % (len(sub.availableFiles()), len(sub.acquiredFiles()))
             assert len(sub.acquiredFiles()) == before + size, "Job did not acquire files correctly"
             assert len(sub.availableFiles()) == num_files - before - size, "Job did not acquire files correctly"
-            
+                        
     def testFileCycle(self):
         testlogger = logging.getLogger('testFileCycle')
         db_interfaces = [self.dbf1]#, self.dbf2:
@@ -152,14 +161,34 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
             size = 100
             jobs = []
             for j in range(0, 10):
-                job = Job(subscription = sub, files = sub.acquireFiles(size=size), logger=testlogger, dbfactory = dbi)
+                fileset = Fileset(name='testMakeJobFileset_%s' % j, # Need to increment the name as it goes to the DB
+                              logger=testlogger, 
+                              dbfactory=dbi)
+                for i in sub.acquireFiles(size=size):
+                    file = File(id=i, logger=testlogger, dbfactory=dbi)
+                    file.load()
+                    fileset.addFile(file)
+                fileset.commit()
+                job = Job(subscription = sub, files = fileset, logger=testlogger, dbfactory = dbi)
                 jobs.append(job)
-                assert len(job.file_set) == size, "Job has a different number of files than expected"
+                assert len(job.listLFNs()) == size, "Job has a different number of files (%s) than expected (%s)" % (len(job.listLFNs()), size)
                 assert job.id == j + 1, "Job id is not what is expected"
             job = Job(subscription = sub, files = sub.acquireFiles(size=size), logger=testlogger, dbfactory = dbi)
             assert len(job.file_set) == 0, "11th job has files"
             print "files available %s, files acquired %s" % (len(sub.availableFiles()),len(sub.acquiredFiles()))
-
+        
+    def testFileManip(self):
+        testlogger = logging.getLogger('testFileManip')
+        db_interfaces = [self.dbf1]#, self.dbf2:
+        for dbi in db_interfaces:
+            sub = self.subscriptions[db_interfaces.index(dbi)]
+            job = Job(sub)
+            for i in range(0,10):
+                file = File("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
+                                 1000, 2000, 10 + i, 12312, logger=testlogger, dbfactory = dbi)
+                job.addFile(file)
+                assert len(job.listLFNs()) == i+1, "wrong number of lfn's associated to job" 
+        
 if __name__ == "__main__":
     unittest.main()    
         

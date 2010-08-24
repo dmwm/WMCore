@@ -25,8 +25,6 @@ class AddRunLumi(MySQLBase):
     
     def execute(self, files=None, run=0, lumi=0, conn = None, transaction = False):
         binds = self.getBinds(files, run, lumi)
-        
-        self.logger.debug('AddRunLumi binds: %s' % binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.format(result)

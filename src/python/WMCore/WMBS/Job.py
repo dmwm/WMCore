@@ -4,7 +4,8 @@ _Job_
 
 A job is owned by a subscription (which gives it it's workflow) and is 
 associated to a (set of) file(s). The job interacts with its subscription
-to acquire/complete/fail files. A job know's it's Workflow.
+to acquire/complete/fail files. A job know's it's Workflow via it's 
+subscription. A job is meaningless without a subscription.
 
 CREATE TABLE wmbs_job (
     id           INT(11) NOT NULL AUTO_INCREMENT,
@@ -25,20 +26,21 @@ CREATE TABLE wmbs_job_assoc (
 
 """
 
-__revision__ = "$Id: Job.py,v 1.1 2008/07/07 09:43:20 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Job.py,v 1.2 2008/08/05 17:59:31 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import datetime
 from sets import Set
 
 from WMCore.DataStructs.Job import Job as WMJob
+from WMCore.DataStructs.Fileset import Fileset
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Job(BusinessObject, WMJob):
-    def __init__(self, subscription=None, files = Set(), id = -1, logger=None, dbfactory = None):
+    def __init__(self, subscription=None, files = Fileset(), id = -1, logger=None, dbfactory = None):
         """
         Subscription object is used to determine the workflow. 
         file_set is a set that contains the id's of all files the job should use.
@@ -57,19 +59,27 @@ class Job(BusinessObject, WMJob):
         """
         action = self.daofactory(classname="Jobs.New")
         self.id, self.last_update = action.execute(subscription = self.subscription.id)
+        self.load()
     
     def load(self):
         """
         Load the subscription and file id's from the database for a job of known id
         """
-        pass
-        
+        file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
+        for i in file_ids:
+            file = File(id=i)
+            file.load()
+            self.file_set.addFile(file)
+            
     def associateFiles(self):
         """
         update the wmbs_job_assoc table with the files in self.file_set
         """
-        pass
-        
+        def getFileId(file):
+             return file.dict["id"]
+        files = map(getFileId, self.file_set.listFiles())
+        self.daofactory(classname='Jobs.AddFiles').execute(self.id, files)
+    
     def resubmit(self):
         """
         Reset the file status to acquired for files associated to this job

@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.1 2008/08/21 13:18:16 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Transaction_t.py,v 1.2 2008/08/21 16:12:05 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -36,11 +36,16 @@ class TransactionTest(unittest.TestCase):
         
         self.tearDown()
         
-        self.db = []
-        self.db.append(DBFactory(self.logger,'mysql://metson@localhost/%s' % self.mysqldb).connect())
-        self.db.append(DBFactory(self.logger,'sqlite:///%s' % self.sqlitedb).connect())
+        self.db = {}
+        self.db['mysql'] = DBFactory(self.logger,
+                         'mysql://metson@localhost/%s' % self.mysqldb).connect()
+        self.db['sqlite'] = DBFactory(self.logger,
+                         'sqlite:///%s' % self.sqlitedb).connect()
         #add in Oracle
-        self.create = "create table test (bind1 varchar(20), bind2 varchar(20))"
+        self.create = {}
+        self.create['mysql'] = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB;"
+        self.create['sqlite'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
+        
         self.insert = "insert into test (bind1, bind2) values (:bind1, :bind2)"
         self.insert_binds = [ {'bind1':'value1a', 'bind2': 'value2a'},
               {'bind1':'value1b', 'bind2': 'value2b'},
@@ -61,33 +66,43 @@ class TransactionTest(unittest.TestCase):
             pass
     
     def testGoodTransaction(self):
-        for dbi in self.db:
-            print type(dbi)
+        for name, dbi in self.db.items():
+            print name, type(dbi)
+            
             trans = Transaction(dbi)
-            trans.processData(self.create)
+            trans.processData(self.create[name])
             trans.processData(self.insert, self.insert_binds)
-            result = trans.processData(self.select)
-            assert len(result) == 1
-            assert len(result[0].fetchall()) == 3
+            result1 = trans.processData(self.select)
+            
+            assert len(result1) == 1
+            assert len(result1[0].fetchall()) == 3
+            
             trans.commit()
             trans = Transaction(dbi)
-            result = trans.processData(self.select)
-            assert len(result[0].fetchall()) == 3, "commit failed"
+            result2 = trans.processData(self.select)
+            
+            assert len(result2[0].fetchall()) == 3, "commit failed"
             
     def testBadTransaction(self):
-        for dbi in self.db:
-            print type(dbi)
+        for name, dbi in self.db.items():
+            print name, type(dbi)
             trans = Transaction(dbi)
-            trans.processData(self.create)
+            trans.processData(self.create[name])
+            
+            trans = Transaction(dbi)
             trans.processData(self.insert, self.insert_binds)
-            result = trans.processData(self.select)
-            assert len(result) == 1
-            assert len(result[0].fetchall()) == 3
+            result1 = trans.processData(self.select)
+            
+            assert len(result1) == 1
+            assert len(result1[0].fetchall()) == 3
+            
             trans.rollback()
             trans = Transaction(dbi)
-            result = trans.processData(self.select)
-            assert len(result) == 1
-            assert len(result[0].fetchall()) == 0, "roll back failed"
+            result2 = trans.processData(self.select)
+            
+            assert len(result2) == 1
+            l = len(result2[0].fetchall())
+            assert l == 0, "roll back failed, %s records" % l
             
             
 if __name__ == "__main__":

@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.9 2008/09/22 10:01:40 evansde Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: File.py,v 1.10 2008/09/25 12:57:28 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Run import Run
@@ -78,15 +78,11 @@ class File(WMObject, dict):
 
     def __eq__(self, rhs):
         """
-        File is equal if it has the same name, size, runs events and lumi
+        File is equal if it has the same name
         """
         eq = False
         if type(rhs) == type(self):
             eq = self['lfn'] == rhs.dict['lfn']
-            eq = eq and self['size'] == rhs.dict['size']
-            eq = eq and self['events'] == rhs.dict['events']
-            eq = eq and self['run'] == rhs.dict['run']
-            eq = eq and self['lumi'] == rhs.dict['lumi']
         elif type(rhs) == type('string'):
             eq = self['lfn'] == rhs
         return eq
@@ -96,8 +92,4 @@ class File(WMObject, dict):
 
     def __hash__(self):
         hash = self['lfn'].__hash__()
-        hash = hash + self['size'].__hash__()
-        hash = hash + self['events'].__hash__()
-        hash = hash + self['run'].__hash__()
-        hash = hash + self['lumi'].__hash__()
         return hash

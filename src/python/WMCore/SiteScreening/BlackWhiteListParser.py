@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.7 2008/11/04 16:06:04 ewv Exp $"
-__version__  = "$Revision: 1.7 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.8 2009/02/03 17:55:34 ewv Exp $"
+__version__  = "$Revision: 1.8 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -76,7 +76,8 @@ class BlackWhiteListParser(object):
                 hadErrors = True
 
             if expandedItem:
-                expandedList.extend(expandedItem)
+                for pollutedItem in expandedItem:
+                    expandedList.extend(pollutedItem.split(','))
             else:
                 expandedList.append(item)
 

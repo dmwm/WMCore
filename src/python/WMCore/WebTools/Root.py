@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.1 2009/01/07 11:57:32 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Root.py,v 1.2 2009/01/07 17:37:56 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -46,11 +46,20 @@ class Root(object):
         #Configure CherryPy
         cpconfig.update ({"server.environment": self.config.get('root', 'environment')})
         cpconfig.update ({"server.socket_port": int(self.config.get('root', 'port'))})
+        
+        cpconfig.update ({'tools.expires.on': True,
+                          'tools.expires.secs': 300,
+                          'tools.response_headers.on':True,
+                          'tools.etags.on':True,
+                          'tools.etags.autotags':True,
+                          'tools.encode.on': True, 
+                          'tools.gzip.on': True})
         #cpconfig.update ({'request.show_tracebacks': False})
         #cpconfig.update ({'request.error_response': self.handle_error})
         #cpconfig.update ({'tools.proxy.on': True})
         #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})    
         
+        print cpconfig
         
         self.loadPages(opts, self.config)
         

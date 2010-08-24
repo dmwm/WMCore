@@ -3,13 +3,13 @@
 import unittest, commands
 
 from unittest import TestCase
-from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAO_t
-from WMCore_t.WMBS_t.Performance_t.Subscription_t import Subscription_t
+from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
+from WMCore_t.WMBS_t.Performance_t.Subscription_t import SubscriptionTest
 from WMCore.DAOFactory import DAOFactory
 
-class MySQLDAOSubscription_t(Subscription_t, MySQLDAO_t, TestCase):
+class MySQLDAOSubscriptionTest(SubscriptionTest, MySQLDAOTest, TestCase):
     """
-    __MySQLDAOSubscription_t__
+    __MySQLDAOSubscriptionTest__
 
      DB Performance testcase for WMBS Subscription class
 
@@ -18,15 +18,15 @@ class MySQLDAOSubscription_t(Subscription_t, MySQLDAO_t, TestCase):
 
     def setUp(self):
 
-        MySQLDAO_t.setUp(self)
-        Subscription_t.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
+        MySQLDAOTest.setUp(self)
+        SubscriptionTest.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
         #Set the specific threshold for the testm
         self.threshold = 1
 
     def tearDown(self):
         #Call superclass tearDown method
-        Subscription_t.tearDown(self)
-        MySQLDAO_t.tearDown(self)
+        SubscriptionTest.tearDown(self)
+        MySQLDAOTest.tearDown(self)
         #DB Specific tearDown code
         
 

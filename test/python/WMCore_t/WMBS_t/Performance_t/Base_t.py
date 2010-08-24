@@ -11,9 +11,9 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from sets import Set
 
-class Base_t():
+class BaseTest():
     """
-    __Base_t__
+    __BaseTest__
 
     Base class for Performance Tests at WMBS
 

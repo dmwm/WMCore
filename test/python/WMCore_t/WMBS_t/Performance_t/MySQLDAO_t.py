@@ -2,9 +2,9 @@
 
 import commands
 from ConfigParser import ConfigParser  
-class MySQLDAO_t():
+class MySQLDAOTest():
     """
-    __MySQLDAO_t__
+    __MySQLDAOTest__
 
      DB Performance testcase for WMBS File class
 

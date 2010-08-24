@@ -2,9 +2,9 @@
 
 import commands, os
 from ConfigParser import ConfigParser
-class SQLiteDAO_t():
+class SQLiteDAOTest():
     """
-    __SQLiteDAO_t__
+    __SQLiteDAOTest__
 
      DB Performance testcase for WMBS File class
 

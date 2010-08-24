@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 import logging
-from WMCore_t.WMBS_t.Performance_t.Base_t import Base_t
+from WMCore_t.WMBS_t.Performance_t.Base_t import BaseTest
 from WMCore.Database.DBFactory import DBFactory
 
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 
-class Subscription_t(Base_t):
+class SubscriptionTest(BaseTest):
     """
-    __Subscription_t__
+    __SubscriptionTest__
 
      Performance testcase for Subscription DAO class
 
@@ -20,17 +20,17 @@ class Subscription_t(Base_t):
     """
     
     def setUp(self, sqlURI='', logarg=''):
-        #Call common setUp method from Base_t
+        #Call common setUp method from BaseTest
                 
         self.logger = logging.getLogger(logarg + 'SubscriptionPerformanceTest')
         
         dbf = DBFactory(self.logger, sqlURI)
         
-        Base_t.setUp(self,dbf=dbf)
+        BaseTest.setUp(self,dbf=dbf)
 
     def tearDown(self):
         #Call superclass tearDown method
-        Base_t.tearDown(self)
+        BaseTest.tearDown(self)
 
     def testAcquireFiles(self):         
         print "testAcquireFiles"

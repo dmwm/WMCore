@@ -3,30 +3,30 @@
 import unittest, commands
 
 from unittest import TestCase
-from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAO_t
-from WMCore_t.WMBS_t.Performance_t.Job_t import Job_t
+from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
+from WMCore_t.WMBS_t.Performance_t.Job_t import JobTest
 from WMCore.DAOFactory import DAOFactory
 
-class SQLiteDAOJob_t(Job_t, SQLiteDAO_t, TestCase):
+class SQLiteDAOJobTest(JobTest, SQLiteDAOTest, TestCase):
     """
-    __SQLiteDAOJob_t__
+    __SQLiteDAOJobTest__
 
-     DB Performance testcase for WMBS File class
+     DB Performance testcase for WMBS Job class
 
 
     """
 
     def setUp(self):
 
-        SQLiteDAO_t.setUp(self)
-        Job_t.setUp(self,sqlURI=self.sqlURI, logarg='SQLite')
+        SQLiteDAOTest.setUp(self)
+        JobTest.setUp(self,sqlURI=self.sqlURI, logarg='SQLite')
         #Set the specific threshold for the testm
         self.threshold = 1
 
     def tearDown(self):
         #Call superclass tearDown method
-        Job_t.tearDown(self)
-        SQLiteDAO_t.tearDown(self)
+        JobTest.tearDown(self)
+        SQLiteDAOTest.tearDown(self)
         #DB Specific tearDown code
         
 

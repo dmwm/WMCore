@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import logging
-from WMCore_t.WMBS_t.Performance_t.Base_t import Base_t
+from WMCore_t.WMBS_t.Performance_t.Base_t import BaseTest
 from WMCore.Database.DBFactory import DBFactory
 
-class Workflow_t(Base_t):
+class WorkflowTest(BaseTest):
     """
-    __Workflow_t__
+    __WorkflowTest__
 
      Performance testcase for WMBS Workflow class
 
@@ -17,17 +17,17 @@ class Workflow_t(Base_t):
     """
     
     def setUp(self, sqlURI='', logarg=''):
-        #Call common setUp method from Base_t
+        #Call common setUp method from BaseTest
                 
         self.logger = logging.getLogger(logarg + 'WorkflowPerformanceTest')
         
         dbf = DBFactory(self.logger, sqlURI)
         
-        Base_t.setUp(self,dbf=dbf)
+        BaseTest.setUp(self,dbf=dbf)
 
     def tearDown(self):
         #Call superclass tearDown method
-        Base_t.tearDown(self)
+        BaseTest.tearDown(self)
 
     def testExists(self):         
         print "testExists"
@@ -38,7 +38,7 @@ class Workflow_t(Base_t):
     def testNew(self):         
         print "testNew"
 
-        #Can't use testWorkflow from Base_t
+        #Can't use testWorkflow from BaseTest
         spec='TestSpec'
         owner='WorkflowTest'
         name='NewTestWorkflow'

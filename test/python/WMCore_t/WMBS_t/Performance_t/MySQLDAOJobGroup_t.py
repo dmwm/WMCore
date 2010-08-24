@@ -3,13 +3,13 @@
 import unittest, commands
 
 from unittest import TestCase
-from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAO_t
-from WMCore_t.WMBS_t.Performance_t.JobGroup_t import JobGroup_t
+from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
+from WMCore_t.WMBS_t.Performance_t.JobGroup_t import JobGroupTest
 from WMCore.DAOFactory import DAOFactory
 
-class MySQLDAOJobGroup_t(JobGroup_t, MySQLDAO_t, TestCase):
+class MySQLDAOJobGroupTest(JobGroupTest, MySQLDAOTest, TestCase):
     """
-    __MySQLDAOJobGroup_t__
+    __MySQLDAOJobGroupTest__
 
      DB Performance testcase for WMBS JobGroup class
 
@@ -18,15 +18,15 @@ class MySQLDAOJobGroup_t(JobGroup_t, MySQLDAO_t, TestCase):
 
     def setUp(self):
 
-        MySQLDAO_t.setUp(self)
-        JobGroup_t.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
+        MySQLDAOTest.setUp(self)
+        JobGroupTest.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
         #Set the specific threshold for the testm
         self.threshold = 1
 
     def tearDown(self):
         #Call superclass tearDown method
-        JobGroup_t.tearDown(self)
-        MySQLDAO_t.tearDown(self)
+        JobGroupTest.tearDown(self)
+        MySQLDAOTest.tearDown(self)
         #DB Specific tearDown code
         
 

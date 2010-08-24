@@ -7,12 +7,12 @@ MySQL implementation of Subscription.GetCompletedFiles
 Return a list of files that are available for processing
 """
 __all__ = []
-__revision__ = "$Id: GetCompletedFiles.py,v 1.2 2008/06/30 18:00:19 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetCompletedFiles.py,v 1.3 2008/09/09 16:57:58 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class GetCompletedFiles(MySQLBase):
+class GetCompletedFiles(DBFormatter):
 #    sql = """select lfn from wmbs_file_details
 #                where id in (
 #                     select file from wmbs_sub_files_complete where subscription=:subscription

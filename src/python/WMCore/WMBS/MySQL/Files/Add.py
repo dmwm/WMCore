@@ -1,9 +1,9 @@
 """
 MySQL implementation of AddFile
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class Add(MySQLBase):
+class Add(DBFormatter):
     sql = """insert into wmbs_file_details (lfn, size, events) 
                 values (:lfn, :size, :events)"""
                 
@@ -23,8 +23,12 @@ class Add(MySQLBase):
                               'events': f[2]})
         return binds
     
+    def format(self, result):
+        return True
+    
     def execute(self, files=None, size=0, events=0, conn = None, transaction = False):
         binds = self.getBinds(files, size, events)
+        
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.format(result)

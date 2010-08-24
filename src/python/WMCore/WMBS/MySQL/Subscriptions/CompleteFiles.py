@@ -5,12 +5,12 @@ _CompleteFiles_
 MySQL implementation of Subscription.CompleteFiles
 """
 __all__ = []
-__revision__ = "$Id: CompleteFiles.py,v 1.1 2008/06/24 15:53:16 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CompleteFiles.py,v 1.2 2008/09/09 16:57:20 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class CompleteFiles(MySQLBase):
+class CompleteFiles(DBFormatter):
     sql = """insert into wmbs_sub_files_complete 
                 (subscription, file) values (:subscription, :file)"""
     

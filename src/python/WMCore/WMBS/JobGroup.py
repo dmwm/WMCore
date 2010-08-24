@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.9 2008/12/05 21:05:51 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobGroup.py,v 1.10 2008/12/18 15:10:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -89,11 +89,6 @@ class JobGroup(WMJobGroup):
         self.id, self.uid = action.execute(self.uid, self.subscription["id"],
                                            self.groupoutput.id)
 
-        # Iterate through all the jobs in the group
-        for j in self.jobs:
-            j.create(group=self.id)
-            j.associateFiles()
-            
         return
 
     def delete(self):
@@ -135,27 +130,21 @@ class JobGroup(WMJobGroup):
         self.groupoutput.load(method = "Fileset.LoadFromID")
         return
         
-    def add(self, job):
+    def commit(self):
         """
-        Input must be (subclasses of) WMBS jobs. Input may be a list or set as 
-        well as single jobs.
+        _commit_
+
+        Write any new jobs to the database, creating them in the database if
+        necessary.
         """
-        if self.exists() == False:
-            self.create()
-        
-        if type(job) != type([]) and type(job) != type(Set()):
-            job = [job]
-            
-        # Iterate through all the jobs in the group and commit them to the 
-        # database
         trans = Transaction(dbinterface = self.dbi)
         try:
-            for j in job:
+            for j in self.newjobs:
                 j.create(group=self)
                 j.associateFiles()
             
+            WMJobGroup.commit(self)
             trans.commit()
-            self.jobs = self.jobs | self.makeset(job)
         except Exception, e:
             trans.rollback()
             raise e

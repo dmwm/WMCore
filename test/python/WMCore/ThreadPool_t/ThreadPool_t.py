@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101,C0103,R0902
 """
 _ThreadPool_t_
 
@@ -6,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.4 2008/09/08 19:38:03 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.5 2008/09/09 13:50:36 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import unittest

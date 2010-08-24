@@ -4,8 +4,8 @@
 Template Action for trigger.
 """
 
-__revision__ = "$Id: ActionTemplate.py,v 1.1 2008/09/08 19:38:02 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ActionTemplate.py,v 1.2 2008/09/09 13:50:35 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -27,14 +27,15 @@ class ActionTemplate:
         # to a handler through an array.
         self.bulk = False
 
-    def handle(self, payload_and_id):
+    def handle(self, payloadAndId):
         """
         Simple handler where payload is allways a dictionary of 'id' and 'payload'
         where payload is the object set in when the action was set.
         """
-        logging.debug('-->Action Test Action is being invoked for payload(s): '+ \
-            str(payload_and_id) )
+        msg = '-->Action Test Action is being invoked for payload(s): '+ \
+            str(payloadAndId) 
+        logging.debug(msg)
 
-    def __call__(self, payload_and_id):
-        self.handle(payload_and_id)
+    def __call__(self, payloadAndId):
+        self.handle(payloadAndId)
 

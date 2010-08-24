@@ -12,6 +12,8 @@ mv codeQuality.txt qualityThreadPool.txt
 mv codeQuality.txt qualityAgent.txt
 ./quality.sh $WMCOREBASE/src/python/WMCore/WMFactory.py
 mv codeQuality.txt qualityWMFactory.txt
+./quality.sh $WMCOREBASE/src/python/WMCore/Trigger/
+mv codeQuality.txt qualityTrigger.txt
 #./quality.sh $WMCOREBASE/src/python/WMCore/Database/
 #mv codeQuality.txt qualityDatabase.txt
 #./quality.sh $WMCOREBASE/src/python/WMCore/JobSplitting
@@ -34,6 +36,8 @@ mv codeQuality.txt qualityMsgService_t.txt
 mv codeQuality.txt qualityThreadPool_t.txt
 ./quality.sh $WMCOREBASE/test/python/WMCore/Agent_t/
 mv codeQuality.txt qualityAgent_t.txt
+./quality.sh $WMCOREBASE/test/python/WMCore/Trigger_t/
+mv codeQuality.txt qualityTrigger_t.txt
 #./quality.sh $WMCOREBASE/test/python/WMCore/Database_t/
 #mv codeQuality.txt qualityDatabase_t.txt
 

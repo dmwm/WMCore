@@ -1,12 +1,13 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1103
 
 """
 Class that implements trigger functionality for
 Different components to synchronize work
 """
 
-__revision__ = "$Id: Trigger.py,v 1.1 2008/09/08 19:38:02 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Trigger.py,v 1.2 2008/09/09 13:50:35 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -17,6 +18,8 @@ from WMCore.WMExceptions import WMEXCEPTION
 from WMCore.WMException import WMException
 from WMCore.WMFactory import WMFactory
 
+#FIXME: do we want to have a multi queu version of this?
+
 class Trigger:
 
     """
@@ -26,7 +29,8 @@ class Trigger:
 
     def __init__(self):
         myThread = threading.currentThread()
-        self.query = myThread.factory['trigger'].loadObject(myThread.dialect+'.Queries')
+        self.query = myThread.factory['trigger'].loadObject(\
+            myThread.dialect+'.Queries')
         self.actionFactory = WMFactory("actions")
 
     def setFlag(self, args):
@@ -54,21 +58,23 @@ class Trigger:
             args = [args]
         argsIn = []
         for arg in args:
-            argsIn.append({'trigger_id':arg['trigger_id'],'id':arg['id']}) 
+            argsIn.append({'trigger_id':arg['trigger_id'], 'id':arg['id']}) 
         self.query.lockTrigger(argsIn)
         # remove the flags
         self.query.removeFlag(args)
         #check if all flags are set:
         notSets = self.query.allFlagsSet(argsIn)
         notToBSet = []
+        # single out triggers that should not trigger yet
         for notSet in notSets:
-            notToBSet.append([notSet['trigger_id'],notSet['id']])
+            notToBSet.append([notSet['trigger_id'], notSet['id']])
         toBset = []
+        # compare with the input which triggers should triggers.
         for arg in args:
-            if not [arg['trigger_id'],arg['id']] in notToBSet:
-                toBset.append({'trigger_id':arg['trigger_id'],'id':arg['id']})
+            if not [arg['trigger_id'], arg['id']] in notToBSet:
+                toBset.append({'trigger_id':arg['trigger_id'], 'id':arg['id']})
              
-        # if flags are set invoke action
+        # if flags are set invoke action (trigger it)
         if len(toBset) > 0:
             result = self.query.selectAction(args)
             # check which actions can be put in bulk
@@ -80,10 +86,12 @@ class Trigger:
                 if not actions.has_key(entry['action_name']):
                     actions[entry['action_name']] = []
                 payload = cPickle.loads(base64.decodestring(entry['payload']))
-                forAction = {'payload' : payload, 'id': entry['id']}
-                actions[entry['action_name']].append(forAction)
+                actions[entry['action_name']].append(\
+                    {'payload' : payload, 'id': entry['id']})
             for actionName in actions.keys():
                 action = self.actionFactory.loadObject(actionName)
+                # e.g. you can imagine that if an action has threading
+                # capability it can handle bulkd and spread it over the threads.
                 if action.bulk:
                     action.__call__(actions[actionName])
                 else:
@@ -146,7 +154,8 @@ class Trigger:
             if type(args) != list:
                 args = [args]
             for arg in args:
-                arg['payload'] = base64.encodestring(cPickle.dumps(arg['payload'])) 
+                arg['payload'] = base64.encodestring(\
+                    cPickle.dumps(arg['payload'])) 
             self.query.setAction(args)
         except Exception,ex:
             msg = WMEXCEPTION['WMCORE-10'] 

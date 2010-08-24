@@ -7,15 +7,14 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.1 2008/09/08 19:38:03 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Trigger_t.py,v 1.2 2008/09/09 13:50:37 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
 import logging
 import os
 import threading
-import time
 
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
@@ -35,15 +34,15 @@ class TriggerTest(unittest.TestCase):
     _setup = False
     _teardown = False
     # values for testing various sizes
-    _triggers = 1 
-    _jobspecs = 10
+    _triggers = 2
+    _jobspecs = 5
     _flags = 4
 
     def setUp(self):
         "make a logger instance and create tables"
        
         if not TriggerTest._setup: 
-            logging.basicConfig(level=logging.DEBUG,
+            logging.basicConfig(level=logging.NOTSET,
                 format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                 datefmt='%m-%d %H:%M',
                 filename='%s.log' % __file__,
@@ -88,66 +87,75 @@ class TriggerTest(unittest.TestCase):
 
         Test subscription of a component.
         """
-        trigger = Trigger()
+        # perpare trigger name tables if working in multi queue
         myThread = threading.currentThread()
         myThread.transaction = Transaction(myThread.dbi)
+        trigger = Trigger()
 
         print("\nCreate Triggers")
         flags = []
         actions  = []
-        for i in xrange(0,TriggerTest._triggers):
-            for j in xrange(0,TriggerTest._jobspecs):
-               for k in xrange(0,TriggerTest._flags):
-                  flags.append({'trigger_id' : "trigger"+str(i),\
-                                'id' : "jobSpec"+str(j),\
+        for i in xrange(0, TriggerTest._triggers):
+            for j in xrange(0, TriggerTest._jobspecs):
+                for k in xrange(0, TriggerTest._flags):
+                    flags.append({'trigger_id' : "trigger"+str(i), \
+                                'id' : "jobSpec"+str(j), \
                                 'flag_id' : "flag"+str(k)})
-               payload = {'jobspec' : 'jobSpec'+str(j), 'var1':'val1','var2':'val2','var3':'val3'}
-               actions.append({'id' : "jobSpec"+str(j),\
-                              'trigger_id' : "trigger"+str(i),\
+                payload = {'jobspec' : 'jobSpec'+str(j), \
+                    'var1':'val1', 'var2':'val2','var3':'val3'}
+                actions.append({'id' : "jobSpec"+str(j), \
+                              'trigger_id' : "trigger" + str(i), \
                               'action_name' : "WMCore.Trigger.ActionTemplate",\
                               'payload': payload})
 
         trigger.addFlag(flags)
-        trigger.addFlag({'trigger_id' : 'single_insert',\
-                         'id' : 'single_insert_id',\
+        trigger.addFlag({'trigger_id' : 'single_insert', \
+                         'id' : 'single_insert_id', \
                          'flag_id': 'single_flag_insert1'})
-        trigger.addFlag({'trigger_id' : 'single_insert',\
-                         'id' : 'single_insert_id',\
+        trigger.addFlag({'trigger_id' : 'single_insert', \
+                         'id' : 'single_insert_id', \
                          'flag_id': 'single_flag_insert2'})
         trigger.setAction(actions)
         myThread.transaction.commit()
 
     def testB(self):
+        """
+        Set almost all flags
+        """
+
         trigger = Trigger()
         myThread = threading.currentThread()
         myThread.transaction.begin()
         flags = []
         print("\nSet not all Flags")
-        for i in xrange(0,TriggerTest._triggers):
-            for j in xrange(0,TriggerTest._jobspecs):
-                for k in xrange(0,(TriggerTest._flags-1)):
-                   flags.append({'trigger_id' : "trigger"+str(i),\
-                                 'id' : "jobSpec"+str(j),\
+        for i in xrange(0, TriggerTest._triggers):
+            for j in xrange(0, TriggerTest._jobspecs):
+                for k in xrange(0, (TriggerTest._flags-1)):
+                    flags.append({'trigger_id' : "trigger" + str(i), \
+                                 'id' : "jobSpec"+str(j), \
                                  'flag_id' : "flag"+str(k)})
         trigger.setFlag(flags)
-        trigger.setFlag({'trigger_id' : 'single_insert',\
-                          'id' : 'single_insert_id',\
+        trigger.setFlag({'trigger_id' : 'single_insert', \
+                          'id' : 'single_insert_id', \
                           'flag_id' : 'single_flag_insert1'})
 
         myThread.transaction.commit()
 
     def testC(self):
+        """
+        Set all flags and remove flags from database
+        """
         trigger = Trigger()
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
         flags = []
         print("\nSet all Flags")
-        for i in xrange(0,TriggerTest._triggers):
-            for j in xrange(0,TriggerTest._jobspecs):
-                for k in xrange(TriggerTest._flags-1,TriggerTest._flags):
-                   flags.append({'trigger_id' : "trigger"+str(i),\
-                                 'id' : "jobSpec"+str(j),\
+        for i in xrange(0, TriggerTest._triggers):
+            for j in xrange(0, TriggerTest._jobspecs):
+                for k in xrange(TriggerTest._flags-1, TriggerTest._flags):
+                    flags.append({'trigger_id' : "trigger"+str(i), \
+                                 'id' : "jobSpec"+str(j), \
                                  'flag_id' : "flag"+str(k)})
         trigger.setFlag(flags)
        

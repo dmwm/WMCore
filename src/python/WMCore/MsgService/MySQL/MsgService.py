@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1103
 """
 _MsgService_
 
@@ -33,9 +34,9 @@ messages after it is handled.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.5 2008/09/01 08:57:52 fvlingen Exp $"
+    "$Id: MsgService.py,v 1.6 2008/09/09 13:50:35 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.5 $"
+    "$Revision: 1.6 $"
 __author__ = \
     "fvlingen@caltech.edu"
 

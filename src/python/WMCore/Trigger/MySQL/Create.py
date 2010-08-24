@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#pylint: disable-msg=E1103
 
 """
 _Create_
@@ -7,11 +8,10 @@ Class for creating MySQL specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2008/09/08 19:38:02 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2008/09/09 13:50:36 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
-import logging
 import threading
 
 from WMCore.Database.DBCreator import DBCreator

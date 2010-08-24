@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#pylint: disable-msg=E1103
 """
 _Queries_
 
@@ -8,15 +8,16 @@ This module implements the mysql backend for the trigger.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.1 2008/09/08 19:38:02 fvlingen Exp $"
+    "$Id: Queries.py,v 1.2 2008/09/09 13:50:36 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
 import threading
 
 from WMCore.Database.DBFormatter import DBFormatter
+
 
 class Queries(DBFormatter):
     """
@@ -29,6 +30,8 @@ class Queries(DBFormatter):
     def __init__(self):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
+        # size we use for bulk inserts and deletes until binding is fixed.
+        self.size = 200
 
     def lockTrigger(self, args):
         """
@@ -49,7 +52,7 @@ INSERT INTO tr_trigger(id,flag_id,trigger_id) VALUES(:id,:flag_id,:trigger_id)
         self.execute(sqlStr, args)
         
 
-    def setAction(self,args):
+    def setAction(self, args):
         """
         Sets the associated action for a trigger. If the action was set it 
         updates it.
@@ -69,23 +72,34 @@ ON DUPLICATE KEY UPDATE action_name = VALUES(action_name)
         if len(args) == 0:
             return 
         if len(args) == 1:
+            # a bind for one works
             sqlStr = """
 DELETE FROM tr_trigger WHERE trigger_id = :trigger_id AND flag_id = :flag_id AND id = :id
             """
-            self.execute(sqlStr,args)
+            self.execute(sqlStr, args)
         else:
             # reformat query to do delete without binds
             # FIXME: there are some problems with multi bind delete.
-            sqlStr = """
+            # also there is a maximum query size mysql can deal with.
+            start = 0
+            end = self.size
+            while start < len(args):
+                if end > len(args):
+                    end = len(args)
+                sqlStr = """
 DELETE FROM tr_trigger WHERE 
-            """
-            orOp = False
-            for arg in args:
-                if orOp:
-                    sqlStr += ' OR '
-                orOp = True
-                sqlStr +=" (trigger_id='"+str(arg['trigger_id'])+"' AND flag_id='"+str(arg['flag_id'])+"')"
-            self.execute(sqlStr,{})
+                """
+                orOp = False
+                for arg in args[start:end]:
+                    if orOp:
+                        sqlStr += ' OR '
+                    orOp = True
+                    sqlStr += " (trigger_id='"+str(arg['trigger_id'])+\
+                        "' AND flag_id='"+str(arg['flag_id'])+"')"
+                self.execute(sqlStr, {})
+                start += 100
+                end += 100
+
 
     def allFlagsSet(self, args):
         """
@@ -111,9 +125,10 @@ SELECT COUNT(*) as total_count,trigger_id, id FROM tr_trigger WHERE
                 if orOp:
                     sqlStr += ' OR '
                 orOp = True
-                sqlStr +=" (trigger_id='"+str(arg['trigger_id'])+"' AND id='"+str(arg['id'])+"')"
-            sqlStr +=" GROUP BY trigger_id,id "
-            result = self.execute(sqlStr,{})
+                sqlStr += " (trigger_id='"+str(arg['trigger_id'])+\
+                    "' AND id='"+str(arg['id'])+"')"
+            sqlStr += " GROUP BY trigger_id,id "
+            result = self.execute(sqlStr, {})
             return self.format(result) 
 
 
@@ -128,7 +143,9 @@ SELECT COUNT(*) as total_count,trigger_id, id FROM tr_trigger WHERE
             return
         else:
             orOps = False
-            sqlStr1 = "SELECT action_name,trigger_id,id, payload FROM tr_action WHERE "
+            sqlStr1 = """
+SELECT action_name,trigger_id,id, payload FROM tr_action WHERE 
+            """
             sqlStr2 = "DELETE FROM tr_action WHERE "
             for arg in args:
                 if orOps :
@@ -139,10 +156,42 @@ SELECT COUNT(*) as total_count,trigger_id, id FROM tr_trigger WHERE
                 sqlStr2 += """(trigger_id='%s' AND id='%s') 
                 """ % (arg['trigger_id'], arg['id'])
                 orOps = True
-            result = self.execute(sqlStr1,{})
+            result = self.execute(sqlStr1, {})
             result = self.formatDict(result) 
-            self.execute(sqlStr2,{})
+            self.execute(sqlStr2, {})
             return result
+
+    def createTriggerTables(self, triggerName):
+        trigger = "tr_trigger_"+triggerName
+        sqlStr1 = """
+CREATE TABLE %s(
+   id VARCHAR(32) NOT NULL,
+   trigger_id VARCHAR(32) NOT NULL,
+   flag_id VARCHAR(32) NOT NULL,
+   time timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+   UNIQUE(id,trigger_id,flag_id),
+   INDEX(trigger_id)
+   ) TYPE=InnoDB;
+        """ %trigger
+        action = "tr_action_"+triggerName
+        sqlStr2 = """
+CREATE TABLE %s(
+   id VARCHAR(32) NOT NULL,
+   trigger_id VARCHAR(32) NOT NULL,
+   /* Action name associated to this trigger. This name
+   is associated to some python code in an action registery
+   */
+   action_name VARCHAR(255) NOT NULL,
+   payload text,
+   UNIQUE(id,trigger_id)
+   ) TYPE=InnoDB;
+        """ %action
+        self.execute(sqlStr1, {})
+        self.execute(sqlStr2, {})
+
+
+
+
 
     def execute(self, sqlStr, args):
         """"

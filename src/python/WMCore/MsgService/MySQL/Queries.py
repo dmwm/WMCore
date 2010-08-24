@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1103
 
 """
 _Queries_
@@ -9,9 +10,9 @@ service.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.4 2008/09/01 08:57:52 fvlingen Exp $"
+    "$Id: Queries.py,v 1.5 2008/09/09 13:50:35 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.4 $"
+    "$Revision: 1.5 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -281,6 +282,8 @@ INSERT INTO %s(type,source,dest,payload,delay) VALUES(:type,:source,:dest,:paylo
 
         # we need to cut things up as mysql can not deal with very large 
         # inserts (over 500). We are conservative and stop at 100
+        # FIXME: we would like to have this chopping logic 
+        # FIXME: in a high level formatter.
         if len(args['msgs'])>100:
             start = 0
             end = 100

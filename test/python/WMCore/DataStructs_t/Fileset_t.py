@@ -1,17 +1,27 @@
 #!/usr/bin/env python
 """ 
+_Fileset_t_
+
 Testcase for Fileset
 
-Instantiate a Fileset, with an initial file on its Set. After being populated with 1000 random files,
-its access methods and additional file insert methods are tested
-
 """
-
 import unittest, logging, random
-import Fileset
+from sets import Set
+from WMCore.DataStructs.Fileset import Fileset
+from WMCore.DataStructs.File import File
 
-class FilesetClassTest (TestCase):
+class FilesetClassTest (unittest.TestCase):
+    """ 
+    _Fileset_t_
+
+    Testcase for Fileset
+    """
     def setUp(self):
+        """
+        Create a dummy fileset and populate it with random files,
+        in order to use it for the testcase methods
+        
+        """
         logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
@@ -20,12 +30,13 @@ class FilesetClassTest (TestCase):
         self.logger = logging.getLogger('FilesetClassTest')
         
         #Setup the initial testcase environment:
-        self.initialfile= File('/tmp/lfn1',1000,1,1,1)
-        self.initialSet = Set(initialfile)
+        initialfile = File('/tmp/lfn1',1000,1,1,1)
+        self.initialSet = Set()
+        self.initialSet.add(initialfile)
         
-        #A Fileset, containing a initial file on it.
-        fileset = Fileset(name = 'testFileSet', files = self.initialSet, logger = self.logger )
-        #Populating the fileset
+        #Create a Fileset, containing a initial file on it.
+        self.fileset = Fileset(name = 'self.fileset', files = self.initialSet, logger = self.logger )
+        #Populate the fileset with random files
         for i in range(1,1000):
             lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999),
                                               random.randint(1000, 9999))
@@ -35,32 +46,90 @@ class FilesetClassTest (TestCase):
             lumi = random.randint(0, 8)
 
             file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
-            fileset.addFile(file)
+            self.fileset.addFile(file)
         
     def tearDown(self):
-        #Is there a need for a tearDown in our fileset testcase?
+        """
+            No tearDown method for this testcase
+            
+        """
         pass
     def testAddFile(self):
+        """
+            Testcase for the addFile method of the Fileset class
+            
+        """
         #First test - Add file and check if its there
-        #Second test - Add file that was already at Fileset.files , and check if its updated
-        #Third test - Add file that was already at Fileset.newfiles , and check if its updated
-        pass
+        testfile = File('/tmp/lfntest',9999,9,9,9)
+        self.fileset.addFile(testfile)
+        assert(testfile in self.fileset.listNewFiles(), 'Couldn\'t add file ' +
+                'to fileset - fileset.addfile method not working')
+        #Second test - Add file that was already at Fileset.files , 
+        # and check if it gets updated
+        testFileSame = File('/tmp/lfntest',9999,9,9,9)
+        testFileSame.setLocation(Set('dummyse.dummy.com'))
+        self.fileset.addFile(testFileSame)
+        assert(testFileSame in  self.fileset.listFiles(),'Same file copy ' +
+               'failed - fileset.addFile not updating location of already ' +
+               'existing files' )
+        assert(testfile in self.fileset.listFiles(),'Same file copy ' +
+               'failed - fileset.addFile unable to remove previous file ' +
+               'from list')
+        #Third test - Add file that was already at Fileset.newfiles , 
+        #and check if it gets updated
+        assert(testFileSame in  self.fileset.listNewFiles(),'Same file copy ' +
+               'failed - fileset.addFile not adding file to fileset.newFiles')
     def testListFiles(self):
-        filestemp = fileSet.listFiles()
-        assert( filesettemp in (testFileSet._files | testFileSet._newfiles), 'Message' )
-        pass
+        """
+            Testcase for the listFiles method of the Fileset class
+            
+        """
+        filesettemp = self.fileset.listFiles()
+        for x in filesettemp:
+            assert x in (self.fileset.files | self.fileset.newfiles), \
+            'Missing file %s from file list returned from fileset.ListFiles' % x.dict["lfn"]
     def testListLFNs(self):
+        """
+            Testcase for the listLFN method of the Fileset class
+            
+        """
+        #Kinda slow way of verifying if the raw LFN from each file at the
+        #fileset is returned from the meth
+        allFiles = self.fileset.listFiles()
+        
+        #For each file returned by method listFiles, it checks if LFN is
+        #present at the output of method listLFNs 
+        for x in allFiles:
+            assert x.dict['lfn'] in self.fileset.listLFNs(), 'Missing %s from ' \
+            'list returned from fileset.ListLFNs' % x.dict["lfn"] 
         #Im a bit confused with this method, leave to discuss it at the meeting with Simon
-        pass
     def testListNewFiles(self):
-        newfilestemp = testFileSet.ListNewFiles()
-        assert(newfilestemp == testFileSet._newfiles, 'Message')
+        """
+            Testcase for the listNewFiles method of the Fileset class
+            
+        """
+        newfilestemp = self.fileset.listNewFiles()
+        assert newfilestemp == self.fileset.newfiles, 'Missing files from ' \
+               'list returned from fileset.ListNewFiles'
     def testCommit(self):
-        localTestFileSet = Fileset('LocalTestFileset', initialSet)
-        localTestFileSet.add(file3)
-        newfilestemp = localTestFileSet.ListNewFiles()
+        """
+            Testcase for the commit method of the Fileset class
+            
+        """
+        localTestFileSet = Fileset('LocalTestFileset', self.initialSet)
+        #Dummy file to test
+        fileTestCommit = File('/tmp/filetestcommit',0000,1,1,1)
+        #File is added to the newfiles attribute of localTestFileSet
+        localTestFileSet.addFile(fileTestCommit)
+        newfilestemp = localTestFileSet.newfiles
+        #After commit, dummy file is supposed to move from newfiles to files
         localTestFileSet.commit()
-        #First, testing if the new file is present at file Set object attribute of the Fileset object
-        assert( newfilestemp in localTestFileSet.listFiles(), 'Message' )
-        #Second, testing if the newfile Set object attribute is empty
-        assert (localTestFileSet._newfiles == None, 'Message')
+        #First, testing if the new file is present at file set object attribute of the Fileset object
+        assert newfilestemp in localTestFileSet.files, 'Test file not ' \
+                'present at fileset.files - fileset.commit ' \
+                'not working properly' 
+        #Second, testing if the newfile set object attribute is empty
+        assert localTestFileSet.newfiles == None, \
+                'Test file not present at fileset.newfiles ' \
+                '- fileset.commit not working properly'
+ 

@@ -2,10 +2,11 @@
 """
 _Job_t_
 
+Unit tests for the WMBS Job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.2 2008/12/01 22:16:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Job_t.py,v 1.3 2008/12/18 15:00:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import logging
@@ -28,7 +29,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class Job_t(unittest.TestCase):
+class JobTest(unittest.TestCase):
     _setup = False
     _teardown = False
     
@@ -76,6 +77,9 @@ class Job_t(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
+        Create a job and save it to the database.  Use the exists() method of
+        the job class to determine if the job exists in the database before the
+        job is created, after it is created and after it is deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -121,6 +125,9 @@ class Job_t(unittest.TestCase):
         """
         _testLoad_
 
+        Create a job and save it to the database.  Load the same job from the
+        database and verify that all the attributes of the loaded job match the
+        original.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")

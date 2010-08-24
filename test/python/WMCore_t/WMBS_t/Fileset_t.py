@@ -2,13 +2,11 @@
 """ 
 Testcase for Fileset
 
-Instantiate a Fileset, with an initial file on its Set. After being populated with 1000 random files,
-its access methods and additional file insert methods are tested
-
+Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.3 2008/11/25 15:53:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Fileset_t.py,v 1.4 2008/12/18 15:00:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import logging
@@ -22,7 +20,7 @@ from WMCore.WMBS.Fileset import Fileset
 
 from WMQuality.TestInit import TestInit
 
-class Fileset_t(unittest.TestCase):
+class FilesetTest(unittest.TestCase):
     _setup = False
     _teardown = False
     

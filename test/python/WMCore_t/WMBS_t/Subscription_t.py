@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+""" 
+Subscription_t
+
+Unit tests for the WMBS Subscription class.
+"""
+
+__revision__ = "$Id: Subscription_t.py,v 1.4 2008/12/18 15:00:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest, os, logging, commands, random, threading
 from sets import Set
@@ -13,7 +21,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class Subscription_t(unittest.TestCase):
+class SubscriptionTest(unittest.TestCase):
     _setup = False
     _teardown = False
     

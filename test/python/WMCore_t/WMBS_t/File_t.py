@@ -2,13 +2,11 @@
 """
 _File_t_
 
-Unit tests for File creation, location and exists, including checks to see that calls 
-are database dialect neutral.
-
+Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.6 2008/12/12 19:35:29 afaq Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: File_t.py,v 1.7 2008/12/18 15:00:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import logging
@@ -25,7 +23,7 @@ from WMCore.WMBS.File import File
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class File_t(unittest.TestCase):
+class FileTest(unittest.TestCase):
     _setup = False
     _teardown = False
     

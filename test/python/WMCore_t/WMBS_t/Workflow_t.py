@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.2 2008/11/20 16:23:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Workflow_t.py,v 1.3 2008/12/18 15:00:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os
@@ -16,7 +16,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class Workflow_t(unittest.TestCase):
+class WorkflowTest(unittest.TestCase):
     _setup = False
     _teardown = False
     

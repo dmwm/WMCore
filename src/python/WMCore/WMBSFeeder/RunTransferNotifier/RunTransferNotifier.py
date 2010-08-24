@@ -39,14 +39,14 @@ TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
           for example.
         * Factor out DBS queries into helper module
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.4 2008/10/28 11:40:21 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.5 2008/10/28 11:41:30 jacksonj Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 
 from sets import Set
 
-from DbsQueryHelper import DbsQueryHelper
+from WMCore.WMBSFeeder.RunTransferNotifier.DbsQueryHelper import DbsQueryHelper
 
 from WMCore.DataStructs.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl

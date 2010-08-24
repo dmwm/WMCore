@@ -6,8 +6,10 @@ A simple wrapper around DBInterface to make working with transactions simpler
 
 
 """
-__revision__ = "$Id: Transaction.py,v 1.1 2008/08/21 10:27:49 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Transaction.py,v 1.2 2008/08/21 11:31:25 metson Exp $"
+__version__ = "$Revision: 1.2 $"
+
+from WMCore.DataStructs.WMObject import WMObject
 
 class Transaction(WMObject):
     dbi = None

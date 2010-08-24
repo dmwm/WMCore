@@ -15,8 +15,8 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Workflow.py,v 1.18 2009/01/16 22:42:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Workflow.py,v 1.19 2009/03/09 13:15:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -55,6 +55,11 @@ class Workflow(WMBSBase, WMWorkflow):
         """
         Write a workflow to the database
         """
+        self.id = self.exists()
+        if self.id != False:
+            self.load()
+            return
+        
         action = self.daofactory(classname = "Workflow.New")
         action.execute(spec = self.spec, owner = self.owner, name = self.name,
                        conn = self.getWriteDBConn(),

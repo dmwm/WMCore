@@ -19,8 +19,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.8 2008/06/30 17:57:29 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Subscription.py,v 1.9 2008/07/03 09:48:01 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -74,8 +74,8 @@ class Subscription(BusinessObject):
         if not result:
             raise RuntimeError, "Subscription for %s:%s unknown" % \
                                     (self.fileset.name, self.workflow.spec)
-        self.fileset = result['fileset']
-        self.workflow = result['workflow']
+        self.fileset = Fileset(id = result['fileset']).load('Fileset.LoadFromID')
+        self.workflow = Workflow(id = result['workflow']).load('Workflow.LoadFromID')
         self.type = result['type']
         self.id = result['id']
              
@@ -163,3 +163,9 @@ class Subscription(BusinessObject):
                                   file=[x for x in files], 
                                   state="FailFiles",
                                   daofactory = self.daofactory)
+    
+    def getWorkflow(self):
+        return self.workflow
+    
+    def getFileset(self):
+        return self.fileset

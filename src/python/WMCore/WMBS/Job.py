@@ -46,8 +46,8 @@ TODO: Test/complete load
 TODO: Load/Save Mask
 """
 
-__revision__ = "$Id: Job.py,v 1.9 2008/10/22 17:51:53 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Job.py,v 1.10 2008/10/28 18:59:26 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import datetime
 
@@ -61,31 +61,43 @@ class Job(BusinessObject, WMJob):
     """
     A job in WMBS
     """
-    def __init__(self, 
-                 name=None, 
-                 files = None, 
-                 id = -1, 
-                 logger=None, dbfactory=None):
+    def __init__(self, name=None, files = None, id = -1, logger=None, dbfactory=None):
         """
         jobgroup object is used to determine the workflow. 
         file_set is a set that contains the id's of all files 
         the job should use.
         """
+        WMJob.__init__(self, name=name, files = files)
         BusinessObject.__init__(self, 
                                 logger=logger, 
                                 dbfactory=dbfactory)
-        WMJob.__init__(self, name=name, files = files)
         
         self.id = id
         if self.id > 0:
             self.load()
             
-    def create(self, group):
+    def create(self, group, trans = None):
         """
-        Write the job to the database
+        Write the job to the database, connection and logger are picked up from 
+        the JobGroup
         """
-        action = self.daofactory(classname='Jobs.New')
-        self.id = action.execute(group, self.name)
+        
+        newtrans = False
+        if not trans:
+            trans = Transaction(dbinterface = self.dbfactory.connect())
+            newtrans = True
+        try:    
+            action = self.daofactory(classname='Jobs.New')
+            self.id = action.execute(group.id, 
+                                 self.name,
+                                 conn = trans.conn, 
+                                 transaction = True)
+            if newtrans:
+                trans.commit()
+                print "created"
+        except Exception, e:
+            trans.rollback()
+            raise e
                     
     def load(self):
         """
@@ -95,8 +107,9 @@ class Job(BusinessObject, WMJob):
 
     def getFiles(self, type='list'):
         """
-        Get the files associate to the job
+        Get the files associated to the job
         """
+        
         file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
         if file_ids == WMJob.getFiles(self, type='id'):
             return WMJob.getFiles(self, type)
@@ -117,12 +130,25 @@ class Job(BusinessObject, WMJob):
         WMJob.submit(self, name=name)
         self.daofactory(classname='Jobs.UpdateName').execute(self.id, self.name)
                     
-    def associateFiles(self):
+    def associateFiles(self, trans = None):
         """
         update the wmbs_job_assoc table with the files in self.file_set
         """
-        files = self.file_set.getFiles(type='id')
-        self.daofactory(classname='Jobs.AddFiles').execute(self.id, files)
+        newtrans = False
+        if not trans:
+            trans = Transaction(dbinterface = self.dbfactory.connect())
+            newtrans = True
+        try:
+            files = self.file_set.getFiles(type='id')
+            self.daofactory(classname='Jobs.AddFiles').execute(self.id, 
+                                                           files,
+                                                           conn = trans.conn, 
+                                                           transaction = True)
+            if newtrans:
+                trans.commit()
+        except Exception, e:
+            trans.rollback()
+            raise e
     
     def changeStatus(self, status):
         """

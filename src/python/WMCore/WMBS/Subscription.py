@@ -19,15 +19,15 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.7 2008/06/25 10:03:39 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Subscription.py,v 1.8 2008/06/30 17:57:29 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
+from WMCore.WMBS.Actions.Subscriptions.ChangeState import ChangeStateAction
 
 class Subscription(BusinessObject):
     def __init__(self, fileset = None, workflow = None, id = -1,
@@ -87,7 +87,7 @@ class Subscription(BusinessObject):
         files = Set()
         action = self.daofactory(classname='Subscriptions.GetAvailableFiles')
         for f in action.execute(self.id):
-            files.append(File(lfn=f).load(parentage=parents))
+            files.add(f[0])
         return files
             
     def acquiredFiles(self):
@@ -97,7 +97,7 @@ class Subscription(BusinessObject):
         files = Set()
         action = self.daofactory(classname='Subscriptions.GetAcquiredFiles')
         for f in action.execute(self.id):
-            files.add(File(lfn=f, wmbs=self.wmbs).load())
+            files.add(f[0])
         return files
 
     def completedFiles(self):
@@ -107,7 +107,7 @@ class Subscription(BusinessObject):
         files = Set()
         action = self.daofactory(classname='Subscriptions.GetCompletedFiles')
         for f in action.execute(self.id):
-            files.add(File(lfn=f[0], wmbs=self.wmbs).load(parentage=self.parentage))
+            files.add(f[0])
         return files
     
     def failedFiles(self):
@@ -117,7 +117,7 @@ class Subscription(BusinessObject):
         files = Set()
         action = self.daofactory(classname='Subscriptions.GetFailedFiles')
         for f in action.execute(self.id):
-            files.add(File(lfn=f[0], wmbs=self.wmbs).load(parentage=self.parentage))
+            files.add(f[0])
         return files
                      
     def acquireFiles(self, files = [], size = 0):
@@ -134,10 +134,12 @@ class Subscription(BusinessObject):
         else:
             files = self.availableFiles()
             l = []
+            if len(files) < size:
+                size = len(files)
             for i in range(size):
                 l.append(files.pop())
                 i = i + 1
-            action.execute(self.id, [x.id for x in l])
+            action.execute(self.id, [x for x in l])
     
     def completeFiles(self, files):
         """
@@ -145,7 +147,10 @@ class Subscription(BusinessObject):
         """
         if not isinstance(files, list) and not isinstance(files, set):
             files=[files]
-        self.daofactory(classname='Subscriptions.CompleteFiles').execute(self.id, [x.id for x in files])
+        statechanger = ChangeStateAction(self.logger)
+        statechanger.execute(subscription=self.id, 
+                                  file=[x for x in files], 
+                                  daofactory = self.daofactory)
     
     def failFiles(self, files):
         """
@@ -153,4 +158,8 @@ class Subscription(BusinessObject):
         """
         if not isinstance(files, list) and not isinstance(files, set):
             files=[files]
-        self.daofactory(classname='Subscriptions.FailFiles').execute(self.id, [x.id for x in files])
+        statechanger = ChangeStateAction(self.logger)
+        statechanger.execute(subscription=self.id, 
+                                  file=[x for x in files], 
+                                  state="FailFiles",
+                                  daofactory = self.daofactory)

@@ -4,8 +4,8 @@
 Proxy test TestProxy module and the harness
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.5 2008/10/03 12:36:05 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Proxy_t.py,v 1.6 2008/11/13 16:05:38 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -47,7 +47,7 @@ To run this test you need to have an old msg service
 setup in a different database and its contact parameters 
 need to be defined in the PROXYDATABASE variable (press key to continue")
             """
-            raw_input(msg)
+            #raw_input(msg)
             logging.basicConfig(level=logging.NOTSET,
                 format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                 datefmt='%m-%d %H:%M',

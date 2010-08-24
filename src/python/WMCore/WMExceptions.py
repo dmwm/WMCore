@@ -7,8 +7,8 @@ mappings to a human readable message.
 
 """
 
-__revision__ = "$Id: WMExceptions.py,v 1.8 2008/09/18 15:21:40 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMExceptions.py,v 1.9 2008/11/13 16:05:37 fvlingen Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -22,4 +22,5 @@ WMEXCEPTION = {'WMCore-1' : 'Not allowed to instantiate ', \
    'WMCORE-8' : 'No config section for this component! ',\
    'WMCORE-9' : 'Problem inserting a trigger flag. ',\
    'WMCORE-10': 'Problem setting trigger action. ',\
-   'WMCORE-11': 'Security exception. ',}
+   'WMCORE-11': 'Security exception. ',\
+   'WMCORE-12': 'Database connection problem '}

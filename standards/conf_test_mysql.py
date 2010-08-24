@@ -261,6 +261,10 @@ except Exception,ex:
        errors["jcgon"] = []
    errors["jcgon"].append(("SubscriptionTest",str(ex)))
 
+#tests = []
+#x=ProxyTest()
+#tests.append((x,"fvlingen"))
+
 raw_input('Writing level 2 failures to file: failures2.log (press key to continue)')
 failures = open('failures2_mysql.rep','w')
 

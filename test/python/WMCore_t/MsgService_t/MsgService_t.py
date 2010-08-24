@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.5 2008/11/12 16:15:04 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: MsgService_t.py,v 1.6 2008/11/13 16:05:40 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import commands
 import unittest
@@ -60,7 +60,7 @@ class MsgServiceTest(unittest.TestCase):
         Deletion of the databases 
         """
         myThread = threading.currentThread()
-        if MsgServiceTest._teardown and myThread.dialect == 'MySQL':
+        if MsgServiceTest._teardown :
             # call the script we use for cleaning:
             self.testInit.clearDatabase()
         MsgServiceTest._teardown = False

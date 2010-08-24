@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.9 2009/01/29 19:43:38 valya Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Page.py,v 1.10 2009/02/02 11:55:48 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import urllib
 import cherrypy
@@ -18,7 +18,8 @@ class Page(object):
     Page is a base class that holds a configuration
     """
     def __init__(self, config = {}):
-        self.config = config
+        #Config is a WMCore.Configuration
+        self.config = config.component_(config.listComponents_()[0])
     
     def warning(self, msg):
         self.log(msg, logging.WARNING)

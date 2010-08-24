@@ -4,8 +4,8 @@ _Job_t_
 
 """
 
-__revision__ = "$Id: Job_t.py,v 1.1 2008/11/20 17:10:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Job_t.py,v 1.2 2008/12/01 22:16:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -149,12 +149,12 @@ class Job_t(unittest.TestCase):
         testJobA = Job(name = "TestJob", files = testFileset)
         testJobA.create(group = testJobGroup)
 
-        testJobA.mask.FirstEvent = 1
-        testJobA.mask.LastEvent = 2
-        testJobA.mask.FirstLumi = 3
-        testJobA.mask.LastLumi = 4
-        testJobA.mask.FirstRun = 5
-        testJobA.mask.LastRun = 6
+        testJobA.mask["FirstEvent"] = 1
+        testJobA.mask["LastEvent"] = 2
+        testJobA.mask["FirstLumi"] = 3
+        testJobA.mask["LastLumi"] = 4
+        testJobA.mask["FirstRun"] = 5
+        testJobA.mask["LastRun"] = 6
 
         testJobA.save()
 
@@ -198,6 +198,6 @@ class Job_t(unittest.TestCase):
                "ERROR: Job didn't load all files"        
         
         return
-        
+
 if __name__ == "__main__":
     unittest.main() 

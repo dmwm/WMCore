@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.9 2008/06/02 23:56:37 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DBCore.py,v 1.10 2008/06/09 15:21:59 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from copy import copy   
 class DBInterface(object):    
@@ -152,6 +152,8 @@ class DBInterface(object):
         else:
             self.logger.exception(
                 "DBInterface.processData Nothing executed, problem with your arguments")
+            self.logger.exception(
+                "DBInterface.processData SQL = %s" % sqlstmt)
             self.logger.debug('DBInterface.processData  sql is %s items long' % len(sqlstmt))
             self.logger.debug('DBInterface.processData  binds are %s items long' % len(binds))
             asser_value = False

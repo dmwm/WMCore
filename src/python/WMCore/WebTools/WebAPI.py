@@ -5,6 +5,7 @@ from cherrypy import expose, HTTPRedirect
 import sys
 
 class WebAPI(DatabasePage):
+    __version__ = 1
     def __init__(self, config = {}, database = ''):
         """
         __WebAPI__
@@ -30,7 +31,13 @@ class WebAPI(DatabasePage):
         variables!).
         """
         DatabasePage.__init__(self, config, database) 
-        self.methods = {}
+        self.methods = {'status':{'args':[],
+                                 'call':self.status,
+                                 'version': 1}}
+    
+    def status(self):
+        return {'application': self.config.application, 
+                'version': self.__version__}
     
     @expose
     def index(self):

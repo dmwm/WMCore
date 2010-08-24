@@ -61,6 +61,5 @@ setup (name='wmcore',
                  'WMCore.Services.SiteDB',
                  'WMCore.Services',
                  'WMCore.Database',
-                 'WMCore.FwkJobReport',
                  'WMCore'],)
 

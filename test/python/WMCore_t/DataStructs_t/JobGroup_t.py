@@ -3,6 +3,7 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Subscription import Subscription 
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.JobGroup import JobGroup
+from WMCore.DataStructs.Run import Run
 
 from WMQuality.TestInit import TestInit
 

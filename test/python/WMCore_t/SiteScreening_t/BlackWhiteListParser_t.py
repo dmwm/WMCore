@@ -2,8 +2,8 @@
 """
 Test case for SiteScreening
 """
-__revision__ = "$Id: BlackWhiteListParser_t.py,v 1.1 2008/10/16 07:19:21 ewv Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: BlackWhiteListParser_t.py,v 1.2 2008/10/16 07:20:16 ewv Exp $"
+__version__  = "$Revision: 1.2 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -96,7 +96,6 @@ class BlackWhiteListParserTest(unittest.TestCase):
                      'ic-kit-lcgce.rz.uni-karlsruhe.de']
         other = ['gridce2.pi.infn.it', 'lcg02.ciemat.es']
         results = self.ceparser.checkWhiteList(other + whitelist)
-        print results
         results = sets.Set(results)
         self.failUnless(results == sets.Set(whitelist))
 

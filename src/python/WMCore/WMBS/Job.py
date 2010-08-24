@@ -2,19 +2,30 @@
 """
 _Job_
 
-A job is owned by a subscription (which gives it it's workflow) and is 
-associated to a (set of) file(s). The job interacts with its subscription
+A job is owned by a jobgroup (which gives it it's workflow) and is 
+associated to a (set of) file(s). The job interacts with its jobgroup
 to acquire/complete/fail files. A job know's it's Workflow via it's 
-subscription. A job is meaningless without a subscription.
+jobgroup. A job is meaningless without a jobgroup.
+
+A WMBS job != a job in a batch system, it's more abstract - it's the piece of 
+work that needs to get done.
 
 CREATE TABLE wmbs_job (
-    id           INT(11) NOT NULL AUTO_INCREMENT,
-    subscription INT(11) NOT NULL,
-    last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-                    ON DELETE CASCADE)
+             id          INTEGER   PRIMARY KEY AUTOINCREMENT,
+             jobgroup    INT(11)   NOT NULL,
+             name        VARCHAR(255),
+             FirstEvent  INT(11),
+             LastEvent   INT(11),
+             FirstLumi   INT(11),
+             LastLumi    INT(11),
+             FirstRun    INT(11),
+             LastRun     INT(11),
+             start       INT(11),
+             completed   INT(11),
+             retries     INT(11),
+             last_update TIMESTAMP NOT NULL,
+             FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
+               ON DELETE CASCADE)
 
 CREATE TABLE wmbs_job_assoc (
     job    INT(11) NOT NULL,
@@ -24,10 +35,12 @@ CREATE TABLE wmbs_job_assoc (
     FOREIGN KEY (file) REFERENCES wmbs_file(id)
                     ON DELETE CASCADE)
 
+Jobs are added to the WMBS database by their parent JobGroup, but are 
+responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.5 2008/09/19 16:29:44 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Job.py,v 1.6 2008/10/01 21:30:02 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import datetime
 from sets import Set
@@ -35,41 +48,31 @@ from sets import Set
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Job(BusinessObject, WMJob):
-    def __init__(self, subscription=None, files = None, id = -1):
+    def __init__(self, name=None, files = None, id = -1, logger=None, dbfactory=None):
         """
-        Subscription object is used to determine the workflow. 
+        jobgroup object is used to determine the workflow. 
         file_set is a set that contains the id's of all files 
         the job should use.
         """
         BusinessObject.__init__(self, 
-                                logger=subscription.logger, 
-                                dbfactory=subscription.dbfactory)
-        WMJob.__init__(self, subscription=subscription, files = files)
+                                logger=logger, 
+                                dbfactory=dbfactory)
+        WMJob.__init__(self, name=name, files = files)
         
         self.id = id
-        if self.id == -1:
-            self.create()
-        else:
+        if self.id > 0:
             self.load()
             
-    def create(self):
-        """
-        Add a new row to wmbs_job
-        """
-        action = self.daofactory(classname="Jobs.New")
-        self.id, self.last_update = \
-                action.execute(subscription = self.subscription.id)
-        self.load()
-    
+    def create(self, group):
+        self.id = self.daofactory(classname='Jobs.New').execute(group, self.name)
+                    
     def load(self):
         """
-        Load the subscription and file id's from 
-        the database for a job of known id
+        Load the job and it's input from the database for a job of known id
         """
         self.file_set = Fileset()
         file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
@@ -77,33 +80,45 @@ class Job(BusinessObject, WMJob):
             file = File(id=i, logger=self.logger, dbfactory=self.dbfactory)
             file.load()
             self.file_set.addFile(file)
-            
+        # load the mask
+
+    def submit(self, name):
+        """
+        Once submitted to a batch queue set status to active and set the job's
+        name to some id from the batch system. Calling this method means the job
+        has been submitted to the batch queue.
+        """
+        self.name = name
+        self.daofactory(classname='Jobs.UpdateName').execute(self.id, self.name)
+        self.changeStatus('ACTIVE')
+                    
     def associateFiles(self):
         """
         update the wmbs_job_assoc table with the files in self.file_set
         """
         def getFileId(file):
              return file.dict["id"]
-        files = map(getFileId, self.file_set.listFiles())
+        files = self.file_set.getFiles(type='id')
         self.daofactory(classname='Jobs.AddFiles').execute(self.id, files)
     
-    def resubmit(self):
+    def changeStatus(self, status):
         """
-        Reset the file status to acquired for files associated to this job
+        possible states are: ACTIVE, FAILED, COMPLETE - files not in the state
+        tables are considered new.
         """
-        pass
-    
-    def fail(self):
-        """
-        Job has failed, mark all files associated with it as failed
-        """
-        self.subscription.failFiles(self.file_set.listFiles())
-    
-    def complete(self):
-        """
-        Job has completed successfully, mark all files associated 
-        with it as complete
-        """
-        self.subscription.completeFiles(self.file_set.listFiles())
+        self.last_update = datetime.datetime.now()
+        self.status = status
+        trans = Transaction(dbinterface = self.dbfactory.connect())
+        try:
+            self.daofactory(classname='Jobs.ClearStatus').execute(self.id,
+                                                       conn = trans.conn, 
+                                                       transaction = True)
+            self.daofactory(classname='Jobs.%s' % self.status.title()).execute(self.id,
+                                                       conn = trans.conn, 
+                                                       transaction = True)
+            trans.commit()
+        except Exception, e:
+            trans.rollback()
+            raise e
         
         

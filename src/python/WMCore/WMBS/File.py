@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.41 2009/01/26 20:49:32 sryu Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: File.py,v 1.42 2009/01/29 16:44:41 sryu Exp $"
+__version__ = "$Revision: 1.42 $"
 
 from sets import Set
 
@@ -85,6 +85,33 @@ class File(WMBSBase, WMFile):
             parents = temp
         result.sort()   # ensure SecondaryInputFiles are in order
         return [x['lfn'] for x in result]
+    
+    def getAncestorLFNs(self, level=2):
+        """
+        Get ancestorLFNs. it will access directly DAO.
+        level indicates the level of ancestors. default value is 2 
+        (grand parents). level should be bigger than >= 1
+        """
+        def _getAncestorIDs(ids, level):
+            action = self.daofactory(classname = "Files.GetParentIDsByID")
+            parentIDs = action.execute(ids, conn = self.getReadDBConn(),
+                                       transaction = self.existingTransaction())
+            parentIDs.sort()
+            if level == 1 or len(parentIDs) == 0:
+                return parentIDs
+            else:
+                return _getAncestorIDs(parentIDs, level-1)
+        
+        if self['id'] < 0:
+            self.load()
+        idList = _getAncestorIDs(self['id'], level)
+        ancestorLFNs = []
+        for fileID in idList:
+            anceFile = File(id=fileID)
+            anceFile.load()
+            ancestorLFNs.append(anceFile['lfn'])
+            
+        return ancestorLFNs
     
     def load(self):
         """

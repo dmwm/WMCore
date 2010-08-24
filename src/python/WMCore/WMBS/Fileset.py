@@ -15,8 +15,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.30 2008/11/20 16:47:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Fileset.py,v 1.31 2008/11/25 15:54:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import threading
 
@@ -155,12 +155,8 @@ class Fileset(WMFileset):
                 #Check file objects exist in the database, save those that don't
                 f = self.newfiles.pop()
                 self.logger.debug ( "commiting : %s" % f["lfn"] )  
-                try:
-                    f.save()
-                except IntegrityError:
-                    self.logger.warning(
-                                'File already exists in the database %s' 
-                                % f["lfn"])
+                if not f.exists():
+                    f.create()
                 lfns.append(f["lfn"])
 
             #Add Files to DB only if there are any files on newfiles            

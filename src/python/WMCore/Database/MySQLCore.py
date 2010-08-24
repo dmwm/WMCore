@@ -51,7 +51,6 @@ class MySQLInterface(DBInterface):
         TODO: add assert check that number of records inserted are the same as
         number of binds. 
         """
-        
         b = self.makelist(b)
         try: 
             newsql = s
@@ -68,7 +67,7 @@ class MySQLInterface(DBInterface):
                 newsql = newsql.replace(':%s' % k, ':%s' % newbind)
                 mapper[newbind] = k
                 binds[binds.index(k)] = newbind
-            
+
             binds.sort(key=newsql.index)
             
             self.logger.debug("MySQLCore.executemanybinds: rewriting sql for execute_many: sql %s" % 
@@ -89,7 +88,7 @@ class MySQLInterface(DBInterface):
             self.logger.debug("MySQLCore.executemanybinds: rewritten binds: %s" % bind_list)
             
             cur = connection.connection.cursor()
-        
+
             result = cur.executemany(newsql, bind_list)
             #assert result, len(bind_list)
             result = self.makelist(result)
@@ -99,5 +98,5 @@ class MySQLInterface(DBInterface):
         except Exception, e:
             self.logger.exception("""MySQLCore.executemanybinds failed - sql : %s
 binds : %s
-exception : %s""" % (s, b, e.message))
+exception : %s""" % (s, b, e))
             raise e

@@ -5,11 +5,18 @@ Oracle implementation of GetByID
 from WMCore.WMBS.MySQL.Files.GetByID import GetByID as GetByIDMySQL
 
 class GetByID(GetByIDMySQL):
-    """
-    _GetByID_
-    
-    """
-    sql = """SELECT wmbs_file_details.id, wmbs_file_details.lfn,
-             wmbs_file_details.filesize, wmbs_file_details.events,
-             wmbs_file_details.cksum FROM wmbs_file_details
-             WHERE wmbs_file_details.id = :fileid"""
+    sql = """SELECT id, lfn, filesize, events, cksum
+             FROM wmbs_file_details WHERE id = :fileid"""
+
+    def formatDict(self, result):
+        """
+        _formatDict_
+
+        Override the formatDict() method so that we can change the name
+        of the filesize column to just be size.
+        """
+        formattedResult = GetByIDMySQL.formatDict(self, result)
+        formattedResult[0]["size"] = formattedResult[0]["filesize"]
+        del formattedResult[0]["filesize"]
+
+        return formattedResult

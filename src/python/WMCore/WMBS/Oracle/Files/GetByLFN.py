@@ -1,16 +1,21 @@
 """
-Oracle implementation of GetFile
+Oracle implementation of GetFileByLFN
 """
-from WMCore.WMBS.MySQL.Files.GetByLFN import GetByLFN as GetFileByLFNMySQL
+from WMCore.WMBS.MySQL.Files.GetByLFN import GetByLFN as GetByLFNMySQL
 
-class GetByLFN(GetFileByLFNMySQL):
-    """
-    _GetByLFN_
-    
-    Oracle specific: file and size are reserved words and doesn't allow 'as'
-    for table rename
-    """
-    sql = """select fileD.id, fileD.lfn, fileD.filesize, fileD.events, map.run, map.lumi
-             from wmbs_file_details fileD 
-             inner join wmbs_file_runlumi_map map on (map.fileid = fileD.id) 
-             where lfn = :lfn"""
+class GetByLFN(GetByLFNMySQL):
+    sql = """SELECT id, lfn, filesize, events, cksum
+             FROM wmbs_file_details WHERE lfn = :lfn"""
+
+    def formatDict(self, result):
+        """
+        _formatDict_
+
+        Override the formatDict() method so that we can change the name
+        of the filesize column to just be size.
+        """
+        formattedResult = GetByLFNMySQL.formatDict(self, result)
+        formattedResult[0]["size"] = formattedResult[0]["filesize"]
+        del formattedResult[0]["filesize"]
+
+        return formattedResult

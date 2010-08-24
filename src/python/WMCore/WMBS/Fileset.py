@@ -15,8 +15,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.25 2008/10/28 15:23:38 metson Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Fileset.py,v 1.26 2008/10/28 17:49:14 metson Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -138,21 +138,25 @@ class Fileset(BusinessObject, WMFileset):
         lfns = []
         
         trans = Transaction(dbinterface = self.dbfactory.connect())
-        
-        while len(self.newfiles) > 0:
-            #Check file objects exist in the database, save those that don't
-            f = self.newfiles.pop()
-            self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
-            try:
-                f.save(trans)
-            except IntegrityError:
-                self.logger.warning(
-                            'File already exists in the database %s' 
-                            % f.dict["lfn"])
-            lfns.append(f.dict["lfn"])
-        
-        self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
-                                                       fileset=self.name,
-                                                       conn = trans.conn, 
-                                                       transaction = True)
+        try:
+            while len(self.newfiles) > 0:
+                #Check file objects exist in the database, save those that don't
+                f = self.newfiles.pop()
+                self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
+                try:
+                    f.save(trans)
+                except IntegrityError:
+                    self.logger.warning(
+                                'File already exists in the database %s' 
+                                % f.dict["lfn"])
+                lfns.append(f.dict["lfn"])
+            
+            self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
+                                                           fileset=self.name,
+                                                           conn = trans.conn, 
+                                                           transaction = True)
+            trans.commit()
+        except Exception, e:
+            trans.rollback()
+            raise e
         self.populate()

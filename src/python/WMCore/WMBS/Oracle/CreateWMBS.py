@@ -5,9 +5,11 @@ Implementation of CreateWMBS for Oracle.
 
 Inherit from CreateWMBSBase, and add Oracle specific creates to the dictionary 
 at some high value.
+
+Remove Oracle reserved words (e.g. size) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.2 2008/10/10 17:28:25 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.3 2008/10/13 17:33:45 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -21,89 +23,247 @@ class CreateWMBS(CreateWMBSBase):
         constraints and inserts.
         """
         CreateWMBSBase.__init__(self, logger, dbInterface)
-        self.requiredTables.append('30wmbs_subs_type')
-        
+        self.requiredTables.append('09wmbs_subs_type')
+        sequence_tables = []
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          number(10) not null,
-             name        VARCHAR(255) NOT NULL,
-             open        BOOLEAN      NOT NULL DEFAULT FALSE,
-             last_update TIMESTAMP    NOT NULL,
-             UNIQUE (name))"""
+             name        VARCHAR(255) not null,
+             open        CHAR(1) CHECK (open IN ( 'Y', 'N' )) not null,
+             last_update number(10)    not null,
+             constraint pk_fileset primary key (id),
+             constraint uk_filesetname unique (name))"""
+             
         sequence_tables.append('wmbs_fileset') 
         
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
              id          number(10) not null,
-             lfn          VARCHAR(255) NOT NULL,
-             size         INT(11),
-             events       INT(11),
-             first_event  INT(11),
-             last_event   INT(11))"""
+             lfn          VARCHAR(255) not null,
+             filesize         number(10),
+             events       number(10),
+             first_event  number(10),
+             last_event   number(10),
+             constraint pk_file primary key (id),
+             constraint uk_filelfn unique (lfn))"""
+             
         sequence_tables.append('wmbs_file_details') 
+        
+                
+        self.create["03wmbs_fileset_files"] = \
+          """CREATE TABLE wmbs_fileset_files (
+             fileid       number(10)   not null,
+             fileset     number(10)   not null,
+             insert_time number(10) not null,
+             constraint fk_filesetfiles_fileset
+                 FOREIGN KEY(fileset) references wmbs_fileset(id)
+                    ON DELETE CASCADE,
+             constraint fk_filesetfiles_file
+                 FOREIGN KEY(fileid) references wmbs_file_details(id)
+                    ON DELETE CASCADE)"""
+             
+        self.create["04wmbs_file_parent"] = \
+          """CREATE TABLE wmbs_file_parent (
+             child  number(10) not null,
+             parent number(10) not null,
+             constraint fk_fileparentage_child
+                 FOREIGN KEY (child)  references wmbs_file_details(id)
+                   ON DELETE CASCADE,
+             constraint fk_fileparentage_parent        
+                 FOREIGN KEY (parent) references wmbs_file_details(id),
+             UNIQUE(child, parent))"""  
+        
+        self.create["05wmbs_file_runlumi_map"] = \
+          """CREATE TABLE wmbs_file_runlumi_map (
+             fileid   number(10),
+             run     number(10),
+             lumi    number(10),
+             constraint fk_runlumi_file
+                 FOREIGN KEY (fileid) references wmbs_file_details(id)
+                   ON DELETE CASCADE)"""
         
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
              id          number(10) not null,
-             se_name VARCHAR(255) NOT NULL,
-             UNIQUE(se_name))"""
+             se_name VARCHAR(255) not null,
+             constraint pk_sename primary key (id),
+             constraint uk_sename unique (se_name))"""
+             
         sequence_tables.append('wmbs_location') 
+        
+        self.create["07wmbs_file_location"] = \
+          """CREATE TABLE wmbs_file_location (
+             fileid    number(10),
+             location number(10),
+             constraint uk_sfile_location unique (fileid, location),
+             constraint fk_location_file
+                 FOREIGN KEY(fileid)     REFERENCES wmbs_file_details(id)
+                   ON DELETE CASCADE,
+             constraint fk_location_se
+                 FOREIGN KEY(location) REFERENCES wmbs_location(id)
+                   ON DELETE CASCADE)"""
          
         self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id          number(10) not null,
-             spec         VARCHAR(255) NOT NULL,
-             name         VARCHAR(255) NOT NULL,
-             owner        VARCHAR(255))"""
+             spec         VARCHAR(255) not null,
+             name         VARCHAR(255) not null,
+             owner        VARCHAR(255),
+             
+             constraint pk_workflow primary key (id),
+             constraint uk_workflow_nameowner unique (name, owner))"""
         sequence_tables.append('wmbs_workflow') 
+        
+        #Need this before making the subscription table
+        self.create["09wmbs_subs_type"] = \
+          """CREATE TABLE wmbs_subs_type (
+             id          number(10) not null,
+             name VARCHAR(255) not null,
+             constraint pk_subtype primary key (id),
+             constraint uk_subtype_name unique (name))"""
+             
+        sequence_tables.append('wmbs_subs_type')
         
         self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
-             id          number(10) not null,
-             fileset     INT(11)      NOT NULL,
-             workflow    INT(11)      NOT NULL,
-             split_algo  VARCHAR(255) NOT NULL DEFAULT 'File',
-             type        INT(11)      NOT NULL,
-             last_update TIMESTAMP    NOT NULL,
-             FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
-               ON DELETE CASCADE
-             FOREIGN KEY(type)     REFERENCES wmbs_subs_type(id)
-               ON DELETE CASCADE
-             FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
-               ON DELETE CASCADE)""" 
+             id          number(10)   not null,
+             fileset     number(10)      not null,
+             workflow    number(10)      not null,
+             split_algo  varchar(255) not null,
+             subtype     number(10)      not null,
+             last_update number(10)   not null,
+             constraint fk_subs_fileset
+                 FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
+                   ON DELETE CASCADE,
+             constraint fk_subs_type
+                 FOREIGN KEY(subtype)     REFERENCES wmbs_subs_type(id)
+                   ON DELETE CASCADE,
+             constraint fk_subs_workflow           
+                 FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
+                   ON DELETE CASCADE,
+             constraint pk_subscription primary key (id)
+)""" 
         sequence_tables.append('wmbs_subscription') 
+
+        self.create["10wmbs_sub_files_acquired"] = \
+          """CREATE TABLE wmbs_sub_files_acquired (
+             subscription number(10) not null,
+             fileid        number(10) not null,
+             constraint fk_subsacquired_sub
+                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+                   ON DELETE CASCADE,
+             constraint fk_subsacquired_file
+                 FOREIGN KEY (fileid)         REFERENCES wmbs_file_details(id))"""
+
+        self.create["11wmbs_sub_files_failed"] = \
+          """CREATE TABLE wmbs_sub_files_failed (
+             subscription number(10) not null,
+             fileid        number(10) not null,
+             constraint fk_subsfailed_sub
+                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+                   ON DELETE CASCADE,
+             constraint fk_subsfailed_file
+                 FOREIGN KEY (fileid)         REFERENCES wmbs_file_details(id))"""
+
+
+        self.create["12wmbs_sub_files_complete"] = \
+          """CREATE TABLE wmbs_sub_files_complete (
+          subscription number(10) not null,
+          fileid        number(10) not null,
+          constraint fk_subscomplete_sub
+             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+               ON DELETE CASCADE,
+          constraint fk_subscomplete_file
+             FOREIGN KEY (fileid)         REFERENCES wmbs_file_details(id))"""
+
                
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
-             id          number(10) not null,
-             subscription INT(11)    NOT NULL,
-             uid          VARCHAR(255),
-             output       INT(11),
-             last_update  TIMESTAMP NOT NULL,
-             UNIQUE(uid),
-             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
-                    ON DELETE CASCADE)"""
+             id           number(10) not null,
+             subscription number(10)    not null,
+             guid          VARCHAR(255),
+             output       number(10),
+             last_update  number(10) not null,
+             constraint fk_jobgroup_subscription
+                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+                   ON DELETE CASCADE,
+             constraint fk_jobgroup_fileset  
+                 FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
+                        ON DELETE CASCADE,                        
+             constraint pk_jobgroup primary key (id),
+             constraint uk_jobgroup_output unique (output),
+             constraint uk_jobgroup_uid unique (guid))"""
+             
         sequence_tables.append('wmbs_jobgroup') 
         
         self.create["14wmbs_job"] = \
           """CREATE TABLE wmbs_job (
              id          number(10) not null,
-             jobgroup    INT(11)   NOT NULL,
+             jobgroup    number(10)   not null,
              name        VARCHAR(255),
-             last_update TIMESTAMP NOT NULL,
-             UNIQUE(name),
-             FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-               ON DELETE CASCADE)"""               
+             last_update number(10) not null,
+             constraint fk_job_jobgroup
+                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
+                   ON DELETE CASCADE,
+             constraint pk_job primary key (id),
+             constraint uk_job_name unique (name))"""               
         sequence_tables.append('wmbs_job')           
-          
-        self.create["30wmbs_subs_type"] = \
-          """CREATE TABLE wmbs_subs_type (
-             id          number(10) not null,
-             name VARCHAR(255) NOT NULL)"""
+
+        self.create["15wmbs_job_assoc"] = \
+          """CREATE TABLE wmbs_job_assoc (
+             job    number(10) not null,
+             fileid  number(10) not null,
+             constraint fk_jobassoc_job
+                 FOREIGN KEY (job)  REFERENCES wmbs_job(id)
+                   ON DELETE CASCADE,
+             constraint fk_jobassoc_file
+                 FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
+                   ON DELETE CASCADE)"""
+
+        self.create["16wmbs_group_job_acquired"] = \
+          """CREATE TABLE wmbs_group_job_acquired (
+              jobgroup number(10) not null,
+              job         number(10)     not null,
+             constraint fk_jobgrpacquired_group
+                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
+                   ON DELETE CASCADE,
+             constraint fk_jobgrpacquired_job
+                 FOREIGN KEY (job)         REFERENCES wmbs_job(id))"""
+
+        self.create["17wmbs_group_job_failed"] = \
+          """CREATE TABLE wmbs_group_job_failed (
+              jobgroup number(10) not null,
+              job         number(10)     not null,
+             constraint fk_jobgrpfailed_group
+                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
+                   ON DELETE CASCADE,
+             constraint fk_jobgrpfailed_job
+                 FOREIGN KEY (job)         REFERENCES wmbs_job(id))"""
+
+        self.create["18wmbs_group_job_complete"] = \
+          """CREATE TABLE wmbs_group_job_complete (
+              jobgroup number(10) not null,
+              job         number(10)     not null,
+             constraint fk_jobgrpcomplete_group
+                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
+                   ON DELETE CASCADE,
+             constraint fk_jobgrpcomplete_job
+                 FOREIGN KEY (job)         REFERENCES wmbs_job(id))"""
              
-        sequence_tables.append('wmbs_subs_type')
+        self.create["19wmbs_job_mask"] = \
+          """CREATE TABLE wmbs_job_mask (
+              job           number(10)     not null,
+              FirstEvent    number(10),
+              LastEvent     number(10),
+              FirstLumi     number(10),
+              LastLumi      number(10),
+              FirstRun      number(10),
+              LastRun       number(10),
+              inclusivemask CHAR(1) CHECK (inclusivemask IN ( 'Y', 'N' )) not null,
+              constraint fk_mask_job
+                  FOREIGN KEY (job) REFERENCES wmbs_job(id)
+                    ON DELETE CASCADE)"""
+          
         
         for subType in ("Processing", "Merge", "Job"):
             subTypeQuery = "INSERT INTO wmbs_subs_type (name) values ('%s')" % \

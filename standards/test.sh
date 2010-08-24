@@ -6,7 +6,7 @@ source setup_mysql.sh
 # testing with mysql parameters:
 
 cd $WMCOREBASE/test/python/WMCore/JobSplitting_t
-#python FileBased_unit.py
+##python FileBased_unit.py
 #$WMCOREBASE/standards/./cleanup_mysql.sh
 
 cd ../WMBS
@@ -50,6 +50,6 @@ $WMCOREBASE/standards/./cleanup_mysql_proxy.sh
 
 # testing with oracle parameters:
 
-#source setup_oracle.sh
-#cd $WMCOREBASE/test/python/WMCore/Trigger_t
-#python Trigger_t.py
+source $WMCOREBASE/standards/setup_oracle.sh
+cd $WMCOREBASE/test/python/WMCore/Trigger_t
+python Trigger_t.py

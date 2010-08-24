@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.4 2008/09/18 14:48:35 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Trigger_t.py,v 1.5 2008/09/19 15:34:37 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import unittest
@@ -42,7 +42,8 @@ class TriggerTest(unittest.TestCase):
         "make a logger instance and create tables"
        
         if not TriggerTest._setup: 
-            logging.basicConfig(level=logging.NOTSET,
+            print('trigger setup (once)')
+            logging.basicConfig(level=logging.DEBUG,
                 format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                 datefmt='%m-%d %H:%M',
                 filename='%s.log' % __file__,
@@ -50,31 +51,43 @@ class TriggerTest(unittest.TestCase):
 
             myThread = threading.currentThread()
             myThread.logger = logging.getLogger('TriggerTest')
-            myThread.dialect = 'MySQL'
+            myThread.dialect = os.getenv('DIALECT')
         
             options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
+            if myThread.dialect == 'MySQL':
+                options['unix_socket'] = os.getenv("DBSOCK")
+                dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
+                    options)
+            else:
+                dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"))
         
             myThread.dbi = dbFactory.connect() 
 
             factory = WMFactory("trigger", "WMCore.Trigger")
             create = factory.loadObject(myThread.dialect+".Create")
-            createworked = create.execute()
-            if createworked:
-                logging.debug("Trigger tables created")
-            else:
-                logging.debug("Trigger tables could not be created, \
+            myThread.transaction = Transaction(myThread.dbi)
+            createworked = create.execute(conn = myThread.transaction.conn)
+            if not createworked:
+                raise Exception("Trigger tables could not be created, \
                     already exists?")
-                                              
             TriggerTest._setup = True
+            myThread.transaction.commit()                                  
 
     def tearDown(self):
         """
         Deletion is external
         """
-        pass 
+        myThread = threading.currentThread()
+        if TriggerTest._teardown:
+            print('trigger teardown (once)')
+            factory = WMFactory("trigger", "WMCore.Trigger")
+            destroy = factory.loadObject(myThread.dialect+".Destroy")
+            myThread.transaction.begin()
+            destroyworked = destroy.execute(conn = myThread.transaction.conn)
+            if not destroyworked:
+                raise Exception("Trigger tables could not be destroyed")
+            myThread.transaction.commit()
+        TriggerTest._teardown = False
                
     def testA(self):
         """
@@ -84,7 +97,6 @@ class TriggerTest(unittest.TestCase):
         """
         # perpare trigger name tables if working in multi queue
         myThread = threading.currentThread()
-        myThread.transaction = Transaction(myThread.dbi)
         trigger = Trigger()
 
         print("\nCreate Triggers")
@@ -103,6 +115,7 @@ class TriggerTest(unittest.TestCase):
                               'action_name' : "WMCore.Trigger.ActionTemplate",\
                               'payload': payload})
 
+        myThread.transaction.begin()
         trigger.addFlag(flags)
         trigger.addFlag({'trigger_id' : 'single_insert', \
                          'id' : 'single_insert_id', \

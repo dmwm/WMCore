@@ -8,9 +8,9 @@ This module implements the mysql backend for the trigger.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.2 2008/09/09 13:50:36 fvlingen Exp $"
+    "$Id: Queries.py,v 1.3 2008/09/19 15:34:35 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.2 $"
+    "$Revision: 1.3 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -59,8 +59,7 @@ INSERT INTO tr_trigger(id,flag_id,trigger_id) VALUES(:id,:flag_id,:trigger_id)
         """
         sqlStr = """
 INSERT INTO tr_action(id,trigger_id,action_name,payload) VALUES(:id,:trigger_id,:action_name,:payload) 
-ON DUPLICATE KEY UPDATE action_name = VALUES(action_name)
-        """
+"""
         self.execute(sqlStr, args)        
 
     def removeFlag(self, args):
@@ -105,6 +104,7 @@ DELETE FROM tr_trigger WHERE
         """
         Builds Query that checks if all flags for a trigger are set.
         """
+        result = None
         if len(args) == 0:
             return 
         if len(args) == 1:
@@ -113,7 +113,6 @@ SELECT COUNT(*) as total_count,trigger_id, id FROM tr_trigger WHERE
 trigger_id = :trigger_id AND id = :id GROUP BY trigger_id,id 
         """             
             result = self.execute(sqlStr, args)
-            return self.formatDict(result) 
         else:
             # reformat query to do delete without binds
             # FIXME: there are some problems with multi bind 
@@ -129,13 +128,13 @@ SELECT COUNT(*) as total_count,trigger_id, id FROM tr_trigger WHERE
                     "' AND id='"+str(arg['id'])+"')"
             sqlStr += " GROUP BY trigger_id,id "
             result = self.execute(sqlStr, {})
-            return self.format(result) 
-
+        res = self.format(result)
+        return res
 
     def selectAction(self, args):
         """
         Once the trigger is triggered, this query selects an action to be loaded
-        and executed.
+        and executed and deletes it.
         """
         if type(args) != list:
             args = [args]

@@ -6,8 +6,8 @@ Class that implements trigger functionality for
 Different components to synchronize work
 """
 
-__revision__ = "$Id: Trigger.py,v 1.2 2008/09/09 13:50:35 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Trigger.py,v 1.3 2008/09/19 15:34:35 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -67,13 +67,12 @@ class Trigger:
         notToBSet = []
         # single out triggers that should not trigger yet
         for notSet in notSets:
-            notToBSet.append([notSet['trigger_id'], notSet['id']])
+            notToBSet.append([notSet[1], notSet[2]])
         toBset = []
         # compare with the input which triggers should triggers.
         for arg in args:
             if not [arg['trigger_id'], arg['id']] in notToBSet:
                 toBset.append({'trigger_id':arg['trigger_id'], 'id':arg['id']})
-             
         # if flags are set invoke action (trigger it)
         if len(toBset) > 0:
             result = self.query.selectAction(args)

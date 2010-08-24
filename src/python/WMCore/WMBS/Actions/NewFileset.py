@@ -7,21 +7,12 @@ class NewFilesetAction(BaseAction):
         """
         import the approriate SQL object and execute it
         """ 
-        dia = dbinterface.engine.dialect
-        #if isinstance(dia, OracleDialect):
-        #    from WMCore.WMBS.Oracle import OracleDialect as WMBSOracle
-        #    return WMBSOracle (self.logger, engine)
-        #el
-        if isinstance(dia, self.dialects['sqlite']):
-            from WMCore.WMBS.SQLite.NewFilesetSQL import NewFilesetSQL
-        elif isinstance(dia, self.dialects['mysql']):
-            from WMCore.WMBS.MySQL.NewFilesetSQL import NewFilesetSQL
-        else:
-            raise TypeError, "unknown connection type"
-             
-        action = NewFilesetSQL(self.logger, dbinterface)
+        BaseAction.execute(self, dbinterface)
+        self.logger.debug("Adding %s" % fileset)    
+        action = self.myclass(self.logger, dbinterface)
         try:
             action.execute(fileset)
             return True
-        except:
+        except Exception, e:
+            self.logger.exception(e)
             return False

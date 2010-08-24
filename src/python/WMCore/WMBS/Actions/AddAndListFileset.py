@@ -5,11 +5,10 @@ class AddAndListFileset(BaseAction):
     name = "NewFileset"
         
     def execute(self, fileset = None, dbinterface = None):
-        """
-        import the approriate SQL object and execute it
-        """ 
+        BaseAction.execute(dbinterface)
+        
         action1 = NewFilesetAction(self.logger, dbinterface)
-        action1.execute('my filesset')
+        action1.execute(fileset)
         action2 = ListFilesetAction(self.logger, dbinterface)
         return action2.execute()
         

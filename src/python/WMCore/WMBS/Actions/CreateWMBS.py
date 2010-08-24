@@ -7,21 +7,10 @@ class CreateWMBSAction(BaseAction):
         """
         import the approriate SQL object and execute it
         """ 
-        dia = dbinterface.engine.dialect
-        #if isinstance(dia, OracleDialect):
-        #    from WMCore.WMBS.Oracle import OracleDialect as WMBSOracle
-        #    return WMBSOracle (self.logger, engine)
-        #el
-        if isinstance(dia, self.dialects['sqlite']):
-            from WMCore.WMBS.SQLite.CreateWMBSSQL import CreateWMBS
-        elif isinstance(dia, self.dialects['mysql']):
-            from WMCore.WMBS.MySQL.CreateWMBSSQL import CreateWMBS
-        else:
-            raise TypeError, "unknown connection type"
+        BaseAction.execute(self, dbinterface)
              
-        action = CreateWMBS(self.logger, dbinterface)
+        action = self.myclass(self.logger, dbinterface)
         try:
-            action.execute()
-            return True
+            return action.execute()
         except:
             return False

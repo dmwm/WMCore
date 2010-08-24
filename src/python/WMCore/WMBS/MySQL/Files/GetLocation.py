@@ -2,6 +2,7 @@
 MySQL implementation of File.GetLocation
 """
 from WMCore.WMBS.MySQL.Base import MySQLBase
+from sets import Set
 
 class GetLocation(MySQLBase):
     sql = """select se_name from wmbs_location 
@@ -18,10 +19,10 @@ class GetLocation(MySQLBase):
     
     def format(self, result):
         "Return a list of SE FQDN's"
-        out = set()
+        out = Set()
         for r in result:
             for i in r.fetchall():
-                out.add(i)
+                out.add(i[0])
         return out
     
     def execute(self, file=None, conn = None, transaction = False):

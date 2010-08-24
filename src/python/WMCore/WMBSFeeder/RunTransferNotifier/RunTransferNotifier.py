@@ -29,8 +29,8 @@ TODO:   * Make parent relations condition on actually requiring parent relation
         * DQ flags from DBS?
         * Finish tracking down DBS problems
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.10 2008/10/30 12:20:10 jacksonj Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.11 2008/11/04 11:02:10 jacksonj Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import logging
 
@@ -127,9 +127,10 @@ class RunTransferNotifier(FeederImpl):
         # Do per fileset work, abandon fileset processing on exception
         for fileset in filesets:
             ds = fileset.name
-            watchCompleteFiles = []
             try:
                 # Do per run work
+                watchCompleteFiles = []
+                
                 for watch in self.watchedRuns:
                     # Ensure watcher has dataset listed
                     watch.addDatasetOfInterest(ds)
@@ -174,8 +175,8 @@ class RunTransferNotifier(FeederImpl):
                             if not fileToAdd.exists() and fileset.requireParents:
                                 fileToAdd.addParent(fi["file.parent"])
     
-                            # Add new locations
-                            fileToAdd.setLocations(newSites)
+                            # Add new locations but don't persist immediately
+                            fileToAdd.setLocations(newSites, immediateSave=False)
                                 
                             # Add the file to the new file list
                             fileset.addFile(fileToAdd)
@@ -185,15 +186,15 @@ class RunTransferNotifier(FeederImpl):
                 
                 # Commit the fileset
                 fileset.commit()
-                fileset.close()
+                
+                # Add the watched runs
+                for a in watchCompleteFiles:
+                    a[0].addCompletedNodes(a[1], a[2])
+                
             except:
                 # Reset the watch list so we re-evaluate next call
                 watchCompleteFiles = []
-                
-            # Add completed sites / datasets as required
-            for a in watchCompleteFiles:
-                a[0].addCompletedNodes(a[1], a[2])
-            
+
         # Purge old runs
         self.purgeWatchedRuns()
         

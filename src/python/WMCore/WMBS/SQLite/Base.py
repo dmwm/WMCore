@@ -10,7 +10,10 @@ class SQLiteBase(MySQLBase):
         out = []
         for r in result:
             for i in r.fetchall():
-                out.append(i)
+                row = []
+                for j in i:
+                    row.append(j)
+                out.append(row)
         return out
         
     def execute(self, conn = None, transaction = False):

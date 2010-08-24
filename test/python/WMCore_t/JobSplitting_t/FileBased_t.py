@@ -7,8 +7,8 @@ and one per job type.
 
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.2 2008/10/01 22:03:10 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FileBased_t.py,v 1.3 2008/10/03 11:30:30 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 from sets import Set
 import unittest, logging, os, commands, random, datetime, math
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
@@ -148,7 +148,7 @@ class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
                                 dbinterface=self.dbf.connect())
         
         theCreator = daofactory(classname='CreateWMBS')
-        assert not theCreator.execute(), "could not create database instance"
+        assert theCreator.execute(), "could not create database instance"
 
         self.fileset = WMBSFileset(name='MyCoolFiles', 
                                    logger=logging.getLogger('wmbs_fileset'), 

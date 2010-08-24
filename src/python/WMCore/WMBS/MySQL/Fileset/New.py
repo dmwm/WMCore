@@ -1,29 +1,31 @@
 #!/usr/bin/env python
 """
-_Parentage_
+_New_
  
 MySQL implementation of Fileset.New
-
 """
-__all__ = []
-__revision__ = "$Id: New.py,v 1.3 2008/11/24 21:47:03 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
 
+__all__ = []
+__revision__ = "$Id: New.py,v 1.4 2009/03/03 14:54:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
+
+import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
-    sql = "insert into wmbs_fileset (name, open) values (:fileset, :open)"
+    sql = """INSERT INTO wmbs_fileset (name, last_update, open)
+               VALUES (:NAME, :LAST_UPDATE, :OPEN)"""
     
-    def getBinds(self, name = None, open=0):
-        return self.dbi.buildbinds(self.dbi.makelist(name), 'fileset',
-                        self.dbi.buildbinds(
-                            self.dbi.makelist(open), 'open'))
+    def getBinds(self, name = None, open = False):
+        bindVars = {}
+        bindVars["NAME"] = name
+        bindVars["OPEN"] = int(open)
+        bindVars["LAST_UPDATE"] = int(time.time())
+        return bindVars
     
-    def format(self, result):
-        return True
-    
-    def execute(self, name = None, conn = None, transaction = False):
-        self.dbi.processData(self.sql, self.getBinds(name), 
+    def execute(self, name = None, open = False, conn = None,
+                transaction = False):
+        self.dbi.processData(self.sql, self.getBinds(name, open), 
                          conn = conn, transaction = transaction)
-        return True #Or raise
+        return

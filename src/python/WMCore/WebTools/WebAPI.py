@@ -41,17 +41,18 @@ class WebAPI(DatabasePage):
         kwargs=''
         for i in input:
             kwargs = kwargs + "%s='%s'," % (i, input[i])
-        str = "self.methods[method]['call']"
         dict = {}
         try:
-            method = eval(str)
-            dict = method(kwargs.strip(','))
+            if len(kwargs):
+                dict = self.methods[method]['call'](kwargs.strip(','))
+            else:
+                dict = self.methods[method]['call']()
         except Exception, e:
             error = e.__str__()
             self.debug(error)
             self.debug(str)
             self.debug("%s:%s" % (sys.exc_type, sys.exc_value))
-            dict = {'Exception':{'Exception_thrown_in': method.__str__(),
+            dict = {'Exception':{'Exception_thrown_in': method,
                        'Exception_type': '%s' % sys.exc_type,
                        'Exception_detail':error, 
                        'Exception_string': str, 

@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.22 2008/09/10 17:57:12 metson Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Fileset.py,v 1.23 2008/09/18 22:36:21 metson Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -53,14 +53,9 @@ class Fileset(BusinessObject, WMFileset):
         self.lastUpdate = 0
     
     def addFile(self, file):
+        # Add the file object to the set, but don't commit to the database
+        # Call commit() to do that - enables bulk operations
         WMFileset.addFile(self, file)
-
-        try:
-            self.commit()
-        except IntegrityError, e:
-            pass #Ignore that the file exists
-        except Exception, e:
-            raise e
     
     def setParentage(self, parents, parents_open):
         """
@@ -134,22 +129,17 @@ class Fileset(BusinessObject, WMFileset):
         comfiles = []
         if not self.exists():
             self.create()
-        #lfns=[]
+        lfns=[]
         while len(self.newfiles) > 0:
+            #Check file objects exist in the database, save those that don't
             f = self.newfiles.pop()
             self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
             try:
                 f.save()
             except IntegrityError, ex:
                 self.logger.warning('File already exists in the database %s' % f.dict["lfn"])
-            #lfns.append(f.dict["lfn"])
+            lfns.append(f.dict["lfn"])
         
-            self.daofactory(classname='Files.AddToFileset').execute(file=f.dict["lfn"], 
-                                                                    fileset=self.name)
+        self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
+                                                            fileset=self.name)
         self.populate()
-                
-        
-        #TODO: make the following bulk operation work
-        #print 'commit', len(lfns)
-        #self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
-        #                                                    fileset=self.name)

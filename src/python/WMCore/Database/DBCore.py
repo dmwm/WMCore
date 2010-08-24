@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.2 2008/04/11 15:54:41 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBCore.py,v 1.3 2008/04/11 16:03:50 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from sqlalchemy.databases.mysql import MySQLDialect
@@ -85,17 +85,17 @@ class DBInterface(object):
             Should never get executed - should be using binds!!
             """
             self.logger.warning('%s is not using binds!!' % sqlstmt)
-            result.append(self.executebinds(sqlstmt, binds, connectionection=connection))            
+            result.append(self.executebinds(sqlstmt, binds, connection=connection))            
         elif type(sqlstmt) == type("string") and isinstance(binds, dict):
             # single statement plus binds
-            result.append(self.executebinds(sqlstmt, binds, connectionection=connection))
+            result.append(self.executebinds(sqlstmt, binds, connection=connection))
         elif type(sqlstmt) == type("string") and isinstance(binds, list):
             #Run single SQL statement for a list of binds
             if not transaction: trans = connection.begin()
             try:
                 for b in binds:
                     result.append(self.executebinds(sqlstmt, b,
-                                                    connectionection=connection))
+                                                    connection=connection))
                 if not transaction: trans.commit()
             except Exception, e:
                 if not transaction: trans.rollback()
@@ -107,7 +107,7 @@ class DBInterface(object):
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
                     result.append(self.executebinds(sqlstmt, b,
-                                                    connectionection=connection))
+                                                    connection=connection))
                 if not transaction: trans.commit()
             except Exception, e:
                 if not transaction: trans.rollback()

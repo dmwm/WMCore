@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.18 2009/01/29 16:44:04 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: JobGroup.py,v 1.19 2009/01/29 20:46:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -194,9 +194,11 @@ class JobGroup(WMBSBase, WMJobGroup):
         necessary.
         """
         self.beginTransaction()
+
+        if self.id == -1:
+            self.create()
         
         for j in self.newjobs:
-            # create() will also associate files
             j.create(group=self)
             
         WMJobGroup.commit(self)

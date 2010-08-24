@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.18 2009/02/27 19:33:17 metson Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Page.py,v 1.19 2009/03/05 15:04:20 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import urllib
 import cherrypy
@@ -121,12 +121,25 @@ class SecuredPage(Page):
             self.debug("No cert found in a browser")
         return userdn
 
+def exposeatom (func):
+    def wrapper (self, *args, **kwds):
+        data = func (self, *args, **kwds)
+        cherrypy.response.headers['Content-Type'] = "application/atom+xml"
+        return self.templatepage('Atom', data = data, 
+                                 config = self.config,
+                                 request = request)
+    wrapper.__doc__ = func.__doc__
+    wrapper.__name__ = func.__name__
+    wrapper.exposed = True
+    return wrapper
     
 def exposexml (func):
     def wrapper (self, *args, **kwds):
         data = func (self, *args, **kwds)
         cherrypy.response.headers['Content-Type'] = "application/xml"
-        return data
+        return self.templatepage('XML', data = data, 
+                                 config = self.config,
+                                 request = request)
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True

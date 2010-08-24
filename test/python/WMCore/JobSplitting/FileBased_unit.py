@@ -7,16 +7,27 @@ job type.
 
 """
 
-__revision__ = "$Id: FileBased_unit.py,v 1.2 2008/07/07 21:42:09 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FileBased_unit.py,v 1.3 2008/07/08 12:12:01 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 from sets import Set
 import unittest, logging, os, commands, random, datetime, math
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.Workflow import Workflow
+
+from WMCore.WMBS.Job import Job as WMBSJob
+from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
+from WMCore.WMBS.File import File as WMBSFile
+from WMCore.WMBS.Fileset import Fileset as WMBSFileset
+from WMCore.WMBS.Workflow import Workflow as WMBSWorkflow
+
+from WMCore.Database.DBFactory import DBFactory
+from WMCore.DAOFactory import DAOFactory
+
 class FileBasedGenericObjectTest(unittest.TestCase):
     """
     A test of the job splitting algorithm "FileBased" using generic WMObjects
@@ -88,15 +99,57 @@ class FileBasedGenericObjectTest(unittest.TestCase):
             assert len(test_set) == test_set_len + job_set_len
         assert len(test_set) == files_size
         
-class FileBasedWMBSObjectTest(unittest.TestCase):
+class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
     """
     A test of the job splitting algorithm "FileBased" using WMBS Objects
     """
     def setUp(self):
-        pass
+        logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename='%s.log' % __file__,
+                    filemode='w')
+        self.testlogger = logging.getLogger('wmbs_FileBasedWMBSObjectTest')
+        self.tearDown()
+        
+        self.dbf = DBFactory(logging.getLogger('wmbs_sqlite'), 'sqlite:///FileBasedWMBSObjectTest.lite')
+        daofactory = DAOFactory(package='WMCore.WMBS', logger=logging.getLogger('wmbs_sqlite'), dbinterface=self.dbf.connect())
+        
+        theSQLiteCreator = daofactory(classname='CreateWMBS')
+        assert theSQLiteCreator.execute(), "could not create database instance"
+        
+        
+        self.fileset = WMBSFileset(name='MyCoolFiles', 
+                                   logger=logging.getLogger('wmbs_fileset'), 
+                                   dbfactory=self.dbf)
+        self.fileset.create()
+        
+        for i in range(1, 993):
+            file = WMBSFile(lfn="/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
+                             size=1000, events=2000, lumi=10 + i, run=12312, 
+                             logger=logging.getLogger('wmbs_file'), 
+                             dbfactory=self.dbf)
+            self.fileset.addFile(file)
+        self.fileset.commit()
+        work = WMBSWorkflow(logger=logging.getLogger('wmbs_workflow'), 
+                            dbfactory=self.dbf)
+        
+        self.subscription = WMBSSubscription(fileset = self.fileset, workflow = work, 
+               split_algo = 'FileBased', type = "Processing", 
+               logger=logging.getLogger('wmbs_subscription'), 
+               dbfactory=self.dbf)
+        self.subscription.create()
+        assert self.subscription.exists()
+        print len(self.subscription.getFileset().listFiles()), len(self.subscription.availableFiles())
+        assert len(self.subscription.getFileset().listFiles()) == len(self.subscription.availableFiles())
     
     def tearDown(self):
-        pass
+        try:
+            self.testlogger.debug(os.remove('FileBasedWMBSObjectTest.lite'))
+        except OSError:
+            #Don't care if the file doesn't exist
+            pass
+        self.testlogger.debug("WMBS SQLite database deleted")
     
             
 if __name__ == "__main__":

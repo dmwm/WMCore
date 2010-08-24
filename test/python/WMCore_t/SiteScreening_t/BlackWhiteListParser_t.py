@@ -2,8 +2,8 @@
 """
 Test case for SiteScreening
 """
-__revision__ = "$Id: BlackWhiteListParser_t.py,v 1.3 2008/11/04 17:01:28 ewv Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: BlackWhiteListParser_t.py,v 1.4 2009/02/03 19:55:36 ewv Exp $"
+__version__  = "$Revision: 1.4 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -63,6 +63,12 @@ class BlackWhiteListParserTest(unittest.TestCase):
                 blackList=ceBlackList,
                 logger=fakeLogger
             )
+
+    def runTest(self):
+        self.testSEBlackList()
+        self.testSEWhiteList()
+        self.testCEBlackList()
+        self.testCEWhiteList()
 
     def testSEBlackList(self):
         """

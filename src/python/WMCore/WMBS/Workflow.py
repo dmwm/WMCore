@@ -16,8 +16,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.13 2008/10/22 17:51:53 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Workflow.py,v 1.14 2008/10/22 20:32:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -78,16 +78,18 @@ class Workflow(BusinessObject,WMWorkflow):
         """
         action = self.daofactory(classname=method)
         if method == 'Workflow.LoadFromName':
-            action.execute(workflow = self.name)
+            result = action.execute(workflow = self.name)
+
         elif method == 'Workflow.LoadFromID':
-            action.execute(workflow = self.id)
+            result = action.execute(workflow = self.id)
         elif method == 'Workflow.LoadFromSpecOwner':
-            action.execute(spec = self.spec, owner = self.owner)
+            result = action.execute(spec = self.spec, owner = self.owner)
         else:
             raise TypeError, "load method not supported"
-            
-            
-            
-            
-            
-        
+
+        self.logger.debug("RESULT: %s" % result)
+
+        self.id = result[0][0]
+        self.spec = result[0][1]
+        self.name = result[0][2]
+        self.owner = result[0][3]

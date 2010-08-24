@@ -43,6 +43,10 @@ class MySQLInterface(DBInterface):
         :bind_name becomes %s.
         
         See: http://www.devshed.com/c/a/Python/MySQL-Connectivity-With-Python/5/
+        
+        Seems the sqlalchemy's executemany on MySQL is a bit flakey, so instead 
+        we get the MySQLDB connection, make a cursor and interact with that 
+        directly. 
         """
         b = self.makelist(b)
         try: 
@@ -63,9 +67,12 @@ class MySQLInterface(DBInterface):
                               newsql.replace('\n', ' '))
             self.logger.debug("MySQLCore.executemanybinds: rewritten binds: %s" % bind_list)
         except Exception, e:
+            print e.message
             self.logger.exception("""MySQLCore.executemanybinds failed - sql : %s
 binds : %s
-exception : %s""" % (s, b, e))
+exception : %s""" % (s, b, e.message))
             raise e
-
-        return DBInterface.executemanybinds(self, newsql, bind_list, connection)
+        cur = connection.connection.cursor()
+        result = cur.executemany(newsql, bind_list)
+        return result
+        #return DBInterface.executemanybinds(self, newsql, bind_list, connection)

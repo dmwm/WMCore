@@ -9,14 +9,15 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.4 2009/01/10 16:00:39 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Root.py,v 1.5 2009/01/20 12:08:44 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
 from cherrypy import config as cpconfig
 # configuration and arguments
-from ConfigParser import ConfigParser
+from WMCore.Configuration import Configuration
+from WMCore.Configuration import loadConfigurationFile
 from optparse import OptionParser
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
@@ -32,32 +33,33 @@ from WMCore.DataStructs.WMObject import WMObject
 class Root(WMObject):
     def __init__(self, opts):
         self.opts = opts
-        self.configfile = self.loadConfig(opts.inifile)
-        self.app = self.configfile.get('root', 'application')
+        cfg = loadConfigurationFile(opts.inifile)
+        self.config = cfg.Webtools
+        self.app = self.config.application
         
         #Configure CherryPy
         try:
-            cpconfig.update ({"server.environment": self.configfile.get('root', 'environment')})
+            cpconfig.update ({"server.environment": self.config.environment})
         except:
             cpconfig.update ({"server.environment": 'production'})
         try:
-            cpconfig.update ({"server.socket_port": int(self.configfile.get('root', 'port'))})
+            cpconfig.update ({"server.socket_port": int(self.config.port)})
         except:
             cpconfig.update ({"server.socket_port": 8080})
         try:
-            cpconfig.update ({'tools.expires.secs': int(self.configfile.get('root', 'expires'))})
+            cpconfig.update ({'tools.expires.secs': int(self.config.expires)})
         except:
             cpconfig.update ({'tools.expires.secs': 300})
         try:
-            cpconfig.update ({'log.screen': bool(self.configfile.get('root', 'log_screen'))})
+            cpconfig.update ({'log.screen': bool(self.config.log_screen)})
         except:
             cpconfig.update ({'log.screen': True})
         try:
-            cpconfig.update ({'log.access_file': self.configfile.get('root', 'access_log_file')})
+            cpconfig.update ({'log.access_file': self.config.access_log_file})
         except:
             cpconfig.update ({'log.access_file': None})
         try:
-            cpconfig.update ({'log.error_file': int(self.configfile.get('root', 'error_log_file'))})
+            cpconfig.update ({'log.error_file': int(self.config.error_log_file)})
         except:
             cpconfig.update ({'log.error_file': None})
                                   
@@ -80,45 +82,48 @@ class Root(WMObject):
         
     def loadPages(self):
         factory = WMFactory('webtools_factory')
-        views = eval(self.configfile.get('views', 'active'))
+        
         # Read in global configuration, to be over-ridden if needs be
         globalconfig = {}
-        globalconfig['application'] = self.configfile.get('root', 'application')
+        globalconfig['application'] = self.config.application
         try:
-            globalconfig['templates'] = self.configfile.get('root', 'templates')
+            globalconfig['templates'] = self.config.templates
         except:
             pass
         try:
-            globalconfig['database'] = self.configfile.get('root', 'database')
+            globalconfig['database'] = self.config.database
         except:
             pass
         
-        for i in views:
-            log("loading %s" % i, context=self.app, 
+        for view in self.config.views.active:
+            log("loading %s" % view._internal_name, context=self.app, 
                 severity=logging.INFO, traceback=False)
             
             config = {} 
             config.update(globalconfig)
-            config.update(self.configToDict(self.configfile, i))
+            config.update(view.dictionary_())
             
-            log("configuration for %s: %s" % (i, config), context=self.app, 
+            log("configuration for %s: %s" % (view._internal_name, config), 
+                context=self.app, 
                 severity=logging.INFO, traceback=False)
             
             if 'database' in config.keys():
+                log("loading database for %s" % (view._internal_name), 
+                    context=self.app, 
+                severity=logging.INFO, traceback=False)
                 config['database'] = self.loadDatabase(config)
-            
-            theclass = self.configfile.get(i, 'class')
                     
-            obj = factory.loadObject(theclass, config)
-            eval(compile("self.%s = obj" % i, '<string>', 'single'))
+            obj = factory.loadObject(view.object, config)
+            eval(compile("self.%s = obj" % view._internal_name, '<string>', 'single'))
         
-            log("%s available on %s/%s" % (i, server.base(), i), 
+            log("%s available on %s/%s" % (view._internal_name, 
+                                           server.base(), 
+                                           view._internal_name), 
                                         context=self.app, 
                                         severity=logging.DEBUG, 
                                         traceback=False)
         
-        maint = eval(self.configfile.get('views', 'maintenance'))
-        for i in maint:
+        for i in self.config.views.maintenance:
             #TODO: Show a maintenance page
             pass
     
@@ -136,35 +141,19 @@ class Root(WMObject):
     
         return self.flatten(dblist)
     
-    def configToDict(self, config, section):
-        dict = {}
-        for option in config.items(section):
-            if option[1][0] in ['[', '{', '(']:
-                dict[option[0]] = eval(option[1])
-            else:
-                dict[option[0]] = option[1]
-        return dict
-    
-    def loadConfig(self, inifile):
-        # Check permissions are 600
-        # assert inifile is read only
-        config = ConfigParser()
-        config.read(inifile)
-        return config
-    
     @expose
     def index(self):
-        index = self.configfile.get('root', 'index')
+        index = self.config.index
         return eval('self.%s.index()' % index)
     
     @expose
     def default(self, *args, **kwargs):
-        index = self.configfile.get('root', 'index')
+        index = self.config.index
         return eval('self.%s.default(*args, **kwargs)' % index)
 
 if __name__ == "__main__":
     parser = OptionParser()
-    parser.add_option("-i", "--ini", dest="inifile", default='application.ini',
+    parser.add_option("-i", "--ini", dest="inifile", default='DefaultConfig.py',
                       help="write the configuration to FILE", metavar="FILE")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,

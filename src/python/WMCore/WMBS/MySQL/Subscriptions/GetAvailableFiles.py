@@ -27,8 +27,8 @@ CREATE TABLE wmbs_subscription_location (
                ON DELETE CASCADE)"
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.3 2008/11/11 14:02:05 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.4 2008/11/11 14:36:04 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
@@ -107,7 +107,9 @@ class GetAvailableFiles(MySQLBase):
             and file not in 
                 (select file from wmbs_sub_files_failed where subscription=:subscription)
             and file not in 
-                (select file from wmbs_sub_files_complete where subscription=:subscription)"""
+                (select file from wmbs_sub_files_complete where subscription=:subscription)
+            and file in
+                (select file from wmbs_file_location)"""
                 
         return sql, binds
            

@@ -47,7 +47,7 @@ class JobGroupTest(unittest.TestCase):
         for i in l:
             fs = Fileset(name='tmp', logger=self.logger)
             fs.addFile(i)
-            job = Job(subscription=sub, files=fs)
+            job = Job(files=fs)
             set.add(job)
             
         group = JobGroup(subscription = sub, jobs=set) 
@@ -69,7 +69,7 @@ class JobGroupTest(unittest.TestCase):
             for j in jobs:
                 if j.status in ['QUEUED', 'FAILED']:
                     print "submitting"
-                    j.submit()
+                    j.submit(name='batch queue id')
                 if j.status == 'ACTIVE':
                     dice = random.randint(0 , 10) / 10.
                     if dice <= complete_prob:

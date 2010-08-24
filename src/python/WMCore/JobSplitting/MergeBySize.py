@@ -7,8 +7,8 @@ based on the size of the files
 
 """
 
-__revision__ = "$Id: MergeBySize.py,v 1.2 2008/09/29 13:22:31 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: MergeBySize.py,v 1.3 2008/10/01 22:01:33 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -49,8 +49,7 @@ class MergeBySize(JobFactory):
             accumSize += f['size']
             accumFiles.append(f)
             if accumSize >= mergeSize:
-                job  = job_instance(subscription = self.subscription,
-                                    name = '%s-%s' % (jobname, len(jobs) +1))
+                job  = job_instance(name = '%s-%s' % (jobname, len(jobs) +1))
                 job.addFile(accumFiles)
                 job.mask.setMaxAndSkipEvents(-1, 0)
                 jobs.add(job)
@@ -59,8 +58,7 @@ class MergeBySize(JobFactory):
                 
         if len(accumFiles) > 0:
             if overflow:
-                job =  job_instance(subscription = self.subscription,
-                                    name = '%s-%s' % (jobname, len(jobs) +1 ))
+                job =  job_instance(name = '%s-%s' % (jobname, len(jobs) +1 ))
                 job.addFile(accumFiles)
                 job.mask.setMaxAndSkipEvents(-1, 0)
                 jobs.add(job)

@@ -52,7 +52,7 @@ class Job_t(unittest.TestCase):
             file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
             self.dummyFileSet2.addFile(file)
 		
-        self.dummyJob = Job(subscription = self.dummySubscription, files=self.dummyFileSet2)
+        self.dummyJob = Job(files=self.dummyFileSet2)
 	
     def tearDown(self):
         """
@@ -102,14 +102,14 @@ class Job_t(unittest.TestCase):
         """
         Testcase for the submit method of the Subscription Class
         """
-        self.dummyJob.submit()
+        self.dummyJob.submit(name="batch queue id")
         assert self.dummyJob.status == 'ACTIVE','couldn\'t change Job status to ACTIVE - submit method error'
 
     def testResubmit(self):
         """
         Testcase for the resubmit method of the Subscription Class
         """
-        self.dummyJob.resubmit()
+        self.dummyJob.resubmit(name="batch queue id")
         assert self.dummyJob.status == 'ACTIVE','couldn\'t change Job status to ACTIVE - resubmit method error'
 		
     def testFail(self):

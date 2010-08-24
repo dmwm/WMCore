@@ -26,8 +26,8 @@ CREATE TABLE wmbs_job_assoc (
 
 """
 
-__revision__ = "$Id: Job.py,v 1.4 2008/08/13 15:15:59 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Job.py,v 1.5 2008/09/19 16:29:44 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import datetime
 from sets import Set
@@ -40,7 +40,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Job(BusinessObject, WMJob):
-    def __init__(self, subscription=None, files = Fileset(), id = -1):
+    def __init__(self, subscription=None, files = None, id = -1):
         """
         Subscription object is used to determine the workflow. 
         file_set is a set that contains the id's of all files 
@@ -50,6 +50,7 @@ class Job(BusinessObject, WMJob):
                                 logger=subscription.logger, 
                                 dbfactory=subscription.dbfactory)
         WMJob.__init__(self, subscription=subscription, files = files)
+        
         self.id = id
         if self.id == -1:
             self.create()

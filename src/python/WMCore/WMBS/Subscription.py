@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.24 2008/11/24 21:48:40 sryu Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Subscription.py,v 1.25 2009/01/02 19:25:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import threading
 
@@ -147,11 +147,9 @@ class Subscription(WMSubscription):
         fids will be a set of id's, we'll then load the corresponding file 
         objects.
         """
-        fids = Set()
         files = Set()
         action = self.daofactory(classname='Subscriptions.Get%s' % status)
         for f in action.execute(self):
-            fids.add(f[0])
             fl = File(id=f[0])
             fl.load()
             files.add(fl)

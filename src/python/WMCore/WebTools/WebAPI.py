@@ -6,7 +6,7 @@ import sys
 
 class WebAPI(DatabasePage):
     __version__ = 1
-    def __init__(self, config = {}, database = ''):
+    def __init__(self, config = {}):
         """
         __WebAPI__
         To create an auto-documenting API, make a subclass of the WebAPI class, 
@@ -30,7 +30,7 @@ class WebAPI(DatabasePage):
         connections) to minimise risk of SQL injection attacks (always use binds
         variables!).
         """
-        DatabasePage.__init__(self, config, database) 
+        DatabasePage.__init__(self, config) 
         self.methods = {'status':{'args':[],
                                  'call':self.status,
                                  'version': 1}}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.17 2009/02/20 20:26:56 metson Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Page.py,v 1.18 2009/02/27 19:33:17 metson Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import urllib
 import cherrypy
@@ -48,7 +48,7 @@ class TemplatedPage(Page):
     
     TemplatedPage is a class that provides simple Cheetah templating
     """
-    def __init__(self, config):
+    def __init__(self, config = {}):
         Page.__init__(self, config)
         self.templatedir = ''
         if hasattr(self.config, 'templates'):
@@ -74,7 +74,7 @@ class TemplatedPage(Page):
             return "Template %s not known" % file
 
 class DatabasePage(TemplatedPage, DBFormatter):
-    def __init__(self, config = {}, database = ''):
+    def __init__(self, config = {}):
         """
         __DatabasePage__
         

@@ -8,9 +8,9 @@ This module implements the mysql backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.2 2008/09/04 14:32:07 fvlingen Exp $"
+    "$Id: Queries.py,v 1.3 2008/09/12 13:02:10 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.2 $"
+    "$Revision: 1.3 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -129,7 +129,7 @@ SELECT COUNT(*) FROM  %s
         sqlStr2 = ''
         if source == 'tp_threadpool_buffer_in':
             sqlStr1 = """
-INSERT INTO %s(event,component,payload,thread_pool_id) SELECT event,component,payload,thread_pool_id FROM %s
+INSERT INTO %s(event,component,payload,thread_pool_id) SELECT event,component,payload,thread_pool_id FROM %s FOR UPDATE
             """ % (target, source)
             sqlStr2 = """ DELETE FROM %s """ % (source)
         else:

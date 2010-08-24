@@ -7,8 +7,8 @@ To use this you need to use the ThreadSlave class
 """
 
 
-__revision__ = "$Id: ThreadPool.py,v 1.3 2008/09/05 12:41:32 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ThreadPool.py,v 1.4 2008/09/12 13:02:10 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -146,6 +146,8 @@ class ThreadPool(Queue):
         self.query.insertWork(args, self.poolTableBufferIn)
         # we need to commit here otherwise the thread transaction might not 
         # see it. check if this buffer needs to be flushed.
+        myThread.transaction.commit()
+        myThread.transaction.begin()
         bufferSize = self.query.getQueueLength(\
             {'componentName' : self.component.config.Agent.componentName, \
              'thread_pool_id' : self.threadPoolId}, self.poolTableBufferIn)

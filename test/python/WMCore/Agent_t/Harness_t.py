@@ -4,10 +4,11 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.6 2008/09/08 08:27:40 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Harness_t.py,v 1.7 2008/09/12 13:02:11 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
+import commands
 import logging
 import os
 import threading
@@ -25,6 +26,7 @@ class HarnessTest(unittest.TestCase):
     """
 
     _setup_done = False
+    _teardown = False
     _log_level = 'debug'
 
     def setUp(self):
@@ -61,6 +63,17 @@ class HarnessTest(unittest.TestCase):
 
             HarnessTest._setup_done = True
 
+    def tearDown(self):
+        """
+        Delete the databases
+        """
+        myThread = threading.currentThread()
+        if HarnessTest._teardown:
+            myThread.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root --socket='+os.getenv("DBSOCK")+' drop '+os.getenv("DBNAME")))
+            myThread.logger.debug(commands.getstatusoutput('mysqladmin -u root --socket='+os.getenv("DBSOCK")+' create '+os.getenv("DBNAME")))
+            myThread.logger.debug("database deleted")
+
+
     def testA(self):
         """
         Mimics creation of component and handles come messages.
@@ -93,6 +106,7 @@ class HarnessTest(unittest.TestCase):
         testComponent.handleMessage('TestMessage3','TestMessag3Payload')
         testComponent.handleMessage('TestMessage4','TestMessag4Payload')
 
+        HarnessTest._teardown = True
 if __name__ == '__main__':
     unittest.main()
 

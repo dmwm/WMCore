@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.10 2009/01/24 00:16:04 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Root.py,v 1.11 2009/01/24 01:27:02 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -35,6 +35,7 @@ class Root(WMObject):
     def __init__(self, config):
         self.config = config
         self.config = config.section_("Webtools")
+        self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
         self.configureCherryPy()
         self.loadPages()
@@ -82,16 +83,21 @@ class Root(WMObject):
 
     def loadPages(self):
         factory = WMFactory('webtools_factory')
-        
-        for view in self.config.views.active:
+
+        for view in self.appconfig.views.active:
             config = Configuration()
             component = config.component_(view._internal_name)
             component.application = self.config.application
-            # TODO: if the view has a template/database set override a global one
-            component.templates = self.config.templates
-            component.database = self.config.database
-            # TODO: Pull in all the other configs...
-
+            
+            if hasattr(self.appconfig, 'templates'):
+                component.templates = self.appconfig.templates
+            if hasattr(self.appconfig, 'database'):
+                component.database = self.appconfig.database
+            
+            dict = view.dictionary_()
+            for k in dict.keys():
+                component.__setattr__(k, dict[k])
+            
             log("loading %s" % view._internal_name, context=self.app, 
                 severity=logging.INFO, traceback=False)
             
@@ -110,7 +116,7 @@ class Root(WMObject):
                                 severity=logging.DEBUG, 
                                 traceback=False)
             # Load the object
-            obj = factory.loadObject(view.object, view)
+            obj = factory.loadObject(view.object, config)
             # Attach the object to cherrypy's root, at the name of the view 
             eval(compile("self.%s = obj" % view._internal_name, '<string>', 'single'))
         
@@ -121,7 +127,7 @@ class Root(WMObject):
                                            severity=logging.INFO, 
                                            traceback=False)
         
-        for i in self.config.views.maintenance:
+        for i in self.appconfig.views.maintenance:
             #TODO: Show a maintenance page
             pass
     
@@ -141,12 +147,12 @@ class Root(WMObject):
     
     @expose
     def index(self):
-        index = self.config.index
+        index = self.appconfig.index
         return eval('self.%s.index()' % index)
     
     @expose
     def default(self, *args, **kwargs):
-        index = self.config.index
+        index = self.appconfig.index
         return eval('self.%s.default(*args, **kwargs)' % index)
 
 if __name__ == "__main__":

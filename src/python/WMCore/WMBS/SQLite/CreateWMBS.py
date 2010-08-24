@@ -53,6 +53,7 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fileset INT(11) NOT NULL,
                 workflow INT(11) NOT NULL,
+                split_algo VARCHAR(255) NOT NULL DEFAULT 'File',
                 type    INT(11) NOT NULL,
                 last_update timestamp NOT NULL,
                 FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
@@ -64,6 +65,8 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
         self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 subscription INT(11) NOT NULL,
+                start INT(11),
+                completed INT(11),
                 last_update timestamp NOT NULL,
                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                 ON DELETE CASCADE)"""

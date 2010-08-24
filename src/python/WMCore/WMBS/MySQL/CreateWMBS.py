@@ -65,6 +65,7 @@ class CreateWMBS(MySQLBase):
                 id      INT(11) NOT NULL AUTO_INCREMENT,
                 fileset INT(11) NOT NULL,
                 workflow INT(11) NOT NULL,
+                split_algo VARCHAR(255) NOT NULL DEFAULT 'File',
                 type    ENUM("merge", "processing"),
                 last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
@@ -99,6 +100,8 @@ wmbs_sub_files_complete (
         self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
                 id           INT(11) NOT NULL AUTO_INCREMENT,
                 subscription INT(11) NOT NULL,
+                start INT(11),
+                completed INT(11),
                 last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),

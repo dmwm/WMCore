@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson, exposedasjson 
 from WMCore.Lexicon import sitetier, countrycode
-from cherrypy import expose
+from cherrypy import expose, HTTPRedirect
 import sys
 
 class WebAPI(DatabasePage):
@@ -54,8 +54,11 @@ class WebAPI(DatabasePage):
         The json output. args is assumed to be length 1 and contain the method 
         name, kwargs are passed to the method
         """
-        dict = self.runMethod(args[0], kwargs)
-        return dict
+        if len(args) > 0:
+            dict = self.runMethod(args[0], kwargs)
+            return dict
+        else:
+            raise HTTPRedirect("doc")
     
     @exposedasjson
     def das(self, *args, **kwargs):
@@ -63,8 +66,11 @@ class WebAPI(DatabasePage):
         The das compatible json output. args is assumed to be length 1 and 
         contain the method name, kwargs are passed to the method
         """
-        dict = self.runMethod(args[0], kwargs)
-        return dict
+        if len(args) > 0:
+            dict = self.runMethod(args[0], kwargs)
+            return dict
+        else:
+            raise HTTPRedirect("doc")
     
     @exposexml
     def xml(self, *args, **kwargs):
@@ -72,8 +78,11 @@ class WebAPI(DatabasePage):
         The xml output. args is assumed to be length 1 and contain the method 
         name, kwargs are passed to the method
         """
-        dict = self.runMethod(args[0], kwargs)
-        return dict
+        if len(args) > 0:
+            dict = self.runMethod(args[0], kwargs)
+            return dict
+        else:
+            raise HTTPRedirect("doc")
     
     def runMethod(self, method, input):
         """

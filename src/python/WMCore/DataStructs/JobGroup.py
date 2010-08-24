@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.12 2009/01/16 22:49:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobGroup.py,v 1.13 2009/01/21 22:16:33 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -59,7 +59,7 @@ class JobGroup(Pickleable):
         
     def add(self, job):        
         self.newjobs = self.newjobs | self.makeset(job)
-
+        
     def commit(self):
         """
         _commit_
@@ -92,9 +92,6 @@ class JobGroup(Pickleable):
                     failed.append(j)
                 elif j.status == 'COMPLETE':
                     complete.append(j)
-        self.recordAcquire(activated)
-        self.recordComplete(complete)
-        self.recordFail(failed)
         
         self.last_update = datetime.datetime.now()
     
@@ -108,10 +105,13 @@ class JobGroup(Pickleable):
         if detail:
             report = ' (av %s, ac %s, fa %s, cm %s)' % (av, ac, fa, cm)
         if cm == total:
+            self.recordComplete(self.jobs)
             return 'COMPLETE%s' % report
-        elif fa == total:
+        elif fa > 0:
+            self.recordFail(self.jobs)
             return 'FAILED%s' % report
         else:
+            self.recordAcquire(self.jobs)
             return 'ACTIVE%s' % report
      
     def recordAcquire(self, jobs):
@@ -137,7 +137,7 @@ class JobGroup(Pickleable):
         if self.status() == 'COMPLETE':
             "output only makes sense if the group is completed"
             for j in self.jobs:
-                self.addOutput(j.output.listFiles())
+                self.addOutput(j.output.getFiles())
             return self.groupoutput
         print self.status(detail=True)
         return False

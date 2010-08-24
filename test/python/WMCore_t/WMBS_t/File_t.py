@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: File_t.py,v 1.5 2008/11/26 19:36:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: File_t.py,v 1.6 2008/12/12 19:35:29 afaq Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import logging
@@ -69,6 +69,7 @@ class File_t(unittest.TestCase):
             return
         
         factory = WMFactory("WMBS", "WMCore.WMBS")
+
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
         destroyworked = destroy.execute(conn = myThread.transaction.conn)
@@ -140,17 +141,20 @@ class File_t(unittest.TestCase):
         assert info[5] == testFile["lumi"], \
                "ERROR: File returned wrong lumi"
 
-        assert len(info[6]) == 2, \
+        assert info[6] == testFile["cksum"], \
+               "ERROR: File returned wrong cksum"
+
+        assert len(info[7]) == 2, \
                "ERROR: File returned wrong locations"
 
-        for testLocation in info[6]:
+        for testLocation in info[7]:
             assert testLocation in ["se1.fnal.gov", "se1.cern.ch"], \
                    "ERROR: File returned wrong locations"
 
-        assert len(info[7]) == 1, \
+        assert len(info[8]) == 1, \
                "ERROR: File returned wrong parents"
 
-        assert info[7][0] == testFileParent, \
+        assert info[8][0] == testFileParent, \
                "ERROR: File returned wrong parents"
 
         testFile.delete()

@@ -40,10 +40,11 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.5 2008/10/28 14:47:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobGroup.py,v 1.6 2008/10/28 19:01:13 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
+from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.Fileset import Fileset
 
@@ -70,7 +71,7 @@ class JobGroup(WMJobGroup, BusinessObject):
         Add the new jobgroup to WMBS, create the output Fileset object
         """
         action = self.daofactory(classname='JobGroup.New')
-        self.id, self.uid = action.execute(self.subscription.id)
+        self.id, self.uid = action.execute(self.subscription['id'])
         self.groupoutput = Fileset(
                       name="output://%s_%s" % (self.subscription.name(), id),
                       logger=self.logger, 
@@ -96,12 +97,19 @@ class JobGroup(WMJobGroup, BusinessObject):
         Input must be (subclasses of) WMBS jobs. Input may be a list or set as 
         well as single jobs.
         """
-        # Iterate through all the jobs in the group
-        for j in job:
-            j.create(group=self.id)
-            j.associateFiles()
+        # Iterate through all the jobs in the group and commit them to the 
+        # database
+        trans = Transaction(dbinterface = self.dbfactory.connect())
+        try:
+            for j in job:
+                j.create(group=self, trans = trans)
+                j.associateFiles(trans = trans)
             
-        self.jobs = self.jobs | self.makeset(job)
+            trans.commit()
+            self.jobs = self.jobs | self.makeset(job)
+        except Exception, e:
+            trans.rollback()
+            raise e
     
     def status(self, detail=False):
         """

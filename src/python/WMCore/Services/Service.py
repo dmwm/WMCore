@@ -7,13 +7,18 @@ has a cache (though this may not be used), an endpoint (the url the service
 exists on) a logger and a type (json, xml etc).
 """
 
-__revision__ = "$Id: Service.py,v 1.1 2008/09/18 15:33:14 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Service.py,v 1.2 2008/09/18 19:34:12 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
-import datetime, os, urllib, time
+import datetime
+import os
+import urllib
+import time
+import socket
 
 class Service:
     def __init__(self, dict={}):
+        #The following should (also) read the configuration class
         try:    
             self.logger = dict['logger']
             try:    
@@ -33,6 +38,12 @@ class Service:
         except:
             raise TypeError, "Can't have a service without a logger"
         
+        #Set a timeout for the socket
+        timeout = 30
+        if 'timeout' in dict.keys and int(dict['timeout']) > timeout:
+            timeout = int(dict['timeout'])
+        socket.setdefaulttimeout(timeout)
+            
         try:
             self.type = dict['type']
         except:

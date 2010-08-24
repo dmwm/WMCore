@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.21 2008/10/28 18:56:01 metson Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Subscription.py,v 1.22 2008/11/11 14:01:06 metson Exp $"
+__version__ = "$Revision: 1.22 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -125,7 +125,7 @@ class Subscription(BusinessObject, WMSubscription):
         fids = Set()
         files = Set()
         action = self.daofactory(classname='Subscriptions.Get%s' % status)
-        for f in action.execute(self['id']):
+        for f in action.execute(self):
             fids.add(f[0])
             fl = File(id=f[0], 
                            logger=self.logger, 
@@ -133,7 +133,7 @@ class Subscription(BusinessObject, WMSubscription):
             fl.load()
             files.add(fl)
         return files 
-                     
+    
     def acquireFiles(self, files = None, size = 0):
         """
         Acquire size files, activating them for the subscription. If size = 0 

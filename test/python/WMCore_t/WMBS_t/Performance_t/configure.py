@@ -13,10 +13,28 @@ def input():
                       help="Create ini for database of TYPE", metavar="TYPE")
     parser.add_option("-i", "--instance", dest="inst", default='wmbs',
                       help="User INSTANCE", metavar="INSTANCE")
-    parser.add_option("-u", "--user", dest="user", metavar="USER",
-                      help="Connect to the database as USER")
-    parser.add_option("-o", "--host", dest="host", metavar="HOST", 
-                      help="Database is running on HOST")
+    #MySQL
+    parser.add_option("--mysqluser", dest="mysqluser", metavar="MYSQLUSER",
+                      help="Connect to MySQL database as USER", default='')
+    parser.add_option("--mysqlhost", dest="mysqlhost", metavar="MYSQLHOST", 
+                      help="MySQL Database is running on HOST", default='')
+    parser.add_option("--mysqlpass", dest="mysqlpass", metavar="MYSQLPASS", 
+                      help="Password to access MySQL database", default='')
+    #SQLite
+    parser.add_option("--sqliteuser", dest="sqliteuser", metavar="SQLITEUSER",
+                      help="Connect to SQLite database as USER", default='')
+    parser.add_option("--sqlitehost", dest="sqlitehost", metavar="SQLITEHOST", 
+                      help="SQLite Database is running on HOST", default='')
+    parser.add_option("--sqlitepass", dest="sqlitepass", metavar="SQLITEPASS", 
+                      help="Password to access SQLite database", default='')
+    #Oracle
+    parser.add_option("--oracleuser", dest="oracleuser", metavar="ORACLEUSER",
+                      help="Connect to Oracle database as USER", default='')
+    parser.add_option("--oraclehost", dest="oraclehost", metavar="ORACLEHOST", 
+                      help="Oracle Database is running on HOST", default='')
+    parser.add_option("--oraclepass", dest="oraclepass", metavar="ORACLEPASS", 
+                      help="Password to access Oracle database", default='')
+
     parser.add_option("-r", "--threshold", dest="threshold", metavar="THRESHOLD", 
                       help="Threshold time for a single DAO operation")
     parser.add_option("-e", "--totalthreshold", dest="total_threshold", metavar="TOTALTHRESHOLD", 
@@ -41,25 +59,28 @@ def config(options):
     #Verbose Mode ON/OFF
     config.set("output", "verbose", options.verbose)
 
+    #TODO - Security must be enhanced for plain text passwords
     #Testcases specific settings
     config.set("settings", "threshold", options.threshold)
     config.set("settings", "total_threshold", options.total_threshold)
     config.set("settings", "times", options.times)
 
     #MySQL
-    config.set("mysql", "user", options.user)
-    config.set("mysql", "host", options.host)
+    config.set("mysql", "user", options.mysqluser)
+    config.set("mysql", "host", options.mysqlhost)
+    config.set("mysql", "pass", options.mysqlpass)
     config.set("mysql", "instance", options.inst)
 
     #SQLite
-    config.set("sqlite", "user", options.user)
-    config.set("sqlite", "host", options.host)
+    config.set("sqlite", "user", options.sqliteuser)
+    config.set("sqlite", "host", options.sqlitehost)
+    config.set("sqlite", "pass", options.sqlitepass)
     config.set("sqlite", "instance", options.inst)
 
     #Oracle
-
-    config.set("oracle", "user", options.user)
-    config.set("oracle", "host", options.host)
+    config.set("oracle", "user", options.oracleuser)
+    config.set("oracle", "host", options.oraclehost)
+    config.set("oracle", "pass", options.oraclepass)
     config.set("oracle", "instance", options.inst)
     
     config.write(file ('test.ini', 'w'))

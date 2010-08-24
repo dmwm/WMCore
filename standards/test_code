@@ -15,9 +15,8 @@ python conf_test_mysql.py
 
 echo ''
 echo '======================================================'
-echo 'mysql backend tested, press any key for oracle backend'
+echo 'mysql backend tested, starting oracle backend'
 echo '======================================================'
-read
 
 # setup backend
 source setup_oracle.sh

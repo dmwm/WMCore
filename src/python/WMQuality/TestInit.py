@@ -12,22 +12,18 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.4 2008/11/20 22:20:08 sfoulkes Exp $"
+    "$Id: TestInit.py,v 1.5 2008/12/18 14:53:16 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.4 $"
+    "$Revision: 1.5 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
 import commands
-import logging
 import os
 import threading
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory import WMFactory
 
 from WMCore.WMInit import WMInit
 
@@ -56,7 +52,8 @@ class TestInit:
         Set up the database connection by retrieving the environment
         parameters.
         """
-        self.init.setDatabaseConnection(os.getenv("DATABASE"), self.backend, os.getenv("DBSOCK"))
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+            self.backend, os.getenv("DBSOCK"))
 
     def setSchema(self, customModules = [], useDefault = True):
         """
@@ -69,8 +66,6 @@ class TestInit:
         if useDefault is set to False, it will not instantiate the
         schemas in the defaultModules array.
         """
-        myThread = threading.currentThread()
-
         defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
             "WMCore.Trigger"]
         if not useDefault:
@@ -102,7 +97,6 @@ class TestInit:
         config.General.workDir = os.getenv("TESTDIR")
 
         config.section_("CoreDatabase")
-        myThread = threading.currentThread()
         if self.backend == 'MySQL':
             config.CoreDatabase.dialect = 'mysql'
         if self.backend == 'Oracle':
@@ -130,7 +124,7 @@ class TestInit:
             for entry in result:
                 print(str(entry))
         else:
-            self.init.clearDatabaes(modules)
+            self.init.clearDatabases(modules)
 
 
 

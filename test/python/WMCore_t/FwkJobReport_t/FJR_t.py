@@ -6,8 +6,8 @@ General test for FJR
 
 """
 
-__revision__ = "$Id: FJR_t.py,v 1.1 2008/10/08 15:34:16 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FJR_t.py,v 1.2 2008/12/18 14:53:17 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -43,6 +43,10 @@ class FJRTest(unittest.TestCase):
         pass
     
     def testA(self):
+        """
+        Create job report and its attributes.
+        """
+
         fjr = FJR(name = "test", jobSpecId = "jobSpecId_1")
         fjr.status = 'Go'
         fjr.workflowSpecId = 'workflowSpecId_1'
@@ -50,28 +54,28 @@ class FJRTest(unittest.TestCase):
         fjr.dashboardId = 'dashboard_id'
         fjr.siteDetails = {'key1': 'val1', 'key2': 'val2'}
         fjr.storageStatistics = 'some storage statistics'
-        fjr.performance.addCPU('dual core','fast','a description')
-        metrics = {'metric1':'value1','metric2':'value2'}
+        fjr.performance.addCPU('dual core', 'fast', 'a description')
+        metrics = {'metric1':'value1', 'metric2':'value2'}
         fjr.performance.addSummary('a_metric_class', **metrics)
-        fjr.performance.addModule('a_metric_class','a_module_name', **metrics)
+        fjr.performance.addModule('a_metric_class', 'a_module_name', **metrics)
 
         fileInfo_o = fjr.newFile()
         fileInfo_o.addInputFile("/a/pfn/location.root", "/a/lfn/location.root")
         fileInfo_o.addChecksum("checksum_algo", 12345)
-        fileInfo_o.addRunAndLumi(1,2,3,4,5,6,7)
+        fileInfo_o.addRunAndLumi(1, 2, 3, 4, 5, 6, 7)
         datasetInfo_o = fileInfo_o.newDataset()
 
         datasetInfo_o['PrimaryDataset'] = "RAW1"
         datasetInfo_o['ProcessedDataset'] = "RECO1"
         datasetInfo_o['ParentDataset'] = "VERY_RAW1"
         datasetInfo_o['ApplicationName'] = "Application1"
-        datasetInfo_o['ApplicationProject'] ="CMS PROJECT"
-        datasetInfo_o['ApplicationVersion'] ="VERSION 1"
+        datasetInfo_o['ApplicationProject'] = "CMS PROJECT"
+        datasetInfo_o['ApplicationVersion'] = "VERSION 1"
         datasetInfo_o['ApplicationFamily'] = "Family 1"
         datasetInfo_o['DataTier'] = "Datatier 1"
-        datasetInfo_o['Conditions'] ="none"
+        datasetInfo_o['Conditions'] = "none"
         datasetInfo_o['PSetHash'] = "a long hash"
-        datasetInfo_o['InputModuleName'] ="input module name"
+        datasetInfo_o['InputModuleName'] = "input module name"
         datasetInfo_o['OutputModuleName'] = "output module name"
 
         
@@ -79,15 +83,15 @@ class FJRTest(unittest.TestCase):
         fileInfo_o = fjr.newInputFile()
         fileInfo_o.addInputFile("/a/pfn/location.root", "/a/lfn/location.root")
         fileInfo_o.addChecksum("checksum_algo", 12345)
-        fileInfo_o.addRunAndLumi(1,2,3,4,5,6,7)
+        fileInfo_o.addRunAndLumi(1, 2, 3, 4, 5, 6, 7)
         datasetInfo_o = fileInfo_o.newDataset()
 
         datasetInfo_o['PrimaryDataset'] = "RAW1"
         datasetInfo_o['ProcessedDataset'] = "RECO1"
         datasetInfo_o['ParentDataset'] = "VERY_RAW1"
         datasetInfo_o['ApplicationName'] = "Application1"
-        datasetInfo_o['ApplicationProject'] ="CMS PROJECT"
-        datasetInfo_o['ApplicationVersion'] ="VERSION 1"
+        datasetInfo_o['ApplicationProject'] = "CMS PROJECT"
+        datasetInfo_o['ApplicationVersion'] = "VERSION 1"
         datasetInfo_o['ApplicationFamily'] = "Family 1"
         datasetInfo_o['DataTier'] = "Datatier 1"
         datasetInfo_o['Conditions'] ="none"
@@ -107,6 +111,10 @@ class FJRTest(unittest.TestCase):
         fjr.write(os.path.join(os.getenv("TESTDIR"),'fjr1.xml'))
 
     def testB(self):
+        """
+        Read job report, and extract information.
+        """
+
         reportLocation = os.path.join(os.getenv("TESTDIR"),"fjr1.xml")
         fjr = readJobReport(reportLocation) 
         checksum = FJRUtils.readCksum(reportLocation)
@@ -118,6 +126,9 @@ class FJRTest(unittest.TestCase):
         FJRUtils.mergeReports(newReportLocation, reportLocation)
 
     def runTest(self):
+        """
+        Run tests.
+        """
         self.testA()
         self.testB()
             

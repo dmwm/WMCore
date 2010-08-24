@@ -8,8 +8,8 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.5 2008/10/29 13:21:48 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Test.py,v 1.6 2008/12/18 14:53:16 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -33,16 +33,34 @@ class Test:
         self.totalErrors = 0
         self.totalFailures = 0
         self.logFile = logFile
+        # files used for testing.
+        self.testFile = {}
+        self.cvsLog = None 
+        self.moduleCut = None 
 
 
     def run(self):
+        """
+        Run over all the tests added to this suite.
+        """
+
         for test in self.tests:
-            testSuite = unittest.TestSuite()
-            test[0].developer = test[1]
-            testSuite.addTest(test[0])
-            testResult = unittest.TestResult()
-            self.testResult = testSuite.run(testResult)
-            self.summarizeTest()
+            print('Test: '+test[0].__class__.__name__+ ' Developer: '+test[1])
+            try:
+                testSuite = unittest.TestSuite()
+                test[0].developer = test[1]
+                testSuite.addTest(test[0])
+                testResult = unittest.TestResult()
+                self.testResult = testSuite.run(testResult)
+                self.summarizeTest()
+            except Exception, ex:
+                customReport = {}
+                customReport['developer'] = test[1]
+                customReport['class'] = test[0].__class__.__name__ 
+                msg = """
+Test framework error! Did you use the proper test classes? """
+                customReport['msg'] = msg + ' '+str(ex)
+                self.summarizeTest(customReport)
             # call the script we use for cleaning the backends:
             # FIXME: need to add something for oracle too.
             print('Cleaning database backends')
@@ -67,8 +85,6 @@ class Test:
         self.moduleCut = moduleCut
         # maxVotes: maximum number of authors for voting.
 
-        # files used for testing.
-        self.testFile = {}
 
         logFile = open(self.cvsLog, 'r')
         nl = logFile.readline()
@@ -192,15 +208,20 @@ from WMQuality.Test import Test
         for testObject in winners:
             testsFile.writelines('try:\n')
             testsFile.writelines('   x='+testObject+'()\n')
-            testsFile.writelines('   tests.append((x,"'+winners[testObject]+'"))\n')
+            testsFile.writelines('   tests.append((x,"'+\
+                winners[testObject]+'"))\n')
             testsFile.writelines('except Exception,ex:\n')
-            testsFile.writelines('   if not errors.has_key("'+winners[testObject]+'"):\n')
-            testsFile.writelines('       errors["'+winners[testObject]+'"] = []\n')
-            testsFile.writelines('   errors["'+str(winners[testObject])+'"].append(("'+str(testObject)+'",str(ex)))\n')
+            testsFile.writelines('   if not errors.has_key("'+\
+                winners[testObject]+'"):\n')
+            testsFile.writelines('       errors["'+\
+                winners[testObject]+'"] = []\n')
+            testsFile.writelines('   errors["'+ \
+                str(winners[testObject])+'"].append(("'+\
+                str(testObject)+'",str(ex)))\n')
             testsFile.writelines('\n')
         tail = """
 
-raw_input('Writing level 2 failures to file: failures2.log (press key to continue)')
+print('Writing level 2 failures to file: failures2.log ')
 failures = open('failures2.log','w')
 
 failures.writelines('Failed instantiation summary (level 2): \\n')
@@ -222,7 +243,7 @@ test.summaryText()
         testsFile.close()
         # we generated the test file, now generate the report of failed
         # imports.
-        raw_input('Writing level 1 failures to file: failures1.log (press key to continue)')
+        print('Writing level 1 failures to file: failures1.log ')
         failures = open('failures1.log','w')
         failures.writelines('Failed import summary (level 1):\n\n')
         for winner in losersCum.keys():
@@ -231,7 +252,7 @@ test.summaryText()
             failures.writelines(msg+'\n')
         failures.writelines('\nFailed import details:\n\n')
         for winner in losers.keys():
-            failures.writelines('****************Author: '+winner+'***************\n\n')
+            failures.writelines('************Author: '+winner+'***********\n\n')
             for failed in losers[winner]:
                 failures.writelines('Failed import: '+failed[0]+'\n\n')
                 failures.writelines('Error message: \n'+failed[1]+'\n\n')              
@@ -241,7 +262,7 @@ test.summaryText()
         """
         Summary for the tests result.
         """
-        raw_input('Writing level 3 failures to file: '+self.logFile+' (press key to continue)')
+        print('Writing level 3 failures to file: '+self.logFile)
         failures = open(self.logFile,'w')
         failures.writelines('Following tests where run\n\n')
         for test in self.tests:
@@ -249,9 +270,11 @@ test.summaryText()
         failures.writelines('\n\n') 
         failures.writelines('Failed tests (level 3):\n\n')    
         for author in self.failures.keys():
-            failures.writelines(author+':'+str(len(self.failures[author]))+' failures\n')
+            failures.writelines(author+ \
+                ':'+str(len(self.failures[author]))+' failures\n')
         for author in self.errors.keys():
-            failures.writelines(author+':'+str(len(self.errors[author]))+' errors\n')
+            failures.writelines(author+ \
+                ':'+str(len(self.errors[author]))+' errors\n')
         failures.writelines('Failures (level 3):\n\n')    
         for author in self.failures.keys():
             failures.writelines('Author: '+author+'\n\n')
@@ -266,25 +289,33 @@ test.summaryText()
                 failures.writelines('Error: '+failure[1]+'\n\n') 
         failures.close()
 
-    def summarizeTest(self):
+    def summarizeTest(self, customReport = {}):
         """
-        Aggregates a summary of the test.
+        Aggregates a summary of the test. If the test framework failed
+        (e.g. the developer did not inherit from the test object, we need
+        to send a custom report.
         """
-    
-        for i in self.testResult.failures:
-            obj, msg= i
+        if customReport != {}:
             self.totalFailures += 1
-            if not self.failures.has_key(obj.developer):
-                self.failures[obj.developer] = []
-            self.failures[obj.developer].append([obj.__class__.__name__, \
-                msg])
+            if not self.failures.has_key(customReport['developer']):
+                self.failures[customReport['developer']] = []
+            self.failures[customReport['developer']].append(\
+                [customReport['class'], customReport['msg']])
+        else: 
+            for i in self.testResult.failures:
+                obj, msg = i
+                self.totalFailures += 1
+                if not self.failures.has_key(obj.developer):
+                    self.failures[obj.developer] = []
+                self.failures[obj.developer].append([obj.__class__.__name__, \
+                    msg])
     
-        for i in self.testResult.errors:
-            obj,msg=i
-            self.totalErrors += 1
-            if not self.errors.has_key(obj.developer):
-                self.errors[obj.developer] = []
-            self.errors[obj.developer].append([obj.__class__.__name__, \
-                msg])
+            for i in self.testResult.errors:
+                obj, msg = i
+                self.totalErrors += 1
+                if not self.errors.has_key(obj.developer):
+                    self.errors[obj.developer] = []
+                self.errors[obj.developer].append([obj.__class__.__name__, \
+                    msg])
  
 

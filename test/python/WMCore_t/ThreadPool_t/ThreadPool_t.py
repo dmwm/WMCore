@@ -7,20 +7,13 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.5 2008/11/12 16:15:04 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.6 2008/12/18 14:53:17 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 
-import commands
 import unittest
-import logging
-import os
 import threading
 import time
 
-from WMCore.Agent.Configuration import Configuration
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory import WMFactory
 from WMCore.ThreadPool.ThreadPool import ThreadPool
 
 from WMQuality.TestInit import TestInit
@@ -45,6 +38,11 @@ class ThreadPoolTest(unittest.TestCase):
         "make a logger instance and create tables"
        
         if not ThreadPoolTest._setup: 
+            # initialization necessary for proper style.
+            myThread = threading.currentThread()
+            myThread.dialect = None
+            myThread.transaction = None
+
             self.testInit = TestInit(__file__)
             self.testInit.setLogging()
             self.testInit.setDatabaseConnection()
@@ -126,6 +124,9 @@ class ThreadPoolTest(unittest.TestCase):
         myThread.transaction.commit()
   
     def runTest(self):
+        """ 
+        Run the threadpool tests.
+        """
         self.testA()
 
 if __name__ == "__main__":

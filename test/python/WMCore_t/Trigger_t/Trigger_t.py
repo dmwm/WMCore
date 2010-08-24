@@ -7,17 +7,13 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.4 2008/11/12 16:15:04 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Trigger_t.py,v 1.5 2008/12/18 14:53:17 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
-import commands
 import unittest
-import logging
 import os
 import threading
 
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.Database.Transaction import Transaction
 from WMCore.Trigger.Trigger import Trigger
 from WMCore.WMFactory import WMFactory
 
@@ -43,6 +39,12 @@ class TriggerTest(unittest.TestCase):
         "make a logger instance "
        
         if not TriggerTest._setup: 
+            # initialization necessary for proper style.
+            myThread = threading.currentThread()
+            myThread.dialect = None
+            myThread.transaction = None
+
+
             self.testInit = TestInit(__file__, os.getenv("DIALECT"))
             self.testInit.setLogging()
             self.testInit.setDatabaseConnection()

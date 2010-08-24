@@ -11,10 +11,10 @@ class DBFactory(object):
         
     def connect(self):
         self.logger.debug("Using SQLAlchemy v.%s" % sqlalchemy_version)
-        self.logger.debug("creating DB engine %s" % dburl)
+        self.logger.debug("creating DB engine %s" % self.dburl)
         engine = create_engine(self.dburl, convert_unicode=True, encoding='utf-8', pool_size=10, pool_recycle=30)
 
-        dia = dbinterface.engine.dialect
+        dia = engine.dialect
         if isinstance(dia, MySQLDialect):
             from WMCore.Database.MySQLCore import MySQLInterface as DBInterface
         else:

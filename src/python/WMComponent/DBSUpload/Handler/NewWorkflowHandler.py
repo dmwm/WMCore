@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.2 2008/10/31 00:55:34 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.3 2008/10/31 01:56:25 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -36,13 +36,9 @@ class NewWorkflowHandler(BaseHandler):
     def __init__(self, component):
         BaseHandler.__init__(self, component)
         try:
-            self.args = {}
-            #self.args['DBSURL'] = 'http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
-            self.args['DBSURL'] = 'http://cmssrv17.fnal.gov:8989/DBS/servlet/DBSServlet'
-            #self.args['DBSURL'] = 'http://cmssrv48.fnal.gov:8383/DBS/servlet/DBSServlet'
-            args = { "url" :  self.args['DBSURL'], "level" : 'ERROR', 'USER': 'NORMAL'}
-            
-            self.dbsApi = DbsApi(args)
+            #TODO: These parameters should come from the Component Config
+            self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
+            self.DropParent=False
         except DbsException, ex:
             msg = "Error in DBSWriterError with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
@@ -86,12 +82,10 @@ class NewWorkflowHandler(BaseHandler):
         # //  Contact DBS using the DBSWriter
         #//`
         #
-        import pdb
-        pdb.set_trace()
         #
-        logging.info("DBSURL %s"%self.args['DBSURL'])
+        logging.info("DBSURL %s"%self.dbsurl)
         #dbswriter = DBSWriter('fakeurl') 
-        dbswriter = DBSWriter(self.args['DBSURL'],level='ERROR')
+        dbswriter = DBSWriter(url=self.dbsurl, level='ERROR', USER='NORMAL',version='DBS_2_0_3')
         #  //
         # //  Create Processing Datsets based on workflow
         #//
@@ -102,34 +96,39 @@ class NewWorkflowHandler(BaseHandler):
                adataset['ParentDataset']=None
 
         #createDatasets(workflowSpec)
-        datasets = workflowSpec.outputDatasets()
+        #datasets = workflowSpec.outputDatasets()
+        datasets = workflowSpec.outputDatasetsWithPSet()
         
-        cfgMeta = None
-        try:
-            cfgInt = pnode.cfgInterface
-            cfgMeta = cfgInt.configMetadata
-            cfgMeta['Type'] = self.workflow.parameters["RequestCategory"]    
-            #
-            print     cfgMeta['ApplicationName']
-            print     cfgMeta['ApplicationVersion']
-            print     cfgMeta["ApplicationFamily"]  
-            print     cfgMeta.get('PSetContent',None)
-            psetHash = cfgMeta.get('PSetHash',None)
-            print psetHash
-            
-        except Exception, ex:
-            msg = "Unable to Extract cfg data from workflow"
-            msg += str(ex)
-            logging.error(msg)
-            return
         
         for dataset in datasets:
-            primary = DBSWriterObjects.createPrimaryDataset(dataset, self.dbsApi)
-            if psetHas != None:  #Which probably is the case
-                algo = DBSWriterObjects.createAlgorithm(dataset, cfgMeta, self.apiRef)
+            print dir(aDataset)
+            print aDataset.keys()
+            
+            """
+            'ApplicationName', 
+            'InputModuleName', 
+            'ApplicationVersion', 
+            'ParentDataset', 
+            'PSetContent', 
+            'OutputModuleName', 
+            'PSetHash', 
+            'Conditions', 
+            'PhysicsGroup', 
+            'ProcessedDataset', 
+            'DataTier', 
+            'ApplicationProject', 
+            'PrimaryDataset', 
+            'ApplicationFamily'
+            """
+
+            primary = DBSWriterObjects.createPrimaryDataset(dataset, dbswriter.dbs)
+            
+            if dataset['PSetHash'] != None:  #Which probably is not the case
+                algo = DBSWriterObjects.createAlgorithm(dataset, cfgMeta, dbswriter.dbs)
             else: algo = DbsAlgorithm()
+            
             processed = DBSWriterObjects.createProcessedDataset(
-                primary, algo, dataset, self.apiRef)
+                primary, algo, dataset, dbswriter.dbs)
             # RECORD ALGO in DBSBuffer, do not create in DBS if PSetHASH is not present
             # Record this dataset in DBSBuffer
    

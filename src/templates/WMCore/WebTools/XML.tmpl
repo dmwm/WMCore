@@ -1,0 +1,17 @@
+#set path = $request.request_line.split(' ')[1]
+<?xml version='1.0' standalone='yes'?>
+<$config.application>
+	<head>
+		<title>$config.title</title>
+		<desc>$config.description</desc>
+		<admin>$config.admin</admin>
+		<link>$request.base$path</link>
+	</head>
+#if type($data) == type({})
+#for k,v in $data.items()
+	<$k>$v</$k>
+#end for
+#else
+	<body>$data</body>
+#end if
+</$config.application>

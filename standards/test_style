@@ -14,12 +14,14 @@ qualityReport = '/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/codeQualit
 threshold = 8
 
 packages = {\
-        
+        'src/python/WMCore/HTTPFrontEnd':'valya',\
+        'src/python/WMComponent/DBSBuffer':'afaq',\
+        'src/python/WMComponent/DBSUpload':'afaq',\
         'src/python/WMCore/WMBSFeeder':'metson',\
         'src/python/WMCore/WMBS/WMBSAllocater/Allocaters':'swakef',\
         'src/python/WMCore/WMBSFeeder/DBS':'metson',\
         'src/python/WMCore/MsgService':'fvlingen',\
-        'test/python':'fvlingen,meston',\
+        'test/python':'fvlingen,metson',\
         'src/python/WMQuality':'fvlingen',\
         'test/python/WMCore_t/JobSplitting_t':'evansde',\
         'src/python/WMCore/Database':'metson',\

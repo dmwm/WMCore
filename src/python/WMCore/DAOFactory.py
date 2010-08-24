@@ -9,12 +9,11 @@ from WMCore.Database.Dialects import SQLiteDialect
 from WMCore.Database.Dialects import OracleDialect
 
 class DAOFactory(object):
-    name = "BaseAction"
     def __init__(self, package='WMCore', logger=None, dbinterface=None):
         self.package = package
         self.logger = logger
         self.dbinterface = dbinterface
-        self.logger.debug("Instantiating %s Action object" % self.name)
+        self.logger.debug("Instantiating DAOFactory for %s package" % self.package)
         self.dialects = {"Oracle" : OracleDialect,
                     "MySQL" : MySQLDialect,
                     "SQLite" : SQLiteDialect}
@@ -23,7 +22,6 @@ class DAOFactory(object):
         """
         Somewhat fugly method to load generic SQL classes...
         """
-        
         dia = self.dbinterface.engine.dialect
         #TODO: Make good
         dialect = None

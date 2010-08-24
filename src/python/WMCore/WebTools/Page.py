@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.15 2009/02/16 11:41:32 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Page.py,v 1.16 2009/02/16 12:48:33 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import urllib
 import cherrypy
 from cherrypy import log as cplog
 from cherrypy import request
 from Cheetah.Template import Template
+from Cheetah import Version
 from simplejson import JSONEncoder
 import logging, os, types
 import datetime, time
@@ -49,14 +50,14 @@ class TemplatedPage(Page):
     """
     def __init__(self, config):
         Page.__init__(self, config)
-        
         self.templatedir = ''
         if hasattr(self.config, 'templates'):
             self.templatedir = self.config.templates
         else:
             # Take a guess
             self.templatedir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'Templates')
-        self.debug("templates are located in: %s" % self.templatedir)
+        self.debug("Templates are located in: %s" % self.templatedir)
+        self.debug("Using Cheetah version: %s" % Version)
         
     def templatepage(self, file=None, *args, **kwargs):
         searchList=[]

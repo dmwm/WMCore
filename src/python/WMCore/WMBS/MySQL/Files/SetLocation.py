@@ -27,8 +27,8 @@ class SetLocation(DBFormatter):
     def format(self, result):
         return True
         
-    def execute(self, file, sename, conn = None, transaction = None):
-        binds = self.getBinds(file, sename)
+    def execute(self, file, location, conn = None, transaction = None):
+        binds = self.getBinds(file, location)
 
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)

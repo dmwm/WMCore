@@ -1,2 +1,0 @@
-WMAgents Emulators emulates WMAgents interface with WorkQueue (JobCreator and TaskArchiver)
-Basic interface are getWork, gotWork call from JobCreator and doneWork, failWork, and cancelWork from TaskArchiver

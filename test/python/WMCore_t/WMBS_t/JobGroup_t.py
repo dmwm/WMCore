@@ -1,11 +1,12 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python
 """
 _JobGroup_t_
 
+Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.6 2009/01/02 19:28:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.7 2009/01/06 15:53:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import logging
@@ -77,6 +78,9 @@ class Job_t(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
+        Create a JobGroup and then delete it.  Use the JobGroup's exists()
+        method to determine if it exists before it is created, after it is
+        created and after it is deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -113,6 +117,9 @@ class Job_t(unittest.TestCase):
         """
         _testLoad_
 
+        Create a JobGroup and save it to the database.  Create a new JobGroup
+        and then attempt to load the first one into it from the database.
+        Compare the two JobGroup to make sure they're identical.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -147,6 +154,68 @@ class Job_t(unittest.TestCase):
         testJobGroupA.commit()
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
+        testJobGroupB.load()
+
+        assert testJobGroupB.subscription["id"] == testSubscription["id"], \
+               "ERROR: Job group did not load subscription correctly"
+
+        goldenJobs = [testJobA.id, testJobB.id]
+        for job in testJobGroupB.jobs:
+            assert job.id in goldenJobs, \
+                   "ERROR: JobGroup loaded an unknown job"
+            goldenJobs.remove(job.id)
+
+        assert len(goldenJobs) == 0, \
+            "ERROR: JobGroup didn't load all jobs"
+
+        assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
+               "ERROR: Output fileset didn't load properly"
+        
+        return
+
+    def testLoadByUID(self):
+        """
+        _testLoadByUID_
+
+        Create a JobGroup and save it to the database.  Create a new JobGroup
+        and then attempt to load the first one into it from the database using
+        the UID instead of the ID.  Compare the two JobGroup to make sure
+        they're identical.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription,
+                                 uid = "TestJobGroup")
+        testJobGroupA.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(10, *[12312]))
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(10, *[12312]))
+        testFileA.create()
+        testFileB.create()
+
+        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
+        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
+        
+        testJobA = Job(name = "TestJobA", files = testFilesetA)
+        testJobB = Job(name = "TestJobB", files = testFilesetB)
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.commit()
+
+        testJobGroupB = JobGroup(uid = testJobGroupA.uid)
         testJobGroupB.load()
 
         assert testJobGroupB.subscription["id"] == testSubscription["id"], \
@@ -226,7 +295,5 @@ class Job_t(unittest.TestCase):
         assert len(testJobGroupC.jobs) == 2, \
                "ERROR: Loaded object has too few jobs."
 
-    
-    
 if __name__ == "__main__":
     unittest.main() 

@@ -17,9 +17,13 @@ class GetByLFN(MySQLBase):
     
     def format(self, result):
         out = result[0].fetchall()
-        out = out[0]
-        out = int(out[0]), str(out[1]), int(out[2]), int(out[3]), int(out[4]), int(out[5])
-        return out 
+        self.logger.debug('File.GetByLFN format result: %s' % out)
+        if len(out) > 0:
+            out = out[0]
+            out = int(out[0]), str(out[1]), int(out[2]), int(out[3]), int(out[4]), int(out[5])
+            return out
+        else:
+            raise Exception, "File not found"  
         
     def execute(self, files=None, conn = None, transaction = False):
         binds = self.getBinds(files)

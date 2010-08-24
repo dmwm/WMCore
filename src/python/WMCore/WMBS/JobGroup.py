@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.22 2009/02/12 16:22:14 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: JobGroup.py,v 1.23 2009/02/12 20:58:11 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -302,7 +302,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         if self.status() == 'COMPLETE':
             # output only makes sense if the group is completed
             # load output from DB 
-            self.groupoutput.load(method = "Fileset.LoadFromID")
+            self.groupoutput.load()
             return self.groupoutput
         self.logger.debug(self.status(detail=True))
         return False

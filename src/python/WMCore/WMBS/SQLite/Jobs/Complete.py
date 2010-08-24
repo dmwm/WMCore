@@ -1,23 +1,16 @@
 #!/usr/bin/env python
 """
 _Complete_
-MySQL implementation of Jobs.Complete
+SQLite implementation of Jobs.Complete
 
-move file into wmbs_group_job_acquired
+move file into wmbs_group_job_completed
 """
-__all__ = []
-__revision__ = "$Id: Complete.py,v 1.1 2008/10/01 21:34:25 metson Exp $"
-__version__ = "$Revision: 1.1 $"
 
-from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.WMBS.SQLite.Base import SQLiteBase
+from WMCore.WMBS.MySQL.Jobs.Complete import Complete as CompleteJobsMySQL
 
-class Complete(MySQLBase):
-    sql = """insert into wmbs_group_job_complete (job, jobgroup) 
-        values (select id, jobgroup from wmbs_job where id = :job)"""
+class Complete(SQLiteBase, CompleteJobsMySQL):
+    sql = CompleteJobsMySQL.sql
         
     def execute(self, job=0, conn = None, transaction = False):
-        binds = self.getBinds(job=job)
-        self.logger.debug('Job.Complete sql: %s' % self.sql)
-        self.logger.debug('Job.Complete binds: %s' % binds)
-        
-        return self.format(self.dbi.processData(self.sql, binds))
+        CompleteJobsMySQL.execute(self, job=job, conn=conn, transaction=transaction)

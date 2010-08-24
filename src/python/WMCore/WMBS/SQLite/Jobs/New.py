@@ -4,8 +4,8 @@ _New_
 SQLite implementation of Jobs.New
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.2 2008/10/16 15:30:02 jcgon Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: New.py,v 1.3 2008/10/17 13:22:50 jcgon Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -13,8 +13,6 @@ class New(DBFormatter):
     sql = []
     sql.append("insert into wmbs_job (jobgroup, name, last_update) values (:jobgroup, :name, :timestamp)")
     sql.append("select id from wmbs_job where jobgroup = :jobgroup and name = :name")        
-    #sql = ["insert into wmbs_job (jobgroup, name, last_update) values (:jobgroup, :name, :timestamp)",
-    #"select id from wmbs_job where jobgroup = :jobgroup and name = :name"]
     
     def format(self, result):
         result = DBFormatter.format(self, result)

@@ -11,8 +11,8 @@ job in a batch system, it's more abstract - it's the piece of
 work that needs to get done.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.14 2008/10/01 22:02:30 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Job.py,v 1.15 2008/10/28 18:46:24 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -72,12 +72,14 @@ class Job(Pickleable):
         add a file to self.file_set
         """
         self.file_set.addFile(file)
+        self.file_set.commit()
 
     def addOutput(self, file):
         """
-        add a file to self.output
+        add files to self.output
         """
         self.output.addFile(file)
+        self.output.commit()
 
     def changeStatus(self, status):
         self.last_update = datetime.datetime.now()

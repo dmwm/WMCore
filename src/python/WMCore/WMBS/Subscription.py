@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.18 2008/10/22 17:51:53 metson Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Subscription.py,v 1.19 2008/10/24 15:57:44 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -97,7 +97,22 @@ class Subscription(BusinessObject, WMSubscription):
         self.type = result['type']
         self.id = result['id']
         self.split_algo = result['split_algo']
-             
+    
+    def markLocation(self, location, whitelist = True):
+        """
+        Add a location to the subscriptions white or black list
+        """
+        # Check the location exists, add it if not
+        try:
+            self.daofactory(classname='Locations.New').execute(location)
+        except IntegrityError:
+            # location exists, do nothing
+            pass
+        
+        # Mark the location as appropriate
+        action = self.daofactory(classname='Subscriptions.MarkLocation')
+        action.execute(self.id, location, whitelist)
+          
     def filesOfStatus(self, status=None):
         """
         fids will be a set of id's, we'll then load the corresponding file 

@@ -8,8 +8,10 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.18 2008/11/20 16:09:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Subscription.py,v 1.19 2008/11/25 17:41:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
+
+import logging
 import copy
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable
@@ -37,9 +39,9 @@ class Subscription(Pickleable, dict):
         self.available = Fileset(name=fileset.name, 
                                  files = fileset.listFiles())  
         
-        self.acquired = Fileset(name='acquired', logger = fileset.logger)
-        self.completed = Fileset(name='completed', logger = fileset.logger)
-        self.failed = Fileset(name='failed', logger = fileset.logger)
+        self.acquired = Fileset(name='acquired')
+        self.completed = Fileset(name='completed')
+        self.failed = Fileset(name='failed')
     
     def name(self):
         return self.getWorkflow().name.replace(' ', '') + '_' + \
@@ -121,7 +123,6 @@ class Subscription(Pickleable, dict):
         if status == 'AvailableFiles':
             return self.available.getFiles(type='set') - \
             (self.acquiredFiles() | self.completedFiles() | self.failedFiles())
-            #return [12,11]
         elif status == 'AcquiredFiles':
             return self.acquired.getFiles(type='set')
         elif status == 'CompletedFiles':
@@ -155,8 +156,9 @@ class Subscription(Pickleable, dict):
                 if len(f['locations'] & locations) > 0:
                     magicfiles.add(f)
             return magicfiles
-            
+
         files = self.filesOfStatus(status='AvailableFiles')
+
         if len(self['whitelist']) > 0:
             # Return files at white listed sites
             return locationMagic(files, self['whitelist'])

@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.19 2008/10/24 15:57:44 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Subscription.py,v 1.20 2008/10/28 17:42:17 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -34,14 +34,17 @@ from WMCore.DataStructs.Subscription import Subscription as WMSubscription
 
 class Subscription(BusinessObject, WMSubscription):
     def __init__(self, fileset = None, workflow = None, id = -1,
-                  type = "Processing", split_algo = 'FileBased', 
-                  logger=None, dbfactory = None):
+                 whitelist = Set(), blacklist = Set(),
+                 type = "Processing", split_algo = 'FileBased', 
+                 logger=None, dbfactory = None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         self.fileset = fileset
         self.workflow = workflow
         self.type = type
         self.split_algo = split_algo
         self.id = id
+        self.whitelist = whitelist
+        self.blacklist = blacklist
         
     def create(self):
         """
@@ -137,8 +140,8 @@ class Subscription(BusinessObject, WMSubscription):
         for those acquired.
         """
         action = self.daofactory(classname='Subscriptions.AcquireFiles')
-        files = self.makelist(files)
-        if len(files):
+        if files:
+            files = self.makelist(files)
             action.execute(self.id, [x.id for x in files])
             return files
         else:
@@ -160,22 +163,22 @@ class Subscription(BusinessObject, WMSubscription):
         """
         Mark a (set of) file(s) as completed.
         """
-        if not isinstance(files, list) and not isinstance(files, set):
+        if files and not isinstance(files, list) and not isinstance(files, set):
             files = [files]
         statechanger = ChangeStateAction(self.logger)
         statechanger.execute(subscription = self.id, 
-                                  file = [x for x in files], 
+                                  file = [x['id'] for x in files], 
                                   daofactory = self.daofactory)
     
     def failFiles(self, files):
         """
         Mark a (set of) file(s) as failed. 
         """
-        if not isinstance(files, list) and not isinstance(files, set):
+        if files and not isinstance(files, list) and not isinstance(files, set):
             files=[files]
         statechanger = ChangeStateAction(self.logger)
         statechanger.execute(subscription = self.id, 
-                                  file = [x for x in files], 
+                                  file = [x['id'] for x in files], 
                                   state = "FailFiles",
                                   daofactory = self.daofactory)
 

@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.1 2008/06/12 10:04:09 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.2 2008/06/12 10:17:14 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 
@@ -78,12 +78,15 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
         self.action2 = []
         self.action3 = []
         self.action4 = []
+        
         for daofactory in self.daofactory1, self.daofactory2:
             self.action1.append(daofactory(classname='Fileset.Exists'))
             self.action2.append(daofactory(classname='Fileset.New'))
             self.action3.append(daofactory(classname='Fileset.Delete')) 
             self.action4.append(daofactory(classname='Fileset.List'))
         
+        from WMCore.WMBS.Actions.Fileset.AddAndList import AddAndListFilesetAction
+        self.action5 = AddAndListFilesetAction(self.testlogger)
                 
     def testCreateExists(self):
         for i in 0,1:
@@ -133,13 +136,13 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
             
         print " List action is dialect neutral" 
 
-    #def testAddAndList(self):
-    #    for conn in self.dbf1.connect(), self.dbf2.connect():
-    #        result = self.action5.execute(fileset='fs001', dbinterface=conn)
-    #        assert type(result) == type([]), 'AddAndListFilesetAction did not return a list'
-    #        assert len(result) == 1,\
-    #            'List from AddAndListFilesetAction is of unexpected length (%s not 1) \n\t %s' % (len(result), result)
-    #            
-    #    print " AddAndListFilesetAction works as expected"
+    def testAddAndList(self):
+        for conn in self.dbf1, self.dbf2:
+            result = self.action5.execute(fileset='fs001', dbinterface=conn)
+            assert type(result) == type([]), 'AddAndListFilesetAction did not return a list'
+            assert len(result) == 1,\
+                'List from AddAndListFilesetAction is of unexpected length (%s not 1) \n\t %s' % (len(result), result)
+                
+        print " AddAndListFilesetAction works as expected"
 if __name__ == "__main__":
     unittest.main()

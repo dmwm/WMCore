@@ -1,11 +1,20 @@
 """
 Class to define the standardised formatting of MySQL results.
 """
+import datetime
+import time
 
 class MySQLBase(object):
     def __init__(self, logger, dbinterface):
         self.logger = logger
         self.dbi = dbinterface
+    
+    def timestamp(self):
+        """
+        generate a timestamp
+        """
+        t = datetime.datetime.now()
+        return time.mktime(t.timetuple())
         
     def format(self, result):
         """
@@ -29,5 +38,4 @@ class MySQLBase(object):
         """
         result = self.dbi.processData(self.sql, self.getBinds(), 
                          conn = conn, transaction = transaction)
-        print result
         return self.format(result)

@@ -1,15 +1,6 @@
-import datetime
-import time
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
 class SQLiteBase(MySQLBase):
-    
-    def timestamp(self):
-        """
-        generate a timestamp
-        """
-        t = datetime.datetime.now()
-        return time.mktime(t.timetuple())
     
     def format(self, result):
         """

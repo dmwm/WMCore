@@ -114,4 +114,4 @@ wmbs_sub_files_complete (
             print "done processing"
             return True
         except Exception, e:
-            return False
+            raise e

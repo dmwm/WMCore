@@ -1,10 +1,10 @@
 """
 SQLite implementation of NewFileset
 """
-from WMCore.WMBS.MySQL.NewFilesetSQL import NewFilesetSQL as NewFilesetMySQL
+from WMCore.WMBS.MySQL.NewFilesetSQL import NewFileset as NewFilesetMySQL
 from WMCore.WMBS.SQLite.Base import SQLiteBase
 
-class NewFilesetSQL(NewFilesetMySQL, SQLiteBase):
+class NewFileset(NewFilesetMySQL, SQLiteBase):
     sql = """insert into wmbs_fileset 
             (name, last_update) values (:fileset, :timestamp)"""
             

@@ -4,10 +4,15 @@ _Transaction_
 
 A simple wrapper around DBInterface to make working with transactions simpler
 
+On MySQL transactions only work for innodb tables.
 
+On SQLite transactions only work if isolation_level is not null. This can be set
+in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
+you set {'isolation_level':None} all sql will be implicitly committed and the 
+Transaction object will be meaningless.
 """
-__revision__ = "$Id: Transaction.py,v 1.2 2008/08/21 11:31:25 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Transaction.py,v 1.3 2008/08/21 16:11:22 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -22,7 +27,7 @@ class Transaction(WMObject):
         self.conn = self.dbi.connection()
         self.transaction = self.conn.begin()
 
-    def processData(self, sql, binds):
+    def processData(self, sql, binds={}):
         return self.dbi.processData(sql, 
                                     binds, 
                                     conn = self.conn, 

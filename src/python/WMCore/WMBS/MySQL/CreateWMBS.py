@@ -7,7 +7,7 @@ Inherit from CreateWMBSBase, and add MySQL specific substituions (e.g. add
 INNODB) and specific creaetes (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.16 2008/10/01 15:42:15 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.17 2008/10/03 11:29:09 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -94,5 +94,5 @@ class CreateWMBS(CreateWMBSBase):
             self.create[i] = self.create[i] + " ENGINE=InnoDB"
             self.create[i] = self.create[i].replace('AUTOINCREMENT', 'AUTO_INCREMENT')
             self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
-        CreateWMBSBase.execute(self)    
+        return CreateWMBSBase.execute(self)    
         

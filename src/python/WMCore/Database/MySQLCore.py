@@ -67,7 +67,6 @@ class MySQLInterface(DBInterface):
                               newsql.replace('\n', ' '))
             self.logger.debug("MySQLCore.executemanybinds: rewritten binds: %s" % bind_list)
         except Exception, e:
-            print e.message
             self.logger.exception("""MySQLCore.executemanybinds failed - sql : %s
 binds : %s
 exception : %s""" % (s, b, e.message))

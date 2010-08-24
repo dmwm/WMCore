@@ -74,5 +74,6 @@ exception : %s""" % (s, b, e.message))
             raise e
         cur = connection.connection.cursor()
         result = cur.executemany(newsql, bind_list)
+        result = self.makelist(result)
         return result
         #return DBInterface.executemanybinds(self, newsql, bind_list, connection)

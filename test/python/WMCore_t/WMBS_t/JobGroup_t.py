@@ -2,11 +2,10 @@
 """
 _JobGroup_t_
 
-Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.4 2008/12/18 15:03:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.5 2008/12/26 15:31:19 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import logging
@@ -28,8 +27,9 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
+from WMCore.DataStructs.Run import Run
 
-class JobGroupTest(unittest.TestCase):
+class Job_t(unittest.TestCase):
     _setup = False
     _teardown = False
     
@@ -77,9 +77,6 @@ class JobGroupTest(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
-        Create and delete a WMBS JobGroup.  Use the JobGroup's exist method to
-        test to see if the JobGroup exists in the database before create() is
-        called, after create() is called and after the JobGroup is deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -116,10 +113,6 @@ class JobGroupTest(unittest.TestCase):
         """
         _testLoad_
 
-        Create a WMBS JobGroup and save it to the database.  Attempt to load it
-        from the database and verify that all the attributes are the same
-        between the original object and the one that was loaded from the
-        database.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -135,10 +128,11 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupA = JobGroup(subscription = testSubscription)
         testJobGroupA.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         run = 1, lumi = 45)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         run = 1, lumi = 45)
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(10, *[12312]))
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(10, *[12312]))
         testFileA.create()
         testFileB.create()
 
@@ -150,7 +144,6 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroupA.add(testJobA)
         testJobGroupA.add(testJobB)
-        testJobGroupA.commit()
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.load()
@@ -183,10 +176,10 @@ class JobGroupTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
         testWorkflow.create()
-        
+
         testWMBSFileset = WMBSFileset(name = "TestFileset")
         testWMBSFileset.create()
-        
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -195,15 +188,17 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupA.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         run = 1, lumi = 45)
+                         cksum=1)
+        testFileA.addRun(Run(1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         run = 1, lumi = 45)
+                         cksum=1)
+        testFileB.addRun(Run(1, *[45]))
         testFileA.create()
         testFileB.create()
 
         testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
         testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
-        
+
         testJobA = Job(name = "TestJobA", files = testFilesetA)
         testJobB = Job(name = "TestJobB", files = testFilesetB)
 
@@ -211,7 +206,7 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupA.add(testJobB)
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
-        testJobGroupB.load()        
+        testJobGroupB.load()
 
         assert len(testJobGroupA.jobs) == 0, \
                "ERROR: Original object commited too early"
@@ -229,6 +224,8 @@ class JobGroupTest(unittest.TestCase):
 
         assert len(testJobGroupC.jobs) == 2, \
                "ERROR: Loaded object has too few jobs."
+
+    
     
 if __name__ == "__main__":
     unittest.main() 

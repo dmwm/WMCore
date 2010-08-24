@@ -4,8 +4,8 @@ _Job_t_
 
 """
 
-__revision__ = "$Id: Job_t.py,v 1.4 2008/12/26 15:06:40 afaq Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Job_t.py,v 1.5 2008/12/26 15:31:19 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import logging
@@ -27,6 +27,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
+from WMCore.DataStructs.Run import Run
 
 class Job_t(unittest.TestCase):
     _setup = False

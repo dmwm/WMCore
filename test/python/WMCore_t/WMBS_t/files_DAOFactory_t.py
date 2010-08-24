@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: files_DAOFactory_t.py,v 1.5 2008/12/26 15:06:40 afaq Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: files_DAOFactory_t.py,v 1.6 2008/12/26 15:31:19 afaq Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -16,6 +16,8 @@ from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
+from WMCore.DataStructs.Run import Run
+
 #pylint --rcfile=../../../../standards/.pylintrc  ../../../../src/python/WMCore/WMBS/Fileset.py
 
 class BaseFilesTestCase(unittest.TestCase):

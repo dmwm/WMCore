@@ -12,6 +12,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
+from WMCore.DataStructs.Run import Run
 
 class Subscription_t(unittest.TestCase):
     _setup = False

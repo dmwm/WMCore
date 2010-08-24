@@ -6,12 +6,14 @@ objects and multiple objects contained in a list or Set.
 """
 
 
-__revision__ = "$Id: fileset_addFile_t.py,v 1.2 2008/12/26 15:06:40 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: fileset_addFile_t.py,v 1.3 2008/12/26 15:31:19 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands
 from sets import Set
 import pdb
+from WMCore.DataStructs.Run import Run
+
 
 class BaseFilesetTestCase(unittest.TestCase):
     def setUp(self):

@@ -6,8 +6,8 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.1 2008/08/12 21:47:19 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JSONParser.py,v 1.2 2008/08/18 20:28:17 ewv Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import urllib
 import cStringIO
@@ -26,19 +26,22 @@ class JSONParser:
     def getJSON(self, service, **args):
         """
         _getJSON_
-    
+
         retrieve JSON formatted information given the service name and the
         argument dictionaries
-    
+
         """
         query = self.url
         query += "%s" % service
-    
+
         params = urllib.urlencode(args)
-        f = urllib.urlopen(query, params)
-        result = f.read()
-        f.close()
-    
+        try:
+            f = urllib.urlopen(query, params)
+            result = f.read()
+            f.close()
+        except IOError:
+            raise RuntimeError("URL not available: %s" % query)
+
         output = self.dictParser(result)
         return output
 
@@ -93,4 +96,3 @@ class JSONParser:
         src = cStringIO.StringIO(source).readline
         src = tokenize.generate_tokens(src)
         return self.parse(src.next(), src)
-    

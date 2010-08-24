@@ -337,6 +337,7 @@ class SubscriptionTest(WMBSBase):
 
         for i in range(times):             
             time = self.perfTest(dao=self.dao, action='Subscriptions.Load', 
+                id=subscription["id"],
                 workflow=subscription.getWorkflow().id, type='Processing', 
                 fileset=subscription.getFileset().id)
             self.totaltime = self.totaltime + time

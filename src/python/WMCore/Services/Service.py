@@ -7,8 +7,8 @@ has a cache (though this may not be used), an endpoint (the url the service
 exists on) a logger and a type (json, xml etc).
 """
 
-__revision__ = "$Id: Service.py,v 1.3 2008/10/15 13:47:25 ewv Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Service.py,v 1.4 2008/11/29 22:30:05 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import datetime
 import os
@@ -69,4 +69,19 @@ class Service:
             except Exception, e:
                 self.logger.exception(e)
                 raise e
+        return open(cachefile, 'r')
+    
+    def forceRefresh(self, cachefile, url):
+        cachefile = "%s/%s" % (self.path, cachefile)
+
+        url = self.endpoint + url
+
+        self.logger.debug("Forcing cache refresh of %s" % cachefile)
+        u = urllib.URLopener()
+        u.addheader('Accept', self.type)
+        try:
+            u.retrieve(url, cachefile)
+        except Exception, e:
+            self.logger.exception(e)
+            raise e
         return open(cachefile, 'r')

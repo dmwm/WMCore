@@ -6,8 +6,8 @@ An AuthorisedService is the same as a Service but sends a cert/key with the url
 opener to access secured resources.
 """
 
-__revision__ = "$Id: AuthorisedService.py,v 1.2 2008/09/18 15:50:53 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: AuthorisedService.py,v 1.3 2008/11/29 22:30:05 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import datetime, os, urllib, time
 
@@ -37,3 +37,13 @@ class AuthorisedService(Service):
             u.addheader('Accept', self.type)
             u.retrieve(url, cachefile)
         return open(cachefile, 'r')
+    
+    def forceRefresh(self, cachefile, url):
+        
+        cachefile = "%s/%s" % (self.path, cachefile)
+        
+        self.logger.debug("%s expired, refreshing cache" % cachefile)
+        u = urllib.URLopener(cert_file=self.cert, key_file=self.key)
+        u.addheader('Accept', self.type)
+        u.retrieve(url, cachefile)
+        return open(cachefile, 'r')        

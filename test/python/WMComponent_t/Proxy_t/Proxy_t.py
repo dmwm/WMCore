@@ -4,8 +4,8 @@
 Proxy test TestProxy module and the harness
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.7 2008/11/20 09:55:50 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Proxy_t.py,v 1.8 2009/02/06 10:17:31 fvlingen Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -216,7 +216,7 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
             assert payload == 'forOldPA'
         print('--Old msgService sends 10 JobSuccess messages')
         for i in xrange(0, 10):
-            oldMsgService.publish("JobSuccess","")
+            oldMsgService.publish("JobSuccess","JobSuccess")
         print('--New msgService waits for it')
         for i in xrange(0, 10):
             msg = newMsgService.get()

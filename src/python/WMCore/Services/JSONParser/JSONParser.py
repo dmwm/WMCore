@@ -6,8 +6,8 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.3 2008/09/18 15:22:26 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JSONParser.py,v 1.4 2008/10/15 13:47:25 ewv Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import urllib
 import cStringIO
@@ -26,7 +26,7 @@ class JSONParser:
             logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='/tmp/jsonparser/jsonparser.log',
+                    filename='/tmp/WMCoreJSONparser.log',
                     filemode='w')
             logger = logging.getLogger('JSONParser')
         dict = {}
@@ -46,7 +46,7 @@ class JSONParser:
         """
         params = urllib.urlencode(args)
         query = service + '?' + params
-        
+
         try:
             f = self.service.refreshCache(file, query)
             #f = urllib.urlopen(service, params)

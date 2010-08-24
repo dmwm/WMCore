@@ -1,31 +1,21 @@
 #!/usr/bin/env python
 """
-_Load_
+_LoadFromName_
 
-MySQL implementation of LoadFileset
-
+MySQL implementation of Fileset.LoadFromName
 """
+
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.4 2008/11/26 19:46:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: LoadFromName.py,v 1.5 2009/01/13 16:43:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadFromName(DBFormatter):
-    sql = """select id, open, last_update from wmbs_fileset 
-            where name = :fileset"""
+    sql = """SELECT id, name, open, last_update FROM wmbs_fileset
+             WHERE name = :fileset"""
             
-    def getBinds(self, fileset = None):
-        return self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset')
-    
-    def format(self, result):
-        result = result[0].fetchall()[0]
-        time = result[2]
-        open = self.truefalse(result[1])
-        id = int(result[0])
-        return id, open, time
-    
     def execute(self, fileset = None, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, self.getBinds(fileset), 
+        result = self.dbi.processData(self.sql, {"fileset": fileset}, 
                          conn = conn, transaction = transaction)
-        return self.format(result)
+        return self.formatDict(result)[0]

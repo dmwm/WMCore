@@ -1,4 +1,6 @@
 from cherrypy import expose
+from cherrypy import __version__ as cherrypy_version
+from Cheetah import Version as cheetah_version
 from WMCore.WebTools.Page import Page
 
 class Welcome(Page):
@@ -14,9 +16,12 @@ class Welcome(Page):
         html += '<body>'
         html += '<h1>Welcome to the DMWM web framework</h1>'
         html += "<table>\n"
-        html += "<tr><th><p>Service</p></th><th><p>Description</p></th></tr>\n"
+        html += "<tr><th><h3>Service</h3></th><th><h3>Description</h3></th></tr>\n"
         for name, docstring in self.namesAndDocstrings:
             html += '<tr><td><p><a href="%s">%s</a></p></td><td><p>%s</p></td></tr>' % (name, name, docstring)
+        html += "<tr><td><h3>Server info</h3</td></tr>\n"
+        html += '<tr><td><p>CherryPy: v.%s</p>' % cherrypy_version
+        html += '<p>Cheetah: v.%s</p></td></tr>' % cheetah_version
         html += '</table>'
         html += '</body>'
         html += '</html>'

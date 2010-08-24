@@ -12,12 +12,12 @@ TABLE wmbs_subscription
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.4 2008/07/03 17:02:20 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: New.py,v 1.5 2008/10/13 12:57:42 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class New(MySQLBase):
+class New(DBFormatter):
     """
     Create a workflow ready for subscriptions
     """
@@ -32,6 +32,13 @@ class New(MySQLBase):
                 (fileset, workflow, type, last_update, split_algo) 
                 values (:fileset, :workflow, :type, :timestamp, :split_algo)"""
         return sql
+
+    def getBinds(self, **kwargs):
+        binds = {}
+        for i in kwargs.keys():
+            if kwargs[i]:
+                binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
+        return binds
         
     def execute(self, fileset = None, workflow = None, 
                 split = 'File', timestamp = None, type = 'Processing',\
@@ -40,8 +47,6 @@ class New(MySQLBase):
                               workflow = workflow,
                               timestamp = timestamp, 
                               type = type,
-                              spec = spec, 
-                              owner = owner,
                               split_algo = split)
         
         self.dbi.processData(self.getSQL(timestamp), binds, 

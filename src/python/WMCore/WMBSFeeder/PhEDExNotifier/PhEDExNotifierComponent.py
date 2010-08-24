@@ -14,9 +14,8 @@ from MessageService.MessageService import MessageService
 from ProdAgentDB.Config import defaultConfig as dbConfig
 import ProdAgentCore.LoggingUtils as LoggingUtils
 
-from xml.dom.minidom import Document
-from xml.dom import minidom
 from urllib import urlretrieve
+from urllib import urlopen
 
 class PhEDExNotifierComponent:
     """
@@ -39,9 +38,8 @@ class PhEDExNotifierComponent:
 
         if self.args['Node'] == None:
             logging.error("PhEDExNotifier: no node specified")
-        self.baseURL = "https://cmsweb.cern.ch/phedex/datasvc/xml/prod/blockReplicas?node=%s" % self.args['Node']
+        self.baseURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/blockReplicas?node=%s" % self.args['Node']
         self.timestamp = 0
-        self.doc = Document()
         self.ms = None
         msg = "PhEDExNotifier Component Started\n"
         logging.info(msg)
@@ -89,13 +87,15 @@ class PhEDExNotifierComponent:
         self.ms.subscribeTo("PhEDExNotifier:EndDebug")
         
         # Get current state from PhEDEx or local file if it exists
-        baseFileName = self.args['ComponentDir'] + "/base.xml"
+        baseFileName = self.args['ComponentDir'] + "/base.json"
         if not os.path.isfile( baseFileName ):
-            logging.debug("PhEDExNotifier: downloading base.xml file")
+            logging.debug("PhEDExNotifier: downloading base.json file")
             urlretrieve( self.baseURL, baseFileName )
-        self.doc = minidom.parse( baseFileName )
-        phedex = self.doc.getElementsByTagName( "phedex" ).item( 0 )        
-        self.timestamp = phedex.getAttribute( "request_timestamp" )
+        f = open( baseFileName )
+        self.base = eval( f.read(), {}, {} )
+        f.close()
+        phedex = self.base[ 'phedex' ]
+        self.timestamp = phedex[ 'request_timestamp' ]
 
         # wait for messages
         while True:
@@ -122,22 +122,25 @@ class PhEDExNotifierComponent:
         updatedURL = self.baseURL + "&updated_since=%s" % self.timestamp
         createdURL = self.baseURL + "&create_since=%s" % self.timestamp
 
-        updatedFile = self.args['ComponentDir'] + "/updated.xml"
-        createdFile = self.args['ComponentDir'] + "/created.xml"
+        updatedConnection = urlopen( updatedURL )
+        createdConnection = urlopen( createdURL )
 
-        urlretrieve( updatedURL, updatedFile )
-        urlretrieve( createdURL, createdFile )
+        updatedString = updatedConnection.read()
+        createdString = createdConnection.read()
 
-        updated = minidom.parse( updatedFile )
-        created = minidom.parse( createdFile )
+        updatedConnection.close()
+        createdConnection.close()
 
-        updatedBlocks = updated.getElementsByTagName( "block" )
-        if updatedBlocks.length > 0:
-            logging.debug( "PhEDExNotifier: Found %d updated blocks" % updatedBlocks.length )
+        updated = eval( updatedString, {}, {} )
+        created = eval( createdString, {}, {} )
+        
+        updatedBlocks = updated[ 'phedex' ][ 'block' ]
+        if len( updatedBlocks ) > 0:
+            logging.debug( "PhEDExNotifier: Found %d updated blocks" % len( updatedBlocks) )
 
-        createdBlocks = created.getElementsByTagName( "block" )
-        if createdBlocks.length > 0:
-            logging.debug( "PhEDExNotifier: Found %d created blocks" % createdBlocks.length )
+        createdBlocks = created[ 'phedex' ][ 'block' ]
+        if len( createdBlocks ) > 0:
+            logging.debug( "PhEDExNotifier: Found %d created blocks" % len( createdBlocks ) )
         
         self.handleUpdates( updatedBlocks )
 
@@ -146,19 +149,19 @@ class PhEDExNotifierComponent:
     def handleUpdates( self, updates ):
 
         for update in updates:
-            blockId = update.getAttribute( "id" )
-            for block in self.doc.getElementsByTagName( "block" ):
-                if block.getAttribute( "id" ) == blockId:
-                    filesInUpdate = int( update.getElementsByTagName( "replica" )[0].getAttribute( "files" ) )
-                    filesInBase = int( block.getElementsByTagName( "replica" )[0].getAttribute( "files" ) )
+            blockId = update[ 'id' ]
+            for block in self.base[ 'phedex' ][ 'block' ]:
+                if block[ 'id' ] == blockId:
+                    filesInUpdate = int( update[ 'replica' ][0][ 'files' ] )
+                    filesInBase = int( block[ 'replica' ][0][ 'files' ] )
                     newFiles = filesInUpdate - filesInBase
                     if filesInUpdate > filesInBase:
-                        logging.debug( "PhEDExNotifier: block %s has %d new files" % ( update.getAttribute( "name" ), newFiles ) )
+                        logging.debug( "PhEDExNotifier: block %s has %d new files" % ( update[ 'name' ], newFiles ) )
 
                     
 
     def handleCreated( self, theCreated ):
 
         for aCreated in theCreated:
-            filesInCreated = int( aCreated.getElementsByTagName( "replica" )[0].getAttribute( "files" ) )
-            logging.debug( "PhEDExNotifier: new block %s has %d files" % ( aCreated.getAttribute( "name" ), filesInCreated ) )
+            filesInCreated = int( aCreated[ 'replica' ][0][ 'files' ] )
+            logging.debug( "PhEDExNotifier: new block %s has %d files" % ( aCreated[ 'name' ], filesInCreated ) )

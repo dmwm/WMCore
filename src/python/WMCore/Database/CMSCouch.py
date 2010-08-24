@@ -7,10 +7,15 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.2 2009/03/06 15:22:53 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: CMSCouch.py,v 1.3 2009/03/06 16:22:26 valya Exp $"
+__version__ = "$Revision: 1.3 $"
 
-import simplejson
+try:
+    # Python 2.6
+    import json
+except:
+    # Prior to 2.6 requires simplejson
+    import simplejson as json
 import urllib, urllib2
 from httplib import HTTPConnection
 import uuid
@@ -59,7 +64,7 @@ class Requests:
         self.conn.request(type, uri, data, headers)
         response = self.conn.getresponse()
         
-        print type, uri, response.status, response.reason  #TODO: log this not print
+#        print type, uri, response.status, response.reason  #TODO: log this not print
         data = response.read()
         self.conn.close()
         return self.decode(data)
@@ -93,13 +98,13 @@ class CouchRequests(Requests):
         """
         encode data as json
         """
-        return simplejson.dumps(data)
+        return json.dumps(data)
     
     def decode(self, data):
         """
         decode the data to python from json
         """ 
-        return simplejson.loads(data)
+        return json.loads(data)
         
 class Database(CouchRequests):
     """

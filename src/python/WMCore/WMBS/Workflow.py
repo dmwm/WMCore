@@ -16,8 +16,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.4 2008/05/12 11:58:06 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Workflow.py,v 1.5 2008/05/29 16:48:03 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sqlalchemy.exceptions import IntegrityError
 
@@ -35,10 +35,11 @@ class Workflow(object):
     
     workflow + fileset = subscription
     """
-    def __init__(self, spec=None, owner=None, wmbs=None):
+    def __init__(self, spec=None, name=None, owner=None, wmbs=None):
         self.wmbs = wmbs
         #TODO: define a url-like scheme for spec's and enforce it here
         self.spec = spec
+        self.name = name
         self.owner = owner
 
         

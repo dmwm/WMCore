@@ -16,12 +16,10 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.6 2008/06/09 12:38:51 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Workflow.py,v 1.7 2008/06/12 11:04:50 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
-from WMCore.WMBS.Actions.WorkflowExists import WorkflowExistsAction
-from WMCore.WMBS.Actions.NewWorkflow import NewWorkflowAction
-from WMCore.WMBS.Actions.DeleteWorkflow import DeleteWorkflowAction
+from WMCore.DAOFactory import DAOFactory
 
 class Workflow(object):
     """
@@ -39,7 +37,6 @@ class Workflow(object):
     """
 
     def __init__(self, spec=None, owner=None, name=None, logger=None, dbfactory=None):
-        self.wmbs = wmbs
         #TODO: define a url-like scheme for spec's and enforce it here
         self.spec = spec
         self.name = name
@@ -47,24 +44,28 @@ class Workflow(object):
         self.name = name
         self.dbfactory = dbfactory
         self.logger = logger
+        self.daofactory = DAOFactory(package='WMCore.WMBS', 
+                                     logger=self.logger, 
+                                     dbinterface=self.dbfactory.connect())
+        
         
     def exists(self):
         """
         Does a workflow exist with this spec and owner
         """
-        conn = dbfactory.connect()
-        action = WorkflowExistsAction(self.logger)
-        return action.execute(spec=self.spec, owner=self.owner, name=self.name,
-                               dbinterface=conn)
+        action = self.daofactory(classname='Workflow.Exists')
+        return action.execute(spec=self.spec, 
+                              owner=self.owner, 
+                              name=self.name)
     
     def create(self):
         """
         Write a workflow to the database
         """
-        conn = dbfactory.connect()
-        action = NewWorkflowAction(self.logger)
-        action.execute(spec=self.spec, owner=self.owner, name=self.name,
-                               dbinterface=conn)
+        action = self.daofactory(classname='Workflow.New')
+        action.execute(spec=self.spec, 
+                       owner=self.owner, 
+                       name=self.name)
 
     def delete(self):
         """
@@ -72,10 +73,10 @@ class Workflow(object):
         """
         self.logger.warning('You are removing the following workflow from WMBS %s (%s) owned by %s'
                                  % (self.name, self.spec, self.owner))
-        conn = dbfactory.connect()
-        action = DeleteWorkflowAction(self.testlogger)
-        return action.execute(spec=self.spec, owner=self.owner, name=self.name,
-                               dbinterface=conn)
+        action = self.daofactory(classname='Workflow.Delete')
+        action.execute(spec=self.spec, 
+                       owner=self.owner, 
+                       name=self.name)
         
         
         

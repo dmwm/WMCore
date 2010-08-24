@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.1 2008/08/26 13:56:32 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Harness.py,v 1.2 2008/09/04 12:31:24 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -105,8 +105,10 @@ class Harness:
             dbStr = self.args['db_dialect'] + '://' + self.args['db_user'] + \
                 ':' + self.args['db_pass']+"@"+self.args['db_hostname']+'/'+\
                 self.args['db_name']
-            dbFactory = DBFactory(myThread.logger, dbStr, options)
-            myThread.dbi = dbFactory.connect()
+            # we only want one DBFactory per database so we will need to 
+            # to pass this on in case we are using threads.
+            myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
+            myThread.dbi = myThread.dbFactory.connect()
             logging.info(">>>Initialize transaction dictionary")
             myThread.transactions = {}
             # diagnostic messages are ones that most of the time

@@ -4,8 +4,8 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.11 2008/11/19 19:12:38 afaq Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: BufferSuccess.py,v 1.12 2008/12/17 21:57:10 afaq Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -21,6 +21,7 @@ from DBSAPI.dbsApi import DbsApi
 from DBSAPI.dbsException import *
 from DBSAPI.dbsApiException import *
 
+from WMCore.WMBS.File import *
 from ProdCommon.DataMgmt.DBS import DBSWriterObjects
 
 import base64
@@ -46,11 +47,15 @@ class BufferSuccess(BaseHandler):
 
     def __init__(self, component):
         BaseHandler.__init__(self, component)
+	#self.dbsurl="http://cmssrv18.fnal.gov:8989/DBSON18/servlet/DBSServlet"
+        #self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_4')
+
         self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
+        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_3')
+
         #args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" :'DBS_2_0_3'}
         #dbswriter = DbsApi(args)
         #dbswriter = DBSWriter('fakeurl') 
-        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_3')
         
         # define a slave threadpool (this is optional
         # and depends on the developer deciding how he/she
@@ -76,8 +81,10 @@ class BufferSuccess(BaseHandler):
         
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
         dbinterface=factory.loadObject("UploadToDBS")
-        
+       
+
         datasets=dbinterface.findUploadableDatasets()
+
         for aDataset in datasets:
             #Check Dataset for AlgoInDBS (Uploaded to DBS or not)    
             #We need to get algos anyways for File insertion
@@ -94,23 +101,30 @@ class BufferSuccess(BaseHandler):
                     #TODO: Update Algorithm status in DBS
                    
                     dbinterface.updateDSAlgo(dict(aDataset))
-                
+
             #Find files for each dataset and then UPLOAD 10 files at a time 
             #(10 is just a number of choice now, later it will be a configurable parameter)
-            files=dbinterface.findUploadableFiles(aDataset)
+            file_ids=dbinterface.findUploadableFiles(aDataset)
+	    files=[]
+
+ 
+	    for an_id in file_ids:
+		file=File(id=an_id['ID'])
+		file.load(parentage=1)
+                files.append(file) 
 
             print "Total files", len(files)
             #base64.decodestring(aFile['RunLumiInfo'])
-            
+
             self.dbswriter.insertFilesForDBSBuffer(files, dict(aDataset), algos, jobType = "NotMerge", insertDetectorData = False)
             #Update UnMigratedFile Count here !!!!
-            
+
             print "COMMENTED line below for testing..."
-            #dbinterface.updateDSFileCount(aDataset, 10)
+            dbinterface.updateDSFileCount(aDataset, 10)
             #TODO: Update the files as well to Migrated
             
             print "NEXT to be implemented"
-            dbinterface.updateFilesStatus(files)
+            dbinterface.updateFilesStatus(file_ids)
             
 
         return

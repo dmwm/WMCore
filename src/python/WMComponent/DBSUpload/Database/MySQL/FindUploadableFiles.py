@@ -5,8 +5,8 @@ _DBSUpload.FindUploadableFiles_
 Find the files in a datasets that needs to be uploaded to DBS
 
 """
-__revision__ = "$Id: FindUploadableFiles.py,v 1.3 2008/11/05 01:20:45 afaq Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FindUploadableFiles.py,v 1.4 2008/12/17 21:57:10 afaq Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -15,7 +15,18 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class FindUploadableFiles(DBFormatter):
     
-    sql = """SELECT * FROM dbsbuffer_file where dataset=:dataset and FileStatus =:status LIMIT 10"""
+    sql = """SELECT wmbsfile.id as ID,
+		wmbsfile.lfn as LFN, 
+		wmbsfile.size as FileSize, 
+		wmbsfile.events as TotalEvents,
+		wmbsfile.cksum as Checksum
+		FROM dbsbuffer_file buffile 
+			join wmbs_file_details wmbsfile 
+				on wmbsfile.id=buffile.id 
+		where buffile.dataset=:dataset and buffile.FileStatus =:status"""#  LIMIT 10"""
+
+
+    #sqlold = """SELECT * FROM dbsbuffer_file where dataset=:dataset and FileStatus =:status LIMIT 10"""
     
     def __init__(self):
         myThread = threading.currentThread()
@@ -25,11 +36,24 @@ class FindUploadableFiles(DBFormatter):
         binds =  { 'dataset': dataset['ID'], 'status':'NOTUPLOADED' }
         return binds
 
+    def makeFile(self, results):
+        ret=[]
+        for r in results:
+                entry={}
+                entry['ID']=long(r['id'])
+                entry['LFN']=r['lfn']
+                entry['FileSize']=r['filesize']
+                entry['TotalEvents']=r['totalevents']
+                entry['Checksum']=r['checksum']
+                ret.append(entry)
+        return ret
+
+
     def execute(self, datasetInfo=None, conn=None, transaction = False):
         binds = self.getBinds(datasetInfo)
         print "SQL: %s" %(self.sql)
         print "BINDS: %s" %str(binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
-        return self.format(result)
+        return self.makeFile(self.formatDict(result))
     

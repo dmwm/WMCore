@@ -5,46 +5,55 @@ _Job_
 Data object that describes a job
 
 Jobs know their status (active, failed, complete) and know the files they run on
-but don't know the subscription or group. They do know their workflow.
+but don't know the subscription or workflow. They are kept together by a 
+JobGroup which knows the subscription and corresponding workflow. A Job is not a 
+job in a batch system, it's more abstract - it's the piece of 
+work that needs to get done.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.12 2008/09/29 16:10:53 metson Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Job.py,v 1.13 2008/10/01 15:00:11 metson Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.Subscription import Subscription
+from WMCore.DataStructs.JobGroup import JobGroup
 from WMCore.DataStructs.Mask import Mask
+from WMCore.Services.UUID import makeUUID
 from sets import Set
 import datetime
 
 class Job(Pickleable):
-    def __init__(self, name=None, subscription=None, files=None):
+    def __init__(self, name=None, files=None, logger=None, dbfactory=None):
         """
-        A job has a subscription which gives it its workflow.
+        A job has a jobgroup which gives it its subscription and workflow.
         file_set is a Fileset containing files associated to a job
         last_update is the time the job last changed
         """
-        self.subscription = subscription
-        self.workflow = subscription.workflow
         if files == None:
             self.file_set = Fileset()
         else:
             self.file_set = files
         self.last_update = datetime.datetime.now()
         self.status = 'QUEUED'
-        self.name = name
+        if name == None:
+            # Job's need to be uniquely named, so generate a GUID
+            self.name = makeUUID()
+        else:
+            self.name = name
+        
         self.output = Fileset(name = 'output', logger = self.file_set.logger)
         self.report = None
         self.mask = Mask()
 
     def getFiles(self, type='list'):
         if type == 'list':
-            return self.file_set.listFiles()
+            return self.file_set.getFiles(type='list')
         elif type == 'set':
-             return self.file_set.getFiles(type='set')
+            return self.file_set.getFiles(type='set')
         elif type == 'lfn':
-            return self.file_set.listLFNs()        
+            return self.file_set.getFiles(type='lfn')
+        elif type == 'id':
+            return self.file_set.getFiles(type='id')
 
     def listLFNs(self):
         """
@@ -77,7 +86,8 @@ class Job(Pickleable):
     def submit(self, name):
         """
         Once submitted to a batch queue set status to active and set the job's
-        name to some id from the batch system
+        name to some id from the batch system. Calling this method means the job
+        has been submitted to the batch queue.
         """
         self.name = name
         self.changeStatus('ACTIVE')

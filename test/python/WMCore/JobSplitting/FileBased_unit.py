@@ -7,8 +7,8 @@ job type.
 
 """
 
-__revision__ = "$Id: FileBased_unit.py,v 1.1 2008/07/07 09:42:18 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FileBased_unit.py,v 1.2 2008/07/07 21:42:09 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 from sets import Set
 import unittest, logging, os, commands, random, datetime, math
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
@@ -42,15 +42,16 @@ class FileBasedGenericObjectTest(unittest.TestCase):
         files_size = len(self.fileset.listFiles())
         print "Number of files: %i" % files_size
         assert len(self.subscription.getFileset().listFiles()) == len(self.subscription.availableFiles())
+        assert len(self.subscription.availableFiles()) == files_size
         splitsize = 89
         splitter = SplitterFactory()
         jobfactory = splitter(self.subscription)
         jobs = jobfactory(files_per_job=splitsize)
-        # Something weird is happening to self.subscription - it's like it's being reset to a new instance??
-        #assert len(self.subscription.getFileset().listFiles()) == len(self.subscription.availableFiles())
-        #assert len(self.subscription.getFileset().listFiles()) == job_size
-        #assert len(self.subscription.availableFiles()) == job_size
-        #print len(self.fileset.listFiles()), len(self.subscription.getFileset().listFiles())
+
+        assert len(self.subscription.getFileset().listFiles()) == files_size
+        assert len(self.subscription.availableFiles()) == 0
+
+        print len(self.fileset.listFiles()), len(self.subscription.getFileset().listFiles())
         print files_size, splitsize, len(jobs)
         number_jobs = divmod(files_size, splitsize)
         print "should have %i jobs of %i files and 1 job of %i files" % (number_jobs[0], splitsize, number_jobs[1])

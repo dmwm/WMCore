@@ -6,8 +6,8 @@ MySQL implementation of JobGroup.LoadJobs
 """
 
 __all__ = []
-__revision__ = "$Id: LoadJobs.py,v 1.1 2008/11/20 17:04:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadJobs.py,v 1.2 2009/01/12 16:49:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -24,5 +24,6 @@ class LoadJobs(DBFormatter):
 
     def execute(self, jobgroup, conn = None, transaction = False):
         binds = self.getBinds(jobgroup = jobgroup)
-        result = self.dbi.processData(self.sql, binds)
+        result = self.dbi.processData(self.sql, binds, conn = conn,
+                                      transaction = transaction)
         return self.format(result)

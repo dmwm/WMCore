@@ -26,7 +26,7 @@ from sets import Set
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.14 2008/11/26 19:28:55 sfoulkes Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.15 2008/12/10 20:08:14 jcgon Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -75,11 +75,6 @@ class WMBSBase(Performance):
 
         """    
         filelist = self.genFileObjects(number)
-
-        #Test Code START - Erase after Fileset initial files creation is fixed
-#        for x in filelist:
-#            x.create()
-        #Test Code END
 
         setfiles = set(filelist)
 
@@ -328,10 +323,6 @@ class WMBSBase(Performance):
         #TODO -Still to be implemented
         self.baseexec = ''
 
-        #Threshold settings:
-        #self.threshold = 0.1
-        #self.totalthreshold = 2
-
         #possibly deprecated, need to use selist instead
         self.sename = 'localhost'        
         
@@ -342,6 +333,7 @@ class WMBSBase(Performance):
         self.dao = DAOFactory(package = 'WMCore.WMBS', logger = self.logger, 
                         dbinterface = self.dbf.connect())
 
+        #WMBS Database tables creation
         try:
             assert self.dao(classname = 'Create').execute()
         except:
@@ -352,15 +344,13 @@ class WMBSBase(Performance):
         for se in self.selist:
             self.dao(classname = 'Locations.New').execute(sename=se)      
 
-        #TestUnit Specs
+        #TestUnit Settings
         if self._setup:
             return
 
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
 
         myThread = threading.currentThread()
 
@@ -372,6 +362,16 @@ class WMBSBase(Performance):
         Common tearDown for all WMBS Performance tests
 
         """
+        #Post-Testing report        
+        if self.totaltime != 0:
+            avgtime = self.totaltime/self.testtimes
+            
+            print 'Elapsed time for %s DAO operations:'\
+                    '%.4f seconds (cumulative threshold: %.4f'\
+                    % (self.testtimes, self.totaltime, self.totalthreshold)
+            print 'Average time for DAO class: %.4f seconds for %s operations'\
+                  '(threshold: %.4f)' % (avgtime, self.testtimes, self.threshold)
+
         #Base tearDown method for the DB Performance test
         Performance.tearDown(self)
 

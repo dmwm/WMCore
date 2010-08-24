@@ -18,10 +18,13 @@ class RESTApi(WebAPI):
     __version__ = 1
     def __init__(self, config = {}):
         
-        modelconfig = config.section_('model')
-        modelconfig.application = config.application
-
-        self.set_model(config.section_('model'))
+        #formatterconfig = config.section_('formatter')
+        #formatterconfig.application = config.application
+        self.set_formatter(config)
+        
+        #modelconfig = config.section_('model')
+        #modelconfig.application = config.application
+        self.set_model(config)
         
         self.__doc__ = self.model.__doc__
         
@@ -46,9 +49,13 @@ class RESTApi(WebAPI):
                              'text/json', 'text/x-json', 'application/json',
                              'text/html','text/plain']
         
-    def set_model(self, model):
+    def set_model(self, config):
         factory = WMFactory('webtools_factory')
-        self.model = factory.loadObject(model.object, model)
+        self.model = factory.loadObject(config.model.object, config)
+        
+    def set_formatter(self, config):
+        factory = WMFactory('webtools_factory')
+        self.formatter = factory.loadObject(config.formatter.object, config)
 
     @expose
     def index(self, *args, **kwargs):
@@ -83,20 +90,13 @@ class RESTApi(WebAPI):
         
         if datatype in ('text/json', 'text/x-json', 'application/json'):
             # Serialise to json
-            try:
-                jsondata = json.dumps(data)
-                response.headers['Content-Length'] = len(jsondata)
-                return jsondata
-            except:
-                Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+            return self.formatter.json(data)
         elif datatype == 'application/xml':
             # Serialise to xml
-            return self.templatepage('XML', data = data, config = self.config, 
-                                     request = request)
+            return self.formatter.xml(data)
         elif datatype == 'application/atom+xml':
-            # Serialise to xml
-            return self.templatepage('Atom', data = data, config = self.config,
-                                     request = request)
+            # Serialise to atom
+            return self.formatter.atom(data)
 
         # TODO: Add other specific content types
         response.headers['Content-Length'] = len(data)

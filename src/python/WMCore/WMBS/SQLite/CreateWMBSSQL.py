@@ -12,6 +12,7 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name varchar(255) NOT NULL,
+                open BOOLEAN NOT NULL DEFAULT FALSE,
                 last_update timestamp NOT NULL,
                 UNIQUE (name))"""
         self.create['wmbs_fileset_files'] = """CREATE TABLE wmbs_fileset_files (

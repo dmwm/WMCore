@@ -6,7 +6,8 @@ class CreateWMBS(MySQLBase):
         self.create = {}
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id int(11) NOT NULL AUTO_INCREMENT,
-                name varchar(255) NOT NULL,  
+                name varchar(255) NOT NULL,
+                open boolean NOT NULL DEFAULT FALSE,
                 last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ON UPDATE CURRENT_TIMESTAMP,  
                 PRIMARY KEY (id), UNIQUE (name))"""

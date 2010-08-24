@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.30 2008/11/25 17:23:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: File.py,v 1.31 2008/11/26 19:42:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.Database.Transaction import Transaction
@@ -109,50 +109,37 @@ class File(WMFile):
     
     def create(self, trans = None):
         """
-        Create a file.
+        _create_
+
+        Create a file.  If no transaction is passed in this will wrap all
+        statements in a single transaction.
         """
-        if not trans:
+        if self.exists() != False:
+            return
+
+        if trans == None:
+            newtrans = True            
             trans = Transaction(self.dbi)
-            conn = trans.conn
-            newtrans = True
         else:
             newtrans = False
-            conn = None
-        try:
-            try:
-                self.daofactory(classname='Files.Add').execute(
-                                                       files=self['lfn'], 
-                                                       size=self['size'], 
-                                                       events=self['events'],
-                                                       conn = conn,
-                                                       transaction = True)
-            except IntegrityError, e:
-                self.logger.exception('File %s exists' % (self['lfn']))
-            except Exception, e:
-                raise e
-            try:
-                self.daofactory(classname='Files.AddRunLumi').execute(
-                                                       files=self['lfn'],  
-                                                       run=self['run'], 
-                                                       lumi=self['lumi'],
-                                                       conn = conn,
-                                                       transaction = True)
-            except IntegrityError, e:
-                pass #Ignore that the file exists
-            except Exception, e:
-                raise e
-            
-            # Add new locations if required
-            self.updateLocations(trans)
-        
-            if newtrans:
-                trans.commit()
-        except Exception, e:
-            # Only roll back transaction if it was created in this scope
-            if newtrans:
-                trans.rollback()
-            raise e
 
+        conn = trans.conn
+
+        addAction = self.daofactory(classname="Files.Add")
+        addAction.execute(files = self["lfn"], size = self["size"],
+                          events = self["events"], conn = conn,
+                          transaction = True)
+
+        lumiAction = self.daofactory(classname="Files.AddRunLumi")
+        lumiAction.execute(files = self["lfn"], run = self["run"],
+                           lumi = self["lumi"], conn = conn, transaction = True)
+        
+        # Add new locations if required
+        self.updateLocations(trans)
+
+        if newtrans:
+            trans.commit()
+        
         self["id"] = self.exists()
         return
     
@@ -195,38 +182,36 @@ class File(WMFile):
     
     def updateLocations(self, trans = None):
         """
-        Saves any new locations, and refreshes location list from DB
+        _updateLocations_
+        
+        Write any new locations to the database.  After any new locations are
+        written to the database all locations will be reloaded from the
+        database.
         """
-        if not trans:
+        if trans == None:
             trans = Transaction(self.dbi)
-            conn = trans.conn
             newtrans = True
         else:
             newtrans = False
-            conn = None
+
+        conn = trans.conn
             
-        try:
-            # Add new locations if required
-            if len(self['newlocations']) > 0:
-                self.daofactory(classname='Files.SetLocation').execute(
-                    file=self['lfn'],
-                    sename=self['newlocations'],
-                    conn = conn,
-                    transaction = True)
+        # Add new locations if required
+        if len(self["newlocations"]) > 0:
+            addAction = self.daofactory(classname = "Files.SetLocation")
+            addAction.execute(file = self["lfn"], location = self["newlocations"],
+                              conn = conn, transaction = True)
+
+        # Update locations from the DB    
+        getAction = self.daofactory(classname = "Files.GetLocation")
+        self["locations"] = getAction.execute(self["lfn"], conn = conn,
+                                              transaction = True)
+        self["newlocations"].clear()
+
+        if newtrans:
+            trans.commit()
             
-                # Update locations from the DB    
-                action = self.daofactory(classname='Files.GetLocation')
-                self['locations'] = action.execute(self['lfn'], conn = conn,
-                                                   transaction = True)
-                self['newlocations'].clear()
-        
-                if newtrans:
-                    trans.commit()
-        except Exception, e:
-            # Only roll back transaction if it was created in this scope
-            if newtrans:
-                trans.rollback()
-            raise e
+        return
         
     def setLocation(self, se, immediateSave = True):
         """

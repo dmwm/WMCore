@@ -8,11 +8,16 @@ from ProdCommon.MCPayloads.WorkflowSpec import WorkflowSpec
 
 #WMBS db stuff
 
-from sqlalchemy import create_engine
-import sqlalchemy.pool as pool
+#from sqlalchemy import create_engine
+#import sqlalchemy.pool as pool
 from sqlalchemy.exceptions import IntegrityError, OperationalError
+#from WMCore.WMBS.Factory import SQLFactory 
 
-from WMCore.WMBS.Factory import SQLFactory 
+from WMCore.Database.DBCore import DBInterface
+from WMCore.Database.DBFactory import DBFactory
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.Actions.CreateWMBS import CreateWMBSAction
+
 
 from ProdCommon.MCPayloads.LFNAlgorithm import mergedLFNBase, unmergedLFNBase
 from ProdCommon.CMSConfigTools.ConfigAPI.CMSSWConfig import CMSSWConfig
@@ -20,13 +25,31 @@ import ProdCommon.MCPayloads.WorkflowTools as MCWorkflowTools
 from ProdCommon.MCPayloads.MergeTools import createMergeJobWorkflow
 
 from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Fileset import Subscription
+from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 
 logging.basicConfig(level=logging.ERROR) #DEBUG
 
 #TODO: Put everything into a single transaction
+
+
+def hashSubscription(sub):
+    """
+    Function to hash a subscription
+    """
+    return "%s:%s:%s:%s" % \
+            (sub.workflow.name, sub.fileset.name, sub.type, sub.owner)
+
+def subHashesFromJobspec(spec, datasets, owner):
+    """
+    Return appropriate sub hashes - multiple subs possible
+    """
+    return ["%s:%s:%s:%s" % (spec.workflowName(),
+                         dataset.name(),
+                         spec.parameters['WorkflowType'],
+                         owner) for dataset in datasets
+                ]
 
 class WMBSAccountant:
     """
@@ -40,58 +63,33 @@ class WMBSAccountant:
         connect to wmbs db etc
         """
         #logger = logging.getLogger()
-        
+        self.logger = logging.getLogger('wmbs')
         #TODO: create connection string properly
-        engine = create_engine(dbparams['dbName'], convert_unicode=True,
-                                    encoding='utf-8', pool_size=10,
-                                    pool_recycle=30)
+        #engine = create_engine(dbparams['dbName'], convert_unicode=True,
+        #                            encoding='utf-8', pool_size=10,
+        #                            pool_recycle=30)
+        self.db = DBFactory(self.logger, 'sqlite:///filesettest.lite')
+        #CreateWMBSAction(self.logger).execute(dbinterface=self.db.connect())
+        #self.dao = DAOFactory(package='WMCore.WMBS', logger=self.logger, dbinterface=self.db.connect())
+        #self.dao(classname='CreateWMBS').execute()
         #factory = SQLFactory(logging)
-        factory = SQLFactory(logging)
-        self.wmbs = factory.connect(engine)       
-        try:
-            #TODO: move into client setup script
-            self.wmbs.createWMBS()
-        except OperationalError:
-            pass
+        #factory = SQLFactory(logging)
+        #self.wmbs = factory.connect(engine)       
+        #try:
+        #    #TODO: move into client setup script
+        #    self.wmbs.createWMBS()
+        #except OperationalError:
+        #    pass
         
-        self.setKnownInfo()
-        self.new_datasets = {}
-        self.new_workflows = {}
-        self.new_subs = {}
+        #self.setKnownInfo()
+#        self.new_datasets = {}
+#        self.new_workflows = {}
+#        self.new_subs = {}
         self.label = label
         self.spec_dir = spec_dir
         self.ms = None
-    
-    
-    def setKnownInfo(self):
-        """
-        get workflows and filesets already available in db
-        """
-        self.known_datasets = {}
-        temp = self.wmbs.showAllFilesets()
-        
-        for fs in temp:
-            self.known_datasets[fs] = Fileset(fs, self.wmbs).populate()
-    
-        self.known_workflows = {}
-        temp = self.wmbs.showAllWorkflows()
-        for wf, owner in temp:
-            self.known_workflows[wf] = Workflow(wf, owner, self.wmbs)
+        self.subscriptions = {} #TODO: Fill this
 
-        self.known_subs = {}
-        #TODO: fill this
-        
-
-    def updateKnownInfo(self):
-        """
-        update known info with items seen since last update
-        """
-        self.known_datasets.update(self.new_datasets)
-        self.known_workflows.update(self.new_workflows)
-        self.known_subs.update(self.new_subs)
-        self.new_datasets = {}
-        self.new_workflows = {}
-        self.new_subs = {}
 
     
     def setMessager(self, ms):
@@ -113,11 +111,86 @@ class WMBSAccountant:
         raise NotImplementedError, 'sendMessage not set via setMessager()'
     
     
-    def newWorkflow(self, workflowSpecFile, mergeable=True):
+    def subscriptionsFromProcWorkflow(self, spec, specfile):
         """
-        take a workflowSpec file and setup subscription in wmbs
+        Return the subscription that apply to this workflow
         """
-        print "start new workflow"
+        subs = []
+        #    //
+        #  //     Load input datasets
+        #//
+        inputDatasets = []
+        for dataset in spec.inputDatasets():
+            fileset = Fileset(dataset.name(), dbinterface=self.db).populate()
+            inputDatasets.append(fileset)
+        
+        #    //
+        #  //     Load output datasets
+        #//
+        outputDatasets = []
+        for dataset in spec.outputDatasets():
+            fileset = Fileset(dataset.name(), dbinterface=self.db).populate()
+            outputDatasets.append(fileset)
+            
+        #    //
+        #  //     Form subscription 
+        #// 
+        parentageLevel = int(spec.parameters.get('ParentageLevel', 0))
+        proc_workflow = Workflow(specfile, self.label, spec.workflowName(),
+                                            self.label, dbinterface=self.db)
+            
+        for indataset in inputDatasets:
+            subs.append(Subscription(indataset, workflow=proc_workflow, 
+                           type=spec.parameters['WorkflowType'],
+                           parentage=parentageLevel, dbinterface=self.db)
+                           )
+        return subs
+        
+    
+    def mergeSubscriptionsFromProcWorkflow(self, spec):
+        """
+        Return list of merge subscriptions for proccessing workflow
+        """
+        subs = []
+        
+        # create merge workflows (one for each output dataset)
+        mergeWorkflows = self.createMergeWorkflow(spec)
+        for mergeWFPath, mergeWF in mergeWorkflows:
+            
+            # save wf to wmbs
+            workflow = Workflow(mergeWFPath, self.label,
+                                mergeWF.workflowName(), dbinterface=self.db)
+            
+            #    //
+            #  //     Load/Create datasets - assume only 1 for merge
+            #//
+            unmergedFileset = Fileset(mergeWF.inputDatasets()[0], dbinterface=self.db).populate()
+            
+            mergedFileset = Fileset(mergeWF.outputDatasets()[0].name(),
+                                    dbinterface=self.db, is_open=True,
+                                    parents=[unmergedFileset.parents])
+            if not mergedFileset.exists():
+                mergedFileset.create()
+
+            #    //
+            #  //     Setup subscription 
+            #// 
+            sub = Subscription(unmergedFileset, workflow=workflow,
+                                            type='Merge', dbinterface=self.db)
+            subs.append(sub)
+
+        return subs
+    
+    
+    def createSubscription(self, workflowSpecFile, mergeable=True):
+        """
+        Take a worklfow and create the neccessary 
+        subscriptions (including merging) assuming that the fileset has 
+        been entered into wmbs
+        """ 
+        
+        #TODO: Either trap db errors or check for existence first
+        
         spec = WorkflowSpec()
         try:
             spec.load(workflowSpecFile)
@@ -126,81 +199,48 @@ class WMBSAccountant:
             raise
         
         # only work on appropriate workflows
-        if spec.parameters['WorkflowType'] in ('Merge'):
-            logging.info('Ignoring workflow %s' % workflowSpecFile)
+        if spec.parameters['WorkflowType'] != 'Processing':
+            logging.info('Ignoring non-processing workflow %s' % \
+                                                        workflowSpecFile)
             return
         
-        # exit if already watched
-        # move to watching workflows
-        # - allow child processing to be registered before parent
-        if self.known_workflows.has_key(spec.workflowName()):
-            logging.info('Workflow known %s - skipping %s insertion' 
-                                        % spec.workflowName(), workflowSpecFile)
-            return
-        logging.info('Reading workflow from %s' % workflowSpecFile)
+        logging.info("Create subscriptions for %s" % workflowSpecFile)
         
-        proc_workflow = Workflow(spec.workflowName(), self.label, self.wmbs).create()
-        self.new_workflows[spec.workflowName()] = proc_workflow
-        
-        #    //
-        #  //     Insert pileup datasets
+        #  //
+        # //  Create Subscriptions
         #//
-        for dataset in spec.pileupDatasets():
-            if not self.known_datasets.has_key(dataset.name()):
-                fileset = Fileset(dataset.name(), self.wmbs, is_open=False).create()
-                self.importFileset(dataset.name())
-                self.new_datasets[dataset.name()] = fileset
-            else:
-                logging.warning("pileup dataset %s already known - skip import") % dataset.name()
- 
-        #    //
-        #  //     Insert input datasets
-        #//
-        inputDatasets = []
-        for dataset in spec.inputDatasets():
-            if not self.known_datasets.has_key(dataset.name()):
-                # need to find out from workflow if open - default true
-                fileset = Fileset(dataset.name(), self.wmbs).create()
-                self.importFileset(dataset.name())
-                self.new_datasets[dataset.name()] = fileset
-            else:
-                logging.warning("input dataset %s already known - skip import") % dataset.name()
-            inputDatasets.append(self.new_datasets[dataset.name()])
-        print "input datasets saved %s" % [x.name for x in inputDatasets]
- 
-        #    //
-        #  //     Insert output datasets
-        #//
-        for dataset in spec.outputDatasets():
-            if not self.known_datasets.has_key(dataset.name()):
-            #dont add pileup to parentage
-                fileset = Fileset(dataset.name(), self.wmbs, is_open=True, 
-                              parents=inputDatasets).create()
-                self.new_datasets[dataset.name()] = fileset
+        subscriptions = self.subscriptionsFromProcWorkflow(spec, workflowSpecFile)
+        subscriptions.extend(self.mergeSubscriptionsFromProcWorkflow(spec))
+        for sub in subscriptions:
+            subHash = hashSubscription(sub)
+            if self.subscriptions.has_key(subHash):
+                logging.info('%s Subscription for %s on %s already exists' % \
+                                (sub.type, sub.workflow.name, sub.fileset.name))
+                continue
+            
+            logging.info("Creating %s subscription for %s on %s" % \
+                                (sub.type, sub.workflow.name, sub.fileset.name))
+            if not sub.workflow.exists():
+                sub.workflow.create() 
+            sub.create()
+            self.subscriptions[subHash] = sub
 
-        # set up subscription 
-        #  - assume only 1 input dataset for the moment
-        #  - assume parentage set by num input datasets move to workflow spec
-        #TODO: Revisit this!!!
-        sub = Subscription(inputDatasets[-1], workflow=proc_workflow, 
-                           type=spec.parameters['WorkflowType'],
-                           parentage=len(spec.inputDatasets())-1, wmbs=self.wmbs)
-        sub.create()
-        self.new_subs['%s:%s' % 
-                (proc_workflow.spec, spec.parameters['WorkflowType'])] = sub
-        
-        if mergeable:
-            self.createMergeWorkflow(spec)
-
-        self.updateKnownInfo()
         return
-    
-    
-    def jobSuccess(self, jobReportFile):
+
+    # TODO: see if inputDatasets can be moved into fjr
+    def handleJobReport(self, jobReportFile, inputDatasets, label=None):
         """
         Handle JobSuccess
         add to wmbs and can publish InputAvailable
+        
+        Needs to know what datasets this job ran over - the fjr may not
+        contain this - hence need the caller to provide it
         """
+        # get default label if not passed
+        if label is None:
+            label = self.label
+        
+        #TODO: Does this work if processing jobs produce merged data?
         try:
             reports = readJobReport(jobReportFile)
         except StandardError, ex:
@@ -212,101 +252,81 @@ class WMBSAccountant:
         logging.debug("Contains: %s reports" % len(reports))
         
         for report in reports:
-            logging.debug("Inserting into db %s" % report.jobSpecId)
-            try:
-                # get from job instead?
-                sub = self.known_subs.get('%s:%s' % (report.workflowSpecId, report.jobType), None)
-                if not sub:
-                    raise RuntimeError, 'Subscription not found %s:%s' % (report.workflowSpecId, report.jobType)
-                
-                if report.jobType in ('Processing', 'Merge'):
-                    newfilesets = self.insertFile(report, sub)
-                    
-                    # Make it known that new files are available for a dataset
-                    [self.inputAvailable(x) for x in newfilesets]
-                    
-            except StandardError, ex:
-                # If error on insert save for later retry
-                logging.error("Failed to insert job files into the wmbs: %s" % str(ex))
-                raise
-
-        
-        
-    def insertFile(self, jobReport, subscription):
-        """
-        insert file to wmbs from job report
-        """
-        filesFor = set()
-        
-        for ofile in jobReport.files:
-            inputs = set()
-            for input in ofile.inputFiles:
-                #TODO: Add rest of file metadata
-                file = File(input['LFN'], wmbs=self.wmbs).load()
-                inputs.add(file)
-            subscription.completeFiles(inputs)
-
-            outputFile = File(ofile['LFN'], parents=inputs, locations=[ofile['SEName']])
             
-            for dataset in ofile.dataset:
-                #TODO: Method for this somewhere
-                dsName = "/%s/%s/%s" % (dataset['PrimaryDataset'],
-                                        dataset['ProcessedDataset'],
-                                        dataset['DataTier'])
-                ds = self.known_datasets.get(dsName, None)
-                if not ds:
-                    raise RuntimeError, 'Fileset %s unknown' % dsName
-                ds.addFile(outputFile)
-                ds.commit()
-                filesFor.add(dsName)
-                
-        return tuple(filesFor)
-    
-    
-    def jobFailure(self, jobReportFile):
-        """
-        Handle JobFailure
-        mark file in error state
-        """
-        #TODO: - mark all inout files failed - what to do here?
-        #TODO: how get subscription???
-        
-        try:
-            reports = readJobReport(jobReportFile)
-        except StandardError, ex:
-            msg = "Error loading Job Report: %s\n" % jobReportFile
-            logging.error(msg)
-            raise
-        
-        logging.debug("ReportFile: %s" % jobReportFile)
-        logging.debug("Contains: %s reports" % len(reports))
-        
-        for report in reports:
             try:
+                if not report.jobType in ('Processing', 'Merge'):
+                    logging.info("Ignoring fjr - %s" % report.jobSpecId)
+                    continue
                 
-                sub = self.known_subs.get('%s:%s' % (report.workflowSpecId, report.jobType), None)
-                if not sub:
-                    raise RuntimeError, 'Subscription not found %s:%s' % (report.workflowSpecId, report.jobType)
+                logging.debug("Inserting into db %s" % report.jobSpecId)
+
+                # update subscription with success or failure
+                self.updateSubscriptions(report, inputDatasets, label)
                 
-                if report.jobType in ('Processing', 'Merge'):
-                    failedFiles = [File(x['Lfn'], wmbs=self.wmbs).load() for x in report.skippedFiles]
-                    sub.failFiles(failedFiles)
+                # add new files to wmbs for successful reports
+                if report.wasSuccess():
+                    self.recordOutputFiles(report)    
+
             except StandardError, ex:
-                # If error on insert save for later retry
-                logging.error("Failed to mark files for job as failed: %s" % str(ex))
+                logging.error("Failed to handle fjr %s: %s" % \
+                                            (report.jobSpecId, str(ex)))
                 raise
+
+
+    def updateSubscriptions(self, report, inputDatasets, label):
+        """
+        Update subscriptions from a fjr
+        """
+        subHashes = subHashesFromJobspec(report, inputDatasets, label)
+        files = [File(input['LFN'], dbinterface=self.db).load() \
+                                    for input in report.inputFiles]
+        #TODO: SkippedFiles ?
+        for subHash in subHashes:
+            sub = self.subscriptions.get(subHash, None)
+            if sub:
+                if report.wasSuccess():
+                    sub.completeFiles(files)
+                else:
+                    sub.failFiles(files)
+    
+    
+    def recordOutputFiles(self, report):
+        """
+        Add Output files to wmbs
+        """
+        
+        for ofile in report.files:
+            #TODO: needed? or just lfns
+            inputs = [File(input['LFN'], dbinterface=self.db).load() for \
+                                            input in ofile.inputFiles]
+            outputFile = File(lfn=ofile['LFN'],
+                              size=ofile['Size'],
+                              events=ofile['TotalEvents'],
+                              parents=inputs,
+                              locations=[ofile['SEName']])
+                
+            for dataset in ofile.dataset:
+                fileset = Fileset(dataset.name(), dbinterface=self.db)
+                if not fileset.exists():
+                    raise RuntimeError, 'Fileset %s unknown' % dataset.name()
+                fileset.addFile(outputFile)
+                fileset.commit()    #TODO: move this?
+                self.inputAvailable(dataset.name())
 
 
     def createMergeWorkflow(self, procWorkflow):
         """
         create the merging workflow for a processing workflow
         """
+        
+        results = []
+
         #create merge workflow
-        mergeWorkflow = createMergeJobWorkflow(procWorkflow, 
+        mergeWorkflows = createMergeJobWorkflow(procWorkflow, 
                                 isFastMerge = False, doCleanUp = False)
         
-        # create workflows for each dataset
-        for watchedDatasetName, mergeWF in mergeWorkflow.items():
+        # create merge workflows for each output dataset
+        for watchedDatasetName, mergeWF in mergeWorkflows.items():
 
             # add bare cfg template to workflow
             cmsRun = mergeWF.payload
@@ -316,7 +336,6 @@ class WMBSAccountant:
             cfg.setInputMaxEvents(-1)
             outMod = cfg.getOutputModule("Merged")
             
-            
             # save it
             fileName = watchedDatasetName.replace('/','#') + '-workflow.xml'
             workflowPath = os.path.join(self.spec_dir, 'merges', fileName)
@@ -324,36 +343,10 @@ class WMBSAccountant:
                 os.mkdir(os.path.dirname(workflowPath))
             mergeWF.save(workflowPath) 
             self.newWF(workflowPath)
+            results.append(tuple(workflowPath, mergeWF))
             
-            # save wf to wmbs
-            workflow = Workflow(mergeWF.workflowName(), 
-                                self.label, self.wmbs).create()
-            self.new_workflows[mergeWF.workflowName()] = workflow
-            
-            #    //
-            #  //     Insert datasets
-            #//
-        
-            procDataset = Fileset(watchedDatasetName, self.wmbs).populate()
-            
-            fileset = Fileset(mergeWF.outputDatasets()[0].name(), self.wmbs, 
-                              is_open=True, parents=[procDataset]).create()
-            self.new_datasets[fileset.name] = fileset
+        return results
 
-
-
-            # set up subscription 
-            #  - assume only 1 input dataset for the moment
-            #  - assume parentage set by num input datasets move to workflow spec
-            #TODO: Revisit this!!!
-            sub = Subscription(procDataset, workflow=workflow,
-                                            type='Merge', wmbs=self.wmbs)
-            sub.create()
-            self.new_subs['%s:%s' % (workflow.spec, 'Merge')] = sub
-            logging.info('Merge subscription for %s on %s created' % 
-                                    (workflow.spec, procDataset.name))
-
-        return mergeWorkflow.values()
 
 
     def inputAvailable(self, fileset):

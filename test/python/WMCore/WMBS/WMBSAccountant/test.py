@@ -24,7 +24,7 @@ accountant = WMBSAccountant.WMBSAccountant({'dbName':'sqlite:///:memory:'},
 #accountant.wmbs.createTables()
 
 #null messanger object
-ms = lambda x,y,z: True
+ms = lambda x,y,z: None
 
 class WMBSAccountantTester(unittest.TestCase):
     """
@@ -40,27 +40,29 @@ class WMBSAccountantTester(unittest.TestCase):
         """
         Insert new workflow
         """
-    
-        self.wmbsAccountant.newWorkflow('test_workflow.xml')
 
         # will throw if not in db
         workflow = Workflow('StuartTest-RelValSingleElectronPt10-999',
-                                self.wmbsAccountant.label, self.wmbsAccountant.wmbs)
+                            'StuartTest-RelValSingleElectronPt10-999',
+                self.wmbsAccountant.label, dbfactory=self.wmbsAccountant.db)
         inputDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-RelVal-1209247429-IDEAL_V1-2nd-IDEAL_V1/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
+                               dbfactory=self.wmbsAccountant.db).populate()
         unmergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999-unmerged/GEN-SIM-DIGI-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
+                               dbfactory=self.wmbsAccountant.db).populate()
         mergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999/GEN-SIM-DIGI-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
+                               dbfactory=self.wmbsAccountant.db).populate()
+        # create sub
+        self.wmbsAccountant.createSubscription('test_workflow.xml')
+        
         procSub = Subscription(inputDataset, workflow, type='Processing',
-                                wmbs=self.wmbsAccountant.wmbs).load()
+                                dbfactory=self.wmbsAccountant.db).load()
         mergeSub = Subscription(unmergedDataset, workflow, type='Merge',
-                                wmbs=self.wmbsAccountant.wmbs).load()
+                                dbfactory=self.wmbsAccountant.db).load()
         
         
-        subs = self.wmbsAccountant.wmbs.listSubscriptionsOfType('Processing')
+        subs = unmergedDataset.subscriptions('Processing')
         self.assertEqual(len(subs), 1)
-        subs = self.wmbsAccountant.wmbs.listSubscriptionsOfType('Merge')
+        subs = mergedDataset.subscriptions('Merge')
         self.assertEqual(len(subs), 1)
 
     def test20JobSuccess(self):
@@ -68,23 +70,25 @@ class WMBSAccountantTester(unittest.TestCase):
         test handling of successful job report
         """
         
-        self.wmbsAccountant.jobSuccess('test_fjr_success.xml')
+        workflow = Workflow('StuartTest-RelValSingleElectronPt10-999', 'StuartTest-RelValSingleElectronPt10-999',
+                                self.wmbsAccountant.label, dbfactory=self.wmbsAccountant.db)
+        inputDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-RelVal-1209247429-IDEAL_V1-2nd-IDEAL_V1/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO',
+                               dbfactory=self.wmbsAccountant.db).populate()
+        unmergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999-unmerged/GEN-SIM-DIGI-RECO',
+                               dbfactory=self.wmbsAccountant.db).populate()
+        mergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999/GEN-SIM-DIGI-RECO',
+                               dbfactory=self.wmbsAccountant.db).populate()
+        procSub = Subscription(inputDataset, workflow, type='Processing',
+                                dbfactory=self.wmbsAccountant.db).load()
+        mergeSub = Subscription(unmergedDataset, workflow, type='Merge',
+                                dbfactory=self.wmbsAccountant.db).load()
+        
+        self.wmbsAccountant.handleJobReport('test_fjr_success.xml', [])
         
         # will throw if not in db
         file = File('/store/unmerged/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763/6467AF28-F31B-DD11-B1EF-003048772324.root',
-                    wmbs=self.wmbsAccountant.wmbs).load()
-        workflow = Workflow('StuartTest-RelValSingleElectronPt10-999',
-                                self.wmbsAccountant.label, self.wmbsAccountant.wmbs)
-        inputDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-RelVal-1209247429-IDEAL_V1-2nd-IDEAL_V1/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
-        unmergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999-unmerged/GEN-SIM-DIGI-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
-        mergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999/GEN-SIM-DIGI-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
-        procSub = Subscription(inputDataset, workflow, type='Processing',
-                                wmbs=self.wmbsAccountant.wmbs).load()
-        mergeSub = Subscription(unmergedDataset, workflow, type='Merge',
-                                wmbs=self.wmbsAccountant.wmbs).load()
+                    dbfactory=self.wmbsAccountant.db).load()
+        
         #should have 1 file ready for merging
         self.assertEqual(mergeSub.availableFiles(), [file])
         
@@ -94,23 +98,23 @@ class WMBSAccountantTester(unittest.TestCase):
         test handling of failure job report
         """
         
-        self.wmbsAccountant.jobFailure('test_fjr_fail.xml')
+        self.wmbsAccountant.handleJobReport('test_fjr_fail.xml', [])
     
         # will throw if not in db
         file = File('/store/unmerged/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763/6467AF28-F31B-DD11-B1EF-003048772324.root',
-                    wmbs=self.wmbsAccountant.wmbs).load()
-        workflow = Workflow('StuartTest-RelValSingleElectronPt10-999',
-                                self.wmbsAccountant.label, self.wmbsAccountant.wmbs)
+                    dbfactory=self.wmbsAccountant.db).load()
+        workflow = Workflow('StuartTest-RelValSingleElectronPt10-999', 'StuartTest-RelValSingleElectronPt10-999',
+                                self.wmbsAccountant.label, dbfactory=self.wmbsAccountant.db)
         inputDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-RelVal-1209247429-IDEAL_V1-2nd-IDEAL_V1/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
+                               dbfactory=self.wmbsAccountant.db).populate()
         unmergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999-unmerged/GEN-SIM-DIGI-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
+                               dbfactory=self.wmbsAccountant.db).populate()
         mergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999/GEN-SIM-DIGI-RECO',
-                               wmbs=self.wmbsAccountant.wmbs).populate()
+                               dbfactory=self.wmbsAccountant.db).populate()
         procSub = Subscription(inputDataset, workflow, type='Processing',
-                                wmbs=self.wmbsAccountant.wmbs).load()
+                                dbfactory=self.wmbsAccountant.db).load()
         mergeSub = Subscription(unmergedDataset, workflow, type='Merge',
-                                wmbs=self.wmbsAccountant.wmbs).load()
+                                dbfactory=self.wmbsAccountant.db).load()
         
         #should have 1 failed file
         self.assertEqual(mergeSub.failedFiles(), [file])

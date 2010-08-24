@@ -1,0 +1,194 @@
+function insertMastHead (page, title, stylish){
+	if (!stylish){
+	            doStyle(page);
+	}
+        document.body.insertBefore(buildMenu(page,title), document.body.firstChild);
+}			
+
+function buildMenu(page,title){
+        var navTable = document.createElement("table");
+        navTable.setAttribute("id","masthead_table");
+        var tableTR1 = document.createElement("tr");
+        var tr1_td1  = document.createElement("td");
+        var tr1_td2  = document.createElement("td");
+
+	var navbar = document.createElement ("div");
+        navbar.setAttribute("id","navcontainer");
+
+	sites = menuText();
+	var mainUlL = document.createElement ("ul");
+
+	for ( i = 0; i < sites.length; i++) {
+		var item = document.createElement ("li");
+		item.setAttribute ("id",sites[i].id);
+                if (sites[i].id!=page) {
+	            YAHOO.util.Dom.addClass(item ,"masthead_plain");
+                } else {
+	            YAHOO.util.Dom.addClass(item , "masthead_"+page);
+                }
+		var a = document.createElement ("a");
+		a.setAttribute ("href", sites[i].link);
+		a.setAttribute ("title", sites[i].title);
+		changeText (a, sites[i].label);
+		item.appendChild (a);
+		mainUlL.appendChild (item);
+	}
+
+        navbar.appendChild(mainUlL);
+        tr1_td1.appendChild(navbar);
+        tableTR1.appendChild(tr1_td1);
+
+        var aLogin = document.createElement("span");
+        try {
+           addLoginObject(aLogin);
+        }  catch(err) {
+           changeText(aLogin,"Login N/A");
+        }
+        tr1_td2.appendChild(aLogin);
+        tr1_td2.setAttribute("align","right"); 
+        tableTR1.appendChild(tr1_td2);
+
+        var tableTR2= document.createElement("tr");
+        var tr2_td1 = document.createElement("td");
+        YAHOO.util.Dom.addClass(tr2_td1 , "masthead_"+page);
+        var subMasthead_left=createSiteMasthead(page,title);
+        tr2_td1.appendChild(subMasthead_left);
+        tableTR2.appendChild(tr2_td1);
+
+        var tr2_td2 = document.createElement("td");
+        YAHOO.util.Dom.addClass(tr2_td2 , "masthead_"+page);
+        tr2_td2.setAttribute("align","right");
+        var subMasthead_right=createSiteMasthead(page,title,"right");
+        tr2_td2.appendChild(subMasthead_right);
+        tableTR2.appendChild(tr2_td2);
+
+        navTable.appendChild(tableTR1);
+        navTable.appendChild(tableTR2);
+
+	return navTable;
+}
+
+function createSiteMasthead(page,title,position){
+        YAHOO.namespace("cms.dmwt");
+	var footer = document.createElement ("div");
+	var leftUl = document.createElement ("ul");
+        leftUl.setAttribute("style","margin:0; padding: 0; list-style-type: none;");
+	sites = footerMenuText();
+	var item = document.createElement ("li");
+        item.setAttribute("style","display:inline;text-decoration: none;");
+	changeText (item, title);
+	leftUl.appendChild (item);
+	var l = 0;
+	for ( i = 0; i < sites.length; i++){
+            if (sites[i].position == position) {
+		var item = document.createElement("li");
+                item.setAttribute("style","display:inline;text-decoration: none;");
+		var a = document.createElement("a");
+		a.setAttribute ("href", sites[i].link);
+		a.setAttribute ("title", sites[i].title);
+		changeText (a, sites[i].label);
+                if ( l > 0 ) {
+                        changeText (item, " - ");
+                }
+                item.appendChild (a);		
+                leftUl.appendChild (item);
+                l++;
+            }
+	}
+	footer.appendChild(leftUl);
+	return footer
+}
+function addLoginObject (item){
+	// Login will be an object containing name, role(s), and login type (cert/HN)
+	// Some call to Security Module, page should be enough to work out role
+	// Will show "You are logged in as Simon Metson | more"
+	// Clicking on "more" will bring up a panel with information about your login (cert/HN, roles) and a logout button.
+	// If not logged in will show "Click here to login"
+	//return "You are logged in as Simon Metson | more";
+    redirectionLocation = window.location.href;
+	var callback = {
+	    success: function (o) {
+	        user = o.responseXML.getElementsByTagName ("user")[0];
+	        dn = user.getAttribute ("dn")
+	        if (!dn)
+	        {
+	            window.location.href = "/base" + 
+	                                   "/SecurityModule/logout?redirect=" + window.location.href;
+	        }else if ( dn == "None" || dn == "guest" || dn == "Unknown" )
+	        {
+            	var loginObject = "<span class='LoginObject'>";
+            	loginObject += "<a href='/base/SecurityModule/login?";
+            	loginObject += "requestedPage=" + window.location.href + "'>";
+            	loginObject += "Login</a></span>";	        
+                item.innerHTML = loginObject;	        
+	        }
+	        else
+	        {
+    	        var loginObject = "<span class='LoginObject'>" + dn + " &#187; <span>";
+    	        loginObject += "<a href=\"/base/SecurityModule/logout?redirect=";
+    	        loginObject += redirectionLocation;
+    	        loginObject += "\">logout</a>";
+                item.innerHTML = loginObject;
+            }
+	    },
+	    failure: function (o) {
+        	var loginObject = "<span class='LoginObject'>You are not logged in, click ";
+        	loginObject += "<a href='/base/SecurityModule/login?";
+        	loginObject += "requestedPage=" + redirectionLocation + "'>";
+        	loginObject += "here</a> to login.</span>";	        
+            item.innerHTML = loginObject;	        
+	    }
+	};
+
+	YAHOO.util.Connect.asyncRequest ("get", "/base/SecurityModule/userInfo", callback);
+}
+
+function doStyle(page){
+//put into loop
+	var cssNode = document.createElement('link');
+	cssNode.setAttribute('rel', 'stylesheet');
+	cssNode.setAttribute('type', 'text/css');
+	cssNode.setAttribute('href', '/base/Common/css/dmwt_main_table.css');	
+	document.getElementsByTagName('head')[0].appendChild(cssNode); 
+	
+	cssNode = document.createElement('link');
+	cssNode.setAttribute('rel', 'stylesheet');
+	cssNode.setAttribute('type', 'text/css');
+	var ie = (document.all) ? true : false;
+	if (ie) {
+		cssNode.setAttribute('href', '/base/Common/css/dmwt_masthead_ie.css');
+	} else { 
+		cssNode.setAttribute('href', '/base/Common/css/dmwt_masthead.css');
+	}
+	document.getElementsByTagName('head')[0].appendChild(cssNode); 
+	
+	cssNode = document.createElement('link');
+	cssNode.setAttribute('rel', 'stylesheet');
+	cssNode.setAttribute('type', 'text/css');
+	cssNode.setAttribute('href', '/base/Common/css/dmwt_masthead_table_' + page + '.css');
+	document.getElementsByTagName('head')[0].appendChild(cssNode); 
+}
+	
+function menuText(){
+	//One day this will come from a database or something...
+	return [/*{title: "ASAP - Job submission and monitoring. Currently not available.", link: "na", label: "ASAP"}, */
+	{title: "CMS Dashboard - Monitorring of jobs, transfers, IO rate, Tier 0.", link: "http://arda-dashboard.cern.ch/cms/", label: "Dashboard", id: "dashboard"}, 
+	{title: "DBS/DLS Discovery - Data set book keeping and location.", link: "/dbs_discovery/", label: "DBS Discovery", id:"dbs"},
+	//{title: "ProdRequest - Request large scale official production of samples.", link: "/prodrequest/", label: "ProdRequest", id:"prodrequest"},
+	{title: "Data placement, transfer, monitoring", link: "/base/Common/datatransfer", label: "DataTransfer", id:"phedex"},
+	{title: "SiteDB - Site information and aggregate monitoring", link: "/sitedb/sitelist", label: "SiteDB", id: "sitedb"},
+	{title: "CondDB - Conditions Database", link: "/conddb/", label: "CondDB", id: "conddb"},
+	{title: "Web Tools Support - File a bug report, ask for help, read our FAQ", link: "/base/Common/help", label: "Support", id: "help"}]
+}
+
+function changeText (elem, text){
+	var hasInnerText = (document.getElementsByTagName("body")[0].innerText != undefined) ? true : false;
+	if (!hasInnerText)
+	{
+		elem.textContent = text;
+	}
+	else
+	{
+		elem.innerText = text;
+	}
+}

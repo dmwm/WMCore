@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_unit.py,v 1.1 2008/06/09 16:18:37 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: fileset_unit.py,v 1.2 2008/06/10 11:08:11 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from pylint import lint
@@ -17,7 +17,7 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMBS.Actions.CreateWMBS import CreateWMBSAction
 #pylint --rcfile=../../../../standards/.pylintrc  ../../../../src/python/WMCore/WMBS/Fileset.py
 
-class BaseFilesetTestCase(object):
+class BaseFilesetTestCase(unittest.TestCase):
     def setUp(self):
         "make a logger instance"
         #level=logging.ERROR
@@ -58,7 +58,7 @@ class BaseFilesetTestCase(object):
         self.testlogger.debug(os.remove('filesettest.lite'))
         self.testlogger.debug("WMBS SQLite database deleted")
 
-class FilesetExistsTestCase(BaseFilesetTestCase, unittest.TestCase):
+class FilesetExistsTestCase(BaseFilesetTestCase):
     def setUp(self):
         BaseFilesetTestCase.setUp(self)
         

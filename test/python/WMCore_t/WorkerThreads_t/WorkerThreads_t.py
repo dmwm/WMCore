@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.1 2009/02/05 22:40:10 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.2 2009/02/06 18:01:59 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import threading
@@ -64,7 +64,7 @@ class DummyWorker2(BaseWorkerThread):
     def algorithm(self, parameters):
         pass
 
-class WorkerThreadManagerTest(unittest.TestCase):
+class WorkerThreadsTest(unittest.TestCase):
     """    
     Unit tests for WorkerThreads
     """
@@ -159,6 +159,13 @@ class WorkerThreadManagerTest(unittest.TestCase):
         manager = WorkerThreadManager(compDummy)
         manager.addWorker(DummyWorker2(), 1)
         manager.terminateWorkers()
+        
+    def runTest(self):
+        """
+        Run tests
+        """
+        self.testA()
+        self.testB()
 
 if __name__ == "__main__":
     unittest.main()

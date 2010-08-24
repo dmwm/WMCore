@@ -9,7 +9,7 @@ at some high value.
 Remove Oracle reserved words (e.g. size) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.4 2008/10/22 18:00:51 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.5 2008/10/24 14:57:56 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -147,6 +147,18 @@ class CreateWMBS(CreateWMBSBase):
              constraint pk_subscription primary key (id)
 )""" 
         sequence_tables.append('wmbs_subscription') 
+
+        self.create["09wmbs_subscription_location"] = \
+          """CREATE TABLE wmbs_subscription_location (
+             subscription     INT(11)      NOT NULL,
+             location         INT(11)      NOT NULL,
+             valid            CHAR(1) CHECK (open IN ( 'Y', 'N' )) not null,
+             constraint fk_subs_loc_subscription
+                 FOREIGN KEY(subscription)  REFERENCES wmbs_subscription(id)
+                   ON DELETE CASCADE,
+             constraint fk_subs_loc_location
+                 FOREIGN KEY(location)     REFERENCES wmbs_location(id)
+                   ON DELETE CASCADE)"""
 
         self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (

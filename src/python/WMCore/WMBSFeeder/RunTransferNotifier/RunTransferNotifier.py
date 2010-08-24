@@ -28,11 +28,9 @@ TODO:   * Make parent relations condition on actually requiring parent relation
              -- c.f. Talk with Simon about fileset name to specify datasets
         * DQ flags from DBS?
         * Finish tracking down DBS problems
-        * File location saving - move to save method?
-        * setlocation requires double save for new file - move to save method!
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.9 2008/10/30 10:48:10 jacksonj Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.10 2008/10/30 12:20:10 jacksonj Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import logging
 
@@ -129,9 +127,7 @@ class RunTransferNotifier(FeederImpl):
         # Do per fileset work, abandon fileset processing on exception
         for fileset in filesets:
             ds = fileset.name
-            newFilesetFiles = []
             watchCompleteFiles = []
-            fileLocations = []
             try:
                 # Do per run work
                 for watch in self.watchedRuns:
@@ -167,8 +163,8 @@ class RunTransferNotifier(FeederImpl):
                             # First add parent file
                             if fileset.requireParents:
                                 parentFile = File(lfn=fi["file.parent"])
-                                parentFile.setLocation(newSites) # Will fail?
-                                parentFile.save() # I don't want a double save..
+                                parentFile.save()
+                                parentFile.setLocation(newSites)
                                 
                             # Add actual file
                             fileToAdd = File(lfn=file, size=fi["file.size"],
@@ -179,30 +175,24 @@ class RunTransferNotifier(FeederImpl):
                                 fileToAdd.addParent(fi["file.parent"])
     
                             # Add new locations
-                            fileLocations.append([fileToAdd, newSites])
+                            fileToAdd.setLocations(newSites)
                                 
                             # Add the file to the new file list
-                            newFilesetFiles.append(fileToAdd)
+                            fileset.addFile(fileToAdd)
                         
                     # Add the site info to the watcher list
                     watchCompleteFiles.append([watch, ds, newSites])
-            except:
-                # Reset the file and watch list so nothing gets added to the
-                # fileset or completed datasets records
-                newFilesetFiles = []
-                watchCompleteFiles = []
-                fileLocations = []
                 
-            # Add all new files to the fileset, locations to files and completed
-            # dataset info. Would like a global Trans object otherwise can be
-            # left with some files being picked up by Splitter, and some not.
-            # Only a problem for location information - why not save it in in
-            # save method rather than on addition?
-            fileset.addFile(newFilesetFiles)
+                # Commit the fileset
+                fileset.commit()
+                fileset.close()
+            except:
+                # Reset the watch list so we re-evaluate next call
+                watchCompleteFiles = []
+                
+            # Add completed sites / datasets as required
             for a in watchCompleteFiles:
                 a[0].addCompletedNodes(a[1], a[2])
-            for a in fileLocations:
-                a[0].setLocation(a[1])
             
         # Purge old runs
         self.purgeWatchedRuns()

@@ -3,6 +3,7 @@ from WMCore.WMBS.MySQL.Base import MySQLBase
 class CreateWMBS(MySQLBase):
     def __init__(self, logger, dbinterface):
         MySQLBase.__init__(self, logger, dbinterface)
+        self.create = {}
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id int(11) NOT NULL AUTO_INCREMENT,
                 name varchar(255) NOT NULL,  
@@ -67,23 +68,23 @@ class CreateWMBS(MySQLBase):
                     ON DELETE CASCADE,
                 FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                     ON DELETE CASCADE)"""
-        self.create['wmbs_sub_files_acquired'] = """
-CREATE TABLE wmbs_sub_files_acquired (
-    subscription INT(11) NOT NULL,
-    file         INT(11) NOT NULL,
-    FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-        ON DELETE CASCADE,
-    FOREIGN KEY (file) REFERENCES wmbs_file(id))
+        self.create['wmbs_sub_files_acquired'] = """CREATE TABLE 
+    wmbs_sub_files_acquired (
+        subscription INT(11) NOT NULL,
+        file         INT(11) NOT NULL,
+        FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+            ON DELETE CASCADE,
+        FOREIGN KEY (file) REFERENCES wmbs_file(id))
 """
-        self.create['wmbs_sub_files_failed'] = """
-CREATE TABLE wmbs_sub_files_failed (
+        self.create['wmbs_sub_files_failed'] = """CREATE TABLE 
+wmbs_sub_files_failed (
     subscription INT(11) NOT NULL,
     file         INT(11) NOT NULL,
     FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
         ON DELETE CASCADE,
     FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
-        self.create['wmbs_sub_files_complete'] = """
-CREATE TABLE wmbs_sub_files_complete (
+        self.create['wmbs_sub_files_complete'] = """CREATE TABLE 
+wmbs_sub_files_complete (
     subscription INT(11) NOT NULL,
     file         INT(11) NOT NULL,
     FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
@@ -106,8 +107,11 @@ CREATE TABLE wmbs_sub_files_complete (
 
     def execute(self, fileset = None, conn = None, transaction = False):
         try:
-            for i in self.create.values():
-                self.dbi.processData(i, conn = conn, transaction = transaction)
+            keys = self.create.keys()
+            self.logger.debug( keys )
+            
+            self.dbi.processData(self.create.values(), conn = conn, transaction = transaction)
+            print "done processing"
             return True
-        except:
+        except Exception, e:
             return False

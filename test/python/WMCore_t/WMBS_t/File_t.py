@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.16 2009/01/26 14:02:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: File_t.py,v 1.17 2009/01/26 20:53:30 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import logging
@@ -103,7 +103,7 @@ class FileTest(unittest.TestCase):
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
 
-	testFile.addRun(Run(1, *[45]))
+        testFile.addRun(Run(1, *[45]))
         testFile.create()
 
         assert testFile.exists() > 0, \
@@ -133,7 +133,7 @@ class FileTest(unittest.TestCase):
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
 
-	testFile.addRun(Run(1, *[45]))
+        testFile.addRun(Run(1, *[45]))
         testFile.create()
 
         assert testFile.exists() > 0, \
@@ -161,7 +161,7 @@ class FileTest(unittest.TestCase):
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
 
-	testFile.addRun(Run(1, *[45]))
+        testFile.addRun(Run(1, *[45]))
         testFile.create()
 
         assert testFile.exists() > 0, \
@@ -190,13 +190,13 @@ class FileTest(unittest.TestCase):
         """
         testFileParent = File(lfn = "/this/is/a/parent/lfn", size = 1024,
                               events = 20, cksum=1111)
-	testFileParent.addRun(Run(1, *[45]))
+        testFileParent.addRun(Run(1, *[45]))
         testFileParent.create()
 
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=222)
-	testFile.addRun(Run(1, *[45]))
-	testFile.addRun(Run(2, *[46, 47]))
-	testFile.addRun(Run(2, *[48]))
+        testFile.addRun(Run(1, *[45]))
+        testFile.addRun(Run(2, *[46, 47]))
+        testFile.addRun(Run(2, *[47, 48]))
         testFile.create()
         testFile.setLocation(se = "se1.fnal.gov", immediateSave = False)
         testFile.setLocation(se = "se1.cern.ch", immediateSave = False)
@@ -217,9 +217,13 @@ class FileTest(unittest.TestCase):
         
         assert info[4] == testFile["cksum"], \
                "ERROR: File returned wrong cksum"
-	assert len(info[5]) == 3, \
-		"ERROR: File returned wrong runs"
-
+        
+        assert len(info[5]) == 2, \
+		      "ERROR: File returned wrong runs"
+        
+        assert info[5] == [Run(1, *[45]), Run(2, *[46, 47, 48])], \
+               "Error: Run hasn't been combined correctly"
+               
         assert len(info[6]) == 2, \
                "ERROR: File returned wrong locations"
 
@@ -247,7 +251,7 @@ class FileTest(unittest.TestCase):
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                                events = 20, cksum = 1)
-	testFileParentA.addRun(Run(1, *[45]))
+        testFileParentA.addRun(Run(1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
                                events = 20, cksum = 2)
         testFileParentB.addRun(Run(1, *[45]))
@@ -595,5 +599,18 @@ class FileTest(unittest.TestCase):
               "ERROR: Some locations are missing"        
         return
 
+    def testAddRunSet(self):
+        
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFile.create()
+        runSet = Set()
+        runSet.add(Run( 1, *[45]))
+        runSet.add(Run( 2, *[67, 68]))
+        testFile.addRunSet(runSet)
+        
+        assert (runSet - testFile["runs"]) == Set(), \
+            "Error: addRunSet is not updating set correctly"
+         
 if __name__ == "__main__":
     unittest.main() 

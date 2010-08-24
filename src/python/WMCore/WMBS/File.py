@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.42 2009/01/29 16:44:41 sryu Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: File.py,v 1.43 2009/02/03 22:32:12 sryu Exp $"
+__version__ = "$Revision: 1.43 $"
 
 from sets import Set
 
@@ -86,7 +86,7 @@ class File(WMBSBase, WMFile):
         result.sort()   # ensure SecondaryInputFiles are in order
         return [x['lfn'] for x in result]
     
-    def getAncestorLFNs(self, level=2):
+    def getAncestors(self, level=2, type="id"):
         """
         Get ancestorLFNs. it will access directly DAO.
         level indicates the level of ancestors. default value is 2 
@@ -105,13 +105,68 @@ class File(WMBSBase, WMFile):
         if self['id'] < 0:
             self.load()
         idList = _getAncestorIDs(self['id'], level)
-        ancestorLFNs = []
-        for fileID in idList:
-            anceFile = File(id=fileID)
-            anceFile.load()
-            ancestorLFNs.append(anceFile['lfn'])
-            
-        return ancestorLFNs
+        
+        if type == "id":
+            return idList
+        elif type == "lfn":
+            ancestorLFNs = []
+            for fileID in idList:
+                anceFile = File(id=fileID)
+                anceFile.load()
+                ancestorLFNs.append(anceFile['lfn'])
+                
+            return ancestorLFNs
+        elif type == "file":
+            ancestors = []
+            for fileID in idList:
+                anceFile = File(id=fileID)
+                anceFile.load()
+                ancestors.append(anceFile)
+                
+            return ancestors
+
+        return idList
+    
+    def getDescendants(self, level=2, type="id"):
+        """
+        Get descendants. it will access directly DAO.
+        level indicates the level of ancestors. default value is 2 
+        (grand parents). level should be bigger than >= 1
+        """
+        def _getDescendantIDs(ids, level):
+            action = self.daofactory(classname = "Files.GetChildIDsByID")
+            childIDs = action.execute(ids, conn = self.getReadDBConn(),
+                                       transaction = self.existingTransaction())
+            childIDs.sort()
+            if level == 1 or len(childIDs) == 0:
+                return childIDs
+            else:
+                return _getDescendantIDs(childIDs, level-1)
+        
+        if self['id'] < 0:
+            self.load()
+        idList = _getDescendantIDs(self['id'], level)
+        
+        if type == "id":
+            return idList
+        
+        elif type == "lfn":
+            descendantLFNs = []
+            for fileID in idList:
+                descFile = File(id=fileID)
+                descFile.load()
+                descendantLFNs.append(descFile['lfn'])
+            return descendantLFNs
+        
+        elif type == "file":
+            descendants = []
+            for fileID in idList:
+                descFile = File(id=fileID)
+                descFile.load()
+                descendants.append(descFile)
+            return descendants
+        
+        return idList
     
     def load(self):
         """

@@ -40,6 +40,16 @@ message = {"FeederType" : "runTransferNotifier", "DataSetName" : "a name",\
 
 testFeederManager.handleMessage("AddDatasetWatch", pickle.dumps(message))
 
+message = {"FeederType" : "otherType", "DataSetName" : "a name",\
+           "RequireParents" : False, "CallbackId" : "0"}
+
+testFeederManager.handleMessage("AddDatasetWatch", pickle.dumps(message))
+
+message = {"FeederType" : "runTransferNotifier", "DataSetName" : "a name",\
+           "RequireParents" : False, "CallbackId" : "0"}
+
+testFeederManager.handleMessage("AddDatasetWatch", pickle.dumps(message))
+
 # Wait a bit
 time.sleep(5)
 

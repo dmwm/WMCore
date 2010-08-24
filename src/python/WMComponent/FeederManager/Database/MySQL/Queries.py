@@ -12,9 +12,9 @@ FeederManage
 import time
 
 __revision__ = \
-    "$Id: Queries.py,v 1.1 2009/02/02 23:06:50 jacksonj Exp $"
+    "$Id: Queries.py,v 1.2 2009/02/02 23:37:35 jacksonj Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "james.jackson@cern.ch"
 
@@ -58,6 +58,15 @@ VALUES (:type, :state, :time)
 SELECT COUNT(*) FROM managed_feeders WHERE feeder_type = :type"""
         result = self.execute(sqlStr, {'type':feederType})
         return self.formatOne(result)[0] != 0
+    
+    def getFeederId(self, feederType):
+        """
+        Gets the ID for a given feeder
+        """
+        sqlStr = """
+SELECT id from managed_feeders WHERE feeder_type = :type"""
+        result = self.execute(sqlStr, {"type" : feederType})
+        return self.formatOne(result)[0]
 
     def execute(self, sqlStr, args):
         """"

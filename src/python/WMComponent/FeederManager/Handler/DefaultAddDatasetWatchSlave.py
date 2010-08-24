@@ -5,8 +5,8 @@ Slave used for default AddDatasetWatch behavior
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultAddDatasetWatchSlave.py,v 1.1 2009/02/02 23:06:49 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: DefaultAddDatasetWatchSlave.py,v 1.2 2009/02/02 23:37:37 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -36,23 +36,31 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
         myThread = threading.currentThread()
         myThread.runningFeedersLock.acquire()
         
-        logging.info(str(myThread.runningFeeders))
-        logging.info(message["FeederType"])
+        # Get feeder type
+        feederType = message["FeederType"]
         
         # Check if there is a running feeder
-        if myThread.runningFeeders.has_key(message["FeederType"]):
-            logging.info("HAVE FEEDER " + message["FeederType"])
+        if myThread.runningFeeders.has_key(feederType):
+            logging.info("HAVE FEEDER " + feederType + " RUNNING")
+            logging.info(myThread.runningFeeders[feederType])
         else:
-            logging.info("NO FEEDER " + message["FeederType"])
-            ret = self.queries.checkFeeder(message["FeederType"])
-            logging.info(str(type(ret)))
-            logging.info(str(ret))
+            logging.info("NO FEEDER " + feederType + " RUNNING")
             
-            # Create feeder
-            #self.queries.addFeeder(message["FeederType"], "StatePath")
+            # Check if we have a feeder in DB
+            if self.queries.checkFeeder(feederType):
+                # Have feeder, get info
+                logging.info("Getting Feeder from DB")
+                feederId = self.queries.getFeederId(feederType)
+                logging.info(feederId)
+                myThread.runningFeeders[feederType] = feederId
+            else:
+                # Create feeder
+                logging.info("Adding Feeder to DB")
+                self.queries.addFeeder(feederType, "StatePath")
+                feederId = self.queries.getFeederId(feederType)
+                logging.info(feederId)
+                myThread.runningFeeders[feederType] = feederId
             
-            #ret = self.queries.checkFeeder(message["FeederType"])
-            #logging.info(str(type(ret)))
-            #logging.info(str(ret))
+        myThread.runningFeedersLock.release()
         
         myThread.msgService.finish()

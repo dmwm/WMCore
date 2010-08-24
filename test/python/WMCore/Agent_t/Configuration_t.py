@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#pylint: disable-msg=E1101,C0103,R0902
 
 import unittest
 import os

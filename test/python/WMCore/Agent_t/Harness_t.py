@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101,C0103,R0902
 """
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.5 2008/09/05 12:41:33 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Harness_t.py,v 1.6 2008/09/08 08:27:40 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging

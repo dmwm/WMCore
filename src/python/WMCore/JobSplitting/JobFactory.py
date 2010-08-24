@@ -32,7 +32,15 @@ class JobFactory(WMObject):
         
         group.add(self.algorithm(job_instance=job_instance, jobname=basename,
                                   *args, **kwargs))
+        # Acquire the files used in the job group, job groups should run on 
+        # complete files.
+        group.recordAcquire()
         return group
     
     def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):
-        return Set([job_instance(name=jobname, files=self.subscription.availableFiles())])
+        """
+        a splitting algorithm to be overridden by a proper algorithm that does 
+        something, anything!
+        """
+        return Set([job_instance(name=jobname, 
+                                 files=self.subscription.availableFiles())])

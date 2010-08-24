@@ -7,8 +7,8 @@ and one per job type.
 
 """
 
-__revision__ = "$Id: FileBased_unit.py,v 1.3 2008/09/15 10:21:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FileBased_unit.py,v 1.4 2008/09/18 22:41:14 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 from sets import Set
 import unittest, logging, os, commands, random, datetime, math
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
@@ -33,9 +33,15 @@ class FileBasedGenericObjectTest(unittest.TestCase):
     A test of the job splitting algorithm "FileBased" using generic WMObjects
     """    
     def setUp(self):
-        self.fileset = Fileset(name='MyCoolFiles')
+        logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename=__file__.replace('.py','.log'),
+                    filemode='w')
+        self.testlogger = logging.getLogger('wmbs_FileBasedGenericObjectTest')
+        self.fileset = Fileset(name='MyCoolFiles', logger = self.testlogger)
         
-        for i in range(1, 993):
+        for i in range(0, 993):
             file = File("/store/data/Electrons/1234/5678/k123ljhkj2%s.root" % i, 
                              1000, 2000, 10 + i, 12312)
             self.fileset.addFile(file)
@@ -116,19 +122,19 @@ class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
         logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='%s.log' % __file__,
+                    filename=__file__.replace('.py','.log'),
                     filemode='w')
         self.testlogger = logging.getLogger('wmbs_FileBasedWMBSObjectTest')
         self.tearDown()
         
-        self.dbf = DBFactory(logging.getLogger('wmbs_sqlite'), 
-                             'sqlite:///FileBasedWMBSObjectTest.lite')
+        self.dbf = DBFactory(logging.getLogger('wmbs_mysql'), 
+                             'mysql://metson@localhost/wmbs')
         daofactory = DAOFactory(package='WMCore.WMBS', 
-                                logger=logging.getLogger('wmbs_sqlite'), 
+                                logger=logging.getLogger('wmbs_sql'), 
                                 dbinterface=self.dbf.connect())
         
-        theSQLiteCreator = daofactory(classname='CreateWMBS')
-        assert not theSQLiteCreator.execute(None, False), "could not create database instance"
+        theCreator = daofactory(classname='CreateWMBS')
+        assert not theCreator.execute(), "could not create database instance"
 
         self.fileset = WMBSFileset(name='MyCoolFiles', 
                                    logger=logging.getLogger('wmbs_fileset'), 
@@ -136,20 +142,31 @@ class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
 
         self.fileset.create()
 
-        print "Creating file:"
-        for i in range(1, 993):
-            print "  %d" % i
+        filecreate = datetime.datetime.now()
+        print "Creating files - %s" % filecreate
+        
+        for i in range(0, 993):
+            #if i/50. == i/50:
+            #    print i
             file = WMBSFile(lfn="/store/data/Electrons/1234/5678/h1%s.root" % i, 
                              size=1000, events=2000, lumi=10 + i, run=12312, 
                              logger=logging.getLogger('wmbs_file'), 
                              dbfactory=self.dbf)
+
             self.fileset.addFile(file)
-
+            
+        startsave = datetime.datetime.now()
+        print "Saving Fileset - %s" % startsave
         self.fileset.commit()
-
-        work = WMBSWorkflow(logger=logging.getLogger('wmbs_workflow'), 
+        complete = datetime.datetime.now()
+        assert len(self.fileset.listLFNs()) == 993, "Fileset has wrong number of files: %s"\
+                            % len(self.fileset.listLFNs())
+        work = WMBSWorkflow(spec='coolworkflow0001.xml', owner='JoeBloggs', 
+                            name='My Cool Workflow',
+                            logger=logging.getLogger('wmbs_workflow'), 
                             dbfactory=self.dbf)
-
+        work.create()
+        assert work.exists()
         self.subscription = WMBSSubscription(fileset = self.fileset, 
                 workflow = work, 
                 split_algo = 'FileBased', 
@@ -157,13 +174,15 @@ class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
                 logger=logging.getLogger('wmbs_subscription'), 
                 dbfactory=self.dbf)
         self.subscription.create()
+        
         assert self.subscription.exists()
-        print len(self.subscription.getFileset().listFiles()), \
-                len(self.subscription.availableFiles())
+        
         assert len(self.subscription.getFileset().listFiles()) == \
                 len(self.subscription.availableFiles())
     
     def tearDown(self):
+       # commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs')
+       # commands.getstatusoutput('mysqladmin -u root create wmbs')
         try:
             self.testlogger.debug(os.remove('FileBasedWMBSObjectTest.lite'))
         except OSError:

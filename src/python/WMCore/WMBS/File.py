@@ -6,17 +6,19 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.2 2008/05/02 13:47:28 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: File.py,v 1.3 2008/05/02 14:28:46 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 class File(object):
-    lfn = ''
+    """
+    A simple object representing a file in WMBS
+    """
     id = -1
-    size = 0 
-    events = 0
-    run = 0
-    lumi = 0
-    
+    lfn = ''
+    size = ''
+    events = ''
+    run = ''
+    lumi = ''
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0):
         """
         Create the file object

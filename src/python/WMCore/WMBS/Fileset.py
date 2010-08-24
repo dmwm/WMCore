@@ -11,14 +11,22 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.2 2008/05/02 13:48:27 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Fileset.py,v 1.3 2008/05/02 14:28:46 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.Factory import SQLFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Subscription import Subscription
 
 class Fileset(object):
+    """
+    A simple object representing a Fileset in WMBS.
+
+    A fileset is a collection of files for processing. This could be a 
+    complete block, a block in transfer, some user defined dataset etc.
+    
+    workflow + fileset = subscription
+    
+    """
     def __init__(self, name, wmbs):
         """
         Create an empty fileset
@@ -94,26 +102,29 @@ class Fileset(object):
         self.newfiles = []
         self.populate()
     
-    def createSubscription(self, workflow=None, type='processing'):
+    def createSubscription(self, workflow=None, subtype='processing'):
         """
         Create a subscription for the fileset using the given workflow 
         """
-        s = Subscription(fileset = self, workflow = workflow, type = type, wmbs = self.wmbs)
+        s = Subscription(fileset = self, workflow = workflow, 
+                         type = subtype, wmbs = self.wmbs)
         s.create()
         return s
         
-    def subscriptions(self, type="processing"):
+    def subscriptions(self, subtype="processing"):
         """
         Return all subscriptions for a fileset
         """
-        type = type.lower()
+        subtype = subtype.lower()
         #TODO: types should come from DB
-        if type in ("merge", "processing"):
+        if subtype in ("merge", "processing"):
             #TODO: change subscriptionsForFileset to return the workflow spec
-            subscriptions = self.wmbs.subscriptionsForFileset(self.name, type)
+            subscriptions = self.wmbs.subscriptionsForFileset(self.name, 
+                                                              subtype)
             for i in subscriptions:
                 print i.fetchall()
         else:
-            self.wmbs.logger.exception('%s is an unknown subscription type' % type)
-            raise TypeError
+            self.wmbs.logger.exception('%s is an unknown subscription type' % 
+                                       subtype)
+            raise TypeError, '%s is an unknown subscription type' % subtype
         

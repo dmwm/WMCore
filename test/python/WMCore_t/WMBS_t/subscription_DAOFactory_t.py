@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_t.py,v 1.1 2008/09/25 13:31:27 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: subscription_DAOFactory_t.py,v 1.2 2008/10/28 17:40:11 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands, random, datetime
 import sys, traceback
@@ -154,10 +154,10 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
         testlogger = logging.getLogger('testFileCycle')
         self.createSubs(testlogger)
         filelist = []
-        num_files = 1000
+        num_files = 10
         
         c = 0
-        for dbi in [self.dbf1, self.dbf2]:
+        for dbi in [self.dbf1]:#, self.dbf2]:
             for i in range(0,num_files):
                 f = File(lfn="/store/data/Electrons/1234/5678/%s.root" % i, 
                          size=1000, 
@@ -177,7 +177,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
         
         subscriptions = []
         c = 0
-        for dbi in [self.dbf1, self.dbf2]:
+        for dbi in [self.dbf1]:#, self.dbf2]:
             subscriptions.append(Subscription(fileset = self.fileset[c], 
                                             workflow = self.workflow[c], 
                                             logger=testlogger, 
@@ -214,19 +214,23 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
                 complete = subscriptions[c].completedFiles()
                 failed = subscriptions[c].failedFiles()
                 if len(complete) > 0:
-                    id = complete.pop()
-                    testlogger.debug(id)
-                    completedfile = File(id = id, dbfactory = dbi, logger = testlogger)
+                    completedfile = complete.pop()
+                    lfn = completedfile['lfn']
+                    testlogger.debug(lfn)
                     completedfile.load()
                     testlogger.debug(completedfile.getInfo())
-                    assert completedfile.dict['id'] == id, "File did not load correctly - wrong ID!"
+                    assert completedfile.dict['lfn'] == lfn,\
+                     "File did not load correctly - wrong lfn! %s, %s" % \
+                     (lfn, completedfile.dict['lfn'])
                 if len(failed) > 0:
-                    id = failed.pop()
-                    testlogger.debug(id)
-                    failedfile = File(id = id, dbfactory = dbi, logger = testlogger)
+                    failedfile = complete.pop()
+                    lfn = failedfile['lfn']
+                    testlogger.debug(lfn)
                     failedfile.load()
                     testlogger.debug(failedfile.getInfo())
-                    assert failedfile.dict['id'] == id, "File did not load correctly - wrong ID!"
+                    assert failedfile.dict['lfn'] == lfn,\
+                     "File did not load correctly - wrong lfn! %s, %s" % \
+                     (lfn, failedfile.dict['lfn'])
             c = c + 1
         
 if __name__ == "__main__":

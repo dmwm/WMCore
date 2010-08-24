@@ -5,7 +5,8 @@ _JobGroup_
 Definition of JobGroup:
     Set of jobs running on same input file for same Workflow
     Set of jobs for a single subscription
-    Required for certain job splitting Algo's (.g. event split to make complete lumi)
+    Required for certain job splitting Algo's (.g. event split to make complete 
+    lumi)
     Subscription:JobGroup == 1:N
     JobGroup:Jobs = 1:N
     JobGroup:InFile = 1:1
@@ -16,20 +17,21 @@ A JobGroup is a set of jobs and a Fileset that contains their output.
 
 JobGroup knows the Subscription and passes the Workflow to Jobs in the group.
 
-Jobs know their status (active, failed, complete) and know the files they run on 
-but don't know the group. They do know their subscription and corresponding 
-workflow. This means Jobs can update their state in the database without talking 
-to the group, and WMBS JobGroups can calculate status from the database instead 
-of the in memory objects. 
+Jobs know their status (active, failed, complete) and know the files they run 
+on but don't know the group. They do know their subscription and corresponding 
+workflow. This means Jobs can update their state in the database without 
+talking to the group, and WMBS JobGroups can calculate status from the database
+instead of the in memory objects. 
 
 The group has a status call which goes through the jobs and updates the db for 
-state changes and then returns the status of the group (active, failed, complete).
+state changes and then returns the status of the group (active, failed, 
+complete).
 
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.3 2008/09/09 17:20:23 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobGroup.py,v 1.4 2008/09/10 19:43:17 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -47,10 +49,10 @@ class JobGroup(Pickleable):
         """
         self.jobs = jobs
         self.subscription = subscription
-        self.output = Fileset()
+        self._output = Fileset()
         self.last_update = datetime.datetime.now()
         
-    def status(self):
+    def status(self, detail=False):
         """
         The status of the job group is the sum of the status of all jobs in the
         group.
@@ -69,9 +71,9 @@ class JobGroup(Pickleable):
                     failed.append(j)
                 elif j.status == 'COMPLETE':
                     complete.append(j)
-        self.markAcquire(activated)
-        self.markComplete(complete)
-        self.markFail(failed)
+        self.recordAcquire(activated)
+        self.recordComplete(complete)
+        self.recordFail(failed)
         
         self.last_update = datetime.datetime.now()
     
@@ -81,24 +83,27 @@ class JobGroup(Pickleable):
         cm = len(self.subscription.filesOfStatus('CompletedFiles'))
     
         total = av + ac + fa + cm
+        report = ''
+        if detail:
+            report = ' (av %s, ac %s, fa %s, cm %s)' % (av, ac, fa, cm)
         if cm == total:
-            return 'COMPLETE'
-        elif cm + fa == total:
-            return 'FAILED'
+            return 'COMPLETE%s' % report
+        elif fa == total:
+            return 'FAILED%s' % report
         else:
-            return 'ACTIVE'
-        
-    def markAcquire(self, jobs):
+            return 'ACTIVE%s' % report
+     
+    def recordAcquire(self, jobs):
         jobs = self.makelist(jobs)
         for j in jobs:
             self.subscription.acquireFiles(j.listFiles())
             
-    def markComplete(self, jobs):
+    def recordComplete(self, jobs):
         jobs = self.makelist(jobs)
         for j in jobs:
             self.subscription.completeFiles(j.listFiles())
             
-    def markFail(self, jobs):
+    def recordFail(self, jobs):
         jobs = self.makelist(jobs)
         for j in jobs:
             self.subscription.failFiles(j.listFiles())
@@ -111,9 +116,10 @@ class JobGroup(Pickleable):
         if self.status() == 'COMPLETE':
             "output only makes sense if the group is completed"
             for j in self.jobs:
-                self.addOutput(j.output)
-            return self.output
+                self.addOutput(j.output.listFiles())
+            return self._output
+        print self.status(detail=True)
         return False
     
     def addOutput(self, file):
-        self.output.addFile(file)
+        self._output.addFile(file)

@@ -19,8 +19,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.10 2008/07/03 09:57:09 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Subscription.py,v 1.11 2008/07/03 17:06:04 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -28,16 +28,17 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.WMBS.Actions.Subscriptions.ChangeState import ChangeStateAction
+from WMCore.DataStructs.Subscription import Subscription as WMSubscription
 
-class Subscription(BusinessObject):
+class Subscription(BusinessObject, WMSubscription):
     def __init__(self, fileset = None, workflow = None, id = -1,
-                  type = "Processing", logger=None, dbfactory = None):
+                  type = "Processing", split_algo = 'File', 
+                  logger=None, dbfactory = None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        
-        self.fileset = fileset
-        self.workflow = workflow
-        self.type = type
+        WMSubscription.__init__(self, fileset=fileset, workflow=workflow, 
+                                type=type, split_algo = split_algo)
         self.id = id
+        print self.type
         
     def create(self):
         try:
@@ -82,6 +83,7 @@ class Subscription(BusinessObject):
                                  dbfactory=self.dbfactory).load('Workflow.LoadFromID')
         self.type = result['type']
         self.id = result['id']
+        self.split_algo = result['split_algo']
              
     def availableFiles(self, parents=0):
         """
@@ -132,18 +134,17 @@ class Subscription(BusinessObject):
         action = self.daofactory(classname='Subscriptions.AcquireFiles')
         if len(files):
             action.execute(self.id, [x.id for x in files])
-        elif size == 0:
-            files = self.availableFiles()
-            action.execute(self.id, [x.id for x in files])
+            return [x.id for x in files]
         else:
             files = self.availableFiles()
             l = []
-            if len(files) < size:
+            if len(files) < size or size == 0:
                 size = len(files)
             for i in range(size):
                 l.append(files.pop())
                 i = i + 1
             action.execute(self.id, [x for x in l])
+            return l
     
     def completeFiles(self, files):
         """
@@ -167,9 +168,3 @@ class Subscription(BusinessObject):
                                   file=[x for x in files], 
                                   state="FailFiles",
                                   daofactory = self.daofactory)
-    
-    def getWorkflow(self):
-        return self.workflow
-    
-    def getFileset(self):
-        return self.fileset

@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.6 2008/09/19 09:44:53 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobGroup.py,v 1.7 2008/09/25 13:07:14 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -51,6 +51,7 @@ class JobGroup(Pickleable):
         self.subscription = subscription
         self._output = Fileset()
         self.last_update = datetime.datetime.now()
+        self.id = self.last_update.__hash__() 
     
     def add(self, job):        
         self.jobs = self.jobs | self.makeset(job)

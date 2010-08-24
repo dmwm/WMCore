@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.15 2008/07/03 09:46:25 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Fileset.py,v 1.16 2008/07/03 16:39:49 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -20,8 +20,9 @@ from sqlalchemy.exceptions import IntegrityError
 from WMCore.WMBS.File import File
 #from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.BusinessObject import BusinessObject
+from WMCore.DataStructs.Fileset import Fileset as WMFileset
 
-class Fileset(BusinessObject):
+class Fileset(BusinessObject, WMFileset):
     """
     A simple object representing a Fileset in WMBS.
 
@@ -32,19 +33,17 @@ class Fileset(BusinessObject):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name=None, id=-1, is_open=True, parents=None,
+    def __init__(self, name=None, id=-1, is_open=True, files=Set(), parents=Set(), 
                  parents_open=True, source=None, sourceUrl=None,
                  logger=None, dbfactory = None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
+        WMFileset.__init__(self, name = name, files=files)
         """
         Create a new fileset
         """
         self.id = id
-        self.name = name
-        self.files = Set()
-        self.newfiles = Set()
         self.open = is_open
-        self.parents = set()
+        self.parents = parents
         self.setParentage(parents, parents_open)
         self.source = source
         self.sourceUrl = sourceUrl 
@@ -64,7 +63,7 @@ class Fileset(BusinessObject):
     
     def exists(self):
         """
-        Does a fileset exist with this name
+        Does a fileset exist with this name in the database
         """
         return self.daofactory(classname='Fileset.Exists').execute(self.name)
         
@@ -108,31 +107,13 @@ class Fileset(BusinessObject):
             #id, lfn, size, events, run, lumi = f
             file = File(lfn, id, size, events, run, lumi, \
                         logger=self.logger, dbfactory=self.dbfactory)
-            self.files.add(file)
+            self.add(file)
 
         return self
-            
-    def addFile(self, file):
-        """
-        Add a file to the fileset
-        """
-        self.newfiles = self.newfiles | Set(self.dbfactory.makelist(file))
-    
-    def listFiles(self):
-        """
-        List all files in the fileset
-        """
-        return list(self.files | self.newfiles)
-    
-    def listNewFiles(self):  
-        """
-        List all files in the fileset that are new - e.g. not in the DB
-        """       
-        return self.newfiles
     
     def commit(self):
         """
-        Commit changes to the fileset
+        Add contents of self.newfiles to the database, empty self.newfiles, reload self
         """
         comfiles = []
         for f in self.newfiles:

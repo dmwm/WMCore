@@ -7,11 +7,13 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.3 2008/06/16 16:04:11 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.4 2008/07/03 16:39:49 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest, logging, os, commands
+from sets import Set
 
+from WMCore.WMBS.Fileset import Fileset
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
@@ -146,7 +148,27 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
         print " AddAndListFilesetAction works as expected"
 
 class FilesetBusinessObjectTestCase(BaseFilesetTestCase):
-    pass
-
+    def testFillFileset(self):
+        testlogger = logging.getLogger('testFillFileset')
+        filelist = Set()
+        num_files = 1000
+        for i in range(0,num_files):
+            filelist.add(("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
+                             1000, 2000, 10 + i, 12312))
+        factories = [self.dbf1, self.dbf2]
+        for dbf in factories:
+            fs = Fileset(name='MyCoolFiles', files=filelist, logger=testlogger, dbfactory=dbf)
+            
+            assert fs.exists() == False, "Fileset exists before being created"
+            fs.create()
+            assert fs.exists() == True, "Fileset does not exist after being created"
+            assert len(fs.listFiles()) == num_files, \
+                "File set has wrong number of files: %i %i" % (len(fs.listFiles()), num_files)
+            file = ("/store/data/Electrons/1234/5678/hkh123ghk12khj3asdhk123ljhkj1232.root", 
+                             1000, 2000, 6006, 12312)
+            fs.addFile(file)
+            assert len(fs.listFiles()) == num_files + 1, \
+                "File set has wrong number of files: %i %i" % (len(fs.listFiles()), num_files)
+            
 if __name__ == "__main__":
     unittest.main()

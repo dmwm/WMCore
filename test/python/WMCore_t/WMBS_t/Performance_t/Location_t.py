@@ -29,27 +29,46 @@ class LocationTest(WMBSBase):
         #Call superclass tearDown method
         WMBSBase.tearDown(self)
 
-    def testNew(self):         
+    def testNew(self, times=1):         
         print "testNew"
         
-        sename='TestLocation'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-        time = self.perfTest(dao=self.dao, action='Locations.New', sename=sename)
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        locations = self.genLocationObjects(number=times)
 
-    def testList(self):         
+        for i in range(times):     
+            time = self.perfTest(dao=self.dao, action='Locations.New', sename=locations[i])
+            assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'   
+
+    def testList(self, times=1):         
         print "testList"
         
-        sename='TestLocation'
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
 
-        time = self.perfTest(dao=self.dao, action='Locations.List')
-        assert time <= self.threshold, 'List DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        for i in range(times):     
+            time = self.perfTest(dao=self.dao, action='Locations.List')
+            assert self.totaltime <= self.totalthreshold, 'List DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'   
 
-    def testDelete(self):         
+    def testDelete(self, times=1):         
         print "testDelete"
-        
-        time = self.perfTest(dao=self.dao, action='Locations.Delete', sename=self.sename)
-        assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+
+        #If testtimes is not set, the arguments are used for how many times
+        #the test method will be run
+        if self.testtimes != 0:
+            times=self.testtimes
+
+        locations = self.genLocation(number=times)
+
+        for i in range(times):
+            time = self.perfTest(dao=self.dao, action='Locations.Delete', sename=locations[i])
+            assert self.totaltime <= self.totalthreshold, 'Delete DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'   
+
 
 #    def testFiles(self):         
 #        print "testFiles"

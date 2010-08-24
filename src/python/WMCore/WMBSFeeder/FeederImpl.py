@@ -4,7 +4,8 @@ class FeederImpl(WMObject):
     """
     Interface class for WMBS feeders
     
-    All subclasses should implement the __call__ method, and __init__ as appropriate
+    All subclasses should implement the __call__ and persist methods, and 
+    __init__ as appropriate. persist() needs to return a dictionary.
     """
     
     def __init__(self):
@@ -12,3 +13,6 @@ class FeederImpl(WMObject):
     
     def __call__(self, fileset):
         raise NotImplementedError, "WMBSFeeder.__call__"
+    
+    def persist(self):
+        raise NotImplementedError, "WMBSFeeder.persist"

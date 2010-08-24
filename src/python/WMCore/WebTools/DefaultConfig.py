@@ -46,3 +46,6 @@ active.controllers.css = {'reset': environ['YUIHOME'] + '/reset/reset.css',
 active.controllers.js = {}
 # These are pages in "maintenance mode" - to be completed
 maint = config.WebtoolsDocs.views.section_('maintenance')
+
+active.section_('masthead')
+active.masthead.object = 'WMCore.WebTools.Masthead'

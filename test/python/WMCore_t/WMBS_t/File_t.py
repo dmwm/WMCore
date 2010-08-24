@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: File_t.py,v 1.4 2008/11/25 17:18:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: File_t.py,v 1.5 2008/11/26 19:36:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import logging
@@ -145,7 +145,7 @@ class File_t(unittest.TestCase):
 
         for testLocation in info[6]:
             assert testLocation in ["se1.fnal.gov", "se1.cern.ch"], \
-                   "ERROR: File returned wrong locations"                   
+                   "ERROR: File returned wrong locations"
 
         assert len(info[7]) == 1, \
                "ERROR: File returned wrong parents"
@@ -181,7 +181,7 @@ class File_t(unittest.TestCase):
 
         testFile.addParent(testFileParentA["lfn"])
         testFile.addParent(testFileParentB["lfn"])
-        testFile.addParent(testFileParentC["lfn"])        
+        testFile.addParent(testFileParentC["lfn"])
 
         parentLFNs = testFile.getParentLFNs()
         
@@ -268,7 +268,6 @@ class File_t(unittest.TestCase):
         testFileB.load(parentage = 1)
 
         goldenFiles = [testFileParentA, testFileParentB]
-
         for parentFile in testFileB["parents"]:
             assert parentFile in goldenFiles, \
                    "ERROR: Unknown parent file"
@@ -276,7 +275,6 @@ class File_t(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
               "ERROR: Some parents are missing"
-
         return
     
     def testSetLocation(self):
@@ -291,7 +289,7 @@ class File_t(unittest.TestCase):
         testFileA.create()
         testFileA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
-                              immediateSave = False)        
+                              immediateSave = False)
 
         testFileB = File(id = testFileA["id"])
         testFileB.load()
@@ -305,6 +303,7 @@ class File_t(unittest.TestCase):
 
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"    
+        return
 
     def testLocationsConstructor(self):
         """
@@ -321,14 +320,14 @@ class File_t(unittest.TestCase):
         testFileB.load()
 
         goldenLocations = ["se1.fnal.gov"]
-
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
                    "ERROR: Unknown file location"
             goldenLocations.remove(location)
-
+            
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"            
+        return
 
 if __name__ == "__main__":
     unittest.main() 

@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.11 2009/01/08 22:00:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: File_t.py,v 1.12 2009/01/12 21:39:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import logging
@@ -283,10 +283,33 @@ class File_t(unittest.TestCase):
         """
         _testLoad_
 
-        Create a file, add two parents and two locations and save the file
-        to the database.  Load the file using the ID and using the LFN and
-        compare the loaded file to the original to make sure everything loaded
-        correctly.
+        Test the loading of file meta data using the ID of a file and the
+        LFN of a file.
+        """
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                        cksum = 1)
+        testFileA.create()
+                                                        
+        testFileB = File(lfn = testFileA["lfn"])
+        testFileB.load()
+        testFileC = File(id = testFileA["id"])
+        testFileC.load()
+
+        assert testFileA == testFileB, \
+               "ERROR: File load by LFN didn't work"
+
+        assert testFileA == testFileC, \
+               "ERROR: File load by ID didn't work"
+
+        testFileA.delete()
+        return
+
+    def testLoadData(self):
+        """
+        _testLoadData_
+
+        Test the loading of all data from a file, including run/lumi
+        associations, location information and parentage information.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, cksum = 1)
@@ -308,9 +331,9 @@ class File_t(unittest.TestCase):
         testFileA.updateLocations()
                                                         
         testFileB = File(lfn = testFileA["lfn"])
-        testFileB.load(parentage = 1)
+        testFileB.loadData(parentage = 1)
         testFileC = File(id = testFileA["id"])
-        testFileC.load(parentage = 1)
+        testFileC.loadData(parentage = 1)
 
         assert testFileA == testFileB, \
                "ERROR: File load by LFN didn't work"
@@ -321,7 +344,7 @@ class File_t(unittest.TestCase):
         testFileA.delete()
         testFileParentA.delete()
         testFileParentB.delete()
-        return
+        return    
 
     def testAddChild(self):
         """
@@ -348,7 +371,7 @@ class File_t(unittest.TestCase):
         testFileParentB.addChild("/this/is/a/lfn")
 
         testFileB = File(id = testFileA["id"])
-        testFileB.load(parentage = 1)
+        testFileB.loadData(parentage = 1)
 
         goldenFiles = [testFileParentA, testFileParentB]
         for parentFile in testFileB["parents"]:
@@ -391,7 +414,7 @@ class File_t(unittest.TestCase):
         testFileParentB.addChild("/this/is/a/lfn")
 
         testFileB = File(id = testFileA["id"])
-        testFileB.load(parentage = 1)
+        testFileB.loadData(parentage = 1)
 
         goldenFiles = [testFileParentA, testFileParentB]
         for parentFile in testFileB["parents"]:
@@ -403,7 +426,7 @@ class File_t(unittest.TestCase):
               "ERROR: Some parents are missing"
 
         myThread.transaction.rollback()
-        testFileB.load(parentage = 1)
+        testFileB.loadData(parentage = 1)
 
         goldenFiles = [testFileParentA]
         for parentFile in testFileB["parents"]:
@@ -432,7 +455,7 @@ class File_t(unittest.TestCase):
                               immediateSave = False)
 
         testFileB = File(id = testFileA["id"])
-        testFileB.load()
+        testFileB.loadData()
 
         goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
 
@@ -449,6 +472,10 @@ class File_t(unittest.TestCase):
         """
         _testSetLocationTransaction_
 
+        Create a file at specific locations and commit everything to the
+        database.  Reload the file from the database and verify that the
+        locations are correct.  Rollback the database transaction and once
+        again reload the file.  Verify that the original locations are back.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1)
@@ -464,7 +491,7 @@ class File_t(unittest.TestCase):
                               immediateSave = False)
 
         testFileB = File(id = testFileA["id"])
-        testFileB.load()
+        testFileB.loadData()
 
         goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
 
@@ -477,7 +504,7 @@ class File_t(unittest.TestCase):
               "ERROR: Some locations are missing"
 
         myThread.transaction.rollback()
-        testFileB.load()
+        testFileB.loadData()
 
         goldenLocations = ["se1.fnal.gov"]
 
@@ -510,7 +537,7 @@ class File_t(unittest.TestCase):
         testFileB.create()        
 
         testFileC = File(id = testFileA["id"])
-        testFileC.load()
+        testFileC.loadData()
 
         goldenLocations = ["se1.fnal.gov"]
         for location in testFileC["locations"]:
@@ -522,7 +549,7 @@ class File_t(unittest.TestCase):
               "ERROR: Some locations are missing"
 
         testFileC = File(id = testFileB["id"])
-        testFileC.load()
+        testFileC.loadData()
 
         goldenLocations = ["se1.fnal.gov"]
         for location in testFileC["locations"]:

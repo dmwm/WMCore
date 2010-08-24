@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.3 2008/06/30 18:03:38 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.4 2008/07/03 17:17:17 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest, logging, os, commands, random, datetime
 
@@ -154,48 +154,47 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
                                             logger=testlogger, 
                                             dbfactory = dbi))
             subscriptions[c].load()
-        for i in range(0,15):
-            testlogger.debug("Timing stats - start %s" % datetime.datetime.now())
-            avail = subscriptions[c].availableFiles()
-            testlogger.debug("Timing stats - avail done %s" % datetime.datetime.now())
-            acquired = subscriptions[c].acquiredFiles()
-            testlogger.debug("Timing stats - acquired done %s" % datetime.datetime.now())
-            complete = subscriptions[c].completedFiles()
-            testlogger.debug("Timing stats - complete done %s" % datetime.datetime.now())
-            failed = subscriptions[c].failedFiles()
-            testlogger.debug("Timing stats - failed done %s" % datetime.datetime.now())
-            print "\niteration: ", i
-            print "\tavail: ", len(avail)
-            print "\tacquired ", len(acquired)
-            print "\tcomplete ", len(complete)
-            print "\tfailed ", len(failed)
-            assert len(avail) + len(acquired) + len(complete) + len(failed) == num_files, "number of files not consistent"
-            (len(acquired) + len(complete) + len(failed))
-            subscriptions[c].acquireFiles(size=10)
-            fail_prob = i / 4
-            complete_prob = i / 1.5
-            for f in subscriptions[c].acquiredFiles():
-                if random.randint(0 , 15) < fail_prob:
-                    subscriptions[c].failFiles(f)
-                elif random.randint(0 , 15) < complete_prob:
-                    subscriptions[c].completeFiles(f)
-            complete = subscriptions[c].completedFiles()
-            failed = subscriptions[c].failedFiles()
-            if len(complete) > 0:
-                id = complete.pop()
-                testlogger.debug(id)
-                completedfile = File(id = id, dbfactory = self.dbf1, logger = testlogger)
-                completedfile.load()
-                testlogger.debug(completedfile.getInfo())
-                assert completedfile.id == id, "File did not load correctly - wrong ID!"
-            if len(failed) > 0:
-                id = failed.pop()
-                testlogger.debug(id)
-                failedfile = File(id = id, dbfactory = self.dbf1, logger = testlogger)
-                failedfile.load()
-                testlogger.debug(failedfile.getInfo())
-                assert failedfile.id == id, "File did not load correctly - wrong ID!"
-            #c = c + 1
+            for i in range(0,15):
+                testlogger.debug("Timing stats - start %s" % datetime.datetime.now())
+                avail = subscriptions[c].availableFiles()
+                testlogger.debug("Timing stats - avail done %s" % datetime.datetime.now())
+                acquired = subscriptions[c].acquiredFiles()
+                testlogger.debug("Timing stats - acquired done %s" % datetime.datetime.now())
+                complete = subscriptions[c].completedFiles()
+                testlogger.debug("Timing stats - complete done %s" % datetime.datetime.now())
+                failed = subscriptions[c].failedFiles()
+                testlogger.debug("Timing stats - failed done %s" % datetime.datetime.now())
+                testlogger.debug("\niteration: %i" % i)
+                testlogger.debug("\tavail: %i" % len(avail))
+                testlogger.debug("\tacquired %i" % len(acquired))
+                testlogger.debug("\tcomplete %i" % len(complete))
+                testlogger.debug("\tfailed %i" % len(failed))
+                assert len(avail) + len(acquired) + len(complete) + len(failed) == num_files, "number of files not consistent"
+                testlogger.debug(subscriptions[c].acquireFiles(size=10))
+                fail_prob = i / 4
+                complete_prob = i / 1.5
+                for f in subscriptions[c].acquiredFiles():
+                    if random.randint(0 , 15) < fail_prob:
+                        subscriptions[c].failFiles(f)
+                    elif random.randint(0 , 15) < complete_prob:
+                        subscriptions[c].completeFiles(f)
+                complete = subscriptions[c].completedFiles()
+                failed = subscriptions[c].failedFiles()
+                if len(complete) > 0:
+                    id = complete.pop()
+                    testlogger.debug(id)
+                    completedfile = File(id = id, dbfactory = dbi, logger = testlogger)
+                    completedfile.load()
+                    testlogger.debug(completedfile.getInfo())
+                    assert completedfile.dict['id'] == id, "File did not load correctly - wrong ID!"
+                if len(failed) > 0:
+                    id = failed.pop()
+                    testlogger.debug(id)
+                    failedfile = File(id = id, dbfactory = dbi, logger = testlogger)
+                    failedfile.load()
+                    testlogger.debug(failedfile.getInfo())
+                    assert failedfile.dict['id'] == id, "File did not load correctly - wrong ID!"
+            c = c + 1
         
 if __name__ == "__main__":
     unittest.main()

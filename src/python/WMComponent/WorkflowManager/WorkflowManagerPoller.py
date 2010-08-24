@@ -36,11 +36,15 @@ class WorkflowManagerPoller(BaseWorkerThread):
         
         # Get all watched mappings
         managedWorkflows = self.queries.getManagedWorkflows()
-        if len(workflows == 0):
+        
+        logging.info("Have %s managed workflows" % len(managedWorkflows))
+        
+        if len(managedWorkflows) == 0:
             return
         
         # Get the details of all unsubscribed filesets
         availableFilesets = self.queries.getUnsubscribedFilesets()
+        logging.info("Have %s unsubscribed filesets" % len(availableFilesets))
             
         # Match filesets to managed workflows
         for fileset in availableFilesets:
@@ -64,6 +68,7 @@ class WorkflowManagerPoller(BaseWorkerThread):
                 
                 # Attempt to match workflows to filesets
                 if re.match(managedWorkflow['fileset_match'], fileset['name']):
+                    logging.info("Found a fileset match: %s" % fileset['name'])
                     # Match found - Load the fileset if not already loaded
                     if not fsObj:
                         fsObj = Fileset(id = fileset['id'])

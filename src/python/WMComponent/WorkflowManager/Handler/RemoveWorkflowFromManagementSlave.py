@@ -5,8 +5,8 @@ Slave used for RemoveWorkflowFromManagement handler
 
 __all__ = []
 __revision__ = \
-    "$Id: RemoveWorkflowFromManagementSlave.py,v 1.1 2009/02/05 14:45:02 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: RemoveWorkflowFromManagementSlave.py,v 1.2 2009/02/05 15:47:14 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -23,10 +23,10 @@ class RemoveWorkflowFromManagementSlave(DefaultSlave):
         DefaultSlave.__call__(self, parameters)
 
         # Handle the message
-        logging.debug("Handling RmoveWorkflowFromManagement message: %s" % str(params))
+        args = self.messageArgs
+        logging.debug("Handling RmoveWorkflowFromManagement message: %s" % str(args))
         
         # Validate arguments
-        args = self.messageArgs
         if args.has_key("FilesetMatch") and args.has_key("WorkflowId"):
             self.queries.removeManagedWorkflow(args['WorkflowId'], \
                                                args['FilesetMatch'])

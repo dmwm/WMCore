@@ -23,12 +23,6 @@ class WorkflowManager(Harness):
         """
         Add required worker modules to work threads
         """
-        # in case nothing was configured we have a fallback.
-        if not hasattr(self.config.FeederManager, "addDatasetWatch"):
-            logging.warning("Using default AddDatasetWatch handler")
-            self.config.FeederManager.addDatasetWatchHandler =  \
-                'WMComponent.FeederManager.Handler.DefaultAddDatasetWatch'
-
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')
         self.messages['AddWorkflowToManage'] = \
@@ -46,4 +40,4 @@ class WorkflowManager(Harness):
         
         # Add event loop to worker manager
         myThread = threading.currentThread()
-        myThread.workerThreadManager.addWorker(WorkflowManagerPoller())
+        myThread.workerThreadManager.addWorker(WorkflowManagerPoller(), 5)

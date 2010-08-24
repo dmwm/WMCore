@@ -10,9 +10,10 @@ WorkflowManager
 """
 
 import time
+import logging
 
-__revision__ = "$Id: Queries.py,v 1.2 2009/02/05 14:45:03 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Queries.py,v 1.3 2009/02/05 15:47:14 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -35,7 +36,7 @@ class Queries(DBFormatter):
         """
         Adds a workflow to be managed
         """
-        sqlStr = """INSERT INTO wm_managed_worklow
+        sqlStr = """INSERT INTO wm_managed_workflow
                         (workflow, fileset_match, split_algo, type)
                     VALUES (:workflow, :fileset_match, :split_algo, :type)
                     """
@@ -48,7 +49,7 @@ class Queries(DBFormatter):
         """
         Removes a workflow from being managed
         """
-        sqlStr = """DELETE FROM wm_managed_worklow
+        sqlStr = """DELETE FROM wm_managed_workflow
                     WHERE workflow = :workflow
                     AND fileset_match = :fileset_match
                     """
@@ -61,7 +62,7 @@ class Queries(DBFormatter):
         managed
         """
         sqlStr = """SELECT id, workflow, fileset_match, split_algo, type
-                    FROM wm_managed_worklow
+                    FROM wm_managed_workflow
                     """
         result = self.execute(sqlStr)
         return self.formatDict(result)
@@ -70,10 +71,10 @@ class Queries(DBFormatter):
         """
         Returns all filesets that do not have a subscription
         """
-        sqlStr = """SELECT wmbs_fileset.id, wmbs_fileset.name
-                    FROM wmbs_fileset
-                    WHERE NOT EXISTS (SELECT 1 FROM wmbs_subscription WHERE
-                                   wmbs_subscription.fileset = wmbs_fileset.id);
+        sqlStr = """SELECT wmbs_fileset.id, wmbs_fileset.name 
+                    FROM wmbs_fileset 
+                    WHERE NOT EXISTS (SELECT 1 FROM wmbs_subscription WHERE 
+                                   wmbs_subscription.fileset = wmbs_fileset.id)
                     """
         result = self.execute(sqlStr)
         return self.formatDict(result)
@@ -122,3 +123,13 @@ class Queries(DBFormatter):
         self.execute(sqlStr, {'workflow' : workflowId, \
                               'fsmatch' : filesetMatch, \
                               'location' : location})
+
+    def execute(self, sqlStr, args = {}):
+        """"
+        Executes the queries by getting the current transaction
+        and dbinterface object that is stored in the reserved words of
+        the thread it operates in.
+        """
+        myThread = threading.currentThread()
+        currentTransaction = myThread.transaction
+        return currentTransaction.processData(sqlStr, args) 

@@ -5,8 +5,8 @@ Slave used for AddWorkflowToManagementLocationList handler
 
 __all__ = []
 __revision__ = \
-    "$Id: AddToWorkflowManagementLocationListSlave.py,v 1.1 2009/02/05 14:45:02 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: AddToWorkflowManagementLocationListSlave.py,v 1.2 2009/02/05 15:47:14 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -23,12 +23,12 @@ class AddToWorkflowManagementLocationListSlave(DefaultSlave):
         DefaultSlave.__call__(self, parameters)
 
         # Handle the message
+        args = self.messageArgs
         msg = "Handling AddToWorkflowManagementLocationList message: %s" % \
-                                                                    str(params)
+                                                                    str(args)
         logging.debug(msg)
         
         # Validate arguments
-        args = self.messageArgs
         if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
         and args.has_key("Locations") and args.has_key("Valid"):
             locations = args['Locations'].split(",")

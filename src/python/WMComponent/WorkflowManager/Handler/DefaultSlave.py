@@ -5,12 +5,13 @@ Default slave, handles loading of shared DB code
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultSlave.py,v 1.1 2009/02/05 14:45:02 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: DefaultSlave.py,v 1.2 2009/02/05 15:47:14 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import pickle
 
+from WMCore.WMFactory import WMFactory
 from WMCore.ThreadPool.ThreadSlave import ThreadSlave
 
 class DefaultSlave(ThreadSlave):
@@ -24,7 +25,7 @@ class DefaultSlave(ThreadSlave):
         # Load DB queries
         myThread = threading.currentThread()
         factory = WMFactory("default", \
-                "WMComponent.WorkerManager.Database." + myThread.dialect)
+                "WMComponent.WorkflowManager.Database." + myThread.dialect)
         self.queries = factory.loadObject("Queries")
 
     def __call__(self, parameters):

@@ -2,10 +2,11 @@
 """
 _JobGroup_t_
 
+Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.3 2008/11/20 17:00:34 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.4 2008/12/18 15:03:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import logging
@@ -28,7 +29,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class Job_t(unittest.TestCase):
+class JobGroupTest(unittest.TestCase):
     _setup = False
     _teardown = False
     
@@ -76,6 +77,9 @@ class Job_t(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
+        Create and delete a WMBS JobGroup.  Use the JobGroup's exist method to
+        test to see if the JobGroup exists in the database before create() is
+        called, after create() is called and after the JobGroup is deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -112,6 +116,69 @@ class Job_t(unittest.TestCase):
         """
         _testLoad_
 
+        Create a WMBS JobGroup and save it to the database.  Attempt to load it
+        from the database and verify that all the attributes are the same
+        between the original object and the one that was loaded from the
+        database.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                         run = 1, lumi = 45)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                         run = 1, lumi = 45)
+        testFileA.create()
+        testFileB.create()
+
+        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
+        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
+        
+        testJobA = Job(name = "TestJobA", files = testFilesetA)
+        testJobB = Job(name = "TestJobB", files = testFilesetB)
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.commit()
+
+        testJobGroupB = JobGroup(id = testJobGroupA.id)
+        testJobGroupB.load()
+
+        assert testJobGroupB.subscription["id"] == testSubscription["id"], \
+               "ERROR: Job group did not load subscription correctly"
+
+        goldenJobs = [testJobA.id, testJobB.id]
+        for job in testJobGroupB.jobs:
+            assert job.id in goldenJobs, \
+                   "ERROR: JobGroup loaded an unknown job"
+            goldenJobs.remove(job.id)
+
+        assert len(goldenJobs) == 0, \
+            "ERROR: JobGroup didn't load all jobs"
+
+        assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
+               "ERROR: Output fileset didn't load properly"
+        
+        return
+
+    def testCommit(self):
+        """
+        _testCommit_
+
+        Verify that jobs are not added to a job group until commit() is called
+        on the JobGroup.  Also verify that commit() correctly commits the jobs
+        to the database.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -144,26 +211,24 @@ class Job_t(unittest.TestCase):
         testJobGroupA.add(testJobB)
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
-        testJobGroupB.load()
+        testJobGroupB.load()        
 
-        assert testJobGroupB.subscription["id"] == testSubscription["id"], \
-               "ERROR: Job group did not load subscription correctly"
+        assert len(testJobGroupA.jobs) == 0, \
+               "ERROR: Original object commited too early"
 
-        goldenJobs = [testJobA.id, testJobB.id]
-        for job in testJobGroupB.jobs:
-            assert job.id in goldenJobs, \
-                   "ERROR: JobGroup loaded an unknown job"
-            goldenJobs.remove(job.id)
+        assert len(testJobGroupB.jobs) == 0, \
+               "ERROR: Loaded JobGroup has too many jobs"
 
-        assert len(goldenJobs) == 0, \
-            "ERROR: JobGroup didn't load all jobs"
+        testJobGroupA.commit()
 
-        assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
-               "ERROR: Output fileset didn't load properly"
-        
-        return
+        assert len(testJobGroupA.jobs) == 2, \
+               "ERROR: Original object did not commit jobs"
 
-    
+        testJobGroupC = JobGroup(id = testJobGroupA.id)
+        testJobGroupC.load()
+
+        assert len(testJobGroupC.jobs) == 2, \
+               "ERROR: Loaded object has too few jobs."
     
 if __name__ == "__main__":
     unittest.main() 

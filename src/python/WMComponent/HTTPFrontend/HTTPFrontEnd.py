@@ -90,6 +90,7 @@ class HTTPFrontEnd(Harness):
 
 if __name__ == '__main__':
     config = loadConfigurationFile('DefaultConfig.py')
+    config.section_("Agent")
     config.Agent.contact = "rickw@caltech.edu"
     config.Agent.teamName = "Dodgers"
     config.Agent.agentName = "Manny Ramirez"

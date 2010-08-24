@@ -1,6 +1,6 @@
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.DataStructs.JobGroup import JobGroup
+
 class JobFactory(WMObject):
     """
     A JobFactory is created with a subscription (which has a fileset). It is a
@@ -13,7 +13,7 @@ class JobFactory(WMObject):
         self.package = package
         self.subscription = subscription
         
-    def __call__(self, jobtype='Job', *args, **kwargs):
+    def __call__(self, jobtype='Job', grouptype='JobGroup', *args, **kwargs):
         """
         The default behaviour of JobFactory.__call__ is to return a single
         Job associated with all the files in the subscription's fileset
@@ -22,13 +22,17 @@ class JobFactory(WMObject):
         module = __import__(module, globals(), locals(), [jobtype])#, -1)
         job_instance = getattr(module, jobtype.split('.')[-1])
         
-        group = JobGroup(subscription = self.subscription)
+        module = "%s.%s" % (self.package, grouptype)
+        module = __import__(module, globals(), locals(), [grouptype])
+        group_instance = getattr(module, grouptype.split('.')[-1])
+        
+        group = group_instance(subscription = self.subscription)
+        
         basename = "%s-%s" % (self.subscription.name(), group.id)
         
-        group.add(self.algorithm(job_instance=job_instance, name=basename,
+        group.add(self.algorithm(job_instance=job_instance, jobname=basename,
                                   *args, **kwargs))
         return group
     
-    def algorithm(self, job_instance=None, *args, **kwargs):
-        return Set([job_instance(self.subscription, 
-                                 self.subscription.availableFiles())])
+    def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):
+        return Set([job_instance(name=jobname, files=self.subscription.availableFiles())])

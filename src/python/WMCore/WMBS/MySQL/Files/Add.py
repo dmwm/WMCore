@@ -29,10 +29,9 @@ class Add(DBFormatter):
     def format(self, result):
         return True
     
-    def execute(self, files=None, size=0, events=0, cksum=0, conn = None, transaction = False):
-
+    def execute(self, files = None, size = 0, events = 0, cksum = 0,
+                conn = None, transaction = False):
         binds = self.getBinds(files, size, events, cksum)
-        
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.format(result)

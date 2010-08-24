@@ -3,26 +3,29 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Subscription import Subscription 
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.JobGroup import JobGroup
+
+from WMQuality.TestInit import TestInit
+
 from sets import Set
 
 import unittest
 import logging
 import random
+import os
 
 class JobGroupTest(unittest.TestCase):
+    _setup = False
+    
     def setUp(self):
-        "make a logger instance"
+        if self._setup:
+            return
         
-        logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename='%s.log' % __file__.replace('.py',''),
-                    filemode='w')
-        self.logger = logging.getLogger('JobGroupTest')
-        
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self._setup = True
          
-    def testInit(self):
-        fileset = Fileset(logger=self.logger)
+    def testSetup(self):
+        fileset = Fileset()
         l = []
         for i in range(0,10):
             lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999), 
@@ -37,15 +40,12 @@ class JobGroupTest(unittest.TestCase):
             if i < 11:
                 l.append(file)
         
-        print "Fileset made"    
-        
         sub = Subscription(fileset=fileset, workflow='/my/test/workflow')
-        print "Subscription made"
         
         # pretend we've got the job group from a factory
         set = Set()
         for i in l:
-            fs = Fileset(name='tmp', logger=self.logger)
+            fs = Fileset(name='tmp')
             fs.addFile(i)
             job = Job(files=fs)
             set.add(job)
@@ -54,21 +54,17 @@ class JobGroupTest(unittest.TestCase):
         return group
     
     def testFileCycle(self):
-        print "testFileCycle"
-        group = self.testInit()
+        group = self.testSetup()
         jobs = list(group.jobs)
         maxacquire = 10
         fail_prob = 1/4.
         complete_prob = 1/2.
-        print "probabilities: complete %s, fail %s" % (complete_prob, fail_prob)
         i=0
         while group.status() != 'COMPLETE':
             i = i + 1
-            print "group status: %s" % group.status(detail=True)
             # Decide if jobs have completed or failed
             for j in jobs:
                 if j.status in ['QUEUED', 'FAILED']:
-                    print "submitting"
                     j.submit(name='batch queue id')
                 if j.status == 'ACTIVE':
                     dice = random.randint(0 , 10) / 10.
@@ -80,10 +76,8 @@ class JobGroupTest(unittest.TestCase):
                         self.logger.debug(  "#job fails" )
                         j.fail('fail report')
                 
-        print group.output().listLFNs()
-        
     def testOutput(self):
-        group = self.testInit()
+        group = self.testSetup()
     
 if __name__ == '__main__':
     unittest.main()

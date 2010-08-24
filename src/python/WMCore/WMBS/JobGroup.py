@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.11 2009/01/05 21:49:25 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobGroup.py,v 1.12 2009/01/06 15:55:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -110,6 +110,9 @@ class JobGroup(WMJobGroup):
         """
         Load the JobGroup from the database
         """
+        if self.id == -1:
+            self.id = self.daofactory(classname='JobGroup.LoadIDFromUID').execute(self.uid)
+            
         subID = self.daofactory(classname='JobGroup.LoadSubscription').execute(self.id)
         jobIDs = self.daofactory(classname='JobGroup.LoadJobs').execute(self.id)
         outputID = self.daofactory(classname='JobGroup.LoadOutput').execute(self.id)

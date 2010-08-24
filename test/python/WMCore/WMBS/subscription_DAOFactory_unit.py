@@ -7,10 +7,11 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.4 2008/07/03 17:17:17 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.5 2008/07/04 17:17:37 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest, logging, os, commands, random, datetime
+import sys, traceback
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory

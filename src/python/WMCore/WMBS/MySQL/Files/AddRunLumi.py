@@ -26,7 +26,6 @@ class AddRunLumi(DBFormatter):
     
     def execute(self, files=None, run=0, lumi=0, conn = None, transaction = False):
         binds = self.getBinds(files, run, lumi)
-        result = self.dbi.processData(self.sql, binds, 
-                         conn = conn, transaction = transaction)
-        result = self.format(result)
-        return result
+        self.dbi.processData(self.sql, binds, 
+                             conn = conn, transaction = transaction)
+        return

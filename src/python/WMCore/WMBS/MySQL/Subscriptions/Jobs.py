@@ -3,13 +3,11 @@
 _Jobs_
 
 MySQL implementation of Subscriptions.Jobs
-
-Return a list of all jobs that exist for a subscription.
 """
 
 __all__ = []
-__revision__ = "$Id: Jobs.py,v 1.4 2009/01/12 19:26:04 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Jobs.py,v 1.5 2009/01/16 22:40:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -17,8 +15,21 @@ class Jobs(DBFormatter):
     sql = """SELECT id FROM wmbs_job WHERE jobgroup IN
              (SELECT id FROM wmbs_jobgroup WHERE subscription = :subscription)"""
 
+    def formatDict(self, results):
+        """
+        _formatDict_
+
+        Cast the id column to an integer since formatDict() turns everything
+        into strings.
+        """
+        formattedResults = DBFormatter.formatDict(self, results)
+
+        for formattedResult in formattedResults:
+            formattedResult["id"] = int(formattedResult["id"])
+
+        return formatttedResults
+
     def execute(self, subscription = 0, conn = None, transaction = False):
-        binds = self.getBinds(subscription=subscription)
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
-        return self.format(result)
+        results = self.dbi.processData(self.sql, {"subscription": subscription},
+                                       conn = conn, transaction = transaction)
+        return self.formatDict(results)

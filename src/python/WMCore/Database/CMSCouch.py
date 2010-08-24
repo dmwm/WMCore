@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.5 2009/03/09 17:12:46 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: CMSCouch.py,v 1.6 2009/03/10 01:59:56 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 try:
     # Python 2.6
@@ -16,7 +16,7 @@ try:
 except:
     # Prior to 2.6 requires simplejson
     import simplejson as json
-import urllib, urllib2
+import urllib
 from httplib import HTTPConnection
 import uuid
 
@@ -38,7 +38,7 @@ class Requests:
     """ 
     
     def __init__(self, url = 'localhost'):
-        self.type = 'text/html'
+        self.accept_type = 'text/html'
         self.url = url
         self.conn = HTTPConnection(self.url)
         
@@ -72,17 +72,19 @@ class Requests:
         request will determine the action take by the server (be careful with 
         DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
-        headers = {}
-        if type != 'GET':
-            data = self.encode(data)
-            headers = {"Content-type": self.type, 
-                   "Content-length": len(data)}
-        
+        headers = {"Content-type": 'application/x-www-form-urlencoded', #self.accept_type, 
+                    "Accept": self.accept_type}
+        encoded_data = ''
+        if type != 'GET' and data:
+            encoded_data = self.encode(data)
+            headers["Content-length"] = len(encoded_data)
+        else:
+            #encode the data as a get string
+            uri = uri
         self.conn.connect()
-        self.conn.request(type, uri, data, headers)
+        self.conn.request(type, uri, encoded_data, headers)
         response = self.conn.getresponse()
         
-        #print type, data, uri, response.status, response.reason  #TODO: log this not print
         data = response.read()
         self.conn.close()
         return self.decode(data)
@@ -90,6 +92,7 @@ class Requests:
     def get(self, uri=None):
         """
         Get a document of known id
+        TODO: take some data
         """
         return self.makeRequest(uri)
     
@@ -97,7 +100,7 @@ class Requests:
         """
         encode data into some appropriate format, for now make it a string...
         """
-        return data.__str__()
+        return urllib.urlencode(data)
     
     def decode(self, data):
         """
@@ -111,10 +114,8 @@ class JSONRequests(Requests):
     CouchDB port (change that?).
     """
     def __init__(self, url = 'localhost:5984'):
-        
-        
         Requests.__init__(self, url)
-        self.type = "application/json"
+        self.accept_type = "application/json"
         
     def encode(self, data):
         """
@@ -135,7 +136,7 @@ class Database(JSONRequests):
     def __init__(self, dbname = 'database', url = 'http://localhost:5984/'):
         self._queue = []
         self.name = dbname
-        CouchRequests.__init__(self, url)
+        JSONRequests.__init__(self, url)
         
     def queue(self, doc):
         """

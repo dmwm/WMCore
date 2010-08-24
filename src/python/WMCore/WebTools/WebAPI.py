@@ -89,14 +89,11 @@ class WebAPI(DatabasePage):
         Run the specified method with the provided input, return a dict 
         containing the result of the call or an exception wrapped in a dict. 
         """
-        kwargs=''
-        for i in input:
-            kwargs = kwargs + "%s='%s'," % (i, input[i])
         dict = {}
         try:
             assert method in self.methods.keys(), "Unknown method called"
-            if len(kwargs):
-                dict = self.methods[method]['call'](kwargs.strip(','))
+            if len(input):
+                dict = self.methods[method]['call'](**input)
             else:
                 dict = self.methods[method]['call']()
         except Exception, e:
@@ -106,6 +103,6 @@ class WebAPI(DatabasePage):
             dict = {'Exception':{'Exception_thrown_in': method,
                        'Exception_type': '%s' % sys.exc_type,
                        'Exception_detail':error, 
-                       'Exception_arguments': kwargs,
+                       'Exception_arguments': input,
                        'Exception_dict':dict}}
         return dict

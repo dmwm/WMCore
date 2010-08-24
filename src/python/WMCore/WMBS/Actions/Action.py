@@ -9,6 +9,7 @@ objects to produce a single output.
 
 from WMCore.Action import BaseAction as CoreBaseAction
 from WMCore.Action import BoundAction as CoreBoundAction
+from WMCore.DAOFactory import DAOFactory
 
 class BaseAction(CoreBaseAction):
     name = "BaseAction"
@@ -17,4 +18,4 @@ class BaseAction(CoreBaseAction):
 
 class BoundAction(CoreBoundAction):
     def __init__(self, logger):
-        CoreBoundAction.__init__(package='WMCore.WMBS', logger=logger)
+        CoreBoundAction.__init__(self, package='WMCore.WMBS', logger=logger)

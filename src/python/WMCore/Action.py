@@ -22,7 +22,8 @@ class BaseAction(object):
         self.logger.debug("Instantiating %s Action object" % self.name)
        
     def execute(self, dbinterface = None):
-        action = DAOFactory(package=self.package, logger=self.logger, dbinterface=dbinterface)
+        daofactory = DAOFactory(package=self.package, logger=self.logger, dbinterface=dbinterface)
+        action = daofactory(classname=self.name)
         try:
             return action.execute()
         except Exception, e:
@@ -37,7 +38,8 @@ class BoundAction(BaseAction):
     def execute(self, **kwargs):
         if not 'dbinterface' in kwargs.keys():
             raise ValueError, "You must pass a dbinterface to a BoundAction's execute method"
-        action = DAOFactory(package=self.package, logger=self.logger, dbinterface=kwargs['dbinterface'])
+        daofactory = DAOFactory(package=self.package, logger=self.logger, dbinterface=dbinterface)
+        action = daofactory(classname=self.name)
         try:
             return action.execute(kwargs)
         except Exception, e:

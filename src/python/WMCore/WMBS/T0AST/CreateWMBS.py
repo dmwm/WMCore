@@ -6,8 +6,8 @@ Implementation of CreateWMBS for T0AST.
 Inherit from Oracle.CreateWMBS, and add T0AST specific changes.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.2 2008/10/22 18:00:51 metson Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: CreateWMBS.py,v 1.3 2008/11/10 15:41:45 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.Oracle.CreateWMBS import CreateWMBS as OracleCreate
 

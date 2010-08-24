@@ -3,12 +3,12 @@ _CreateWMBS_
 
 Implementation of CreateWMBS for MySQL.
 
-Inherit from CreateWMBSBase, and add MySQL specific substituions (e.g. add 
-INNODB) and specific creaetes (e.g. for time stamp and enum fields).
+Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add 
+INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.19 2008/10/22 18:00:50 metson Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: CreateWMBS.py,v 1.20 2008/11/10 15:42:01 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 

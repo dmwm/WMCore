@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add SQLite specific creates to the dictionary
 at some high value.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.15 2008/10/03 11:31:20 metson Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: CreateWMBS.py,v 1.16 2008/11/10 15:41:44 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 

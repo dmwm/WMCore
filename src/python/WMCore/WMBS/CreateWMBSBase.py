@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.8 2008/10/24 14:57:56 metson Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.9 2008/11/10 15:41:44 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBCreator import DBCreator
 

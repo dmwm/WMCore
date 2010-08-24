@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.5 2008/10/24 14:57:56 metson Exp $"
-__version__ = "$Reivison: $"
+__revision__ = "$Id: CreateWMBS.py,v 1.6 2008/11/10 15:42:01 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 

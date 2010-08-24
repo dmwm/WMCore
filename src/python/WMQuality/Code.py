@@ -8,8 +8,8 @@ and generate a file for checking the
 code style.
 """
 
-__revision__ = "$Id: Code.py,v 1.4 2009/01/26 13:23:44 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Code.py,v 1.5 2009/02/11 09:21:01 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -201,7 +201,6 @@ class Code:
                     if same:
                         for moduleName, developer in parents[parent]:
                             del self.module[moduleName]  
-                print('test '+str(length))
          
 
     def generate(self, fileName):

@@ -8,8 +8,8 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.8 2009/02/06 15:26:35 fvlingen Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Test.py,v 1.9 2009/02/11 09:21:01 fvlingen Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -210,7 +210,7 @@ from WMQuality.Test import Test
                 if not losers.has_key(winner):
                     losers[winner] = []
                     losersCum[winner] = 0
-                losers[winner].append( [importStmt, errorMsg] )
+                losers[winner].append( [testFile, importStmt, errorMsg] )
                 losersCum[winner] += 1
         # make the object instantiations.
         # it is done with try/except clauses to test instantiation (level 2)
@@ -266,8 +266,9 @@ test.summaryText()
         for winner in losers.keys():
             failures.writelines('************Author: '+winner+'***********\n\n')
             for failed in losers[winner]:
-                failures.writelines('Failed import: '+failed[0]+'\n\n')
-                failures.writelines('Error message: \n'+failed[1]+'\n\n')              
+                failures.writelines('File: '+failed[0]+'\n\n')
+                failures.writelines('Failed import: '+failed[1]+'\n\n')
+                failures.writelines('Error message: \n'+failed[2]+'\n\n')              
  
  
     def summaryText(self):

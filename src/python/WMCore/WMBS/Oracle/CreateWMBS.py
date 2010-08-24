@@ -9,12 +9,15 @@ at some high value.
 Remove Oracle reserved words (e.g. size) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.3 2008/10/13 17:33:45 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.4 2008/10/22 18:00:51 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
 class CreateWMBS(CreateWMBSBase):
+    """
+    Class to set up the WMBS schema in an Oracle database
+    """
     def __init__(self, logger, dbInterface):
         """
         _init_
@@ -163,7 +166,7 @@ class CreateWMBS(CreateWMBSBase):
                  FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                    ON DELETE CASCADE,
              constraint fk_subsfailed_file
-                 FOREIGN KEY (fileid)         REFERENCES wmbs_file_details(id))"""
+                 FOREIGN KEY (fileid)       REFERENCES wmbs_file_details(id))"""
 
 
         self.create["12wmbs_sub_files_complete"] = \
@@ -251,18 +254,18 @@ class CreateWMBS(CreateWMBSBase):
                  FOREIGN KEY (job)         REFERENCES wmbs_job(id))"""
              
         self.create["19wmbs_job_mask"] = \
-          """CREATE TABLE wmbs_job_mask (
-              job           number(10)     not null,
-              FirstEvent    number(10),
-              LastEvent     number(10),
-              FirstLumi     number(10),
-              LastLumi      number(10),
-              FirstRun      number(10),
-              LastRun       number(10),
-              inclusivemask CHAR(1) CHECK (inclusivemask IN ( 'Y', 'N' )) not null,
-              constraint fk_mask_job
-                  FOREIGN KEY (job) REFERENCES wmbs_job(id)
-                    ON DELETE CASCADE)"""
+      """CREATE TABLE wmbs_job_mask (
+          job           number(10)     not null,
+          FirstEvent    number(10),
+          LastEvent     number(10),
+          FirstLumi     number(10),
+          LastLumi      number(10),
+          FirstRun      number(10),
+          LastRun       number(10),
+          inclusivemask CHAR(1) CHECK (inclusivemask IN ( 'Y', 'N' )) not null,
+          constraint fk_mask_job
+              FOREIGN KEY (job) REFERENCES wmbs_job(id)
+                ON DELETE CASCADE)"""
           
         
         for subType in ("Processing", "Merge", "Job"):
@@ -273,8 +276,9 @@ class CreateWMBS(CreateWMBSBase):
         for i in self.create.keys():
             self.create[i] = self.create[i].replace('INTEGER', 'number(10)')
             self.create[i] = self.create[i].replace('INT(11)', 'number(10)')
-        j=50
+        j = 50
         for i in sequence_tables:
             seqname = '%s_SEQ' % i
             self.create["%s%s" % (j, seqname)] = \
-      "CREATE SEQUENCE %s start with 1 increment by 1 nomaxvalue cache 100;" % seqname
+      "CREATE SEQUENCE %s start with 1 increment by 1 nomaxvalue cache 100;" \
+                    % seqname

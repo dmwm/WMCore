@@ -7,12 +7,15 @@ Inherit from CreateWMBSBase, and add MySQL specific substituions (e.g. add
 INNODB) and specific creaetes (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.18 2008/10/08 14:29:16 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.19 2008/10/22 18:00:50 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
 class CreateWMBS(CreateWMBSBase):
+    """
+    Class to set up the WMBS schema in a MySQL database
+    """
     def __init__(self, logger, dbInterface):
         """
         _init_

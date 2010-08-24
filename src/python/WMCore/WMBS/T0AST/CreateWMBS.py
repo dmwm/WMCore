@@ -6,12 +6,15 @@ Implementation of CreateWMBS for T0AST.
 Inherit from Oracle.CreateWMBS, and add T0AST specific changes.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.1 2008/10/13 12:47:38 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.2 2008/10/22 18:00:51 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.Oracle.CreateWMBS import CreateWMBS as OracleCreate
 
 class CreateWMBS(OracleCreate):
+    """
+    Class to set up the WMBS schema in the T0AST database
+    """
     def __init__(self, logger, dbInterface):
         """
         _init_
@@ -19,7 +22,7 @@ class CreateWMBS(OracleCreate):
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """
-        CreateWMBSBase.__init__(self, logger, dbInterface)
+        OracleCreate.__init__(self, logger, dbInterface)
         
         self.create["02wmbs_file_details"] = None # This would be a view
         

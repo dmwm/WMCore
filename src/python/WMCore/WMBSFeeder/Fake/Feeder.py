@@ -7,11 +7,12 @@ A feeder implementation that generates fake files. Make up random sizes, names a
 Always returns new/unique files.
 """
 __all__ = []
-__revision__ = "$Id: Feeder.py,v 1.2 2008/07/21 16:21:32 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Feeder.py,v 1.3 2008/07/21 16:33:46 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.File import File
+from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 
 import time, random, md5
 
@@ -32,19 +33,19 @@ def uuid( *args ):
     return data
   
 
-class Feeder(WMObject):
+class Feeder(FeederImpl):
     def __init__(self, max = 10):
         self.max = max
         self.locations = ['fakese01.cern.ch','fakese02.cern.ch','fakese01.fnal.gov','fakese02.fnal.gov','fakese01.rl.ac.uk','fakese02.rl.ac.uk']
     
-    def __call__(self, fileset=["My Cool Fileset"]):
+    def __call__(self, fileset):
         """
-        return a list of files (DataStructs.File) at locations (string)
+        return a randomly sized list of files (DataStructs.File) at locations
+        files will always be new
         """
         num_files = random.randint(0 , self.max)
-        
-        list = []
-        for f in fileset:
+        for f in self.makelist(fileset):
+            list = []
             for i in range(0, num_files):
                 # Decide where the file is
                 locs = []
@@ -59,6 +60,5 @@ class Feeder(WMObject):
                 file = File(lfn, size, events, run, lumi)
                 file.setLocation(locs)
                 f.addFile(file)
-            
                 
             

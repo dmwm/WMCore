@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.10 2008/09/19 16:27:30 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Subscription.py,v 1.11 2008/09/25 13:07:42 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 import copy
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset 
@@ -29,6 +29,9 @@ class Subscription(Pickleable):
         self.acquired = Fileset(name='acquired', logger = fileset.logger)
         self.completed = Fileset(name='completed', logger = fileset.logger)
         self.failed = Fileset(name='failed', logger = fileset.logger)
+    
+    def name(self):
+        return self.getWorkflow().name + '_' + self.getFileset().name
         
     def getWorkflow(self):
         return self.workflow

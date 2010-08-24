@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.8 2009/02/03 17:55:34 ewv Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.9 2009/02/09 18:04:06 mcinquil Exp $"
+__version__  = "$Revision: 1.9 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -90,7 +90,7 @@ class BlackWhiteListParser(object):
         return expandedList
 
 
-    def checkBlackList(self, sites, fileblocks=''):
+    def checkBlackList(self, sites, fileblocks=[]):
         """
         Select sites that are not excluded by the user (via blacklist)
 
@@ -120,7 +120,7 @@ class BlackWhiteListParser(object):
         return goodSites
 
 
-    def checkWhiteList(self, sites, fileblocks=''):
+    def checkWhiteList(self, sites, fileblocks=[]):
         """
         Select sites that are defined by the user (via white list).
 

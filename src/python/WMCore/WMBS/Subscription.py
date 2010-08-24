@@ -19,8 +19,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.13 2008/07/04 16:49:00 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Subscription.py,v 1.14 2008/07/08 12:11:11 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -35,8 +35,10 @@ class Subscription(BusinessObject, WMSubscription):
                   type = "Processing", split_algo = 'FileBased', 
                   logger=None, dbfactory = None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        WMSubscription.__init__(self, fileset=fileset, workflow=workflow, 
-                                type=type, split_algo = split_algo)
+        self.fileset = fileset
+        self.workflow = workflow
+        self.type = type
+        self.split_algo = split_algo
         self.id = id
         
     def create(self):
@@ -97,16 +99,17 @@ class Subscription(BusinessObject, WMSubscription):
         acquire all files (default behaviour).
         """
         action = self.daofactory(classname='Subscriptions.AcquireFiles')
+        files = self.makelist(files)
         if len(files):
             action.execute(self.id, [x.id for x in files])
             return [x.id for x in files]
         else:
             files = self.availableFiles()
-            l = []
+            l = Set()
             if len(files) < size or size == 0:
                 size = len(files)
             for i in range(size):
-                l.append(files.pop())
+                l.add(files.pop())
                 i = i + 1
             action.execute(self.id, [x for x in l])
             return l

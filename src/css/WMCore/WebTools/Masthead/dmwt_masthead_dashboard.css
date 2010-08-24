@@ -1,0 +1,38 @@
+@CHARSET "UTF-8";
+
+.masthead { 
+	background:rgb(255, 165, 234);
+	border:solid rgb(164, 34, 119) 0px;
+	border-bottom-width: 1px;
+}
+.masthead .mastheadLeft ul, .masthead .mastheadRight ul {
+	border:solid rgb(164, 34, 119) 0px;
+	color: rgb(164, 34, 119);
+}
+.masthead .mastheadLeft ul li a, .masthead .mastheadRight ul li a {
+	color: rgb(164, 34, 119);
+	padding:5px 10px 5px 10px;
+}
+.masthead #dashboard a{
+	background:rgb(164, 34, 119);
+	color:white;
+}
+/* This next bit is for site dependant masthead */
+.mastheadfooter {
+	background:rgb(164, 34, 119);
+}
+.mastheadfooter ul {
+	color:white;
+}
+.mastheadfooter ul li {
+	color:rgb(255, 233, 179);	
+}
+.mastheadfooter ul li a, .mastheadfooter ul li a:visited{
+	color:white;
+}
+.mastheadfooter ul li a:hover{
+	color:white;
+}
+.mastheadfooter ul li a:active{
+	color:white;
+}

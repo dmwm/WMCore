@@ -17,26 +17,24 @@ AddWorkflowToManage - Used to add a Fileset name : Subscription creation mapping
    WorkflowId : string (ID from WMBS database of workflow to apply to new subs)
    SplitAlgo : string (as passed to Subscription constructor)
    Type : string (as passed to Subscription constructor)
+
+RemoveWorkflowFromManagement - Used to add a Fileset name : Subscription
+                               creation mapping
+   FilesetMatch : string (regex of fileset names to match)
+   WorkflowId : string (ID from WMBS database of workflow to apply to new subs)
    
-AddToLocationWhitelist - Adds locations to the whitelist of created subscriptions
+AddToWorkflowManagementLocationList - Adds locations to the white / black list
+                                      of created subscriptions
     FilesetMatch : string (as passed to AddWorkflowToManage)
     WorkflowId : string (as passed to AddWorkflowToManage)
     Locations : string (comma separated list of locations to add to whitelist)
+    Valid : bool (are these locations for whitelist (True) or blacklist (False))
     
-RemoveFromLocationWhitelist - Removes locations from the whitelist of created subscriptions
+RemoveFromWorkflowManagementLocationList - Removes locations from the white /
+                                           blacklist of created subscriptions
     FilesetMatch : string (as passed to AddWorkflowToManage)
     WorkflowId : string (as passed to AddWorkflowToManage)
     Locations : string (comma separated list of locations to remove from whitelist)
-    
-AddToLocationBlacklist - Adds locations to the blacklist of created subscriptions
-    FilesetMatch : string (as passed to AddWorkflowToManage)
-    WorkflowId : string (as passed to AddWorkflowToManage)
-    Locations : string (comma separated list of locations to add to blacklist)
-    
-RemoveFromLocationBlacklist - Removes locations from the blacklist of created subscriptions
-    FilesetMatch : string (as passed to AddWorkflowToManage)
-    WorkflowId : string (as passed to AddWorkflowToManage)
-    Locations : string (comma separated list of locations to remove from blacklist)
 
 Note there is one potential concurrency problem. If a managment request is made,
 and filesets become available before messages to handle location white / black
@@ -45,6 +43,6 @@ complete.
 """
 
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.1 2009/02/04 21:57:11 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: __init__.py,v 1.2 2009/02/05 14:45:03 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "james.jackson@cern.ch"

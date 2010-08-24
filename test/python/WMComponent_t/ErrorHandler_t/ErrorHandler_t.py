@@ -4,10 +4,11 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.1 2008/09/12 13:02:10 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.2 2008/09/18 14:48:34 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
+import commands
 import logging
 import os
 import threading
@@ -27,6 +28,7 @@ class ErrorHandlerTest(unittest.TestCase):
     """
 
     _setup_done = False
+    _teardown = False
     _maxMessage = 10
 
     def setUp(self):
@@ -46,7 +48,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
             options = {}
             options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("MYSQLDATABASE"), \
+            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
 
             myThread.dbi = dbFactory.connect()
@@ -78,6 +80,12 @@ class ErrorHandlerTest(unittest.TestCase):
  
 
             ErrorHandlerTest._setup_done = True
+
+    def tearDown(self):
+        """
+        Deletion of databases is external
+        """
+        pass
 
     def testA(self):
         """
@@ -123,6 +131,7 @@ class ErrorHandlerTest(unittest.TestCase):
             print('Currently: '+str(threading.activeCount())+\
                 ' Threads. Wait until all our threads have finished')
             time.sleep(1)
+        ErrorHandlerTest._teardown = True
 
 if __name__ == '__main__':
     unittest.main()

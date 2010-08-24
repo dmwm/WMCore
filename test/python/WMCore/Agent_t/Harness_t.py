@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.7 2008/09/12 13:02:11 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Harness_t.py,v 1.8 2008/09/18 14:48:34 fvlingen Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -46,7 +46,7 @@ class HarnessTest(unittest.TestCase):
 
             options = {}
             options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("MYSQLDATABASE"), \
+            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
 
             myThread.dbi = dbFactory.connect()
@@ -65,14 +65,9 @@ class HarnessTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Delete the databases
+        Deletion is external
         """
-        myThread = threading.currentThread()
-        if HarnessTest._teardown:
-            myThread.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root --socket='+os.getenv("DBSOCK")+' drop '+os.getenv("DBNAME")))
-            myThread.logger.debug(commands.getstatusoutput('mysqladmin -u root --socket='+os.getenv("DBSOCK")+' create '+os.getenv("DBNAME")))
-            myThread.logger.debug("database deleted")
-
+        pass
 
     def testA(self):
         """

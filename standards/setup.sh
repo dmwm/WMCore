@@ -12,20 +12,8 @@ export TESTDIR=/home/fvlingen/programFiles/CMS_CVS/WMCORE_TEST
 export WMCOREBASE=$CVSBASE/WMCORE
 export PYTHONPATH=$WMCOREBASE/src/python:$PYTHONPATH
 #export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
-# source oracle environment (if you have it/need it):
-source /usr/lib/oracle/xe/app/oracle/product/10.2.0/server/bin/oracle_env.sh
-export DBNAME=wmbs
-export DBUSER=some_user
-export DBPASS=some_pass
-
-#DO NOT TOUCH FROM HERE !
-echo "-->Creating MySQL database access string"
-export DBSOCK=$TESTDIR/mysqldata/mysql.sock
-export DBHOST=localhost
-export MYSQLDATABASE=mysql://${DBUSER}:${DBPASS}@${DBHOST}/${DBNAME}
-echo '-->Using mysql DB: ' $MYSQLDATABASE
-export SQLCREATE="GRANT ALL PRIVILEGES ON ${DBNAME}.* TO '${DBUSER}'@'localhost' IDENTIFIED BY '${DBPASS}' WITH GRANT OPTION;"
-
 echo "-->Sourcing CMS environment"
 source $PRODAGENTBASE/etc/profile.d/init.sh
-
+source setup_mysql.sh
+./start_mysql.sh
+./start_mysql.proxy.sh

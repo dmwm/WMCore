@@ -67,24 +67,14 @@ TESTING:
 
 This directory also contains a set of .sh files to setup and run tests
 
--edit the setup.sh to reflect your settings (it assumes you use the cms packages 
+-edit the setup*.sh scripts to reflect your settings (it assumes you use the cms packages 
 for running the tests (e.g. mysql, sqlalchemy).
--source the setup.sh file
+-source the setup.sh file (once)
 
-You can then test using the folowing workflow:
+(optional) edit the test.sh file to disable some tests.
+run test.sh  (repeat as necessary)
 
-|----->./startup_dbs.sh
-|             |
-|            \|/
-| |--->./test (comment out what you do not need)
-| |           |
-| |          \|/
-| |----./cleanup.sh
-|             |
-|            \|/
-|------./stop_dbs
-
-After setup.sh you can also test your code quality
+After sourcing setup.sh you can also test your code quality
 using the quality.sh command. Either invoke
 quality.sh with a file or directory, or edit 
 the myfiles.sh script to run quality tests on several

@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.2 2008/09/01 12:41:25 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.3 2008/09/18 14:48:34 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import logging
@@ -46,8 +46,8 @@ class DBFormatterTest(unittest.TestCase):
 
             options = {}
             dburl = ''
-            if os.getenv("MYSQLDATABASE"):
-                dburl = os.getenv("MYSQLDATABASE")
+            if os.getenv("DATABASE"):
+                dburl = os.getenv("DATABASE")
                 options['unix_socket'] = os.getenv("DBSOCK")
                 myThread.create = """
 create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """

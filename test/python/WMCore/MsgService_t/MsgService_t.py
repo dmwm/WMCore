@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.8 2008/09/16 15:03:04 fvlingen Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: MsgService_t.py,v 1.9 2008/09/18 14:48:35 fvlingen Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import commands
 import unittest
@@ -59,7 +59,7 @@ class MsgServiceTest(unittest.TestCase):
         
             options = {}
             options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("MYSQLDATABASE"), \
+            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
         
             myThread.dbi = dbFactory.connect() 
@@ -78,13 +78,9 @@ class MsgServiceTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Delete the databases
+        Deletion of the databases is external
         """
-        myThread = threading.currentThread()
-        if MsgServiceTest._teardown:
-            myThread.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root --socket='+os.getenv("DBSOCK")+' drop '+os.getenv("DBNAME")))
-            myThread.logger.debug(commands.getstatusoutput('mysqladmin -u root --socket='+os.getenv("DBSOCK")+' create '+os.getenv("DBNAME")))
-            myThread.logger.debug("database deleted")
+        pass
                
                
     def testA(self):

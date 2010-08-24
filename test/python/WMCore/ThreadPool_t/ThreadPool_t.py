@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.5 2008/09/09 13:50:36 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.6 2008/09/18 14:48:35 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import commands
 import unittest
@@ -56,7 +56,7 @@ class ThreadPoolTest(unittest.TestCase):
             options = {}
             options['unix_socket'] = os.getenv("DBSOCK")
             myThread.dbFactory = DBFactory(myThread.logger, \
-                os.getenv("MYSQLDATABASE"), options)
+                os.getenv("DATABASE"), options)
             myThread.dbi = myThread.dbFactory.connect() 
             myThread.transaction = Transaction(myThread.dbi)
 
@@ -75,14 +75,9 @@ class ThreadPoolTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Delete the databases
+        Deletion is external
         """
-        myThread = threading.currentThread()
-        if ThreadPoolTest._teardown:
-            myThread.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root --socket='+os.getenv("DBSOCK")+' drop '+os.getenv("DBNAME")))
-            myThread.logger.debug(commands.getstatusoutput('mysqladmin -u root --socket='+os.getenv("DBSOCK")+' create '+os.getenv("DBNAME")))
-            myThread.logger.debug("database deleted")
-               
+        pass 
                
     def testA(self):
         """

@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.3 2008/09/12 13:02:11 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Trigger_t.py,v 1.4 2008/09/18 14:48:35 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import unittest
@@ -54,7 +54,7 @@ class TriggerTest(unittest.TestCase):
         
             options = {}
             options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("MYSQLDATABASE"), \
+            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
         
             myThread.dbi = dbFactory.connect() 
@@ -72,14 +72,9 @@ class TriggerTest(unittest.TestCase):
 
     def tearDown(self):
         """
-        Delete the databases
+        Deletion is external
         """
-        myThread = threading.currentThread()
-        if TriggerTest._teardown:
-            myThread.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root --socket='+os.getenv("DBSOCK")+' drop '+os.getenv("DBNAME")))
-            myThread.logger.debug(commands.getstatusoutput('mysqladmin -u root --socket='+os.getenv("DBSOCK")+' create '+os.getenv("DBNAME")))
-            myThread.logger.debug("database deleted")
-               
+        pass 
                
     def testA(self):
         """

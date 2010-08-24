@@ -7,8 +7,8 @@ and one per job type.
 
 """
 
-__revision__ = "$Id: FileBased_unit.py,v 1.1 2008/09/12 17:04:17 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FileBased_unit.py,v 1.2 2008/09/15 10:08:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 from sets import Set
 import unittest, logging, os, commands, random, datetime, math
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
@@ -122,30 +122,34 @@ class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
         self.tearDown()
         
         self.dbf = DBFactory(logging.getLogger('wmbs_sqlite'), 
-                             'sqlite:///FileBasedWMBSObjectTest.lite')
+                             'sqlite://FileBasedWMBSObjectTest.lite')
         daofactory = DAOFactory(package='WMCore.WMBS', 
                                 logger=logging.getLogger('wmbs_sqlite'), 
                                 dbinterface=self.dbf.connect())
         
         theSQLiteCreator = daofactory(classname='CreateWMBS')
-        assert theSQLiteCreator.execute(), "could not create database instance"
-        
-        
+        assert not theSQLiteCreator.execute(None, False), "could not create database instance"
+
         self.fileset = WMBSFileset(name='MyCoolFiles', 
                                    logger=logging.getLogger('wmbs_fileset'), 
                                    dbfactory=self.dbf)
+
         self.fileset.create()
-        
+
+        print "Creating file:"
         for i in range(1, 993):
+            print "  %d" % i
             file = WMBSFile(lfn="/store/data/Electrons/1234/5678/h1%s.root" % i, 
                              size=1000, events=2000, lumi=10 + i, run=12312, 
                              logger=logging.getLogger('wmbs_file'), 
                              dbfactory=self.dbf)
             self.fileset.addFile(file)
+
         self.fileset.commit()
+
         work = WMBSWorkflow(logger=logging.getLogger('wmbs_workflow'), 
                             dbfactory=self.dbf)
-        
+
         self.subscription = WMBSSubscription(fileset = self.fileset, 
                 workflow = work, 
                 split_algo = 'FileBased', 

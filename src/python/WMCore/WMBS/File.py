@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.15 2008/07/21 17:23:44 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: File.py,v 1.16 2008/08/09 22:20:16 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -24,7 +24,7 @@ class File(BusinessObject, WMFile):
         """
         Create the file object
         """
-        self.dict["id"] = id
+        self.dict["id"] = int(id)
         self.dict["locations"] = locations
         
     def getInfo(self):

@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.15 2009/02/03 23:38:39 rpw Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Root.py,v 1.16 2009/02/13 11:27:46 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -136,9 +136,10 @@ class Root(WMObject):
                                            severity=logging.INFO, 
                                            traceback=False)
         
-        for i in self.appconfig.views.maintenance:
-            #TODO: Show a maintenance page
-            pass
+        if hasattr(self.appconfig.views, 'maintenance'):
+            for i in self.appconfig.views.maintenance:
+                #TODO: Show a maintenance page
+                pass
 
         # now make the index page
         if hasattr(self.appconfig, 'index'):

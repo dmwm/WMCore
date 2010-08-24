@@ -16,10 +16,9 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.8 2008/06/20 12:34:21 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Workflow.py,v 1.9 2008/06/23 16:01:15 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Workflow(BusinessObject):
@@ -37,23 +36,18 @@ class Workflow(BusinessObject):
     workflow + fileset = subscription
     """
 
-    def __init__(self, spec=None, owner=None, name=None, logger=None, dbfactory=None):
-        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
+    def __init__(self, spec=None, owner=None, name=None, id=-1, logger=None, dbfactory=None):
+        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         #TODO: define a url-like scheme for spec's and enforce it here
         self.spec = spec
         self.name = name
         self.owner = owner
         self.name = name
-        self.dbfactory = dbfactory
-        self.logger = logger
-        self.daofactory = DAOFactory(package='WMCore.WMBS', 
-                                     logger=self.logger, 
-                                     dbinterface=self.dbfactory.connect())
-        
+        self.id = id
         
     def exists(self):
         """
-        Does a workflow exist with this spec and owner
+        Does a workflow exist with this spec and owner, return the id
         """
         action = self.daofactory(classname='Workflow.Exists')
         return action.execute(spec=self.spec, 
@@ -68,6 +62,7 @@ class Workflow(BusinessObject):
         action.execute(spec=self.spec, 
                        owner=self.owner, 
                        name=self.name)
+        self.id = self.exists()
 
     def delete(self):
         """
@@ -76,9 +71,7 @@ class Workflow(BusinessObject):
         self.logger.warning('You are removing the following workflow from WMBS %s (%s) owned by %s'
                                  % (self.name, self.spec, self.owner))
         action = self.daofactory(classname='Workflow.Delete')
-        action.execute(spec=self.spec, 
-                       owner=self.owner, 
-                       name=self.name)
+        action.execute(id=self.id)
         
         
         

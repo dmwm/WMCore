@@ -7,8 +7,8 @@ are database dialect neutral
 
 """
 
-__revision__ = "$Id: workflow_DAOFactory_unit.py,v 1.2 2008/06/12 11:05:07 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: workflow_DAOFactory_unit.py,v 1.3 2008/06/23 16:01:30 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands
 
@@ -90,11 +90,11 @@ class WorkflowDAOObjectTestCase(BaseWorkflowTestCase):
 
         assert self.action2[0].execute(spec='spec.xml', owner='Simon', name='wf001') == True, \
                                'workflow cannot be created'
-
-        assert self.action1[0].execute(spec='spec.xml', owner='Simon', name='wf001') == True, \
-                               'workflow does not exist after it has been created'   
+        
+        id = self.action1[0].execute(spec='spec.xml', owner='Simon', name='wf001')
+        assert id > 0, 'workflow does not exist after it has been created'   
                                
-        assert self.action3[0].execute(spec='spec.xml', owner='Simon', name='wf001') == True, \
+        assert self.action3[0].execute(id = id) == True, \
                                'workflow cannot be deleted'
                                
         assert self.action1[0].execute(spec='spec.xml', owner='Simon', name='wf001') == False, \
@@ -106,11 +106,11 @@ class WorkflowDAOObjectTestCase(BaseWorkflowTestCase):
 
         assert self.action2[1].execute(spec='spec.xml', owner='Simon', name='wf001') == True, \
                                'workflow cannot be created'
-
-        assert self.action1[1].execute(spec='spec.xml', owner='Simon', name='wf001') == True, \
-                               'workflow does not exist after it has been created' 
+        id = self.action1[1].execute(spec='spec.xml', owner='Simon', name='wf001')
+        
+        assert id > 0, 'workflow does not exist after it has been created' 
                                
-        assert self.action3[1].execute(spec='spec.xml', owner='Simon', name='wf001') == True, \
+        assert self.action3[1].execute(id = id) == True, \
                                'workflow cannot be deleted'
                                
         assert self.action1[1].execute(spec='spec.xml', owner='Simon', name='wf001') == False, \
@@ -140,8 +140,9 @@ class WorkflowDAOObjectTestCase(BaseWorkflowTestCase):
         assert mysql == sqlite, 'dialect difference mysql: %s, sqlite: %s' % (mysql, sqlite)
     
     def testDeleteDialectNeutral(self):
-        mysql = self.action3[0].execute(spec='spec.xml', owner='Simon', name='wf001')
-        sqlite = self.action3[1].execute(spec='spec.xml', owner='Simon', name='wf001')
+        
+        mysql = self.action3[0].execute(id=1)
+        sqlite = self.action3[1].execute(id=1)
         assert mysql == sqlite, 'dialect difference mysql: %s, sqlite: %s' % (mysql, sqlite)
     
 class WorkflowBusinessObjectTestCase(BaseWorkflowTestCase):

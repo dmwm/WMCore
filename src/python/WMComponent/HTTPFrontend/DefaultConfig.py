@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.8 2009/01/26 23:48:58 rpw Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.9 2009/01/31 01:24:57 rpw Exp $"
+__version__ = "$Revision: 1.9 $"
 
 
 from WMCore.Configuration import Configuration
@@ -45,3 +45,7 @@ active.assignmentManager.Port = config.HTTPFrontEnd.Port
 
 active.section_('requestDataService')
 active.requestDataService.object = 'ReqMgr.Component.RequestDataService.RequestDataService'
+
+active.section_('requestListener')
+active.requestListener.object = 'ReqMgr.Component.RequestListener.RequestListener'
+

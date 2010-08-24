@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.4 2008/04/14 16:26:10 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBCore.py,v 1.5 2008/05/12 11:58:08 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 from sqlalchemy.databases.mysql import MySQLDialect
@@ -78,6 +78,10 @@ class DBInterface(object):
             connection = self.engine.connect()
         else: 
             connection = conn
+            
+        if not transaction: 
+                trans = connection.begin()
+            
         result = []
         # Can take either a single statement or a list of statements and binds
         if type(sqlstmt) == type("string") and binds is None:
@@ -91,14 +95,15 @@ class DBInterface(object):
                                             connection=connection))
         elif type(sqlstmt) == type("string") and isinstance(binds, list):
             #Run single SQL statement for a list of binds
-            if not transaction: 
-                trans = connection.begin()
+            #if not transaction: 
+            #    trans = connection.begin()
+            #    print "start transaction"
             try:
                 for b in binds:
                     result.append(self.executebinds(sqlstmt, b,
                                             connection=connection))
-                if not transaction: 
-                    trans.commit()
+                #if not transaction: 
+                #    trans.commit()
             except Exception, e:
                 if not transaction: 
                     trans.rollback()
@@ -106,15 +111,15 @@ class DBInterface(object):
         elif isinstance(sqlstmt, list) and isinstance(binds, list) \
                 and len(binds) == len(sqlstmt):            
             # Run a list of SQL for a list of binds
-            if not transaction: 
-                trans = connection.begin()
+            #if not transaction: 
+             #   trans = connection.begin()
             try:
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
                     result.append(self.executebinds(sqlstmt, b,
                                             connection=connection))
-                if not transaction: 
-                    trans.commit()
+                #if not transaction:
+                #    trans.commit()
             except Exception, e:
                 if not transaction: 
                     trans.rollback()
@@ -131,7 +136,29 @@ class DBInterface(object):
                                type("string"), type({}),
                                type(connection), type(transaction))
             raise 'some clever exception type'
+        
+#        if not transaction:
+#            #print "commiting transaction"
+#            trans.commit()
+#        if not conn: 
+#            connection.close() # Return connection to the pool
+        
+        # change resultset to list
+        #return result
+        temp = []
+        for row in result:
+            for subrow in row.fetchall():
+                #print "have %s" % subrow
+                #temp.extend(subrow.values())
+                temp.append(subrow.values())
+            temp.extend(row.fetchall())
+            #temp.append(row.fetchall())
+#        print temp
+        if not transaction:
+            #print "commiting transaction"
+            trans.commit()
         if not conn: 
             connection.close() # Return connection to the pool
-        return result
+            
+        return temp
         

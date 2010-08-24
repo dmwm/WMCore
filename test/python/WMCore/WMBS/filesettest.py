@@ -79,7 +79,7 @@ fs.commit()
 print " ### Look for subscriptions, should be none"
 
 fs.subscriptions()
-fs.subscriptions('merge')
+fs.subscriptions('Merge')
 print "check for subscriptions of type 'blah' - should throw exception"
 try:
     fs.subscriptions('blah')
@@ -92,14 +92,14 @@ wf.create()
 print 'Workflow %s exists?: %s' % (wf.spec, wf.exists())
 
 sub1 = fs.createSubscription(wf)
-sub2 = fs.createSubscription(wf, 'merge')
+sub2 = fs.createSubscription(wf, 'Merge')
 print sub1.id
 print sub2.id
 
 print " ### Look for subscriptions, should be one of each type"
 
 fs.subscriptions()
-fs.subscriptions('merge')
+fs.subscriptions('Merge')
 print "check for subscriptions of type 'blah' - should throw exception"
 try:
     fs.subscriptions('blah')
@@ -110,14 +110,14 @@ print "\n#### Testing files in subscriptions"
 print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))
 
 print "\nAcquire two files"
-sub2.acquireFiles(2)
+sub2.acquireFiles(size=2)
 print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))
 print "\t acquired files: %s" % sub2.acquiredFiles()
 print "\t completed files: %s" % sub2.completedFiles()
 print "\t failed files: %s" % sub2.failedFiles()
 
 print "\nAcquire three files, fail one, complete one"
-sub2.acquireFiles(3)
+sub2.acquireFiles(size=3)
 sub2.failFiles(sub2.acquiredFiles().pop())
 sub2.completeFiles(sub2.acquiredFiles().pop())
 print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))

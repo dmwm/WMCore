@@ -16,8 +16,10 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.3 2008/05/02 17:29:24 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Workflow.py,v 1.4 2008/05/12 11:58:06 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
+
+from sqlalchemy.exceptions import IntegrityError
 
 class Workflow(object):
     """
@@ -38,19 +40,21 @@ class Workflow(object):
         #TODO: define a url-like scheme for spec's and enforce it here
         self.spec = spec
         self.owner = owner
+
         
     def exists(self):
         """
         Does a workflow exist with this spec and owner
         """
-        result = -1
-        for f in self.wmbs.workflowExists(self.spec, self.owner):
-            for i in f.fetchall():
-                result = i[0]
-        if result > 0:
-            return True
-        else:
-            return False
+        return self.wmbs.workflowExists(self.spec, self.owner)[0][0] > 0
+#        result = -1
+#        for f in self.wmbs.workflowExists(self.spec, self.owner):
+#            for i in f.fetchall():
+#                result = i[0]
+#        if result > 0:
+#            return True
+#        else:
+#            return False
     
     def create(self):
         """
@@ -58,9 +62,17 @@ class Workflow(object):
         """
         try:
             self.wmbs.newWorkflow(self.spec, self.owner)
-        except Exception, e:
+        except IntegrityError, e:
             self.wmbs.logger.exception('Workflow %s:%s exists' % (self.spec, self.owner))
-            raise e
+            raise
+        return self
+    
+#    def load(self, spec, owner, wmbs):
+#        self.wmbs = wmbs
+#        self.spec = spec
+#        self.owner = owner
+#        self.self.wmbs.workflowId(spec, owner, wmbs)
+        
     
     def delete(self):
         """

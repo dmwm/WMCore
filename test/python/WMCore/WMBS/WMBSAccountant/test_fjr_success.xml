@@ -1,0 +1,446 @@
+<?xml version="1.0" ?>
+<JobReports>
+	<FrameworkJobReport DashboardId="Unknown" JobSpecID="StuartTest-RelValSingleElectronPt10-999-6763777" JobType="Processing" Name="cmsRun1" Status="Success" WorkflowSpecID="StuartTest-RelValSingleElectronPt10-999">
+		<ExitCode Value="0"/>
+		<SiteDetail Parameter="SiteName" Value="T2_UK_London_Brunel"/>
+		<SiteDetail Parameter="ce-name" Value="dgc-grid-44.brunel.ac.uk"/>
+		<SiteDetail Parameter="HostName" Value="comp04"/>
+		<SiteDetail Parameter="se-name" Value="dgc-grid-34.brunel.ac.uk"/>
+		<File>
+			<SEName>
+				dgc-grid-34.brunel.ac.uk
+			</SEName>
+			<ModuleLabel>
+				out_step
+			</ModuleLabel>
+			<LFN>
+				/store/unmerged/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763/6467AF28-F31B-DD11-B1EF-003048772324.root
+			</LFN>
+			<TotalEvents>
+				69
+			</TotalEvents>
+			<PFN>
+				srm://dgc-grid-34.brunel.ac.uk:8443/srm/managerv1?SFN=/dpm/brunel.ac.uk/home/cms/store/unmerged/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763/6467AF28-F31B-DD11-B1EF-003048772324.root
+			</PFN>
+			<Catalog>
+				StuartTest-RelValSingleElectronPt10-999-6763777-out_step-Output.xml
+			</Catalog>
+			<OutputModuleClass>
+				PoolOutputModule
+			</OutputModuleClass>
+			<GUID>
+				6467AF28-F31B-DD11-B1EF-003048772324
+			</GUID>
+			<Size>
+				63835488
+			</Size>
+			<Checksum Algorithm="cksum">
+				1573607737
+			</Checksum>
+			<State Value="closed"/>
+			<Inputs/>
+			<Runs>
+				<Run>
+					6763777
+				</Run>
+			</Runs>
+			<Datasets>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="ApplicationVersion">
+						CMSSW_2_0_5
+					</Entry>
+					<Entry Name="PhysicalFileName">
+						StuartTest-RelValSingleElectronPt10-999-6763777-out_step.root
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						RelValSingleElectronPt10
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763
+					</Entry>
+					<Entry Name="DataTier">
+						GEN-SIM-DIGI-RECO
+					</Entry>
+					<Entry Name="OutputModuleName">
+						out_step
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/unmerged/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763
+					</Entry>
+					<Entry Name="Catalog">
+						StuartTest-RelValSingleElectronPt10-999-6763777-out_step-Output.xml
+					</Entry>
+					<Entry Name="ApplicationProject">
+						CMSSW
+					</Entry>
+					<Entry Name="PSetHash">
+						3fbe6f872b231642676b710e617ac7b8
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						DPG
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						CMSSW_2_0_5-StuartTest-999-unmerged
+					</Entry>
+					<Entry Name="LogicalFileName">
+						/store/unmerged/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763/StuartTest-RelValSingleElectronPt10-999-6763777-out_step.root
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						out_step
+					</Entry>
+				</DatasetInfo>
+			</Datasets>
+			<Branches>
+				<Branch>
+					FEDRawDataCollection_rawDataCollector__HLT.
+				</Branch>
+				<Branch>
+					edmTriggerResults_TriggerResults__HLT.
+				</Branch>
+				<Branch>
+					CSCDetIdCSCComparatorDigiMuonDigiCollection_muonCSCDigis_MuonCSCComparatorDigi_HLT.
+				</Branch>
+				<Branch>
+					EBSrFlagsSorted_ecalDigis_ebSrFlags_HLT.
+				</Branch>
+				<Branch>
+					EESrFlagsSorted_ecalDigis_eeSrFlags_HLT.
+				</Branch>
+				<Branch>
+					EcalRecHitsSorted_hltAlCaPhiSymStream_phiSymEcalRecHitsEB_HLT.
+				</Branch>
+				<Branch>
+					EcalRecHitsSorted_hltAlCaPhiSymStream_phiSymEcalRecHitsEE_HLT.
+				</Branch>
+				<Branch>
+					EcalRecHitsSorted_hltAlCaPi0RegRecHits_pi0EcalRecHitsEB_HLT.
+				</Branch>
+				<Branch>
+					HBHERecHitsSorted_hltAlCaHcalPhiSymStream_phiSymHcalRecHitsHBHE_HLT.
+				</Branch>
+				<Branch>
+					HFRecHitsSorted_hltAlCaHcalPhiSymStream_phiSymHcalRecHitsHF_HLT.
+				</Branch>
+				<Branch>
+					HORecHitsSorted_hltAlCaHcalPhiSymStream_phiSymHcalRecHitsHO_HLT.
+				</Branch>
+				<Branch>
+					L1GlobalTriggerEvmReadoutRecord_gtDigis__HLT.
+				</Branch>
+				<Branch>
+					L1GlobalTriggerObjectMapRecord_gtDigis__HLT.
+				</Branch>
+				<Branch>
+					L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT.
+				</Branch>
+				<Branch>
+					L1GlobalTriggerReadoutRecord_gtDigis__HLT.
+				</Branch>
+				<Branch>
+					L1GlobalTriggerReadoutRecord_hltGtDigis__HLT.
+				</Branch>
+				<Branch>
+					L1GlobalTriggerRecord_l1GtRecord__HLT.
+				</Branch>
+				<Branch>
+					L1MuGMTCands_hltGtDigis__HLT.
+				</Branch>
+				<Branch>
+					L1MuGMTReadoutCollection_hltGtDigis__HLT.
+				</Branch>
+				<Branch>
+					L1MuRegionalCands_hltGtDigis_CSC_HLT.
+				</Branch>
+				<Branch>
+					L1MuRegionalCands_hltGtDigis_DT_HLT.
+				</Branch>
+				<Branch>
+					L1MuRegionalCands_hltGtDigis_RPCb_HLT.
+				</Branch>
+				<Branch>
+					L1MuRegionalCands_hltGtDigis_RPCf_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_CaloHitsTk_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_CastorBU_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_CastorFI_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_CastorPL_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_CastorTU_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_EcalHitsEB_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_EcalHitsEE_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_EcalHitsES_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_EcalTBH4BeamHits_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_HcalHits_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_HcalTB06BeamHits_HLT.
+				</Branch>
+				<Branch>
+					PCaloHits_g4SimHits_ZDCHITS_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_BSCHits_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_FP420SI_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_MuonCSCHits_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_MuonDTHits_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_MuonRPCHits_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TotemHitsRP_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TotemHitsT1_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TotemHitsT2Gem_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsPixelBarrelHighTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsPixelBarrelLowTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsPixelEndcapHighTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsPixelEndcapLowTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTECHighTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTECLowTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTIBHighTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTIBLowTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTIDHighTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTIDLowTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTOBHighTof_HLT.
+				</Branch>
+				<Branch>
+					PSimHits_g4SimHits_TrackerHitsTOBLowTof_HLT.
+				</Branch>
+				<Branch>
+					PixelDigiSimLinkedmDetSetVector_siPixelDigis__HLT.
+				</Branch>
+				<Branch>
+					RandomEngineStates_randomEngineStateProducer__HLT.
+				</Branch>
+				<Branch>
+					SimTracks_g4SimHits__HLT.
+				</Branch>
+				<Branch>
+					SimVertexs_g4SimHits__HLT.
+				</Branch>
+				<Branch>
+					StripDigiSimLinkedmDetSetVector_muonCSCDigis_MuonCSCStripDigiSimLinks_HLT.
+				</Branch>
+				<Branch>
+					StripDigiSimLinkedmDetSetVector_muonCSCDigis_MuonCSCWireDigiSimLinks_HLT.
+				</Branch>
+				<Branch>
+					StripDigiSimLinkedmDetSetVector_siStripDigis__HLT.
+				</Branch>
+				<Branch>
+					TrackingParticles_mergedtruth_MergedTrackTruth_HLT.
+				</Branch>
+				<Branch>
+					TrackingRecHitsOwned_hltPixelTracks__HLT.
+				</Branch>
+				<Branch>
+					TrackingVertexs_mergedtruth_MergedTrackTruth_HLT.
+				</Branch>
+				<Branch>
+					double_genEventScale__HLT.
+				</Branch>
+				<Branch>
+					double_genEventWeight__HLT.
+				</Branch>
+				<Branch>
+					edmHepMCProduct_source__HLT.
+				</Branch>
+				<Branch>
+					ints_genParticles__HLT.
+				</Branch>
+				<Branch>
+					l1extraL1EmParticles_hltL1extraParticles_Isolated_HLT.
+				</Branch>
+				<Branch>
+					l1extraL1EmParticles_hltL1extraParticles_NonIsolated_HLT.
+				</Branch>
+				<Branch>
+					l1extraL1EtMissParticle_hltL1extraParticles__HLT.
+				</Branch>
+				<Branch>
+					l1extraL1EtMissParticles_hltL1extraParticles__HLT.
+				</Branch>
+				<Branch>
+					l1extraL1JetParticles_hltL1extraParticles_Central_HLT.
+				</Branch>
+				<Branch>
+					l1extraL1JetParticles_hltL1extraParticles_Forward_HLT.
+				</Branch>
+				<Branch>
+					l1extraL1JetParticles_hltL1extraParticles_Tau_HLT.
+				</Branch>
+				<Branch>
+					l1extraL1MuonParticles_hltL1extraParticles__HLT.
+				</Branch>
+				<Branch>
+					recoBeamSpot_hltOfflineBeamSpot__HLT.
+				</Branch>
+				<Branch>
+					recoGenJets_iterativeCone5GenJets__HLT.
+				</Branch>
+				<Branch>
+					recoGenJets_kt4GenJets__HLT.
+				</Branch>
+				<Branch>
+					recoGenJets_kt6GenJets__HLT.
+				</Branch>
+				<Branch>
+					recoGenJets_sisCone5GenJets__HLT.
+				</Branch>
+				<Branch>
+					recoGenJets_sisCone7GenJets__HLT.
+				</Branch>
+				<Branch>
+					recoGenMETs_genMet__HLT.
+				</Branch>
+				<Branch>
+					recoGenMETs_genMetNoNuBSM__HLT.
+				</Branch>
+				<Branch>
+					recoGenParticles_genParticles__HLT.
+				</Branch>
+				<Branch>
+					recoIsolatedPixelTrackCandidates_hltIsolPixelTrackProd__HLT.
+				</Branch>
+				<Branch>
+					recoMETs_genMetIC5GenJets__HLT.
+				</Branch>
+				<Branch>
+					recoPdfInfo_genEventPdfInfo__HLT.
+				</Branch>
+				<Branch>
+					recoTrackExtras_hltPixelTracks__HLT.
+				</Branch>
+				<Branch>
+					recoTracks_hltPixelTracks__HLT.
+				</Branch>
+				<Branch>
+					triggerTriggerEvent_hltTriggerSummaryAOD__HLT.
+				</Branch>
+			</Branches>
+			<LumiSections>
+				<LumiSection>
+					<LumiSectionNumber Value="1"/>
+					<RunNumber Value="6763777"/>
+				</LumiSection>
+			</LumiSections>
+		</File>
+		<LogFile SEName="dgc-grid-34.brunel.ac.uk">
+			/store/unmerged/logs/prod/2008/5/StuartTest-RelValSingleElectronPt10-999/StuartTest-RelValSingleElectronPt10-999-6763777/StuartTest-RelValSingleElectronPt10-999-6763777-1210143133-LogArch.tgz
+		</LogFile>
+		<TimingService>
+			<AppEndTime Value="1210143110"/>
+			<StageOutStart Value="1210143114"/>
+			<AppStartTime Value="1210135655"/>
+			<StageOutEnd Value="1210143132"/>
+		</TimingService>
+		<StorageStatistics>
+			Storage parameters: adaptor: true Stats:true Buffering:false Caching:0,0
+							Storage statistics: file/close=1/1/0MB/0.118016ms/0.118016ms/0.118016ms; file/destruct=1/1/0MB/0.135936ms/0.135936ms/0.135936ms; file/flush=5/5/0MB/100.644ms/0.434944ms/67.2799ms; file/open=2/2/0MB/1.90413ms/0.102144ms/1.80198ms; file/position=486990/486990/0MB/2599.92ms/0.00384ms/19.3889ms; file/read=927775/927775/6386.48MB/29914.2ms/0.005888ms/2295.76ms; file/write=5379/5379/60.9191MB/558.984ms/0.009984ms/38.5201ms; tstoragefile/close=1/1/0MB/0.272128ms/0.272128ms/0.272128ms; tstoragefile/construct=2/2/0MB/939.974ms/4.97101ms/935.003ms; tstoragefile/flush=5/5/0MB/100.701ms/0.445952ms/67.2911ms; tstoragefile/read=927775/927775/6386.48MB/57235.7ms/0.024832ms/2295.79ms; tstoragefile/readu=0/0/0MB/0ms/0ms/0ms; tstoragefile/readx=927775/927775/6386.48MB/37417.5ms/0.013824ms/2295.76ms; tstoragefile/seek=933154/933154/0MB/4120.84ms/0.002816ms/3.13293ms; tstoragefile/seekx=486982/486982/0MB/6545.46ms/0.010752ms/19.3979ms; tstoragefile/stat=2/2/0MB/0.113664ms/0.036864ms/0.0768ms; tstoragefile/write=5379/5379/60.9191MB/669.756ms/0.027136ms/38.551ms; tstoragefile/writex=5379/5379/60.9191MB/604.965ms/0.016896ms/38.53ms; tfile/read=?/?/6386.76MB/?ms/?ms/?ms; tfile/write=?/?/60.9191MB/?ms/?ms/?ms
+		</StorageStatistics>
+		<GeneratorInfo/>
+		<PerformanceReport>
+			<CPU>
+				<CPUCore Core="1">
+					<Property Name="Speed">
+						1795.863
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 265
+					</Property>
+				</CPUCore>
+				<CPUCore Core="0">
+					<Property Name="Speed">
+						1795.863
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 265
+					</Property>
+				</CPUCore>
+				<CPUCore Core="3">
+					<Property Name="Speed">
+						1795.863
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 265
+					</Property>
+				</CPUCore>
+				<CPUCore Core="2">
+					<Property Name="Speed">
+						1795.863
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 265
+					</Property>
+				</CPUCore>
+			</CPU>
+			<Memory>
+				<Property Name="MemTotal">
+					4155056
+				</Property>
+			</Memory>
+			<PerformanceSummary Metric="Timing">
+				<Metric Name="CPUPerEvent" Value="0.603656"/>
+				<Metric Name="RealPerEvent" Value="0.627762"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="TrigReport">
+				<Metric Name="FailedEvents" Value="9931"/>
+				<Metric Name="TotalEvents" Value="10000"/>
+				<Metric Name="PassedEvents" Value="69"/>
+			</PerformanceSummary>
+		</PerformanceReport>
+	</FrameworkJobReport>
+</JobReports>

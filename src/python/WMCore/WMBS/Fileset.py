@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.4 2008/05/02 17:29:24 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Fileset.py,v 1.5 2008/05/12 11:58:06 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -29,7 +29,8 @@ class Fileset(object):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name, wmbs):
+    def __init__(self, name, wmbs, is_open=True,
+                    parents=None, parents_open=True):
         """
         Create an empty fileset
         """
@@ -37,29 +38,47 @@ class Fileset(object):
         self.files = Set()
         self.newfiles = Set()
         self.wmbs = wmbs
+        self.open = is_open
+        self.parents = set()
+        self.setParentage(parents, parents_open)
+
+    
+    def setParentage(self, parents, parents_open):
+        """
+        Set parentage for this fileset - set parents to closed
+        """
+        if parents:
+            for parent in parents:
+                if isinstance(parent, Fileset):
+                    self.parents.add(parent)
+                else:
+                    self.parents.add(Fileset(parent, self.wmbs, 
+                            is_open=parents_open, parents_open=False))
+    
     
     def exists(self):
         """
         Does a fileset exist with this name
         """
-        result = -1
-        for f in self.wmbs.filesetExists(self.name):
-            for i in f.fetchall():
-                result = i[0]
-        if result > 0:
-            return True
-        else:
-            return False
+        return self.wmbs.filesetExists(self.name)[0][0] > 0
         
     def create(self):
         """
         Add the new fileset to WMBS
         """
+        for parent in self.parents:
+            try:
+                parent.create()
+            except IntegrityError:
+                self.wmbs.logger.warning('Fileset parent %s exists' % \
+                                                         parent.name)
         try:
-            self.wmbs.insertFileset(self.name)
-        except Exception, e:
+            self.wmbs.insertFileset(self.name, self.open,
+                                    [x.name for x in self.parents])
+        except IntegrityError:
             self.wmbs.logger.exception('Fileset %s exists' % self.name)
-            raise e
+            #raise
+        return self
     
     def delete(self):
         """
@@ -73,12 +92,20 @@ class Fileset(object):
         """
         Load up the files in the file set from the database
         """
+        #recursively go through parents
+        for parent in self.wmbs.getFilesetParents(self.name):
+            self.parents.add(Fileset(parent[0], self.wmbs, bool(parent[1])).populate())
+            
+        #get my details
+        self.open = self.wmbs.getFileset(self.name)[1]
+        
         for f in self.wmbs.showFilesInFileset(self.name):
-            for i in f.fetchall():
-                id, lfn, size, events, run, lumi = i
-                file = File(lfn, id, size, events, run, lumi)
-                self.files.add(file)
-                
+            id, lfn, size, events, run, lumi = f
+            file = File(lfn, id, size, events, run, lumi)
+            self.files.add(file)
+
+        return self
+            
     def addFile(self, file):
         """
         Add a file to the fileset
@@ -106,41 +133,40 @@ class Fileset(object):
         """
         comfiles = []
         for f in self.newfiles:
-            comfiles.append(f.getInfo())
-        self.wmbs.logger.debug ( "commiting : %s" % comfiles )  
-        try:
-            self.wmbs.insertFilesForFileset(files=comfiles, fileset=self.name)
-        except IntegrityError:
-            self.wmbs.logger.exception('File already exists in the database')
-            for i in self.newfiles:
-                print i.getInfo()
-            raise IntegrityError, 'File already exists in the database'
+            #comfiles.append(f.getInfo())
+            self.wmbs.logger.debug ( "commiting : %s" % comfiles )  
+            try:
+            #self.wmbs.insertFilesForFileset(files=comfiles, fileset=self.name)
+                self.wmbs.addNewFileToNewLocation(f.getInfo(), fileset=self.name)
+            except IntegrityError, ex:
+                self.wmbs.logger.exception('File already exists in the database %s' % f)
+                self.wmbs.logger.exception(str(ex))
+                    #for i in self.newfiles:
+                        #print i.getInfo()
+                raise IntegrityError, 'File already exists in the database'
         self.newfiles = Set()
         self.populate()
     
-    def createSubscription(self, workflow=None, subtype='processing'):
+    def createSubscription(self, workflow=None, subtype='Processing', parentage=0):
         """
         Create a subscription for the fileset using the given workflow 
         """
         s = Subscription(fileset = self, workflow = workflow, 
-                         type = subtype, wmbs = self.wmbs)
+                         type = subtype, parentage=parentage, wmbs = self.wmbs)
         s.create()
         return s
         
-    def subscriptions(self, subtype="processing"):
+    def subscriptions(self, subtype=None):
         """
         Return all subscriptions for a fileset
         """
-        subtype = subtype.lower()
         #TODO: types should come from DB
-        if subtype in ("merge", "processing"):
+        if subtype in (None, "Merge", "Processing", "Job"):
             #TODO: change subscriptionsForFileset to return the workflow spec
             subscriptions = self.wmbs.subscriptionsForFileset(self.name, 
                                                               subtype)
-            for i in subscriptions:
-                print i.fetchall()
         else:
             self.wmbs.logger.exception('%s is an unknown subscription type' % 
                                        subtype)
             raise TypeError, '%s is an unknown subscription type' % subtype
-        
+        return subscriptions

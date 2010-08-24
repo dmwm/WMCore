@@ -11,14 +11,14 @@ job in a batch system, it's more abstract - it's the piece of
 work that needs to get done.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.17 2009/01/02 19:23:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Job.py,v 1.18 2009/01/13 17:34:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
 from WMCore.DataStructs.Mask import Mask
-from WMCore.Services.UUID import makeUUID
+
 from sets import Set
 import datetime
 
@@ -36,11 +36,7 @@ class Job(Pickleable):
         self.last_update = datetime.datetime.now()
         self.job_group = -1
         self.status = 'QUEUED'
-        if name == None:
-            # Job's need to be uniquely named, so generate a GUID
-            self.name = makeUUID()
-        else:
-            self.name = name
+        self.name = name
         
         self.output = Fileset(name = 'output')
         self.report = None
@@ -74,7 +70,7 @@ class Job(Pickleable):
         self.last_update = datetime.datetime.now()
         self.status = status
 
-    def submit(self, name=None):
+    def submit(self, name = None):
         """
         Once submitted to a batch queue set status to active and set the job's
         name to some id from the batch system. Calling this method means the job
@@ -84,13 +80,13 @@ class Job(Pickleable):
             self.name = name
         self.changeStatus('ACTIVE')
 
-    def resubmit(self, name=None):
+    def resubmit(self, name = None):
         """
         Reset the file status to acquired for files associated to this job
         """
         self.submit(name)
 
-    def fail(self, report=None):
+    def fail(self, report = None):
         """
         Job has failed, mark all files associated with it as failed, and store
         the job report
@@ -98,7 +94,7 @@ class Job(Pickleable):
         self.changeStatus('FAILED')
         self.report = report
 
-    def complete(self, report=None):
+    def complete(self, report = None):
         """
         Job has completed successfully, mark all files associated
         with it as complete, and store the job report

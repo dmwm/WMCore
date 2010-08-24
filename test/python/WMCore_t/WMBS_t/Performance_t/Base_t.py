@@ -11,7 +11,7 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from sets import Set
 
-class BaseTest():
+class BaseTest:
     """
     __BaseTest__
 
@@ -49,8 +49,11 @@ class BaseTest():
 
         self.dao = DAOFactory(package='WMCore.WMBS', logger=self.logger, 
                         dbinterface=self.dbf.connect())
-        
-        assert self.dao(classname='CreateWMBS').execute()       
+
+        try:
+            assert self.dao(classname='Create').execute()
+        except:
+            pass
 
         #Creating the Locations at the Database
         self.selist = ['localhost']        

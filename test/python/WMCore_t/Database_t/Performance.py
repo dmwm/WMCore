@@ -12,7 +12,7 @@ DB Performance Testcases
 
 import logging, time
 
-class Performance():
+class Performance:
     """
     __Performance__
 

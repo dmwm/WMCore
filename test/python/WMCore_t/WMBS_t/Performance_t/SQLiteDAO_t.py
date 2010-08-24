@@ -2,7 +2,7 @@
 
 import commands, os
 from ConfigParser import ConfigParser
-class SQLiteDAOTest():
+class SQLiteDAOTest:
     """
     __SQLiteDAOTest__
 

@@ -10,7 +10,7 @@ DB Performance testcase for WMBS File class
 
 import commands
 from ConfigParser import ConfigParser  
-class MySQLDAOTest():
+class MySQLDAOTest:
     """
     __MySQLDAOTest__
 

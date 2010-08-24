@@ -16,8 +16,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.11 2008/07/03 17:06:29 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Workflow.py,v 1.12 2008/07/03 17:11:16 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -39,7 +39,7 @@ class Workflow(BusinessObject,WMWorkflow):
 
     def __init__(self, spec=None, owner=None, name=None, id=-1, logger=None, dbfactory=None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        WMWorkflow.__init__(spec=spec, owner=owner, name=name)
+        WMWorkflow.__init__(self, spec=spec, owner=owner, name=name)
         self.id = id
         
     def exists(self):

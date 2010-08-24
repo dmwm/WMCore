@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.10 2008/06/24 10:49:42 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: File.py,v 1.11 2008/06/24 11:45:06 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 
@@ -69,12 +69,10 @@ class File(BusinessObject):
         
         self.parents = set()
         
-        if not parentage > 0:
-            return self
-
-        for lfn in self.daofactory(classname='Files.GetParents').execute():
-            self.parents.add( \
-                    File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory).load(parentage=parentage-1))
+        if parentage > 0:
+            for lfn in self.daofactory(classname='Files.GetParents').execute(self.lfn):
+                self.parents.add( \
+                        File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory).load(parentage=parentage-1))
         
         return self
     
@@ -93,7 +91,7 @@ class File(BusinessObject):
         """
         Remove a file from WMBS
         """
-        self.daofactory(classname='Files.Delete').execute(files=self.lfn)
+        self.daofactory(classname='Files.Delete').execute(file=self.lfn)
         
     def addChild(self, lfn):
         """

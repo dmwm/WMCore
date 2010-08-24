@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: job_DAOFactory_unit.py,v 1.3 2008/08/05 18:00:53 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: job_DAOFactory_unit.py,v 1.4 2008/08/09 22:17:47 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest, logging, os, commands, random, datetime
 from sets import Set
@@ -104,7 +104,7 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
         filelist = []
         num_files = 1000
         for i in range(0,num_files):
-            filelist.append(("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
+            filelist.append(("/store/data/Electrons/setup%s.root" % i, 
                              1000, 2000, 10 + i, 12312))
         adder = FullAddAction(testlogger)
         for dao in self.daofactory1, self.daofactory2:
@@ -176,19 +176,35 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
             job = Job(subscription = sub, files = sub.acquireFiles(size=size), logger=testlogger, dbfactory = dbi)
             assert len(job.file_set) == 0, "11th job has files"
             print "files available %s, files acquired %s" % (len(sub.availableFiles()),len(sub.acquiredFiles()))
-        
+
     def testFileManip(self):
         testlogger = logging.getLogger('testFileManip')
         db_interfaces = [self.dbf1]#, self.dbf2:
         for dbi in db_interfaces:
             sub = self.subscriptions[db_interfaces.index(dbi)]
             job = Job(sub)
+            job.load()
             for i in range(0,10):
-                file = File("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
-                                 1000, 2000, 10 + i, 12312, logger=testlogger, dbfactory = dbi)
+                print i, len(job.listLFNs())
+                file = File(lfn="/store/data/%s.root" % i, 
+                                 size=1000, events=2000, lumi=10 + i, run=12312, logger=testlogger, dbfactory = dbi)
+                print file.dict['id']
+                file.save()
+                print file.dict['id']
                 job.addFile(file)
-                assert len(job.listLFNs()) == i+1, "wrong number of lfn's associated to job" 
-        
+                #assert len(job.listLFNs()) == i+1, "wrong number of lfn's associated to job: %s not %s" % ( len(job.listLFNs()), i+1)
+
+                job.associateFiles()
+                print i, len(job.listLFNs())
+                testjob = Job(subscription=sub, id=job.id)
+                print i, len(job.listLFNs()), len(testjob.listLFNs())
+                assert len(job.listLFNs()) == len(testjob.listLFNs()), "job incorrectly loaded from database"
+                print i, len(job.listLFNs())
+                
+                print dbi.connect().processData("select count(*) from wmbs_job_assoc where job=%s" % job.id)[0].fetchall()
+                
+                
+                
 if __name__ == "__main__":
-    unittest.main()    
-        
+    unittest.main()
+    

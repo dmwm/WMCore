@@ -4,8 +4,8 @@
 Proxy test TestProxy module and the harness
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.6 2008/11/13 16:05:38 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Proxy_t.py,v 1.7 2008/11/20 09:55:50 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -122,6 +122,7 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
         """
         Mimics creation of component and handles come messages.
         """
+        ProxyTest._teardown = True
         # read the default config first.
         config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
             'src/python/WMComponent/Proxy/DefaultConfig.py'))
@@ -159,6 +160,7 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
         config.CoreDatabase.hostname = os.getenv("DBHOST")
         config.CoreDatabase.name = os.getenv("DBNAME")
 
+        # initialize component with proper configuration.
         testProxy = Proxy(config)
         # make this a thread so we can send messages.
         print('--Make a thread from the proxy component\n')
@@ -166,6 +168,8 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
         thread.start()
         # we have our thread with component, now create 2 message services one
         # old one and one new one to test the proxy functionality.
+        # if you just want to test a new component just instantiate the new
+        # the new message service.
         print('--Create a new msgService instance '+\
         '(these represent other components in our test)\n')
         myThread = threading.currentThread()
@@ -196,7 +200,7 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
         'the (proxy) subscriptions arrived\n')
         time.sleep(10)
         # now we can publish a message in the new component that will be 
-        # forwarded by the proxy
+        # forwarded by the proxy to the old message service.
         myThread.transaction.begin()
         msg = {'name':'ATestMessage1', 'payload':'forOldPA'}
         print('--Publish 10 messages in new msgService : '+str(msg)+'\n')
@@ -223,10 +227,11 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
         # stop once all its threads minus itself and the main thread are done
         oldMsgService.publish("StopAndWait","2")
         print('--Component in thread will receive this message and stop')
+        # wait until the thread count is 1 (the main trhead) before
+        # ending the test.
         while threading.activeCount() > 1:
             time.sleep(3)
             print(str(threading.activeCount())+' threads active')
-        ProxyTest._teardown = True
 
     def runTest(self):
         """

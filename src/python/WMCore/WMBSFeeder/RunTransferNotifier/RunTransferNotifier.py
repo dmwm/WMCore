@@ -37,8 +37,8 @@ TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
           to global DBS. getEvents could use cached response from getDbsBlockFiles
           for example.
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.1 2008/10/25 16:28:35 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.2 2008/10/25 23:50:34 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 
@@ -57,7 +57,7 @@ from urllib import quote
 
 from time import time
 
-class PhEDExNotifierComponent(FeederImpl):
+class RunTransferNotifier(FeederImpl):
     """
     _PhEDExNotifierComponent_
     
@@ -111,7 +111,7 @@ class PhEDExNotifierComponent(FeederImpl):
         
         # The last run that was identified as new, and run purge time
         self.lastRun = 0
-        self.purgeTime = purgeTime * 3600 # Convert to seconds
+        self.purgeTime = purgeTime * 3600 # Convert hours to seconds
         
         # Configure DBS API
         try:
@@ -282,7 +282,7 @@ class PhEDExNotifierComponent(FeederImpl):
         """
         Queries DBS to determine what new runs are present, and adds a watcher
         """
-        runs = self.dbsapi.listRuns("run > %s % self.lastRun")
+        runs = self.dbsapi.listRuns("run > %s" % self.lastRun)
         runs.sort()
         for run in runs:
             watchedRuns.add(WatchedRun(run))

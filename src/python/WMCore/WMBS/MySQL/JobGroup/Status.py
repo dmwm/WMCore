@@ -4,8 +4,8 @@ _New_
 MySQL implementation of JobGroup.Status
 """
 __all__ = []
-__revision__ = "$Id: Status.py,v 1.2 2008/10/01 21:57:08 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Status.py,v 1.3 2008/10/01 22:11:14 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -25,7 +25,7 @@ class Status(DBFormatter):
     """
 
     def format(self, result):
-        result = MySQLBase.format(self, result)
+        result = DBFormatter.format(self, result)
         return result[0]
         
     def execute(self, group=None, conn = None, transaction = False):

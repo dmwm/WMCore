@@ -10,9 +10,10 @@ TABLE wmbs_subscription
     workflow INT(11) NOT NULL,
     type    ENUM("merge", "processing")
 """
+
 __all__ = []
-__revision__ = "$Id: Load.py,v 1.3 2008/07/03 17:01:48 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Load.py,v 1.4 2008/11/20 16:56:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
@@ -21,7 +22,7 @@ class Load(MySQLBase):
     def getSQL(self, **kwargs):
         sql = ""
         binds = {}
-        if kwargs['id']:
+        if kwargs['id'] != -1:
             sql = """select id, fileset, workflow, type, split_algo from wmbs_subscription 
             where id = :id"""
             binds = self.getBinds(id=kwargs['id'])
@@ -43,6 +44,7 @@ class Load(MySQLBase):
                   'workflow': int(result[2]), 
                   'type': result[3],
                   'split_algo': result[4]}
+
         return result
         
     def execute(self, id = None, workflow = None, type = None, fileset = None, 

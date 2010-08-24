@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.7 2008/11/20 16:59:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobGroup.py,v 1.8 2008/12/02 17:20:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -135,6 +135,9 @@ class JobGroup(WMJobGroup):
         Input must be (subclasses of) WMBS jobs. Input may be a list or set as 
         well as single jobs.
         """
+        if self.exists() == False:
+            self.create()
+        
         if type(job) != type([]) and type(job) != type(Set()):
             job = [job]
             

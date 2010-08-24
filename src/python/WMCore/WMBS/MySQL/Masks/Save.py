@@ -6,8 +6,8 @@ MySQL implementation of Masks.Save
 """
 
 __all__ = []
-__revision__ = "$Id: Save.py,v 1.1 2008/11/20 17:20:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Save.py,v 1.2 2008/12/01 22:15:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -17,7 +17,7 @@ class Save(DBFormatter):
 
     def execute(self, jobid, mask):
         doUpdate = False
-        binds = {}
+        binds = {"jobid": jobid}
         sql = self.sqlBeginning
 
         for maskKey in mask.keys():

@@ -19,25 +19,30 @@ config.component_('WebtoolsDocs')
 config.WebtoolsDocs.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
 # Define the class that is the applications index
 config.WebtoolsDocs.index = 'welcome'
+
 # Views are all pages 
 config.WebtoolsDocs.section_('views')
+# These are all the active pages that Root.py should instantiate 
 active = config.WebtoolsDocs.views.section_('active')
+# The section name is also the location the class will be located
+# e.g. http://localhost:8080/documentation
+active.section_('documentation')
+# The class to load for this view/page
+active.documentation.object = 'WMCore.WebTools.Documentation'
+# I could add a variable to the documenation object if I wanted to as follows:
+# active.documentation.foo = 'bar'
+
+active.section_('welcome')
+active.welcome.object = 'WMCore.WebTools.Welcome'
+
 # Controllers are standard way to return minified gzipped css and js
 active.section_('controllers')
+# The class to load for this view/page
 active.controllers.object = 'WMCore.WebTools.Controllers'
+# The configuration for this object - the location of css and js
 active.controllers.css = {'reset': environ['YUIHOME'] + '/reset/reset.css', 
                           'cms_reset': '../../../css/WMCore/WebTools/cms_reset.css', 
                           'style': '../../../css/WMCore/WebTools/style.css'}
 active.controllers.js = {}
-# The section name is also the location the class will be located
-# e.g. http://localhost:8080/documentation
-active.section_('documentation')
-# The class to load for this class
-active.documentation.object = 'WMCore.WebTools.Documentation'
-# I could add a variable to the documenation object if I wanted to as follows:
-# active.documentation.foo = 'bar'
-active.section_('welcome')
-active.welcome.object = 'WMCore.WebTools.Welcome'
-
 # These are pages in "maintenance mode" - to be completed
 maint = config.WebtoolsDocs.views.section_('maintenance')

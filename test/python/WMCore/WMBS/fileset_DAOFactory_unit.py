@@ -7,13 +7,15 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.5 2008/07/21 15:21:35 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.6 2008/09/10 17:59:50 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest, logging, os, commands
 from sets import Set
+import datetime, time
 
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.File import File
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
@@ -66,7 +68,9 @@ class BaseFilesetTestCase(unittest.TestCase):
         self.testlogger.debug(commands.getstatusoutput('mysqladmin -u root create wmbs'))
         self.testlogger.debug("WMBS MySQL database deleted")
         try:
-            self.testlogger.debug(os.remove('filesettest.lite'))
+            t = datetime.datetime.now()
+            now = int(time.mktime(t.timetuple()))
+            os.system ("mv %s %s" % ('filesettest.lite', 'filesettest_%s.lite' % now))
         except OSError:
             #Don't care if the file doesn't exist
             pass
@@ -153,23 +157,37 @@ class FilesetBusinessObjectTestCase(BaseFilesetTestCase):
         testlogger = logging.getLogger('testFillFileset')
         filelist = Set()
         num_files = 1000
-        for i in range(0,num_files):
-            filelist.add(("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
-                             1000, 2000, 10 + i, 12312))
         factories = [self.dbf1, self.dbf2]
         for dbf in factories:
-            fs = Fileset(name='MyCoolFiles', files=filelist, logger=testlogger, dbfactory=dbf)
+            for i in range(0,num_files):
+                filelist.add(File(size=1000, run=2000, lumi=10+i, events=12312,
+                  lfn="/store/data/Electrons/1234/5678/hkh112kj1232%s.root" % i, 
+                  logger=self.sqlitelogger, dbfactory=dbf))
+
+            fs = Fileset(name='MyCoolFiles', 
+                         files=filelist, 
+                         logger=testlogger, 
+                         dbfactory=dbf)
             
             assert fs.exists() == False, "Fileset exists before being created"
+            
             fs.create()
+            
             assert fs.exists() == True, "Fileset does not exist after being created"
+            
+            print 'testFillFileset listFiles', len(fs.listFiles())
+            print 'testFillFileset filelist', len(filelist)
+            fs.addFile(filelist)
+            print 'testFillFileset listFiles', len(fs.listFiles())
             assert len(fs.listFiles()) == num_files, \
-                "File set has wrong number of files: %i %i" % (len(fs.listFiles()), num_files)
-            file = ("/store/data/Electrons/1234/5678/hkh123ghk12khj3asdhk123ljhkj1232.root", 
-                             1000, 2000, 6006, 12312)
+                "Fileset has wrong number of files: %i %i" % \
+                        (len(fs.listFiles()), num_files)
+            file = File(size=1000, run=2000, lumi=60 + i, events=12312,
+              lfn="/store/data/Electrons/5678/1234/hkh123g12kj1232%s.root" % i, 
+              logger=self.sqlitelogger, dbfactory=dbf)
             fs.addFile(file)
             assert len(fs.listFiles()) == num_files + 1, \
-                "File set has wrong number of files: %i %i" % (len(fs.listFiles()), num_files)
+                "Fileset has wrong number of files: %i %i" % (len(fs.listFiles()), num_files)
             
 if __name__ == "__main__":
     unittest.main()

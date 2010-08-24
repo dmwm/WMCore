@@ -4,7 +4,7 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.4 2008/10/16 09:46:49 afaq Exp $"
+__revision__ = "$Id: JobSuccess.py,v 1.5 2008/10/16 12:14:11 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -17,8 +17,24 @@ from WMComponent.DBSBuffer.Database.Interface.addToBuffer import AddToBuffer
 #import cPickle
 import os
 import string
+import exceptions
 
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
+
+#TODO: InvalidJobReport will come from DBSInterface or elsewhere
+class InvalidJobReport(exceptions.Exception):
+  def __init__(self,jobreportfile):
+   args="Invalid JobReport file: %s\n"%jobreportfile
+   exceptions.Exception.__init__(self, args)
+   pass
+
+  def getClassName(self):
+   """ Return class name. """
+   return "%s" % (self.__class__.__name__)
+
+  def getErrorMessage(self):
+   """ Return exception error. """
+   return "%s" % (self.args)
 
 class JobSuccess(BaseHandler):
     """
@@ -69,36 +85,34 @@ class JobSuccess(BaseHandler):
         # and move to the next.
 
         jobReports = self.readJobReportInfo(payload)
-	
-	for aFJR in jobReports:
-		l=0
-		print "\n\n"
-		for aFile in aFJR.files:
-            if l==0:
-                l=1
-                AddToBuffer.addDataset(aFile.dataset[0])
-                
-                """
-				print "Dataset Path : " + \
+        for aFJR in jobReports:
+            l=0
+            print "\n\n"
+            for aFile in aFJR.files:
+                if l==0:
+                    l=1
+                    AddToBuffer.addDataset(aFile.dataset[0])
+    
+                    """
+				    print "Dataset Path : " + \
 					"/"+aFile.dataset[0]['PrimaryDataset']+ \
 					"/"+aFile.dataset[0]['ProcessedDataset']+ \
 					"/"+aFile.dataset[0]['DataTier']
-				"""
-            	
-			AddToBuffer.addFile(aFile)
+				    """
+                AddToBuffer.addFile(aFile)
             
-            """
-			print "\n\n\n"
-                	print aFile['LFN']
-			print aFile['TotalEvents']
-			print aFile['Size']
-			print aFile.checksums['cksum']
-			print "aFile['Type']='UNKNOWN'"
-			print "aFile['Block']='UNKNOWN'"
-			print aFile.runs
-			print aFile.getLumiSections()
-			print "aFile['inputFiles']"
-            """
+                """
+			    print "\n\n\n"
+                print aFile['LFN']
+			    print aFile['TotalEvents']
+			    print aFile['Size']
+			    print aFile.checksums['cksum']
+			    print "aFile['Type']='UNKNOWN'"
+			    print "aFile['Block']='UNKNOWN'"
+			    print aFile.runs
+			    print aFile.getLumiSections()
+			    print "aFile['inputFiles']"
+                """
 			
 	# Now lets see if we can call the methods from Database/Interface
 	print "DONE! "

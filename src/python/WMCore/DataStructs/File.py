@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.6 2008/09/01 15:17:50 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: File.py,v 1.7 2008/09/09 16:52:54 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject 
 class File(WMObject):
@@ -31,7 +31,13 @@ class File(WMObject):
         over-ride this method.
         """
         pass
-        
+    def save(self): 
+        """
+        A DataStructs file has nothing to save to, other implementations will
+        over-ride this method.
+        """
+        pass   
+    
     def setLocation(self, se):
         self.dict['locations'] = self.dict['locations'] | Set(self.makelist(se))
 

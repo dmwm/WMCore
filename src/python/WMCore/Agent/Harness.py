@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.7 2008/10/01 11:09:10 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Harness.py,v 1.8 2008/10/02 14:31:38 fvlingen Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -34,6 +34,7 @@ from WMCore.Database.Transaction import Transaction
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 from WMCore.WMFactory import WMFactory
+from WMCore import WMLogging
 
 class Harness:
     """
@@ -84,17 +85,22 @@ class Harness:
             logHandler = RotatingFileHandler(compSect.logFile,
                 "a", 1000000, 3)
             logFormatter = \
-                logging.Formatter("%(asctime)s:%(module)s:%(message)s")
+                logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
             logHandler.setFormatter(logFormatter)
             logging.getLogger().addHandler(logHandler)
             logging.getLogger().setLevel(logging.INFO)
-            if hasattr(compSect, "logLevel"):
-                if compSect.logLevel == 'DEBUG':
-                    logging.getLogger().setLevel(logging.DEBUG)
-                elif compSect.logLevel == 'ERROR':
-                    logging.getLogger().setLevel(logging.ERROR)
-                elif compSect.logLevel == 'NOTSET':
-                    logging.getLogger().setLevel(logging.NOTSET)
+            # map log strings to integer levels:
+            self.logMsg = {'DEBUG' :   logging.DEBUG,    \
+                          'ERROR' :   logging.ERROR,     \
+                          'NOTSET':   logging.NOTSET,    \
+                          'CRITICAL' : logging.CRITICAL, \
+                          'WARNING'  : logging.WARNING,  \
+                          'INFO'     : logging.INFO,     \
+                          'SQLDEBUG' : logging.SQLDEBUG  }
+            if hasattr(compSect, "logLevel") and \
+               compSect.logLevel in self.logMsg.keys():
+                logging.getLogger().setLevel(self.logMsg[compSect.logLevel])   
+            WMLogging.sqldebug("wmcore level debug:")
              
             logging.info(">>>Starting: "+compName+'<<<')
             # check which backend to use: MySQL, Oracle, etc... for core 
@@ -141,15 +147,10 @@ class Harness:
             # and handlers used by an agent
             self.diagnosticMessages.append(compName + ':LogState')
             self.diagnosticMessages.append('LogState')
-            # start/stop debug
-            self.diagnosticMessages.append(compName + ':Logging.DEBUG')
-            self.diagnosticMessages.append(compName + ':Logging.INFO')
-            self.diagnosticMessages.append(compName + ':Logging.ERROR')
-            self.diagnosticMessages.append(compName + ':Logging.NOTSET')
-            self.diagnosticMessages.append('Logging.DEBUG')
-            self.diagnosticMessages.append('Logging.INFO')
-            self.diagnosticMessages.append('Logging.ERROR')
-            self.diagnosticMessages.append('Logging.NOTSET')
+            # debug levels
+            for logLevel in self.logMsg.keys():
+                self.diagnosticMessages.append(compName+ ':Logging.'+logLevel)
+                self.diagnosticMessages.append('Logging.'+logLevel)
             # events to stop the component.
             self.diagnosticMessages.append(compName + ':Stop')
             self.diagnosticMessages.append(compName + ':StopAndWait')
@@ -245,22 +246,11 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         # diagnostics are tiny operations so we put them here rather 
         # than in separate handlers
         else:
-            if(event == compName+':Logging.DEBUG') or \
-                (event == 'Logging.DEBUG'):
-                logging.getLogger().setLevel(logging.DEBUG)
-                logging.info("Log level set to DEBUG")
-            elif(event == compName+':Logging.INFO') or \
-                (event == 'Logging.INFO'):
-                logging.getLogger().setLevel(logging.INFO)
-                logging.info("Log level set to INFO")
-            elif(event == compName+':Logging.ERROR') or \
-                (event == 'Logging.ERROR'):
-                logging.getLogger().setLevel(logging.ERROR)
-                logging.info("Log level set to ERROR")
-            elif(event == compName+':Logging.NOTSET') or \
-                (event == 'Logging.NOTSET'):
-                logging.getLogger().setLevel(logging.NOTSET)
-                logging.info("Log level set to ERROR")
+            if(event.startswith(compName+':Logging')  or
+                event.startswith('Logging') ):
+                logLevel = event.split('.')[-1]
+                logging.getLogger().setLevel(self.logMsg[logLevel])
+                logging.critical("Log level set to: "+logLevel)
             elif(event == compName+':LogState') or \
                 (event == 'LogState'):
                 logging.info(str(self))

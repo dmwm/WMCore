@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.3 2008/10/01 11:09:13 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Harness_t.py,v 1.4 2008/10/02 14:31:38 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -101,7 +101,7 @@ class HarnessTest(unittest.TestCase):
         config.General.workDir = os.getenv("TESTDIR")
 
         config.component_("TestComponent")
-        config.TestComponent.logLevel = 'DEBUG'
+        config.TestComponent.logLevel = 'INFO'
 
         config.section_("CoreDatabase")
         config.CoreDatabase.dialect = 'mysql' 
@@ -118,6 +118,18 @@ class HarnessTest(unittest.TestCase):
         testComponent.handleMessage('TestMessage2','TestMessag2Payload')
         testComponent.handleMessage('TestMessage3','TestMessag3Payload')
         testComponent.handleMessage('TestMessage4','TestMessag4Payload')
+        testComponent.handleMessage('Logging.DEBUG','')
+        testComponent.handleMessage('Logging.WARNING','')
+        testComponent.handleMessage('Logging.CRITICAL','')
+        testComponent.handleMessage('Logging.ERROR','')
+        testComponent.handleMessage('Logging.INFO','')
+        testComponent.handleMessage('Logging.SQLDEBUG','')
+        testComponent.handleMessage('TestComponent:Logging.DEBUG','')
+        testComponent.handleMessage('TestComponent:Logging.WARNING','')
+        testComponent.handleMessage('TestComponent:Logging.CRITICAL','')
+        testComponent.handleMessage('TestComponent:Logging.ERROR','')
+        testComponent.handleMessage('TestComponent:Logging.INFO','')
+        testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
 
         HarnessTest._teardown = True
 

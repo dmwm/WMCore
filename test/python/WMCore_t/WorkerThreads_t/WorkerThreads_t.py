@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.2 2009/02/06 18:01:59 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.3 2009/02/09 10:05:14 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import threading
@@ -77,19 +77,19 @@ class WorkerThreadsTest(unittest.TestCase):
         """
         Callback for setup
         """
-        WorkerThreadManagerTest._setupCalled = True
+        WorkerThreadsTest._setupCalled = True
         
     def dummyAlgoCallback(self):
         """
         Callback for algo
         """
-        WorkerThreadManagerTest._algoCalled = True
+        WorkerThreadsTest._algoCalled = True
         
     def dummyTerminateCallback(self):
         """
         Callback for terminate
         """
-        WorkerThreadManagerTest._terminateCalled = True
+        WorkerThreadsTest._terminateCalled = True
 
     def setUp(self):
         "make a logger instance and create tables"
@@ -138,18 +138,18 @@ class WorkerThreadsTest(unittest.TestCase):
         # Add a worker, and check init method gets called
         manager.addWorker(DummyWorker1(), 1)
         time.sleep(3)
-        assert WorkerThreadManagerTest._setupCalled == True
+        assert WorkerThreadsTest._setupCalled == True
         
         # Run the workers, pause, and check algo method gets called
         manager.resumeWorkers()
         time.sleep(3)
         manager.pauseWorkers()
-        assert WorkerThreadManagerTest._algoCalled == True
+        assert WorkerThreadsTest._algoCalled == True
         
         # Terminate the workers, and check terminate method gets called
         manager.terminateWorkers()
         time.sleep(3)
-        assert WorkerThreadManagerTest._terminateCalled == True
+        assert WorkerThreadsTest._terminateCalled == True
     
     def testB(self):
         """

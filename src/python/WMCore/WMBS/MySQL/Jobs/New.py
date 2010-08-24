@@ -4,19 +4,17 @@ _New_
 MySQL implementation of Jobs.New
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.3 2008/10/01 15:58:30 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: New.py,v 1.4 2008/10/01 21:43:16 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-class New(MySQLBase):
-    sql = []
-    sql.append("insert into wmbs_job (jobgroup, name) values (:jobgroup, :name)")
-    sql.append("select id from wmbs_job where jobgroup = :jobgroup and name = :name")
+class New(DBFormatter):
+    sql = ["insert into wmbs_job (jobgroup, name) values (:jobgroup, :name)",
+    "select id from wmbs_job where jobgroup = :jobgroup and name = :name"]
     
     def format(self, result):
-        result = MySQLBase.format(self, result)
-        print result[0][0]
+        result = DBFormatter.format(self, result)
         return result[0][0]
         
     def execute(self, jobgroup=0, name=None, conn = None, transaction = False):

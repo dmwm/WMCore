@@ -5,10 +5,8 @@ _Alert_
 Data structure that contains details about an alert.
 """
 
-__revision__ = "$Id: Alert.py,v 1.1 2008/10/22 21:22:46 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
-
-import datetime
+__revision__ = "$Id: Alert.py,v 1.2 2008/10/28 16:29:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -18,35 +16,37 @@ class Alert(WMObject, dict):
     
     Data structure that contains details about an alert.
     """
-    def __init__(self, id = None, component = None, severity = None,
+    def __init__(self, alertID = None, component = None, severity = None,
                  message = None, timestamp = None):
         """
         ___init___
 
-        Initialize the four data members:
-          id
+        Initialize the five data members:
+          alertID
           component
           severity
           message
           timestamp
         """
         dict.__init__(self)
+        WMObject.__init__(self)
 
-        self.setdefault("id", id)
-        self.setdefault("component", component)
-        self.setdefault("severity", severity)
-        self.setdefault("message", message)
-        self.setdefault("timestamp", timestamp)        
+        self.alertID = alertID
+        self.component = component
+        self.severity = severity
+        self.message = message
+        self.timestamp = timestamp        
 
         return
 
-    def setID(self, id):
+    def setID(self, alertID):
         """
         _setID_
 
         Set the ID for this alert.
         """
-        pass
+        self.alertID = alertID
+        return
 
     def setComponent(self, component):
         """
@@ -54,7 +54,8 @@ class Alert(WMObject, dict):
 
         Set the name of the component that generated the alert.
         """
-        pass
+        self.component = component
+        return
 
     def setSeverity(self, severity):
         """
@@ -62,7 +63,8 @@ class Alert(WMObject, dict):
 
         Set the severity of the alert.
         """
-        pass
+        self.severity = severity
+        return
 
     def setMessage(self, message):
         """
@@ -70,7 +72,8 @@ class Alert(WMObject, dict):
 
         Set the message explaining what the alert means.
         """
-        pass
+        self.message = message
+        return
 
     def setTimestamp(self, timestamp):
         """
@@ -78,7 +81,8 @@ class Alert(WMObject, dict):
 
         Set the time at which the alert was generated.
         """
-        pass
+        self.timestamp = timestamp
+        return
 
     def getID(self):
         """
@@ -86,7 +90,7 @@ class Alert(WMObject, dict):
 
         Retrieve the ID of the alert.
         """
-        return self.id
+        return self.alertID
 
     def getComponent(self):
         """

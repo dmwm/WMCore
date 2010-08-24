@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.4 2009/01/14 05:15:36 rpw Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.5 2009/01/20 21:42:04 rpw Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -34,3 +34,6 @@ config.Downloader.dir = '/home/rpw/work'
 config.component_('AssignmentManager')
 config.AssignmentManager.requestSpecDir= config.Downloader.dir
 config.component_('RequestDataService')
+
+import WMCore.WebTools.DefaultConfig
+config += WMCore.WebTools.DefaultConfig.config

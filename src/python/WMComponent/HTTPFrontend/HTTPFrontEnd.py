@@ -11,12 +11,8 @@ Introduces a dependency on the cherrypy package
 
 """
 import socket
-import logging
 import os
 import cherrypy
-from cherrypy.lib.static import serve_file
-#from ProdAgentCore.Configuration import prodAgentName
-#from ProdAgentCore.Configuration import loadProdAgentConfiguration
 from WMCore.Agent.Configuration import loadConfigurationFile
 from MessageService.MessageService import MessageService
 
@@ -26,64 +22,11 @@ from WMCore.Agent.Harness import Harness
 # we do not import failure handlers as they are dynamicly
 # loaded from the config file.
 from WMCore.WMFactory import WMFactory
-
-from cherrypy.lib.static import serve_file
-import logging
+from WMComponent.HTTPFrontend import Downloader
+from WMCore.WebTools.Root import Root
 
 factory = WMFactory('generic')
 
-class Downloader:
-    """
-    _Downloader_
-
-    Serve files from the JobCreator Cache via HTTP
-
-    """
-    def __init__(self, rootDir):
-        self.rootDir = rootDir
-
-    def index(self, filepath):
-        """
-        _index_
-
-        index response to download URL, serves the file
-        requested
-
-        """
-        pathInCache = os.path.join(self.rootDir, filepath)
-        logging.debug("Download Agent serving file: %s" % pathInCache)
-        return serve_file(pathInCache, "application/x-download", "attachment")
-    index.exposed = True
-
-class Root:
-    """
-    _Root_
-
-    Main index page for the component, will appear as the index page
-    of the toplevel address
-
-    """
-    def __init__(self, myUrl):
-        self.myUrl = myUrl
-        self.components = []
- 
-    def addComponent(self, componentPath, config):
-        # take the last field of the module name for the web page name
-        oneWordName = componentPath.split('.')[-1]
-        self.__dict__[oneWordName] = factory.loadObject(componentPath, config)
-        self.components.append(oneWordName)
-
-    def index(self):
-        html = "<html><body><h2>HTTPFrontEnd </h2>\n "
-        html += "<table>\n"
-        html += "<tr><th>Service</th><th>Description</th></tr>\n"
-        for component in self.components:
-          html += "<tr><td><a href=\"%s/%s\">%s</a></td><td>%s</td></tr>\n" % (
-            self.myUrl, component, component, self.__dict__[component].__doc__)
-        html += """</table></body></html>"""
-        return html
-
-    index.exposed = True
 
 class HTTPFrontEnd(Harness):
     def __init__(self, config):
@@ -134,10 +77,8 @@ class HTTPFrontEnd(Harness):
             self.config.HTTPFrontEnd.Host, self.config.HTTPFrontEnd.Port)
         
         
-        root = Root(baseUrl)
-        for component in self.config.HTTPFrontEnd.components:
-            root.addComponent(component, self.config)
-        root.download = Downloader(self.config.Downloader.dir)
+        root = Root(self.config)
+        root.loadPages()
         cherrypy.tree.mount(root)
         cherrypy.server.quickstart()
         cherrypy.engine.start()
@@ -163,8 +104,8 @@ if __name__ == '__main__':
     #config.CoreDatabase.hostname = os.getenv("DBHOST")
     #config.CoreDatabase.name = os.getenv("DBNAME")
     config.CoreDatabase.socket = '/home/rpw/work/mysqldata/mysql.sock'
-    config.CoreDatabase.user = 'root'
-    config.CoreDatabase.passwd = 'XXXXXXX'
+    config.CoreDatabase.user = 'some_user'
+    config.CoreDatabase.passwd = 'some_pass'
     config.CoreDatabase.hostname = 'localhost'
     config.CoreDatabase.name = 'wmbs'
 

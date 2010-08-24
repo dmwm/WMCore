@@ -1,6 +1,6 @@
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
-class ListFileset(MySQLBase):
+class LoadFileset(MySQLBase):
     sql = """select id, open, last_update from wmbs_fileset 
             where name = :fileset"""
             

@@ -19,7 +19,6 @@ class ParamServer(object):
         self.verbose = verbose
         self.secure  = 0
         self.user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
-#        print "got",server
         if  server.find("https://") != -1:
             server = server.replace("https://","")
             self.secure = 1
@@ -32,10 +31,20 @@ class ParamServer(object):
             self.server = url
             self.path = path
 
-    def sendmessage(self, method="GET", ifile="index.html",
-                          ctype='text/html', params=None):
+    def message(self, url="index.html", method="GET",
+                      params=None, ctype='text/html'):
         """
-           send request to the server via GET message
+           send request to the server via provided URL and method.
+        """
+        if  method == "POST":
+            return self.sendpostmessage(url, params, ctype)
+        return self.sendmessage(url, method, params, ctype)
+
+    def sendmessage(self, ifile="index.html", method="GET",
+                          params=None, ctype='text/html'):
+        """
+           send request to the server via provided method,
+           suitable for GET, HEAD, DELETE
         """
         if  self.verbose:
             httplib.HTTPConnection.debuglevel = 1
@@ -46,10 +55,13 @@ class ParamServer(object):
             http_conn = httplib.HTTPConnection(self.server)
         if  self.path:
             ifile = "/%s/%s" % (self.path, ifile)
-        print "sendmessage %s" % ifile
+        print "sendmessage %s with params %s" % (ifile, params)
+        url = "/%s?" % ifile
+        for key, val in params.iteritems():
+            url += "%s=%s" % (key, val)
         headers = { 'User-Agent' : self.user_agent, 'Accept':ctype}
-        data = urllib.urlencode(params, doseq=True)
-        http_conn.request(method, "/%s" % ifile, data, headers)
+        body = "test"
+        http_conn.request(method, url, body, headers)
         response = http_conn.getresponse()
         data = ""
         if  response.reason != "OK":
@@ -95,9 +107,10 @@ if  __name__ == "__main__":
 
     URL = "services/rest/word"
     SERVER = ParamServer(server="http://localhost:8080", verbose=1)
-    PARAMS = {}
+    PARAMS = {'test':1}
     for CTYPE in ['application/xml', 'text/json', 'text/html']:
-        print "\n### GET message via %s" % CTYPE
-        page = SERVER.sendmessage("GET", URL, CTYPE, PARAMS)
-        print page
-
+        for METHOD in ['HEAD', 'GET', 'POST', 'DELETE']:
+            print "-------- %s REQUEST ---------" % METHOD
+            print CTYPE, PARAMS
+            page = SERVER.message(URL, METHOD, PARAMS, CTYPE)
+            print page

@@ -161,7 +161,8 @@ class Resource(object):
             print "Calling handle_head %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        data   = self._model.getdata(args[0], **kwargs)
+        method = args[0][0] # request args='(('word',), {'test': '1'})'
+        data   = self._model.getdata(method, kwargs)
         # generate response
         self.response(data,"head")
     
@@ -173,7 +174,8 @@ class Resource(object):
             print "Calling handle_get %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        data   = self._model.getdata(args[0], **kwargs)
+        method = args[0][0] # request args='(('word',), {'test': '1'})'
+        data   = self._model.getdata(method, kwargs)
         # generate response
         return self.response(data, "get")
 
@@ -186,7 +188,8 @@ class Resource(object):
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
         params = args[0]
-        data   = self._model.createdata(params, **kwargs)
+        method = args[0][0] # request args='(('word',), {'test': '1'})'
+        data   = self._model.createdata(method, kwargs)
 
         # set appropriate headers for POST method
         cherrypy.response.status = '201 Created'
@@ -204,7 +207,8 @@ class Resource(object):
             print "Calling handle_put %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        data   = self._model.updatedata(args[0], **kwargs)
+        method = args[0][0] # request args='(('word',), {'test': '1'})'
+        data   = self._model.updatedata(method, kwargs)
         # generate response
         return self.response(data,"put")
 
@@ -216,7 +220,8 @@ class Resource(object):
             print "Calling handle_delete %s %s" % (args, kwargs)
         self.checkaccept()
         kwargs = updateinputdict(args, kwargs)
-        data   = self._model.deletedata(args[0], **kwargs)
+        method = args[0][0] # request args='(('word',), {'test': '1'})'
+        data   = self._model.deletedata(method, kwargs)
         # generate response
         return self.response(data,"delete")
 

@@ -11,6 +11,8 @@ import cherrypy
 from cherrypy import expose
 from services.rest.RestService import RestService
 
+from utils.Utils import setsqlalchemylogger
+from utils.Utils import setcherrypylogger
 # test model and formatter
 from services.test.TestModel import TestModel
 from services.test.TestFormatter import TestFormatter
@@ -20,12 +22,20 @@ from Framework import Controller
 
 class Service(object):
     """Service implementation, we should have some default page"""
+    def __init__(self):
+        self.rest = None # to be defined by REST server
+        self._ver = "0.1.1" # service version
     @expose
     def default(self, *args, **kwargs):
         """Default page implementation"""
         if  kwargs.has_key('verbose') and kwargs['verbose']:
+            print "REST service version %s" % self._ver
+            print "REST default method invoked with:"
             print args, kwargs
         return
+    def version(self):
+        """Service version"""
+        return self._ver
 
 class RestServer(Controller):
     """REST server implementation within WEBTOOLS framework"""
@@ -34,10 +44,10 @@ class RestServer(Controller):
         self.baseurl = None
         if  context:
             Controller.__init__ (self, context, __file__)
-#            setsqlalchemylogger(super(RestServer,self).getHandler(),
-#                                super(RestServer,self).getLogLevel())
-#            setcherrypylogger(  super(RestServer,self).getHandler(),
-#                                super(RestServer,self).getLogLevel())
+            setsqlalchemylogger(super(RestServer, self).getHandler(),
+                                super(RestServer, self).getLogLevel())
+            setcherrypylogger(  super(RestServer, self).getHandler(),
+                                super(RestServer, self).getLogLevel())
         rest_service = Service()
         rest_service.rest = RestService()
         self.rest = rest_service.rest
@@ -58,8 +68,6 @@ class RestServer(Controller):
         opts = self.context.CmdLineArgs().opts
         self.baseurl    = opts.baseUrl
         self.rest._url  = self.baseurl
-#        self.rest._murl = self.baseurl+"/base/Common/masthead"
-#        self.rest._host = self.baseurl
         cherrypy.config.update ( { 
               'request.dispatch' : cherrypy.dispatch.MethodDispatcher()
                                  } )

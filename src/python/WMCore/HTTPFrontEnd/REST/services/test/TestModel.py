@@ -14,23 +14,23 @@ class TestModel:
     """Example of model class implementation"""
     def __init__(self):
         self.data = "DATA"
-    def getdata(self, *args, **kwargs):
+    def getdata(self, method, params=None):
         """Example of getdata implementation"""
-        self.data = "TestModel getData args='%s' kwargs='%s'" % \
-                    (str(args),str(kwargs))
+        self.data = "TestModel getdata method=%s params=%s" % \
+                    (str(method),str(params))
         return self.data
-    def createdata(self, *args, **kwargs):
+    def createdata(self, method, params=None):
         """Example of createdata implementation"""
-        self.data = "TestModel createData args='%s' kwargs='%s'" % \
-                    (str(args),str(kwargs))
+        self.data = "TestModel createdata method=%s params=%s" % \
+                    (str(method),str(params))
         return self.data
-    def deletedata(self, *args, **kwargs):
+    def deletedata(self, method, params=None):
         """Example of deletedata implementation"""
-        self.data = "TestModel deleteData args='%s' kwargs='%s'" % \
-                    (str(args),str(kwargs))
+        self.data = "TestModel deletedata method=%s params=%s" % \
+                    (str(method),str(params))
         return self.data
-    def updatedata(self, *args, **kwargs):
+    def updatedata(self, method, params=None):
         """Example of updatedata implementation"""
-        self.data = "TestModel updateData args='%s' kwargs='%s'" % \
-                    (str(args),str(kwargs))
+        self.data = "TestModel updatedata method=%s params=%s" % \
+                    (str(method),str(params))
         return self.data

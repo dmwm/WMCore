@@ -17,6 +17,7 @@ class Service(object):
     def __init__(self):
         self.rest = None # to be defined by REST class implementation
         self.verbose = 1
+        self._version = "0.1.1"
     @cherrypy.expose
     def default(self, *args, **kwargs):
         """Default method for our service"""
@@ -25,6 +26,9 @@ class Service(object):
             print args
             print kwargs
         return 
+    def version(self):
+        """Service version"""
+        return self._version
 #
 # Main
 #
@@ -35,6 +39,7 @@ if  __name__ == "__main__":
     SERVICE.rest._model = TestModel()
     SERVICE.rest._formatter = TestFormatter()
     SERVICE.rest._url = URL
+    SERVICE.rest._verbose = 1
     CONF = {'/':{'request.dispatch':cherrypy.dispatch.MethodDispatcher()}}
     cherrypy.quickstart(SERVICE, '/services', config=CONF)
 

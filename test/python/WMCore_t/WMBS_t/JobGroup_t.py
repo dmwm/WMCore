@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.10 2009/01/16 22:26:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.11 2009/01/21 22:05:13 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import logging
@@ -52,7 +52,7 @@ class Job_t(unittest.TestCase):
         
         self._setup = True
         return
-          
+               
     def tearDown(self):        
         """
         _tearDown_
@@ -73,7 +73,63 @@ class Job_t(unittest.TestCase):
         myThread.transaction.commit()
             
         self._teardown = True
-            
+    
+    def createTestJobGroupA(self, commitFlag = True):
+        """
+        create testJobGroupA 
+               with testSubscription 
+                     using testWorkflow (wf001) and testWMBSFilset
+        add testJobA with testFileA and testJobB with testFileB
+            to testJobGroupA
+        return testJobGroupA
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(10, *[12312]))
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(10, *[12312]))
+        testFileA.create()
+        testFileB.create()
+
+        #testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
+        #testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
+        
+        #testJobA = Job(name = "TestJobA", files = testFilesetA)
+        #testJobB = Job(name = "TestJobB", files = testFilesetB)
+        
+        testJobA = Job(name = "TestJobA")
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB")
+        testJobB.addFile(testFileB)
+        
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        if commitFlag:
+            testJobGroupA.commit()
+        
+        return testJobGroupA
+    
+    def deleteTestJobGroup(self, jobGroup):
+        """
+        delete job group and all the jobs, subscription, workflow and files
+        """
+        pass
+    
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -210,38 +266,8 @@ class Job_t(unittest.TestCase):
         Test loading the JobGroup and any associated meta data from the
         database.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
+        testJobGroupA = self.createTestJobGroupA()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-        
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroupA = JobGroup(subscription = testSubscription)
-        testJobGroupA.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(10, *[12312]))
-
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(10, *[12312]))
-        testFileA.create()
-        testFileB.create()
-
-        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
-        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
-        
-        testJobA = Job(name = "TestJobA", files = testFilesetA)
-        testJobB = Job(name = "TestJobB", files = testFilesetB)
-
-        testJobGroupA.add(testJobA)
-        testJobGroupA.add(testJobB)
-        testJobGroupA.commit()
-
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.load()
         testJobGroupC = JobGroup(uid = testJobGroupA.uid)
@@ -271,10 +297,12 @@ class Job_t(unittest.TestCase):
         assert testJobGroupC.id == testJobGroupA.id, \
                "ERROR: Job group did not load id correctly."
         
-        assert testJobGroupB.subscription["id"] == testSubscription["id"], \
+        assert testJobGroupB.subscription["id"] == \
+               testJobGroupA.subscription["id"], \
                "ERROR: Job group did not load subscription correctly"
 
-        assert testJobGroupC.subscription["id"] == testSubscription["id"], \
+        assert testJobGroupC.subscription["id"] == \
+               testJobGroupA.subscription["id"], \
                "ERROR: Job group did not load subscription correctly"        
 
         assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
@@ -292,45 +320,16 @@ class Job_t(unittest.TestCase):
         Test loading the JobGroup, it's meta data and any data associated with
         its output fileset and jobs from the database.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-        
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-        
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroupA = JobGroup(subscription = testSubscription)
-        testJobGroupA.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(10, *[12312]))
-
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(10, *[12312]))
-        testFileA.create()
-        testFileB.create()
-
-        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
-        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
-        
-        testJobA = Job(name = "TestJobA", files = testFilesetA)
-        testJobB = Job(name = "TestJobB", files = testFilesetB)
-
-        testJobGroupA.add(testJobA)
-        testJobGroupA.add(testJobB)
-        testJobGroupA.commit()
+        testJobGroupA = self.createTestJobGroupA()
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.loadData()
 
-        assert testJobGroupB.subscription["id"] == testSubscription["id"], \
+        assert testJobGroupB.subscription["id"] == \
+               testJobGroupA.subscription["id"], \
                "ERROR: Job group did not load subscription correctly"
 
-        goldenJobs = [testJobA.id, testJobB.id]
+        goldenJobs = testJobGroupA.getJobIDs(type="list")
         for job in testJobGroupB.jobs:
             assert job.id in goldenJobs, \
                    "ERROR: JobGroup loaded an unknown job"
@@ -352,37 +351,7 @@ class Job_t(unittest.TestCase):
         on the JobGroup.  Also verify that commit() correctly commits the jobs
         to the database.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroupA = JobGroup(subscription = testSubscription)
-        testJobGroupA.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         cksum=1)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         cksum=1)
-        testFileB.addRun(Run(1, *[45]))
-        testFileA.create()
-        testFileB.create()
-
-        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
-        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
-
-        testJobA = Job(name = "TestJobA", files = testFilesetA)
-        testJobB = Job(name = "TestJobB", files = testFilesetB)
-
-        testJobGroupA.add(testJobA)
-        testJobGroupA.add(testJobB)
+        testJobGroupA = self.createTestJobGroupA(commitFlag = False)
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.loadData()
@@ -414,38 +383,8 @@ class Job_t(unittest.TestCase):
         verify that the jobs that were committed before are no longer associated
         with the JobGroup.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
-        testWMBSFileset.create()
-
-        testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-
-        testJobGroupA = JobGroup(subscription = testSubscription)
-        testJobGroupA.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         cksum=1)
-        testFileA.addRun(Run(1, *[45]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         cksum=1)
-        testFileB.addRun(Run(1, *[45]))
-        testFileA.create()
-        testFileB.create()
-
-        testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
-        testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
-
-        testJobA = Job(name = "TestJobA", files = testFilesetA)
-        testJobB = Job(name = "TestJobB", files = testFilesetB)
-
-        testJobGroupA.add(testJobA)
-        testJobGroupA.add(testJobB)
-
+        testJobGroupA = self.createTestJobGroupA(commitFlag = False)
+        
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.loadData()
 
@@ -479,5 +418,55 @@ class Job_t(unittest.TestCase):
 
         return
 
+    def testRecordSubscriptionStatus(self):
+        """
+        _testRecordSubscriptionStatus_
+
+        Create a JobGroup and then add some jobs to it. commit the job group
+        and change the status of input file status of the jobs
+        
+        """
+        testJobGroupA = self.createTestJobGroupA()
+        
+        jobs = testJobGroupA.getJobIDs(type = "JobList")
+        
+        assert testJobGroupA.status() == "ACTIVE", \
+               """ Error: All the jobs in available state: 
+                   JobGroup should be in ACTIVE State """
+                    
+        for job in jobs:
+            job.load()
+        
+        jobs[0].changeStatus("ACTIVE")
+        
+        assert testJobGroupA.status() == "ACTIVE", \
+               """ Error:  One job is in active state: 
+                   JobGroup should be in ACTIVE State """
+        
+        jobs[1].changeStatus("ACTIVE")
+        
+        assert testJobGroupA.status() == "ACTIVE", \
+               """ Error:  All jobs is in active state: 
+                   JobGroup should be in ACTIVE State """
+        
+        jobs[0].changeStatus("COMPLETE")
+        
+        assert testJobGroupA.status() == "ACTIVE", \
+               """ Error:  One job is in active state: 
+                   JobGroup should be in ACTIVE State """
+        
+        
+        jobs[1].changeStatus("COMPLETE")
+        
+        assert testJobGroupA.status() == "COMPLETE", \
+               """ Error:  both jobs are in COMPLETE state: 
+                   JobGroup should be in COMPLETE State """
+        
+        jobs[1].changeStatus("FAILED")
+        
+        assert testJobGroupA.status() == "FAILED", \
+               """ Error:  one job is in FAILED state: 
+                   JobGroup should be in FAILD State: %s"""
+                   
 if __name__ == "__main__":
     unittest.main() 

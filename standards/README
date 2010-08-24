@@ -1,0 +1,16 @@
+
+Use pylint and the pylint test file located under:
+WMCORE/standards/.pylintrc
+
+Test files need to be located under WMCORE/test/python/ and
+need to mirror the structure you use for the packages under
+WMCORE/src/python where every directory and test file is 
+augmented with a _t
+
+E.g.: if you have a package:
+
+src/python/WMCORE/MsgService/MsgService.py
+
+you will have a test in the pacakge:
+
+test/python/WMCORE_t/MsgService_t/MsgService_t.py

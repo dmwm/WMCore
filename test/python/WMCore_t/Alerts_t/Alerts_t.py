@@ -3,8 +3,8 @@
 
 """
 
-__revision__ = "$Id: Alerts_t.py,v 1.1 2008/10/22 21:34:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Alerts_t.py,v 1.2 2008/11/17 12:59:27 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -17,6 +17,8 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.Alerts.Alerts import Alerts
 from WMCore.WMFactory import WMFactory
+
+from WMQuality.TestInit import TestInit
 
 class AlertsTest(unittest.TestCase):
     """
@@ -36,47 +38,23 @@ class AlertsTest(unittest.TestCase):
         _setUp_
         
         """
-        if AlertsTest._setup:
-            return
-
-        print("Alerts setup (once)")
-        logging.basicConfig(level=logging.DEBUG,
-                            format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
-                            datefmt="%m-%d %H:%M",
-                            filename="%s.log" % __file__,
-                            filemode="w")
-
-        myThread = threading.currentThread()
-        myThread.logger = logging.getLogger("AlertsTest")
-        myThread.dialect = os.getenv("DIALECT")
-        
-        options = {}
-        if myThread.dialect == "MySQL":
-            options["unix_socket"] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                                  options)
-        else:
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"))
-        
-        myThread.dbi = dbFactory.connect() 
-        
-        factory = WMFactory("alerts", "WMCore.Alerts")
-        create = factory.loadObject(myThread.dialect+".Create")
-        destroy = factory.loadObject(myThread.dialect+".Destroy")        
-        myThread.transaction = Transaction(myThread.dbi)
-        destroy.execute(conn = myThread.transaction.conn)
-        createworked = create.execute(conn = myThread.transaction.conn)
-        if not createworked:
-            raise Exception("Alert tables could not be created, already exist?")
-        AlertsTest._setup = True
-        myThread.transaction.commit()                                  
+        if not AlertsTest._setup:
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.clearDatabase()
+            self.testInit.setSchema(customModules = ['WMCore.Alerts'], useDefault = False)
 
     def tearDown(self):
         """
         Database deletion 
         """
-        pass
-    
+        myThread = threading.currentThread()
+        if AlertsTest._teardown :
+            # call the script we use for cleaning:
+            self.testInit.clearDatabase()
+        AlertsTest._teardown = False
+
     def testPublish(self):
         """
         __testPublish__
@@ -128,10 +106,11 @@ class AlertsTest(unittest.TestCase):
         _testAckCurrent_
         
         """
-        pass
+        AlertsTest._teardown = True
 
     def runTest(self):
         self.testPublish() 
+        self.testAckCurrent()
 
 if __name__ == "__main__":
     unittest.main()

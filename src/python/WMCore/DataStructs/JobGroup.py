@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.9 2008/10/24 14:01:42 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobGroup.py,v 1.10 2008/11/20 16:09:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -43,11 +43,14 @@ class JobGroup(Pickleable):
     JobGroups are sets of jobs running on files who's output needs to be merged
     together.
     """
-    def __init__(self, subscription = None, jobs=Set()):
+    def __init__(self, subscription = None, jobs = None):
         """
         Store all the jobs as a set in self.dict
         """
-        self.jobs = jobs
+        if jobs == None:
+            self.jobs = Set()
+        else:
+            self.jobs = jobs
         self.subscription = subscription
         self.groupoutput = Fileset()
         self.last_update = datetime.datetime.now()

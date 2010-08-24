@@ -8,17 +8,24 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.17 2008/10/28 18:55:40 metson Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Subscription.py,v 1.18 2008/11/20 16:09:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 import copy
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset 
 
 class Subscription(Pickleable, dict):
-    def __init__(self, fileset = Fileset(), workflow = None, 
-               whitelist = Set(), blacklist = Set(),
-               split_algo = 'FileBased', type = "Processing"):
+    def __init__(self, fileset = None, workflow = None, whitelist = None,
+                 blacklist = None, split_algo = "FileBased",
+                 type = "Processing"):
+        if fileset == None:
+            fileset = Fileset()
+        if whitelist == None:
+            whitelist = Set()
+        if blacklist == None:
+            blacklist = Set()
+            
         self.setdefault('fileset', fileset)
         self.setdefault('workflow', workflow)
         self.setdefault('type', type)
@@ -28,8 +35,7 @@ class Subscription(Pickleable, dict):
         self.setdefault('blacklist', blacklist)
         
         self.available = Fileset(name=fileset.name, 
-                                 files = fileset.listFiles(), 
-                                 logger = fileset.logger)  
+                                 files = fileset.listFiles())  
         
         self.acquired = Fileset(name='acquired', logger = fileset.logger)
         self.completed = Fileset(name='completed', logger = fileset.logger)
@@ -40,18 +46,10 @@ class Subscription(Pickleable, dict):
                     self.getFileset().name.replace(' ', '')
         
     def getWorkflow(self):
-        return self['workflow']
+        return self["workflow"]
     
     def getFileset(self):
         return self['fileset']
-#
-#    def availableFiles(self, parents=0):
-#        """
-#        Return a Set of files that are available for processing 
-#        (e.g. not already in use)
-#        """
-#        return self.available.listFiles() - self.acquiredFiles.listFiles() - \
-#            self.completed.listFiles() - self.failed.listFiles() 
     
     def acquireFiles(self, files = [], size=1):
         """

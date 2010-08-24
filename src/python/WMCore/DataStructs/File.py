@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.11 2008/09/29 15:34:09 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: File.py,v 1.12 2008/11/20 16:09:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 from sets import Set
 import datetime
 from WMCore.DataStructs.WMObject import WMObject
@@ -18,26 +18,19 @@ class File(WMObject, dict):
     _File_
     Data object that contains details for a single file
     """
-    def __init__(self, lfn='', id = -1, size=0, events=0, run=0, lumi=0, parents=Set()):
+    def __init__(self, lfn='', size=0, events=0, run=0, lumi=0, parents=None):
         dict.__init__(self)
         self.setdefault("lfn", lfn)
-        if id == -1:
-            self.setdefault("id", datetime.datetime.now().__hash__())
-            # made up id's need to be negative
-            if self['id'] > 0:
-                self['id'] = -1 * self['id']
-        else:
-            self.setdefault("id", id)
-        
         self.setdefault("size", size)
         self.setdefault("events", events)
         self.setdefault("run", run)
         self.setdefault("lumi", lumi)
-        self.setdefault("parents", parents)
-        self.setdefault('locations', Set())
         self.setdefault('runs', Set())
-        self.dict = self
 
+        if parents == None:
+            self.setdefault("parents", Set())
+        else:
+            self.setdefault("parents", parents)            
 
     def addRun(self, run):
         """
@@ -77,15 +70,14 @@ class File(WMObject, dict):
 
     def setLocation(self, se):
         self['locations'] = self['locations'] | Set(self.makelist(se))
-        self.dict = self
 
     def __cmp__(self, rhs):
         """
         Sort files in run number and lumi section order
         """
-        if self['run'] == rhs.dict['run']:
-            return cmp(self['lumi'], rhs.dict['lumi'])
-        return cmp(self['run'], rhs.dict['run'])
+        if self['run'] == rhs['run']:
+            return cmp(self['lumi'], rhs['lumi'])
+        return cmp(self['run'], rhs['run'])
 
     def __eq__(self, rhs):
         """
@@ -93,7 +85,7 @@ class File(WMObject, dict):
         """
         eq = False
         if type(rhs) == type(self):
-            eq = self['lfn'] == rhs.dict['lfn']
+            eq = self['lfn'] == rhs['lfn']
         elif type(rhs) == type('string'):
             eq = self['lfn'] == rhs
         return eq

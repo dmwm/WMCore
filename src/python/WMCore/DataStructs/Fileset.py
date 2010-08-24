@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.20 2008/11/11 11:48:21 metson Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Fileset.py,v 1.21 2008/11/20 16:09:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.21 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject 
 
@@ -16,14 +16,17 @@ class Fileset(WMObject):
     _Fileset_
     Data object that contains a set of files
     """
-    def __init__(self, name=None, files = Set(), logger=None):
+    def __init__(self, name=None, files = None):
         """
         Assume input files are new
         """
-        self.files = Set()
         self.name = name
-        self.newfiles = files
-        self.logger = logger        
+        self.files = Set()
+
+        if files == None:
+            self.newfiles = Set()
+        else:
+            self.newfiles = files
                 
     def addFile(self, file):
         """
@@ -43,14 +46,6 @@ class Fileset(WMObject):
         
         self.files = self.files.union(updated)
         
-        if self.logger != None:
-            self.logger.debug ( "u n f nf %s %s %s %s" % (len(updated), len(new), 
-                            len(self.files), len(self.newfiles)))
-        #else:
-        #    print "u n f nf", len(updated), len(new), \
-        #                    len(self.files), len(self.newfiles)
-        #self.commit()
-    
     def getFiles(self, type='list'):
         if type == 'list':
             """
@@ -58,6 +53,7 @@ class Fileset(WMObject):
             sorted by lfn.
             """
             files = list(self.getFiles(type='set'))
+
             try:
                 files.sort(lambda x, y: cmp(x['lfn'], y['lfn']))
             except Exception, e:
@@ -72,7 +68,7 @@ class Fileset(WMObject):
             All the lfn's for files in the filesets 
             """
             def getLFN(file):
-                return file.dict["lfn"]
+                return file["lfn"]
             files = map(getLFN, self.getFiles(type='list'))
             return files
         elif type == 'id':
@@ -80,7 +76,8 @@ class Fileset(WMObject):
             All the id's for files in the filesets 
             """
             def getID(file):
-                return file.dict["id"]
+                return file["id"]
+            
             files = map(getID, self.getFiles(type='list'))
             return files
     

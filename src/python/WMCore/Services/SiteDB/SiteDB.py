@@ -6,10 +6,11 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.1 2008/08/12 21:47:19 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SiteDB.py,v 1.2 2008/09/18 15:30:00 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Services.JSONParser import JSONParser
+import urllib
 
 class SiteDBJSON:
 
@@ -26,8 +27,8 @@ class SiteDBJSON:
         """
         Convert DN to Hypernews name
         """
-        
-        userinfo = self.parser.getJSON("dnUserName", dn=dn)
+        file = 'dnUserName_%s.json' % str(dn.__hash__()) 
+        userinfo = self.parser.getJSON("dnUserName", dn=dn, file=file)
         userName = userinfo['user']
         return userName
 
@@ -36,8 +37,8 @@ class SiteDBJSON:
         """
         Convert CMS name to list of CEs
         """
-        
-        ceList = self.cmsNametoList(cmsName, 'CE')
+        file = 'cmsNametoCE_%s.json' % cmsName
+        ceList = self.cmsNametoList(cmsName, 'CE', file=file)
         return ceList
 
 
@@ -45,19 +46,19 @@ class SiteDBJSON:
         """
         Convert CMS name to list of SEs
         """
-        
-        seList = self.cmsNametoList(cmsName, 'SE')
+        file = 'cmsNametoSE_%s.json' % cmsName
+        seList = self.cmsNametoList(cmsName, 'SE', file=file)
         return seList
 
 
-    def cmsNametoList(self, cmsName, kind):
+    def cmsNametoList(self, cmsName, kind, file):
         """
         Convert CMS name to list of CEs or SEs
         """
         
         cmsName = cmsName.replace('*','%')
         cmsName = cmsName.replace('?','_')
-        theInfo = self.parser.getJSON("CMSNameto"+kind, name=cmsName)
+        theInfo = self.parser.getJSON("CMSNameto"+kind, file=file, name=cmsName)
     
         theList = []
         for index in theInfo:
@@ -80,7 +81,14 @@ if __name__ == '__main__':
           mySiteDB.dnUserName(dn="/C=UK/O=eScience/OU=Bristol/L=IS/CN=simon metson")
 
     print "CMS name for UNL:", \
-          mySiteDB.parser.getJSON("CEtoCMSName", name="red.unl.edu")
+          mySiteDB.parser.getJSON("CEtoCMSName", 
+                                  file="CEtoCMSName", 
+                                  name="red.unl.edu")
+          
+    print "T1 Site Exec's:", \
+          mySiteDB.parser.getJSON("CMSNametoAdmins", 
+                                  file="CMSNametoAdmins", 
+                                  name="T1",
+                                  role="Site Executive")
     print "Tier 1 CEs:", mySiteDB.cmsNametoCE("T1")
     print "Tier 1 SEs:", mySiteDB.cmsNametoSE("T1")
-

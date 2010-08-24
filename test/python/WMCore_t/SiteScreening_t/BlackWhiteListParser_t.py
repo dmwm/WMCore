@@ -2,8 +2,8 @@
 """
 Test case for SiteScreening
 """
-__revision__ = "$Id: test_unittest.py,v 1.4 2008/10/15 15:47:45 ewv Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: BlackWhiteListParser_t.py,v 1.1 2008/10/16 07:19:21 ewv Exp $"
+__version__  = "$Revision: 1.1 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -37,9 +37,11 @@ class FakeLogger:
         """
         pass
 
+
+
 fakeLogger  = FakeLogger()
 
-class TestBlackWhiteList(unittest.TestCase):
+class BlackWhiteListParserTest(unittest.TestCase):
     """
     Unit tests for SiteScreening module
     """
@@ -91,7 +93,7 @@ class TestBlackWhiteList(unittest.TestCase):
         Tests white list parsing for Compute Elements
         """
         whitelist = ['vampire.accre.vanderbilt.edu',
-            'ic-kit-lcgce.rz.uni-karlsruhe.de']
+                     'ic-kit-lcgce.rz.uni-karlsruhe.de']
         other = ['gridce2.pi.infn.it', 'lcg02.ciemat.es']
         results = self.ceparser.checkWhiteList(other + whitelist)
         print results
@@ -101,15 +103,11 @@ class TestBlackWhiteList(unittest.TestCase):
 
 cfgParams = {
   'EDG.se_black_list': 'ccsrm.in2p3.fr, T1_*',
-  'EDG.se_white_list': 'T2_US, T2_UK, T2_KR_KNU',
+  'EDG.se_white_list': 'srm.ihepa.ufl.edu, heplnx204.pp.rl.ac.uk, cluster142.knu.ac.kr',
   'EDG.ce_black_list': 'lcg02.ciemat.es, bris.ac, *.fnal.gov',
-  'EDG.ce_white_list': 'T3',
+  'EDG.ce_white_list': 'vampire.accre.vanderbilt.edu, ic-kit-lcgce.rz.uni-karlsruhe.de',
 }
-
-#= FakeLogger()
-
 
 
 if __name__ == '__main__':
     unittest.main()
-

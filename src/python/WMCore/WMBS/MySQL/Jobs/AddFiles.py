@@ -4,10 +4,10 @@ _AddFiles_
 MySQL implementation of Jobs.AddFiles
 """
 __all__ = []
-__revision__ = "$Id: AddFiles.py,v 1.3 2008/10/01 15:42:43 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: AddFiles.py,v 1.4 2008/10/01 15:58:37 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
 class AddFiles(MySQLBase):
     sql = "insert into wmbs_job_assoc (job, file) values (:jobid, :fileid)"

@@ -4,10 +4,10 @@ _New_
 MySQL implementation of Jobs.New
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.2 2008/10/01 15:43:08 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: New.py,v 1.3 2008/10/01 15:58:30 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
 class New(MySQLBase):
     sql = []

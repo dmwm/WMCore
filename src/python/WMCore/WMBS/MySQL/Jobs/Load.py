@@ -4,10 +4,10 @@ _Load_
 MySQL implementation of Jobs.Load
 """
 __all__ = []
-__revision__ = "$Id: Load.py,v 1.2 2008/08/09 22:22:55 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Load.py,v 1.3 2008/10/01 15:58:37 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
 class Load(MySQLBase):
     sql = "select file from wmbs_job_assoc where job = :jobid"

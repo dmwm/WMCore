@@ -5,6 +5,7 @@ class CreateWMBS(MySQLBase):
     def __init__(self, logger, dbinterface):
         MySQLBase.__init__(self, logger, dbinterface)
         self.create = {}
+        self.constraints = {}
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id int(11) NOT NULL AUTO_INCREMENT,
                 name varchar(255) NOT NULL,
@@ -57,8 +58,8 @@ class CreateWMBS(MySQLBase):
                 id           INT(11) NOT NULL AUTO_INCREMENT,
                 spec         VARCHAR(255) NOT NULL,
                 name         VARCHAR(255) NOT NULL,
-                owner        VARCHAR(255),
-                PRIMARY KEY (id))"""
+                owner        VARCHAR(255) NOT NULL,
+                PRIMARY KEY (id))""" 
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
                 id      INT(11) NOT NULL AUTO_INCREMENT,
                 fileset INT(11) NOT NULL,
@@ -107,14 +108,22 @@ wmbs_sub_files_complete (
                 FOREIGN KEY (job) REFERENCES wmbs_job(id)
                     ON DELETE CASCADE,
                 FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
-
+        
+        self.constraints['uniquewfname'] = "CREATE UNIQUE INDEX uniq_wf_name on wmbs_workflow (name)"
+        self.constraints['uniquewfspecowner'] = "CREATE UNIQUE INDEX uniq_wf_spec_owner on wmbs_workflow (spec, owner)"
+        
     def execute(self, fileset = None, conn = None, transaction = False):
         try:
             keys = self.create.keys()
             self.logger.debug( keys )
             
             self.dbi.processData(self.create.values(), conn = conn, transaction = transaction)
-            print "done processing"
+            
+            keys = self.constraints.keys()
+            self.logger.debug( keys )
+            
+            self.dbi.processData(self.constraints.values(), conn = conn, transaction = transaction)
+            
             return True
         except Exception, e:
             raise e

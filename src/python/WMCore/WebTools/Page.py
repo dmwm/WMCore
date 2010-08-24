@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.3 2009/01/10 15:42:54 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Page.py,v 1.4 2009/01/11 11:58:19 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import cherrypy
-from cherrypy import log
+from cherrypy import log as cplog
 from Cheetah.Template import Template
 from simplejson import JSONEncoder
 import logging, os, types
@@ -18,6 +18,22 @@ class Page(object):
     def __init__(self, config = {}):
         self.config = config
     
+    def warning(self, msg):
+        self.log(msg, logging.WARNING)
+        
+    def exception(self, msg):
+        self.log(msg, logging.ERROR)
+        
+    def debug(self, msg):
+        self.log(msg, logging.DEBUG)
+    
+    def info(self, msg):
+        self.log(msg, logging.INFO)
+    
+    def log(self, msg, severity):
+        cplog(msg, context=self.config['application'], 
+                severity=severity, traceback=False)
+        
 class TemplatedPage(Page):
     """
     __TemplatedPage__
@@ -33,8 +49,7 @@ class TemplatedPage(Page):
         else:
             # Take a guess
             self.templatedir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'Templates')
-        log("templates are located in: %s" % self.templatedir, context=self.config['application'], 
-            severity=logging.DEBUG, traceback=False)
+        self.debug("templates are located in: %s" % self.templatedir)
         
     def templatepage(self, file=None, *args, **kwargs):
         searchList=[]
@@ -47,8 +62,7 @@ class TemplatedPage(Page):
             template = Template(file=templatefile, searchList=searchList)
             return template.respond()
         else:
-            log("%s not found at %s" % (file, self.templatedir), 
-                        context=self.config['application'], severity=logging.WARNING)
+            self.warning("%s not found at %s" % (file, self.templatedir))
             return "Template %s not known" % file
 
 class SecuredPage(Page):
@@ -65,11 +79,9 @@ class SecuredPage(Page):
             userdn  = cherrypy.request.headers['Cms-Client-S-Dn']
             access  = cherrypy.request.headers['Cms-Auth-Status']
             if  userdn != '(null)' and access == 'OK':
-                log("Found user cert", context=self.config['application'], 
-                    severity=logging.DEBUG, traceback=False)
+                self.debug("Found user cert")
         except:
-            log("No cert found in a browser", context=self.config['application'], 
-                severity=logging.DEBUG, traceback=False)
+            self.debug("No cert found in a browser")
         return userdn
 
     

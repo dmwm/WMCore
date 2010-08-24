@@ -47,19 +47,39 @@ class MySQLInterface(DBInterface):
         Seems the sqlalchemy's executemany on MySQL is a bit flakey, so instead 
         we get the MySQLDB connection, make a cursor and interact with that 
         directly. 
+        
+        TODO: add assert check that number of records inserted are the same as
+        number of binds. 
         """
         
         b = self.makelist(b)
         try: 
             newsql = s
             binds = b[0].keys()
-            binds.sort(key=s.index)
+            """
+            This extra sort/replace needed if your binds are similarly named, 
+            e.g. file and fileset binds.sort(key=s.index) can lead to incorrect 
+            results
+            """
+            binds.sort(key=len, reverse=True)
+            mapper = {}
+            for k in binds:
+                newbind = 'b%s' % binds.index(k)
+                newsql = newsql.replace(':%s' % k, ':%s' % newbind)
+                mapper[newbind] = k
+                binds[binds.index(k)] = newbind
+            
+            binds.sort(key=newsql.index)
+            
             self.logger.debug("MySQLCore.executemanybinds: rewriting sql for execute_many: sql %s" % 
                               s.replace('\n', ' '))
             for k in binds:
                 newsql = newsql.replace(':%s' % k, '%s')
-    
+            
             bind_list = []
+            # Now map back to the original bind names
+            for i in binds:
+                binds[binds.index(i)] = mapper[i]
             for i in b:
                 tpl = tuple( [ i[x] for x in binds] )
                 bind_list.append(tpl)
@@ -67,15 +87,17 @@ class MySQLInterface(DBInterface):
             self.logger.debug("MySQLCore.executemanybinds: rewritten sql for execute_many: sql %s" % \
                               newsql.replace('\n', ' '))
             self.logger.debug("MySQLCore.executemanybinds: rewritten binds: %s" % bind_list)
+            
+            cur = connection.connection.cursor()
+        
+            result = cur.executemany(newsql, bind_list)
+            #assert result, len(bind_list)
+            result = self.makelist(result)
+            #print result
+            cur.close()
+            return result
         except Exception, e:
             self.logger.exception("""MySQLCore.executemanybinds failed - sql : %s
 binds : %s
 exception : %s""" % (s, b, e.message))
             raise e
-        cur = connection.connection.cursor()
-        
-        result = cur.executemany(newsql, bind_list)
-        result = self.makelist(result)
-        cur.close()
-        return result
-        #return DBInterface.executemanybinds(self, newsql, bind_list, connection)

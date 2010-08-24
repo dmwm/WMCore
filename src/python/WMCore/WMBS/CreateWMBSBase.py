@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.13 2008/11/26 19:46:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.14 2008/11/26 20:16:51 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import threading
 
@@ -82,9 +82,9 @@ class CreateWMBSBase(DBCreator):
         
         self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
-             file    INTEGER,
-             run     INTEGER,
-             lumi    INTEGER,
+             file    INTEGER NOT NULL,
+             run     INTEGER NOT NULL,
+             lumi    INTEGER NOT NULL,
              FOREIGN KEY (file) references wmbs_file_details(id)
                ON DELETE CASCADE)"""
         
@@ -96,8 +96,8 @@ class CreateWMBSBase(DBCreator):
              
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
-             file     INTEGER,
-             location INTEGER,
+             file     INTEGER NOT NULL,
+             location INTEGER NOT NULL,
              UNIQUE(file, location),
              FOREIGN KEY(file)     REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE,

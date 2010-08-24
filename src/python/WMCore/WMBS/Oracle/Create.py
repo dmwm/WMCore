@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2008/11/24 21:51:35 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2008/11/26 20:16:37 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -87,9 +87,9 @@ class Create(CreateWMBSBase):
         
         self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
-             fileid   number(10),
-             run     number(10),
-             lumi    number(10),
+             fileid   number(10) not null,
+             run     number(10) not null,
+             lumi    number(10) not null,
              constraint fk_runlumi_file
                  FOREIGN KEY (fileid) references wmbs_file_details(id)
                    ON DELETE CASCADE)"""
@@ -105,8 +105,8 @@ class Create(CreateWMBSBase):
         
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
-             fileid    number(10),
-             location number(10),
+             fileid    number(10) not null,
+             location number(10) not null,
              constraint uk_sfile_location unique (fileid, location),
              constraint fk_location_file
                  FOREIGN KEY(fileid)     REFERENCES wmbs_file_details(id)

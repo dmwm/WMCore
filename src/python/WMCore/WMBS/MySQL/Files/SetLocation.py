@@ -1,5 +1,5 @@
 """
-MySQL implementation of SetFileLocation
+MySQL implementation of SetLocation
 """
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
@@ -13,6 +13,9 @@ class SetLocation(MySQLBase):
                                    self.dbi.buildbinds(self.dbi.makelist(location), 'location'))
     
     def execute(self, file = None, sename = None, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, self.getBinds(file, sename), 
+        binds = self.getBinds(file, sename)
+        self.logger.debug('File.SetLocation binds: %s' % binds)
+        result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
+        
         return self.format(result)

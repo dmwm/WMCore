@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.11 2009/01/21 22:05:13 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.12 2009/01/26 13:46:33 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import logging
@@ -30,7 +30,7 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 
-class Job_t(unittest.TestCase):
+class JobGroupTest(unittest.TestCase):
     _setup = False
     _teardown = False
     

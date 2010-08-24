@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.17 2009/01/26 20:53:30 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: File_t.py,v 1.18 2009/01/29 16:42:53 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import unittest
 import logging
@@ -611,6 +611,54 @@ class FileTest(unittest.TestCase):
         
         assert (runSet - testFile["runs"]) == Set(), \
             "Error: addRunSet is not updating set correctly"
-         
+    
+    def testGetAncestorLFNs(self):
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileA.create()
+        
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileB.create()
+        
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileC.create()
+        
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileD.create()
+        
+        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileE.create()
+        
+        testFileE = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileE.create()
+        
+        testFileA.addParent(lfn = "/this/is/a/lfnB")
+        testFileA.addParent(lfn = "/this/is/a/lfnC")
+        testFileB.addParent(lfn = "/this/is/a/lfnD")
+        testFileC.addParent(lfn = "/this/is/a/lfnD")
+        testFileD.addParent(lfn = "/this/is/a/lfnE")
+        testFileD.addParent(lfn = "/this/is/a/lfnF")
+        
+        level1 = ["/this/is/a/lfnB", "/this/is/a/lfnC"]
+        level2 = ["/this/is/a/lfnD"]
+        level3 = ["/this/is/a/lfnE", "/this/is/a/lfnF"]
+        level4 = level5 = []
+        
+        assert testFileA.getAncestorLFNs(level=1) == level1, \
+              "ERROR: level 1 test failed"
+        assert testFileA.getAncestorLFNs(level=2) == level2, \
+              "ERROR: level 2 test failed"
+        assert testFileA.getAncestorLFNs(level=3) == level3, \
+              "ERROR: level 3 test failed"
+        assert testFileA.getAncestorLFNs(level=4) == level4, \
+              "ERROR: level 4 test failed"
+        assert testFileA.getAncestorLFNs(level=5) == level5, \
+              "ERROR: level 5 test failed"
+              
 if __name__ == "__main__":
     unittest.main() 

@@ -9,7 +9,7 @@ to run the test
 
 
 """
-import random
+import random, os, threading
 
 from ConfigParser import ConfigParser
 
@@ -23,7 +23,10 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from sets import Set
 
-__revision__ = "$Id: WMBSBase.py,v 1.12 2008/11/10 13:12:14 jcgon Exp $"
+#Needed for TestInit
+from WMQuality.TestInit import TestInit
+
+__revision__ = "$Id: WMBSBase.py,v 1.13 2008/11/25 15:58:57 jcgon Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -37,6 +40,9 @@ class WMBSBase(Performance):
 
 
     """
+
+    _setup = False
+    _teardown = False
 
     def genFileObjects(self, number = 0, name = 'Test'):
         """
@@ -57,9 +63,7 @@ class WMBSBase(Performance):
                         size = random.randint(1000, 2000),
                         events = 1000,
                         run = random.randint(0, 2000),
-                        lumi = random.randint(0, 8), 
-                        logger = self.logger, 
-                        dbfactory = self.dbf)
+                        lumi = random.randint(0, 8))
             
             filelist.append(file)
         return filelist
@@ -72,12 +76,15 @@ class WMBSBase(Performance):
         """    
         filelist = self.genFileObjects(number)
 
+        #Test Code START - Erase after Fileset initial files creation is fixed
+#        for x in filelist:
+#            x.create()
+        #Test Code END
+
         setfiles = set(filelist)
 
         fileset = Fileset(name = name+'Files', 
-                            files = setfiles, 
-                            logger = self.logger, 
-                            dbfactory = self.dbf)
+                            files = setfiles)
         fileset.create()
     
         filelist = list(fileset.getFiles())
@@ -133,9 +140,7 @@ class WMBSBase(Performance):
         for i in range(rangemax):        
             filelist = self.genFileObjects(number = 10, name = name+'Fileset')
             fileset = Fileset(name = name+str(i), 
-                            files = set(filelist), 
-                            logger = self.logger, 
-                            dbfactory = self.dbf) 
+                            files = set(filelist))
             list.append(fileset)        
      
         return list
@@ -170,8 +175,7 @@ class WMBSBase(Performance):
         for i in range(rangemax):        
             workflow = Workflow(spec = name+'Spec'+str(i), 
                                 owner = name+'Owner'+str(i), 
-                                name = name+'Workflow'+str(i), 
-                        logger = self.logger, dbfactory = self.dbf)
+                                name = name+'Workflow'+str(i) )
             list.append(workflow)
 
         return list
@@ -211,8 +215,7 @@ class WMBSBase(Performance):
 
 
             subscription = Subscription(fileset = fileset[i], 
-                        workflow = workflow[0], logger = self.logger, 
-                        dbfactory = self.dbf)
+                        workflow = workflow[0] )
             subscription.create()
 
             list.append(subscription)
@@ -235,8 +238,7 @@ class WMBSBase(Performance):
 
         for i in range(rangemax):        
          
-            job = Job(name = name+'Job'+str(i), files = fileset[i], 
-                        logger = self.logger, dbfactory = self.dbf)
+            job = Job(name = name+'Job'+str(i), files = fileset[i] )
             jobset.add(job)
 
         return list(jobset) 
@@ -303,6 +305,7 @@ class WMBSBase(Performance):
         Common setUp for all WMBS Performance tests
 
         """
+
         #Total time counter for Performance tests
         self.totaltime = 0
         
@@ -345,6 +348,21 @@ class WMBSBase(Performance):
         self.selist = ['localhost']        
         for se in self.selist:
             self.dao(classname = 'Locations.New').execute(sename=se)      
+
+        #TestUnit Specs
+        if self._setup:
+            return
+
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
+
+        myThread = threading.currentThread()
+
+        self._setup = True
+        return
 
     def tearDown(self):
         """

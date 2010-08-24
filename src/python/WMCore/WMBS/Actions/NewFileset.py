@@ -7,9 +7,9 @@ class NewFilesetAction(BaseAction):
         """
         import the approriate SQL object and execute it
         """ 
-        BaseAction.execute(self, dbinterface)
+        myclass = self.loadDialect(self.name, dbinterface)
         self.logger.debug("Adding %s" % fileset)    
-        action = self.myclass(self.logger, dbinterface)
+        action = myclass(self.logger, dbinterface)
         try:
             action.execute(fileset)
             return True

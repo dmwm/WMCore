@@ -5,8 +5,6 @@ class AddAndListFileset(BaseAction):
     name = "NewFileset"
         
     def execute(self, fileset = None, dbinterface = None):
-        BaseAction.execute(dbinterface)
-        
         action1 = NewFilesetAction(self.logger, dbinterface)
         action1.execute(fileset)
         action2 = ListFilesetAction(self.logger, dbinterface)

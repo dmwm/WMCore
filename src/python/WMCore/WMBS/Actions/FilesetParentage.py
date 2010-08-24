@@ -8,9 +8,14 @@ class FilesetParentageAction(BaseAction):
         """
         import the approriate SQL object and execute it
         """ 
-        BaseAction.execute(dbinterface)
+        
         if  not isinstance(child, Fileset) and not isinstance(parent, Fileset):
             raise TypeError, "Parent or Child not a WMBS Fileset object"
         
-        action = self.myclass(self.logger, dbinterface)
-        return action.execute(child.id, parent.id)
+        myclass = self.loadDialect(self.name, dbinterface)
+        action = myclass(self.logger, dbinterface)
+        try:
+            return action.execute(child.id, parent.id)
+        except:
+            self.logger.exception(e)
+            return False

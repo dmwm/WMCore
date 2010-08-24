@@ -39,5 +39,11 @@ class BaseAction(object):
 
     
     def execute(self, dbinterface = None):
-        self.myclass = self.loadDialect(self.name, dbinterface)
+        myclass = self.loadDialect(self.name, dbinterface)
+        action = myclass(self.logger, dbinterface)
+        try:
+            return action.execute()
+        except Exception, e:
+            self.logger.exception(e)
+            return False
 # Fin       

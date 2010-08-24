@@ -5,8 +5,8 @@ _DBSBuffer.NewDataset_
 Add a new dataset to DBS Buffer
 
 """
-__revision__ = "$Id: NewDataset.py,v 1.6 2008/11/18 23:25:29 afaq Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: NewDataset.py,v 1.7 2008/12/11 20:32:03 afaq Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -28,7 +28,6 @@ class NewDataset(DBFormatter):
                     and AppFam=:appFamily 
                     and PSetHash=:psetHash),
                 :algoIn)"""
-                
                 
     def getBinds(self, datasetInfo=None, algoInDBS=None):
         # binds a list of dictionaries

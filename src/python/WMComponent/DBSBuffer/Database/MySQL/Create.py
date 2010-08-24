@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.12 2008/11/11 19:47:48 afaq Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Create.py,v 1.13 2008/12/11 20:32:03 afaq Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -29,17 +29,17 @@ class Create(DBCreator):
         
         self.create["05dbsbuf_algo"] = \
               """CREATE TABLE dbsbuffer_algo
-                (
-               ID     BIGINT UNSIGNED not null auto_increment,   
-               AppName varchar(100),
-               AppVer  varchar(100),
-               AppFam  varchar(100),
-               PSetHash varchar(700),
-               ConfigContent LONGTEXT,
-               LastModificationDate  BIGINT,
-               primary key(ID),
-               unique (AppName,AppVer,AppFam,PSetHash) 
-            ) ENGINE=InnoDB"""
+                	(
+               		   ID     BIGINT UNSIGNED not null auto_increment,   
+               		   AppName varchar(100),
+               		   AppVer  varchar(100),
+               		   AppFam  varchar(100),
+               		   PSetHash varchar(700),
+               		   ConfigContent LONGTEXT,
+               		   LastModificationDate  BIGINT,
+               		   primary key(ID),
+               		   unique (AppName,AppVer,AppFam,PSetHash) 
+            		) ENGINE=InnoDB"""
                 
         self.create["01dbsbuf_dataset"] = \
               """CREATE TABLE dbsbuffer_dataset
@@ -56,23 +56,21 @@ class Create(DBCreator):
         self.create["02dbsbuf_file"] = \
 		      """CREATE TABLE dbsbuffer_file
 			( 
-			    ID                    BIGINT UNSIGNED not null auto_increment,
-			    LFN                   varchar(500)      unique not null,
-			    Dataset 		      BIGINT UNSIGNED   not null,
-			    Checksum              varchar(100)      not null,
-			    NumberOfEvents        BIGINT UNSIGNED   not null,
-			    FileSize              BIGINT UNSIGNED   not null,
-			    FileStatus            varchar(20),
-			    FileType              BIGINT UNSIGNED,
-			    RunLumiInfo           varchar(500),
-			    SEName                varchar(100),
-			    LastModificationDate  BIGINT,
-			    primary key(ID)
+			   ID                    BIGINT UNSIGNED not null auto_increment,
+			   WMBS_File_ID          INTEGER  not null,
+			   LFN                   varchar(500)      unique not null,
+			   Dataset 		  BIGINT UNSIGNED   not null,
+			   LastModificationDate  BIGINT,
+			   primary key(ID)
 		    ) ENGINE=InnoDB"""
 
         self.constraints["FK_dbsbuf_file_ds"]=\
 		      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuf_file_ds
     			 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
+
+        self.constraints["FK_dbsbuf_file_ds"]=\
+                      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuf_wmbsfile
+                         foreign key(WMBS_File_ID) references wmbs_file_details(ID)"""
 
         self.constraints["FK_dbsbuf_ds_algo"]=\
               """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuf_ds_algo

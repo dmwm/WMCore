@@ -4,8 +4,8 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.11 2008/12/11 21:12:01 afaq Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobSuccess.py,v 1.12 2008/12/30 17:47:06 afaq Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -112,9 +112,9 @@ class JobSuccess(BaseHandler):
 
                         #Lets see if ALGO info is present in the dataset
                         #### Lets fake test it
-                        pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
-                        print "FAKING PSetHash in file <<<<<<<<<"
-                        if aFile['PSetHash'] != None:
+                        #pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
+                        #print "FAKING PSetHash in file <<<<<<<<<"
+                        if aFile.has_key('PSetHash') and aFile['PSetHash'] != None:
                             #Pass in the dataset, that contains all info about Algo
                             # 
                             addToBuffer.updateAlgo(dataset, pset)

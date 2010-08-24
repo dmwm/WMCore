@@ -4,8 +4,8 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.12 2008/12/17 21:57:10 afaq Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: BufferSuccess.py,v 1.13 2008/12/30 17:47:33 afaq Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -50,7 +50,7 @@ class BufferSuccess(BaseHandler):
 	#self.dbsurl="http://cmssrv18.fnal.gov:8989/DBSON18/servlet/DBSServlet"
         #self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_4')
 
-        self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
+        self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS205Local/servlet/DBSServlet'
         self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_3')
 
         #args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" :'DBS_2_0_3'}
@@ -85,6 +85,7 @@ class BufferSuccess(BaseHandler):
 
         datasets=dbinterface.findUploadableDatasets()
 
+	print datasets
         for aDataset in datasets:
             #Check Dataset for AlgoInDBS (Uploaded to DBS or not)    
             #We need to get algos anyways for File insertion
@@ -107,24 +108,23 @@ class BufferSuccess(BaseHandler):
             file_ids=dbinterface.findUploadableFiles(aDataset)
 	    files=[]
 
- 
 	    for an_id in file_ids:
 		file=File(id=an_id['ID'])
 		file.load(parentage=1)
                 files.append(file) 
 
-            print "Total files", len(files)
-            #base64.decodestring(aFile['RunLumiInfo'])
+	    if len(files) > 0:
+            	print "Total files", len(files)
+            	#base64.decodestring(aFile['RunLumiInfo'])
 
-            self.dbswriter.insertFilesForDBSBuffer(files, dict(aDataset), algos, jobType = "NotMerge", insertDetectorData = False)
-            #Update UnMigratedFile Count here !!!!
+            	self.dbswriter.insertFilesForDBSBuffer(files, dict(aDataset), algos, jobType = "NotMerge", insertDetectorData = False)
+            	#Update UnMigratedFile Count here !!!!
 
-            print "COMMENTED line below for testing..."
-            dbinterface.updateDSFileCount(aDataset, 10)
-            #TODO: Update the files as well to Migrated
+            	print "COMMENTED line below for testing..."
+            	dbinterface.updateDSFileCount(aDataset, 10)
+            	#TODO: Update the files as well to Migrated
             
-            print "NEXT to be implemented"
-            dbinterface.updateFilesStatus(file_ids)
+            	print "NEXT to be implemented"
+            	dbinterface.updateFilesStatus(file_ids)
             
-
         return

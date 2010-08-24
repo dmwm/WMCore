@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.9 2008/12/16 20:46:33 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.10 2008/12/30 17:47:33 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -39,7 +39,7 @@ class NewWorkflowHandler(BaseHandler):
     def __init__(self, component):
         BaseHandler.__init__(self, component)
         #TODO: These parameters should come from the Component Config
-        self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
+        self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS205Local/servlet/DBSServlet'
         self.DropParent=False
         # define a slave threadpool (this is optional
         # and depends on the developer deciding how he/she

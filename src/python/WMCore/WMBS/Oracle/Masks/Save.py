@@ -6,11 +6,10 @@ Oracle implementation of Masks.Save
 """
 
 __all__ = []
-__revision__ = "$Id: Save.py,v 1.2 2008/12/05 21:06:24 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Save.py,v 1.3 2009/01/11 17:48:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Masks.Save import Save as SaveMasksMySQL
 
 class Save(SaveMasksMySQL):
-    def execute(self, jobid, mask):
-        SaveMasksMySQL.execute(self, jobid, mask)
+    sqlBeginning = SaveMasksMySQL.sqlBeginning

@@ -1,6 +1,7 @@
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
 class CreateWMBS(MySQLBase):
+    
     def __init__(self, logger, dbinterface):
         MySQLBase.__init__(self, logger, dbinterface)
         self.create = {}
@@ -55,6 +56,7 @@ class CreateWMBS(MySQLBase):
         self.create['wmbs_workflow'] = """CREATE TABLE wmbs_workflow (
                 id           INT(11) NOT NULL AUTO_INCREMENT,
                 spec         VARCHAR(255) NOT NULL,
+                name         VARCHAR(255) NOT NULL,
                 owner        VARCHAR(255),
                 PRIMARY KEY (id))"""
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (

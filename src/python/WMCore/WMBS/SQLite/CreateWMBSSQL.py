@@ -37,6 +37,7 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
         self.create['wmbs_workflow'] = """CREATE TABLE wmbs_workflow (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 spec         VARCHAR(255) NOT NULL,
+                name         VARCHAR(255) NOT NULL,
                 owner        VARCHAR(255))"""
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

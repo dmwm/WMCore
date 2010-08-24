@@ -4,15 +4,16 @@ _AcquireFiles_
 
 MySQL implementation of Subscription.AcquireFiles
 """
+
 __all__ = []
-__revision__ = "$Id: AcquireFiles.py,v 1.5 2008/11/24 21:46:59 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: AcquireFiles.py,v 1.6 2009/01/11 17:41:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AcquireFiles(DBFormatter):
-    sql = """insert into wmbs_sub_files_acquired 
-                (subscription, file) values (:subscription, :fileid)"""
+    sql = """INSERT INTO wmbs_sub_files_acquired 
+                (subscription, file) VALUES (:subscription, :fileid)"""
     
     def format(self, result):
         return True

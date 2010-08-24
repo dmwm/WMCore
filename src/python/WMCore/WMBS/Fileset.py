@@ -11,13 +11,12 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.10 2008/06/20 12:34:21 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Fileset.py,v 1.11 2008/06/23 15:44:04 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 
-from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.File import Subscription
 from WMCore.WMBS.BusinessObject import BusinessObject
@@ -33,10 +32,10 @@ class Fileset(BusinessObject):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name=None, id=0, is_open=True, parents=None,
+    def __init__(self, name=None, id=-1, is_open=True, parents=None,
                  parents_open=True, source=None, sourceUrl=None,
                  logger=None, dbfactory = None):
-        BusinessObject.__init__(logger=logger, dbfactory=dbfactory)
+        BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         """
         Create a new fileset
         """

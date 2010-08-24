@@ -4,7 +4,7 @@ _CreateWMBS_
 Implementation of CreateWMBS for SQLite.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.9 2008/09/18 13:25:23 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.10 2008/09/18 22:34:40 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -18,6 +18,7 @@ class CreateWMBS(CreateWMBSBase):
         constraints and inserts.
         """
         CreateWMBSBase.__init__(self, logger, dbInterface)
+        self.requiredTables.append('20wmbs_subs_type')
         
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -26,6 +27,15 @@ class CreateWMBS(CreateWMBSBase):
              open        BOOLEAN      NOT NULL DEFAULT FALSE,
              last_update TIMESTAMP    NOT NULL,
              UNIQUE (name))"""
+        
+        self.create["02wmbs_file_details"] = \
+          """CREATE TABLE wmbs_file_details (
+             id           INTEGER      PRIMARY KEY AUTOINCREMENT,
+             lfn          VARCHAR(255) NOT NULL,
+             size         INT(11),
+             events       INT(11),
+             first_event  INT(11),
+             last_event   INT(11))"""
         
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (
@@ -36,15 +46,15 @@ class CreateWMBS(CreateWMBSBase):
              FOREIGN KEY(fileset) references wmbs_fileset(id)
              FOREIGN KEY(status)  references wmbs_file_status(id)
                ON DELETE CASCADE)"""
-        
-        self.create["02wmbs_file_details"] = \
-          """CREATE TABLE wmbs_file_details (
-             id           INTEGER      PRIMARY KEY AUTOINCREMENT,
-             lfn          VARCHAR(255) NOT NULL,
-             size         INT(11),
-             events       INT(11),
-             first_event  INT(11),
-             last_event   INT(11))"""
+
+        self.create["04wmbs_file_parent"] = \
+          """CREATE TABLE wmbs_file_parent (
+             child  INT(11) NOT NULL,
+             parent INT(11) NOT NULL,
+             FOREIGN KEY (child)  references wmbs_file(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY (parent) references wmbs_file(id),
+             UNIQUE(child, parent))"""  
         
         self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
@@ -59,6 +69,16 @@ class CreateWMBS(CreateWMBSBase):
              id      INTEGER      PRIMARY KEY AUTOINCREMENT,
              se_name VARCHAR(255) NOT NULL,
              UNIQUE(se_name))"""
+             
+        self.create["07wmbs_file_location"] = \
+          """CREATE TABLE wmbs_file_location (
+             file     INT(11),
+             location INT(11),
+             UNIQUE(file, location),
+             FOREIGN KEY(file)     REFERENCES wmbs_file(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY(location) REFERENCES wmbs_location(id)
+               ON DELETE CASCADE)"""
         
         self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
@@ -81,43 +101,6 @@ class CreateWMBS(CreateWMBSBase):
                ON DELETE CASCADE
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE)""" 
-
-        self.create["13wmbs_jobgroup"] = \
-          """CREATE TABLE wmbs_jobgroup (
-             id          INTEGER   PRIMARY KEY AUTOINCREMENT,
-             subscription INT(11)   NOT NULL,
-             last_update TIMESTAMP NOT NULL,
-             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-               ON DELETE CASCADE)"""
-
-        self.create["14wmbs_job"] = \
-          """CREATE TABLE wmbs_job (
-             id          INTEGER   PRIMARY KEY AUTOINCREMENT,
-             jobgroup    INT(11)   NOT NULL,
-             start       INT(11),
-             completed   INT(11),
-             last_update TIMESTAMP NOT NULL,
-             FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-               ON DELETE CASCADE)"""
-
-        self.create["04wmbs_file_parent"] = \
-          """CREATE TABLE wmbs_file_parent (
-             child  INT(11) NOT NULL,
-             parent INT(11) NOT NULL,
-             FOREIGN KEY (child)  references wmbs_file(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY (parent) references wmbs_file(id),
-             UNIQUE(child, parent))"""  
-
-        self.create["07wmbs_file_location"] = \
-          """CREATE TABLE wmbs_file_location (
-             file     INT(11),
-             location INT(11),
-             UNIQUE(file, location),
-             FOREIGN KEY(file)     REFERENCES wmbs_file(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY(location) REFERENCES wmbs_location(id)
-               ON DELETE CASCADE)"""
 
         self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (
@@ -143,6 +126,24 @@ class CreateWMBS(CreateWMBSBase):
           FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
             ON DELETE CASCADE,
           FOREIGN KEY (file)         REFERENCES wmbs_file(id))"""
+
+        self.create["13wmbs_jobgroup"] = \
+          """CREATE TABLE wmbs_jobgroup (
+             id          INTEGER   PRIMARY KEY AUTOINCREMENT,
+             subscription INT(11)   NOT NULL,
+             last_update TIMESTAMP NOT NULL,
+             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+               ON DELETE CASCADE)"""
+
+        self.create["14wmbs_job"] = \
+          """CREATE TABLE wmbs_job (
+             id          INTEGER   PRIMARY KEY AUTOINCREMENT,
+             jobgroup    INT(11)   NOT NULL,
+             start       INT(11),
+             completed   INT(11),
+             last_update TIMESTAMP NOT NULL,
+             FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
+               ON DELETE CASCADE)"""
 
         self.create["15wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (

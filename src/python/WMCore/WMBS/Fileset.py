@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.20 2008/08/13 15:15:22 metson Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Fileset.py,v 1.21 2008/09/09 16:59:36 metson Exp $"
+__version__ = "$Revision: 1.21 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -55,7 +55,6 @@ class Fileset(BusinessObject, WMFileset):
     def addFile(self, file):
         WMFileset.addFile(self, file)
 
-        "Maybe remove these next two calls - probably wasteful"
         try:
             self.commit()
         except IntegrityError, e:
@@ -119,9 +118,9 @@ class Fileset(BusinessObject, WMFileset):
         self.newfiles = Set()
         self.files = Set()
         values = self.daofactory(classname='Files.InFileset').execute(fileset=self.name)
+        
         for id, lfn, size, events, run, lumi in values:
-            file = File(lfn, id, size, events, run, lumi, \
-                        logger=self.logger, dbfactory=self.dbfactory)
+            file = File(id=id, logger=self.logger, dbfactory=self.dbfactory)
             file.load()
             self.files.add(file)
 
@@ -143,7 +142,7 @@ class Fileset(BusinessObject, WMFileset):
                 f.save()
             except IntegrityError, ex:
                 self.logger.warning('File already exists in the database %s' % f.dict["lfn"])
-                self.logger.warning(str(ex))
+                
         
             self.daofactory(classname='Files.AddToFileset').execute(file=f.dict["lfn"], 
                                                                     fileset=self.name)

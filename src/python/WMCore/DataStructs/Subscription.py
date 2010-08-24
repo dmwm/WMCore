@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.14 2008/10/24 14:43:57 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Subscription.py,v 1.15 2008/10/27 12:20:44 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 import copy
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable
@@ -133,6 +133,9 @@ class Subscription(Pickleable, dict):
     
     
     def markLocation(self, location, whitelist = True):
+        """
+        Add a location to the subscriptions white or black list
+        """
         if whitelist:
             self.whitelist.add(location)
         else:

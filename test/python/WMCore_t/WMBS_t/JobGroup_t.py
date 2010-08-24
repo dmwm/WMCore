@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.13 2009/01/26 14:02:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.14 2009/01/29 16:42:06 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import logging
@@ -456,6 +456,13 @@ class JobGroupTest(unittest.TestCase):
         assert testJobGroupA.status() == "ACTIVE", \
                """ Error:  All jobs is in active state: 
                    JobGroup should be in ACTIVE State """
+                   
+        assert testJobGroupA.recordFail() == False, \
+                "Error : recordFail failed"
+        assert testJobGroupA.recordComplete() == False, \
+                "Error : recordComplete failed"
+        assert testJobGroupA.recordAcquire() == True, \
+                "Error : recordAcquier failed"
         
         jobs[0].changeStatus("COMPLETE")
         
@@ -470,11 +477,26 @@ class JobGroupTest(unittest.TestCase):
                """ Error:  both jobs are in COMPLETE state: 
                    JobGroup should be in COMPLETE State """
         
+        assert testJobGroupA.recordAcquire() == False, \
+                "Error : recordAcquier failed"
+        assert testJobGroupA.recordFail() == False, \
+                "Error : recordFail failed"
+        assert testJobGroupA.recordComplete() == True, \
+                "Error : recordComplete failed"
+                
         jobs[1].changeStatus("FAILED")
         
         assert testJobGroupA.status() == "FAILED", \
                """ Error:  one job is in FAILED state: 
                    JobGroup should be in FAILD State: %s"""
+        
+        assert testJobGroupA.recordAcquire() == False, \
+                "Error : recordAcquier failed"
+        assert testJobGroupA.recordComplete() == False, \
+                "Error : recordComplete failed"
+        assert testJobGroupA.recordFail() == True, \
+                "Error : recordFail failed"
+                
                    
 if __name__ == "__main__":
     unittest.main() 

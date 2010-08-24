@@ -5,8 +5,8 @@ _DBSUpload.FindUploadableDatasets_
 Find the datasets that have files that needs to be uploaded to DBS
 
 """
-__revision__ = "$Id: FindUploadableDatasets.py,v 1.4 2008/12/17 21:57:10 afaq Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FindUploadableDatasets.py,v 1.5 2009/01/14 22:06:57 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -15,7 +15,9 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class FindUploadableDatasets(DBFormatter):
     
-    sql = """SELECT ds.id as ID, ds.Path as Path, ds.Algo as Algo, ds.AlgoInDBS as AlgoInDBS FROM dbsbuffer_dataset ds WHERE UnMigratedFiles >= 10 """
+    sql = """SELECT ds.id as ID, ds.Path as Path, ds.Algo as Algo, ds.AlgoInDBS as AlgoInDBS 
+						FROM dbsbuffer_dataset ds WHERE UnMigratedFiles > 0"""
+    #sql = """SELECT ds.id as ID, ds.Path as Path, ds.Algo as Algo, ds.AlgoInDBS as AlgoInDBS FROM dbsbuffer_dataset ds """
     
     def __init__(self):
         myThread = threading.currentThread()

@@ -5,8 +5,8 @@ _DBSBuffer.NewDataset_
 Add a new dataset to DBS Buffer
 
 """
-__revision__ = "$Id: NewDataset.py,v 1.7 2008/12/11 20:32:03 afaq Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: NewDataset.py,v 1.8 2009/01/14 22:07:25 afaq Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -20,14 +20,14 @@ class NewDataset(DBFormatter):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
         
-    sql = """INSERT INTO dbsbuffer_dataset (Path, Algo, AlgoInDBS)
+    sql = """INSERT INTO dbsbuffer_dataset (Path, Algo, AlgoInDBS, UnMigratedFiles)
                 values (:path, 
                 (select ID from dbsbuffer_algo 
                 where AppName=:exeName 
                     and AppVer=:appVersion 
                     and AppFam=:appFamily 
                     and PSetHash=:psetHash),
-                :algoIn)"""
+                :algoIn, :unmigratedfiles)"""
                 
     def getBinds(self, datasetInfo=None, algoInDBS=None):
         # binds a list of dictionaries
@@ -51,7 +51,8 @@ class NewDataset(DBFormatter):
                         'appVersion' : appVersion,
                         'appFamily' : appFamily,
                         'psetHash' : psetHash,
-                        'algoIn' : algoInDBS
+                        'algoIn' : algoInDBS,
+			'unmigratedfiles' : 0,
                 }
         return binds
 

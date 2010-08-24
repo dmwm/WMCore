@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.11 2009/01/13 19:35:22 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.12 2009/01/14 22:06:58 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -38,12 +38,11 @@ class NewWorkflowHandler(BaseHandler):
 
     def __init__(self, component):
         BaseHandler.__init__(self, component)
-        #TODO: These parameters should come from the Component Config
         self.dbsurl=self.component.config.DBSUpload.dbsurl
         self.dbsversion=self.component.config.DBSUpload.dbsversion
-
-        #self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS205Local/servlet/DBSServlet'
         self.DropParent=False
+	print "What is DropParent ??"
+	
         # define a slave threadpool (this is optional
         # and depends on the developer deciding how he/she
         # wants to implement certain logic.
@@ -61,7 +60,6 @@ class NewWorkflowHandler(BaseHandler):
         Store them in DBSBuffer database and create in DBS
         """
         #
-
         logging.debug("Reading the NewDataset event payload from WorkFlowSpec: ")
         workflowFile=string.replace(workflowFile,'file://','')
         if not os.path.exists(workflowFile):
@@ -90,15 +88,13 @@ class NewWorkflowHandler(BaseHandler):
            for adataset in workflowSpec.payload._OutputDatasets:
                adataset['ParentDataset']=None
 
-        datasets = workflowSpec.outputDatasetsWithPSet()        
-        
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
         addToBuffer=factory.loadObject("AddToBuffer")
-        print len(datasets)
+ 
+        datasets = workflowSpec.outputDatasetsWithPSet()        
         for dataset in datasets:
             #dataset['PSetContent']="TMP Contents, actual contents too long so dropping them for testing"
             #print "\n\n\nATTENTION: PSetContent being trimmed for TESTING, please delete line above in real world\n\n\n"
-            
             primary = DBSWriterObjects.createPrimaryDataset(dataset, dbswriter)
             algoInDBS=0 #Using binary values 0/1 
             if dataset['PSetHash'] != None:  #Which probably is not the case

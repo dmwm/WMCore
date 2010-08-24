@@ -5,8 +5,8 @@ _DBSBuffer.NewAlgo_
 Add a new algorithm to DBS Buffer
 
 """
-__revision__ = "$Id: NewAlgo.py,v 1.2 2008/11/18 23:25:29 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: NewAlgo.py,v 1.3 2009/01/14 22:07:25 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -29,6 +29,10 @@ class NewAlgo(DBFormatter):
         appVersion = datasetInfo['ApplicationVersion']
         appFamily = datasetInfo["ApplicationFamily"]
         psetContent = datasetInfo.get('PSetContent',None)
+
+	print "TEMPORARY FOR TESTING........"
+	psetContent="THIS IS A TEST CONTENT"
+
         if psetContent == None:
             psetContent = "PSET_CONTENT_NOT_AVAILABLE"
         psetHash = datasetInfo.get('PSetHash',None)
@@ -43,7 +47,7 @@ class NewAlgo(DBFormatter):
                   'exeName' : exeName,
                   'appVersion' : appVersion,
                   'appFamily' : appFamily,
-                  'psetContent' : psetContent,
+                  'psetContent' : str(psetContent),
                   'psetHash' : psetHash
                   }
         return binds

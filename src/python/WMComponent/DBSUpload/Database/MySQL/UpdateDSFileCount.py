@@ -5,8 +5,8 @@ _DBSBuffer.NewFile_
 Update UnMigrated File Count in DBS Buffer
 
 """
-__revision__ = "$Id: UpdateDSFileCount.py,v 1.1 2008/11/18 23:25:29 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: UpdateDSFileCount.py,v 1.2 2009/01/14 22:06:57 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -27,18 +27,18 @@ class UpdateDSFileCount(DBFormatter):
                       select * from dbsbuffer_dataset
                           where Path=:path
                    ) as B on A.ID = B.ID
-                SET A.UnMigratedFiles = A.UnMigratedFiles - :cnt"""
+                SET A.UnMigratedFiles = (select count(*) from dbsbuffer_file f where f.dataset = B.ID AND f.status = 'NOTUPLOADED')"""
+
 
     #sqlUpdateDS = """UPDATE dbsbuffer_dataset SET UnMigratedFiles = UnMigratedFiles + 1 WHERE ID = (select ID from dbsbuffer_dataset where Path=:path)"""
     def __init__(self):
             myThread = threading.currentThread()
             DBFormatter.__init__(self, myThread.logger, myThread.dbi)
         
-    def getBinds(self, dataset=None, count=0):
+    def getBinds(self, dataset=None):
             # binds a list of dictionaries
            binds =  { 
             'path': dataset['Path'],
-            'cnt' : count
             }
            
            return binds
@@ -46,10 +46,9 @@ class UpdateDSFileCount(DBFormatter):
     def format(self, result):
         return True
 
-    def execute(self, dataset=None, count =0, conn=None, transaction = False):
+    def execute(self, dataset=None, conn=None, transaction = False):
         
-        binds = self.getBinds(dataset, count)
-
+        binds = self.getBinds(dataset)
         try:
             result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)

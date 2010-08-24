@@ -4,8 +4,8 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.13 2009/01/12 23:02:41 afaq Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobSuccess.py,v 1.14 2009/01/14 22:07:25 afaq Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -88,31 +88,25 @@ class JobSuccess(BaseHandler):
         jobReports = self.readJobReportInfo(payload)
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
         addToBuffer=factory.loadObject("AddToBuffer")
+
         for aFJR in jobReports:
-            recorded=False
             for aFile in aFJR.files:
-                if not recorded:
-                    # This shouldn't be required any more
-                    # Dataset is being added with workflow spec
-                    for dataset in aFile.dataset:
-                        addToBuffer.addAlgo(dataset)                    
-                        addToBuffer.addDataset(dataset, algoInDBS=0)
-                        #Lets see if ALGO info is present in the dataset
-                        #### Lets fake test it
-                        #pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
-                        #print "FAKING PSetHash in file <<<<<<<<<"
-                        if aFile.has_key('PSetHash') and aFile['PSetHash'] != None:
-                            #Pass in the dataset, that contains all info about Algo
-                            # 
-                            addToBuffer.updateAlgo(dataset, pset)
-			recorded=True
+                # This shouldn't be required any more
+                # Dataset is being added with workflow spec
+                for dataset in aFile.dataset:
+                    addToBuffer.addAlgo(dataset)                    
+                    addToBuffer.addDataset(dataset, algoInDBS=0)
+                    #Lets see if ALGO info is present in the dataset
+                    #### Lets fake test it
+                    #pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
+                    #print "FAKING PSetHash in file <<<<<<<<<"
+                    if aFile.has_key('PSetHash') and aFile['PSetHash'] != None:
+                       #Pass in the dataset, that contains all info about Algo
+                       # 
+                       addToBuffer.updateAlgo(dataset, pset)
 		dataset=aFile.dataset[0]
 		datasetPath='/'+dataset['PrimaryDataset']+'/'+ \
                                         dataset['ProcessedDataset']+'/'+ \
                                         dataset['DataTier']
 		addToBuffer.addFile(aFile, datasetPath) 
 
-
-
-
-                

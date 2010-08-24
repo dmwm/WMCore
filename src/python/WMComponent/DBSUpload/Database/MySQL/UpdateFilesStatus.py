@@ -5,8 +5,8 @@ _DBSBuffer.UpdateFileStatus_
 Update file status to promoted
 
 """
-__revision__ = "$Id: UpdateFilesStatus.py,v 1.2 2008/11/19 19:12:35 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: UpdateFilesStatus.py,v 1.3 2009/01/14 22:06:57 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -17,7 +17,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class UpdateFilesStatus(DBFormatter):
 
     def sql(self, files=None):
-        sql = """UPDATE dbsbuffer_file SET FileStatus = :status where ID IN """
+        sql = """UPDATE dbsbuffer_file SET status = :status where ID IN """
         if len(files) <= 0: raise Exception("Cannot change status of all files in DBS Buffer")
         count=0
         for afile in files:

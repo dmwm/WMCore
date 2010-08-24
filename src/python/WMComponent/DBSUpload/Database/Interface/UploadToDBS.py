@@ -5,8 +5,8 @@ _UploadToDBS_
 APIs related to adding file to DBS
 
 """
-__version__ = "$Revision: 1.5 $"
-__revision__ = "$Id: UploadToDBS.py,v 1.5 2008/11/19 19:12:35 afaq Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: UploadToDBS.py,v 1.6 2009/01/14 22:06:57 afaq Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -30,7 +30,7 @@ class UploadToDBS:
         myThread.transaction.commit()
         return results  
 
-    def findUploadableFiles(self, dataset):
+    def findUploadableFiles(self, dataset, maxfiles=10):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
@@ -40,7 +40,7 @@ class UploadToDBS:
         # Add the file to the buffer (API Call)
         
         #results = findFiles.execute(conn = myThread.transaction.conn, transaction=myThread.transaction)
-        results = findFiles.execute(datasetInfo=dataset, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        results = findFiles.execute(datasetInfo=dataset, maxfiles=maxfiles, conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return results  
 
@@ -71,7 +71,7 @@ class UploadToDBS:
         myThread.transaction.commit()
         return
 
-    def updateDSFileCount(self, dataset, count):
+    def updateDSFileCount(self, dataset):
         # Add the algo to the buffer (API Call)
         # dataset object contains the algo information
         myThread = threading.currentThread()
@@ -80,7 +80,7 @@ class UploadToDBS:
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("UpdateDSFileCount")
-        newDS.execute(dataset=dataset, count=count, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        newDS.execute(dataset=dataset, conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
 

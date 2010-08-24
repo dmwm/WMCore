@@ -15,8 +15,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.27 2008/10/29 09:22:53 metson Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Fileset.py,v 1.28 2008/10/29 09:24:53 metson Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -102,7 +102,9 @@ class Fileset(BusinessObject, WMFileset):
     
     def populate(self, method='Fileset.LoadFromName'): #, parentageLevel=0):
         """
-        Load up the files in the file set from the database
+        Load up the files in the file set from the database, this drops new 
+        files that aren't in the database. If you want to keep them call commit,
+        which will then populate the fileset for you.
         """
         action = self.daofactory(classname=method)    
         values = None
@@ -115,6 +117,7 @@ class Fileset(BusinessObject, WMFileset):
             self.name, self.open, self.lastUpdate = values
         else:
             raise TypeError, 'Chosen populate method not supported'
+        
         
         self.newfiles = Set()
         self.files = Set()

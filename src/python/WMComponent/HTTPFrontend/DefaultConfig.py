@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.5 2009/01/20 21:42:04 rpw Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.6 2009/01/20 23:00:36 rpw Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -25,15 +25,23 @@ config.HTTPFrontEnd.HTTPLogfile = None
 config.HTTPFrontEnd.Host = socket.gethostname()
 config.HTTPFrontEnd.ThreadPool = 10
 config.HTTPFrontEnd.JobCreatorCache = None
-config.HTTPFrontEnd.components = ['ReqMgr.Component.AssignmentManager.AssignmentManager',
-                                  'ReqMgr.Component.RequestDataService.RequestDataService']
+#config.HTTPFrontEnd.components = ['ReqMgr.Component.AssignmentManager.AssignmentManager',
+#                                  'ReqMgr.Component.RequestDataService.RequestDataService']
 config.HTTPFrontEnd.ComponentDir = '/home/rpw/work/install/HTTPFrontend'
 
 config.component_('Downloader')
 config.Downloader.dir = '/home/rpw/work'
-config.component_('AssignmentManager')
-config.AssignmentManager.requestSpecDir= config.Downloader.dir
-config.component_('RequestDataService')
+#config.component_('AssignmentManager')
+#config.AssignmentManager.requestSpecDir= config.Downloader.dir
+#config.component_('RequestDataService')
 
 import WMCore.WebTools.DefaultConfig
 config += WMCore.WebTools.DefaultConfig.config
+active = WMCore.WebTools.DefaultConfig.active
+
+active.section_('AssignmentManager')
+active.AssignmentManager.object = 'ReqMgr.Component.AssignmentManager.AssignmentManager'
+active.AssignmentManager.requestSpecDir= config.Downloader.dir
+
+active.section_('RequestDataService')
+active.RequestDataService.object = 'ReqMgr.Component.RequestDataService.RequestDataService'

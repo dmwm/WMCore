@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2008/12/18 15:07:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2009/01/02 19:25:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -37,6 +37,7 @@ class Create(CreateWMBSBase):
         """
         CreateWMBSBase.__init__(self, logger, dbi)
         self.requiredTables.append('09wmbs_subs_type')
+
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          number(10) not null,
@@ -46,8 +47,6 @@ class Create(CreateWMBSBase):
              constraint pk_fileset primary key (id),
              constraint uk_filesetname unique (name))"""
              
-        #sequence_tables.append('wmbs_fileset') 
-        
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
              id           number(10) not null,
@@ -60,9 +59,6 @@ class Create(CreateWMBSBase):
              constraint pk_file primary key (id),
              constraint uk_filelfn unique (lfn))"""
              
-        #sequence_tables.append('wmbs_file_details') 
-        
-                
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (
              fileid       number(10)   not null,
@@ -102,8 +98,6 @@ class Create(CreateWMBSBase):
              constraint pk_sename primary key (id),
              constraint uk_sename unique (se_name))"""
              
-        #sequence_tables.append('wmbs_location') 
-        
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
              fileid    number(10) not null,
@@ -125,9 +119,7 @@ class Create(CreateWMBSBase):
              
              constraint pk_workflow primary key (id),
              constraint uk_workflow_nameowner unique (name, owner))"""
-        #sequence_tables.append('wmbs_workflow') 
         
-        #Need this before making the subscription table
         self.create["09wmbs_subs_type"] = \
           """CREATE TABLE wmbs_subs_type (
              id          number(10) not null,
@@ -135,8 +127,6 @@ class Create(CreateWMBSBase):
              constraint pk_subtype primary key (id),
              constraint uk_subtype_name unique (name))"""
              
-        #sequence_tables.append('wmbs_subs_type')
-        
         self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
              id          number(10)   not null,
@@ -154,9 +144,7 @@ class Create(CreateWMBSBase):
              constraint fk_subs_workflow           
                  FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                    ON DELETE CASCADE,
-             constraint pk_subscription primary key (id)
-)""" 
-        #sequence_tables.append('wmbs_subscription') 
+             constraint pk_subscription primary key (id))""" 
 
         self.create["09wmbs_subscription_location"] = \
           """CREATE TABLE wmbs_subscription_location (
@@ -220,8 +208,6 @@ class Create(CreateWMBSBase):
              constraint uk_jobgroup_output unique (output),
              constraint uk_jobgroup_uid unique (guid))"""
              
-        #sequence_tables.append('wmbs_jobgroup') 
-        
         self.create["14wmbs_job"] = \
           """CREATE TABLE wmbs_job (
              id          number(10) not null,
@@ -233,7 +219,6 @@ class Create(CreateWMBSBase):
                    ON DELETE CASCADE,
              constraint pk_job primary key (id),
              constraint uk_job_name unique (name))"""               
-        #sequence_tables.append('wmbs_job')           
 
         self.create["15wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (
@@ -290,7 +275,6 @@ class Create(CreateWMBSBase):
               FOREIGN KEY (job) REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
           
-        
         for subType in ("Processing", "Merge"):
             subTypeQuery = """INSERT INTO wmbs_subs_type (id, name) 
                           values (wmbs_subs_type_SEQ.nextval, '%s')""" % subType

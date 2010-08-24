@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.16 2008/12/23 22:17:06 afaq Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: File.py,v 1.17 2009/01/02 19:23:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 from sets import Set
 import datetime
 from WMCore.DataStructs.WMObject import WMObject
@@ -48,11 +48,7 @@ class File(WMObject, dict):
             msg = "addRun argument must be of type WMCore.DataStructs.Run"
             raise RuntimeError, msg
         self['runs'].add(run)
-        #maxRun = max(self['runs'])
-        #self['run']  = maxRun.run
-        #self['lumi'] = max(maxRun)
         return
-
 
     def load(self):
         """

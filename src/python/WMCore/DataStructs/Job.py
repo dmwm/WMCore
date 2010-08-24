@@ -11,8 +11,8 @@ job in a batch system, it's more abstract - it's the piece of
 work that needs to get done.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.16 2008/11/20 16:11:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Job.py,v 1.17 2009/01/02 19:23:50 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -56,18 +56,6 @@ class Job(Pickleable):
         elif type == 'id':
             return self.file_set.getFiles(type='id')
 
-    def listLFNs(self):
-        """
-        To be deprecated
-        """
-        return self.getFiles(type='lfn')
-    
-    def listFiles(self):
-        """
-        To be deprecated
-        """
-        return self.getFiles()
-    
     def addFile(self, file):
         """
         add a file to self.file_set

@@ -5,87 +5,33 @@ _PhEDExNotifierComponent_
 ProdAgent Component to notify clients of new transfers
 
 """
+__all__ = []
+__revision__ = "$Id: PhEDExNotifierComponent.py,v 1.6 2008/07/23 10:37:18 gowdy Exp $"
+__version__ = "$Revision: 1.6 $"
 
-import os
 import logging
 
-from ProdCommon.Database import Session
-from MessageService.MessageService import MessageService
-from ProdAgentDB.Config import defaultConfig as dbConfig
-import ProdAgentCore.LoggingUtils as LoggingUtils
+from WMCore.DataStructs.File import File
+from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 
 from urllib import urlretrieve
 from urllib import urlopen
 
-class PhEDExNotifierComponent:
+class PhEDExNotifierComponent(FeederImpl):
     """
     _PhEDExNotifierComponent_
 
     """
     
-    def __init__(self, **args):
+    def __init__( self, nodes, baseURL ):
         
-        self.args = {}
-        self.args['ComponentDir'] = None
-        self.args['Logfile'] = None
-        self.args['Node'] = None
-        self.args.update(args)
-        if self.args['Logfile'] == None:
-            self.args['Logfile'] = os.path.join(
-                self.args['ComponentDir'],
-                "ComponentLog")
-        LoggingUtils.installLogHandler(self)
-
-        if self.args['Node'] == None:
-            logging.error("PhEDExNotifier: no node specified")
-        self.baseURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/blockReplicas?node=%s" % self.args['Node']
-        self.timestamp = 0
-        self.ms = None
-        msg = "PhEDExNotifier Component Started\n"
-        logging.info(msg)
-
-
-    def __call__(self, event, payload):
-        """
-        _operator(message, payload)_
-
-        Respond to messages from the message service
-
-        """
-        logging.debug("Message=%s Payload=%s" % (event, payload))
-
-
-        if event == "PhEDExNotifier:Poll":
-            self.doPoll()
-            return
-
-        if event == "PhEDExNotifier:StartDebug":
-            logging.getLogger().setLevel(logging.DEBUG)
-            return
-        if event == "PhEDExNotifier:EndDebug":
-            logging.getLogger().setLevel(logging.INFO)
-            return
-
+        self.nodes = self.makelist( nodes )
+        if baseURL == None:
+            self.baseURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas"
+        else
+            self.baseURL = baseURL
         
-        return
-    
-    def startComponent(self):
-        """
-        _startComponent_
-        
-        Start the servers required for this component
-        
-        """                                   
-        # create message service
-        self.ms = MessageService()
-        
-        # register
-        self.ms.registerAs("PhEDExNotifier")                                                                                
-        # subscribe to messages
-        self.ms.subscribeTo("PhEDExNotifier:Poll")
-        self.ms.subscribeTo("PhEDExNotifier:StartDebug")
-        self.ms.subscribeTo("PhEDExNotifier:EndDebug")
-        
+            
         # Get current state from PhEDEx or local file if it exists
         baseFileName = self.args['ComponentDir'] + "/base.json"
         if not os.path.isfile( baseFileName ):
@@ -95,81 +41,77 @@ class PhEDExNotifierComponent:
         self.base = eval( f.read(), {}, {} )
         f.close()
         phedex = self.base[ 'phedex' ]
-        self.timestamp = phedex[ 'request_timestamp' ]
 
-        # wait for messages
-        while True:
-            Session.set_database(dbConfig)
-            Session.connect()
-            Session.start_transaction()
-            msgtype, payload = self.ms.get()
-            self.ms.commit()
-            logging.debug("PhEDExNotifier: %s, %s" % (msgtype, payload))
-            self.__call__(msgtype, payload)
-            Session.commit_all()
-            Session.close_all()
-            
-           
-    def doPoll(self):
+
+    def __call__(self, fileset):
         """
-        _doPoll_
+        _operator(message, payload)_
 
-        Polls PhEDEx webservice for any new or updated blocks
-        since last run.
+        Respond to messages from the message service
 
         """
 
-        updatedURL = self.baseURL + "&update_since=%s" % self.timestamp
-        createdURL = self.baseURL + "&create_since=%s" % self.timestamp
+        # Add the node specification the URL
+        for node in self.nodes:
+            # for the first node need to be a bit different
+            if node == self.nodes[0]:
+                nodeURL = self.baseURL + "?node=%s" % node
+            else:
+                nodeURL += "&node=%s" % node
+                
+        entity = fileset.name
 
-        updatedConnection = urlopen( updatedURL )
-        createdConnection = urlopen( createdURL )
+        # determine if we have a block or dataset
+        if entity.find("#") != -1:
+            doBlock( entity, fileset, nodeURL )
+        else:
+            doDataset( entity, fileset, nodeURL )
 
-        updatedString = updatedConnection.read()
-        createdString = createdConnection.read()
 
-        updatedConnection.close()
-        createdConnection.close()
+    def doDataset( entity, fileset, nodeURL ):
 
-        if updatedString[2:8] != "phedex":
+        # need to adjust the URL to get the list of blocks
+        datasetURL = nodeURL,replace( "fileReplicas", "blockReplicas" )
+
+        connection = urlopen( datasetURL + "&block=%s%s" % (entity,"*") )
+        aString = connection.read()
+        connection.close()
+
+        if aString[2:8] != "phedex":
             logging.debug( "PhEDExNotifier: bad updated string from server follows." )
-            logging.debug( "%s" % updatedString )
+            logging.debug( "%s" % aString )
 
-        if createdString[2:8] != "phedex":
-            logging.debug( "PhEDExNotifier: bad created string from server follows." )
-            logging.debug( "%s" % createdString )
-
-        updated = eval( updatedString, {}, {} )
-        created = eval( createdString, {}, {} )
+        phedex = eval( aString, {}, {} )
         
-        updatedBlocks = updated[ 'phedex' ][ 'block' ]
-        if len( updatedBlocks ) > 0:
-            logging.debug( "PhEDExNotifier: Found %d updated blocks" % len( updatedBlocks) )
+        blocks = phedex[ 'phedex' ][ 'block' ]
+        if len( blocks ) == 0:
+            logging.debug( "PhEDExNotifier: Found no blocks, expected one or more" )
+        for block in blocks:
+            doBlock( block.name, fileset, nodeURL )
 
-        createdBlocks = created[ 'phedex' ][ 'block' ]
-        if len( createdBlocks ) > 0:
-            logging.debug( "PhEDExNotifier: Found %d created blocks" % len( createdBlocks ) )
+    def doBlock( entity, fileset, nodeURL ):
+    
+        connection = urlopen( nodeURL + "&block=%s" % entity )
+        aString = connection.read()
+        connection.close()
+
+        if aString[2:8] != "phedex":
+            logging.debug( "PhEDExNotifier: bad updated string from server follows." )
+            logging.debug( "%s" % aString )
+
+        phedex = eval( aString, {}, {} )
         
-        self.handleUpdates( updatedBlocks )
+        blocks = phedex[ 'phedex' ][ 'block' ]
+        if len( blocks ) != 1:
+            logging.debug( "PhEDExNotifier: Found %d blocks, expected 1, will only consider first block" % len( updatedBlocks) )
 
-        self.handleCreated( createdBlocks )
-
-    def handleUpdates( self, updates ):
-
-        for update in updates:
-            blockId = update[ 'id' ]
-            for block in self.base[ 'phedex' ][ 'block' ]:
-                if block[ 'id' ] == blockId:
-                    filesInUpdate = int( update[ 'replica' ][0][ 'files' ] )
-                    filesInBase = int( block[ 'replica' ][0][ 'files' ] )
-                    newFiles = filesInUpdate - filesInBase
-                    if filesInUpdate > filesInBase:
-                        logging.debug( "PhEDExNotifier: block %s has %d new files" % ( update[ 'name' ], newFiles ) )
-
-                    
-
-    def handleCreated( self, theCreated ):
-
-        for aCreated in theCreated:
-            filesInCreated = int( aCreated[ 'replica' ][0][ 'files' ] )
-            logging.debug( "PhEDExNotifier: new block %s has %d files" % ( aCreated[ 'name' ], filesInCreated ) )
+        files = blocks[0]
+        for file in files:
+            fileToAdd = File( file.name, file.bytes )
+            replicas = file[ 'replica' ]
+            if len( replicas ) > 0:
+                locations = []
+                for replica in replicas:
+                    locations.append( replica.node )
+                fileToAdd.setlocation( locations )
+                fileset.addFile( fileToAdd )

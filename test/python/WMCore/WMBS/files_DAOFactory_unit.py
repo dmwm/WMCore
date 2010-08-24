@@ -7,11 +7,11 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: files_DAOFactory_unit.py,v 1.4 2008/06/24 11:45:06 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: files_DAOFactory_unit.py,v 1.5 2008/07/03 15:57:19 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest, logging, os, commands
-
+from sets import Set
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
@@ -204,17 +204,17 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
             parent.save()
             child.save()
             
-            parents = set()
+            parents = Set()
             parents.add(parent)
             child.addParent(parentlfn)
             #print "child.parents %s" % child.parents
             #print "parents %s" % parents
               
-            assert len(child.parents) == len(parents), "Parents do not match"
+            assert len(child.dict['parents']) == len(parents), "Parents do not match"
             
             child.load(1)
             
-            assert len(child.parents) == len(parents), "Parents do not match"
+            assert len(child.dict['parents']) == len(parents), "Parents do not match"
             
             child.delete()
             parent.delete()
@@ -236,14 +236,14 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         myfile1.setLocation(self.selist[0])
         myfile2.setLocation(self.selist[0]) 
         
-        assert len(myfile1.locations) == 1
-        assert len(myfile2.locations) == 1
+        assert len(myfile1.dict['locations']) == 1
+        assert len(myfile2.dict['locations']) == 1
            
         myfile1.setLocation(self.selist[1:])
         myfile2.setLocation(self.selist[1:]) 
         
-        assert len(myfile1.locations) == len(self.selist)
-        assert len(myfile2.locations) == len(self.selist)
+        assert len(myfile1.dict['locations']) == len(self.selist)
+        assert len(myfile2.dict['locations']) == len(self.selist)
         
         # Check that the persistency is correct
         myfile3 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
@@ -252,8 +252,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         myfile3.load()
         myfile4.load()
         
-        assert len(myfile1.locations) == len(myfile3.locations)
-        assert len(myfile2.locations) == len(myfile4.locations)
+        assert len(myfile1.dict['locations']) == len(myfile3.dict['locations'])
+        assert len(myfile2.dict['locations']) == len(myfile4.dict['locations'])
              
         
 if __name__ == "__main__":

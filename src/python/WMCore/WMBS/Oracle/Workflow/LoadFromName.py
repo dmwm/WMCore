@@ -2,16 +2,15 @@
 """
 _LoadFromName_
 
-SQLite implementation of Workflow.LoadFromName
+Oracle implementation of Workflow.LoadFromName
 
 """
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.1 2008/10/08 14:30:12 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromName.py,v 1.2 2008/11/24 21:51:56 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Workflow.LoadFromName import LoadFromName as LoadWorkflowMySQL
 
-class LoadFromID(LoadWorkflowMySQL, SQLiteBase):
+class LoadFromName(LoadWorkflowMySQL):
     sql = LoadWorkflowMySQL.sql
     

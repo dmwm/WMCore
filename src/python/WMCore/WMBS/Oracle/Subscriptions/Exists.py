@@ -12,11 +12,14 @@ TABLE wmbs_subscription
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.1 2008/10/08 14:30:11 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Exists.py,v 1.2 2008/11/24 21:51:48 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Subscriptions.Exists import Exists as ExistsMySQL
 
-class Exists(ExistsMySQL, SQLiteBase):
-    sql = ExistsMySQL.sql
+class Exists(ExistsMySQL):
+    
+    sql =  """select id from wmbs_subscription
+             where fileset = :fileset and workflow = :workflow 
+                  and subtype = (SELECT id FROM wmbs_subs_type 
+                                 WHERE name = :type)"""

@@ -6,12 +6,10 @@ SQLite implementation of Fileset.Parentage
 
 """
 __all__ = []
-__revision__ = "$Id: Parentage.py,v 1.1 2008/10/08 14:30:11 metson Exp $"
-__version__ = "$Revision: 1.1 $"
-
-from WMCore.WMBS.MySQL.Base import MySQLBase
+__revision__ = "$Id: Parentage.py,v 1.2 2008/11/24 21:51:52 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Fileset.Parentage import Parentage as FilesetParentageMySQL
 
-class Parentage(FilesetParentageMySQL, SQLiteBase):
+class Parentage(FilesetParentageMySQL):
     sql = FilesetParentageMySQL.sql

@@ -6,13 +6,12 @@ SQLite implementation of ListFileset
 
 """
 __all__ = []
-__revision__ = "$Id: List.py,v 1.1 2008/10/08 14:30:11 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: List.py,v 1.2 2008/11/24 21:51:52 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Fileset.List import List as ListFilesetMySQL
 
-class List(ListFilesetMySQL, SQLiteBase):
+class List(ListFilesetMySQL):
     sql = ListFilesetMySQL.sql
     
     def format(self, result):

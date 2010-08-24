@@ -16,10 +16,13 @@ CREATE TABLE wmbs_subscription_location (
                ON DELETE CASCADE)
 """
 __all__ = []
-__revision__ = "$Id: MarkLocation.py,v 1.1 2008/11/11 09:34:08 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MarkLocation.py,v 1.2 2008/11/24 21:51:46 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.SQLite.Subscriptions.MarkLocation import MarkLocation as JobsSQLite
+from WMCore.WMBS.MySQL.Subscriptions.MarkLocation import MarkLocation as MarkLocationMySQL
 
-class MarkLocation(JobsSQLite):
-    sql = JobsSQLite.sql
+class MarkLocation(MarkLocationMySQL):
+    sql = """insert into wmbs_subscription_location 
+             (subscription, location, valid)
+             select :subscription, id, :valid from wmbs_location 
+             where se_name = :location"""

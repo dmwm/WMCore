@@ -4,7 +4,7 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.6 2008/10/20 22:05:08 afaq Exp $"
+__revision__ = "$Id: Create.py,v 1.7 2008/10/22 22:41:59 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -14,6 +14,7 @@ import threading
 #Example in WMCore/MsgService/MySQL/Create.py
 
 from WMCore.Database.DBCreator import DBCreator
+
 
 class Create(DBCreator):
 
@@ -70,8 +71,6 @@ class Create(DBCreator):
 	#	"""CREATE TRIGGER TR_UnMigratedFiles AFTER INSERT ON dbsbuffer_file
 	#		FOR EACH ROW 
 	#		UPDATE dbsbuffer_dataset SET dbsbuffer_dataset.UnMigratedFiles = dbsbuffer_dataset.UnMigratedFiles + 1 WHERE dbsbuffer_dataset.ID = NEW.Dataset;"""
-
-        self.create=sorted(self.create.iteritems(), key=lambda (k,v):(v,k))
 
 
         

@@ -40,70 +40,111 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.6 2008/10/28 19:01:13 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobGroup.py,v 1.7 2008/11/20 16:59:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
-from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.Services.UUID import makeUUID
 
 from sets import Set
+import threading
 
-class JobGroup(WMJobGroup, BusinessObject):
+class JobGroup(WMJobGroup):
     """
-    A gropu (set) of Jobs
+    A group (set) of Jobs
     """
-    def __init__(self, subscription = None, jobs=Set(), id = -1):
-        BusinessObject.__init__(self, 
-                                logger=subscription.logger, 
-                                dbfactory=subscription.dbfactory)
+    def __init__(self, subscription = None, jobs=None, id = -1, uid = None):
         WMJobGroup.__init__(self, subscription=subscription, jobs = jobs)
+
+        myThread = threading.currentThread()
+        self.logger = myThread.logger
+        self.dialect = myThread.dialect
+        self.dbi = myThread.dbi
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
+                                        
         self.id = id
-        if self.id <= 0:
-            self.logger.debug("Creating WMBS JobGroup")
-            self.create()
+        if uid == None:
+            self.uid = makeUUID()
         else:
-            self.load()
+            self.uid = uid
             
     def create(self):
         """
         Add the new jobgroup to WMBS, create the output Fileset object
         """
-        action = self.daofactory(classname='JobGroup.New')
-        self.id, self.uid = action.execute(self.subscription['id'])
         self.groupoutput = Fileset(
-                      name="output://%s_%s" % (self.subscription.name(), id),
-                      logger=self.logger, 
-                      dbfactory=self.dbfactory)
+                      name="output://%s_%s" % (self.subscription.name(), id))
+
         if not self.groupoutput.exists():
             self.groupoutput.create()
-        return self
+
+        action = self.daofactory(classname='JobGroup.New')
+        self.id, self.uid = action.execute(self.uid, self.subscription["id"],
+                                           self.groupoutput.id)
+
+        # Iterate through all the jobs in the group
+        for j in self.jobs:
+            j.create(group=self.id)
+            j.associateFiles()
+            
+        return
+
+    def delete(self):
+        """
+        Remove a jobgroup from WMBS
+        """
+        self.daofactory(classname='JobGroup.Delete').execute(id = self.id)
+
+    def exists(self):
+        """
+        Does a jobgroup exist with this uid, return the id
+        """
+        action = self.daofactory(classname='JobGroup.Exists')
+        return action.execute(uid = self.uid)
     
     def load(self):
         """
         Load the JobGroup from the database
         """
-        self.daofactory(classname='JobGroup.Load').execute(self.id)
-        id = self.daofactory(classname='JobGroup.Output').execute(self.id)
-        self.groupoutput = Fileset(id = id,
-                              logger=self.subscription.logger, 
-                              dbfactory=self.subscription.dbfactory)
-        self.groupoutput.populate()
-        return self
+        subID = self.daofactory(classname='JobGroup.LoadSubscription').execute(self.id)
+        jobIDs = self.daofactory(classname='JobGroup.LoadJobs').execute(self.id)
+        outputID = self.daofactory(classname='JobGroup.LoadOutput').execute(self.id)
+
+        self.subscription = Subscription(id = subID)
+        self.subscription.load()
+
+        self.jobs.clear()
+        for jobID in jobIDs:
+            newJob = Job(id = jobID)
+            newJob.load()
+            self.jobs.add(newJob)
+
+        self.groupoutput = Fileset(id = outputID)
+        self.groupoutput.load(method = "Fileset.LoadFromID")
+        return
         
     def add(self, job):
         """
         Input must be (subclasses of) WMBS jobs. Input may be a list or set as 
         well as single jobs.
         """
+        if type(job) != type([]) and type(job) != type(Set()):
+            job = [job]
+            
         # Iterate through all the jobs in the group and commit them to the 
         # database
-        trans = Transaction(dbinterface = self.dbfactory.connect())
+        trans = Transaction(dbinterface = self.dbi)
         try:
             for j in job:
-                j.create(group=self, trans = trans)
-                j.associateFiles(trans = trans)
+                j.create(group=self)
+                j.associateFiles()
             
             trans.commit()
             self.jobs = self.jobs | self.makeset(job)
@@ -147,7 +188,7 @@ class JobGroup(WMJobGroup, BusinessObject):
         if self.status() == 'COMPLETE':
             # output only makes sense if the group is completed
             # load output from DB 
-            self.groupoutput.populate()
+            self.groupoutput.load(method = "Fileset.LoadFromID")
             return self.groupoutput
         self.logger.debug(self.status(detail=True))
         return False

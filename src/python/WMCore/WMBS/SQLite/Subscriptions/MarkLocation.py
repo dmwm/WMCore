@@ -2,7 +2,7 @@
 """
 _MarkLocation_
 
-MySQL implementation of Subscription.MarkLocation
+SQLite implementation of Subscription.MarkLocation
 
 Insert a record to wmbs_subscription_location
 
@@ -16,8 +16,8 @@ CREATE TABLE wmbs_subscription_location (
                ON DELETE CASCADE)
 """
 __all__ = []
-__revision__ = "$Id: MarkLocation.py,v 1.1 2008/10/24 16:03:25 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MarkLocation.py,v 1.2 2008/11/11 09:34:07 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

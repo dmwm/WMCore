@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.36 2009/01/08 21:58:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: File.py,v 1.37 2009/01/12 21:37:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from sets import Set
 
@@ -83,50 +83,59 @@ class File(WMBSBase, WMFile):
         result.sort()   # ensure SecondaryInputFiles are in order
         return [x['lfn'] for x in result]
     
-    def load(self, parentage=0):
+    def load(self):
         """
-        use lfn to load file info from db
+        _load_
+
+        Load any meta data that is associated with a file.  This currently
+        includes id, lfn, size, events and cksum.
         """
-        result = None 
-        if self['id'] > 0:
-            action = self.daofactory(classname='Files.GetByID')
-            result = action.execute(self['id'], conn = self.getReadDBConn(),
+        if self["id"] > 0:
+            action = self.daofactory(classname = "Files.GetByID")
+            result = action.execute(self["id"], conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())
         else:
-            action = self.daofactory(classname='Files.GetByLFN')
-            result = action.execute(self['lfn'], conn = self.getReadDBConn(),
+            action = self.daofactory(classname = "Files.GetByLFN")
+            result = action.execute(self["lfn"], conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())
-            
-        assert len(result) == 1, "Found %s files, not one" % len(result)
 
-	result = result[0]
-        self['id'] = result[0]
-        self['lfn'] = result[1]
-        self['size'] = result[2]
-        self['events'] = result[3]
-	self['cksum'] = result[4]
-       
-	#Get the Run/Lumis
-	action = self.daofactory(classname='Files.GetRunLumiFile')
-	runs = action.execute(self['lfn'], conn = self.getReadDBConn(), 
+        self.update(result)
+        return self
+
+    def loadData(self, parentage = 0):
+        """
+        _loadData_
+
+        Load all information about a file.  This currently includes meta data,
+        the run and lumi information, all the locations that where the file
+        is stored and any parentage information.  The parentage parameter to
+        this method will determine how many generations to load.
+        """
+        if self["id"] < 0 or self["lfn"] == "":
+            self.load()
+            
+	action = self.daofactory(classname = "Files.GetRunLumiFile")
+	runs = action.execute(self["lfn"], conn = self.getReadDBConn(), 
                               transaction = self.existingTransaction())
 	[self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
 
-        action = self.daofactory(classname='Files.GetLocation')
-        self['locations'] = action.execute(self['lfn'], conn = self.getReadDBConn(),
+        action = self.daofactory(classname = "Files.GetLocation")
+        self["locations"] = action.execute(self["lfn"], conn = self.getReadDBConn(),
                                            transaction = self.existingTransaction())
-        self['newlocations'].clear()
-        self['parents'] = Set()
+        self["newlocations"].clear()
+        self["parents"] = Set()
         
         if parentage > 0:
-            action = self.daofactory(classname='Files.GetParents')
-            parentLFNs = action.execute(self['lfn'],  conn = self.getReadDBConn(),
+            action = self.daofactory(classname = "Files.GetParents")
+            parentLFNs = action.execute(self["lfn"],  conn = self.getReadDBConn(),
                                         transaction = self.existingTransaction())
             for lfn in parentLFNs:
-                f = File(lfn=lfn).load(parentage=parentage-1)
-                self['parents'].add(f)
-        return self
-    
+                f = File(lfn = lfn).load()
+                f.loadData(parentage = parentage - 1)
+                self["parents"].add(f)
+
+        return
+
     def create(self):
         """
         _create_

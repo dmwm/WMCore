@@ -6,8 +6,8 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.5 2008/11/20 17:16:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: New.py,v 1.6 2008/11/25 17:21:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -23,7 +23,5 @@ class New(DBFormatter):
         
     def execute(self, jobgroup, name):
         binds = self.getBinds(jobgroup=jobgroup, name=name) * 3
-        self.logger.debug('Job.Add sql: %s' % self.sql)
-        self.logger.debug('Job.Add binds: %s' % binds)
         
         return self.format(self.dbi.processData(self.sql, binds))

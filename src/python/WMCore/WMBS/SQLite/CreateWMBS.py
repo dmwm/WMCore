@@ -7,7 +7,7 @@ Inherit from CreateWMBSBase, and add SQLite specific creates to the dictionary
 at some high value.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.13 2008/09/29 15:19:17 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.14 2008/10/01 21:34:07 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -23,7 +23,7 @@ class CreateWMBS(CreateWMBSBase):
         CreateWMBSBase.__init__(self, logger, dbInterface)
         self.requiredTables.append('20wmbs_subs_type')
         
-        self.create["20wmbs_subs_type"] = \
+        self.create["30wmbs_subs_type"] = \
           """CREATE TABLE wmbs_subs_type (
              id   INTEGER      PRIMARY KEY AUTOINCREMENT,
              name VARCHAR(255) NOT NULL)"""

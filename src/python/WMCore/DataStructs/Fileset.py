@@ -1,4 +1,13 @@
+#!/usr/bin/env python
+"""
+_Fileset_
 
+Data object that contains a set of files
+
+"""
+__all__ = []
+__revision__ = "$Id: Fileset.py,v 1.2 2008/07/03 16:56:23 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable 
 
@@ -11,7 +20,6 @@ class Fileset(Pickleable):
         self.files = files
         self.name = name
         self.newfiles = Set()
-    
                 
     def addFile(self, file):
         """

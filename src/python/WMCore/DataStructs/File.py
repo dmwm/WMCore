@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+"""
+_File_
+
+Data object that contains details for a single file
+
+"""
+__all__ = []
+__revision__ = "$Id: File.py,v 1.2 2008/07/03 16:56:23 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable 
 class File(Pickleable):

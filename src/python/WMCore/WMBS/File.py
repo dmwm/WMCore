@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.18 2008/08/13 15:21:19 metson Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: File.py,v 1.19 2008/09/01 16:11:31 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -46,10 +46,10 @@ class File(BusinessObject, WMFile):
             result.extend(parents)
             temp = []
             for parent in parents:
-                temp.extend(parent.parents)
+                temp.extend(parent.dict["parents"])
             parents = temp
         result.sort()   # ensure SecondaryInputFiles are in order
-        return [x.lfn for x in result]
+        return [x.dict['lfn'] for x in result]
     
     def load(self, parentage=0):
         """
@@ -111,14 +111,14 @@ class File(BusinessObject, WMFile):
         """
         Set an existing file (lfn) as a child of this file
         """
-        child = File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory).load(parentage=parentage-1)
+        child = File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory)
         child.load()
         if not self.dict['id'] > 0:
             raise Exception, "Parent file doesn't have an id %s" % self.dict['lfn']
-        if not child.id > 0:
+        if not child.dict['id'] > 0:
             raise Exception, "Child file doesn't have an id %s" % child.lfn
         
-        self.daofactory(classname='Files.Heritage').execute(child=child.id, parent=self.dict['id'])
+        self.daofactory(classname='Files.Heritage').execute(child=child.dict['id'], parent=self.dict['id'])
         
     def addParent(self, lfn):
         """

@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.27 2009/01/13 16:45:11 sryu Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Subscription.py,v 1.28 2009/01/14 16:49:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from sets import Set
 
@@ -48,9 +48,8 @@ class Subscription(WMBSBase, WMSubscription):
         """
         Add the subscription to the database
         """
-        eflag = self.exists()
-        if eflag != False:
-            self["id"] = eflag
+        if self.exists() != False:
+            self.load()
             return
         
         action = self.daofactory(classname="Subscriptions.New")
@@ -60,8 +59,8 @@ class Subscription(WMBSBase, WMSubscription):
                        conn = self.getWriteDBConn(),
                        transaction = self.existingTransaction())
         
+        self.load()        
         self.commitIfNew()
-        self["id"] = self.exists()
         return
     
     def exists(self):
@@ -81,34 +80,39 @@ class Subscription(WMBSBase, WMSubscription):
         _load_
 
         """
-        fileset = None
-        if self["fileset"] != None:
-            if "id" in dir(self["fileset"]):
-                fileset = self["fileset"].id
-
-        if self["workflow"] != None:
-            workflow = self["workflow"].id
+        if self["id"] > 0:
+            action = self.daofactory(classname = "Subscriptions.LoadFromID")
+            result = action.execute(id = self["id"],
+                                    conn = self.getReadDBConn(),
+                                    transaction = self.existingTransaction())
         else:
-            workflow = None
+            action = self.daofactory(classname = "Subscriptions.LoadFromFilesetWorkflow")
+            result = action.execute(fileset = self["fileset"].id,
+                                    workflow = self["workflow"].id,
+                                    conn = self.getReadDBConn(),
+                                    transaction = self.existingTransaction())            
 
-        action = self.daofactory(classname = "Subscriptions.Load")
-        result = action.execute(fileset = fileset, workflow = workflow,
-                                id = self["id"], type = self["type"],
-                                conn = self.getReadDBConn(),
-                                transaction = self.existingTransaction())
-        
-        if not result:
-            raise RuntimeError, "Subscription for %s:%s unknown" % \
-                                    (self['fileset'].name, self['workflow'].spec)
-        
-        self['fileset'] = Fileset(id = result['fileset']).load('Fileset.LoadFromID')
-        self['workflow'] = Workflow(id = result['workflow'])
-        self["workflow"].load(method = 'Workflow.LoadFromID')
+        self["type"] = result["type"]
+        self["id"] = int(result["id"])
+        self["split_algo"] = result["split_algo"]
 
-        self['type'] = result['type']
-        self['id'] = result['id']
-        self.split_algo = result['split_algo']
+        self["fileset"] = Fileset(id = int(result["fileset"]))
+        self["workflow"] = Workflow(id = int(result["workflow"]))
         return
+
+    def loadData(self):
+        """
+        _loadData_
+
+        """
+        if self["id"] < 0 or self["fileset"] == None or \
+               self["workflow"] == None:
+            self.load()
+        
+        self["fileset"].loadData()
+        self["workflow"].load()
+
+        return    
     
     def markLocation(self, location, whitelist = True):
         """

@@ -15,6 +15,7 @@ class Documentation(TemplatedPage):
                 index = "%s\n<li><a href='%s'>%s</a></li>" % (index, 
                                                       t.replace('.tmpl', ''), 
                                                       t.replace('.tmpl', ''))
+        index = "%s\n<li><a href='https://twiki.cern.ch/twiki/bin/view/CMS/DMWebtools'>twiki</a>" % (index)
         index = "%s\n<ol>" % (index)
         return index
     

@@ -7,8 +7,8 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.8 2009/02/02 11:11:34 jacksonj Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.9 2009/02/02 11:39:38 jacksonj Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -34,8 +34,9 @@ class BaseWorkerThread:
         self.notifyPause = None
         self.notifyResume = None
         
-        # Reference to the owner component
+        # Reference to the owner component and arguments
         self.component = None
+        self.args = {}
         
         # Termination callback function
         self.terminateCallback = None
@@ -43,6 +44,8 @@ class BaseWorkerThread:
         # Get the current DBFactory
         myThread = threading.currentThread()
         self.dbFactory = myThread.dbFactory
+        
+        # Get the logger
         self.logger = myThread.logger
         
         # get the procid from the mainthread msg service
@@ -80,6 +83,8 @@ class BaseWorkerThread:
         # thread
         myThread = threading.currentThread()
         myThread.dbFactory = self.dbFactory
+        
+        # Now we're in our own thread, set the logger
         myThread.logger = self.logger
 
         # Set up database connection and default transaction

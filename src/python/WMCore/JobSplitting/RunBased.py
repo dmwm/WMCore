@@ -9,8 +9,8 @@ creation and/or tracking.
 
 If file spans a run will need to create a mask for that file.
 """
-__revision__ = "$Id: RunBased.py,v 1.3 2008/10/23 15:58:30 jacksonj Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: RunBased.py,v 1.4 2008/10/24 15:13:13 jacksonj Exp $"
+__version__  = "$Revision: 1.4 $"
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -48,6 +48,7 @@ class RunBased(JobFactory):
         primaryFiles = []
         for f in fileset:
             # Check file doesn't span runs
+            # In future, mask this file?
             if len(f['runs']) != 1:
                 msg = "File %s contains %s runs, should be 1" % \
                     (f['lfn'], len(f['runs']))

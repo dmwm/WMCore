@@ -1,0 +1,151 @@
+<html>
+	<head>
+		<title>ConfigFile</title>
+		<link rel="stylesheet" type="text/css" href="http://localhost:8080/controllers/css/reset/style"/>
+	</head>
+	<body>
+		<center>
+			<table width=700 cellspacing=12>
+			  <!--<tr>
+			    <td>
+			      <p class="small"><a href="#about" name="about">About</a> | <a href="#materials">Materials</a></p>
+			    </td>
+			  </tr>-->
+			  <tr>
+			    <td>
+			  <h1>ConfigFile</h1>
+			  	</td>
+				</tr>
+				<tr>	  	
+			  	<td>
+				<p>At the core of the WEBTOOLS2 frame work is a single configuration file.
+				This file says what classes (and corresponding pages) to load, what settings
+				to give them (for instance the location of templates, if database access is
+				needed etc.) and server configuration (port number). Each application will 
+				have its own ini file.
+				</p>
+				<p>The file is a standard ini file, accessed using the standard python 
+				ConfigParser. The ini file that starts the default instance of WEBTOOLS2
+				(that you are looking at now) is shown below and described in the 
+				following text.</p>
+			    </td>
+			  </tr>
+			  <tr>
+			    <td>
+				<h3>Example</h3>
+				<pre>
+[root]
+application = WEBTOOLS2
+port = 8080
+environment = development
+index = welcome
+templates = /Users/metson/Documents/Workspace/WEBTOOLS2/src/Templates
+
+[views]
+active = ['controllers', 'welcome', 'documentation']
+maintenance = []
+
+[database]
+dburl = sqlite:///sitedb.lite
+
+[controllers]
+init = None
+class = Controllers
+database = False
+css = {'reset': '/Users/metson/WT_Devel/osx105_ia32_gcc401/external/yui/2.2.2-wt/build/reset/reset.css',
+			'style': '../../css/style.css'}
+js = {}
+
+[welcome]
+init = None
+class = Welcome
+database = False
+
+[documentation]
+init = None
+class = Documentation
+database = False
+				</pre>
+				</td>
+		  </tr>
+		  <tr>
+		    <td>
+				<h3>[root]</h3>
+				</td>
+		  </tr>
+			<tr>	  	
+		  	<td>
+		  		<p><b>application</b> defines the name of the application and the root 
+		  		location of the classes that the application comprises. It is used in 
+		  		<a href="/documentation/Logging">logging</a> to correctly identify where a
+					problem is coming from.</p> 
+					<p><b>port</b> and <b>environment</b> (production|development) are the 
+					standard cherrypy settings (<i>TODO: add other settings</i>) and should be
+					self explainatory.</p> 
+					<p><b>index</b> is the name of the default view the application presents.
+					This view must implement both index() and default(*args, **kwargs), though
+					of course can be static and ignore any input to the default() call.</p>
+					<p><b>templates</b> is the default directory for the applications Cheetah
+					templates. This can be over ridden by specific views, or unset. If unset 
+					the framework will assume the templates are in a directory called 
+					Templates under the source directory.
+		    </td>
+			</tr>
+		  <tr>
+		    <td>
+				<h3>[views]</h3>
+				</td>
+		  </tr>
+			<tr>	  	
+		  	<td>
+		  		<p>A list of classes that the server should present is in 'active'. Each 
+		  		class should have a corresponding entry later in the configuration file. A
+		  		second list is maintained for classes/pages that are in 'maintenance'. 
+		  		These classes return a standard 'in maintenance' page and do not require 
+		  		an entry in the configuration file. (<i>TODO: implement maintenance for 
+		  		views</i>).</p>
+		    </td>
+			</tr>
+		  <tr>
+		    <td>
+				<h3>[database]</h3>
+				</td>
+		  </tr>
+			<tr>	  	
+		  	<td>
+		  		<p>This defines a DB URL that the application uses to communicate to its 
+		  		backend database. The DB connection (and pooling) is provided by the 
+		  		framework using the WMCore DBCore class and SQLAlchemy.
+		    </td>
+			</tr>
+		  <tr>
+		    <td>
+				<h3>[controllers]</h3>
+				</td>
+		  </tr>
+		  <tr>
+				<td>
+					<p>The <b>Controllers</b> class is a standard class from the framework. It
+					provides a standard way to access static content such as javascript or css
+					(<i>TODO: implement handling images</i>). Correct headers are set and 
+					content minified (<i>TODO: implement correct minification of 
+					javascript</i>) and gzipped for quick delivery. Content is cached so that 
+					repeat requests do not require manipulation. If a requested script is 
+					missing it is skipped, logged and not cached.</p>
+				</td>		
+		  </tr>
+		  <tr>
+		    <td>
+				<h3>[welcome] & [documentation]</h3>
+				</td>
+			</tr>
+			<tr>	  	
+		  	<td>
+		  		<p>The two basic pages.</p>
+		    </td>
+			</tr>
+		</table>
+	</center>
+</body>
+</html>		
+		

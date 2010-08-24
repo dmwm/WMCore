@@ -20,10 +20,11 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.29 2009/01/14 16:52:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Subscription.py,v 1.30 2009/01/16 17:04:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.30 $"
 
 from sets import Set
+import logging
 
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.File import File
@@ -37,6 +38,15 @@ class Subscription(WMBSBase, WMSubscription):
                  whitelist = None, blacklist = None, split_algo = "FileBased",
                  type = "Processing"):
         WMBSBase.__init__(self)
+
+        # If a fileset or workflow isn't passed in the base class will create
+        # empty non-WMBS filesets and workflows.  We want WMBS filesets and
+        # workflows so we'll create those here.
+        if fileset == None:
+            fileset = Fileset()
+        if workflow == None:
+            workflow = Workflow()
+            
         WMSubscription.__init__(self, fileset = fileset, workflow = workflow,
                                 whitelist = whitelist, blacklist = blacklist,
                                 split_algo = split_algo, type = type)
@@ -99,8 +109,13 @@ class Subscription(WMBSBase, WMSubscription):
         self["id"] = int(result["id"])
         self["split_algo"] = result["split_algo"]
 
-        self["fileset"] = Fileset(id = int(result["fileset"]))
-        self["workflow"] = Workflow(id = int(result["workflow"]))
+        # Only load the fileset and workflow if they haven't been loaded
+        # already.  
+        if self["fileset"].id < 0:
+            self["fileset"] = Fileset(id = int(result["fileset"]))
+        if self["workflow"].id < 0:
+            self["workflow"] = Workflow(id = int(result["workflow"]))
+            
         return
 
     def loadData(self):
@@ -110,8 +125,8 @@ class Subscription(WMBSBase, WMSubscription):
         Load all data having to do with the subscription including all the
         files contained in the fileset and the workflow meta data.
         """
-        if self["id"] < 0 or self["fileset"] == None or \
-               self["workflow"] == None:
+        if self["id"] < 0 or self["fileset"].id < 0 or \
+               self["workflow"].id < 0:
             self.load()
         
         self["fileset"].loadData()

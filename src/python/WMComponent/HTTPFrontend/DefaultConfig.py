@@ -4,11 +4,11 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.6 2009/01/20 23:00:36 rpw Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.7 2009/01/21 19:36:01 rpw Exp $"
+__version__ = "$Revision: 1.7 $"
 
 
-from WMCore.Agent.Configuration import Configuration
+from WMCore.Configuration import Configuration
 
 config = Configuration()
 config.component_("HTTPFrontEnd")

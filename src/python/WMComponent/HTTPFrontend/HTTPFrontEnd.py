@@ -13,7 +13,7 @@ Introduces a dependency on the cherrypy package
 import socket
 import os
 import cherrypy
-from WMCore.Agent.Configuration import loadConfigurationFile
+from WMCore.Configuration import loadConfigurationFile
 from MessageService.MessageService import MessageService
 
 import ProdAgentCore.LoggingUtils as LoggingUtils

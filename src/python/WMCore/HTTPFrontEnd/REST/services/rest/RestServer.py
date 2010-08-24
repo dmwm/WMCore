@@ -14,15 +14,6 @@ import cherrypy
 from cherrypy import expose
 from WMCore.HTTPFrontEnd.REST.services.rest.RestService import RestService
 
-from WMCore.HTTPFrontEnd.REST.utils.Utils import setsqlalchemylogger
-from WMCore.HTTPFrontEnd.REST.utils.Utils import setcherrypylogger
-# test model and formatter
-from WMCore.HTTPFrontEnd.REST.services.test.TestModel import TestModel
-from WMCore.HTTPFrontEnd.REST.services.test.TestFormatter import TestFormatter
-
-# WEBTOOLS modules
-from Framework import Controller
-
 class Service(object):
     """Service implementation, we should have some default page"""
     def __init__(self):
@@ -40,40 +31,57 @@ class Service(object):
         """Service version"""
         return self._ver
 
-class RestServer(Controller, object):
+class RestServer(object):
     """REST server implementation within WEBTOOLS framework"""
-    def __init__(self, context=None, verbose=0):
+    def __init__(self, model, formatter, url=None, verbose=0):
         self.name = "RestServer"
-        self.baseurl = None
-        if  context:
-            Controller.__init__ (self, context, __file__)
-            setsqlalchemylogger(super(RestServer, self).getHandler(),
-                                super(RestServer, self).getLogLevel())
-            setcherrypylogger(  super(RestServer, self).getHandler(),
-                                super(RestServer, self).getLogLevel())
         rest_service = Service()
         rest_service.rest = RestService()
         self.rest = rest_service.rest
+        # check that provided model implement
+        # {get,create,update,delete}data methods
+        for name in ['get', 'create', 'delete', 'update']:
+            clsmethod = '%sdata' % name
+            try:
+                getattr(model, clsmethod)
+            except AttributeError:
+                msg  = "\nERROR: Model class\n'%s'\n" % model
+                msg += "does not implement method '%s'\n" % clsmethod
+                print msg
+                raise
+        # check that provided formatter class implement
+        # to_{xml, txt, html, json} methods
+        for name in ['json', 'html', 'txt', 'xml']:
+            clsmethod = 'to_%s' % name
+            try:
+                getattr(formatter, clsmethod)
+            except AttributeError:
+                msg  = "\nERROR: Formatter class\n'%s'\n" % formatter
+                msg += "does not implement method '%s'\n" % clsmethod
+                print msg
+                raise
         # set model and formatter to be used by RestService
-        self.rest._model = TestModel()
-        self.rest._formatter = TestFormatter()
+        self.rest._model = model
+        self.rest._formatter = formatter
         self.rest._verbose = verbose
+        self.rest._url = url
         # set server config
         self.config = self.setconfig(base=self.name)
-        print "+++ %s is loaded, supported mime_types:" % self.name
-        print self.rest.supporttypes
+        if  verbose:
+            print "+++ %s is loaded, supported mime_types:" % self.name
+            print self.rest.supporttypes
 
-    def readyToRun(self):
-        """
-           this method called at run-time within WEBTOOLS framework
-           it uses to define run-time parameters such as base-url, etc.
-        """
-        opts = self.context.CmdLineArgs().opts
-        self.baseurl    = opts.baseUrl
-        self.rest._url  = self.baseurl
-        cherrypy.config.update ( { 
-              'request.dispatch' : cherrypy.dispatch.MethodDispatcher()
-                                 } )
+    def setmodel(self, model):
+        """Set Model for our REST server"""
+        self.rest._model = model
+
+    def setformatter(self, formatter):
+        """Set Formatter for our REST server"""
+        self.rest._formatter = formatter
+
+    def seturl(self, url):
+        """Set URL for our REST server"""
+        self.rest._url = url
 
     def setconfig(self, base=""):
         """

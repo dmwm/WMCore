@@ -84,7 +84,7 @@ class Resource(object):
                              'text/json', 'text/x-json', 'application/json',
                              'text/html','text/plain']
         self.defaulttype   = 'text/html'
-        print "+++ Init Resource %s" % self._url
+#        print "+++ Init Resource %s" % self._url
         
     def response(self, idata, method):
         """Create server response"""

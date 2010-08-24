@@ -34,7 +34,7 @@ class BaseAction(object):
         module = "WMCore.WMBS.%s.%sSQL" % (dialect, classname)
         self.logger.debug("importing %s, %s" % (module, classname))
         module = __import__(module, globals(), locals(), [classname], -1)
-        instance = getattr(module, classname)
+        instance = getattr(module, classname.split('.')[-1])
         return instance
 
     

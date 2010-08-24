@@ -1,5 +1,4 @@
 #!/usr/bin/python
-#pylint: disable-msg=E1103
 
 """
 _Create_
@@ -8,8 +7,8 @@ Class for creating MySQL specific schema for the FeederManager
 
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/02/02 23:06:50 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/02/05 10:38:59 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading

@@ -6,8 +6,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.1 2008/09/04 12:32:12 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.2 2008/09/04 14:32:08 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -20,8 +20,8 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMCore.ThreadPool.ThreadPool import ThreadPool
-from WMCore.ThreadPool.ThreadSlave import ThreadSlave
 
+# local import
 from Dummy import Dummy
 
 class ThreadPoolTest(unittest.TestCase):
@@ -34,8 +34,8 @@ class ThreadPoolTest(unittest.TestCase):
 
     _setup = False
     _teardown = False
-    _nrOfThreads = 300
-    _nrOfPools = 5
+    _nrOfThreads = 100
+    _nrOfPools = 5 
 
     def setUp(self):
         "make a logger instance and create tables"
@@ -53,8 +53,8 @@ class ThreadPoolTest(unittest.TestCase):
         
             options = {}
             options['unix_socket'] = os.getenv("DBSOCK")
-            myThread.dbFactory = DBFactory(myThread.logger, os.getenv("MYSQLDATABASE"), \
-                options)
+            myThread.dbFactory = DBFactory(myThread.logger, \
+                os.getenv("MYSQLDATABASE"), options)
             myThread.dbi = myThread.dbFactory.connect() 
             myThread.transaction = Transaction(myThread.dbi)
 
@@ -102,8 +102,9 @@ class ThreadPoolTest(unittest.TestCase):
         component.args = args
 
         threadPools = []
-        for i in xrange(0,ThreadPoolTest._nrOfPools):
-            threadPool = ThreadPool("WMCore.ThreadPool.ThreadSlave", component, 'MyPool_'+str(i), ThreadPoolTest._nrOfThreads)
+        for i in xrange(0, ThreadPoolTest._nrOfPools):
+            threadPool = ThreadPool("WMCore.ThreadPool.ThreadSlave", \
+                component, 'MyPool_'+str(i), ThreadPoolTest._nrOfThreads)
             threadPools.append(threadPool)
         # this is how you would use the threadpool. The threadpool retrieves
         # events/payloads from the message service. If a thread is available
@@ -113,30 +114,35 @@ class ThreadPoolTest(unittest.TestCase):
         for i in xrange(0, ThreadPoolTest._nrOfThreads*10):
             event = 'eventNr_'+str(i)
             payload = 'payloadNr_'+str(i)
-            # normally you would have different events per threadpool and even different objects per pool.
-            # the payload part will be pickled into the database enabling flexibility in passing information.
-            for j in xrange(0,ThreadPoolTest._nrOfPools):
-                threadPools[j].enqueue(event, {'event' : event, 'payload' : payload})
-        # this commit you want to be done by the agent harness, so the message is
+            # normally you would have different events per threadpool and 
+            # even different objects per pool. the payload part will be 
+            # pickled into the database enabling flexibility in passing 
+            # information.
+            for j in xrange(0, ThreadPoolTest._nrOfPools):
+                threadPools[j].enqueue(event, \
+                    {'event' : event, 'payload' : payload})
+        # this commit you want to be in the agent harness, so the message is
         # actual removed from the msgService. we can do this as the threadpool
         # acts as a dispatcher and is a shortlived action: dispatch to thread
         # or queu and tell agent harness it is finished.
         finished = False
         while not finished: 
             print('waiting for threads to finishs. Work left:')
-            for j in xrange(0,ThreadPoolTest._nrOfPools):
-                print('pool_'+str(j)+':' + str(threadPools[j].callQueue))
+            for j in xrange(0, ThreadPoolTest._nrOfPools):
+                print('pool_'+str(j)+ ':' + str(threadPools[j].callQueue))
             time.sleep(1)
             finished = True
-            for j in xrange(0,ThreadPoolTest._nrOfPools):
+            for j in xrange(0, ThreadPoolTest._nrOfPools):
                 if (len(threadPools[j].resultsQueue) < ThreadPoolTest._nrOfThreads*10):
                     finished = False
                     break
-        # check if the tables are really empty and all messages have been processed.
-        for j in xrange(0,ThreadPoolTest._nrOfPools):
-            assert len(threadPools[j].resultsQueue) == ThreadPoolTest._nrOfThreads*10
+        # check if the tables are really empty and all messages 
+        # have been processed.
+        for j in xrange(0, ThreadPoolTest._nrOfPools):
+            assert len(threadPools[j].resultsQueue) == \
+                ThreadPoolTest._nrOfThreads*10
         myThread.transaction.begin()
-        for j in xrange(0,ThreadPoolTest._nrOfPools):
+        for j in xrange(0, ThreadPoolTest._nrOfPools):
             assert threadPools[j].countMessages() == 0
         myThread.transaction.commit()
         

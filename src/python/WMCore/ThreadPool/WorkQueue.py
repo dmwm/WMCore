@@ -29,16 +29,21 @@ function. This helps the caller to determine which function
 
 """
 
+__revision__ = "$Id: WorkQueue.py,v 1.2 2008/09/04 14:32:06 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "fvlingen@caltech.edu"
+
+
 import threading
 
 class SerializedThreadPool( object ):
-    __slots__ = ( 'function', 'queue' )
-
     """
     Implements the ThreadPool interface in a serialized fashion. This
     is very useful for debugging since there is no parallelism. All the
     work is performed when calling dequeue.
     """
+
+    __slots__ = ( 'function', 'queue' )
     def __init__( self, slaveFunction ):
         """
         Creates a new SerializedThreadPool that will call the
@@ -69,7 +74,7 @@ class SerializedThreadPool( object ):
             return None
 
         # Take from the tail (much faster)
-        key,parameters = self.queue[-1]
+        key, parameters = self.queue[-1]
         del self.queue[-1]
 
         result = self.function( *parameters )
@@ -114,7 +119,7 @@ class ThreadPool( object ):
 
         """
         
-        work = (key,parameters)
+        work = (key, parameters)
 
         self.lock.acquire()
 
@@ -128,7 +133,8 @@ class ThreadPool( object ):
 
             # Increment the count of active threads
             self.activeCount += 1
-            thread = threading.Thread( target = self.slaveThread, args=(slave,) )
+            thread = threading.Thread( target = self.slaveThread, \
+                args=(slave,) )
             thread.start()
 
         self.lock.release()
@@ -165,7 +171,8 @@ class ThreadPool( object ):
                 del self.resultsQueue[0]
                 break
             elif self.activeCount == 0:
-                # If there are no active threads, then there are no results pending: quit
+                # If there are no active threads, then there 
+                # are no results pending: quit
                 result = None
                 break
             else:
@@ -190,7 +197,7 @@ class ThreadPool( object ):
 
         while len( self.callQueue ) > 0:
             # Dequeue work
-            key,parameters = self.callQueue[0]
+            key, parameters = self.callQueue[0]
             del self.callQueue[0]
 
             self.lock.release()

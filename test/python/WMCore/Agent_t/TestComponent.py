@@ -9,8 +9,8 @@ components.
 
 """
 
-__revision__ = "$Id: TestComponent.py,v 1.1 2008/08/26 13:55:16 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TestComponent.py,v 1.2 2008/09/04 14:32:07 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -23,6 +23,13 @@ from WMCore.Agent.BaseHandler import BaseHandler
 
 
 class TestComponent(Harness):
+    """
+    _TestComponent_
+
+    Compnent to test the skeleton and serve as an example to build 
+    components.
+    
+    """
 
     def __init__(self, **args):
         # call the base class
@@ -39,14 +46,26 @@ class TestComponent(Harness):
         self.messages['TestMessage4'] = BaseHandler(self)
 
     def logState(self):
+        """
+        Augment standard logging message.
+        """
+
         state = 'This is the state of the TestComponent\n'
         state += '-------------------------------------'
         return state
 
     def preInitialization(self):
+        """
+        Override pre initialization.
+        """
+
         logging.debug("TestComponent pre initialization")
 
     def postInitialization(self):
+        """
+        Override post initialization.
+        """
+
         logging.debug("TestComponent post initialization")
 
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 _ThreadPool_
 
@@ -6,8 +7,8 @@ To use this you need to use the ThreadSlave class
 """
 
 
-__revision__ = "$Id: ThreadPool.py,v 1.1 2008/09/04 12:30:16 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ThreadPool.py,v 1.2 2008/09/04 14:32:06 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -28,7 +29,8 @@ class ThreadPool(Queue):
     To use this you need to use the ThreadSlave class
     """
 
-    def __init__(self, slaveModule, component, threadPoolID= 'default', nrOfSlaves = 0):
+    def __init__(self, slaveModule, component, \
+        threadPoolID= 'default', nrOfSlaves = 0):
         """
         _init_
 
@@ -42,24 +44,25 @@ class ThreadPool(Queue):
         # we augment the threadpool id with component name in case
         # we use separate talbes for the thread queues to prevent
         # name clashes.
-        self.threadPoolId = 'tp_threadpool_'+self.component.args['componentName']+'_'+threadPoolID
-        # if set to false the peristent thread pool table is created per threadpool id.
+        self.threadPoolId = 'tp_threadpool_'+ \
+            self.component.args['componentName']+'_'+threadPoolID
+        # if set to false the peristent thread pool table is 
+        # created per threadpool id.
         self.oneQueue = True
         # the size of the buffer to minimize single inserts in large tables.
-        self.bufferSize = 400
+        self.bufferSize = 2
         # the maximum number of slaves (threads) we allow.
         self.nrOfSlaves = nrOfSlaves
 
-        #FIXME: placeholder for passing the slave class later on.
-        slaveModule = "WMCore.ThreadPool.ThreadSlave"
         self.slaveName = slaveModule.split(".")[-1]
  
-        self.slaveFactory = WMFactory("slaveFactory",slaveModule[0:slaveModule.rfind(slaveModule.split(".")[-1])-1])
+        self.slaveFactory = WMFactory("slaveFactory", \
+            slaveModule[0:slaveModule.rfind(slaveModule.split(".")[-1])-1])
         myThread = threading.currentThread()
         myThread.transaction.begin()
         factory = WMFactory("threadPool", "WMCore.ThreadPool."+ \
             myThread.dialect)
-        self.query = myThread.factory['threadPool'].loadObject("Queries")
+        self.query = factory.loadObject("Queries")
 
         # check which tables we need to use. 
         self.poolTable = 'tp_threadpool'
@@ -67,46 +70,58 @@ class ThreadPool(Queue):
         self.poolTableBufferOut = 'tp_threadpool_buffer_out'
         if not self.oneQueue:
             self.poolTable = self.threadPoolId
-            self.poolTableBufferIn = 'tp_threadpool_'+self.component.args['componentName']+'_'+threadPoolID+'_buffer_in'
-            self.poolTableBufferOut = 'tp_threadpool_'+self.component.args['componentName']+'_'+threadPoolID+'_buffer_out'
+            self.poolTableBufferIn = 'tp_threadpool_'+\
+                self.component.args['componentName']+'_'+\
+                threadPoolID+'_buffer_in'
+            self.poolTableBufferOut = 'tp_threadpool_'+\
+                self.component.args['componentName']+'_'+\
+                threadPoolID+'_buffer_out'
             self.query.insertThreadPoolTables(self.poolTable)
             self.query.insertThreadPoolTables(self.poolTableBufferIn)
             self.query.insertThreadPoolTables(self.poolTableBufferOut)
             
-        # inform the slaves what tables and id to use.
-        #for slave in self.slaveQueue:
-        #    slave.args['thread_pool_table'] = self.poolTable
-        #    slave.args['thread_pool_table_buffer_in'] = self.poolTableBufferIn
-        #    slave.args['thread_pool_table_buffer_out'] = self.poolTableBufferOut
-        #    slave.args['thread_pool_id'] = self.threadPoolId
-        #    slave.args['thread_pool_buffer_size'] = self.bufferSize
-           
         # restore any threads that might have been lost during a crash
         # de register thread in database so we do not need to restore it.
-        logging.info("THREADPOOL: Resetting lost threads to queue status if any")
-        self.query.updateWorkStatus({'componentName' : component.args['componentName'], 'thread_pool_id' : self.threadPoolId}, self.poolTable)
-        self.query.updateWorkStatus({'componentName' : component.args['componentName'], 'thread_pool_id' : self.threadPoolId}, self.poolTableBufferIn)
-        self.query.updateWorkStatus({'componentName' : component.args['componentName'], 'thread_pool_id' : self.threadPoolId}, self.poolTableBufferOut)
+        msg = "THREADPOOL: Resetting lost threads to queue status if any"
+        logging.info(msg)
+        args = {'componentName' : component.args['componentName'], \
+            'thread_pool_id' : self.threadPoolId}
+        self.query.updateWorkStatus(args, self.poolTable)
+        self.query.updateWorkStatus(args, self.poolTableBufferIn)
+        self.query.updateWorkStatus(args, self.poolTableBufferOut)
         # get the lenghts of the queue as this our starting point.
         self.callQueue = self.countMessages()
         # we do commit as initalization falls outside the while loop
         # of the component.
         myThread.transaction.commit()
 
-
     def prepareSlave(self, slave):
-            slave.args['thread_pool_table'] = self.poolTable
-            slave.args['thread_pool_table_buffer_in'] = self.poolTableBufferIn
-            slave.args['thread_pool_table_buffer_out'] = self.poolTableBufferOut
-            slave.args['thread_pool_id'] = self.threadPoolId
-            slave.args['thread_pool_buffer_size'] = self.bufferSize
-            return slave
+        """
+        Prepares a slave to make sure it accesses
+        the proper tables and is associated to the 
+        correct pool.
+        """
+        slave.args['thread_pool_table'] = self.poolTable
+        slave.args['thread_pool_table_buffer_in'] = self.poolTableBufferIn
+        slave.args['thread_pool_table_buffer_out'] = self.poolTableBufferOut
+        slave.args['thread_pool_id'] = self.threadPoolId
+        slave.args['thread_pool_buffer_size'] = self.bufferSize
+        return slave
 
     def countMessages(self):
+        """
+        Counts how many messages for this pool are in the database.
+        This is used when the pool is initialized to deal with entries
+        that might be made before a crash and to establish an in 
+        memory queue length
+        """
+
         msgs = 0
-        msgs += self.query.getQueueLength({'componentName' : self.component.args['componentName'], 'thread_pool_id' : self.threadPoolId}, self.poolTable)
-        msgs += self.query.getQueueLength({'componentName' : self.component.args['componentName'], 'thread_pool_id' : self.threadPoolId}, self.poolTableBufferIn)
-        msgs += self.query.getQueueLength({'componentName' : self.component.args['componentName'], 'thread_pool_id' : self.threadPoolId}, self.poolTableBufferOut)
+        args = {'componentName' : self.component.args['componentName'], \
+            'thread_pool_id' : self.threadPoolId}
+        msgs += self.query.getQueueLength(args, self.poolTable)
+        msgs += self.query.getQueueLength(args, self.poolTableBufferIn)
+        msgs += self.query.getQueueLength(args, self.poolTableBufferOut)
         return msgs
 
     def enqueue( self, key, *parameters ):
@@ -119,20 +134,25 @@ class ThreadPool(Queue):
 
         """
         self.lock.acquire()
-        args = {'event': str(key), 'component' : str(self.component.args['componentName']), 'payload' : base64.encodestring(cPickle.dumps(parameters)), 'thread_pool_id' : self.threadPoolId}
+        args = {'event': str(key), \
+                'component' : str(self.component.args['componentName']), \
+                'payload' : base64.encodestring(cPickle.dumps(parameters)), \
+                'thread_pool_id' : self.threadPoolId}
         myThread = threading.currentThread()
         myThread.transaction.begin()
         self.query.insertWork(args, self.poolTableBufferIn)
-        # we need to commit here otherwise the thread transaction might not see it.
-        # check if this buffer needs to be flushed.
-        bufferSize = self.query.getQueueLength({'componentName' : self.component.args['componentName'], 'thread_pool_id' : self.threadPoolId}, self.poolTableBufferIn)
+        # we need to commit here otherwise the thread transaction might not 
+        # see it. check if this buffer needs to be flushed.
+        bufferSize = self.query.getQueueLength(\
+            {'componentName' : self.component.args['componentName'], \
+             'thread_pool_id' : self.threadPoolId}, self.poolTableBufferIn)
         if bufferSize > self.bufferSize:
-            self.query.moveWorkFromBufferIn(self.poolTableBufferIn, self.poolTable) 
-        #FIXME: we should call the msgService finsih method here before this commit
-        #FIXME: so we know the event/payload is transferred to a thread. 
+            self.query.moveWorkFromBufferIn(self.poolTableBufferIn, \
+                self.poolTable) 
+        #FIXME: we should call the msgService finsih method here before 
+        #this commit so we know the event/payload is transferred to a thread. 
         myThread.transaction.commit()
         logging.info("THREADPOOL: Enqueued item")
-        work = (key,parameters)
 
         # enqueue the work item
         self.callQueue += 1
@@ -143,16 +163,20 @@ class ThreadPool(Queue):
             del self.slaveQueue[0]
             # Increment the count of active threads
             self.activeCount += 1
-            thread = threading.Thread( target = self.slaveThread, args=(slave,) )
+            thread = threading.Thread( target = self.slaveThread, \
+                args=(slave,) )
             thread.start()
         # check if we can instantiate more slaves.
         else:       
             if self.activeCount < self.nrOfSlaves:
-                # WE can still create slaves.
-                slave  = self.slaveFactory.loadObject(classname = self.slaveName, args= (self.component))
+                # we can still create slaves.
+                slave  = \
+                    self.slaveFactory.loadObject(classname = self.slaveName, \
+                        args= (self.component))
                 slave = self.prepareSlave(slave)
                 self.activeCount += 1
-                thread = threading.Thread( target = self.slaveThread, args=(slave,) )
+                thread = threading.Thread( target = self.slaveThread, \
+                    args=(slave,) )
                 thread.start()
     
         self.lock.release()
@@ -170,14 +194,14 @@ class ThreadPool(Queue):
         while self.callQueue > 0:
             # Dequeue work
             # handle exceptions to deal with deadlock issues.
-            slaveServer.sane= True
+            slaveServer.sane = True
             try:
-                key, parameters =slaveServer.retrieveWork()
+                key, parameters = slaveServer.retrieveWork()
                 self.callQueue -= 1
-            except Exception,ex:
+            except Exception, ex:
                 logging.error("Problem with retrieving work : "+str(ex))
                 logging.error("Trying to salvage it")
-                slaveServer.sane= False
+                slaveServer.sane = False
             self.lock.release()
             #~ print "making a call..."
             if slaveServer.sane:
@@ -191,7 +215,7 @@ class ThreadPool(Queue):
                 self.lock.notify()
             else:
                 # sleep for some random time.
-                time.sleep(random.randint(1,5)) 
+                time.sleep(random.randint(1, 5)) 
                 self.lock.acquire()
                 
 

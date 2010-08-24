@@ -3,13 +3,12 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.3 2008/08/29 20:03:07 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Harness_t.py,v 1.4 2008/09/04 14:32:07 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
 import os
-import random
 import threading
 import unittest
 
@@ -63,6 +62,10 @@ class HarnessTest(unittest.TestCase):
             HarnessTest._setup_done = True
 
     def testA(self):
+        """
+        Mimics creation of component and handles come messages.
+        """
+        
         # parameters for test component:
         args = {}
         args['workDir'] = os.getenv("TESTDIR")

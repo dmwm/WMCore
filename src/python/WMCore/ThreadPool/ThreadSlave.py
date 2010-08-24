@@ -1,19 +1,42 @@
+#!/usr/bin/env python
+"""
+__ThreadSlave__
 
-__revision__ = "$Id: ThreadSlave.py,v 1.1 2008/09/04 12:30:16 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+Base class for implementing slave objects.
+slave objects inherit from this and overload
+the __call__ method. This method is (usually) passed
+a list of parmeters used to complete a certain tasks.
+parameters is an object that is pickled into the database
+when it is not processed by a thread. It is thus possible
+to pass arbitrary objects if needed through the parameters
+attribute.
+"""
+
+__revision__ = "$Id: ThreadSlave.py,v 1.2 2008/09/04 14:32:06 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
 import cPickle
 import logging
 import threading
-import time
 
-from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
 class ThreadSlave:
+    """
+    __ThreadSlave__
+
+    Base class for implementing slave objects.
+    slave objects inherit from this and overload
+    the __call__ method. This method is (usually) passed
+    a list of parmeters used to complete a certain tasks.
+    parameters is an object that is pickled into the database
+    when it is not processed by a thread. It is thus possible
+    to pass arbitrary objects if needed through the parameters
+    attribute.
+    """
 
     def __init__(self, component):
         """
@@ -42,12 +65,22 @@ class ThreadSlave:
         # to have one thread handling multiple message types.
         self.messages = {}
         # start loading some objects we need in this thread only
+        factory = WMFactory("threadPool", "WMCore.ThreadPool."+ \
+            myThread.dialect)
+        self.query = factory.loadObject("Queries")
 
         #NOTE: this is not a new thread so we need to propagate
         #NOTE: the arguments we want to carry over to the current thread
         #NOTE: object using the initInThread method later on.
 
     def initInThread(self):
+        """
+        ThreadSlave (subclasses) are returned to a queue when no work
+        is available and can be activated by a new thread when work
+        is entered in the queue. This method is called when the ThreadSlave
+        (subclass) is associated to a new thread.
+        """
+
         # we need to call this method only when it is called within a thread
         # otherwise these parameters are not accissible in the thread used
         # to call this threadslave.
@@ -60,7 +93,7 @@ class ThreadSlave:
         if self.args['db_dialect'] == 'mysql':
             myThread.dialect = 'MySQL'
 
-        #FIXME: remove as much as possible logging statements or make them debug
+        #TODO: remove as much as possible logging statements or make them debug
         myThread.logger = logging.getLogger()
 
         logging.info("THREAD: Initializing default database")
@@ -69,10 +102,6 @@ class ThreadSlave:
         if self.args.has_key("db_socket"):
             options['unix_socket'] = self.args['db_socket']
         logging.info("THREAD: Building database connection string")
-        dbStr = self.args['db_dialect'] + '://' + self.args['db_user'] + \
-           ':' + self.args['db_pass']+"@"+self.args['db_hostname']+'/'+\
-            self.args['db_name']
-        #dbFactory = DBFactory(myThread.logger, dbStr, options)
         # we ensured that we use the dbFactory object from our parent
         # thread so we have only one engine in the application.
         myThread.dbi = myThread.dbFactory.connect()
@@ -81,15 +110,12 @@ class ThreadSlave:
         logging.info("THREAD: Initializing default transaction")
         myThread.transaction = Transaction(myThread.dbi)
         logging.info("THREAD: Loading backend")
-        factory = WMFactory("threadPool", "WMCore.ThreadPool."+ \
-            myThread.dialect)
-        self.query = factory.loadObject("Queries")
         factory = WMFactory("msgService", "WMCore.MsgService."+ \
             myThread.dialect)
         myThread.msgService = factory.loadObject("MsgService")
         logging.info("THREAD: Instantiating message queue for thread")
         logging.info("THREAD: Instantiating trigger service for thread")
-        # FIXME: add trigger instantiation.
+        # TODO: add trigger instantiation.
         logging.info("THREAD constructor finished")
 
     def retrieveWork(self):
@@ -108,16 +134,27 @@ class ThreadSlave:
         else:
             # init creates a transaction that will call begin.
             myThread.transaction.begin() 
-        args = {'thread_pool_id' : self.args['thread_pool_id'], 'component' : self.args['componentName']}
-        result = self.query.selectWork(args, self.args['thread_pool_table_buffer_out'])
+        args = {'thread_pool_id' : self.args['thread_pool_id'], \
+            'component' : self.args['componentName']}
+        result = self.query.selectWork(args, \
+            self.args['thread_pool_table_buffer_out'])
         # we might need to look into multiple buffers and move work to find it.
-        # from keeping track of the number of messages for us we know it is there.
+        # from keeping track of the number of messages for us we know it 
+        # is there.
         if result[0] == None:
-            self.query.moveWorkToBufferOut(args,self.args['thread_pool_table'],self.args['thread_pool_table_buffer_out'], self.args['thread_pool_buffer_size'])
-        result = self.query.selectWork(args, self.args['thread_pool_table_buffer_out'])
+            self.query.moveWorkToBufferOut(args, \
+                self.args['thread_pool_table'], \
+                self.args['thread_pool_table_buffer_out'], \
+                self.args['thread_pool_buffer_size'])
+        result = self.query.selectWork(args, \
+            self.args['thread_pool_table_buffer_out'])
         if result[0] == None :
-            self.query.moveWorkToBufferOut(args,self.args['thread_pool_table_buffer_in'],self.args['thread_pool_table_buffer_out'], self.args['thread_pool_buffer_size'])
-        result = self.query.selectWork(args, self.args['thread_pool_table_buffer_out'])
+            self.query.moveWorkToBufferOut(args, \
+                self.args['thread_pool_table_buffer_in'], \
+                self.args['thread_pool_table_buffer_out'], \
+                self.args['thread_pool_buffer_size'])
+        result = self.query.selectWork(args, \
+                self.args['thread_pool_table_buffer_out'])
         
         if result[0] == None:
             # FIXME: make proper exception
@@ -125,12 +162,14 @@ class ThreadSlave:
         logging.debug("THREAD: Retrieved Work with id: "+str(result[0]) )
         myThread.workId = str(result[0])
         # get the actual work now:
-        result = self.query.retrieveWork({'id':myThread.workId}, self.args['thread_pool_table_buffer_out'])        
-        self.query.tagWork({'id' : myThread.workId}, self.args['thread_pool_table_buffer_out'])
+        result = self.query.retrieveWork({'id':myThread.workId}, \
+            self.args['thread_pool_table_buffer_out'])        
+        self.query.tagWork({'id' : myThread.workId}, \
+            self.args['thread_pool_table_buffer_out'])
         # we commit here because if the component crashes this is where
         # if will look for lost threads (the ones that are in the process state
         myThread.transaction.commit() 
-        return (result[1],cPickle.loads(base64.decodestring(result[2])))
+        return (result[1], cPickle.loads(base64.decodestring(result[2])))
 
     def removeWork(self):          
         """
@@ -140,11 +179,13 @@ class ThreadSlave:
         """
         myThread = threading.currentThread()
         myThread.transaction.begin() 
-        self.query.removeWork({'id' : myThread.workId},self.args['thread_pool_table_buffer_out'])
+        self.query.removeWork({'id' : myThread.workId}, \
+            self.args['thread_pool_table_buffer_out'])
         # this method is called once the thread is finished and 
         # we commit everything.
         myThread.transaction.commit()
-        logging.debug("committing other transactions if there any in this thread")
+        msg = "committing other transactions if there any in this thread"
+        logging.debug(msg)
         for transaction in myThread.transactions.keys():
             transaction.commit()
  
@@ -159,4 +200,3 @@ class ThreadSlave:
         its constructor is called, and overload this call method.
         """
         logging.error("I am a placeholder please overload me to handle parameters : "+str(parameters))
-

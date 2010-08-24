@@ -7,11 +7,10 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2008/09/04 12:30:17 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2008/09/04 14:32:07 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
-import logging
 import threading
 
 from WMCore.Database.DBCreator import DBCreator

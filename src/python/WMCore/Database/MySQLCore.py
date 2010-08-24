@@ -10,13 +10,9 @@ class MySQLInterface(DBInterface):
         """
         newsql = sql
         if binds and isinstance(self.engine.dialect, MySQLDialect):
-            for k, v in binds.items():
-                self.logger.debug("substituting bind %s, %s" % (k, v))
-                if type(v) == str or type(v) == unicode:
-                    newsql = newsql.replace(':%s' % k, "'%s'" % v)
-                else:
-                    newsql = newsql.replace(':%s' % k, '%s' % v)
-        return newsql, None
+            for k in binds.keys():
+                newsql = newsql.replace(':%s' % k, '%%(%s)s' % k)
+        return newsql, binds
         
     def executebinds(self, s=None, b=None, connection=None):
         """

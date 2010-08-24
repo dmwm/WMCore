@@ -37,10 +37,10 @@ p, li{
 	font-size:16px;
 }
 
-li {
+ol, li, dt, dd {
 	margin-left: 10px;
 	list-style-type: disc;
-	list-style-position: outside;
+	list-style-position: inside;
 }
 
 .small{

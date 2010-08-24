@@ -32,49 +32,51 @@ class Job_t(Base_t):
     def testNew(self):         
         print "testNew"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.New', execinput=['jobgroup=self.testJobGroup.id','name=self.testJob.name'])
+        testJobName = 'TestNewJob'
+
+        time = self.perfTest(dao=self.dao, action='Jobs.New', jobgroup=self.testJobGroup.id, name=testJobName)
         assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testActive(self):         
         print "testActive"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Active', execinput=['job=self.testJob.id'])
+        time = self.perfTest(dao=self.dao, action='Jobs.Active', job=self.testJob.id)
         assert time <= self.threshold, 'Active DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testComplete(self):         
         print "testComplete"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Complete', execinput=['job=self.testJob.id'])
+        time = self.perfTest(dao=self.dao, action='Jobs.Complete', job=self.testJob.id)
         assert time <= self.threshold, 'Complete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testFailed(self):         
         print "testFailed"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Failed', execinput=['job=self.testJob.id'])
+        time = self.perfTest(dao=self.dao, action='Jobs.Failed', job=self.testJob.id)
         assert time <= self.threshold, 'Failed DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testLoad(self):         
         print "testLoad"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.Load', execinput=['id=self.testJob.id'])
+        time = self.perfTest(dao=self.dao, action='Jobs.Load', id=self.testJob.id)
         assert time <= self.threshold, 'Load DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testClearStatus(self):         
         print "testClearStatus"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.ClearStatus', execinput=['job=self.testJob.id'])
+        time = self.perfTest(dao=self.dao, action='Jobs.ClearStatus', job=self.testJob.id)
         assert time <= self.threshold, 'ClearStatus DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testUpdateName(self):         
         print "testUpdateName"
 
-        time = self.perfTest(dao=self.dao, action='Jobs.UpdateName', execinput=['id=self.testJob.id'])
+        time = self.perfTest(dao=self.dao, action='Jobs.UpdateName', id=self.testJob.id, name='NewJobName')
         assert time <= self.threshold, 'UpdateName DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testAddFiles(self):         
         print "testAddFiles"
         
-        time = self.perfTest(dao=self.dao, action='Jobs.AddFiles', execinput=['id=self.testJob.id','file=testFile.id'])
+        time = self.perfTest(dao=self.dao, action='Jobs.AddFiles', id=self.testJob.id, file=self.testFile["id"])
         assert time <= self.threshold, 'AddFiles DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
 

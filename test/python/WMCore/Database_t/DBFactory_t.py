@@ -18,8 +18,8 @@ Test that the following dburl's are correctly made:
 """
 
 
-__revision__ = "$Id: DBFactory_t.py,v 1.1 2008/08/22 11:13:22 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBFactory_t.py,v 1.2 2008/08/22 15:38:21 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -172,7 +172,7 @@ class DBFactoryTest(unittest.TestCase):
         
         self.genericTest(testname='testOracle', 
                          testoptions={'dialect':'oracle',
-                                      'sidname':'sidname',
+                                      'sid':'sidname',
                                       'username':'username',
                                       'password':'password',
                                       'host':'host',

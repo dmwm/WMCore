@@ -4,7 +4,7 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.4 2008/10/27 21:38:30 afaq Exp $"
+__revision__ = "$Id: BufferSuccess.py,v 1.5 2008/10/29 18:00:54 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -14,7 +14,11 @@ from WMCore.ThreadPool.ThreadPool import ThreadPool
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 
-import cPickle
+from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter
+from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
+from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+from DBSAPI.dbsApiException import DbsException
+
 import os
 import string
 import logging
@@ -61,19 +65,49 @@ class BufferSuccess(BaseHandler):
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
         dbinterface=factory.loadObject("UploadToDBS")
         
-        
-        #import pdb
-        #pdb.set_trace()
-        
         datasets=dbinterface.findUploadableDatasets()
         for aDataset in datasets:
+            #UPLOAD Each Dataset
             print aDataset
+            #Find files for each dataset and then UPLOAD 10 files at a time 
+            #(10 is just a number of choice now, later it will be a configurable parameter)
             files=dbinterface.findUploadableFiles(aDataset)
             print "Total files", len(files)
             for aFile in files:
                 print aFile
 
-        
+    def uploadDataset(self, workflowFile):
+        """
+        _newDatasetEvent_
+
+        Extract relevant info from the WorkFlowSpecification and loop over Dataset
+        """
+
+UPDATE DATASET STATUS ???
+        #  //                                                                      
+        # //  Contact DBS using the DBSWriter
+        #//`
+        logging.info("DBSURL %s"%self.args['DBSURL'])
+        #dbswriter = DBSWriter('fakeurl') 
+        dbswriter = DBSWriter(self.args['DBSURL'],level='ERROR')
+        #  //
+        # //  Create Processing Datsets based on workflow
+        #//
+
+        logging.info(">>>>> create Processing Dataset ")
+        #// optionally drop dataset parentage 
+        if self.DropParent:
+           for adataset in workflowSpec.payload._OutputDatasets:
+               adataset['ParentDataset']=None
+
+        dbswriter.createDatasets(workflowSpec)
+        #  //
+        # //  Create Merged Datasets for that workflow as well
+        #//
+        logging.info(">>>>> create Merged Dataset ")
+        dbswriter.createMergeDatasets(workflowSpec,getFastMergeConfig())
+        return
+
         
         
 	

@@ -4,7 +4,7 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.8 2008/10/27 21:38:29 afaq Exp $"
+__revision__ = "$Id: Create.py,v 1.9 2008/10/29 18:00:54 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -14,7 +14,6 @@ import threading
 #Example in WMCore/MsgService/MySQL/Create.py
 
 from WMCore.Database.DBCreator import DBCreator
-
 
 class Create(DBCreator):
 
@@ -28,12 +27,27 @@ class Create(DBCreator):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         
+        self.create["05dbsbuf_algo"] = \
+              """CREATE TABLE dbsbuffer_algo
+                (
+               ID     BIGINT UNSIGNED not null auto_increment,   
+               AppName varchar(100),
+               AppVer  varchar(100),
+               AppFam  varchar(100),
+               PSetHash varchar(700),
+               ConfigContent LONGTEXT,
+               LastModificationDate  BIGINT,
+               primary key(ID)    
+            ) ENGINE=InnoDB"""
+                
         self.create["01dbsbuf_dataset"] = \
-                """CREATE TABLE dbsbuffer_dataset
+              """CREATE TABLE dbsbuffer_dataset
 			(
 			   ID     BIGINT UNSIGNED not null auto_increment,
 			   Path   varchar(500)    unique not null,
 			   UnMigratedFiles BIGINT UNSIGNED Default 0,
+			   Algo bigint,
+			   AlgoInDBS    int, 
 			   LastModificationDate  BIGINT,
 			   primary key(ID)	
 			) ENGINE=InnoDB"""
@@ -43,7 +57,7 @@ class Create(DBCreator):
 			( 
 			    ID                    BIGINT UNSIGNED not null auto_increment,
 			    LFN                   varchar(500)      unique not null,
-			    Dataset 		  BIGINT UNSIGNED   not null,
+			    Dataset 		      BIGINT UNSIGNED   not null,
 			    Checksum              varchar(100)      not null,
 			    NumberOfEvents        BIGINT UNSIGNED   not null,
 			    FileSize              BIGINT UNSIGNED   not null,
@@ -58,6 +72,10 @@ class Create(DBCreator):
 		      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuf_file_ds
     			 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
 
+        self.constraints["FK_dbsbuf_ds_algo"]=\
+              """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuf_ds_algo
+                 foreign key(Algo) references dbsbuffer_algo(ID)"""
+                 
 	#self.triggers IS NOT a member so I will just use self.create for now
         self.create["03TR_dbsbuf_file_lud"]=\
                 """CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuffer_file
@@ -65,6 +83,10 @@ class Create(DBCreator):
 
         self.create["04TR_dbsbuf_ds_lud"]=\
                 """CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuffer_dataset
+                        FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
+                        
+        self.create["06TR_dbsbuf_algo_lud"]=\
+                """CREATE TRIGGER TR_dbsbuf_algo_lud BEFORE INSERT ON dbsbuffer_algo
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
 
 	#self.create["05TR_UnMigratedFiles"]=\

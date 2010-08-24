@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.1 2008/10/08 21:19:33 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2008/10/29 18:00:56 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -24,4 +24,7 @@ config.DBSUpload.maxThreads = 1
 #
 config.DBSUpload.bufferSuccessHandler = \
     'WMComponent.DBSUpload.Handler.BufferSuccess'
+    
+config.DBSUpload.newWorkflowHandler = \
+    'WMComponent.DBSUpload.Handler.NewWorkflowHandler'
 

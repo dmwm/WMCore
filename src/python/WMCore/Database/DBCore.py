@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.8 2008/05/29 14:20:02 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBCore.py,v 1.9 2008/06/02 23:56:37 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from copy import copy   
 class DBInterface(object):    
@@ -60,17 +60,19 @@ class DBInterface(object):
         _executebinds_
         """
         try:
-            self.logger.debug ('execute binds - sql : %s' % s)
-            self.logger.debug ('execute binds - binds : %s' % b)
+            self.logger.debug ('DBInterface.executebinds - sql : %s' % s)
+            self.logger.debug ('DBInterface.executebinds - binds : %s' % b)
             if b == None: 
                 result = connection.execute(s)
             else: 
                 result = connection.execute(s, b)
             return result
         except Exception, e:
-            self.logger.exception('execute binds - type: %s' % type(e))
-            self.logger.exception('execute binds - sql : %s' % s)
-            self.logger.exception('execute binds - binds : %s' % b)
+            self.logger.exception('DBInterface.executebinds - exception type: %s' % type(e))
+            self.logger.exception('DBInterface.executebinds - connection type: %s' % type(connection))
+            self.logger.exception('DBInterface.executebinds - connection %s' % connection)
+            self.logger.exception('DBInterface.executebinds - sql : %s' % s)
+            self.logger.exception('DBInterface.executebinds - binds : %s' % b)
             self.logger.debug(e)
             raise e
             
@@ -149,13 +151,13 @@ class DBInterface(object):
             
         else:
             self.logger.exception(
-                "Nothing executed, problem with your arguments")
-            self.logger.debug('sql is %s items long' % len(sqlstmt))
-            self.logger.debug('binds are %s items long' % len(binds))
+                "DBInterface.processData Nothing executed, problem with your arguments")
+            self.logger.debug('DBInterface.processData  sql is %s items long' % len(sqlstmt))
+            self.logger.debug('DBInterface.processData  binds are %s items long' % len(binds))
             asser_value = False
             if len(binds) == len(sqlstmt):
                 asser_value =True 
-            self.logger.debug('are binds and sql same length? : %s' % (assert_value))
+            self.logger.debug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
             self.logger.debug( sqlstmt, binds, connection, transaction)
             self.logger.debug( type(sqlstmt), type(binds),
                                type("string"), type({}),

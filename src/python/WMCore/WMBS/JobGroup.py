@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.10 2008/12/18 15:10:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobGroup.py,v 1.11 2009/01/05 21:49:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -79,11 +79,8 @@ class JobGroup(WMJobGroup):
         """
         Add the new jobgroup to WMBS, create the output Fileset object
         """
-        self.groupoutput = Fileset(
-                      name="output://%s_%s" % (self.subscription.name(), id))
-
-        if not self.groupoutput.exists():
-            self.groupoutput.create()
+        self.groupoutput = Fileset(name = makeUUID())
+        self.groupoutput.create()
 
         action = self.daofactory(classname='JobGroup.New')
         self.id, self.uid = action.execute(self.uid, self.subscription["id"],

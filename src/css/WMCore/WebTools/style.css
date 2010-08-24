@@ -30,7 +30,7 @@ h3{
 }
 
 dt{
-	font-size:18px;
+	font-size:22px;
 }
 
 p, li{
@@ -51,7 +51,7 @@ i{
 	color:#7da976;
 }
 
-b, a{
+b, a, dt{
 	color: #E85514;
 }
 

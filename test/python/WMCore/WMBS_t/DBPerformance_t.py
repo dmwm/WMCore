@@ -27,6 +27,10 @@ from WMCore.Database.DBFactory import DBFactory
 class DBPerformanceTest(TestCase):
 
     def setUp(self):
+        """
+        Initial settings for the DB Performance tests
+        
+        """
         "make a logger instance and create tables"
         
         logging.basicConfig(level=logging.DEBUG,
@@ -77,35 +81,22 @@ class DBPerformanceTest(TestCase):
 
         """
         try:
+            #Create a table with two rows
+            #TODO - Generalize this solution for n rows and all kinds of values            
             sqlquery = "create table test (bind1 varchar(20), bind2 varchar(20))"
             self.runTest(sqlquery)
         except OperationalError, oe:
             print oe
 
-    def perfInsert(self, binds):
+    def perfSQL(self, sql, binds={}):
         """
-        Performance test of Insert queries
+        Performance test for generic SQL queries
         Returns the total time of the query
 
         """        
-        #Creating the SQL query strings                    
-        sql = "insert into test (bind1, bind2) values (:bind1, :bind2)"        
+        #Creating the SQL query strings                           
         startTime = time.time()               
         self.runTest(sql, binds)
-        endTime = time.time()
-        diffTime = endTime - startTime
-        return diffTime
-
-    def perfSelect(self):
-        """
-        Performance test of Select queries
-        Returns the total time of the query
-
-        """
-        #Creating the SQL query strings                    
-        sql = "select * from test"
-        startTime = time.time()               
-        self.runTest(sql)
         endTime = time.time()
         diffTime = endTime - startTime
         return diffTime
@@ -122,7 +113,7 @@ class DBPerformanceTest(TestCase):
                     'bind2': 'value'+str(random.randint(1000, 9999))})   
         return values
 
-    def testDBPerformance(self, value=3, multiplier=10, increment=20, times=1000, threshold=10):
+    def testDBPerformance(self, value=3, multiplier=10, increment=20, times=1000, threshold=0.8):
         """
         Performance test for Basic DB Operations
         
@@ -147,6 +138,8 @@ class DBPerformanceTest(TestCase):
         """
         #Preparing Performance test
         b = []
+        sqlInsert = "insert into test (bind1, bind2) values (:bind1, :bind2)"        
+        sqlSelect = "select * from test"
         #Restarting the DB State        
         self.tearDown()                 
         self.createTable() 
@@ -158,12 +151,12 @@ class DBPerformanceTest(TestCase):
             b = self.genValues(value * multiplier)
             total = total + value * multiplier
             # Insert Performance results
-            diffTime = self.perfInsert(b)
+            diffTime = self.perfSQL(sqlInsert, b)
             print'Multiple Insert test time ('+str(total)+' rows): %f sec' % diffTime        
             assert diffTime <= threshold, 'Multiple Insert Test failed' \
                 '('+str(total)+' rows) - Operation too slow.'        
             #Insert Performance results
-            diffTime = self.perfSelect()
+            diffTime = self.perfSQL(sqlSelect)
             print'Select test time ('+str(total)+' rows): %f sec' % diffTime        
             assert diffTime <= threshold, 'Select Test failed' \
                 '('+str(total)+' rows), %f sec - Operation too slow.' % diffTime

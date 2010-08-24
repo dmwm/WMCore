@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.13 2008/12/10 22:27:15 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Job.py,v 1.14 2009/01/06 20:07:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import datetime
 import threading
@@ -201,7 +201,9 @@ class Job(WMJob):
         job.
         """
         files = self.file_set.getFiles(type = "id")
-        self.daofactory(classname = "Jobs.AddFiles").execute(self.id, files)
+
+        if len(files) > 0:
+            self.daofactory(classname = "Jobs.AddFiles").execute(self.id, files)
 
     def changeStatus(self, status):
         """

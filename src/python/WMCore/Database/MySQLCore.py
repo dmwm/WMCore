@@ -44,11 +44,12 @@ class MySQLInterface(DBInterface):
         
         See: http://www.devshed.com/c/a/Python/MySQL-Connectivity-With-Python/5/
         """
-        newsql = s
-        binds = b[0].keys()
-        binds.sort(key=s.index)
+        b = self.makelist(b)
         try: 
-            self.logger.debug("rewriting sql for execute_many: sql %s" % 
+            newsql = s
+            binds = b[0].keys()
+            binds.sort(key=s.index)
+            self.logger.debug("MySQLCore.executemanybinds: rewriting sql for execute_many: sql %s" % 
                               s.replace('\n', ' '))
             for k in binds:
                 newsql = newsql.replace(':%s' % k, '%s')
@@ -58,9 +59,13 @@ class MySQLInterface(DBInterface):
                 tpl = tuple( [ i[x] for x in binds] )
                 bind_list.append(tpl)
                 
-            self.logger.debug("rewritten sql for execute_many: sql %s" % \
+            self.logger.debug("MySQLCore.executemanybinds: rewritten sql for execute_many: sql %s" % \
                               newsql.replace('\n', ' '))
+            self.logger.debug("MySQLCore.executemanybinds: rewritten binds: %s" % bind_list)
         except Exception, e:
-            print s, b
+            self.logger.exception("""MySQLCore.executemanybinds failed - sql : %s
+binds : %s
+exception : %s""" % (s, b, e))
+            raise e
 
         return DBInterface.executemanybinds(self, newsql, bind_list, connection)

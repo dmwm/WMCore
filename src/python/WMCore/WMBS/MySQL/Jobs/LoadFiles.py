@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFiles
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFiles.py,v 1.1 2008/11/20 17:19:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFiles.py,v 1.2 2009/01/11 17:44:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -32,7 +32,7 @@ class LoadFiles(DBFormatter):
                 out.append(i[0])
         return out
                
-    def execute(self, id):
+    def execute(self, id, conn = None, transaction = False):
         """
         _execute_
 
@@ -40,6 +40,6 @@ class LoadFiles(DBFormatter):
         the result.
         """        
         binds = self.getBinds(jobid = id)
-        result = self.dbi.processData(self.sql, binds)
-        
+        result = self.dbi.processData(self.sql, binds, conn = conn,
+                                      transaction = transaction)
         return self.format(result)

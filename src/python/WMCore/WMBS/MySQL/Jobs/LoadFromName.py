@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFromName.
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.1 2008/11/20 17:19:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromName.py,v 1.2 2009/01/11 17:44:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -19,7 +19,8 @@ class LoadFromName(DBFormatter):
     job group and last update time.  This will also retrieve the job mask
     if one exists.
     """
-    sql = "SELECT ID, NAME, JOBGROUP, LAST_UPDATE FROM wmbs_job WHERE NAME = :name"
+    sql = """SELECT ID, NAME, JOBGROUP, LAST_UPDATE FROM wmbs_job WHERE
+             NAME = :name"""
     
     def format(self, resultProxy):
         """
@@ -39,12 +40,12 @@ class LoadFromName(DBFormatter):
         
         return out
                
-    def execute(self, name):
+    def execute(self, name, conn = None, transaction = False):
         """
         _execute_
 
         """
         binds = self.getBinds(name = name)
-        result = self.dbi.processData(self.sql, binds)
-        
+        result = self.dbi.processData(self.sql, binds, conn = conn,
+                                      transaction = transaction)
         return self.format(result)

@@ -6,13 +6,13 @@ MySQL implementation of Jobs.ExistsByID
 """
 
 __all__ = []
-__revision__ = "$Id: ExistsByID.py,v 1.1 2008/12/05 21:02:05 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ExistsByID.py,v 1.2 2009/01/11 17:44:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ExistsByID(DBFormatter):
-    sql = "select id from wmbs_job where id = :id"
+    sql = "SELECT id FROM wmbs_job WHERE id = :id"
     
     def format(self, result):
         result = DBFormatter.format(self, result)
@@ -25,6 +25,7 @@ class ExistsByID(DBFormatter):
     def getBinds(self, id):
         return self.dbi.buildbinds(self.dbi.makelist(id), "id")
         
-    def execute(self, id):
-        result = self.dbi.processData(self.sql, self.getBinds(id))
+    def execute(self, id, conn = None, transaction = False):
+        result = self.dbi.processData(self.sql, self.getBinds(id),
+                                      conn = conn, transaction = transaction)
         return self.format(result)

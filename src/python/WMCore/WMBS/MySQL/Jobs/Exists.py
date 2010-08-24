@@ -6,8 +6,8 @@ MySQL implementation of Jobs.Exists
 """
 
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.2 2008/11/20 21:52:32 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Exists.py,v 1.3 2009/01/11 17:44:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -25,6 +25,7 @@ class Exists(DBFormatter):
     def getBinds(self, name):
         return self.dbi.buildbinds(self.dbi.makelist(name), "name")
         
-    def execute(self, name):
-        result = self.dbi.processData(self.sql, self.getBinds(name))
+    def execute(self, name, conn = None, transaction = False):
+        result = self.dbi.processData(self.sql, self.getBinds(name),
+                                      conn = conn, transaction = transaction)
         return self.format(result)

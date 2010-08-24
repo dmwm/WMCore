@@ -34,9 +34,9 @@ messages after it is handled.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.9 2009/01/16 20:21:51 fvlingen Exp $"
+    "$Id: MsgService.py,v 1.10 2009/02/27 22:18:02 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.9 $"
+    "$Revision: 1.10 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -103,6 +103,8 @@ class MsgService:
         self.currentMsgTable = None
         # how long do we wait to check again for messages.
         self.pollTime = 5
+        # list of buffers we might need to empty.
+        self.checkBuffers = []
 
     ##########################################################################
     # register method 
@@ -384,10 +386,10 @@ class MsgService:
         # after inserting messages we need to check if certain buffers
         # are full and purge/move data.
 
-        checkBuffers = ['ms_history_buffer', 'ms_history_priority_buffer']
+        self.checkBuffers = ['ms_history_buffer', 'ms_history_priority_buffer']
         # update the actual message tables/buffers.
         for tableDest in msg.keys():
-            checkBuffers.append(tableDest)
+            self.checkBuffers.append(tableDest)
             if len(msg[tableDest])>0: 
                 args = {'table' : tableDest, 'msgs' : msg[tableDest]}
                 self.query.insertMsg(args = args)
@@ -403,16 +405,16 @@ class MsgService:
                 self.query.insertMsg(args = args)
 
         # check if we need to emtpty the buffer.
-        logging.debug("Checking if following buffers are full: " \
-            + str(checkBuffers))
-        for tableName in checkBuffers:
-            bufferSize = self.query.tableSize(args = tableName)
-            if bufferSize > self.bufferSize:
-                logging.debug("Buffer full for: "+tableName+". Purging")
-                target = tableName[0:tableName.find("_buffer")]
-                args = {'source' : tableName, 'target' : target}
-                logging.debug("moving messages: " + str(args))
-                self.query.moveMsgFromBufferIn(args = args)
+#        logging.debug("Checking if following buffers are full: " \
+#            + str(self.checkBuffers))
+#        for tableName in self.checkBuffers:
+#            bufferSize = self.query.tableSize(args = tableName)
+#            if bufferSize > self.bufferSize:
+#                logging.debug("Buffer full for: "+tableName+". Purging")
+#                target = tableName[0:tableName.find("_buffer")]
+#                args = {'source' : tableName, 'target' : target}
+#                logging.debug("moving messages: " + str(args))
+#                self.query.moveMsgFromBufferIn(args = args)
         if instant:
             self.instantMsg = {}
             self.instantPriorityMsg = {}
@@ -522,11 +524,12 @@ class MsgService:
         message = None
         myThread = threading.currentThread()
         while True:
-            myThread.transaction.begin()
             logging.debug("Checking messages for: "+self.name)
             # check if there are any messages at all for us:
             args = {'table':'ms_available_priority', 'procid':self.procid}
+            myThread.transaction.begin()
             result = self.query.msgAvailable(args)
+            myThread.transaction.commit()
             # there is a message, lets look for it
             if result[0] == 'there':
                 self.currentMsgTable = priorityBufferOut
@@ -534,31 +537,29 @@ class MsgService:
                 message = self.query.getMsg({'table':priorityBufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
-                    myThread.transaction.commit()
                     break 
                 #nothing from buffer, move (if any) from big table to buffer_out
                 args = {'source': priorityQueue, \
                         'target':priorityBufferOut, \
                         'procid':self.procid, \
-                        'buffer_size':self.bufferSize}
+                        'buffer_size':self.bufferSize-10}
                 self.query.moveMsgToBufferOut(args)
                 message = self.query.getMsg({'table':priorityBufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
-                    myThread.transaction.commit()
                     break 
                 args = {'source': priorityBufferIn, \
                         'target':priorityBufferOut, \
                         'procid':self.procid, \
-                        'buffer_size':self.bufferSize}
+                        'buffer_size':self.bufferSize-10}
                 self.query.moveMsgToBufferOut(args)
                 message = self.query.getMsg({'table':priorityBufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
-                    myThread.transaction.commit()
                     break 
                 msgs = 0
                 sqlArgs = {'procid':self.procid}
+                myThread.transaction.begin()
                 args ={'tableName':priorityBufferIn,'sqlArgs':sqlArgs}
                 msgs += self.query.inQueueForComponent(args)
                 args ={'tableName':priorityBufferOut,'sqlArgs':sqlArgs}
@@ -571,8 +572,11 @@ class MsgService:
                 if msgs == 0:
                     args = {'table':'ms_available_priority', 'procid':self.procid}
                     self.query.noMsgs(args)
+                myThread.transaction.commit()
             args = {'table':'ms_available', 'procid':self.procid}
+            myThread.transaction.begin()
             result = self.query.msgAvailable(args)
+            myThread.transaction.commit()
             # there is a message, lets look for it
             if result[0] == 'there':
                 # try buffer out.
@@ -580,30 +584,28 @@ class MsgService:
                 message = self.query.getMsg({'table':bufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
-                    myThread.transaction.commit()
                     break 
                 #nothing from buffer, move (if any) from big table to buffer_out
                 args = {'source': queue, 'target':bufferOut, \
-                        'procid':self.procid, 'buffer_size':self.bufferSize}
+                        'procid':self.procid, 'buffer_size':self.bufferSize-10}
                 self.query.moveMsgToBufferOut(args)
                 message = self.query.getMsg({'table':bufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
-                    myThread.transaction.commit()
                     break 
                 args = {'source': bufferIn, 'target':bufferOut, \
-                        'procid':self.procid, 'buffer_size':self.bufferSize}
+                        'procid':self.procid, 'buffer_size':self.bufferSize-10}
                 self.query.moveMsgToBufferOut(args)
                 message = self.query.getMsg({'table':bufferOut, \
                                              'procid':self.procid}) 
                 if message != {}:
-                    myThread.transaction.commit()
                     break 
                 # there was a message but we did not find it, this means it 
                 # can be a delayed message. Count if there are messages for us
                 # if not set ms_available flag.
                 msgs = 0
                 sqlArgs = {'procid':self.procid}
+                myThread.transaction.begin()
                 args ={'tableName':bufferIn,'sqlArgs':sqlArgs}
                 msgs += self.query.inQueueForComponent(args)
                 args ={'tableName':bufferOut,'sqlArgs':sqlArgs}
@@ -613,6 +615,7 @@ class MsgService:
                 if msgs == 0: 
                     args = {'table':'ms_available', 'procid':self.procid}
                     self.query.noMsgs(args)
+                myThread.transaction.commit()
 
             if not wait:
                 # return immediately with no message
@@ -620,7 +623,6 @@ class MsgService:
                 return (None, None)
             logging.debug("Sleeping "+str(self.pollTime)+ \
                 " seconds and check for messages again")
-            myThread.transaction.commit()
             time.sleep(self.pollTime)      
 
         self.currentMsg = message
@@ -653,11 +655,12 @@ class MsgService:
         ...<do your potentially long standing operations>...
         MsgService.finish()
         """
-        # publish unpublished messages.
         myThread = threading.currentThread()
         myThread.transaction.begin()
+        # publish unpublished messages.
         self.deliver()
         # check if the history tables are not too large
+
         self.cleanHistory()
         # remove the message from the queu that we where working on.
         if self.currentMsgTable != None and self.currentMsg != None:
@@ -667,6 +670,53 @@ class MsgService:
             self.currentMsgTable = None
             self.currentMsg = None
         myThread.transaction.commit()
+
+        # check buffers.
+        myThread.transaction.begin()
+        args1 = []
+        state = {}
+        for buffer in self.checkBuffers:
+            args1.append(buffer)
+            state[buffer] = 'undecided'
+        result = self.query.getBufferState(args1)
+        for buffer,status in result:
+            state[buffer] = state
+        args2 = []
+        for buffer in state.keys():
+            if state[buffer] != 'checking':
+                args2.append({'buffername':buffer, 'state':'checking'})
+        if len(args2) > 0:
+            self.query.setBufferState(args2)
+        myThread.transaction.commit()
+        if len(args2) == 0:
+            return
+
+        # do your buffer stuff. 
+        # check if we need to emtpty the buffer.
+        logging.debug("Checking if following buffers are full: " \
+            + str(self.checkBuffers))
+        for tableName in self.checkBuffers:
+            myThread.transaction.begin()
+            bufferSize = self.query.tableSize(args = tableName)
+            myThread.transaction.commit()
+            if bufferSize > self.bufferSize:
+                logging.debug("Buffer full for: "+tableName+". Purging")
+                target = tableName[0:tableName.find("_buffer")]
+                args = {'source' : tableName, 'target' : target, 'limit' : self.bufferSize - 10}
+                logging.debug("moving messages: " + str(args))
+                self.query.moveMsgFromBufferIn(args = args)
+
+        # reset check buffers.
+        self.checkBuffers = []
+        myThread.transaction.begin()
+        args3 = []
+        for buffer in args2:
+            args3.append({'buffername':buffer['buffername'], 'state':'not_checking'})
+        self.query.setBufferState(args3) 
+        myThread.transaction.commit()
+           
+        
+         
 
     ##########################################################################
     # purgeMessages method 

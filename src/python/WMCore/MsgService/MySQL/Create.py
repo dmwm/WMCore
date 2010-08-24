@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.6 2008/09/09 13:50:35 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Create.py,v 1.7 2009/02/27 22:18:02 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -325,6 +325,13 @@ CREATE TABLE `ms_available_priority` (
   `status` enum('there','not_there') default 'not_there',	
    UNIQUE (`procid`),
    FOREIGN KEY(`procid`) references `ms_process`(`procid`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+"""
+        self.create['to_ms_checkbuffer'] = """
+CREATE TABLE `ms_check_buffer` (
+  `buffer` varchar(100) NOT NULL,
+  `status` enum('checking','not_checking') default 'not_checking',	
+   UNIQUE (`buffer`)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
  

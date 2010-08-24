@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.19 2009/02/11 16:51:21 fvlingen Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Harness.py,v 1.20 2009/02/27 22:18:02 fvlingen Exp $"
+__version__ = "$Revision: 1.20 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -68,7 +68,7 @@ class Harness:
             compSect.componentDir
         except:
             compSect.componentDir =  os.path.join(self.config.General.workDir, \
-                self.config.Agent.componentName)
+                'Components/'+self.config.Agent.componentName)
         # we have name and location of the log files. Now make sure there
         # is a directory.
         try:
@@ -419,7 +419,10 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         logging.debug("Receiving message of type: "+str(type)+\
         ", payload: "+str(payload))
         self.__call__(type, payload)
-
+        # make sure the message is set to finish if the type is empty.
+        myThread = threading.currentThread()
+        myThread.msgService.finish()
+        
     def startDeamon(self, keepParent = False):
         """
         Same result as start component, except that the comopnent
@@ -471,7 +474,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                     +" that have been registered")
                 # when we call the msgService.finish we finally remove the msg
                 # from the queu.
-                myThread.msgService.finish()
+                #myThread.msgService.finish()
                 for transaction in myThread.transactions.keys():
                     transaction.commit()
                 logging.debug(">>>Finished handling message of type "+ \

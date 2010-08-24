@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.7 2009/01/26 16:11:58 fvlingen Exp $"
+    "$Id: TestInit.py,v 1.8 2009/02/27 22:18:02 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.7 $"
+    "$Revision: 1.8 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -45,6 +45,13 @@ class TestInit:
         """
         Sets logging parameters
         """
+        # remove old logging instances.
+        logger1 = logging.getLogger()
+        logger2 = logging.getLogger(self.testClassName)
+        for logger in [logger1, logger2]:
+            for handler in logger.handlers:
+                logger.removeHandler(handler)
+
         self.init.setLogging(self.testClassName, self.testClassName,
                              logExists = False, logLevel = logLevel)
 

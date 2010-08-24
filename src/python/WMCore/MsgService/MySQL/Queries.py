@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 #pylint: disable-msg=E1103
 
+#FIXME: there are many commit statements
+# in these methods. Perhaps they can be factored out.
+# but be careful this can lead to deadlock exceptions.
 """
 _Queries_
 
@@ -10,9 +13,9 @@ service.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.6 2008/09/16 15:03:03 fvlingen Exp $"
+    "$Id: Queries.py,v 1.7 2009/02/27 22:18:02 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.6 $"
+    "$Revision: 1.7 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -276,6 +279,7 @@ INSERT INTO %s(procid) VALUES(:procid) ON DUPLICATE KEY UPDATE status = 'there'
 
         inserts messages in specific (buffer) tables.
         """
+
         sqlStr = """
 INSERT INTO %s(type,source,dest,payload,delay) VALUES(:type,:source,:dest,:payload,:delay)
 """ % (args['table'])
@@ -328,6 +332,7 @@ DELETE FROM %s WHERE messageid = :msgId
 
         Gets the actual messages keeping in mind possible delays.
         """
+        myThread = threading.currentThread()
 
         sqlStr = """
 SELECT %s.messageid as messageid, ms_type.name as name, %s.payload as payload,
@@ -337,9 +342,11 @@ AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP and
 %s.dest=:procid ORDER BY time,messageid LIMIT 1 """ % (args['table'], \
         args['table'], args['table'], args['table'], args['table'], \
         args['table'], args['table'], args['table'])
+        myThread.transaction.begin()
         result = self.execute(sqlStr, {'procid':args['procid']})
-        return self.formatOneDict(result)
-
+        result = self.formatOneDict(result)
+        myThread.transaction.commit()
+        return result
 
     def insertComponentMsgTables(self, componentName):
         """
@@ -474,16 +481,18 @@ SELECT COUNT(*) FROM %s WHERE dest= :procid
         Moves message from one table to another.
 
         """
+        myThread = threading.currentThread()
         sqlStr1 = """
 INSERT INTO %s(type,source,dest,payload,time,delay) 
-SELECT type,source,dest,payload,time,delay FROM %s
-""" % (str(args['target']), str(args['source']))
+SELECT type,source,dest,payload,time,delay FROM %s order by messageid limit %s
+""" % (str(args['target']), str(args['source']), str(args['limit']))
         sqlStr2 = """ 
-DELETE FROM %s 
-""" % (str(args['source']))
+DELETE FROM %s order by messageid limit %s
+""" % (str(args['source']), str(args['limit']))
 
-        self.execute(sqlStr1, {})
-        self.execute(sqlStr2, {})
+        myThread.transaction.begin()
+        self.execute(sqlStr1+';'+sqlStr2+';commit', {})
+        myThread.transaction.commit()
 
     def moveMsgToBufferOut(self, args):
         """
@@ -492,6 +501,8 @@ DELETE FROM %s
         Moves messages from buffer in or the main queue to buffer out
 
         """
+        # this transaction happens allone.
+        myThread = threading.currentThread()
 
         sqlStr1 = """
 INSERT INTO %s(type,source,dest,payload,delay,time) 
@@ -506,8 +517,11 @@ DELETE FROM %s WHERE dest=:procid
 AND ADDTIME(%s.time,%s.delay) <= CURRENT_TIMESTAMP 
 ORDER BY messageid LIMIT %s 
 """ % (args['source'], args['source'], args['source'], args['buffer_size'])  
-        self.execute(sqlStr1, {'procid':args['procid']})
-        self.execute(sqlStr2, {'procid':args['procid']})
+
+        myThread.transaction.begin()
+        self.execute(sqlStr1+';'+sqlStr2+';commit', {'procid':args['procid']})
+        myThread.transaction.commit()
+
 
     def removeMessageType(self, args):
         """
@@ -549,6 +563,36 @@ SELECT MAX(messageid) from %s
 DELETE FROM %s WHERE messageid < %s
 """ % (args['table'], str(args['maxId']))
         self.execute(sqlStr, {})
+
+    def setBufferState(self, args):
+        """
+        __setBufferState__
+
+        Sets the state of a buffer
+        """
+        sqlStr = """
+INSERT IGNORE INTO ms_check_buffer(buffer, status) VALUES(:buffername,:state)
+"""
+        self.execute(sqlStr,args)
+
+    def getBufferState(self, args):
+        """
+        __bufferState__
+
+        Returns the state of the buffer using 
+        a blocking (FOR UPDATE) select
+        """
+        if len(args) == 0:
+            return []
+        if len(args) == 1:
+            sqlStr = """
+SELECT buffer, status FROM ms_check_buffer WHERE buffer='%s' FOR UPDATE """ %(str(args[0]))
+        else:
+            sqlStr = """
+SELECT buffer, status FROM ms_check_buffer WHERE buffer IN %s FOR UPDATE """ %(str(tuple(args)))
+
+        result = self.execute(sqlStr,{})
+        return self.format(result)
 
     def execute(self, sqlStr, args):
         """"

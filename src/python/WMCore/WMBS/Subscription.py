@@ -19,12 +19,13 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.16 2008/08/13 15:16:30 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Subscription.py,v 1.17 2008/10/01 21:33:04 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.WMBS.Actions.Subscriptions.ChangeState import ChangeStateAction
@@ -88,32 +89,47 @@ class Subscription(BusinessObject, WMSubscription):
         self.split_algo = result['split_algo']
              
     def filesOfStatus(self, status=None):
+        """
+        fids will be a set of id's, we'll then load the corresponding file 
+        objects.
+        """
+        fids = Set()
         files = Set()
         action = self.daofactory(classname='Subscriptions.Get%s' % status)
         for f in action.execute(self.id):
-            files.add(f[0])
+            fids.add(f[0])
+            fl = File(id=f[0], 
+                           logger=self.logger, 
+                           dbfactory=self.dbfactory)
+            fl.load()
+            files.add(fl)
         return files 
                      
     def acquireFiles(self, files = [], size = 0):
         """
-        Acquire size files as active for the subscription. If size = 0 
-        acquire all files (default behaviour).
+        Acquire size files, activating them for the subscription. If size = 0 
+        acquire all files (default behaviour). Return a list of files objects 
+        for those acquired.
         """
         action = self.daofactory(classname='Subscriptions.AcquireFiles')
         files = self.makelist(files)
         if len(files):
             action.execute(self.id, [x.id for x in files])
-            return [x.id for x in files]
+            return files
         else:
+            acq = self.acquiredFiles()
             files = self.availableFiles()
             l = Set()
             if len(files) < size or size == 0:
                 size = len(files)
-            for i in range(size):
-                l.add(files.pop())
+            i = 0
+            while i < size:
+                l.add(files.pop()['id'])
                 i = i + 1
             action.execute(self.id, [x for x in l])
-            return l
+            ret = self.acquiredFiles() - acq
+            
+            return ret
     
     def completeFiles(self, files):
         """

@@ -12,8 +12,8 @@ TABLE wmbs_subscription
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.2 2008/06/23 09:36:17 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: New.py,v 1.3 2008/06/24 16:57:41 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
@@ -28,12 +28,13 @@ class New(MySQLBase):
                 values (:fileset, :workflow, :type)"""
         else:
             sql = """insert into wmbs_subscription (fileset, workflow, type, last_update) 
-                values (:fileset, :workflow :type, :timestamp)"""
+                values (:fileset, :workflow, :type, :timestamp)"""
         return sql
         
-    def execute(self, fileset = None, timestamp = None, type = 'Processing',\
+    def execute(self, fileset = None, workflow = None, timestamp = None, type = 'Processing',\
                     spec = None, owner = None, conn = None, transaction = False):
         binds = self.getBinds(fileset = fileset, 
+                              workflow = workflow,
                               timestamp = timestamp, 
                               type = type,
                               spec = spec, 

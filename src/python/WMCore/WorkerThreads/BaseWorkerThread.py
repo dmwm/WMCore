@@ -7,8 +7,8 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.2 2009/02/01 11:04:28 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.3 2009/02/01 11:41:40 jacksonj Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -31,6 +31,9 @@ class BaseWorkerThread:
         # Reference to the owner component
         self.component = None 
         
+        # Termination callback function
+        self.terminateCallback = None
+        
         # Get the current DBFactory
         myThread = threading.currentThread()
         self.dbFactory = myThread.dbFactory
@@ -46,34 +49,42 @@ class BaseWorkerThread:
         Thread entry point; handles synchronisation with run and terminate
         conditions
         """
-        logging.info("Started running new worker thread")
-        
-        # Call specific thread startup method
-        self.setup(parameters)
-        
-        # Run event loop while termination is not flagged
-        while not self.terminate.isSet():
-            # Check manager hasn't paused threads
-            if self.pause.isSet():
-                self.resume.wait()
-            else:
-                # Catch case where threads were paused and then terminated
-                #  - threads should not run in this case!
-                if not self.terminate.isSet():
-                    # Do some work!
-                    try:
-                        self.doWork(parameters)
-                    except Exception, ex:
-                        logging.error("Error in worker thread: %s" % str(ex))
+        try:
+            # Call specific thread startup method
+            self.setup(parameters)
             
-                    # Put the thread to sleep
-                    time.sleep(self.frequency)
-                    
-        # Call specific thread termination method
-        self.terminate(parameters)
-        
-        #ÊAll done!
-        logging.info("Worker thread terminated")
+            msg = "BaseWorkerThread: Worker thread %s started" % str(self)
+            logging.info(msg)
+            
+            # Run event loop while termination is not flagged
+            while not self.terminate.isSet():
+                # Check manager hasn't paused threads
+                if self.pause.isSet():
+                    self.resume.wait()
+                else:
+                    # Catch case where threads were paused and then terminated
+                    #  - threads should not run in this case!
+                    if not self.terminate.isSet():
+                        # Do some work!
+                        try:
+                            self.algorithm(parameters)
+                        except Exception, ex:
+                            msg = "BaseWorkerThread: Error in worker thread: "
+                            msg += str(ex)
+                            logging.error(msg)
+                
+                        # Put the thread to sleep
+                        time.sleep(self.frequency)
+                        
+            # Call specific thread termination method
+            self.terminate(parameters)
+        finally:
+            # Notify manager
+            self.terminateCallback()
+            
+            #ÊAll done!
+            msg = "BaseWorkerThread: Worker thread %s terminated" % str(self)
+            logging.info(msg)
     
     def setup(self, parameters):
         """

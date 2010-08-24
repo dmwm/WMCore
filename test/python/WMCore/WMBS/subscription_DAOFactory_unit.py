@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.5 2008/07/04 17:17:37 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.6 2008/07/21 15:21:35 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest, logging, os, commands, random, datetime
 import sys, traceback
@@ -44,26 +44,35 @@ class BaseFilesTestCase(unittest.TestCase):
         self.daofactory1 = DAOFactory(package='WMCore.WMBS', logger=self.mysqllogger, dbinterface=self.dbf1.connect())
         self.daofactory2 = DAOFactory(package='WMCore.WMBS', logger=self.sqlitelogger, dbinterface=self.dbf2.connect())
         
-        theMySQLCreator = self.daofactory1(classname='CreateWMBS')
-        createworked = theMySQLCreator.execute()
+        createworked = False
+        try:
+            theMySQLCreator = self.daofactory1(classname='CreateWMBS')
+            createworked = theMySQLCreator.execute()
+        except:
+            pass
         if createworked:
             self.testlogger.debug("WMBS MySQL database created")
         else:
             self.testlogger.debug("WMBS MySQL database could not be created, already exists?")
-            
-        theSQLiteCreator = self.daofactory2(classname='CreateWMBS')
-        createworked = theSQLiteCreator.execute()
+        createworked = False
+        try:   
+            theSQLiteCreator = self.daofactory2(classname='CreateWMBS')
+            createworked = theSQLiteCreator.execute()
+        except:
+            pass
         if createworked:
             self.testlogger.debug("WMBS SQLite database created")
         else:
             self.testlogger.debug("WMBS SQLite database could not be created, already exists?")
         
         self.selist = ['lcgse01.phy.bris.ac.uk', 'lcgse02.phy.bris.ac.uk', 'se01.fnal.gov', 'se02.fnal.gov']
-        
-        for se in self.selist:
-            self.daofactory1(classname='Locations.New').execute(sename=se)
-            self.daofactory2(classname='Locations.New').execute(sename=se)
-        
+        try:
+            for se in self.selist:
+                self.daofactory1(classname='Locations.New').execute(sename=se)
+                self.daofactory2(classname='Locations.New').execute(sename=se)
+        except:
+            pass
+                
     def tearDown(self):
         """
         Delete the databases
@@ -83,29 +92,35 @@ class SubscriptionDAOObjectTestCase(BaseFilesTestCase):
         BaseFilesTestCase.setUp(self)
     
 class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
+    ran = False
     def setUp(self):
-        BaseFilesTestCase.setUp(self)
-        c = 0
-        self.workflow = []
-        self.fileset = []
-        for dbi in self.dbf1, self.dbf2:
-            self.workflow.append(Workflow(spec='/home/metson/workflow.xml', 
-                                 owner='metson', 
-                                 name='My Analysis', 
-                                 logger=self.testlogger, 
-                                 dbfactory=dbi))
-            self.workflow[c].create()
+        if not self.ran:
+            BaseFilesTestCase.setUp(self)
+            c = 0
+            self.workflow = []
+            self.fileset = []
+            for dbi in self.dbf1, self.dbf2:
+                self.workflow.append(Workflow(spec='/home/metson/workflow.xml', 
+                                     owner='metson', 
+                                     name='My Analysis', 
+                                     logger=self.testlogger, 
+                                     dbfactory=dbi))
+                self.workflow[c].create()
+                
+                self.fileset.append(Fileset(name='MyCoolFiles', logger=self.testlogger, 
+                                     dbfactory=dbi))
+                self.fileset[c].create()
+                c = c + 1 
+            self.ran = True
+        
+    def tearDown(self):
+        if not self.ran:
+            BaseFilesTestCase.tearDown(self)
             
-            self.fileset.append(Fileset(name='MyCoolFiles', logger=self.testlogger, 
-                                 dbfactory=dbi))
-            self.fileset[c].create()
-            c = c + 1 
-            self.daofactory1(classname='Files.AddToFileset')
-    
     def createSubs(self, testlogger):
         subscriptions = []
         c = 0
-        for dbi in [self.dbf1]:#, self.dbf2:
+        for dbi in [self.dbf1, self.dbf2]:
             subscriptions.append(Subscription(fileset = self.fileset[c], 
                                             workflow = self.workflow[c], 
                                             logger=testlogger, 
@@ -126,7 +141,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
         self.createSubs(testlogger) #Put some subscriptions into the database
         subscriptions = []
         c = 0
-        for dbi in [self.dbf1]:#, self.dbf2:
+        for dbi in [self.dbf1, self.dbf2]:
             subscriptions.append(Subscription(fileset = self.fileset[c], 
                                             workflow = self.workflow[c], 
                                             logger=testlogger, 
@@ -144,12 +159,17 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
                              1000, 2000, 10 + i, 12312))
         for dao in self.daofactory1, self.daofactory2:
             dao(classname='Files.Add').execute(files=filelist)
-            def strim(tuple): return tuple[0]
-            filelist = map(strim, filelist)
+            dao(classname='Files.AddRunLumi').execute(files=filelist)
+        
+        def strim(tuple): return tuple[0]
+        filelist = map(strim, filelist)
+        
+        for dao in self.daofactory1, self.daofactory2:     
             dao(classname='Files.AddToFileset').execute(file=filelist, fileset='MyCoolFiles')
+        
         subscriptions = []
         c = 0
-        for dbi in [self.dbf1]:#, self.dbf2:
+        for dbi in [self.dbf1, self.dbf2]:
             subscriptions.append(Subscription(fileset = self.fileset[c], 
                                             workflow = self.workflow[c], 
                                             logger=testlogger, 
@@ -170,10 +190,14 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
                 testlogger.debug("\tacquired %i" % len(acquired))
                 testlogger.debug("\tcomplete %i" % len(complete))
                 testlogger.debug("\tfailed %i" % len(failed))
-                assert len(avail) + len(acquired) + len(complete) + len(failed) == num_files, "number of files not consistent"
+                assert len(avail) + len(acquired) + len(complete) + len(failed) == num_files, \
+                    "iteration %s - number of files not consistent: avail:%s acqu:%s comp:%s fail:%s total:%s" % \
+                    (i, len(avail), len(acquired), len(complete), len(failed), num_files)
                 testlogger.debug(subscriptions[c].acquireFiles(size=10))
                 fail_prob = i / 4
                 complete_prob = i / 1.5
+                
+                #Pretend to run jobs
                 for f in subscriptions[c].acquiredFiles():
                     if random.randint(0 , 15) < fail_prob:
                         subscriptions[c].failFiles(f)

@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.4 2008/07/03 16:39:49 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.5 2008/07/21 15:21:35 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -133,7 +133,8 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
             assert type(i) == type([]), \
                 'lists is not type list \n \t %s' % (type(i))
         
-        assert themysqllist == thesqllitelist, \
+        for i in range(0, len(themysqllist)):
+            assert themysqllist[i][0:2] == thesqllitelist[i][0:2], \
             'lists do not match \n \t %s \n \t %s' % (themysqllist, thesqllitelist)
             
         print " List action is dialect neutral" 

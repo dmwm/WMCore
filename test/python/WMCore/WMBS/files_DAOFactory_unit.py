@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: files_DAOFactory_unit.py,v 1.5 2008/07/03 15:57:19 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: files_DAOFactory_unit.py,v 1.6 2008/07/21 15:21:35 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -85,31 +85,35 @@ class FilesDAOObjectTestCase(BaseFilesTestCase):
         assert newFS.execute(name='fs001')
         
         self.action1 = self.daofactory1(classname='Files.Add')
+        self.action5 = self.daofactory1(classname='Files.AddRunLumi')
         self.action2 = self.daofactory1(classname='Files.AddToFileset')
         self.action3 = self.daofactory1(classname='Files.InFileset')
         self.action4 = self.daofactory1(classname='Files.SetLocation')
         
         self.action1a = self.daofactory2(classname='Files.Add')
+        self.action5a = self.daofactory2(classname='Files.AddRunLumi')
         self.action2a = self.daofactory2(classname='Files.AddToFileset')
         self.action3a = self.daofactory2(classname='Files.InFileset')
         self.action4a = self.daofactory2(classname='Files.SetLocation')
         
-    def testCreaate(self, notest=False):
+    def testCreate(self, notest=False):
         file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1231.root"
         
-        self.action1.execute(files=file, size=1000, events=2000, run=10, lumi=12312)
-        self.action1a.execute(files=file, size=1000, events=2000, run=10, lumi=12312)
+        self.action1.execute(files=file, size=1000, events=2000)
+        self.action1a.execute(files=file, size=1000, events=2000)
+        self.action5.execute(files=file, run=10, lumi=12312)
+        self.action5a.execute(files=file, run=10, lumi=12312)
         
         self.action2.execute(file=file, fileset='fs001')
         self.action2a.execute(file=file, fileset='fs001')
         
         list = self.action3.execute(fileset='fs001')
         assert len(list) == 1, \
-            "list has wrong length (%s not 1) \n \t %s" %(len(list), list)
+            "action3 list has wrong length (%s not 1) \n \t %s" %(len(list), list)
         
         list = self.action3a.execute(fileset='fs001')
         assert len(list) == 1, \
-            "list has wrong length (%s not 1) \n \t %s" %(len(list), list)
+            "action3a list has wrong length (%s not 1) \n \t %s" %(len(list), list)
         
     def testListCreate(self, notest=False):
         filelist = []
@@ -119,6 +123,8 @@ class FilesDAOObjectTestCase(BaseFilesTestCase):
         
         self.action1.execute(files=filelist)
         self.action1a.execute(files=filelist)
+        self.action5.execute(files=filelist)
+        self.action5a.execute(files=filelist)
 
         def strim(tuple): return tuple[0]
         filelist = map(strim, filelist)
@@ -172,9 +178,10 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
     def testFile(self):
         file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1231.root"
         
-        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
-        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
-        
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         myfile1 = File(lfn=file, logger=self.mysqllogger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=self.sqlitelogger, dbfactory=self.dbf2)
         
@@ -185,8 +192,10 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1645.root"
         
-        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
-        self.daofactory2(classname='Files.Add').execute(files=file, size=2000, events=1000, run=10, lumi=12312)
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=2000, events=1000)
+        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile3 = File(lfn=file, logger=self.mysqllogger, dbfactory=self.dbf1)
         myfile4 = File(lfn=file, logger=self.sqlitelogger, dbfactory=self.dbf2)
@@ -224,8 +233,10 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
          
         file = "/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1231.root"
         
-        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
-        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000, run=10, lumi=12312)
+        self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
+        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)

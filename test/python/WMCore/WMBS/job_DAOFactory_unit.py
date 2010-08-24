@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: job_DAOFactory_unit.py,v 1.1 2008/07/07 09:44:13 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: job_DAOFactory_unit.py,v 1.2 2008/07/21 15:21:35 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands, random, datetime
 
@@ -20,6 +20,7 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Actions.Files.FullAdd import FullAddAction
 #pylint --rcfile=../../../../standards/.pylintrc  ../../../../src/python/WMCore/WMBS/Fileset.py
 
 class BaseJobsTestCase(unittest.TestCase):
@@ -105,8 +106,10 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
         for i in range(0,num_files):
             filelist.append(("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
                              1000, 2000, 10 + i, 12312))
+        adder = FullAddAction(testlogger)
         for dao in self.daofactory1, self.daofactory2:
-            dao(classname='Files.Add').execute(files=filelist)
+            adder.execute(files=filelist,
+                                  daofactory = dao)
             def strim(tuple): return tuple[0]
             filelist = map(strim, filelist)
             dao(classname='Files.AddToFileset').execute(file=filelist, fileset='MyCoolFiles')

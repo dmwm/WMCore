@@ -6,24 +6,15 @@ MySQL implementation of JobGroup.LoadJobs
 """
 
 __all__ = []
-__revision__ = "$Id: LoadJobs.py,v 1.2 2009/01/12 16:49:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadJobs.py,v 1.3 2009/01/14 16:45:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadJobs(DBFormatter):
-    sql = "select id from wmbs_job where jobgroup = :jobgroup"
-
-    def format(self, results):
-        results = DBFormatter.format(self, results)        
-        out = []
-        for result in results:
-            out.append(result[0])
-
-        return out
+    sql = "SELECT id FROM wmbs_job WHERE jobgroup = :jobgroup"
 
     def execute(self, jobgroup, conn = None, transaction = False):
-        binds = self.getBinds(jobgroup = jobgroup)
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
-        return self.format(result)
+        result = self.dbi.processData(self.sql, {"jobgroup": jobgroup},
+                                      conn = conn, transaction = transaction)
+        return self.formatDict(result)

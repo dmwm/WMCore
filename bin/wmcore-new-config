@@ -8,8 +8,8 @@ together into one big configuration file that operators can then
 edit.
 """
 
-__revision__ = "$Id: wmcore-new-config,v 1.2 2009/01/26 13:23:43 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: wmcore-new-config,v 1.3 2009/02/06 10:16:45 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -92,7 +92,6 @@ config.CoreDatabase.passwd = 'some_pass'
 config.CoreDatabase.hostname = 'localhost'
 config.CoreDatabase.name = 'wmbs'
 
-
 for root in roots:
     # find the DefaultConfig.py files.
     for topdir, dirs, files in os.walk(root, topdown=False):
@@ -100,11 +99,13 @@ for root in roots:
             if name == 'DefaultConfig.py':
                 location = os.path.join(topdir, name)
                 config_section = loadConfigurationFile(location)
+                print('adding: '+location)
                 for component in config_section.listComponents_():
                     compAttr = config_section.component_(component)
                     compAttr.ComponentDir = os.path.join(config.General.workDir, component)
-                print('adding: '+location)
+                    config.component_(component)
                 config += config_section
+
 
 saveConfigurationFile(config, outputFile, comment = True)
 

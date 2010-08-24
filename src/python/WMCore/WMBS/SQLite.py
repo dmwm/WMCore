@@ -5,8 +5,8 @@ _WMBSSQLLite_
 SQLite specific implementations
 
 """
-__revision__ = "$Id: SQLite.py,v 1.5 2008/05/01 17:31:24 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SQLite.py,v 1.6 2008/05/02 13:49:43 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 import datetime
 import time
 from WMCore.WMBS.MySQL import MySQLDialect
@@ -92,12 +92,16 @@ and file not in
 and file not in 
     (select file from wmbs_sub_files_complete where subscription=:subscription)
 """
-
+        self.select['idofsubscription'] = """
+            select id from wmbs_subscription where type=(select id from wmbs_subs_type where name = :type) 
+                and workflow = (select id from wmbs_workflow where spec = :spec and owner = :owner)
+                and fileset=(select id from wmbs_fileset where name =:fileset)
+        """
         self.select['subscriptionsoftype'] = """
-select id, fileset from wmbs_subscription 
+select id, fileset, workflow from wmbs_subscription 
 where type=(select id from wmbs_subs_type where name = :type)"""
         self.select['subscriptionsforfilesetoftype'] = """
-select id from wmbs_subscription 
+select id, workflow from wmbs_subscription 
 where type=(select id from wmbs_subs_type where name = :type) 
 and fileset=(select id from wmbs_fileset where name =:fileset)"""
     

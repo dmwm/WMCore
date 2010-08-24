@@ -7,8 +7,8 @@ MySQL Compatibility layer for WMBS
 
 """
 
-__revision__ = "$Id: MySQL.py,v 1.5 2008/05/01 17:31:24 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: MySQL.py,v 1.6 2008/05/02 13:49:43 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBCore import DBInterface
 
@@ -185,14 +185,19 @@ CREATE TABLE wmbs_sub_files_complete (
         self.select['filesetexists'] = """select count (*) from wmbs_fileset 
             where name = :name"""
         self.select['subscriptionsoftype'] = """
-            select id, fileset from wmbs_subscription where type=:type
+            select id, fileset, workflow from wmbs_subscription where type=:type
         """
         self.select['subscriptionsforfileset'] = """
-            select id, type from wmbs_subscription 
+            select id, workflow, type from wmbs_subscription 
                 where fileset=(select id from wmbs_fileset where name =:fileset)
         """
         self.select['subscriptionsforfilesetoftype'] = """
+            select id, workflow from wmbs_subscription where type=:type 
+                and fileset=(select id from wmbs_fileset where name =:fileset)
+        """
+        self.select['idofsubscription'] = """
             select id from wmbs_subscription where type=:type 
+                and workflow = (select id from wmbs_workflow where spec = :spec and owner = :owner)
                 and fileset=(select id from wmbs_fileset where name =:fileset)
         """
         self.select['filesetforsubscription'] = """
@@ -507,7 +512,15 @@ CREATE TABLE wmbs_sub_files_complete (
             for f in fileset:
                 binds.append({'fileset': f, 'spec': spec, 'owner': owner, 'type': subtype})
             self.processData(self.insert['newsubscription'], binds, 
-                             conn = conn, transaction = transaction)  
+                             conn = conn, transaction = transaction) 
+            
+    def subscriptionID(self, fileset = None, spec = None, owner = None,
+                        subtype='processing', 
+                        conn = None, transaction = False):
+        binds = {'fileset': fileset, 'spec': spec, 'owner': owner, 'type': subtype}
+        return self.processData(self.select['idofsubscription'], binds, 
+                             conn = conn, transaction = transaction)
+        
             
     def subscriptionsForFileset(self, fileset = None, subtype=None, 
                                 conn = None, transaction = False):

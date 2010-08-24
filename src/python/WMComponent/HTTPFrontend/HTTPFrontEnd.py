@@ -66,10 +66,10 @@ class Root:
         self.factory = WMFactory('generic')
         self.components = []
  
-    def addComponent(self, component):
+    def addComponent(self, componentPath, config):
         # take the last field of the module name for the web page name
-        oneWordName = component.split('.')[-1]
-        self.__dict__[oneWordName] = self.factory.loadObject(component)
+        oneWordName = componentPath.split('.')[-1]
+        self.__dict__[oneWordName] = self.factory.loadObject(componentPath, config)
         self.components.append(oneWordName)
 
     def index(self):
@@ -151,7 +151,7 @@ class HTTPFrontEnd(Harness):
         
         root = Root(baseUrl)
         for component in self.config.HTTPFrontEnd.components:
-            root.addComponent(component)
+            root.addComponent(component, self.config)
         cherrypy.tree.mount(root)
         cherrypy.server.quickstart()
         cherrypy.engine.start()
@@ -184,6 +184,6 @@ if __name__ == '__main__':
 
     harness = HTTPFrontEnd(config)
     harness.prepareToStart()
-    #harness.handleMessage("HTTPFrontendStart", "GOGOGOGOGO")
+    harness.handleMessage("HTTPFrontendStart", "GOGOGOGOGO")
     #harness.handleMessage("HTTPFrontendStop", "WHOAWHOAWHOA")
     harness.startComponent()

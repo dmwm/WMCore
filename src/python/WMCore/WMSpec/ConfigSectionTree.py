@@ -7,8 +7,8 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-__revision__ = "$Id: ConfigSectionTree.py,v 1.1 2009/02/04 17:44:22 evansde Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ConfigSectionTree.py,v 1.2 2009/02/05 17:10:28 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Configuration import ConfigSection
@@ -64,16 +64,25 @@ def nodeMap(node):
         result.update(nodeMap(getattr(node.tree.children, child)))
     return result
 
+
 def findTopNode(node):
     """
     _findTopNode_
 
     Find the top node of a tree of nodes given an arbitrary node in the tree
-
+    Checks for non None parent, will also stop if the internal_treetop flag
+    is set for the parent
     """
-    if nodeParent(node) == None:
+    parent = nodeParent(node)
+    if parent == None:
         return node
+    if getattr(node, "_internal_treetop", False):
+        return node
+
+    if getattr(parent, "_internal_treetop", False):
+        return parent
     return findTopNode(nodeParent(node))
+
 
 def allNodeNames(node):
     """
@@ -84,6 +93,8 @@ def allNodeNames(node):
     """
     topNode = findTopNode(node)
     return listNodes(topNode)
+
+
 
 def addNode(currentNode, newNode):
     """
@@ -145,6 +156,12 @@ class TreeHelper:
         """get name of this node"""
         return nodeName(self.data)
 
+    def setTopOfTree(self):
+        """
+        flag this node as the top of the tree
+        """
+        self.data._internal_treetop = True
+
     def listNodes(self):
         """list this node and all subnodes"""
         return listNodes(self.data)
@@ -195,6 +212,7 @@ class ConfigSectionTree(ConfigSection):
 
     def __init__(self, name):
         ConfigSection.__init__(self, name)
+        self._internal_treetop = False
         self.section_("tree")
         self.tree.section_("children")
         self.tree.childNames = []

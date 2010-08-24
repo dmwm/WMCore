@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.8 2008/09/09 17:04:13 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.9 2008/09/19 13:44:20 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest, logging, os, commands, random, datetime
 import sys, traceback
@@ -157,7 +157,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
         num_files = 1000
         
         c = 0
-        for dbi in [self.dbf1]:#, self.dbf2]:
+        for dbi in [self.dbf1, self.dbf2]:
             for i in range(0,num_files):
                 f = File(lfn="/store/data/Electrons/1234/5678/%s.root" % i, 
                          size=1000, 
@@ -177,7 +177,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
         
         subscriptions = []
         c = 0
-        for dbi in [self.dbf1]:#, self.dbf2]:
+        for dbi in [self.dbf1, self.dbf2]:
             subscriptions.append(Subscription(fileset = self.fileset[c], 
                                             workflow = self.workflow[c], 
                                             logger=testlogger, 

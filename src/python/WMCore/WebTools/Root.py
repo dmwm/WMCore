@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.14 2009/02/02 12:10:43 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Root.py,v 1.15 2009/02/03 23:38:39 rpw Exp $"
+__version__ = "$Revision: 1.15 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -30,6 +30,7 @@ from WMCore.DAOFactory import DAOFactory
 import WMCore.WMLogging
 import logging 
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.WebTools.Welcome import Welcome
 
 class Root(WMObject):
     def __init__(self, config):
@@ -87,7 +88,8 @@ class Root(WMObject):
         
         globalconf = self.appconfig.dictionary_()
         del globalconf['views'] 
-        del globalconf['index']
+        if 'index' in globalconf.keys():
+            del globalconf['index']
          
         for view in self.appconfig.views.active:
             #Iterate through each view's configuration and instantiate the class
@@ -137,7 +139,20 @@ class Root(WMObject):
         for i in self.appconfig.views.maintenance:
             #TODO: Show a maintenance page
             pass
-    
+
+        # now make the index page
+        if hasattr(self.appconfig, 'index'):
+            self.homePage = getattr(self, self.appconfig.index)
+        else:
+            namesAndDocstrings = []
+            # make a default Welcome
+            for view in self.appconfig.views.active:
+               viewName = view._internal_name
+               viewObj = getattr(self, viewName)
+               docstring = viewObj.__doc__
+               namesAndDocstrings.append((viewName, docstring))
+            self.homepage = Welcome(namesAndDocstrings)
+
     def loadDatabase(self, configSection):
         #TODO: allow a configSection to contain a DBInterface
 #        dblist = []
@@ -158,8 +173,7 @@ class Root(WMObject):
     
     @expose
     def index(self):
-        index = self.appconfig.index
-        return eval('self.%s.index()' % index)
+        return self.homepage.index() 
     
     @expose
     def default(self, *args, **kwargs):

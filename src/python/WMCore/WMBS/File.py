@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.40 2009/01/21 14:55:32 sfoulkes Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: File.py,v 1.41 2009/01/26 20:49:32 sryu Exp $"
+__version__ = "$Revision: 1.41 $"
 
 from sets import Set
 
@@ -59,17 +59,17 @@ class File(WMBSBase, WMFile):
                list(self['parents'])
 
     def getLocations(self):
-	"""
-	Get a list of locations for this file
-	"""
-	return list(self['locations'])
+        """
+        Get a list of locations for this file
+        """
+        return list(self['locations'])
 
     def getRuns(self):
-	"""
-	Get a list of run lumi objects (List of Set() of type
+        """
+	    Get a list of run lumi objects (List of Set() of type
         WMCore.DataStructs.Run)
-	"""
-	return list(self['runs'])
+	    """
+        return list(self['runs'])
                                     
     def getParentLFNs(self):
         """
@@ -117,10 +117,10 @@ class File(WMBSBase, WMFile):
         if self["id"] < 0 or self["lfn"] == "":
             self.load()
             
-	action = self.daofactory(classname = "Files.GetRunLumiFile")
-	runs = action.execute(self["lfn"], conn = self.getReadDBConn(), 
+        action = self.daofactory(classname = "Files.GetRunLumiFile")
+        runs = action.execute(self["lfn"], conn = self.getReadDBConn(), 
                               transaction = self.existingTransaction())
-	[self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
 
         action = self.daofactory(classname = "Files.GetLocation")
         self["locations"] = action.execute(self["lfn"], conn = self.getReadDBConn(),
@@ -158,12 +158,12 @@ class File(WMBSBase, WMFile):
                           conn = self.getWriteDBConn(),
                           transaction = self.existingTransaction())
 
-	if len(self["runs"]) > 0:
-        	lumiAction = self.daofactory(classname="Files.AddRunLumi")
-        	lumiAction.execute(file = self["lfn"], runs = self["runs"],
+        if len(self["runs"]) > 0:
+            lumiAction = self.daofactory(classname="Files.AddRunLumi")
+            lumiAction.execute(file = self["lfn"], runs = self["runs"],
                                    conn = self.getWriteDBConn(),
                                    transaction = self.existingTransaction())
-        
+            
         self.updateLocations()
         self.load()
         self.commitIfNew()
@@ -213,6 +213,29 @@ class File(WMBSBase, WMFile):
         action = self.daofactory(classname='Files.Heritage')
         action.execute(child=self['id'], parent=parent['id'], conn = self.getWriteDBConn(),
                        transaction = self.existingTransaction())
+        self.commitIfNew()
+        return
+    
+    def addRunSet(self, runSet):
+        """
+        add the set of runs.  This should be called after a file is created,
+        unlike addRun which should be called before the file was created.
+        runSet should be set of DataStruct.Run
+        also there should be no duplicate entries in runSet.
+        (May need to change in schema level not to allow duplicate record)
+        """
+        lumiAction = self.daofactory(classname="Files.AddRunLumi")
+        lumiAction.execute(file = self["lfn"], runs = runSet,
+                           conn = self.getWriteDBConn(),
+                           transaction = self.existingTransaction())
+        
+        # update the self["runs"]
+        self["runs"].clear()
+        action = self.daofactory(classname = "Files.GetRunLumiFile")
+        runs = action.execute(self["lfn"], conn = self.getReadDBConn(), 
+                              transaction = self.existingTransaction())
+        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+
         self.commitIfNew()
         return
     

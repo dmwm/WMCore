@@ -39,6 +39,37 @@ so typically you would have something like this:
 source your external package setup.sh
 source the WMCORE setup.sh
 
+Also edit any other setup_* files as you see fit.
+
+If you want to run the tests. Read the section on Testing.
+
+Assuming you want to run a specific test with a sepcific backend you can 
+do the following:
+
+edit the 'test_code' file and comment out the backends you do not want to test
+(e.g. oracle)
+
+edit the 'conf_test_mysql.py' and locate the test you want to test. (e.g. ProxyTest)
+
+Copy paste this code after the last test is loaded. It empties the tests array and only
+inserts your speicific test:
+
+tests = []
+
+try:
+   x=ProxyTest()
+   tests.append((x,"fvlingen"))
+except Exception,ex:
+   if not errors.has_key("fvlingen"):
+       errors["fvlingen"] = []
+   errors["fvlingen"].append(("ProxyTest",str(ex)))
+
+Save the file and execute test_code
+
+Note: when you first run the tests mysql will initialize things and for some 
+reason some tests fail for the first time. Running them again (after mysql 
+is initialized) makes them succeed.
+
 CODE STANDARD:
 =============
 Use pylint and the pylint test file located under:

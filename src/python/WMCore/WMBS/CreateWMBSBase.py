@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.14 2008/11/26 20:16:51 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.15 2008/12/02 19:28:37 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import threading
 
@@ -44,7 +44,11 @@ class CreateWMBSBase(DBCreator):
                                "12wmbs_sub_files_complete",
                                "13wmbs_jobgroup",
                                "14wmbs_job",
-                               "15wmbs_job_assoc"]
+                               "15wmbs_job_assoc",
+                               "16wmbs_group_job_acquired",
+                               "17wmbs_group_job_failed",
+                               "18wmbs_group_job_complete",
+                               "19wmbs_job_mask"]
         
         
         self.create["01wmbs_fileset"] = \

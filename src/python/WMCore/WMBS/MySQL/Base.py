@@ -9,12 +9,20 @@ class MySQLBase(object):
         self.logger = logger
         self.dbi = dbinterface
     
+    def truefalse(self, value):
+        if value in ('False', 'FALSE', 'n', 'NO', 'No'):
+            value = 0
+        return bool(value)
+        
+    def convertdatetime(self, t):
+        return int(time.mktime(t.timetuple()))
+          
     def timestamp(self):
         """
         generate a timestamp
         """
         t = datetime.datetime.now()
-        return time.mktime(t.timetuple())
+        return self.convertdatetime(t)
         
     def format(self, result):
         """

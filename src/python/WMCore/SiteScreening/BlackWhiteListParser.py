@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.2 2008/10/15 13:54:10 ewv Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.3 2008/10/29 20:19:17 ewv Exp $"
+__version__  = "$Revision: 1.3 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -27,46 +27,34 @@ class BlackWhiteListParser(object):
     (and simple wildcards), but internally filters only on the CE/SE name.
     """
 
-    def __init__(self, cfgParams, logger=None):
+    def __init__(self, whiteList=None, blackList=None, logger=None):
         self.logger = logger
         self.kind = 'se'
         self.mapper = None # Defined by Super class
         self.siteDBAPI = SiteDBJSON()
-        self.blacklist = None
-        self.whitelist = None
+        if type(whiteList) == type("string"):
+            whiteList = whiteList.split(',')
+        elif type(whiteList) == type([]):
+            pass
+        else:
+            raise TypeError
 
-    def configure(self, cfgParams):
-        """
-        Load up the black and white list from the configuation parameters
-           * EDG.SE/CE_black_list
-           * EDG.SE/CE_white_list
-        and expand things that SiteDB knows the CMS names for
-        """
+        if type(blackList) == type("string"):
+            blackList = blackList.split(',')
+        elif type(blackList) == type([]):
+            pass
+        else:
+            raise TypeError
 
-        self.blacklist = []
-        if cfgParams.has_key('EDG.%s_black_list' % self.kind):
-            userInput = cfgParams['EDG.%s_black_list' % self.kind]
-            self.blacklist = self.expandList(userInput)
-        self.logger.debug(5,'Converted %s blacklist: %s' %
-                          (self.kind, ', '.join(self.blacklist)))
+        self.blacklist = sets.Set(self.expandList(whiteList))
+        self.whitelist = sets.Set(self.expandList(blackList))
 
-        self.whitelist = []
-        if cfgParams.has_key('EDG.%s_white_list' % self.kind):
-            userInput = cfgParams['EDG.%s_white_list' % self.kind]
-            self.whitelist = self.expandList(userInput)
-        self.logger.debug(5, 'Converted %s whitelist: %s' %
-                          (self.kind, ', '.join(self.whitelist)))
 
-        self.blacklist = sets.Set(self.blacklist)
-        self.whitelist = sets.Set(self.whitelist)
-
-    def expandList(self, userInput):
+    def expandList(self, userList):
         """
         Contact SiteDB to expand lists like T2_US into lists of
         actual SE names and CE names.
         """
-
-        userList = userInput.split(',')
         expandedList = []
         hadErrors = False
         for item in userList:
@@ -90,6 +78,7 @@ class BlackWhiteListParser(object):
             self.logger.message("List is %s" % expandedList)
 
         return expandedList
+
 
     def checkBlackList(self, sites, fileblocks=''):
         """
@@ -119,6 +108,7 @@ class BlackWhiteListParser(object):
             self.logger.debug(5, "Selected sites for block %s via blacklist " \
                 "are %s.\n" % (', '.join(fileblocks), ', '.join(goodSites)))
         return goodSites
+
 
     def checkWhiteList(self, sites, fileblocks=''):
         """
@@ -150,6 +140,7 @@ class BlackWhiteListParser(object):
                 " are %s.\n" % (', '.join(fileblocks), ', '.join(goodSites)))
 
         return goodSites
+
 
     def cleanForBlackWhiteList(self, destinations, isList=False):
         """
@@ -232,11 +223,10 @@ class SEBlackWhiteListParser(BlackWhiteListParser):
     from the user's input; see the documentation for BlackWhiteListParser.
     """
 
-    def __init__(self, cfgParams, logger=None):
-        super(SEBlackWhiteListParser, self).__init__(cfgParams, logger)
+    def __init__(self, whiteList=None, blackList=None,  logger=None):
+        super(SEBlackWhiteListParser, self).__init__(whiteList, blackList, logger)
         self.kind = 'se'
         self.mapper = self.siteDBAPI.cmsNametoSE
-        self.configure(cfgParams)
 
 
 
@@ -246,8 +236,7 @@ class CEBlackWhiteListParser(BlackWhiteListParser):
     from the user's input; see the documentation for BlackWhiteListParser.
     """
 
-    def __init__(self, cfgParams, logger=None):
-        super(CEBlackWhiteListParser, self).__init__(cfgParams, logger)
+    def __init__(self, whiteList=None, blackList=None,  logger=None):
+        super(CEBlackWhiteListParser, self).__init__(whiteList, blackList, logger)
         self.kind = 'ce'
         self.mapper = self.siteDBAPI.cmsNametoCE
-        self.configure(cfgParams)

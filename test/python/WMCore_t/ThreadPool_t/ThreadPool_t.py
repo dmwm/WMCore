@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.2 2008/09/26 14:48:07 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.3 2008/10/03 12:17:24 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import unittest
@@ -77,22 +77,23 @@ class ThreadPoolTest(unittest.TestCase):
         """
         Deletion of database
         """
+        # FIXME: this might not work if your not using socket.
         myThread = threading.currentThread()
         if ThreadPoolTest._teardown and myThread.dialect == 'MySQL':
             command = 'mysql -u root --socket='\
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "drop database ' \
+            + os.getenv('DBSOCK') \
+            +' --exec "drop database ' \
             + os.getenv('DBNAME')+ '"'
             commands.getstatusoutput(command)
 
             command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
+            + os.getenv('DBSOCK')+' --exec "' \
             + os.getenv('SQLCREATE') + '"'
             commands.getstatusoutput(command)
 
             command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "create database ' \
+            + os.getenv('DBSOCK') \
+            + ' --exec "create database ' \
             +os.getenv('DBNAME')+ '"'
             commands.getstatusoutput(command)
         ThreadPoolTest._teardown = False

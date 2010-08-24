@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.7 2008/05/21 17:54:01 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DBCore.py,v 1.8 2008/05/29 14:20:02 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from copy import copy   
 class DBInterface(object):    
@@ -94,7 +94,22 @@ class DBInterface(object):
                         %s''' % sqlstmt)
             result.append(self.executebinds(sqlstmt, 
                                             connection=connection))  
-                      
+        elif isinstance(sqlstmt, list) and binds is None:
+            # Should only be run by create statements
+            if not transaction: 
+                trans = connection.begin()
+            try:
+                for i in sqlstmt:
+                    self.logger.warning('''The following statement is not using binds!! \n 
+                        %s''' % i)
+                    result.append(self.executebinds(i, connection=connection))
+                if not transaction: 
+                    trans.commit()
+            except Exception, e:
+                if not transaction: 
+                    trans.rollback()
+                raise e 
+            
         elif type(sqlstmt) == type("string") and isinstance(binds, dict):
             # single statement plus binds
             result.append(self.executebinds(sqlstmt, binds, 
@@ -137,12 +152,15 @@ class DBInterface(object):
                 "Nothing executed, problem with your arguments")
             self.logger.debug('sql is %s items long' % len(sqlstmt))
             self.logger.debug('binds are %s items long' % len(binds))
-            self.logger.debug('are binds and sql same length? : %s' % (
-                (len(binds) == len(sqlstmt))))
+            asser_value = False
+            if len(binds) == len(sqlstmt):
+                asser_value =True 
+            self.logger.debug('are binds and sql same length? : %s' % (assert_value))
             self.logger.debug( sqlstmt, binds, connection, transaction)
             self.logger.debug( type(sqlstmt), type(binds),
                                type("string"), type({}),
                                type(connection), type(transaction))
+            raise Exception
         if not conn: 
             connection.close() # Return connection to the pool
         return result

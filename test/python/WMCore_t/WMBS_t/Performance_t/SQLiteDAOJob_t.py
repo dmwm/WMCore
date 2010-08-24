@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 
-import unittest, commands
+"""
+__SQLiteDAOJobTest__
+
+DB Performance testcase for WMBS Job class
+
+
+"""
+import unittest
 
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.Job_t import JobTest
-from WMCore.DAOFactory import DAOFactory
 
 class SQLiteDAOJobTest(JobTest, SQLiteDAOTest, TestCase):
     """
@@ -17,13 +23,18 @@ class SQLiteDAOJobTest(JobTest, SQLiteDAOTest, TestCase):
     """
 
     def setUp(self):
+        """
+        Specific SQLite DAO WMBS Job object Testcase setUp
 
+        """
         SQLiteDAOTest.setUp(self)
-        JobTest.setUp(self,sqlURI=self.sqlURI, logarg='SQLite')
-        #Set the specific threshold for the testm
-        self.threshold = 1
+        JobTest.setUp(self, sqlURI=self.sqlURI, logarg='SQLite')
 
     def tearDown(self):
+        """
+        Specific SQLite DAO WMBS Job object Testcase setUp
+
+        """
         #Call superclass tearDown method
         JobTest.tearDown(self)
         SQLiteDAOTest.tearDown(self)

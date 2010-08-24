@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 
-import unittest, commands
+"""
+__SQLiteDAOWorkflowTest__
+
+DB Performance testcase for WMBS File class
+
+
+"""
+import unittest
 
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.Workflow_t import WorkflowTest
-from WMCore.DAOFactory import DAOFactory
 
 class SQLiteDAOWorkflowTest(WorkflowTest, SQLiteDAOTest, TestCase):
     """
@@ -17,13 +23,18 @@ class SQLiteDAOWorkflowTest(WorkflowTest, SQLiteDAOTest, TestCase):
     """
 
     def setUp(self):
+        """
+        Specific SQLite DAO WMBS Workflow object Testcase setUp
 
+        """
         SQLiteDAOTest.setUp(self)
-        WorkflowTest.setUp(self,sqlURI=self.sqlURI, logarg='SQLite')
-        #Set the specific threshold for the testm
-        self.threshold = 1
+        WorkflowTest.setUp(self, sqlURI=self.sqlURI, logarg='SQLite')
 
     def tearDown(self):
+        """
+        Specific SQLite DAO WMBS Workflow object Testcase tearDown
+
+        """
         #Call superclass tearDown method
         WorkflowTest.tearDown(self)
         SQLiteDAOTest.tearDown(self)

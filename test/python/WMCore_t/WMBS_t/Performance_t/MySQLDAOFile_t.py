@@ -1,11 +1,17 @@
 #!/usr/bin/env python
 
-import unittest, commands
+"""
+__MySQLDAOFileTest__
+
+DB Performance testcase for WMBS File class
+
+
+"""
+import unittest
 
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.File_t import FileTest
-from WMCore.DAOFactory import DAOFactory
 
 class MySQLDAOFile_t(FileTest, MySQLDAOTest, TestCase):
     """
@@ -17,11 +23,18 @@ class MySQLDAOFile_t(FileTest, MySQLDAOTest, TestCase):
     """
 
     def setUp(self):
+        """
+        Specific MySQL DAO WMBS File object Testcase setUp    
 
+        """
         MySQLDAOTest.setUp(self)
         FileTest.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
 
     def tearDown(self):
+        """
+        Specific MySQL DAO WMBS File object Testcase tearDown    
+
+        """
         #Call superclass tearDown method
         FileTest.tearDown(self)
         MySQLDAOTest.tearDown(self)

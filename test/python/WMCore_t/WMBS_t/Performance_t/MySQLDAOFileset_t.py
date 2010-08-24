@@ -1,13 +1,20 @@
 #!/usr/bin/env python
 
+"""
+__MySQLDAOFilesetTest__
+
+DB Performance testcase for WMBS Fileset class
+
+
+"""
+
 import unittest
 
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.Fileset_t import FilesetTest
-from WMCore.DAOFactory import DAOFactory
 
-class MySQLDAOFileset_t(FilesetTest,MySQLDAOTest,TestCase):
+class MySQLDAOFileset_t(FilesetTest, MySQLDAOTest, TestCase):
     """
     __MySQLDAOFilesetTest__
 
@@ -17,13 +24,18 @@ class MySQLDAOFileset_t(FilesetTest,MySQLDAOTest,TestCase):
     """
 
     def setUp(self):
+        """
+        Specific MySQL DAO WMBS Fileset object Testcase setUp    
 
+        """
         MySQLDAOTest.setUp(self)
         FilesetTest.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
-        #Set the specific threshold for the testm
-        self.threshold = 1
 
     def tearDown(self):
+        """
+        Specific MySQL DAO WMBS Fileset object Testcase tearDown    
+
+        """
         #Call superclass tearDown method
         FilesetTest.tearDown(self)
         MySQLDAOTest.tearDown(self)

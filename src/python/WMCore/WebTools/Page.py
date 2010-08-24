@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.2 2009/01/09 16:31:22 valya Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Page.py,v 1.3 2009/01/10 15:42:54 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import cherrypy
 from cherrypy import log
@@ -15,10 +15,9 @@ class Page(object):
     
     Page is a base class that holds a configuration
     """
-    def __init__(self, config):
+    def __init__(self, config = {}):
         self.config = config
-        self.app = self.config[0]['root']['application']
-        
+    
 class TemplatedPage(Page):
     """
     __TemplatedPage__
@@ -29,15 +28,12 @@ class TemplatedPage(Page):
         Page.__init__(self, config)
         
         self.templatedir = ''
-        if 'templates' in self.config[0].keys():
-            self.templatedir = self.config[0]['templates']
-        elif 'templates' in self.config[0]['root'].keys():  
-            self.templatedir = self.config[0]['root']['templates']
+        if 'templates' in self.config.keys():
+            self.templatedir = self.config['templates']
         else:
             # Take a guess
             self.templatedir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'Templates')
-            
-        log("templates are located in: %s" % self.templatedir, context=self.app, 
+        log("templates are located in: %s" % self.templatedir, context=self.config['application'], 
             severity=logging.DEBUG, traceback=False)
         
     def templatepage(self, file=None, *args, **kwargs):
@@ -52,7 +48,7 @@ class TemplatedPage(Page):
             return template.respond()
         else:
             log("%s not found at %s" % (file, self.templatedir), 
-                        context=self.app, severity=logging.WARNING)
+                        context=self.config['application'], severity=logging.WARNING)
             return "Template %s not known" % file
 
 class SecuredPage(Page):
@@ -69,10 +65,10 @@ class SecuredPage(Page):
             userdn  = cherrypy.request.headers['Cms-Client-S-Dn']
             access  = cherrypy.request.headers['Cms-Auth-Status']
             if  userdn != '(null)' and access == 'OK':
-                log("Found user cert", context=self.app, 
+                log("Found user cert", context=self.config['application'], 
                     severity=logging.DEBUG, traceback=False)
         except:
-            log("No cert found in a browser", context=self.app, 
+            log("No cert found in a browser", context=self.config['application'], 
                 severity=logging.DEBUG, traceback=False)
         return userdn
 

@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.16 2008/12/02 19:29:59 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.17 2008/12/11 08:56:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import threading
 
@@ -54,7 +54,7 @@ class CreateWMBSBase(DBCreator):
         
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
-             id          INTEGER      PRIMARY KEY AUTOINCREMENT,
+             id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              name        VARCHAR(255) NOT NULL,
              open        INT(1)       NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
@@ -62,7 +62,7 @@ class CreateWMBSBase(DBCreator):
         
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
-             id           INTEGER      PRIMARY KEY AUTOINCREMENT,
+             id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
              lfn          VARCHAR(255) NOT NULL,
              size         INTEGER,
              events       INTEGER,
@@ -95,7 +95,7 @@ class CreateWMBSBase(DBCreator):
         
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
-             id      INTEGER      PRIMARY KEY AUTOINCREMENT,
+             id      INTEGER      PRIMARY KEY AUTO_INCREMENT,
              se_name VARCHAR(255) NOT NULL,
              UNIQUE(se_name))"""
              
@@ -111,14 +111,14 @@ class CreateWMBSBase(DBCreator):
         
         self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
-             id           INTEGER      PRIMARY KEY AUTOINCREMENT,
+             id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
              spec         VARCHAR(255) NOT NULL,
              name         VARCHAR(255) NOT NULL,
              owner        VARCHAR(255))"""
 
         self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
-             id          INTEGER      PRIMARY KEY AUTOINCREMENT,
+             id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              fileset     INTEGER      NOT NULL,
              workflow    INTEGER      NOT NULL,
              split_algo  VARCHAR(255) NOT NULL DEFAULT 'File',
@@ -168,7 +168,7 @@ class CreateWMBSBase(DBCreator):
 
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
-             id           INTEGER      PRIMARY KEY AUTOINCREMENT,
+             id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
              subscription INTEGER      NOT NULL,
              uid          VARCHAR(255),
              output       INTEGER,
@@ -181,7 +181,7 @@ class CreateWMBSBase(DBCreator):
 
         self.create["14wmbs_job"] = \
           """CREATE TABLE wmbs_job (
-             id          INTEGER   PRIMARY KEY AUTOINCREMENT,
+             id          INTEGER   PRIMARY KEY AUTO_INCREMENT,
              jobgroup    INTEGER   NOT NULL,
              name        VARCHAR(255),             
              last_update INTEGER   NOT NULL,
@@ -256,4 +256,3 @@ class CreateWMBSBase(DBCreator):
         except Exception, e:
             print "ERROR: %s" % e
             return False
-    

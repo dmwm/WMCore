@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.2 2008/07/03 16:56:23 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: File.py,v 1.3 2008/07/21 16:18:41 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable 
 class File(Pickleable):
@@ -23,3 +23,7 @@ class File(Pickleable):
         self.dict["run"] = run
         self.dict["lumi"] = lumi
         self.dict["parents"] = parents
+        self.dict['locations'] = []
+        
+    def setLocation(self, se):
+        self.dict['locations'] = se

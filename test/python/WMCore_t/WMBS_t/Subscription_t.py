@@ -921,11 +921,79 @@ class Subscription_t(unittest.TestCase):
         testSubscriptionB.load()
         testSubscriptionC.load()
 
+        assert testWorkflow.id == testSubscriptionB["workflow"].id, \
+               "ERROR: Subscription load by ID didn't load workflow correctly"
+
+        assert testFileset.id == testSubscriptionB["fileset"].id, \
+               "ERROR: Subscription load by ID didn't load fileset correctly"        
+
+        assert testSubscriptionA["id"] == testSubscriptionC["id"], \
+               "ERROR: Subscription didn't load ID correctly."
+
+        return
+
+    def testLoadData(self):
+        """
+        _testLoadData_
+
+        Test the Subscription's loadData() method to make sure that everything
+        that should be loaded is loaded correctly.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20)
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20)
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)        
+        testFileset.commit()
+
+        testSubscriptionA = Subscription(fileset = testFileset,
+                                         workflow = testWorkflow)
+        testSubscriptionA.create()
+
+        testSubscriptionB = Subscription(id = testSubscriptionA["id"])
+        testSubscriptionC = Subscription(workflow = testSubscriptionA["workflow"],
+                                         fileset = testSubscriptionA["fileset"])
+        testSubscriptionB.loadData()
+        testSubscriptionC.loadData()
+
         assert (testWorkflow.id == testSubscriptionB["workflow"].id) and \
                (testWorkflow.name == testSubscriptionB["workflow"].name) and \
                (testWorkflow.spec == testSubscriptionB["workflow"].spec) and \
                (testWorkflow.owner == testSubscriptionB["workflow"].owner), \
-               "ERROR: Subscription load by ID didn't load workflow correctly"
+               "ERROR: Workflow.LoadFromID Failed"
+
+        assert testFileset.id == testSubscriptionB["fileset"].id, \
+               "ERROR: Load didn't load fileset id"
+
+        assert testFileset.name == testSubscriptionB["fileset"].name, \
+               "ERROR: Load didn't load fileset name"
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testSubscriptionB["fileset"].files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        assert testSubscriptionA["id"] == testSubscriptionC["id"], \
+               "ERROR: Subscription didn't load ID correctly."
 
         return
        

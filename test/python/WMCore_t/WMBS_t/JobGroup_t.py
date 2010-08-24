@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.8 2009/01/12 16:50:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.9 2009/01/14 17:01:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import logging
@@ -207,9 +207,6 @@ class Job_t(unittest.TestCase):
         """
         _testLoad_
 
-        Create a JobGroup and save it to the database.  Create a new JobGroup
-        and then attempt to load the first one into it from the database.
-        Compare the two JobGroup to make sure they're identical.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -245,32 +242,34 @@ class Job_t(unittest.TestCase):
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.load()
+        testJobGroupC = JobGroup(uid = testJobGroupA.uid)
+        testJobGroupC.load()
 
+        assert testJobGroupB.uid == testJobGroupA.uid, \
+               "ERROR: Job group did not load uid correctly."
+
+        assert testJobGroupC.id == testJobGroupA.id, \
+               "ERROR: Job group did not load id correctly."
+        
         assert testJobGroupB.subscription["id"] == testSubscription["id"], \
                "ERROR: Job group did not load subscription correctly"
 
-        goldenJobs = [testJobA.id, testJobB.id]
-        for job in testJobGroupB.jobs:
-            assert job.id in goldenJobs, \
-                   "ERROR: JobGroup loaded an unknown job"
-            goldenJobs.remove(job.id)
-
-        assert len(goldenJobs) == 0, \
-            "ERROR: JobGroup didn't load all jobs"
+        assert testJobGroupC.subscription["id"] == testSubscription["id"], \
+               "ERROR: Job group did not load subscription correctly"        
 
         assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
                "ERROR: Output fileset didn't load properly"
+
+        assert testJobGroupC.groupoutput.id == testJobGroupA.groupoutput.id, \
+               "ERROR: Output fileset didn't load properly"        
         
         return
 
-    def testLoadByUID(self):
+    def testLoadData(self):
         """
-        _testLoadByUID_
+        _testLoadData_
 
-        Create a JobGroup and save it to the database.  Create a new JobGroup
-        and then attempt to load the first one into it from the database using
-        the UID instead of the ID.  Compare the two JobGroup to make sure
-        they're identical.
+
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -283,8 +282,7 @@ class Job_t(unittest.TestCase):
                                         workflow = testWorkflow)
         testSubscription.create()
 
-        testJobGroupA = JobGroup(subscription = testSubscription,
-                                 uid = "TestJobGroup")
+        testJobGroupA = JobGroup(subscription = testSubscription)
         testJobGroupA.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
@@ -305,8 +303,8 @@ class Job_t(unittest.TestCase):
         testJobGroupA.add(testJobB)
         testJobGroupA.commit()
 
-        testJobGroupB = JobGroup(uid = testJobGroupA.uid)
-        testJobGroupB.load()
+        testJobGroupB = JobGroup(id = testJobGroupA.id)
+        testJobGroupB.loadData()
 
         assert testJobGroupB.subscription["id"] == testSubscription["id"], \
                "ERROR: Job group did not load subscription correctly"
@@ -323,7 +321,7 @@ class Job_t(unittest.TestCase):
         assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
                "ERROR: Output fileset didn't load properly"
         
-        return
+        return    
 
     def testCommit(self):
         """
@@ -366,7 +364,7 @@ class Job_t(unittest.TestCase):
         testJobGroupA.add(testJobB)
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
-        testJobGroupB.load()
+        testJobGroupB.loadData()
 
         assert len(testJobGroupA.jobs) == 0, \
                "ERROR: Original object commited too early"
@@ -380,7 +378,7 @@ class Job_t(unittest.TestCase):
                "ERROR: Original object did not commit jobs"
 
         testJobGroupC = JobGroup(id = testJobGroupA.id)
-        testJobGroupC.load()
+        testJobGroupC.loadData()
 
         assert len(testJobGroupC.jobs) == 2, \
                "ERROR: Loaded object has too few jobs."
@@ -428,7 +426,7 @@ class Job_t(unittest.TestCase):
         testJobGroupA.add(testJobB)
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
-        testJobGroupB.load()
+        testJobGroupB.loadData()
 
         assert len(testJobGroupA.jobs) == 0, \
                "ERROR: Original object commited too early"
@@ -445,7 +443,7 @@ class Job_t(unittest.TestCase):
                "ERROR: Original object did not commit jobs"
 
         testJobGroupC = JobGroup(id = testJobGroupA.id)
-        testJobGroupC.load()
+        testJobGroupC.loadData()
 
         assert len(testJobGroupC.jobs) == 2, \
                "ERROR: Loaded object has too few jobs."        
@@ -453,7 +451,7 @@ class Job_t(unittest.TestCase):
         myThread.transaction.rollback()
 
         testJobGroupD = JobGroup(id = testJobGroupA.id)
-        testJobGroupD.load()
+        testJobGroupD.loadData()
 
         assert len(testJobGroupD.jobs) == 0, \
                "ERROR: Loaded object has too many jobs."        

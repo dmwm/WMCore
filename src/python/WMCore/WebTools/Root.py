@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 """
-_SiteDB_
+_Root_
 
-The root object for SiteDB. It loads all the different views and starts 
-CherryPy. When called it will load the SiteList view by default. Views are 
-loaded dynamically and can be turned on/off via configuration file.
-
+The root object for a webtools application. It loads all the different views and
+starts an appropriately configured CherryPy instance. Views are loaded 
+dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.18 2009/02/16 14:04:43 metson Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Root.py,v 1.19 2009/02/16 14:45:02 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log

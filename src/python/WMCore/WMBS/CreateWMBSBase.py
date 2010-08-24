@@ -4,8 +4,10 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.9 2008/11/10 15:41:44 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.10 2008/11/20 17:25:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
+
+import threading
 
 from WMCore.Database.DBCreator import DBCreator
 
@@ -13,14 +15,15 @@ from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
 class CreateWMBSBase(DBCreator):    
-    def __init__(self, logger, dbinterface):
+    def __init__(self):
         """
         _init_
 
         Call the DBCreator constructor and create the list of required tables.
         """
-        DBCreator.__init__(self, logger, dbinterface)
-
+        myThread = threading.currentThread()
+        DBCreator.__init__(self, myThread.logger, myThread.dbi)
+                
         self.requiredTables = ["01wmbs_fileset",
                                "02wmbs_file_details",
                                "03wmbs_fileset_files",
@@ -169,7 +172,7 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_job (
              id          INTEGER   PRIMARY KEY AUTOINCREMENT,
              jobgroup    INT(11)   NOT NULL,
-             name        VARCHAR(255),
+             name        VARCHAR(255),             
              last_update TIMESTAMP NOT NULL,
              UNIQUE(name),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)

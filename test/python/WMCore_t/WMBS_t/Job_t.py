@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.6 2009/01/06 20:09:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Job_t.py,v 1.7 2009/01/12 16:16:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import logging
@@ -117,6 +117,109 @@ class Job_t(unittest.TestCase):
 
         assert testJob.exists() == False, \
                "ERROR: Job exists after it was delete"
+
+        return
+
+    def testCreateTransaction(self):
+        """
+        _testCreateTransaction_
+
+        Create a job and save it to the database.  Roll back the database
+        transaction and verify that the job is no longer in the database.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileA.create()
+        testFileB.create()
+
+        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testJob = Job(name = "TestJob", files = testFileset)
+
+        assert testJob.exists() == False, \
+               "ERROR: Job exists before it was created"
+
+        testJob.create(group = testJobGroup)
+
+        assert testJob.exists() >= 0, \
+               "ERROR: Job does not exist after it was created"
+
+        myThread.transaction.rollback()
+
+        assert testJob.exists() == False, \
+               "ERROR: Job exists after transaction was rolled back."
+
+        return
+
+    def testDeleteTransaction(self):
+        """
+        _testDeleteTransaction_
+
+        Create a new job and commit it to the database.  Start a new transaction
+        and delete the file from the database.  Verify that the file has been
+        deleted.  After that, roll back the transaction and verify that the
+        job is once again in the database.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileA.create()
+        testFileB.create()
+
+        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
+
+        testJob = Job(name = "TestJob", files = testFileset)
+
+        assert testJob.exists() == False, \
+               "ERROR: Job exists before it was created"
+
+        testJob.create(group = testJobGroup)
+
+        assert testJob.exists() >= 0, \
+               "ERROR: Job does not exist after it was created"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testJob.delete()
+
+        assert testJob.exists() == False, \
+               "ERROR: Job exists after it was delete"
+
+        myThread.transaction.rollback()
+
+        assert testJob.exists() >= 0, \
+               "ERROR: Job does not exist after transaction was rolled back."
 
         return
 
@@ -242,6 +345,86 @@ class Job_t(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
                "ERROR: Job didn't load all files"        
+        
+        return
+
+    def testSaveTransaction(self):
+        """
+        _testSaveTransaction_
+
+        Create a job and a job mask and save them both to the database.  Load
+        the job from the database and verify that everything was written
+        correctly.  Begin a new transaction and update the job mask again.
+        Load the mask and verify that it's correct.  Finally, rollback the
+        transaction and reload the mask to verify that it is in the correct
+        state.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(1, *[45]))
+        testFileA.create()
+        testFileB.create()
+
+        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
+        testFileset.commit()
+
+        testJobA = Job(name = "TestJob", files = testFileset)
+        testJobA.create(group = testJobGroup)
+
+        testJobA.mask["FirstEvent"] = 1
+        testJobA.mask["LastEvent"] = 2
+        testJobA.mask["FirstLumi"] = 3
+        testJobA.mask["LastLumi"] = 4
+        testJobA.mask["FirstRun"] = 5
+        testJobA.mask["LastRun"] = 6
+
+        testJobA.save()
+
+        testJobB = Job(id = testJobA.id)        
+        testJobB.load(method = "Jobs.LoadFromID")
+
+        assert testJobA.mask == testJobB.mask, \
+               "ERROR: Job mask did not load properly"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testJobA.mask["FirstEvent"] = 7
+        testJobA.mask["LastEvent"] = 8
+        testJobA.mask["FirstLumi"] = 9
+        testJobA.mask["LastLumi"] = 10
+        testJobA.mask["FirstRun"] = 11
+        testJobA.mask["LastRun"] = 12
+
+        testJobA.save()
+        testJobC = Job(id = testJobA.id)        
+        testJobC.load(method = "Jobs.LoadFromID")
+
+        assert testJobA.mask == testJobC.mask, \
+               "ERROR: Job mask did not load properly"
+
+        myThread.transaction.rollback()
+
+        testJobD = Job(id = testJobA.id)
+        testJobD.load(method = "Jobs.LoadFromID")
+
+        assert testJobB.mask == testJobD.mask, \
+               "ERROR: Job mask did not load properly"        
         
         return
 

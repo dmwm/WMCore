@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.7 2008/08/13 03:17:38 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Fileset.py,v 1.8 2008/09/08 09:32:52 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject 
 
@@ -16,11 +16,11 @@ class Fileset(WMObject):
     _Fileset_
     Data object that contains a set of files
     """
-    def __init__(self, name=None, files = Set()):
+    def __init__(self, name=None, files = Set(), logger=None):
         self.files = files
         self.name = name
         self.newfiles = Set()
-        self.logger = None        
+        self.logger = logger        
                 
     def addFile(self, file):
         """

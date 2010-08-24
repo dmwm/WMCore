@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.4 2008/08/29 19:00:16 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: MsgService_t.py,v 1.5 2008/08/29 20:00:44 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import unittest
@@ -34,12 +34,12 @@ class MsgServiceTest(unittest.TestCase):
     _setup = False
     _teardown = False
     # max number of messages for initial tests.
-    _maxMsg = 1000
+    _maxMsg = 100
     # buffersize used by message service to test message moving.
     _bufferSize = _maxMsg-2
 
     # minimum number of messages that need to be in queue
-    _minMsg = 2000
+    _minMsg = 200
     # number of publish and gets from queue
     _publishAndGet = 10
 
@@ -151,7 +151,6 @@ class MsgServiceTest(unittest.TestCase):
 
         Test subscription of a component.
         """
-        return
         myThread = threading.currentThread()
         myThread.transaction.begin()
         msgService1 = \
@@ -209,7 +208,6 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.commit()
 
     def testC(self):
-        return
         myThread = threading.currentThread()
         myThread.transaction.begin()
         msgService1 = \
@@ -253,7 +251,6 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.commit()
 
     def testD(self):
-        return
         # do some insert and get tests and measure it.
         myThread = threading.currentThread()
         myThread.transaction.begin()

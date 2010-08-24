@@ -27,12 +27,14 @@ creates 6 tables per component (e.g. 10 components create 60 tables)
 the normal messages.
 -periodic purging of history queue with option to keep always the last
 <x> messages in the history queue.
+-no long open commits. service contains a finish method that removes
+messages after it is handled.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.3 2008/08/29 19:00:15 fvlingen Exp $"
+    "$Id: MsgService.py,v 1.4 2008/08/29 20:00:44 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.3 $"
+    "$Revision: 1.4 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -92,7 +94,7 @@ class MsgService:
         # this means we can have one queue (with buffers)
         # or separate queues (one per component). The latter
         # will lead to more tables (6 per component)
-        self.oneQueue = False
+        self.oneQueue = True
         # what is the message currently being worked on.
         self.currentMsg = None
         # from what table did we get the message (important for finish action)

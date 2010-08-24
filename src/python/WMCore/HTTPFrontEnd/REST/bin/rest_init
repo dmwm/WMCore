@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+# REST service init script
+#
+# chkconfig: 345 05 95
+
+if [ -z ${REST_HOME} ]; then
+   echo $"The REST_HOME environment is not set"
+   exit 1
+fi
+cd ${REST_HOME}
+
+RETVAL=$?
+
+port=8080
+url=http://localhost:$port
+pid=`ps auxw | grep cmsWeb | grep -v grep | grep ${port} | awk '{print $2}'`
+base=rest
+cmd="cmsWeb --base-url=${url} --port=${port} --default-page /rest"
+
+case "$1" in
+ restart)
+	echo $"Checking for existing cmsWeb app running REST service..."
+        if [ ! -z ${pid} ]; then
+          echo $"Found REST service running on pid=${pid}, will restart"
+          kill -9 ${pid}
+        fi
+	echo $"Start REST Service on port ${port}..."
+        nohup ${cmd} 2>&1 1>& /dev/null < /dev/null &
+	;;
+ start)
+        if [ ! -z ${pid} ]; then
+          kill -9 ${pid}
+        fi
+	echo $"Start REST Service on port ${port}..."
+        nohup ${cmd} 2>&1 1>& /dev/null < /dev/null &
+	;;
+ status)
+	echo $"Checking REST Service on port ${port}..."
+        if [ ! -z ${pid} ]; then
+          echo $"${base} is running, pid=${pid}"
+          cmd_pid=`ps auxw | grep cmsWeb | grep -v grep | grep ${port}`
+          echo $"${cmd_pid}"
+          exit 0
+        fi
+        echo $"${base} is stopped"
+        exit 3
+	;;
+ stop)
+	echo $"Stop REST Service on port ${port}..."
+        if [ ! -z ${pid} ]; then
+          kill -9 ${pid}
+        fi
+ 	;;
+ *)
+ 	echo $"Usage: $0 {start|stop|status|restart}"
+	exit 1
+	;;
+esac
+
+exit $RETVAL

@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.39 2009/01/16 22:43:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: File.py,v 1.40 2009/01/21 14:55:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.40 $"
 
 from sets import Set
 
@@ -20,8 +20,9 @@ class File(WMBSBase, WMFile):
     A simple object representing a file in WMBS
     """
     #pylint: disable-msg=R0913
-    def __init__(self, lfn='', id=-1, size=0, events=0, cksum=0,
-                 parents=None, locations=None):
+    def __init__(self, lfn = '', id = -1, size = 0, events = 0, cksum = 0,
+                 parents = None, locations = None, first_event = 0,
+                 last_event = 0):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn=lfn, size=size, events=events, 
                         cksum=cksum, parents=parents)
@@ -34,7 +35,9 @@ class File(WMBSBase, WMFile):
                 self['newlocations'].add(locations)
             else:
                 self.setdefault("newlocations", locations)
-                
+
+        self.setdefault("first_event", first_event)
+        self.setdefault("last_event", last_event)
         self.setdefault("id", id)
         self['locations'] = Set()
 
@@ -149,7 +152,9 @@ class File(WMBSBase, WMFile):
 
         addAction = self.daofactory(classname="Files.Add")
         addAction.execute(files = self["lfn"], size = self["size"],
-                          events = self["events"], cksum= self["cksum"],
+                          events = self["events"], cksum = self["cksum"],
+                          first_event = self["first_event"],
+                          last_event = self["last_event"],
                           conn = self.getWriteDBConn(),
                           transaction = self.existingTransaction())
 

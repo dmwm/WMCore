@@ -6,12 +6,11 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.15 2008/08/21 10:27:49 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: DBCore.py,v 1.16 2008/08/21 17:29:42 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
-
 class DBInterface(WMObject):    
     """
     Base class for doing SQL operations using a SQLAlchemy engine, or
@@ -52,6 +51,8 @@ class DBInterface(WMObject):
     def executebinds(self, s=None, b=None, connection=None):
         """
         _executebinds_
+        
+        returns a list of sqlalchemy.engine.base.ResultProxy objects
         """
         try:
             self.logger.debug ('DBInterface.executebinds - sql : %s' % s)
@@ -80,19 +81,38 @@ class DBInterface(WMObject):
         {'bind1':'value1b', 'bind2': 'value2b'} ]
         
         see: http://www.gingerandjohn.com/archives/2004/02/26/cx_oracle-executemany-example/
+        
+        Can't executemany() selects - so do each combination of binds here instead.
+        This will return a list of sqlalchemy.engine.base.ResultProxy object's 
+        one for each set of binds. 
+        
+        returns a list of sqlalchemy.engine.base.ResultProxy objects
+        """
+        if s.lower().endswith('select', 0, 6):
+            """
+            Trying to select many
+            """
+            result = []
+            for bind in b:
+                result.append(connection.execute(s, bind))
+            return self.makelist(result)
+        
+        """
+        Now inserting or updating many
         """
         try:
-            self.logger.debug ('DBInterface.executebinds - sql : %s' % s)
-            self.logger.debug ('DBInterface.executebinds - binds : %s' % b)
+            self.logger.debug ('%s DBInterface.executemanybinds - sql : %s' % (connection.dialect, s))
+            self.logger.debug ('%s DBInterface.executemanybinds - binds : %s' % (connection.dialect, b))
             #Maybe need to get the cursor???
             result = connection.execute(s, b)
-            return result
+            return self.makelist(result)
         except Exception, e:
-            self.logger.exception('DBInterface.executebinds - exception type: %s' % type(e))
-            self.logger.exception('DBInterface.executebinds - connection type: %s' % type(connection))
-            self.logger.exception('DBInterface.executebinds - connection %s' % connection)
-            self.logger.exception('DBInterface.executebinds - sql : %s' % s)
-            self.logger.exception('DBInterface.executebinds - binds : %s' % b)
+            self.logger.exception('DBInterface.executemanybinds - exception type: %s' % type(e))
+            self.logger.exception('DBInterface.executemanybinds - connection type: %s' % type(connection))
+            self.logger.exception('DBInterface.executemanybinds - connection %s' % connection)
+            self.logger.exception('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
+            self.logger.exception('DBInterface.executemanybinds - sql : %s' % s)
+            self.logger.exception('DBInterface.executemanybinds - binds : %s' % b)
             self.logger.debug(e)
             raise e
     
@@ -102,11 +122,14 @@ class DBInterface(WMObject):
         """
         return self.engine.connect()
     
-    def processData(self, sqlstmt, binds = None, conn = None,
+    def processData(self, sqlstmt, binds = {}, conn = None,
                     transaction = False):
         """
         set conn if you already have an active connection to reuse
         set transaction = True if you already have an active transaction        
+        
+        returns a list of sqlalchemy.engine.base.ResultProxy objects
+        
         TODO: Make this code cleaner
         """
         if not conn: 
@@ -116,62 +139,68 @@ class DBInterface(WMObject):
         result = []
         
         # Can take either a single statement or a list of statements and binds
-        if type(sqlstmt) == type("string") and binds is None:
-            # Should never get executed - should be using binds!!
-            self.logger.warning('''The following statement is not using binds!! \n 
-                        %s''' % sqlstmt)
-            result.append(self.executebinds(sqlstmt, 
-                                            connection=connection))  
-        elif isinstance(sqlstmt, list) and binds is None:
+        sqlstmt = self.makelist(sqlstmt)
+        if len(sqlstmt) > 0 and len(binds) == 0:
             # Should only be run by create statements
             if not transaction: 
+                self.logger.info("transaction created in DBInterface")
                 trans = connection.begin()
             try:
                 for i in sqlstmt:
                     self.logger.warning('''The following statement is not using binds!! \n 
                         %s''' % i)
-                    result.append(self.executebinds(i, connection=connection))
+                    
+                    r = self.executebinds(i, connection=connection)
+                    result.append(r)
+                    
                 if not transaction: 
+                    self.logger.info("committing transaction in DBInterface")
                     trans.commit()
             except Exception, e:
                 if not transaction: 
+                    self.logger.info("rolling back in DBInterface")
                     trans.rollback()
+                self.logger.exception(e)
                 raise e 
             
-        elif type(sqlstmt) == type("string") and isinstance(binds, dict):
-            # single statement plus binds
-            result.append(self.executebinds(sqlstmt, binds, 
-                                            connection=connection))
-            
-        elif type(sqlstmt) == type("string") and isinstance(binds, list):
-            #Run single SQL statement for a list of binds
+        elif len(binds) > len(sqlstmt) and len (sqlstmt) == 1:
+            #Run single SQL statement for a list of binds - use execute_many()
             if not transaction: 
+                self.logger.info("transaction created in DBInterface")
                 trans = connection.begin()
             try:
-                result.append(self.executemanybinds(sqlstmt, binds,
-                                            connection=connection))
+                for i in sqlstmt:
+                    result.extend(self.executemanybinds(i, binds, connection=connection))
                 if not transaction: 
+                    self.logger.info("committing transaction in DBInterface")
                     trans.commit()
             except Exception, e:
                 if not transaction: 
+                    self.logger.info("rolling back in DBInterface")
                     trans.rollback()
+                self.logger.exception(e)
                 raise e
             
-        elif isinstance(sqlstmt, list) and isinstance(binds, list) \
-                and len(binds) == len(sqlstmt):            
+        elif len(binds) == len(sqlstmt):            
             # Run a list of SQL for a list of binds
             if not transaction: 
+                self.logger.info("DBInterface.processData transaction created")
                 trans = connection.begin()
             try:
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
-                    result.append(self.executebinds(s, b,
-                                            connection=connection))
+                    
+                    r = self.executebinds(s, b, connection=connection)
+                    result.append(r)
+                    
                 if not transaction: 
+                    self.logger.info("DBInterface.processData committing transaction")
                     trans.commit()
             except Exception, e:
                 if not transaction: 
+                    self.logger.info("DBInterface.processData rolling back transaction")
                     trans.rollback()
+                self.logger.exception(e)
                 raise e 
             
         else:
@@ -183,7 +212,7 @@ class DBInterface(WMObject):
             self.logger.debug('DBInterface.processData  binds are %s items long' % len(binds))
             assert_value = False
             if len(binds) == len(sqlstmt):
-                assert_value =True 
+                assert_value = True 
             self.logger.debug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
             self.logger.debug( sqlstmt, binds, connection, transaction)
             self.logger.debug( type(sqlstmt), type(binds),

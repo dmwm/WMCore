@@ -4,7 +4,7 @@ _CreateWMBS_
 Implementation of CreateWMBS for SQLite.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.11 2008/09/19 16:32:42 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.12 2008/09/19 17:23:04 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -129,16 +129,22 @@ class CreateWMBS(CreateWMBSBase):
 
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
-             id          INTEGER   PRIMARY KEY AUTOINCREMENT,
-             subscription INT(11)   NOT NULL,
-             last_update TIMESTAMP NOT NULL,
+             id           INT(11)    NOT NULL AUTO_INCREMENT,
+             subscription INT(11)    NOT NULL,
+             output       INT(11),
+             last_update  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+             ON UPDATE CURRENT_TIMESTAMP,
+             PRIMARY KEY (id),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-               ON DELETE CASCADE)"""
+               ON DELETE CASCADE,
+             FOREIGN KEY (output) REFERENCES wmbs_fileset(id),
+                    ON DELETE CASCADE)"""
 
         self.create["14wmbs_job"] = \
           """CREATE TABLE wmbs_job (
              id          INTEGER   PRIMARY KEY AUTOINCREMENT,
              jobgroup    INT(11)   NOT NULL,
+             name        VARCHAR(255),             
              start       INT(11),
              completed   INT(11),
              retries     INT(11),

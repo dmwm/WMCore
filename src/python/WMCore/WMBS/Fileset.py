@@ -15,16 +15,16 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.24 2008/10/22 17:51:53 metson Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Fileset.py,v 1.25 2008/10/28 15:23:38 metson Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 
 from WMCore.WMBS.File import File
-#from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.Fileset import Fileset as WMFileset
+from WMCore.Database.Transaction import Transaction
 
 class Fileset(BusinessObject, WMFileset):
     """
@@ -83,7 +83,7 @@ class Fileset(BusinessObject, WMFileset):
         
     def create(self):
         """
-        Add the new fileset to WMBS
+        Add the new fileset to WMBS, does not commit the files!
         """
         self.daofactory(classname='Fileset.New').execute(self.name)
         self.populate()
@@ -136,12 +136,15 @@ class Fileset(BusinessObject, WMFileset):
         if not self.exists():
             self.create()
         lfns = []
+        
+        trans = Transaction(dbinterface = self.dbfactory.connect())
+        
         while len(self.newfiles) > 0:
             #Check file objects exist in the database, save those that don't
             f = self.newfiles.pop()
             self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
             try:
-                f.save()
+                f.save(trans)
             except IntegrityError:
                 self.logger.warning(
                             'File already exists in the database %s' 
@@ -149,5 +152,7 @@ class Fileset(BusinessObject, WMFileset):
             lfns.append(f.dict["lfn"])
         
         self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
-                                                            fileset=self.name)
+                                                       fileset=self.name,
+                                                       conn = trans.conn, 
+                                                       transaction = True)
         self.populate()

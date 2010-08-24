@@ -8,8 +8,8 @@ stub classes.
 
 """
 
-__revision__ = "$Id: Generate.py,v 1.2 2009/01/14 13:42:29 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Generate.py,v 1.3 2009/01/26 16:11:58 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import cPickle
@@ -54,14 +54,15 @@ Inheritance is preferred.
 
         try:
             print('Creating output directory '+\
-                str(self.config.General.outputDir))
-            os.makedirs(self.config.General.outputDir)
+                str(self.config.General.srcDir))
+            os.makedirs(self.config.General.srcDir)
         except:
             print('ERROR: Make sure directory does not exists')
             sys.exit(0)
         self.parse()
         print('Starting generation')
         self.componentStubs()
+        self.componentTests()
         print('Flow generated')
 
     def parse(self):
@@ -89,6 +90,111 @@ Inheritance is preferred.
                  plgn
 
 
+    def componentTests(self):
+        for componentName in self.components.keys():
+            print('Creating test dir for:'+componentName)
+            self.currentDir = os.path.join(self.config.General.testDir, \
+                componentName+'_t')
+            os.makedirs(self.currentDir) 
+            print('Creating test stub')
+            stfile = open(os.path.join(self.currentDir,'__init__.py'), 'w')
+            stfile.write('#!/usr/bin/env python\n')
+            stfile.close()
+            stfile = \
+                open(os.path.join(self.currentDir, componentName + '_t.py'), 'w')
+            stfile.write('#!/usr/bin/env python\n')
+            stfile.write(self.stubmsg)
+            stfile.write("# test file skeletons.\n\n\n")
+            stfile.write('import os\n')
+            stfile.write('import unittest\n\n\n')
+            stfile.write("from "+self.config.General.pythonPrefix+'.'+componentName+'.'+componentName+' import '+componentName+'\n')
+            stfile.write("from WMCore.Agent.Configuration import Configuration\n")
+            stfile.write("from WMQuality.TestInit import TestInit\n")
+            msg = """
+class %sTest(unittest.TestCase):
+
+    _setup_done = False
+
+    def setUp(self):
+
+        if not %sTest._setup_done:
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            %sTest._setup_done = True
+
+    def testA(self):
+        config = self.testInit.getConfiguration(\
+            os.path.join(os.getenv('APPBASE'), \
+            '%s/%s/DefaultConfig.py'))
+        theComponent = %s(config)
+        # make sure database settings are set properly.
+        #theComponent.prepareToStart()
+        print('I am a placeholder for a test')
+
+    def runTest(self):
+
+        #Run test.
+        self.testA()
+
+if __name__ == '__main__':
+    unittest.main()
+""" % (componentName, componentName, componentName, self.config.General.srcDir, componentName, componentName)
+
+            stfile.write(msg)
+            stfile.close()
+        self.currentDir = os.path.join(self.config.General.baseDir, 'standards')
+        try:
+             os.makedirs(self.currentDir) 
+        except:
+             pass
+        print('Creating test suite')
+        stfile = open(os.path.join(self.currentDir,'defaultTest.py'), 'w')
+        stfile.write("#!/usr/bin/env python\n")
+        stfile.write("from WMQuality.Test import Test\n\n\n")
+        for componentName in self.components.keys():
+            msg = "from "+self.config.General.pythonTestPrefix+"."+componentName+'_t.'+componentName+'_t import '+componentName+'Test'
+            stfile.write(msg+'\n')
+
+        stfile.write('\n\n\n')
+
+        stfile.write('errors = {}\n')
+        stfile.write('tests = []\n')
+
+        for componentName in self.components.keys():
+            msg = """
+
+try:
+   x=%sTest()
+   tests.append((x,"nobody"))
+except Exception,ex:
+   if not errors.has_key("nobody"):
+       errors["nobody"] = []
+   errors["nobody"].append(("%sTest",str(ex)))
+
+""" %(componentName, componentName)
+            stfile.write(msg)
+
+        msg = """
+print('Writing level 2 failures to file: failures2.log ')
+failures = open('failures2.log','w')
+
+failures.writelines('Failed instantiation summary (level 2): \\\n')
+for author in errors.keys():
+    failures.writelines('\\\n*****Author: '+author+'********\\\n')
+    for errorInstance, errorMsg in  errors[author]:
+        failures.writelines('Test: '+errorInstance)
+        failures.writelines(errorMsg)
+        failures.writelines('\\\n\\\n')
+failures.close()
+
+test = Test(tests,'failures3.log')
+test.run()
+test.summaryText()
+"""
+        stfile.write(msg)
+        stfile.close()
+
     def componentStubs(self):
         """
         Generates the component stubs.
@@ -96,7 +202,7 @@ Inheritance is preferred.
 
         for componentName in self.components.keys():
             print('Creating component dir for:'+componentName)
-            self.currentDir = os.path.join(self.config.General.outputDir, \
+            self.currentDir = os.path.join(self.config.General.srcDir, \
                 componentName)
             os.makedirs(self.currentDir) 
             print('Creating component stub')

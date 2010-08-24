@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.6 2009/01/15 13:48:11 fvlingen Exp $"
+    "$Id: TestInit.py,v 1.7 2009/01/26 16:11:58 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.6 $"
+    "$Revision: 1.7 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -129,6 +129,7 @@ class TestInit:
         # need to find a way to do this for oracle dbs too.
         if myThread.dialect == 'MySQL' and modules == []:
             # call the script we use for cleaning:
+            # FIXME: need to be more general
             command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
             result = commands.getstatusoutput(command)
             for entry in result:

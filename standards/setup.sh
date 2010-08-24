@@ -18,6 +18,5 @@ export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
 #export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
 echo "-->Sourcing CMS environment"
 source $PRODAGENTBASE/etc/profile.d/init.sh
-source setup_mysql.sh
-source setup_mysql_proxy.sh
-./start_mysql.sh
+source $WMCOREBASE/standards/setup_mysql.sh
+$WMCOREBASE/standards/./start_mysql.sh

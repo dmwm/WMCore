@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.15 2009/01/16 20:21:51 fvlingen Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Harness.py,v 1.16 2009/01/26 16:11:58 fvlingen Exp $"
+__version__ = "$Revision: 1.16 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -77,6 +77,7 @@ class Harness:
             if not hasattr(compSect, "logFile"):
                 compSect.logFile = os.path.join(compSect.componentDir, \
                     "ComponentLog")
+            print('Log file is: '+compSect.logFile)
             # we have name and location of the log files. Now make sure there
             # is a directory.
             try:

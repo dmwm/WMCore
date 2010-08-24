@@ -7,11 +7,11 @@ Sample configuration for generating workflow.
 
 """
 
-__revision__ = "$Id: DefaultFlow.py,v 1.1 2009/01/14 12:31:23 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultFlow.py,v 1.2 2009/01/26 16:11:58 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
-
+import os
 import cPickle
 
 from WMCore.Agent.Configuration import Configuration
@@ -19,9 +19,12 @@ config = Configuration()
 config.section_('General')
 
 # output directory of generated files.
-config.General.outputDir = '/tmp/PRODAGENT/src/python/PA/Component'
+config.General.baseDir = '/tmp/PRODAGENT'
+config.General.srcDir = os.path.join(config.General.baseDir, 'src/python/PA/Component')
+config.General.testDir =  os.path.join(config.General.baseDir, 'test/python/PA_t/Component_t')
 # module prefix for python files.
 config.General.pythonPrefix = 'PA.Component'
+config.General.pythonTestPrefix = 'PA_t.Component_t'
 config.General.handlers = []
 config.General.synchronizers = []
 config.General.plugins = []

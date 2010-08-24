@@ -1,5 +1,5 @@
 """
-MySQL implementation of ListFileset
+SQLite implementation of ListFileset
 """
 from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.ListFilesetSQL import ListFileset as ListFilesetMySQL

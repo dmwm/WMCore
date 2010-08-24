@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.8 2009/02/04 00:24:13 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Controllers.py,v 1.9 2009/02/13 11:46:50 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
@@ -102,15 +102,13 @@ minimising setting appropriate headers and etags and gzip.
         """           
         for script in scripts:
             if script not in map.keys():
-                log("%s not known" % script, 
-                    context='SITEDB', severity=logging.WARNING)
+                self.warning("%s not known" % script)
                 scripts.remove(script)
             else:
                 path = os.path.join(sys.path[0], map[script])
                 path = os.path.normpath(path)
                 if not os.path.exists(path):
-                    log("%s not found at %s" % (script, path), 
-                        context='SITEDB', severity=logging.WARNING)
+                    self.warning("%s not found at %s" % (script, path))
                     scripts.remove(script)
         return scripts
     

@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.8 2008/10/02 14:31:38 fvlingen Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Harness.py,v 1.9 2008/10/03 07:29:36 fvlingen Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -118,7 +118,11 @@ class Harness:
             if hasattr(coreSect, "socket"):
                 options['unix_socket'] = coreSect.socket
             logging.info(">>>Building database connection string")
-            dbStr = coreSect.dialect + '://' + coreSect.user + \
+            # check if there is a premade string if not build it yourself.
+            if hasattr(coreSect, "connectUrl"):
+                dbStr = coreSect.connectUrl
+            else:
+                dbStr = coreSect.dialect + '://' + coreSect.user + \
                 ':' + coreSect.passwd+"@"+coreSect.hostname+'/'+\
                 coreSect.name
             # we only want one DBFactory per database so we will need to 

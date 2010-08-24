@@ -45,7 +45,8 @@ class FilesetTest (unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file.addRun(Run(1, *[45]))
             self.fileset.addFile(file)
         
     def tearDown(self):
@@ -60,13 +61,13 @@ class FilesetTest (unittest.TestCase):
             
         """
         #First test - Add file and check if its there
-        testfile = File('/tmp/lfntest',9999,9,9,9)
+        testfile = File('/tmp/lfntest',9999,9,9)
         self.fileset.addFile(testfile)
         assert(testfile in self.fileset.listNewFiles(), 'Couldn\'t add file ' +
                 'to fileset - fileset.addfile method not working')
         #Second test - Add file that was already at Fileset.files , 
         # and check if it gets updated
-        testFileSame = File('/tmp/lfntest',9999,9,9,9)
+        testFileSame = File('/tmp/lfntest',9999,9,9)
         testFileSame.setLocation(Set('dummyse.dummy.com'))
         self.fileset.addFile(testFileSame)
         assert(testFileSame in  self.fileset.listFiles(),'Same file copy ' +
@@ -154,7 +155,7 @@ class FilesetTest (unittest.TestCase):
         localTestFileSet = Fileset('LocalTestFileset', self.initialSet)
         fsSize = len(localTestFileSet.listLFNs())
         #Dummy file to test
-        fileTestCommit = File('/tmp/filetestcommit',0000,1,1,1)
+        fileTestCommit = File('/tmp/filetestcommit',0000,1,1)
         #File is added to the newfiles attribute of localTestFileSet
         localTestFileSet.addFile(fileTestCommit)
         assert fsSize == len(localTestFileSet.listLFNs()) - 1, 'file not added'\

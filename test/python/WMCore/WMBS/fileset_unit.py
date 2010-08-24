@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_unit.py,v 1.4 2008/06/10 16:51:14 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: fileset_unit.py,v 1.5 2008/06/10 17:21:03 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest, logging, os, commands
 from pylint import lint
@@ -66,11 +66,13 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
         from WMCore.WMBS.Actions.Fileset.New import NewFilesetAction
         from WMCore.WMBS.Actions.Fileset.Delete import DeleteFilesetAction
         from WMCore.WMBS.Actions.Fileset.List import ListFilesetAction
+        from WMCore.WMBS.Actions.Fileset.AddAndList import AddAndListFilesetAction
         
         self.action1 = FilesetExistsAction(self.testlogger)
         self.action2 = NewFilesetAction(self.testlogger) 
         self.action3 = DeleteFilesetAction(self.testlogger)  
-        self.action4 = ListFilesetAction(self.testlogger)        
+        self.action4 = ListFilesetAction(self.testlogger)
+        self.action5 = AddAndListFilesetAction(self.testlogger)
                 
     def testCreateExists(self):
         for conn in self.dbf1.connect(), self.dbf2.connect():
@@ -126,8 +128,13 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
             
         print " List action is dialect neutral" 
 
-      #TODO: AddAndListFilesetAction
-      
-      
+    def testAddAndList(self):
+        for conn in self.dbf1.connect(), self.dbf2.connect():
+            result = self.action5.execute(fileset='fs001', dbinterface=conn)
+            assert type(result) == type([]), 'AddAndListFilesetAction did not return a list'
+            assert len(result) == 1,\
+                'List from AddAndListFilesetAction is of unexpected length (%s not 1) \n\t %s' % (len(result), result)
+                
+        print " AddAndListFilesetAction works as expected"
 if __name__ == "__main__":
     unittest.main()

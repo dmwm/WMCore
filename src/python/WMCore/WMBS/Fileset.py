@@ -15,8 +15,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.28 2008/10/29 09:24:53 metson Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Fileset.py,v 1.29 2008/11/04 10:53:06 jcgon Exp $"
+__version__ = "$Revision: 1.29 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -153,8 +153,10 @@ class Fileset(BusinessObject, WMFileset):
                                 'File already exists in the database %s' 
                                 % f.dict["lfn"])
                 lfns.append(f.dict["lfn"])
-            
-            self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
+
+            #Add Files to DB only if there are any files on newfiles            
+            if( len(lfns) > 0 ):
+                self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 
                                                            fileset=self.name,
                                                            conn = trans.conn, 
                                                            transaction = True)

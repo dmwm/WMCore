@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.14 2009/01/29 16:42:06 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.15 2009/02/12 21:24:01 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import logging
@@ -457,12 +457,6 @@ class JobGroupTest(unittest.TestCase):
                """ Error:  All jobs is in active state: 
                    JobGroup should be in ACTIVE State """
                    
-        assert testJobGroupA.recordFail() == False, \
-                "Error : recordFail failed"
-        assert testJobGroupA.recordComplete() == False, \
-                "Error : recordComplete failed"
-        assert testJobGroupA.recordAcquire() == True, \
-                "Error : recordAcquier failed"
         
         jobs[0].changeStatus("COMPLETE")
         
@@ -476,13 +470,6 @@ class JobGroupTest(unittest.TestCase):
         assert testJobGroupA.status() == "COMPLETE", \
                """ Error:  both jobs are in COMPLETE state: 
                    JobGroup should be in COMPLETE State """
-        
-        assert testJobGroupA.recordAcquire() == False, \
-                "Error : recordAcquier failed"
-        assert testJobGroupA.recordFail() == False, \
-                "Error : recordFail failed"
-        assert testJobGroupA.recordComplete() == True, \
-                "Error : recordComplete failed"
                 
         jobs[1].changeStatus("FAILED")
         
@@ -490,13 +477,54 @@ class JobGroupTest(unittest.TestCase):
                """ Error:  one job is in FAILED state: 
                    JobGroup should be in FAILD State: %s"""
         
-        assert testJobGroupA.recordAcquire() == False, \
+        # these will always return true according if no error occurs.
+        # To do: check actual files state 
+        assert testJobGroupA.recordAcquire() == True, \
                 "Error : recordAcquier failed"
-        assert testJobGroupA.recordComplete() == False, \
+        assert testJobGroupA.recordComplete() == True, \
                 "Error : recordComplete failed"
         assert testJobGroupA.recordFail() == True, \
                 "Error : recordFail failed"
                 
-                   
+    def testOutput(self):
+        """
+        _testOutput_ 
+        test adding output files in job group
+        """
+        testJobGroupA = self.createTestJobGroupA()
+        
+        jobs = testJobGroupA.getJobIDs(type = "JobList")
+        count = 0 
+        lfnSet = Set()           
+        for job in jobs:
+            job.load()
+            count += 1
+            fileName = "/this/is/a/lfnOut%s" % count
+            lfnSet.add(fileName)
+            testFile = File(lfn = fileName, size = 1024, events = 10)
+            testFile.create()
+            job.addOutput(testFile)
+            testJobGroupA.addOutput(testFile)
+        
+        outputFileset = testJobGroupA.output()    
+        assert outputFileset == False, \
+               "Error: JobGroup is not completed but returns value %s"\
+               % outputFileset
+                  
+        for job in jobs:
+            job.changeStatus("COMPLETE")
+        
+        outputFileset = testJobGroupA.output() 
+        
+        outputFileset.loadData()
+        
+        outputLfns = Set()
+        for file in outputFileset.files:
+            outputLfns.add(file['lfn'])
+        
+        assert (lfnSet - outputLfns) == Set(), \
+               "Error: output files doesn't match %s" % outputLfns
+                  
+        
 if __name__ == "__main__":
     unittest.main() 

@@ -4,7 +4,7 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.1 2008/10/22 21:37:53 afaq Exp $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.2 2008/10/23 19:17:29 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -35,7 +35,7 @@ class DBSBufferTest(unittest.TestCase):
         """
         setup for test.
         """
-
+        
 	if not DBSBufferTest._setup_done:
 		logging.basicConfig(level=logging.NOTSET,
                 	format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
@@ -52,19 +52,21 @@ class DBSBufferTest(unittest.TestCase):
             	dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 	options)
 
+                print os.getenv("DATABASE")
 
             	myThread.dbi = dbFactory.connect()
             	myThread.transaction = Transaction(myThread.dbi)
-		myThread.transaction.begin()
+                myThread.transaction.begin()
+                myThread.transaction.commit()
+                createworked=0
 
-	    	createworked=0
-
-		"""
-
+		
+                """
             	# need to create these tables for testing.
             	factory = WMFactory("msgService", "WMCore.MsgService."+ \
                 	myThread.dialect)
             	create = factory.loadObject("Create")
+                pdb.set_trace()
             	createworked = create.execute(conn = myThread.transaction.conn)
             	if createworked:
                 	logging.debug("MsgService tables created")
@@ -86,34 +88,35 @@ class DBSBufferTest(unittest.TestCase):
                 	logging.debug("ThreadPool tables could not be created, \
                     	already exists?")
 
-
+                
+                
             	# need to create DBSBuffer tables for testing.
             	factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
                 	myThread.dialect)
             	create = factory.loadObject("Create")
-	    	try:
-			createworked = create.execute(conn = myThread.transaction.conn)
-            	except:
-			pass
+
+                createworked = create.execute(conn = myThread.transaction.conn)
+            				
             	if createworked:
                 	logging.debug("DBSBuffer tables created")
             	else:
                 	logging.debug("DBSBuffer tables could not be created, \
                     	already exists?")
-
-		# Throw a message
-		factory = WMFactory("msgService", "WMCore.MsgService."+ \
+                
+                # Throw a message
+                factory = WMFactory("msgService", "WMCore.MsgService."+ \
                         myThread.dialect)
                 newMsgService = factory.loadObject("MsgService")
-		newMsgService.registerAs("DBSBufferTestComp")
-        	msg = {'name':'JobSuccess', \
-			'payload':'/home/anzar/devWMCore/WMCORE/test/python/WMComponent_t/DBSBuffer_t/FJR/FrameworkJobReport.xml'}
-		newMsgService.publish(msg)
-		newMsgService.finish()
-		"""
+                newMsgService.registerAs("DBSBufferTestComp")
+                msg = {'name':'JobSuccess', 'payload':'C:\WORK\FJR\FrameworkJobReport.xml'}
+                newMsgService.publish(msg)
+                newMsgService.finish()
+                
+                myThread.transaction.commit()
+                
+                """
 
-        	myThread.transaction.commit()
-        	DBSBufferTest._setup_done = True
+                DBSBufferTest._setup_done = True
 
     def tearDown(self):
         """
@@ -181,8 +184,6 @@ class DBSBufferTest(unittest.TestCase):
         dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
 
-
-
         testDBSBuffer = DBSBuffer(config)
         testDBSBuffer.prepareToStart()
  
@@ -190,22 +191,18 @@ class DBSBufferTest(unittest.TestCase):
         myThread.dbi = dbFactory.connect()
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.begin()
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-       # for testing purposes we use this method instead of the 
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # for testing purposes we use this method instead of the
         # StartComponent one.
-
-	testDBSBuffer.handleMessage('JobSuccess', \
-				'/home/anzar/FJR/FrameworkJobReport.xml')
-
-	myThread.transaction.commit()
-
+        testDBSBuffer.handleMessage('JobSuccess', \
+				'C:\WORK\FJR\FrameworkJobReport.xml')
+        myThread.transaction.commit()
+        import pdb
+        pdb.set_trace()
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\
                 ' Threads. Wait until all our threads have finished')
             time.sleep(1)
-
         DBSBufferTest._teardown = True
 
     def runTest(self):

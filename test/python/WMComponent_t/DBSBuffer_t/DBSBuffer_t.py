@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t.py,v 1.2 2008/10/03 12:36:04 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSBuffer_t.py,v 1.3 2008/10/23 19:17:29 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -50,6 +50,7 @@ class DBSBufferTest(unittest.TestCase):
             options['unix_socket'] = os.getenv("DBSOCK")
             dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
+            print "os.getenv(DATABASE)", os.getenv("DATABASE")
 
             myThread.dbi = dbFactory.connect()
             myThread.transaction = Transaction(myThread.dbi)

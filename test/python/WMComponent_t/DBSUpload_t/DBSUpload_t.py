@@ -110,11 +110,11 @@ class DBSUploadTest(unittest.TestCase):
         # config file
         config.Agent.contact = "anzar@fnal.gov"
         config.Agent.teamName = "DBS"
-        config.Agent.agentName = "DBS Buffer"
+        config.Agent.agentName = "DBS Upload"
 
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR")
-
+        
         config.section_("CoreDatabase")
         config.CoreDatabase.dialect = 'mysql' 
         #config.CoreDatabase.socket = os.getenv("DBSOCK")
@@ -124,6 +124,7 @@ class DBSUploadTest(unittest.TestCase):
         config.CoreDatabase.name = os.getenv("DBNAME")
 
         testDBSUpload = DBSUpload(config)
+        
         testDBSUpload.prepareToStart()
         # for testing purposes we use this method instead of the 
         # StartComponent one.

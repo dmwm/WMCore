@@ -17,6 +17,9 @@ config.Webtools.application = 'WebtoolsDocs'
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
 config.WebtoolsDocs.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
+config.WebtoolsDocs.admin = 'your@email.com'
+config.WebtoolsDocs.title = 'CMS WMCore/WebTools Documentation'
+config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
 # Define the class that is the applications index
 #config.WebtoolsDocs.index = 'welcome'
 
@@ -51,3 +54,11 @@ active.section_('masthead')
 active.masthead.object = 'WMCore.WebTools.Masthead'
 active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Masthead'
 
+active.section_('rest')
+active.rest.object = 'WMCore.WebTools.RESTApi'
+active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+active.rest.section_('model')
+active.rest.model.object = 'REST.Model'
+active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+active.rest.model.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'

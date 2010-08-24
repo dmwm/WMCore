@@ -1,6 +1,7 @@
 from cherrypy import expose
-from Page import TemplatedPage
+from WMCore.WebTools.Page import TemplatedPage
 from os import listdir
+
 class Documentation(TemplatedPage):
     @expose
     def index(self):

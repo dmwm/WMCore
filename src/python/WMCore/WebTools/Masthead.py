@@ -6,11 +6,11 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Masthead.py,v 1.2 2009/01/24 01:36:31 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Masthead.py,v 1.3 2009/02/03 17:33:41 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
-from Page import TemplatedPage, exposejs, exposecss
+from WMCore.WebTools.Page import TemplatedPage, exposejs, exposecss
 from Controllers import Controllers
 from cherrypy import expose
 

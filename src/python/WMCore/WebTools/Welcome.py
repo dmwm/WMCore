@@ -1,5 +1,5 @@
 from cherrypy import expose
-from Page import Page
+from WMCore.WebTools.Page import Page
 
 class Welcome(Page):
     @expose

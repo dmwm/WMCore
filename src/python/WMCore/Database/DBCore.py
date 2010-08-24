@@ -6,11 +6,13 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.23 2008/09/18 22:30:14 metson Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: DBCore.py,v 1.24 2008/11/12 17:33:00 metson Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
+import WMCore.WMLogging
+
 class DBInterface(WMObject):    
     """
     Base class for doing SQL operations using a SQLAlchemy engine, or
@@ -56,8 +58,8 @@ class DBInterface(WMObject):
         returns a list of sqlalchemy.engine.base.ResultProxy objects
         """
         try:
-            self.logger.debug ('DBInterface.executebinds - sql : %s' % s)
-            self.logger.debug ('DBInterface.executebinds - binds : %s' % b)
+            WMCore.WMLogging.sqldebug ('DBInterface.executebinds - sql : %s' % s)
+            WMCore.WMLogging.sqldebug ('DBInterface.executebinds - binds : %s' % b)
             if b == None: 
                 result = connection.execute(s)
             else: 
@@ -65,10 +67,10 @@ class DBInterface(WMObject):
             return result
         except Exception, e:
             self.logger.exception('DBInterface.executemanybinds - exception:%s' % e)
-            self.logger.debug('DBInterface.executemanybinds - connection type: %s' % type(connection))
-            self.logger.debug('DBInterface.executemanybinds - connection %s' % connection)
-            self.logger.info('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
-            self.logger.info('DBInterface.executemanybinds - sql : %s' % s)
+            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection type: %s' % type(connection))
+            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection %s' % connection)
+            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
+            self.logger.debug('DBInterface.executemanybinds - sql : %s' % s)
             self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
             raise e
         
@@ -102,17 +104,17 @@ class DBInterface(WMObject):
         Now inserting or updating many
         """
         try:
-            self.logger.debug ('%s DBInterface.executemanybinds - sql : %s' % (connection.dialect, s))
-            self.logger.debug ('%s DBInterface.executemanybinds - binds : %s' % (connection.dialect, b))
+            WMCore.WMLogging.sqldebug ('%s DBInterface.executemanybinds - sql : %s' % (connection.dialect, s))
+            WMCore.WMLogging.sqldebug ('%s DBInterface.executemanybinds - binds : %s' % (connection.dialect, b))
             #Maybe need to get the cursor???
             result = connection.execute(s, b)
             return self.makelist(result)
         except Exception, e:
             self.logger.exception('DBInterface.executemanybinds - exception:%s' % e)
-            self.logger.debug('DBInterface.executemanybinds - connection type: %s' % type(connection))
-            self.logger.debug('DBInterface.executemanybinds - connection %s' % connection)
-            self.logger.info('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
-            self.logger.info('DBInterface.executemanybinds - sql : %s' % s)
+            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection type: %s' % type(connection))
+            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection %s' % connection)
+            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
+            self.logger.debug('DBInterface.executemanybinds - sql : %s' % s)
             self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
             raise e
     
@@ -144,22 +146,22 @@ class DBInterface(WMObject):
         if len(sqlstmt) > 0 and (binds[0] == {} or binds[0] == None):
             # Should only be run by create statements
             if not transaction: 
-                self.logger.info("transaction created in DBInterface")
+                WMCore.WMLogging.sqldebug("transaction created in DBInterface")
                 trans = connection.begin()
             try:
                 for i in sqlstmt:
-                    self.logger.info('''The following statement is not using binds!! \n 
+                    WMCore.WMLogging.sqldebug('''The following statement is not using binds!! \n 
                         %s''' % i)
                     
                     r = self.executebinds(i, connection=connection)
                     result.append(r)
                     
                 if not transaction: 
-                    self.logger.info("committing transaction in DBInterface")
+                    WMCore.WMLogging.sqldebug("committing transaction in DBInterface")
                     trans.commit()
             except Exception, e:
                 if not transaction: 
-                    self.logger.info("rolling back in DBInterface")
+                    WMCore.WMLogging.sqldebug("rolling back in DBInterface")
                     trans.rollback()
                 self.logger.exception(e)
                 raise e 
@@ -167,7 +169,7 @@ class DBInterface(WMObject):
         elif len(binds) > len(sqlstmt) and len(sqlstmt) == 1:
             #Run single SQL statement for a list of binds - use execute_many()
             if not transaction: 
-                self.logger.info("transaction created in DBInterface")
+                WMCore.WMLogging.sqldebug("transaction created in DBInterface")
                 trans = connection.begin()
             while(len(binds) > self.maxBindsPerQuery):
                 self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
@@ -177,11 +179,11 @@ class DBInterface(WMObject):
                 for i in sqlstmt:
                     result.extend(self.executemanybinds(i, binds, connection=connection))
                 if not transaction: 
-                    self.logger.info("committing transaction in DBInterface")
+                    WMCore.WMLogging.sqldebug("committing transaction in DBInterface")
                     trans.commit()
             except Exception, e:
                 if not transaction: 
-                    self.logger.info("rolling back in DBInterface")
+                    WMCore.WMLogging.sqldebug("rolling back in DBInterface")
                     trans.rollback()
                 self.logger.exception(e)
                 raise e
@@ -189,7 +191,7 @@ class DBInterface(WMObject):
         elif len(binds) == len(sqlstmt):
             # Run a list of SQL for a list of binds
             if not transaction: 
-                self.logger.info("DBInterface.processData transaction created")
+                WMCore.WMLogging.sqldebug("DBInterface.processData transaction created")
                 trans = connection.begin()
             try:
                 for i, s in enumerate(sqlstmt):
@@ -199,11 +201,11 @@ class DBInterface(WMObject):
                     result.append(r)
                     
                 if not transaction: 
-                    self.logger.info("DBInterface.processData committing transaction")
+                    WMCore.WMLogging.sqldebug("DBInterface.processData committing transaction")
                     trans.commit()
             except Exception, e:
                 if not transaction: 
-                    self.logger.info("DBInterface.processData rolling back transaction")
+                    WMCore.WMLogging.sqldebug("DBInterface.processData rolling back transaction")
                     trans.rollback()
                 self.logger.exception(e)
                 raise e 
@@ -213,14 +215,14 @@ class DBInterface(WMObject):
                 "DBInterface.processData Nothing executed, problem with your arguments")
             self.logger.exception(
                 "DBInterface.processData SQL = %s" % sqlstmt)
-            self.logger.debug('DBInterface.processData  sql is %s items long' % len(sqlstmt))
-            self.logger.debug('DBInterface.processData  binds are %s items long' % len(binds))
+            WMCore.WMLogging.sqldebug('DBInterface.processData  sql is %s items long' % len(sqlstmt))
+            WMCore.WMLogging.sqldebug('DBInterface.processData  binds are %s items long' % len(binds))
             assert_value = False
             if len(binds) == len(sqlstmt):
                 assert_value = True 
-            self.logger.debug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
-            self.logger.debug( sqlstmt, binds, connection, transaction)
-            self.logger.debug( type(sqlstmt), type(binds),
+            WMCore.WMLogging.sqldebug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
+            WMCore.WMLogging.sqldebug( sqlstmt, binds, connection, transaction)
+            WMCore.WMLogging.sqldebug( type(sqlstmt), type(binds),
                                type("string"), type({}),
                                type(connection), type(transaction))
             raise Exception, """DBInterface.processData Nothing executed, problem with your arguments 

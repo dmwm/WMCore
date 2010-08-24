@@ -19,8 +19,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.14 2008/07/08 12:11:11 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Subscription.py,v 1.15 2008/08/09 22:22:17 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -136,3 +136,10 @@ class Subscription(BusinessObject, WMSubscription):
                                   file=[x for x in files], 
                                   state="FailFiles",
                                   daofactory = self.daofactory)
+
+    def getJobs(self):
+        """
+        Return a list of all the jobs associated with a subscription
+        """
+        return self.daofactory(classname='Subscriptions.Jobs')
+        

@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.5 2008/11/05 01:20:46 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.6 2008/11/07 03:49:04 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -137,9 +137,6 @@ class NewWorkflowHandler(BaseHandler):
             #First ADD Algo (dataset object contains ALGO information)
             addToBuffer.addAlgo(dataset)
             #Than Add Processed Dataset
-            import pdb
-            pdb.set_trace()
-                    
             addToBuffer.addDataset(dataset)
         
         #  //

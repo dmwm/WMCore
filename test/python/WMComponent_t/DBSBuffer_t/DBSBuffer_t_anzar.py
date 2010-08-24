@@ -4,7 +4,7 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.3 2008/10/27 21:41:11 afaq Exp $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.4 2008/11/07 03:49:05 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -57,16 +57,15 @@ class DBSBufferTest(unittest.TestCase):
             	myThread.dbi = dbFactory.connect()
             	myThread.transaction = Transaction(myThread.dbi)
                 myThread.transaction.begin()
-                myThread.transaction.commit()
+                #myThread.transaction.commit()
                 createworked=0
-
 		
-                """
+                
             	# need to create these tables for testing.
             	factory = WMFactory("msgService", "WMCore.MsgService."+ \
                 	myThread.dialect)
             	create = factory.loadObject("Create")
-                pdb.set_trace()
+
             	createworked = create.execute(conn = myThread.transaction.conn)
             	if createworked:
                 	logging.debug("MsgService tables created")
@@ -74,7 +73,7 @@ class DBSBufferTest(unittest.TestCase):
                 	logging.debug("MsgService tables could not be created, \
                     	already exists?")
 
-
+                """
             	# as the example uses threads we need to create the thread
             	# tables too.
 
@@ -88,7 +87,6 @@ class DBSBufferTest(unittest.TestCase):
                 	logging.debug("ThreadPool tables could not be created, \
                     	already exists?")
 
-                
                 
             	# need to create DBSBuffer tables for testing.
             	factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
@@ -115,7 +113,7 @@ class DBSBufferTest(unittest.TestCase):
                 myThread.transaction.commit()
                 
                 """
-
+                
                 DBSBufferTest._setup_done = True
 
     def tearDown(self):

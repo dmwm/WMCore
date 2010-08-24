@@ -4,7 +4,7 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.7 2008/11/05 01:20:46 afaq Exp $"
+__revision__ = "$Id: BufferSuccess.py,v 1.8 2008/11/07 03:49:04 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -47,6 +47,11 @@ class BufferSuccess(BaseHandler):
     def __init__(self, component):
         BaseHandler.__init__(self, component)
         self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
+        #args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" :'DBS_2_0_3'}
+        #dbswriter = DbsApi(args)
+        #dbswriter = DBSWriter('fakeurl') 
+        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version='DBS_2_0_3')
+        
         # define a slave threadpool (this is optional
         # and depends on the developer deciding how he/she
         # wants to implement certain logic.
@@ -68,9 +73,7 @@ class BufferSuccess(BaseHandler):
         # and move to the next.
         # OK, lets read the Database and find out if there are 
         # Datasets/Files that needs uploading to DBS
-        args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" :'DBS_2_0_3'}
-        dbswriter = DbsApi(args)
-
+        
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
         dbinterface=factory.loadObject("UploadToDBS")
         
@@ -90,11 +93,14 @@ class BufferSuccess(BaseHandler):
 
             print "Total files", len(files)
             #base64.decodestring(aFile['RunLumiInfo'])
-            DBSWriter.insertFilesForDBSBuffer(files, aDataset['Path'], algos)
+            
+            self.dbswriter.insertFilesForDBSBuffer(files, dict(aDataset), algos, jobType = "NotMerge", insertDetectorData = False)
 
         return
     def uploadDataset(self, workflowFile):
         """
+        
+        NOT YET USED, May never be used 
         _newDatasetEvent_
 
         Extract relevant info from the WorkFlowSpecification and loop over Dataset
@@ -103,8 +109,7 @@ class BufferSuccess(BaseHandler):
         # //  Contact DBS using the DBSWriter
         #//`
         logging.info("DBSURL %s"%self.args['DBSURL'])
-        #dbswriter = DBSWriter('fakeurl') 
-        dbswriter = DBSWriter(self.args['DBSURL'],level='ERROR')
+        
         #  //
         # //  Create Processing Datsets based on workflow
         #//

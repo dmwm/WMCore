@@ -5,8 +5,8 @@ _DBSUpload.FindAlgos_
 Find algos in datasets
 
 """
-__revision__ = "$Id: FindAlgos.py,v 1.1 2008/11/05 01:20:45 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FindAlgos.py,v 1.2 2008/11/07 03:49:05 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -14,7 +14,18 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class FindAlgos(DBFormatter):
     
-    sql = """SELECT * FROM dbsbuffer_algo where dataset=:dataset"""
+    sql = """SELECT A.ID as ID, 
+                A.AppName as ApplicationName, 
+                A.AppVer as ApplicationVersion, 
+                A.AppFam as ApplicationFamily, 
+                A.PSetHash as PSetHash,
+                A.ConfigContent as PSetContent, 
+                A.LastModificationDate as LUD
+                FROM 
+                dbsbuffer_algo A 
+                    left outer join dbsbuffer_dataset D
+                     on D.Algo=A.ID
+                     Where D.ID=:dataset"""
     
     def __init__(self):
         myThread = threading.currentThread()

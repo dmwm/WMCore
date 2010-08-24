@@ -4,7 +4,7 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.10 2008/11/03 23:01:10 afaq Exp $"
+__revision__ = "$Id: Create.py,v 1.11 2008/11/07 03:49:04 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -65,6 +65,7 @@ class Create(DBCreator):
 			    FileStatus            varchar(20),
 			    FileType              BIGINT UNSIGNED,
 			    RunLumiInfo           varchar(500),
+			    SEName                varchar(100),
 			    LastModificationDate  BIGINT,
 			    primary key(ID)
 		    ) ENGINE=InnoDB"""

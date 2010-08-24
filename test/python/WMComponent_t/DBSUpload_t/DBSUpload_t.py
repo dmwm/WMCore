@@ -55,13 +55,9 @@ class DBSUploadTest(unittest.TestCase):
 
             	myThread.dbi = dbFactory.connect()
             	myThread.transaction = Transaction(myThread.dbi)
-		myThread.transaction.begin()
-
-
-		print "Basicaly do nothing !"
-
-        	myThread.transaction.commit()
-        	DBSUploadTest._setup_done = True
+                myThread.transaction.begin()
+                myThread.transaction.commit()
+                DBSUploadTest._setup_done = True
 
     def tearDown(self):
         """
@@ -124,9 +120,49 @@ class DBSUploadTest(unittest.TestCase):
         testDBSUpload.prepareToStart()
         # for testing purposes we use this method instead of the 
         # StartComponent one.
-
-	testDBSUpload.handleMessage('BufferSuccess', \
+        testDBSUpload.handleMessage('BufferSuccess', \
 				'/home/anzar/devWMCore/WMCORE/test/python/WMComponent_t/DBSUpload_t/FJR/FrameworkJobReport.xml')
+
+        while threading.activeCount() > 1:
+            print('Currently: '+str(threading.activeCount())+\
+                ' Threads. Wait until all our threads have finished')
+            time.sleep(1)
+
+        DBSUploadTest._teardown = True
+
+    def testB(self):
+        """
+        Mimics creation of component and handles come messages.
+        """
+
+        # read the default config first.
+        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
+            'src/python/WMComponent/DBSUpload/DefaultConfig.py'))
+
+        # some general settings that would come from the general default 
+        # config file
+        config.Agent.contact = "anzar@fnal.gov"
+        config.Agent.teamName = "DBS"
+        config.Agent.agentName = "DBS Upload"
+
+        config.section_("General")
+        config.General.workDir = os.getenv("TESTDIR")
+        
+        config.section_("CoreDatabase")
+        config.CoreDatabase.dialect = 'mysql' 
+        #config.CoreDatabase.socket = os.getenv("DBSOCK")
+        config.CoreDatabase.user = os.getenv("DBUSER")
+        config.CoreDatabase.passwd = os.getenv("DBPASS")
+        config.CoreDatabase.hostname = os.getenv("DBHOST")
+        config.CoreDatabase.name = os.getenv("DBNAME")
+
+        testDBSUpload = DBSUpload(config)
+        
+        testDBSUpload.prepareToStart()
+        # for testing purposes we use this method instead of the 
+        # StartComponent one.
+        testDBSUpload.handleMessage('NewWorkflow', \
+                'C:\\WORK\\FJR\\workflow.xml')
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\
@@ -137,6 +173,10 @@ class DBSUploadTest(unittest.TestCase):
 
     def runTest(self):
         self.testA()
+        print "Test A DONE"
+        import pdb
+        pdb.set_trace()
+        self.testB()
 if __name__ == '__main__':
     unittest.main()
 

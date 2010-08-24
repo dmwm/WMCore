@@ -5,8 +5,8 @@ _DBSBuffer.NewFile_
 Add a new file to DBS Buffer
 
 """
-__revision__ = "$Id: NewFile.py,v 1.6 2008/10/27 21:38:29 afaq Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: NewFile.py,v 1.7 2008/11/07 03:49:04 afaq Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -21,8 +21,8 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class NewFile(DBFormatter):
 
-	sql = """INSERT INTO dbsbuffer_file (LFN, Dataset, Checksum, NumberOfEvents, FileSize, RunLumiInfo, FileStatus)
-		values (:lfn, (select ID from dbsbuffer_dataset where Path=:path), :checksum, :events, :size, :runinfo, :status)"""
+	sql = """INSERT INTO dbsbuffer_file (LFN, Dataset, Checksum, NumberOfEvents, FileSize, RunLumiInfo, FileStatus, SEName)
+		values (:lfn, (select ID from dbsbuffer_dataset where Path=:path), :checksum, :events, :size, :runinfo, :status, :sename)"""
 
 	sqlUpdateDS = """UPDATE dbsbuffer_dataset as A
    				inner join (
@@ -47,7 +47,8 @@ class NewFile(DBFormatter):
 			'events' : file['TotalEvents'],
 			'size' : file['Size'],
 			'runinfo' : base64.binascii.b2a_base64(str(file.getLumiSections())),
-			'status' : 'NOTUPLOADED'
+			'status' : 'NOTUPLOADED',
+			'sename' : file['SEName']
 			}
 	    	return binds
 	   

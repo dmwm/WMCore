@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.4 2009/01/08 22:48:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Workflow_t.py,v 1.5 2009/01/14 16:58:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import os
@@ -162,7 +162,8 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowA.create()
 
         testWorkflowB = Workflow(name = "wf001")
-        testWorkflowB.load(method = "Workflow.LoadFromName")
+        testWorkflowB.load()
+
         assert (testWorkflowA.id == testWorkflowB.id) and \
                (testWorkflowA.name == testWorkflowB.name) and \
                (testWorkflowA.spec == testWorkflowB.spec) and \
@@ -170,7 +171,7 @@ class WorkflowTest(unittest.TestCase):
                "ERROR: Workflow.LoadFromName Failed"
         
         testWorkflowC = Workflow(id = testWorkflowA.id)
-        testWorkflowC.load(method = "Workflow.LoadFromID")
+        testWorkflowC.load()
         assert (testWorkflowA.id == testWorkflowC.id) and \
                (testWorkflowA.name == testWorkflowC.name) and \
                (testWorkflowA.spec == testWorkflowC.spec) and \
@@ -178,7 +179,7 @@ class WorkflowTest(unittest.TestCase):
                "ERROR: Workflow.LoadFromID Failed"
         
         testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon")
-        testWorkflowD.load(method = "Workflow.LoadFromSpecOwner")
+        testWorkflowD.load()
         assert (testWorkflowA.id == testWorkflowD.id) and \
                (testWorkflowA.name == testWorkflowD.name) and \
                (testWorkflowA.spec == testWorkflowD.spec) and \

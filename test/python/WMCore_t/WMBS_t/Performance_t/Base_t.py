@@ -40,15 +40,22 @@ class Base_t():
         self.mysqldbf = DBFactory(self.logger, mysqlURI)
         self.sqlitedbf = DBFactory(self.logger, sqliteURI)        
 
-        self.mysqldao = DAOFactory(package='WMCore.WMBS', logger=daologger, 
-                        dbinterface=mysqldbf.connect())
-        self.sqlitedao = DAOFactory(package='WMCore.WMBS', logger=daologger, 
-                        dbinterface=sqlitedbf.connect())        
+        self.mysqldao = DAOFactory(package='WMCore.WMBS', logger=self.logger, 
+                        dbinterface=self.mysqldbf.connect())
+        self.sqlitedao = DAOFactory(package='WMCore.WMBS', logger=self.logger, 
+                        dbinterface=self.sqlitedbf.connect())        
         
-    def tearDown(self)
+    def tearDown(self):
         #Base tearDown method for the DB Performance test
-        #TODO - Database deleting,etc,etc...
-        pass
+        self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs'))
+        self.logger.debug(commands.getstatusoutput('mysqladmin -u root create wmbs'))
+        self.logger.debug("WMBS MySQL database deleted")
+        try:
+            self.logger.debug(os.remove('filesettest.lite'))
+        except OSError:
+            #Don't care if the file doesn't exist
+            pass
+        self.logger.debug("WMBS SQLite database deleted")
 
     def getClassNames(self, dirname='.'):
         """
@@ -67,20 +74,17 @@ class Base_t():
 
         return list
     
-    def perfTest(self, dao, execinput=''):
+    def perfTest(self, dao, action, execinput=''):
         """
         Method that executes a dao class operation and measures its
         execution time.
         
         """
-        #POTENTIAL PITFALL:
-        #dao object must be given as an argument ALREADY WITH A CLASSNAME LOADED ON IT
-        #TODO - Exception that deals with uninitialized DAOs given as an argument
-
+        
         #Test each of the DAO classes of the specific WMBS class directory        
         startTime = time.time()               
         #Place execute method of the specific classname here            
-        dao.execute(execinput)
+        dao(classname=action).execute(execinput)
         endTime = time.time()
         diffTime = endTime - startTime
         

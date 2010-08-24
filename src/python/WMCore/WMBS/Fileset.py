@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.32 2009/01/08 21:52:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Fileset.py,v 1.33 2009/01/13 16:41:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from sets import Set
 
@@ -74,7 +74,7 @@ class Fileset(WMBSBase, WMFileset):
         """
         Does a fileset exist with this name in the database
         """
-        existsAction = self.daofactory(classname='Fileset.Exists')
+        existsAction = self.daofactory(classname = "Fileset.Exists")
         return existsAction.execute(self.name, conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())
         
@@ -82,10 +82,11 @@ class Fileset(WMBSBase, WMFileset):
         """
         Add the new fileset to WMBS, and commit the files
         """
-        createAction = self.daofactory(classname='Fileset.New')
+        createAction = self.daofactory(classname = "Fileset.New")
         createAction.execute(self.name, conn = self.getWriteDBConn(),
                              transaction = self.existingTransaction())
         self.commit()
+        self.load()
         self.commitIfNew()
         return self
     
@@ -99,41 +100,53 @@ class Fileset(WMBSBase, WMFileset):
         self.commitIfNew()
         return result
     
-    def load(self, method='Fileset.LoadFromName'): 
+    def load(self): 
         """
-        Load up the files in the file set from the database, this drops new 
-        files that aren't in the database. If you want to keep them call commit,
-        which will then populate the fileset for you.
+        _load_
+
+        Load the name, id and time that fileset was last updated in the
+        database.
         """
-        action = self.daofactory(classname = method)    
-        values = None
-        #get my details
-        if method == 'Fileset.LoadFromName':
-            values = action.execute(fileset = self.name,
-                                    conn = self.getReadDBConn(),
-                                    transaction = self.existingTransaction())
-            self.id, self.open, self.lastUpdate = values
-        elif method == 'Fileset.LoadFromID':
-            values = action.execute(fileset=self.id,
+        if self.id > 0:
+            action = self.daofactory(classname = "Fileset.LoadFromID")
+            result = action.execute(fileset = self.id,
                                     conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())                                    
-            self.name, self.open, self.lastUpdate = values
         else:
-            raise TypeError, 'Chosen populate method not supported'
+            action = self.daofactory(classname = "Fileset.LoadFromName")
+            result = action.execute(fileset = self.name,
+                                    conn = self.getReadDBConn(),
+                                    transaction = self.existingTransaction())
+
+        self.id = result["id"]
+        self.name = result["name"]
+        self.open = result["open"]
+        self.lastUpdate = result["last_update"]
         
         self.newfiles = Set()
         self.files = Set()
-        action = self.daofactory(classname='Files.InFileset')
-        values = action.execute(fileset = self.name,
-                                conn = self.getReadDBConn(),
-                                transaction = self.existingTransaction())
+        return self
 
-        for v in values:
-            file = File(id=v[0])
-            file.load()
+    def loadData(self): 
+        """
+        _loadData_
+
+        Load all the files that belong to this fileset.   
+        """
+        if self.name == None or self.id < 0:
+            self.load()
+
+        action = self.daofactory(classname = "Files.InFileset")
+        results = action.execute(fileset = self.name,
+                                 conn = self.getReadDBConn(),
+                                 transaction = self.existingTransaction())
+
+        for result in results:
+            file = File(id = result["id"])
+            file.loadData(parentage = 1)
             self.files.add(file)
 
-        return self
+        return self    
     
     def commit(self):
         """
@@ -159,6 +172,6 @@ class Fileset(WMBSBase, WMFileset):
             addAction.execute(file = lfns, fileset = self.name,
                               conn = self.getWriteDBConn(),
                               transaction = self.existingTransaction())
-        self.load()
+        self.loadData()
         self.commitIfNew()
         return

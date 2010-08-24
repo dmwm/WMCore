@@ -11,8 +11,8 @@ job in a batch system, it's more abstract - it's the piece of
 work that needs to get done.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.13 2008/10/01 15:00:11 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Job.py,v 1.14 2008/10/01 22:02:30 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -83,22 +83,23 @@ class Job(Pickleable):
         self.last_update = datetime.datetime.now()
         self.status = status
 
-    def submit(self, name):
+    def submit(self, name=None):
         """
         Once submitted to a batch queue set status to active and set the job's
         name to some id from the batch system. Calling this method means the job
         has been submitted to the batch queue.
         """
-        self.name = name
+        if name != self.name and name != None:
+            self.name = name
         self.changeStatus('ACTIVE')
 
-    def resubmit(self, name):
+    def resubmit(self, name=None):
         """
         Reset the file status to acquired for files associated to this job
         """
         self.submit(name)
 
-    def fail(self, report):
+    def fail(self, report=None):
         """
         Job has failed, mark all files associated with it as failed, and store
         the job report
@@ -106,7 +107,7 @@ class Job(Pickleable):
         self.changeStatus('FAILED')
         self.report = report
 
-    def complete(self, report):
+    def complete(self, report=None):
         """
         Job has completed successfully, mark all files associated
         with it as complete, and store the job report

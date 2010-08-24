@@ -1,13 +1,15 @@
 """
 MySQL implementation of Files.AddToFileset
 """
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class AddToFileset(MySQLBase):
+class AddToFileset(DBFormatter):
     sql = """
-            insert into wmbs_fileset_files (file, fileset) 
-                values ((select id from wmbs_file_details where lfn = :file),
-                (select id from wmbs_fileset where name = :fileset))"""
+            insert wmbs_fileset_files (file, fileset) 
+                select wmbs_file_details.id, wmbs_fileset.id 
+                from wmbs_file_details, wmbs_fileset 
+                where wmbs_file_details.lfn = :file
+                and wmbs_fileset.name = :fileset"""
         
     def getBinds(self, file = None, fileset = None):
         return self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset',
@@ -18,4 +20,5 @@ class AddToFileset(MySQLBase):
         
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
+        
         return self.format(result)

@@ -2,12 +2,13 @@
 """
 _List_
 
-MySQL implementation of ListFileset
+MySQL implementation of Locations.List
 
 """
+
 __all__ = []
-__revision__ = "$Id: List.py,v 1.4 2008/11/24 21:47:08 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: List.py,v 1.5 2008/12/08 10:12:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

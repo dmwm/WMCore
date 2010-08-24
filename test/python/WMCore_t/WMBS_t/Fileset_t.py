@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.11 2009/03/03 14:48:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Fileset_t.py,v 1.12 2009/03/03 17:29:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import logging
@@ -18,6 +18,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.DataStructs.Run import Run
+from WMCore.DAOFactory import DAOFactory
 
 from WMQuality.TestInit import TestInit
 
@@ -501,6 +502,18 @@ class FilesetTest(unittest.TestCase):
         assert testFilesetF.open == False, \
                "ERROR: FilesetF should be closed."        
 
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        openFilesetDAO = daoFactory(classname = "Fileset.ListOpen")
+        openFilesetNames = openFilesetDAO.execute()        
+
+        assert len(openFilesetNames) == 1, \
+               "ERROR: Too many open filesets."
+
+        assert "TestFileset1" in openFilesetNames, \
+               "ERROR: Wrong fileset listed as open."
+               
         return
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from sqlalchemy.databases.mysql import MySQLDialect
 from sqlalchemy.databases.sqlite import SQLiteDialect 
 from sqlalchemy.databases.oracle import OracleDialect
@@ -21,14 +22,14 @@ class SQLFactory(object):
         """
         dia = engine.dialect
         if isinstance(dia, OracleDialect):
-            from WMBSOracle import wmbsOracle
-            return wmbsOracle (self.logger, engine)
+            from WMCore.WMBS.Oracle import OracleDialect as WMBSOracle
+            return WMBSOracle (self.logger, engine)
         elif isinstance(dia, SQLiteDialect):
-            from WMBSSQLite import wmbsSQLite
-            return wmbsSQLite (self.logger, engine)
+            from WMCore.WMBS.SQLite import SQLiteDialect as WMBSSQLite
+            return WMBSSQLite (self.logger, engine)
         elif isinstance(dia, MySQLDialect):
-            from WMBSMySQL import wmbsMySQL
-            return wmbsMySQL (self.logger, engine)    
+            from WMCore.WMBS.MySQL import MySQLDialect as WMBSMySQL
+            return WMBSMySQL (self.logger, engine)    
         else:
             "Could return the wmbsSQL object and hope that the connection"
             "can handle it but that might be a bit dangerous!"

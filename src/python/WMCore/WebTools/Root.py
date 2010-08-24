@@ -8,11 +8,11 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.19 2009/02/16 14:45:02 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Root.py,v 1.20 2009/02/26 05:05:46 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 # CherryPy
-from cherrypy import quickstart, expose, server, log
+from cherrypy import quickstart, expose, server, log, tree, engine
 from cherrypy import config as cpconfig
 # configuration and arguments
 #FIXME
@@ -88,55 +88,77 @@ class Root(WMObject):
         
         globalconf = self.appconfig.dictionary_()
         del globalconf['views'] 
+        the_index = ''
         if 'index' in globalconf.keys():
+            the_index = globalconf['index']
             del globalconf['index']
          
         for view in self.appconfig.views.active:
             #Iterate through each view's configuration and instantiate the class
-            config = Configuration()
-            component = config.component_(view._internal_name)
-            component.application = self.config.application
-            for k in globalconf.keys():
-                # Add the global config to the view
-                component.__setattr__(k, globalconf[k])
-            
-            dict = view.dictionary_()
-            for k in dict.keys():
-                component.__setattr__(k, dict[k])
-            # component now contains the full configuration (global + view)  
-            # use this throughout 
-            log("loading %s" % component._internal_name, context=self.app, 
-                severity=logging.INFO, traceback=False)
-            
-            log("configuration for %s: %s" % (component._internal_name, 
-                                    component), 
-                                    context=self.app, 
-                                    severity=logging.INFO, traceback=False)
-                                
-            log("Loading %s" % (component._internal_name), 
-                                    context=self.app,
-                                    severity=logging.DEBUG, 
-                                    traceback=False)
-            # Load the object
-            obj = factory.loadObject(component.object, component)
-            # Attach the object to cherrypy's root, at the name of the component 
-            eval(compile("self.%s = obj" % component._internal_name, 
-                            '<string>', 'single'))        
-            log("%s available on %s/%s" % (component._internal_name, 
-                                           server.base(), 
-                                           component._internal_name), 
-                                           context=self.app, 
-                                           severity=logging.INFO, 
-                                           traceback=False)
-        
+            if view._internal_name != the_index:
+                self.mountPage(view, view._internal_name, globalconf, factory)
+                
         if hasattr(self.appconfig.views, 'maintenance'):
             for i in self.appconfig.views.maintenance:
                 #TODO: Show a maintenance page
                 pass
-
+    
+    def mountPage(self, view, mount_point, globalconf, factory):
+        config = Configuration()
+        component = config.component_(view._internal_name)
+        component.application = self.config.application
+        for k in globalconf.keys():
+            # Add the global config to the view
+            component.__setattr__(k, globalconf[k])
+        
+        dict = view.dictionary_()
+        for k in dict.keys():
+            component.__setattr__(k, dict[k])
+        # component now contains the full configuration (global + view)  
+        # use this throughout 
+        log("loading %s" % component._internal_name, context=self.app, 
+            severity=logging.INFO, traceback=False)
+        
+        log("configuration for %s: %s" % (component._internal_name, 
+                                component), 
+                                context=self.app, 
+                                severity=logging.INFO, traceback=False)
+                            
+        log("Loading %s" % (component._internal_name), 
+                                context=self.app,
+                                severity=logging.DEBUG, 
+                                traceback=False)
+        # Load the object
+        if hasattr(view, 'is_rest'):
+            if view.is_rest:
+                #conf = {'/':{'request.dispatch':cherrypy.dispatch.MethodDispatcher()}}
+                #cherrypy.quickstart(rest, restroot.url, config=conf)
+                #load up the rest service
+                #{'/rest':{'request.dispatch':cherrypy.dispatch.MethodDispatcher()}}
+                pass
+        else:
+            obj = factory.loadObject(component.object, component)
+            # Attach the object to cherrypy's root, at the name of the component
+            tree.mount(obj, "/%s" % mount_point) 
+#                eval(compile("self.%s = obj" % component._internal_name, 
+#                            '<string>', 'single'))        
+        log("%s available on %s/%s" % (component._internal_name, 
+                                       server.base(), 
+                                       component._internal_name), 
+                                       context=self.app, 
+                                       severity=logging.INFO, 
+                                       traceback=False)
+            
+    def makeIndex(self):
         # now make the index page
         if hasattr(self.appconfig, 'index'):
-            self.homepage = getattr(self, self.appconfig.index)
+            factory = WMFactory('webtools_factory')
+            globalconf = self.appconfig.dictionary_()
+            view = getattr(self.appconfig.views.active, globalconf['index'])
+            del globalconf['views'] 
+            del globalconf['index']
+            self.mountPage(view, '/', globalconf, factory)
+            
         else:
             log("No index defined for %s - instantiating default Welcome page" 
                                              % (self.app), 
@@ -147,18 +169,10 @@ class Root(WMObject):
             # make a default Welcome
             for view in self.appconfig.views.active:
                viewName = view._internal_name
-               viewObj = getattr(self, viewName)
+               viewObj = tree.apps['/%s' % viewName].root
                docstring = viewObj.__doc__
                namesAndDocstrings.append((viewName, docstring))
-            self.homepage = Welcome(namesAndDocstrings)
-    
-    @expose
-    def index(self):
-        return self.homepage.index() 
-    
-    @expose
-    def default(self, *args, **kwargs):
-        return self.homepage.default(args, kwargs)
+            tree.mount(Welcome(namesAndDocstrings), "/")
 
 if __name__ == "__main__":
     config = __file__.rsplit('/', 1)[0] + '/DefaultConfig.py'
@@ -173,4 +187,6 @@ if __name__ == "__main__":
     root = Root(cfg)
     root.configureCherryPy()
     root.loadPages()
-    quickstart(root)
+    root.makeIndex()
+    engine.start()
+    engine.block()

@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.8 2009/01/26 23:44:37 rpw Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Page.py,v 1.9 2009/01/29 19:43:38 valya Exp $"
+__version__ = "$Revision: 1.9 $"
 
+import urllib
 import cherrypy
 from cherrypy import log as cplog
 from cherrypy import request
@@ -91,6 +92,40 @@ def exposexml (func):
         data = func (self, *args, **kwds)
         cherrypy.response.headers['Content-Type'] = "application/xml"
         return data
+    wrapper.__doc__ = func.__doc__
+    wrapper.__name__ = func.__name__
+    wrapper.exposed = True
+    return wrapper
+
+def exposedasxml (func):
+    """
+    This will prepend the DAS header to the data and calculate the checksum of 
+    the data to set the etag correctly
+    
+    TODO: pass in the call_time value, can we get this in a smart/neat way?
+    TODO: include the request_version in the data hash - a new version should 
+    result in an update in a cache
+    TODO: "inherit" from the exposejson
+    """
+    def wrapper (self, *args, **kwds):
+        itime = time.time()
+        data  = func (self, *args, **kwds)
+        ctime = time.time()-itime
+        now   = time.mktime(datetime.datetime.utcnow().timetuple())
+        url   = request.base + request.path_info + request.query_string
+        url   = urllib.quote(url)
+        ver   = 123
+        call  = func.__name__
+        header = """<?xml version='1.0' standalone='yes'?>
+<das request_timestamp="%s" 
+     request_url="%s" 
+     request_version="%s" 
+     request_call="%s" 
+     call_time="%s">""" % (now, url, ver, call, ctime)
+        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
+        cherrypy.response.headers['Content-Type'] = "application/xml"
+        xmldata = header + data + "</das>"
+        return xmldata
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True

@@ -6,20 +6,17 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.3 2009/01/23 19:07:40 rpw Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Controllers.py,v 1.4 2009/01/23 23:37:27 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
-# configuration and arguments
-from ConfigParser import ConfigParser
-from optparse import OptionParser
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
 # Logging
 import WMCore.WMLogging
 import logging, os, sys
-from Page import Page
+from Page import Page, exposejs, exposecss
 
 class Controllers(Page):
     def __init__(self, config):
@@ -48,7 +45,7 @@ class Controllers(Page):
     def default(self, *args, **kwargs):
         return self.index()
     
-    @expose
+    @exposecss
     def css(self, *args, **kwargs):
         """
         cat together the specified css files and return a single css include
@@ -74,7 +71,7 @@ class Controllers(Page):
             self.cache[id] = self.minify(data)
         return self.cache[id] 
         
-    @expose
+    @exposejs
     def js(self, *args, **kwargs):
         """
         cat together the specified js files and return a single js include

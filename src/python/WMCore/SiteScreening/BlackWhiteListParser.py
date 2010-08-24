@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.5 2008/10/30 16:24:22 ewv Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.6 2008/10/30 20:30:02 ewv Exp $"
+__version__  = "$Revision: 1.6 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -129,10 +129,8 @@ class BlackWhiteListParser(object):
             return sites
         whitelist = self.whitelist
         whitelist = self.matchList(sites, self.whitelist)
-        #print "White list:",whitelist
         siteSet = sets.Set(sites)
         goodSites = siteSet.intersection(whitelist)
-        #print "Good Sites:",goodSites,"\n"
         goodSites = list(goodSites)
         if not goodSites and fileblocks:
             msg = "No sites hosting the block %s after whiteList" % fileblocks
@@ -218,6 +216,13 @@ class BlackWhiteListParser(object):
         results.extend([i for i in names if regExp.search(i)])
         return results
 
+
+    def blackList(self):
+        return list(self.blacklist)
+
+
+    def whiteList(self):
+        return list(self.whitelist)
 
 
 class SEBlackWhiteListParser(BlackWhiteListParser):

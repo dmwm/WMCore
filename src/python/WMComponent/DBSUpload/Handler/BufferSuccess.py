@@ -4,7 +4,7 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.2 2008/10/22 17:20:49 afaq Exp $"
+__revision__ = "$Id: BufferSuccess.py,v 1.3 2008/10/23 19:18:37 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -19,7 +19,7 @@ import os
 import string
 import logging
 
-from ProdCommon.FwkJobRep.ReportParser import readJobReport
+from WMCore.WMFactory import WMFactory
 
 class BufferSuccess(BaseHandler):
     """
@@ -56,12 +56,21 @@ class BufferSuccess(BaseHandler):
         """
         # as we defined a threadpool we can enqueue our item
         # and move to the next.
-        print event, payload
-        print event + " ::::::: Handled"
         # OK, lets read the Database and find out if there are 
         # Datasets/Files that needs uploading to DBS
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
-        getDataset=factory.loadObject("GetUploadableDatasets")
+        dbinterface=factory.loadObject("UploadToDBS")
+        
+        
+        #import pdb
+        #pdb.set_trace()
+        
+        datasets=dbinterface.findUploadableDatasets()
+        for aDataset in datasets:
+            print aDataset
+            files=dbinterface.findUploadableFiles(aDataset)
+            for aFile in files:
+                print aFile
 
         
         

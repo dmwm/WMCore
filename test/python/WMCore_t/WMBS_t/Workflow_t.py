@@ -1,12 +1,12 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python
 """
 _Workflow_t_
 
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.1 2008/11/20 16:19:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Workflow_t.py,v 1.2 2008/11/20 16:23:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import os

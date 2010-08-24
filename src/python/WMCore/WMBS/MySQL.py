@@ -7,8 +7,8 @@ MySQL Compatibility layer for WMBS
 
 """
 
-__revision__ = "$Id: MySQL.py,v 1.9 2008/06/10 17:38:21 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: MySQL.py,v 1.10 2008/06/16 16:06:11 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.Database.DBCore import DBInterface
 from sqlalchemy.exceptions import IntegrityError
@@ -51,13 +51,6 @@ class MySQLDialect(DBInterface):
         # What history tables do we need?
         # What statistics/monitoring is needed?
 
-                        
-        self.insert['newsubscription'] = """
-            insert into wmbs_subscription (fileset, workflow, type, parentage, last_update) 
-                values ((select id from wmbs_fileset where name =:fileset),
-                (select id from wmbs_workflow where spec = :spec and owner = :owner), :type, 
-                :parentage, :timestamp)
-        """
         #TODO: The following should be bulk inserts
         self.insert['acquirefiles'] = """insert into wmbs_sub_files_acquired 
                 (subscription, file) values (:subscription, :file)"""
@@ -108,29 +101,7 @@ class MySQLDialect(DBInterface):
                     select fileset from wmbs_subscription where id = :subscription
                     )
         """ 
-        self.select['filesets'] = """select name, open, last_update 
-                                    from wmbs_fileset"""
-        self.select['alllocations'] = "select id, se_name from wmbs_location"
-        self.select['filesatlocation'] = """
-            select id, lfn, size, events, run, lumi from wmbs_file_details 
-                where id in (select file from wmbs_file_location where location =
-                    (select id from wmbs_location where se_name = :location))
-        """
-        self.select['whereisfile'] = """select se_name from wmbs_location 
-                where id in (select location from wmbs_file_location 
-                    where file in (select id from wmbs_file_details where lfn=:file))
-        """
-#        self.select['nextfiles'] = """select id, lfn, size, events, run, lumi from wmbs_file_details where id IN (
-#        select file from wmbs_fileset_files where
-#            fileset = (select fileset from wmbs_subscription where id=:subscription)
-#            and file not in 
-#                (select file from wmbs_sub_files_acquired where subscription=:subscription)
-#            and file not in 
-#                (select file from wmbs_sub_files_failed where subscription=:subscription)
-#            and file not in 
-#                (select file from wmbs_sub_files_complete where subscription=:subscription)
-#                )
-#        """
+        
         self.select['nextfiles'] = """select lfn from wmbs_file_details
                 where id in (select file from wmbs_fileset_files where
             fileset = (select fileset from wmbs_subscription where id=:subscription)
@@ -142,12 +113,7 @@ class MySQLDialect(DBInterface):
                 (select file from wmbs_sub_files_complete where subscription=:subscription)
                 )
         """
-        self.select['filedetails'] = """select id, lfn, size, events, run, lumi
-                 from wmbs_file_details where lfn = :file"""
-        self.select['filedetailsfromid'] = """select id, lfn, size, events, run, lumi
-                 from wmbs_file_details where id = :file"""
-        self.select['fileparentage'] = """select lfn from wmbs_file_details where id IN (
-        select parent from wmbs_file_parent where child = :file)"""
+
         self.select['activefiles'] = """
         select file from wmbs_sub_files_acquired 
             where subscription=:subscription
@@ -279,32 +245,7 @@ class MySQLDialect(DBInterface):
         binds = {'fileset' : fileset}
         return self.processData(self.select['filesinfileset'], 
                                 binds, conn = conn, transaction = transaction)
-                                
-    def newWorkflow(self, spec=None, owner=None, 
-                           conn = None, transaction = False):
-        """
-        Create a workflow ready for subscriptions
-        """
-        binds = {'spec':spec, 'owner':owner}
-        return self.processData(self.insert['newworkflow'], binds, 
-                             conn = conn, transaction = transaction)
-        
-    def workflowExists(self, spec=None, owner=None, 
-                           conn = None, transaction = False):
-        """
-        Check if a workflow exists
-        """
-        binds = {'spec':spec, 'owner':owner}
-        return self.processData(self.select['workflowexists'], binds, 
-                             conn = conn, transaction = transaction)
-        
-    def showAllWorkflows(self, conn = None, transaction = False):
-        """
-        list all workflows
-        """
-        return self.processData(self.select['workflows'], {}, 
-                             conn = conn, transaction = transaction)
-        
+                          
     def workflowId(self, spec, owner, conn = None, transaction = False):
         """
         get a workflow id
@@ -312,17 +253,6 @@ class MySQLDialect(DBInterface):
         binds = {'spec':spec, 'owner':owner}
         return self.processData(self.select['workflowid'], binds, 
                              conn = conn, transaction = transaction)
-        
-        
-    def deleteWorkflow(self, spec=None, owner=None, 
-                           conn = None, transaction = False):
-        """
-        Delete a workflow
-        """
-        binds = {'spec':spec, 'owner':owner}
-        return self.processData(self.delete['workflow'], binds, 
-                             conn = conn, transaction = transaction)  
-                                               
             
     def newSubscription(self, fileset, spec = None, owner = None, subtype='Processing',
                         parentage = 0, conn = None, transaction = False):
@@ -401,48 +331,9 @@ class MySQLDialect(DBInterface):
             binds = {'subscription':subscription}
             fileset = self.processData(self.select['filesetforsubscription'], 
                                binds, conn = conn, transaction = transaction)
-            fs = fileset[0][0] #''
-#            for f in fileset:
-#                #fs = str(f.fetchone()[0])
-                
+            fs = fileset[0][0]                 
             return self.showFilesInFileset(fileset=fs)
         
-        
-    def listFileSets(self, only_open=False,
-                                conn=None, transaction=False):
-        """
-        return active fileSets and their properties
-        """
-        results = []
-        filesets = self.processData(self.select['filesets'], 
-                                conn = conn, transaction = transaction)
-        for fileset in filesets:
-            is_open = bool(fileset[1])
-            if only_open and not is_open:
-                continue
-            results.append({'fileset':fileset[0], 'is_open':is_open, 'last_updated':fileset[2]}) 
-        return results
-    
-            
-    def addNewLocation(self, sename = None, conn = None, transaction = False):
-        """
-        Tell WMBS about a new SE
-        """
-        if not isinstance(sename, list): 
-            sename = [sename]
-        binds = []
-        for s in sename:
-            binds.append({'location':s})
-        return self.processData(self.insert['newlocation'], 
-                                binds, conn = conn, transaction = transaction)
-    
-    def listAllLocations(self, conn = None, transaction = False):
-        """
-        list all locations known to a WMBS
-        """
-        return self.processData(self.select['alllocations'], 
-                                conn = conn, transaction = transaction)
-    
     def listFilesAtLocation(self, sename, conn = None, transaction = False):
         """
         list all the files at a location
@@ -478,11 +369,6 @@ class MySQLDialect(DBInterface):
         if not isinstance(lfns, list): 
             lfns = [lfns]
         binds = []
-#        for f in file:
-#            binds.append({'file':lfn})
-#        
-#        results = self.processData(self.select['filedetails'], 
-#                                binds, conn = conn, transaction = transaction)
         results = []
         for lfn in lfns:
             try:
@@ -531,29 +417,7 @@ class MySQLDialect(DBInterface):
         files = self.processData(self.select['nextfiles'], 
                                     {'subscription':subscription},
                                     conn = None, transaction = False)
-        
-#        for file in files:
-#            f = {'id' : file[0],
-#                 'lfn' : file[1],
-#                 'size': file[2], 
-#                 'events' : file[3], 
-#                 'run' : file[4],
-#                 'lumi':  file[5],
-#                 'parents' : []}
-#            f['locations'] = self.locateFile(f['lfn'],
-#                                conn = None, transaction = False)
-#            results.append(f)
-#            
-#        # get parentage levels 
-#        num_parents = 1
-#        if num_parents:
-#            for file in results:
-#                file = self.parentsForFile(file, num_parents,
-#                                          conn = None, transaction = False)
-        
-
         return files    
-        #return results
         
     def parentsForFile(self, file, conn = None, transaction = False):
         """ 

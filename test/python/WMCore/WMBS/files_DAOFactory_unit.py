@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: files_DAOFactory_unit.py,v 1.2 2008/06/14 15:35:12 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: files_DAOFactory_unit.py,v 1.3 2008/06/16 16:04:11 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands
 
@@ -194,9 +194,34 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         assert myfile1 != myfile3, "Different files are equal!"
         assert myfile2 != myfile4, "Different files are equal!"
     
-    def testFileParents(self):
-        pass
-    
+    def testFileParent(self):
+        logger = logging.getLogger('FileParents_unit_test')
+        parentlfn = "/store/data/Electrons/1234/5678/parent.toor"
+        childlfn = "/store/data/Electrons/1234/5678/child.toor"
+        for dbf in self.dbf1, self.dbf2:
+            parent = File(lfn=parentlfn, logger=logger, dbfactory=dbf)
+            child = File(lfn=childlfn, logger=logger, dbfactory=dbf)
+            parent.save()
+            child.save()
+            
+            parents = set()
+            parents.add(parent)
+            child.addParent(parentlfn)
+            print "child.parents %s" % child.parents
+            print "parent %s" % parent
+            print "parents %s" % parents
+            assert child.parents == parents, "Parents do not match"
+            
+            child.load(1)
+            
+            print "test"
+            print child.parents
+            
+            assert child.parents == parent, "Parents do not match"
+            
+            child.delete()
+            parent.delete()
+            
     def testFileLocation(self):
         logger = logging.getLogger('FileLocation_unit_test')
          
@@ -232,6 +257,7 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         assert len(myfile1.locations) == len(myfile3.locations)
         assert len(myfile2.locations) == len(myfile4.locations)
+             
         
 if __name__ == "__main__":
     unittest.main()

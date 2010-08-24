@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.2 2008/06/12 10:17:14 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: fileset_DAOFactory_unit.py,v 1.3 2008/06/16 16:04:11 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands
 
@@ -144,5 +144,9 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
                 'List from AddAndListFilesetAction is of unexpected length (%s not 1) \n\t %s' % (len(result), result)
                 
         print " AddAndListFilesetAction works as expected"
+
+class FilesetBusinessObjectTestCase(BaseFilesetTestCase):
+    pass
+
 if __name__ == "__main__":
     unittest.main()

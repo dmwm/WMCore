@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.11 2008/09/25 13:07:42 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Subscription.py,v 1.12 2008/09/29 16:06:00 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 import copy
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset 
@@ -49,13 +49,13 @@ class Subscription(Pickleable):
     
     def acquireFiles(self, files = [], size=1):
         """
-        Return the number of files acquired
+        Return the files acquired
         """
         self.acquired.commit()
         self.available.commit()
         self.failed.commit()
         self.completed.commit()
-        retval = 0
+        retval = []
         if len(files):
             for i in files:
                 # Check each set, instead of elif, just in case something has
@@ -71,9 +71,9 @@ class Subscription(Pickleable):
             if len(self.available.files) < size or size == 0:
                 size = len(self.available.files)        
             for i in range(size):
-                self.acquired.addFile(self.available.files.pop())            
-            retval = self.acquired.listNewFiles() 
-        return retval 
+                self.acquired.addFile(self.available.files.pop())
+                    
+        return self.acquired.listNewFiles() 
 
     def completeFiles(self, files):
         """
@@ -115,15 +115,15 @@ class Subscription(Pickleable):
         
     def filesOfStatus(self, status=None):
         if status == 'AvailableFiles':
-            return self.available.listFiles() - \
+            return self.available.getFiles(type='set') - \
             (self.acquiredFiles() | self.completedFiles() | self.failedFiles())
-            return [12,11]
+            #return [12,11]
         elif status == 'AcquiredFiles':
-            return self.acquired.listFiles()
+            return self.acquired.getFiles(type='set')
         elif status == 'CompletedFiles':
-            return self.completed.listFiles()
+            return self.completed.getFiles(type='set')
         elif status == 'FailedFiles':
-            return self.failed.listFiles()
+            return self.failed.getFiles(type='set')
         
     def availableFiles(self):
         """

@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.16 2008/07/03 16:39:49 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Fileset.py,v 1.17 2008/07/03 17:05:33 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -107,7 +107,7 @@ class Fileset(BusinessObject, WMFileset):
             #id, lfn, size, events, run, lumi = f
             file = File(lfn, id, size, events, run, lumi, \
                         logger=self.logger, dbfactory=self.dbfactory)
-            self.add(file)
+            self.files.add(file)
 
         return self
     

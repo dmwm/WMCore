@@ -36,6 +36,9 @@ class WebAPI(DatabasePage):
                                  'version': 1}}
     
     def status(self):
+        """
+        Return the application name and it's version. Suitable for a ping.
+        """
         return {'application': self.config.application, 
                 'version': self.__version__}
     

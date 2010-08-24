@@ -4,13 +4,13 @@ _New_
 MySQL implementation of JobGroup.New
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.1 2008/10/01 15:14:05 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2008/10/01 21:56:00 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Services.UUID import makeUUID
 
-class New(MySQLBase):
+class New(DBFormatter):
     sql = []
     sql.append("insert into wmbs_jobgroup (subscription, uid) values (:subscription, :uid)")
     sql.append("""select id from wmbs_jobgroup where uid=:uid""")

@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.9 2008/09/10 19:43:17 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Subscription.py,v 1.10 2008/09/19 16:27:30 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 import copy
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset 
@@ -80,25 +80,16 @@ class Subscription(Pickleable):
         self.available.commit()
         self.failed.commit()
         self.completed.commit()
-        retval = 0
-        if len(files):
-            for i in files:
-                # Check each set, instead of elif, just in case something has
-                # got out of synch
-                if i in self.available.files:
-                    self.available.files.remove(i)
-                if i in self.failed.files:
-                    self.failed.files.remove(i)
-                if i in self.acquired.files:
-                    self.acquired.files.remove(i)
-                self.completed.addFile(i)
-        else:
-            if len(self.available.files) < size or size == 0:
-                size = len(self.available.files)        
-            for i in range(size):
-                self.completed.addFile(self.available.files.pop())            
-            retval = self.completed.listNewFiles() 
-        return retval 
+        for i in files:
+            # Check each set, instead of elif, just in case something has
+            # got out of synch
+            if i in self.available.files:
+                self.available.files.remove(i)
+            if i in self.failed.files:
+                self.failed.files.remove(i)
+            if i in self.acquired.files:
+                self.acquired.files.remove(i)
+            self.completed.addFile(i)
     
     def failFiles(self, files):
         """
@@ -108,26 +99,17 @@ class Subscription(Pickleable):
         self.available.commit()
         self.failed.commit()
         self.completed.commit()
-        retval = 0
-        if len(files):
-            for i in files:
-                # Check each set, instead of elif, just in case something has
-                # got out of synch
-                if i in self.available.files:
-                    self.available.files.remove(i)
-                if i in self.completed.files:
-                    self.completed.files.remove(i)
-                if i in self.acquired.files:
-                    self.acquired.files.remove(i)
-                self.failed.addFile(i)
-        else:
-            if len(self.available.files) < size or size == 0:
-                size = len(self.available.files)        
-            for i in range(size):
-                self.failed.addFile(self.available.files.pop())            
-            retval = self.failed.listNewFiles() 
-        return retval 
-    
+        for i in files:
+            # Check each set, instead of elif, just in case something has
+            # got out of synch
+            if i in self.available.files:
+                self.available.files.remove(i)
+            if i in self.completed.files:
+                self.completed.files.remove(i)
+            if i in self.acquired.files:
+                self.acquired.files.remove(i)
+            self.failed.addFile(i)
+        
     def filesOfStatus(self, status=None):
         if status == 'AvailableFiles':
             return self.available.listFiles() - \

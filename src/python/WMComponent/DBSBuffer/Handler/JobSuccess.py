@@ -4,7 +4,7 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.5 2008/10/16 12:14:11 afaq Exp $"
+__revision__ = "$Id: JobSuccess.py,v 1.6 2008/10/20 19:22:04 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -12,11 +12,13 @@ from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
 from WMCore.Agent.Configuration import loadConfigurationFile
 
-from WMComponent.DBSBuffer.Database.Interface.addToBuffer import AddToBuffer
+#from WMComponent.DBSBuffer.Database.Interface.addToBuffer import AddToBuffer
+from WMCore.WMFactory import WMFactory
 
 #import cPickle
 import os
 import string
+import logging
 import exceptions
 
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
@@ -85,13 +87,16 @@ class JobSuccess(BaseHandler):
         # and move to the next.
 
         jobReports = self.readJobReportInfo(payload)
+	factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
+	addToBuffer=factory.loadObject("AddToBuffer")
+
         for aFJR in jobReports:
             l=0
             print "\n\n"
             for aFile in aFJR.files:
                 if l==0:
                     l=1
-                    AddToBuffer.addDataset(aFile.dataset[0])
+                    addToBuffer.addDataset(aFile.dataset[0])
     
                     """
 				    print "Dataset Path : " + \
@@ -99,7 +104,7 @@ class JobSuccess(BaseHandler):
 					"/"+aFile.dataset[0]['ProcessedDataset']+ \
 					"/"+aFile.dataset[0]['DataTier']
 				    """
-                AddToBuffer.addFile(aFile)
+                addToBuffer.addFile(aFile)
             
                 """
 			    print "\n\n\n"

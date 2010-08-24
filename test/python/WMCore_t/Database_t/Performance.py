@@ -1,5 +1,15 @@
 #!/usr/bin/env python
 
+"""
+__Performance__
+
+Base class for Database Performance Tests 
+
+This class is abstract, serving as a superclass for all
+DB Performance Testcases
+
+"""
+
 import logging, time
 
 class Performance():
@@ -16,20 +26,23 @@ class Performance():
 
     def setUp(self):
         """
-        Common setUp for all Performance tests
+        Common setUp for all DB Performance tests
 
         """
         
         #Setting up logger
         logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename='%s.log' % __file__.replace('.py',''),
-                    filemode='w')
+                   format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                   datefmt='%m-%d %H:%M',
+                   filename='%s.log' % __file__.replace('.py',''),
+                   filemode='w')
         self.logger = logging.getLogger('BasePerformanceTest')
 
     def tearDown(self):
-        #Base tearDown method for the DB Performance test
+        """
+        Common tearDown for all DB Performance tests
+
+        """
         pass
 
     def formatExecInput(self, input):
@@ -55,7 +68,7 @@ class Performance():
         
         """
         actionstring = action
-        #Test each of the DAO classes of the specific WMBS class directory        
+        
         action = dao(classname=action)
         string = self.formatExecInput(input=input)        
         string = "action.execute(%s)" % string
@@ -74,6 +87,8 @@ class Performance():
         if self.verbose == 'True':
             print string 
         
-        assert diffTotal <= self.threshold, actionstring+' DAO class - Operation too slow ( elapsed time:'+str(diffTotal)+', threshold:'+str(self.threshold)+' )'
+        assert diffTotal <= self.threshold, actionstring+' DAO class - '+ \
+                       'Operation too slow ( elapsed time:'+ str(diffTotal)+ \
+                        ', threshold:'+str(self.threshold)+' )'
         return diffTotal
         

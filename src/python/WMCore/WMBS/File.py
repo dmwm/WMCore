@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.11 2008/06/24 11:45:06 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: File.py,v 1.12 2008/06/30 17:54:28 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 
@@ -57,7 +57,11 @@ class File(BusinessObject):
         """
         use lfn to load file info from db
         """
-        result = self.daofactory(classname='Files.Get').execute(self.lfn)
+        result = None 
+        if self.id > 0:
+            result = self.daofactory(classname='Files.GetByID').execute(self.id)
+        else:
+            result = self.daofactory(classname='Files.GetByLFN').execute(self.lfn)
         self.id = result[0]
         self.lfn = result[1]
         self.size = result[2]

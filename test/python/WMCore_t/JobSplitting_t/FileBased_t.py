@@ -7,8 +7,8 @@ and one per job type.
 
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.1 2008/09/25 13:14:01 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FileBased_t.py,v 1.2 2008/10/01 22:03:10 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 from sets import Set
 import unittest, logging, os, commands, random, datetime, math
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
@@ -42,38 +42,40 @@ class FileBasedGenericObjectTest(unittest.TestCase):
         self.fileset = Fileset(name='MyCoolFiles', logger = self.testlogger)
         
         for i in range(0, 993):
-            file = File("/store/data/Electrons/1234/5678/k123ljhkj2%s.root" % i, 
-                             1000, 2000, 10 + i, 12312)
+            file = File(lfn="/store/data/Electrons/1234/5678/k123ljhkj2%s.root" % i, 
+                              size=1000, events=2000, lumi=10 + i, run=12312)
             self.fileset.addFile(file)
         self.fileset.commit()
         work = Workflow()
         self.subscription = Subscription(fileset = self.fileset, 
                 workflow = work, split_algo = 'FileBased', type = "Processing")
         
-        assert len(self.subscription.getFileset().listFiles()) == \
+        self.package = 'WMCore.DataStructs'
+        
+        assert len(self.subscription.getFileset().getFiles(type='set')) == \
                 len(self.subscription.availableFiles())
     
     def tearDown(self):
         pass
     
     def testMakeJobs(self):
-        files_size = len(self.fileset.listFiles())
+        files_size = len(self.fileset.getFiles(type='set'))
         print "Number of files: %i" % files_size
-        assert len(self.subscription.getFileset().listFiles()) == \
+        assert len(self.subscription.getFileset().getFiles(type='set')) == \
                 len(self.subscription.availableFiles())
         assert len(self.subscription.availableFiles()) == files_size
         
         splitsize = 89
         splitter = SplitterFactory()
         
-        jobfactory = splitter(self.subscription)
+        jobfactory = splitter(subscription=self.subscription, package=self.package)
         jobgroup = jobfactory(files_per_job=splitsize)
 
-        assert len(self.subscription.getFileset().listFiles()) == files_size
+        assert len(self.subscription.getFileset().getFiles(type='set')) == files_size
         assert len(self.subscription.availableFiles()) == 0
 
-        print len(self.fileset.listFiles()), \
-                    len(self.subscription.getFileset().listFiles())
+        print len(self.fileset.getFiles(type='set')), \
+                    len(self.subscription.getFileset().getFiles(type='set'))
         print files_size, splitsize, len(jobgroup.jobs)
         
         number_jobs = divmod(files_size, splitsize)
@@ -83,16 +85,17 @@ class FileBasedGenericObjectTest(unittest.TestCase):
         if number_jobs[1] > 0:
             job_test = 1
         job_test = job_test + number_jobs[0]
-        assert job_test == len(jobgroup.jobs), "Factory made the wrong number of jobs"
+        assert job_test == len(jobgroup.jobs), \
+            "Factory made the wrong number of jobs; %s not %s" % (jobgroup.jobs, job_test)
         c = 0
         i = 0
         for job in jobgroup.jobs:
             i = i + 1
-            print "job %i : %i files" % (i, len(job.listFiles()))
-            c = c + len(job.listFiles())
-            assert len(job.listFiles()) <= splitsize, \
+            print "job %i : %i files" % (i, len(job.getFiles(type='set')))
+            c = c + len(job.getFiles())
+            assert len(job.getFiles(type='set')) <= splitsize, \
                     "Job has more files than it should"
-        print c
+        
         assert c == files_size, "Jobs will run on the wrong number of files"
         
         # Now check that jobs have different files and that they have all 
@@ -110,10 +113,21 @@ class FileBasedGenericObjectTest(unittest.TestCase):
         for job in jobgroup.jobs:
             test_set_len = len(test_set)
             job_set_len = len(job.file_set)
-            test_set = job.listFiles() ^ test_set
+            test_set = job.getFiles(type='set') ^ test_set
             assert len(test_set) == test_set_len + job_set_len
         assert len(test_set) == files_size
         
+        print "JobGroup status: %s" % jobgroup.status(detail=True)
+        job = jobgroup.jobs.pop()
+        job.submit()
+        print "JobGroup status: %s" % jobgroup.status(detail=True)
+        job.fail()
+        print "JobGroup status: %s" % jobgroup.status(detail=True)
+        job.resubmit(name="job123")
+        print "JobGroup status: %s" % jobgroup.status(detail=True)
+        job.complete()
+        print "JobGroup status: %s" % jobgroup.status(detail=True)
+
 class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
     """
     A test of the job splitting algorithm "FileBased" using WMBS Objects
@@ -154,7 +168,6 @@ class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
                              dbfactory=self.dbf)
 
             self.fileset.addFile(file)
-            
         startsave = datetime.datetime.now()
         print "Saving Fileset - %s" % startsave
         self.fileset.commit()
@@ -175,14 +188,18 @@ class FileBasedWMBSObjectTest(FileBasedGenericObjectTest):
                 dbfactory=self.dbf)
         self.subscription.create()
         
+        print self.subscription.name() 
+        
+        self.package = 'WMCore.WMBS'
+        
         assert self.subscription.exists()
         
-        assert len(self.subscription.getFileset().listFiles()) == \
+        assert len(self.subscription.getFileset().getFiles(type='set')) == \
                 len(self.subscription.availableFiles())
     
     def tearDown(self):
-       # commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs')
-       # commands.getstatusoutput('mysqladmin -u root create wmbs')
+        commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs')
+        commands.getstatusoutput('mysqladmin -u root create wmbs')
         try:
             self.testlogger.debug(os.remove('FileBasedWMBSObjectTest.lite'))
         except OSError:

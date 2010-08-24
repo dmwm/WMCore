@@ -24,23 +24,14 @@ Algorithm:
         fill fileset with primary files
 4. Purge WatchedRuns older than n hours
 
-TODO:   * Handling of file locations - DataStructs.File or WMBS.File?
-        * DBS Event query
+TODO:   * Make parent relations condition on actually requiring parent relation
+             -- c.f. Talk with Simon about fileset name to specify datasets
         * DQ flags from DBS?
-        * Handling of parent files - registering with child file
-        * Adding new locations as they become available? What about file acquire
-          status?
-        * Should fileset flag whether parents are required? Considering we
-          determine what files to get from the fileset name, this should live
-          with the fileset I think, otherwise becomes hacky use of fileset.name
-          e.g. fileset.name = "/Cosmics/MyEra-v1/RECO requireParent=True"
-        * Cache DBS block / file lookups? Depends on how / when blocks are migrated
-          to global DBS. getEvents could use cached response from getDbsBlockFiles
-          for example.
         * Exception handling (especially as propagated from DBS query errors)
+        * Finish tracking down DBS problems
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.7 2008/10/28 12:05:33 jacksonj Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.8 2008/10/29 20:16:18 jacksonj Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import logging
 
@@ -48,7 +39,7 @@ from sets import Set
 
 from WMCore.WMBSFeeder.RunTransferNotifier.DbsQueryHelper import DbsQueryHelper
 
-from WMCore.DataStructs.File import File
+from WMCore.WMBS.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 
 from urllib import urlopen
@@ -147,16 +138,16 @@ class RunTransferNotifier(FeederImpl):
                 # Do per dataset work
                 for ds in watch.datasetCompletion:
                     # Query DBS to find all blocks for this run / dataset
+                    (files, blocks, fileInfoMap) = \
+                         self.dbsHelper.getFileInfo(watch.run, ds)
                     blocks = self.dbsHelper.getBlockInfo(watch.run, ds)
                     
                     # Now determine all required parent blocks
-                    # This is a prime candidate for caching as requires
-                    # many per file lookups in DBS
                     parentBlocks = Set()
                     if fileset.requireParents:
-                        primaryFiles = self.dbsHelper.getBlockFiles(blocks)
-                        parentFiles = self.dbsHelper.getParentFiles(primaryFiles)
-                        parentBlocks = self.dbsHelper.getFileBlocks(parentFiles)
+                        parentDs = self.dbsHelper.getParentDataset(ds)
+                        parentBlocks = self.dbsHelper.getBlockInfo(watch.run,
+                                                                   parentDs)
                     
                     # Final list of all required blocks
                     allBlocks = blocks[:]
@@ -170,25 +161,27 @@ class RunTransferNotifier(FeederImpl):
                     
                     if len(newSites) > 0:
                         # Add the files for these blocks to the fileset
-                        for block in blocks:
-                            files = self.getPhEDExBlockFiles(block)
-                            for file in files:
-                                lfn = file['name']
-                                events = self.getEvents(lfn)
-                                (runs,lumis) = self.getRunLumi(lfn)
-                                fileToAdd = File(lfn=lfn, size=file['bytes'],
-                                               events=events, run=runs[0],
-                                               lumi=lumis[0])
-                                # TODO: File parentage (if required)
-                                # WMBS.File doesn't take location argument...
-                                # What to do here?
-                                replicas = file['replica']
-                                if len(replicas) > 0:
-                                    locations = []
-                                    for replica in replicas:
-                                        locations.append(replica['node'])
-                                    fileToAdd.setLocation(locations)
-                                    fileset.addFile(fileToAdd)
+                        for file in fileInfoMap:
+                            fi = fileInfoMap[file]
+                            
+                            # First add parent file
+                            parentFile = File(lfn=fi["file.parent"])
+                            if not parentFile.exists():
+                                parentFile.save()
+                            
+                            # Add actual file
+                            fileToAdd = File(lfn=file, size=fi["file.size"],
+                                             events=fi["file.events"],
+                                             run=watch.run,
+                                             lumi=fi["file.lumi"])
+                            if not fileToAdd.exists():
+                                fileToAdd.addParent(fi["file.parent"])
+
+                            # Add new locations
+                            fileToAdd.setLocation(newSites)
+                            
+                            # Finally add the file to the fileset
+                            fileset.addFile(fileToAdd)
                     
                     # Add the site info to the watcher
                     watch.addCompletedNode(ds, newSites)

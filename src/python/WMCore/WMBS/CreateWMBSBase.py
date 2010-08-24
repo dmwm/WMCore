@@ -4,7 +4,7 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.5 2008/10/01 15:42:01 metson Exp $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.6 2008/10/03 11:19:36 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.Database.DBCreator import DBCreator
@@ -228,6 +228,9 @@ class CreateWMBSBase(DBCreator):
             if requiredTable not in self.create.keys():
                 raise WMException("The table '%s' is not defined." % \
                                   requiredTable, "WMCORE-2")
-                                  
-        DBCreator.execute(self, conn, transaction)
-        return
+                   
+        try:
+            DBCreator.execute(self, conn, transaction)
+            return True
+        except:
+            return False

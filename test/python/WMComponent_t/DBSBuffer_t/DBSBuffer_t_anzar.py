@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.7 2008/11/18 23:25:29 afaq Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.8 2008/12/11 20:29:21 afaq Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -57,16 +57,21 @@ class DBSBufferTest(unittest.TestCase):
             	myThread.dbi = dbFactory.connect()
             	myThread.transaction = Transaction(myThread.dbi)
                 myThread.transaction.begin()
-                myThread.transaction.commit()
+                #myThread.transaction.commit()
                 createworked=0
 		
-                """
             	# need to create these tables for testing.
             	factory = WMFactory("msgService", "WMCore.MsgService."+ \
                 	myThread.dialect)
             	create = factory.loadObject("Create")
-
-            	createworked = create.execute(conn = myThread.transaction.conn)
+		try: 
+            		createworked = create.execute(conn = myThread.transaction.conn)
+		except Exception, ex:
+                        if ex.__str__().find("already exists") != -1 :
+				print "WARNING: Table Already Exists Exception Raised, All Tables may not have been created"
+                                pass
+                        else:
+                                raise ex
             	if createworked:
                 	logging.debug("MsgService tables created")
             	else:
@@ -80,21 +85,52 @@ class DBSBufferTest(unittest.TestCase):
             	factory = WMFactory("msgService", "WMCore.ThreadPool."+ \
                 	myThread.dialect)
             	create = factory.loadObject("Create")
-            	createworked = create.execute(conn = myThread.transaction.conn)
+		try:
+            		createworked = create.execute(conn = myThread.transaction.conn)
+                except Exception, ex:
+                        if ex.__str__().find("already exists") != -1 :
+                                print "WARNING: Table Already Exists Exception Raised, All Tables may not have been created"
+                                pass
+                        else:
+                                raise ex
             	if createworked:
                 	logging.debug("ThreadPool tables created")
             	else:
                 	logging.debug("ThreadPool tables could not be created, \
                     	already exists?")
 
-                
+
+                # need to create WMBS-DBSBuffer-Related (file and its entroage) tables for testing.
+                factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
+                        myThread.dialect)
+                create = factory.loadObject("ProxyCreateWMBSBase")
+		try:
+                	createworked = create.execute(conn = myThread.transaction.conn)
+                except Exception, ex:
+                        if ex.__str__().find("already exists") != -1 :
+                                print "WARNING: Table Already Exists Exception Raised, All Tables may not have been created"
+                                pass
+                        else:
+                                raise ex
+                if createworked:
+                        logging.debug("DBSBuffer tables created")
+                else:
+                        logging.debug("DBSBuffer tables could not be created, \
+                        already exists?")
+
+
             	# need to create DBSBuffer tables for testing.
             	factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
                 	myThread.dialect)
             	create = factory.loadObject("Create")
-
-                createworked = create.execute(conn = myThread.transaction.conn)
-            				
+		try:
+                	createworked = create.execute(conn = myThread.transaction.conn)
+                except Exception, ex:
+                        if ex.__str__().find("already exists") != -1 :
+                                print "WARNING: Table Already Exists Exception Raised, All Tables may not have been created"
+                                pass
+                        else:
+                                raise ex
             	if createworked:
                 	logging.debug("DBSBuffer tables created")
             	else:
@@ -106,13 +142,12 @@ class DBSBufferTest(unittest.TestCase):
                         myThread.dialect)
                 newMsgService = factory.loadObject("MsgService")
                 newMsgService.registerAs("DBSBufferTestComp")
-                msg = {'name':'JobSuccess', 'payload':'C:\WORK\FJR\FrameworkJobReport.xml'}
+                msg = {'name':'JobSuccess', 'payload':'/uscms/home/anzar/work/FJR/forAnzar/Run68141/Calo/FrameworkJobReport-30.xml'}
                 newMsgService.publish(msg)
                 newMsgService.finish()
                 
                 myThread.transaction.commit()
                 
-                """
                 
                 DBSBufferTest._setup_done = True
 
@@ -148,7 +183,7 @@ class DBSBufferTest(unittest.TestCase):
 
     def testA(self):
         """
-        Mimics creation of component and handles come messages.
+        Mimics creation of component and handles JobSuccess messages.
         """
 
         # read the default config first.
@@ -194,7 +229,7 @@ class DBSBufferTest(unittest.TestCase):
         #testDBSBuffer.handleMessage('JobSuccess', \
         #        'C:\WORK\FJR\fjr_01.xml')
         testDBSBuffer.handleMessage('JobSuccess', \
-                'C:\WORK\FJR\FrameworkJobReport.xml')
+                '/uscms/home/anzar/work/FJR/forAnzar/Run68141/Calo/FrameworkJobReport-30.xml')
         #########myThread.transaction.commit()
          
         while threading.activeCount() > 1:

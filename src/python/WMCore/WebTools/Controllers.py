@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.7 2009/02/02 21:07:24 valya Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Controllers.py,v 1.8 2009/02/04 00:24:13 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
@@ -19,6 +19,10 @@ import logging, os, sys
 from WMCore.WebTools.Page import Page, exposejs, exposecss
 
 class Controllers(Page):
+    """
+    Controllers return java script and/or css from a static directory, after 
+minimising setting appropriate headers and etags and gzip.
+    """
     def __init__(self, config):
         Page.__init__(self, config)
         self.dict = dict

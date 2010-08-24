@@ -3,6 +3,9 @@ from WMCore.WebTools.Page import TemplatedPage
 from os import listdir
 
 class Documentation(TemplatedPage):
+    """
+    The documentation for the framework
+    """
     @expose
     def index(self):
         templates = listdir(self.templatedir)

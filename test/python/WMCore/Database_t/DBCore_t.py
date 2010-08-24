@@ -6,8 +6,8 @@ Unit tests for the DBInterface class
 
 """
 
-__revision__ = "$Id: DBCore_t.py,v 1.2 2008/08/21 17:30:31 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBCore_t.py,v 1.3 2008/09/01 16:09:41 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import unittest
@@ -88,6 +88,20 @@ class DBCoreTest(unittest.TestCase):
     def testInsertMany(self):
         self.createTable()
         self.fillTable()
+        
+    def testComplexInsertMany(self):
+        """
+        MySQL can't do an inner select in an insert, use insert ... select
+        """
+        self.createTable()
+        self.fillTable()
+        sqlite = "insert into test (bind1, bind2) values (:bind1, (select bind1 from test where bind2=:bind2))"
+        
+        b = [ {'bind1':'value3a', 'bind2': 'value2a'},
+              {'bind1':'value3b', 'bind2': 'value2b'},
+              {'bind1':'value3c', 'bind2': 'value2c'}]
+        
+        self.db['sqlite'].processData(sqlite, binds)        
 
     def testSelect(self):
         self.createTable()

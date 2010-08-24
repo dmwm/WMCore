@@ -9,7 +9,7 @@ source setup_mysql.sh
 # test
 python conf_test_mysql.py
 # generic clean
-#./cleanup.sh
+./cleanup.sh
 # clean backend specific stuff
 ./cleanup_mysql.sh
 

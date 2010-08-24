@@ -3,6 +3,7 @@ TOC
 -CODE STANDARD
 -RESERVED WORDS
 -DEVELOPMENT
+-->DEVELOPMENT (DATABASES)
 -TESTING
 
 Quality Officer: TBD
@@ -112,6 +113,20 @@ test might need to be added to multiple backends) in the config_<backend>.py
 file. You import the test module and add a tuple (test instance, and your unique
 id) to the test array. Your id (e.g. name) is used by the quality officer in 
 case of anomalies during testing.
+
+DEVELOPMENT (DATABASES)
+======================
+
+Some components have their own database tables. In order to prevent name clashes
+prefix your tables with something that easily associates it to the component.
+
+Some examples that are being used:
+
+ms_  MsgService
+tp_  ThreadPool
+err_ ErrorHandler
+tr_  Trigger
+
 
 
 TESTING:

@@ -25,18 +25,14 @@
 					    <dd>
 					    $methods[$m]['call'].__doc__
 					    #if len($methods[$m]['args']) > 0
-					    <dl>
-					    <dt>Arguments:</dt>
-					    <dd>
+					    <p>Arguments:</p>
 					    #for a in $methods[$m]['args']
 					    <li class="flat">$a</li>
 					    #end for
-					    </dd>
-					    </dl>
 					    #end if
-					    <li class="small">
+					    <p class="small">
 					    	<a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
-					    </li>
+					    </p>
 					    </dd>
 					    <hr/>
 					    #end for

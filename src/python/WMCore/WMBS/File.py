@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.6 2008/06/14 15:40:27 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: File.py,v 1.7 2008/06/16 16:04:32 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 from WMCore.DAOFactory import DAOFactory
 
 
@@ -33,7 +33,7 @@ class File(object):
         self.daofactory = DAOFactory(package='WMCore.WMBS', 
                                      logger=self.logger, 
                                      dbinterface=self.dbfactory.connect())
-    
+        
     def getInfo(self):
         """
         Return the files attributes as a tuple
@@ -74,12 +74,55 @@ class File(object):
         if not parentage > 0:
             return self
 
-        for lfn in self.wmbs.parentsForFile(self.id,
-                                conn = None, transaction = False):
+        for lfn in self.daofactory(classname='Files.GetParents').execute():
             self.parents.add( \
                     File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory).load(parentage=parentage-1))
         
         return self
+    
+    def save(self):
+        """
+        Save a file to the database 
+        """
+        self.daofactory(classname='Files.Add').execute(files=self.lfn, 
+                                                       size=self.size, 
+                                                       events=self.events, 
+                                                       run=self.run, 
+                                                       lumi=self.lumi)
+        self.load()
+    
+    def delete(self):
+        """
+        Remove a file from WMBS
+        """
+        self.daofactory(classname='Files.Delete').execute(files=self.lfn)
+        
+    def addChild(self, lfn):
+        """
+        Set an existing file (lfn) as a child of this file
+        """
+        child = File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory).load(parentage=parentage-1)
+        child.load()
+        if not self.id > 0:
+            raise Exception, "Parent file doesn't have an id %s" % self.lfn
+        if not child.id > 0:
+            raise Exception, "Child file doesn't have an id %s" % child.lfn
+        
+        self.daofactory(classname='Files.Heritage').execute(child=child.id, parent=self.id)
+        
+    def addParent(self, lfn):
+        """
+        Set an existing file (lfn) as a parent of this file
+        """
+        parent = File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory)
+        parent.load()
+        self.parents.add(parent)
+        if not self.id > 0:
+            raise Exception, "Child file doesn't have an id %s" % self.lfn
+        if not parent.id > 0:
+            raise Exception, "Parent file doesn't have an id %s" % parent.lfn
+        
+        self.daofactory(classname='Files.Heritage').execute(child=self.id, parent=parent.id)
 
     def setLocation(self, se):
         self.daofactory(classname='Files.SetLocation').execute(file=self.lfn, sename=se)

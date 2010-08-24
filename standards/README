@@ -154,9 +154,51 @@ test   : actually test scripts. Currently there are 4 scripts. Two
 for the code style, one for the code itself and a script (test_generate)
 which generates the actual test_style, test_code, config_test_mysql.py
 and config_test_oracle.py files by analyzing the cvs repository log
-(requires access to the cvs repository to generate log).
+(requires access to the cvs repository to generate log)
 
-Once all files are set you typically do:
+test_generate
+-------------
+
+This script generates various files to prepare for testing.
+During generation it also provides a report for test files that
+do not use the proper convention for importing tests (level 1 failure)
+it writes these to failures1.log
+
+Note: the test_generate script should be used mainly to generate
+the initial test configurations. After that these configuration
+can be tweeked manually
+
+The test_generate script generates various test configurations.
+Before running them edit them (e.g. you might want to remove 
+some tests for certain backends).
+
+When you run the actual tests using the test_code script
+it will again generate a report which highlights the tests that could
+not be instantiated (level 2 failure). By default these failures
+are written to failures2.log, however since we test with multiple 
+backends it it desirable to edit this filename in the 
+multiple generated conf_test*.py files (e.g. failure2_mysql.log
+and failures2_oracle.log)
+
+Finally the tests that are run can generate errors (level 3 failure).
+By default these errors and failures are written to failures3.log.
+Edit the name of this file so the different backends write to 
+unique files.
+
+Note: that some tests require an empty database. If tests preceding 
+a this test do not empty the database this might result in errors 
+for this test. The test framework cleans the default database
+but this might not be sufficient.
+
+Note: when generating the tests and style checks the mapping from 
+developer to module might not be correct. For example if user 'fvlingen'
+has moved files to a new directory for better organization he
+might be associated to modules he did not develop.
+
+After generation check the generated files and adapt them appropriately
+also check what tests you want to run for mysql, oracle or both.
+
+Once all files are configured appropriately you typically do:
 
 (1) source setup.sh
 (2) (optional) ./test_generate.sh

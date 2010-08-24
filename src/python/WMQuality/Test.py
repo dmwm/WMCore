@@ -8,10 +8,11 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.4 2008/10/16 15:03:19 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Test.py,v 1.5 2008/10/29 13:21:48 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
+import commands
 import os
 import unittest
 
@@ -24,17 +25,32 @@ class Test:
     to developers responsible for the test.
     """
 
-    def __init__(self, tests = []):
+    def __init__(self, tests = [], logFile = 'failures3.log'):
         self.tests = tests
+        self.failures = {}
+        self.errors = {}
+        self.totalTests = 0
+        self.totalErrors = 0
+        self.totalFailures = 0
+        self.logFile = logFile
 
 
     def run(self):
-        testSuite = unittest.TestSuite()
         for test in self.tests:
+            testSuite = unittest.TestSuite()
             test[0].developer = test[1]
             testSuite.addTest(test[0])
-        testResult = unittest.TestResult()
-        self.testResult = testSuite.run(testResult)
+            testResult = unittest.TestResult()
+            self.testResult = testSuite.run(testResult)
+            self.summarizeTest()
+            # call the script we use for cleaning the backends:
+            # FIXME: need to add something for oracle too.
+            print('Cleaning database backends')
+            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+            result = commands.getstatusoutput(command)
+            for entry in result:
+                print(str(entry))
+
 
     def parseCVS(self, cvsLog, pathCut, moduleCut, maxVotes):
         """
@@ -123,7 +139,11 @@ from WMQuality.Test import Test
         """
         testsFile.writelines(head)
         testsFile.writelines('\n')
+        # winners are successful imports
         winners = {}
+        # losers are unsuccesful imports which are reported (level 1)
+        losers = {}
+        losersCum = {}
         # make the import statements
         for testFile in self.testFile.keys():
             # find the one with the most votes per module:
@@ -143,51 +163,128 @@ from WMQuality.Test import Test
             importStmt += ' import '
             testObject = parts[-1].split('_t.py')[0] + 'Test'
             importStmt += testObject
-            winners[testObject] = winner
-            testsFile.writelines(importStmt+'\n')
-
-        testsFile.writelines('\n\n')
-        testsFile.writelines('tests = [\\\n')
+            # test if the import works. If it does not work we report it
+            pythonCmd = "python -c '"+importStmt+"'"
+            stdout, stdin, stderr = os.popen3(pythonCmd)
+            errorLine = stderr.readline()
+            # if no error register it
+            if not errorLine:
+                winners[testObject] = winner
+                testsFile.writelines(importStmt+'\n')
+            # if error report it
+            else:
+                errorMsg = errorLine
+                while True:
+                    errorLine = stderr.readline()
+                    if not errorLine:
+                        break
+                    errorMsg += errorLine
+                if not losers.has_key(winner):
+                    losers[winner] = []
+                    losersCum[winner] = 0
+                losers[winner].append( [importStmt, errorMsg] )
+                losersCum[winner] += 1
         # make the object instantiations.
+        # it is done with try/except clauses to test instantiation (level 2)
+        testsFile.writelines('\nerrors = {}\n')
+        testsFile.writelines('tests = []\n')
+        testsFile.writelines('\n\n')
         for testObject in winners:
-            testsFile.writelines('     (' +\
-                testObject+"(),'"+winners[testObject]+"'),\\\n")
-        testsFile.writelines('    ]\n')
+            testsFile.writelines('try:\n')
+            testsFile.writelines('   x='+testObject+'()\n')
+            testsFile.writelines('   tests.append((x,"'+winners[testObject]+'"))\n')
+            testsFile.writelines('except Exception,ex:\n')
+            testsFile.writelines('   if not errors.has_key("'+winners[testObject]+'"):\n')
+            testsFile.writelines('       errors["'+winners[testObject]+'"] = []\n')
+            testsFile.writelines('   errors["'+str(winners[testObject])+'"].append(("'+str(testObject)+'",str(ex)))\n')
+            testsFile.writelines('\n')
         tail = """
-test = Test(tests)
+
+raw_input('Writing level 2 failures to file: failures2.log (press key to continue)')
+failures = open('failures2.log','w')
+
+failures.writelines('Failed instantiation summary (level 2): \\n')
+for author in errors.keys():
+    failures.writelines('\\n*****Author: '+author+'********\\n')
+    for errorInstance, errorMsg in  errors[author]:
+        failures.writelines('Test: '+errorInstance)
+        failures.writelines(errorMsg)
+        failures.writelines('\\n\\n')
+failures.close()
+
+
+
+test = Test(tests,'failures3.log')
 test.run()
 test.summaryText()
         """
         testsFile.writelines(tail)
         testsFile.close()
+        # we generated the test file, now generate the report of failed
+        # imports.
+        raw_input('Writing level 1 failures to file: failures1.log (press key to continue)')
+        failures = open('failures1.log','w')
+        failures.writelines('Failed import summary (level 1):\n\n')
+        for winner in losersCum.keys():
+            msg = 'Author: '+winner
+            msg += ' Failures: '+str(losersCum[winner])
+            failures.writelines(msg+'\n')
+        failures.writelines('\nFailed import details:\n\n')
+        for winner in losers.keys():
+            failures.writelines('****************Author: '+winner+'***************\n\n')
+            for failed in losers[winner]:
+                failures.writelines('Failed import: '+failed[0]+'\n\n')
+                failures.writelines('Error message: \n'+failed[1]+'\n\n')              
  
  
     def summaryText(self):
         """
         Summary for the tests result.
         """
-        print "********************REPORT********************"
-        print "*******************FAILURES*******************"
+        raw_input('Writing level 3 failures to file: '+self.logFile+' (press key to continue)')
+        failures = open(self.logFile,'w')
+        failures.writelines('Following tests where run\n\n')
+        for test in self.tests:
+            failures.writelines(test[0].__class__.__name__+'-->'+test[1]+'\n')
+        failures.writelines('\n\n') 
+        failures.writelines('Failed tests (level 3):\n\n')    
+        for author in self.failures.keys():
+            failures.writelines(author+':'+str(len(self.failures[author]))+' failures\n')
+        for author in self.errors.keys():
+            failures.writelines(author+':'+str(len(self.errors[author]))+' errors\n')
+        failures.writelines('Failures (level 3):\n\n')    
+        for author in self.failures.keys():
+            failures.writelines('Author: '+author+'\n\n')
+            for failure in self.failures[author]:
+                failures.writelines('Test: '+failure[0]+'\n\n')
+                failures.writelines('Failure: '+failure[1]+'\n\n') 
+
+        for author in self.errors.keys():
+            failures.writelines('Author: '+author+'\n\n')
+            for failure in self.errors[author]:
+                failures.writelines('Test: '+failure[0]+'\n\n')
+                failures.writelines('Error: '+failure[1]+'\n\n') 
+        failures.close()
+
+    def summarizeTest(self):
+        """
+        Aggregates a summary of the test.
+        """
     
         for i in self.testResult.failures:
             obj, msg= i
-            print('==============================')
-            print(obj.developer+'--->'+obj.__class__.__name__)
-            print('==============================')
-            print(str(msg))
-    
-    
-        print "*******************ERRORS********************"
+            self.totalFailures += 1
+            if not self.failures.has_key(obj.developer):
+                self.failures[obj.developer] = []
+            self.failures[obj.developer].append([obj.__class__.__name__, \
+                msg])
     
         for i in self.testResult.errors:
             obj,msg=i
-            print('==============================')
-            print(obj.developer+'--->'+obj.__class__.__name__)
-            print('==============================')
-            print(str(msg))
+            self.totalErrors += 1
+            if not self.errors.has_key(obj.developer):
+                self.errors[obj.developer] = []
+            self.errors[obj.developer].append([obj.__class__.__name__, \
+                msg])
  
-        print "*******************SUMMARY*********************"
-        print "Number of tests run: "+str(self.testResult.testsRun)
-        print "Number of failures:  "+str(len(self.testResult.failures))
-        print "Number of errors  :  "+str(len(self.testResult.errors))
 

@@ -5,8 +5,8 @@ _EventBased_
 Event based splitting test
 
 """
-__revision__ = "$Id: EventBased_t.py,v 1.2 2008/10/01 22:03:40 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: EventBased_t.py,v 1.3 2008/10/29 13:21:49 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -17,8 +17,8 @@ import random
 import datetime
 import math
 import hotshot, hotshot.stats
-logging.getLogger().setLevel(logging.DEBUG)
-logging.getLogger().addHandler(logging.StreamHandler())
+#logging.getLogger().setLevel(logging.DEBUG)
+#logging.getLogger().addHandler(logging.StreamHandler())
 
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 

@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.2 2008/10/03 12:36:06 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Trigger_t.py,v 1.3 2008/10/29 13:21:50 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import unittest
@@ -39,7 +39,7 @@ class TriggerTest(unittest.TestCase):
     _flags = 4
 
     def setUp(self):
-        "make a logger instance and create tables"
+        "make a logger instance "
        
         if not TriggerTest._setup: 
             print('trigger setup (once)')
@@ -49,29 +49,7 @@ class TriggerTest(unittest.TestCase):
                 filename='%s.log' % __file__,
                 filemode='w')
 
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('TriggerTest')
-            myThread.dialect = os.getenv('DIALECT')
-        
-            options = {}
-            if myThread.dialect == 'MySQL':
-                options['unix_socket'] = os.getenv("DBSOCK")
-                dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                    options)
-            else:
-                dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"))
-        
-            myThread.dbi = dbFactory.connect() 
-
-            factory = WMFactory("trigger", "WMCore.Trigger")
-            create = factory.loadObject(myThread.dialect+".Create")
-            myThread.transaction = Transaction(myThread.dbi)
-            createworked = create.execute(conn = myThread.transaction.conn)
-            if not createworked:
-                raise Exception("Trigger tables could not be created, \
-                    already exists?")
             TriggerTest._setup = True
-            myThread.transaction.commit()                                  
 
     def tearDown(self):
         """
@@ -97,13 +75,39 @@ class TriggerTest(unittest.TestCase):
 
         TriggerTest._teardown = False
 
-               
     def testA(self):
+        "create tables"
+        print('testA')
+        myThread = threading.currentThread()
+        myThread.logger = logging.getLogger('TriggerTest')
+        myThread.dialect = os.getenv('DIALECT')
+        
+        options = {}
+        if myThread.dialect == 'MySQL':
+            options['unix_socket'] = os.getenv("DBSOCK")
+            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
+                options)
+        else:
+            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"))
+    
+        myThread.dbi = dbFactory.connect() 
+
+        factory = WMFactory("trigger", "WMCore.Trigger")
+        create = factory.loadObject(myThread.dialect+".Create")
+        myThread.transaction = Transaction(myThread.dbi)
+        createworked = create.execute(conn = myThread.transaction.conn)
+        if not createworked:
+            raise Exception("Trigger tables could not be created, \
+                already exists?")
+        myThread.transaction.commit()                                  
+
+    def testB(self):
         """
         __testSubscribe__
 
         Test subscription of a component.
         """
+        print('testB')
         # perpare trigger name tables if working in multi queue
         myThread = threading.currentThread()
         trigger = Trigger()
@@ -135,11 +139,12 @@ class TriggerTest(unittest.TestCase):
         trigger.setAction(actions)
         myThread.transaction.commit()
 
-    def testB(self):
+    def testC(self):
         """
         Set almost all flags
         """
 
+        print('testC')
         trigger = Trigger()
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -158,10 +163,12 @@ class TriggerTest(unittest.TestCase):
 
         myThread.transaction.commit()
 
-    def testC(self):
+    def testD(self):
         """
         Set all flags and remove flags from database
         """
+        print('testD')
+        TriggerTest._teardown = True
         trigger = Trigger()
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -179,12 +186,11 @@ class TriggerTest(unittest.TestCase):
         myThread.transaction.commit()
 
 
-        TriggerTest._teardown = True
-
     def runTest(self):
         self.testA() 
         self.testB() 
         self.testC() 
+        self.testD() 
 
 if __name__ == "__main__":
     unittest.main()

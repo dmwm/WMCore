@@ -6,8 +6,8 @@ General test for WMException
 
 """
 
-__revision__ = "$Id: WMException_t.py,v 1.2 2008/09/25 14:35:11 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMException_t.py,v 1.3 2008/10/29 13:21:49 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -23,7 +23,7 @@ class WMExceptionTest(unittest.TestCase):
         """
         setup log file output.
         """
-        logging.basicConfig(level=logging.DEBUG,
+        logging.basicConfig(level=logging.NOTSET,
             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
             datefmt='%m-%d %H:%M',
             filename='%s.log' % __file__,

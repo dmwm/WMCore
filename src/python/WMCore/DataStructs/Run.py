@@ -6,8 +6,8 @@ _Run_
 container representing a run, and its constituent lumi sections
 
 """
-__revision__ = "$Id: Run.py,v 1.2 2008/12/12 19:54:13 afaq Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: Run.py,v 1.3 2009/02/17 17:58:29 sryu Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -60,13 +60,18 @@ class Run(WMObject, list):
             msg = "Adding together two different runs"
             msg += "Run %s does not equal Run %s" % (self.run, rhs.run)
             raise RuntimeError, msg
-
+        
+        #newRun = Run(self.run, *self)
+        #[ newRun.append(x) for x in rhs if x not in newRun ]
         [ self.append(x) for x in rhs if x not in self ]
+        
         return self
 
 
 
     def __eq__(self, rhs):
+        if not isinstance(rhs, Run) :
+            return False
         if self.run != rhs.run:
             return False
         return list(self) == list(rhs)

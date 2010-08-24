@@ -15,9 +15,10 @@ CREATE TABLE wmbs_subscription_location (
              FOREIGN KEY(location)     REFERENCES wmbs_location(id)
                ON DELETE CASCADE)
 """
+
 __all__ = []
-__revision__ = "$Id: MarkLocation.py,v 1.2 2008/11/11 14:02:46 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: MarkLocation.py,v 1.3 2008/11/21 17:08:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -29,6 +30,11 @@ class MarkLocation(DBFormatter):
             
     def execute(self, subscription=None, location=None, valid = None, 
                 conn = None, transaction = False):
+
+        if valid == True:
+            valid = 1
+        else:
+            valid = 0
         
         result = self.dbi.processData(self.sql, 
                                       self.getBinds(subscription=subscription, 

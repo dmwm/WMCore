@@ -27,8 +27,8 @@ CREATE TABLE wmbs_subscription_location (
                ON DELETE CASCADE)"
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.5 2008/11/20 21:52:32 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.6 2008/11/21 17:07:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -77,7 +77,7 @@ class GetAvailableFiles(DBFormatter):
                 (select file from wmbs_file_location where location in
                     (select location from wmbs_subscription_location where
                         subscription=:subscription and
-                        valid = TRUE)
+                        valid = 1)
                 )
                 """
             binds = {'subscription': subscription['id']}
@@ -95,7 +95,7 @@ class GetAvailableFiles(DBFormatter):
                 (select file from wmbs_file_location where location not in
                     (select location from wmbs_subscription_location where
                         subscription=:subscription and
-                        valid = FALSE)
+                        valid = 0)
                 )
                 """
                 
@@ -116,9 +116,6 @@ class GetAvailableFiles(DBFormatter):
     def execute(self, subscription=None, conn = None, transaction = False):
         sql, binds = self.getSQLAndBinds(subscription, conn = conn, transaction = transaction)
         
-        
-        
         result = self.dbi.processData(sql, binds, 
                                       conn = conn, transaction = transaction)
         return self.format(result)
-

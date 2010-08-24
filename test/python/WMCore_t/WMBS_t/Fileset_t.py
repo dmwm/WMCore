@@ -2,11 +2,13 @@
 """ 
 Testcase for Fileset
 
-Unit tests for the WMBS Fileset class.
+Instantiate a Fileset, with an initial file on its Set. After being populated with 1000 random files,
+its access methods and additional file insert methods are tested
+
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.4 2008/12/18 15:00:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Fileset_t.py,v 1.5 2008/12/23 22:31:19 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import logging
@@ -17,10 +19,11 @@ import threading
 from WMCore.WMFactory import WMFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.DataStructs.Run import Run
 
 from WMQuality.TestInit import TestInit
 
-class FilesetTest(unittest.TestCase):
+class Fileset_t(unittest.TestCase):
     _setup = False
     _teardown = False
     
@@ -97,11 +100,14 @@ class FilesetTest(unittest.TestCase):
         load methods.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileC.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -156,11 +162,14 @@ class FilesetTest(unittest.TestCase):
         make sure that all the results it returns are consistant.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileC.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -226,11 +235,14 @@ class FilesetTest(unittest.TestCase):
         if they are not in the database.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20, cksum = 3)
+        testFileC.addRun(Run( 1, *[45]))
         testFileB.create()
 
         testFilesetA = Fileset(name = "TestFileset")

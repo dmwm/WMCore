@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.5 2008/09/10 19:56:52 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobGroup.py,v 1.6 2008/09/19 09:44:53 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -54,7 +54,10 @@ class JobGroup(Pickleable):
     
     def add(self, job):        
         self.jobs = self.jobs | self.makeset(job)
-        
+    
+    def __len__(self):
+        return len(self.jobs)
+    
     def status(self, detail=False):
         """
         The status of the job group is the sum of the status of all jobs in the

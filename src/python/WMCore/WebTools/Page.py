@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.14 2009/02/13 18:48:55 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Page.py,v 1.15 2009/02/16 11:41:32 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import urllib
 import cherrypy
@@ -74,6 +74,28 @@ class TemplatedPage(Page):
 
 class DatabasePage(TemplatedPage, DBFormatter):
     def __init__(self, config = {}, database = ''):
+        """
+        __DatabasePage__
+        
+        A page with a database connection (a WMCore.Database.DBFormatter) held 
+        in self.dbi. Look at the DBFormatter class for other handy helper 
+        methods, such as getBinds and formatDict.
+        
+        The DBFormatter class was originally intended to be extensively 
+        sub-classed, such that it's subclasses followed the DAO pattern. For web 
+        tools we do not generally do this, and you will normally access the 
+        database interface directly:
+        
+        binds = {'id': 123}
+        sql = "select * from table where id = :id"
+        result = self.dbi.processData(sql, binds)
+        return self.formatDict(result)
+        
+        Although following the DAO pattern is still possible and encouraged 
+        where appropriate. However, if you want to use the DAO pattern it may be
+        better to *not* expose the DAO classes and have a normal DatabasePage 
+        exposed that passes the database connection to all the DAO's. 
+        """
         TemplatedPage.__init__(self, config)
         assert hasattr(self.config, 'database'), "No database configured"
         conn = DBFactory(self, self.config.database).connect()

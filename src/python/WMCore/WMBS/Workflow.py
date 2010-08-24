@@ -15,8 +15,8 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Workflow.py,v 1.16 2009/01/08 22:47:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Workflow.py,v 1.17 2009/01/14 16:46:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -75,27 +75,28 @@ class Workflow(WMBSBase, WMWorkflow):
         self.commitIfNew()
         return
         
-    def load(self, method = "Workflow.LoadFromName"):
+    def load(self):
         """
         Load a workflow from WMBS
         """
-        action = self.daofactory(classname = method)
-        if method == "Workflow.LoadFromName":
-            result = action.execute(workflow = self.name,
-                                    conn = self.getReadDBConn(),
-                                    transaction = self.existingTransaction())
-        elif method == "Workflow.LoadFromID":
+        if self.id > 0:
+            action = self.daofactory(classname = "Workflow.LoadFromID")
             result = action.execute(workflow = self.id,
                                     conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())
-        elif method == "Workflow.LoadFromSpecOwner":
+        elif self.name != None:
+            action = self.daofactory(classname = "Workflow.LoadFromName")
+            result = action.execute(workflow = self.name,
+                                    conn = self.getReadDBConn(),
+                                    transaction = self.existingTransaction())
+        else:
+            action = self.daofactory(classname = "Workflow.LoadFromSpecOwner")
             result = action.execute(spec = self.spec, owner = self.owner,
                                     conn = self.getReadDBConn(),
-                                    transaction = self.existingTransaction())                                    
-        else:
-            raise TypeError, "load method not supported"
+                                    transaction = self.existingTransaction())
 
-        self.id = result[0][0]
-        self.spec = result[0][1]
-        self.name = result[0][2]
-        self.owner = result[0][3]
+        self.id = int(result["id"])
+        self.spec = result["spec"]
+        self.name = result["name"]
+        self.owner = result["owner"]
+        return

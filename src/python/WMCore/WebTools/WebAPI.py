@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson 
+from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson, exposedasjson 
 from WMCore.Lexicon import sitetier, countrycode
 from cherrypy import expose
 import sys
@@ -11,7 +11,8 @@ class WebAPI(DatabasePage):
     
     @expose
     def index(self):
-        return self.templatepage('API', methods = self.methods)
+        return self.templatepage('API', methods = self.methods, 
+                                 application = self.config.application)
     
     @expose
     def default(self, *args, **kwargs):

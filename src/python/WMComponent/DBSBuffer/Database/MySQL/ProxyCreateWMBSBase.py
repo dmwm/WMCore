@@ -8,8 +8,8 @@ wmbs tables will be used)
 
 """
 
-__revision__ = "$Id: ProxyCreateWMBSBase.py,v 1.1 2008/12/11 20:32:03 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ProxyCreateWMBSBase.py,v 1.2 2008/12/12 19:23:57 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -50,6 +50,7 @@ class ProxyCreateWMBSBase(DBCreator):
              lfn          VARCHAR(255) NOT NULL,
              size         INTEGER,
              events       INTEGER,
+             cksum        INTEGER,
              first_event  INTEGER,
              last_event   INTEGER)ENGINE=InnoDB"""
         

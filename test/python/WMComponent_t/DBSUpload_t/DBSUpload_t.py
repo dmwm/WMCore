@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.8 $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -70,14 +70,14 @@ class DBSUploadTest(unittest.TestCase):
         #return True # I do not want to remove my database
         
         myThread = threading.currentThread()
-        if DBSBufferTest._teardown and myThread.dialect == 'MySQL':
+        if DBSUploadTest._teardown and myThread.dialect == 'MySQL':
             # call the script we use for cleaning:
             command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
             result = commands.getstatusoutput(command)
             for entry in result:
                 print(str(entry))
 
-        DBSBufferTest._teardown = False
+        DBSUploadTest._teardown = False
 
     def testA(self):
         
@@ -109,16 +109,18 @@ class DBSUploadTest(unittest.TestCase):
         config.CoreDatabase.name = os.getenv("DBNAME")
 
         testDBSUpload = DBSUpload(config)
-        
         testDBSUpload.prepareToStart()
+
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # for testing purposes we use this method instead of the 
         # StartComponent one.
-        #testDBSUpload.handleMessage('BufferSuccess', \
-		#		'NoPayLoad')
-        for i in xrange(0, DBSUploadTest._maxMessage):
-            testDBSUpload.handleMessage('BufferSuccess', \
-                'YourMessageHere'+str(i))
 
+        #testDBSUpload.handleMessage('BufferSuccess', \
+	#			'NoPayLoad')
+
+        #for i in xrange(0, DBSUploadTest._maxMessage):
+        #    testDBSUpload.handleMessage('BufferSuccess', \
+        #        'YourMessageHere'+str(i))
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\
@@ -131,8 +133,7 @@ class DBSUploadTest(unittest.TestCase):
         """
         Mimics creation of component and handles come messages.
         """
-        
-        #return True
+        return True
         
         # read the default config first.
         config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
@@ -163,6 +164,10 @@ class DBSUploadTest(unittest.TestCase):
         
         #testDBSUpload.handleMessage('NewWorkflow', \
         #        'C:\\WORK\\FJR\\workflow.xml')
+
+	#testDBSUpload.handleMessage('NewWorkflow', \
+	#	'/uscms/home/anzar/work/FJR/forAnzar/Run68141/PromptReco-Run68141-A-Calo-workflow.xml')
+
         #testDBSUpload.handleMessage('NewWorkflow', \
         #                            'C:\\WORK\\FJR\\RepackMerge-Run58733-RAW-BarrelMuon-Merge-Workflow.xml')
         for i in xrange(0, DBSUploadTest._maxMessage):

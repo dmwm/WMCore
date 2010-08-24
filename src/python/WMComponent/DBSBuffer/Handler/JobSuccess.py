@@ -4,7 +4,7 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.3 2008/10/10 21:41:00 afaq Exp $"
+__revision__ = "$Id: JobSuccess.py,v 1.4 2008/10/16 09:46:49 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -31,7 +31,7 @@ class JobSuccess(BaseHandler):
         # and depends on the developer deciding how he/she
         # wants to implement certain logic.
 
-	#print "I am not sure about thread pools here"
+        #print "I am not sure about thread pools here"
 
         #self.threadpool = ThreadPool(\
         #    "WMComponent.DBSBuffer.Handler.DefaultRunSlave", \
@@ -53,10 +53,10 @@ class JobSuccess(BaseHandler):
             logging.error("JobReport Not Found: %s" %jobReportFile)
             raise InvalidJobReport(jobReportFile)
         try:
-         jobreports=readJobReport(jobReportFile)
+            jobreports=readJobReport(jobReportFile)
         except:
-          logging.debug("Invalid JobReport File: %s" %jobReportFile)
-          raise InvalidJobReport(jobReportFile)
+            logging.debug("Invalid JobReport File: %s" %jobReportFile)
+            raise InvalidJobReport(jobReportFile)
 
         return jobreports
 
@@ -74,16 +74,20 @@ class JobSuccess(BaseHandler):
 		l=0
 		print "\n\n"
 		for aFile in aFJR.files:
-			if l==0 :
+            if l==0:
+                l=1
+                AddToBuffer.addDataset(aFile.dataset[0])
+                
+                """
 				print "Dataset Path : " + \
 					"/"+aFile.dataset[0]['PrimaryDataset']+ \
 					"/"+aFile.dataset[0]['ProcessedDataset']+ \
-					"/"+aFile.dataset[0]['DataTier'] 
-				l=1
-				AddToBuffer.addDataset(aFile.dataset[0])
-			
+					"/"+aFile.dataset[0]['DataTier']
+				"""
+            	
 			AddToBuffer.addFile(aFile)
-
+            
+            """
 			print "\n\n\n"
                 	print aFile['LFN']
 			print aFile['TotalEvents']
@@ -94,8 +98,9 @@ class JobSuccess(BaseHandler):
 			print aFile.runs
 			print aFile.getLumiSections()
 			print "aFile['inputFiles']"
+            """
 			
-
 	# Now lets see if we can call the methods from Database/Interface
-
 	print "DONE! "
+    
+    

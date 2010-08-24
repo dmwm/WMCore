@@ -5,9 +5,15 @@ _DBSBuffer.NewDataset_
 Add a new dataset to DBS Buffer
 
 """
-__revision__ = "$Id: NewDataset.py,v 1.1 2008/10/15 14:29:08 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: NewDataset.py,v 1.2 2008/10/16 09:46:49 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
+
+
+print "Dataset Path : " + \
+                    "/"+aFile.dataset[0]['PrimaryDataset']+ \
+                    "/"+aFile.dataset[0]['ProcessedDataset']+ \
+                    "/"+aFile.dataset[0]['DataTier'] 
 
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -20,9 +26,10 @@ class NewFile(DBFormatter):
     def getBinds(self, dataset=None):
         # binds a list of dictionaries
         binds =  { 
-                        'path': dataset['path']
+                        'path': "/"+dataset['PrimaryDataset']+ \
+                                "/"+dataset['ProcessedDataset']+ \
+                                "/"+dataset['DataTier']
                 }
-
         return binds
 
     def format(self, result):

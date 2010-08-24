@@ -35,14 +35,11 @@ class JobFactory(WMObject):
                                   *args, **kwargs)
 
         group.add(jobs)
+        group.commit()
 
         # Acquire the files used in the job group, job groups should run on 
         # complete files.
         group.recordAcquire(list(jobs))
-        
-        # Commit the jobs to ensure the JobGroup is ready to use
-        group.commit()
-
         return group
     
     def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):

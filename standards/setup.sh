@@ -12,6 +12,7 @@ export PRODAGENTBASE=$CMSBASE/cms/prodagent/PRODAGENT_0_12_5-cmp
 export CVSBASE=/home/fvlingen/programFiles/CMS_CVS
 export TESTDIR=/home/fvlingen/programFiles/CMS_CVS/WMCORE_TEST
 export WMCOREBASE=$CVSBASE/WMCORE
+export PATH=$WMCOREBASE/bin:$PATH
 export PYTHONPATH=$WMCOREBASE/src/python:$PYTHONPATH
 export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
 #export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH

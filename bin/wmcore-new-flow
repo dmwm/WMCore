@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+"""
+Generates components, handlers and threadpools from 
+a specification. It sets up the skeleton for development.
+"""
+
+__revision__ = "$Id: wmcore-new-flow,v 1.1 2009/01/14 12:31:22 fvlingen Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "fvlingen@caltech.edu"
+
+import getopt
+import sys
+
+from WMCore.Agent.Flow.Generate import Generate
+
+msg = """
+Usage: wmcore-new-flow -config=<config file>
+
+Please give a location of the config file that you 
+want to use for generating the workflow. You can find
+an example of a config file in:
+
+.../WMCORE/src/python/WMCore/Flow/DefaultFlow.py file.
+"""
+
+# try to extract file from the command line
+valid = ["config="]
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "", valid)
+except getopt.GetoptError, ex:
+    print str(ex)
+    print(msg)
+    sys.exit(1)
+
+if len(opts) == 0:
+    print(msg)
+    sys.exit(1)
+
+for opt, arg in opts:
+    if opt == '--config':
+        generate = Generate(arg)
+        generate.generate()
+

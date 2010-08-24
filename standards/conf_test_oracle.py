@@ -75,14 +75,6 @@ except Exception,ex:
    errors["ewv"].append(("SiteDBTest",str(ex)))
 
 try:
-   x=ThreadPoolTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("ThreadPoolTest",str(ex)))
-
-try:
    x=DBSUploadTest()
    tests.append((x,"afaq"))
 except Exception,ex:
@@ -124,11 +116,11 @@ except Exception,ex:
 
 try:
    x=ConfigurationTest()
-   tests.append((x,"fvlingen"))
+   tests.append((x,"evansde"))
 except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("ConfigurationTest",str(ex)))
+   if not errors.has_key("evansde"):
+       errors["evansde"] = []
+   errors["evansde"].append(("ConfigurationTest",str(ex)))
 
 try:
    x=SQLiteDAOJobTest()
@@ -211,28 +203,12 @@ except Exception,ex:
    errors["sfoulkes"].append(("FileTest",str(ex)))
 
 try:
-   x=HarnessTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("HarnessTest",str(ex)))
-
-try:
    x=DBCoreTest()
    tests.append((x,"metson"))
 except Exception,ex:
    if not errors.has_key("metson"):
        errors["metson"] = []
    errors["metson"].append(("DBCoreTest",str(ex)))
-
-try:
-   x=ErrorHandlerTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("ErrorHandlerTest",str(ex)))
 
 try:
    x=MySQLDAOTest()
@@ -315,14 +291,6 @@ except Exception,ex:
    errors["fvlingen"].append(("FileInfoTest",str(ex)))
 
 try:
-   x=TriggerTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("TriggerTest",str(ex)))
-
-try:
    x=FilesetTest()
    tests.append((x,"jcgon"))
 except Exception,ex:
@@ -347,36 +315,12 @@ except Exception,ex:
    errors["afaq"].append(("DBSBufferTest",str(ex)))
 
 try:
-   x=ProxyTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("ProxyTest",str(ex)))
-
-try:
-   x=DaemonTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("DaemonTest",str(ex)))
-
-try:
    x=FJRTest()
    tests.append((x,"fvlingen"))
 except Exception,ex:
    if not errors.has_key("fvlingen"):
        errors["fvlingen"] = []
    errors["fvlingen"].append(("FJRTest",str(ex)))
-
-try:
-   x=AlertsTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("AlertsTest",str(ex)))
 
 try:
    x=MySQLDAOLocationTest()
@@ -417,16 +361,6 @@ except Exception,ex:
    if not errors.has_key("jcgon"):
        errors["jcgon"] = []
    errors["jcgon"].append(("SQLiteDAOFileTest",str(ex)))
-
-try:
-   x=MsgServiceTest()
-   tests.append((x,"fvlingen"))
-except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("MsgServiceTest",str(ex)))
-
-
 
 print('Writing level 2 failures to file: failures2_oracle.rep')
 failures = open('failures2_oracle.rep','w')

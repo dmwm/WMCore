@@ -13,7 +13,7 @@ class JobFactory(WMObject):
     def __init__(self, package='WMCore.DataStructs', subscription=None):
         self.package = package
         self.subscription = subscription
-        
+
     def __call__(self, jobtype='Job', grouptype='JobGroup', *args, **kwargs):
         """
         The default behaviour of JobFactory.__call__ is to return a single
@@ -26,28 +26,20 @@ class JobFactory(WMObject):
         module = "%s.%s" % (self.package, grouptype)
         module = __import__(module, globals(), locals(), [grouptype])
         group_instance = getattr(module, grouptype.split('.')[-1])
-        
+
         group = group_instance(subscription = self.subscription)
         
         basename = "%s-%s" % (self.subscription.name(), group.id)
 
-        logging.debug("A")
-        
         jobs = self.algorithm(job_instance=job_instance, jobname=basename,
                                   *args, **kwargs)
 
-        logging.debug("B")
-        
         group.add(jobs)
 
-        logging.debug("C")
-        
         # Acquire the files used in the job group, job groups should run on 
         # complete files.
         group.recordAcquire(list(jobs))
 
-        logging.debug("D")
-        
         return group
     
     def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):

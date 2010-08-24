@@ -9,7 +9,8 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 
 database = 'sqlite://'
-#database = 'sqlite:///filesettest'
+#database = 'sqlite:///filesettest.lite'
+#database = 'mysql://metson@localhost/wmbs'
 
 engine = create_engine(database)
 "make a logger instance"
@@ -47,8 +48,8 @@ if fs.exists():
         print "this exception should be thrown - the fileset should exist by now"
     fs.populate()
 
-file1 = File('/store/user/metson/file1', 123, 234, 345, 456)
-file2 = File('/store/user/metson/file2', 123, 234, 345, 456)
+file1 = File(lfn='/store/user/metson/file1', size=123, events=234, run=345, lumi=456)
+file2 = File(lfn='/store/user/metson/file2', size=123, events=234, run=345, lumi=456)
 print "list of files, should be empty:\n\t %s" % fs.listFiles()
 fs.addFile(file1)
 print "list of files, should have one file:\n\t %s" % fs.listFiles()
@@ -67,6 +68,13 @@ fs2.populate()
 print "list of files, should have two files:\n\t %s" % fs2.listFiles()
 print "list of files, should be empty:\n\t %s" % fs2.listNewFiles()
 
+print 'add a bunch of files to the fileset'
+size = 10
+for x in range(size):
+    f = File(lfn='/store/user/metson/file%s' % x, size=5 *x, events=10* x, run=x, lumi=x+3)
+    fs.addFile(f) 
+fs.commit()
+
 print " ### Look for subscriptions, should be none"
 
 fs.subscriptions()
@@ -82,9 +90,12 @@ print 'Workflow %s exists?: %s' % (wf.spec, wf.exists())
 wf.create()
 print 'Workflow %s exists?: %s' % (wf.spec, wf.exists())
 
-fs.createSubscription(wf)
+sub1 = fs.createSubscription(wf)
+sub2 = fs.createSubscription(wf, 'merge')
+print sub1.id
+print sub2.id
 
-print " ### Look for subscriptions, should be one"
+print " ### Look for subscriptions, should be one of each type"
 
 fs.subscriptions()
 fs.subscriptions('merge')
@@ -94,9 +105,38 @@ try:
 except:
     print "\t Exception - This should be thrown"
 
+print "\nTesting files in subscriptions"
+print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))
+
+print "\nAcquire two files"
+sub2.acquireFiles(2)
+print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))
+print "\t acquired files: %s" % sub2.acquiredFiles()
+print "\t completed files: %s" % sub2.completedFiles()
+print "\t failed files: %s" % sub2.failedFiles()
+
+print "\nAcquire three files, fail one, complete one"
+sub2.acquireFiles(3)
+sub2.failFiles(sub2.acquiredFiles().pop())
+sub2.completeFiles(sub2.acquiredFiles().pop())
+print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))
+print "\t acquired files: %s" % sub2.acquiredFiles()
+print "\t completed files: %s" % sub2.completedFiles()
+print "\t failed files: %s" % sub2.failedFiles()
+
+print "\nAcquire remaining files, fail one, complete one"
+sub2.acquireFiles()
+sub2.failFiles(sub2.acquiredFiles().pop())
+sub2.completeFiles(sub2.acquiredFiles().pop())
+print "\t available files: %s (%s)" % (sub2.availableFiles(), len(sub2.availableFiles()))
+print "\t acquired files: %s" % sub2.acquiredFiles()
+print "\t completed files: %s" % sub2.completedFiles()
+print "\t failed files: %s" % sub2.failedFiles()
 
 
 
+
+print '\n\n#### test ended'
 
 
 

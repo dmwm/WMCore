@@ -52,12 +52,13 @@ for f in fs:
     
 filelist=[]
 # files is a list of tuples containing lfn, size, events, run and lumi
-for x in range(500):
+size = 5
+for x in range(size):
     f = 'lfn%s' % x,  5 *x,  10* x, x, x+3
     filelist.append(f)
 
 wmbs.insertFilesForFileset(files=filelist, fileset='dataset1')
-print "inserted 5 files:"
+print "inserted %s files:" % size
 fs = wmbs.showFilesInFileset(fileset='dataset1')
 for f in fs:
     for i in f.fetchall():
@@ -69,6 +70,13 @@ wmbs.newWorkflow('file2.xml', 'metson')
 wmbs.newSubscription(fileset='/Higgs/SimonsCoolData/RECO', spec='file.xml', owner = 'metson')
 wmbs.newSubscription(fileset='/Higgs/SimonsCoolData/RECO', spec='file.xml', owner = 'metson', subtype='merge')
 wmbs.newSubscription(fileset=['dataset1', 'dataset2'], spec='file2.xml', owner = 'metson')
+
+print "### ID number for the four subscriptions:"
+print wmbs.subscriptionID(fileset='/Higgs/SimonsCoolData/RECO', spec='file.xml', owner = 'metson')
+print wmbs.subscriptionID(fileset='/Higgs/SimonsCoolData/RECO', spec='file.xml', owner = 'metson', subtype='merge')
+print wmbs.subscriptionID(fileset='dataset1', spec='file2.xml', owner = 'metson')
+print wmbs.subscriptionID(fileset='dataset2', spec='file2.xml', owner = 'metson')
+print
 
 
 fs = wmbs.subscriptionsForFileset(fileset='/Higgs/SimonsCoolData/RECO')

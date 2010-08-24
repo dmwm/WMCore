@@ -160,5 +160,5 @@ class PhEDExNotifierComponent:
     def handleCreated( self, theCreated ):
 
         for aCreated in theCreated:
-            filesInCreated = aCreated.getElementsByTagName( "replica" )[0].getAttribute( "files" )
+            filesInCreated = int( aCreated.getElementsByTagName( "replica" )[0].getAttribute( "files" ) )
             logging.debug( "PhEDExNotifier: new block %s has %d files" % ( aCreated.getAttribute( "name" ), filesInCreated ) )

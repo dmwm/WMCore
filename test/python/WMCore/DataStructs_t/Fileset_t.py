@@ -117,19 +117,25 @@ class FilesetClassTest (unittest.TestCase):
             
         """
         localTestFileSet = Fileset('LocalTestFileset', self.initialSet)
+        fsSize = len(localTestFileSet.listLFNs())
         #Dummy file to test
         fileTestCommit = File('/tmp/filetestcommit',0000,1,1,1)
         #File is added to the newfiles attribute of localTestFileSet
         localTestFileSet.addFile(fileTestCommit)
+        assert fsSize == len(localTestFileSet.listLFNs()) - 1, 'file not added'\
+                'correctly to test fileset'
         newfilestemp = localTestFileSet.newfiles
+        assert fileTestCommit in newfilestemp, 'test file not in the new files'\
+                'list' 
         #After commit, dummy file is supposed to move from newfiles to files
         localTestFileSet.commit()
         #First, testing if the new file is present at file set object attribute of the Fileset object
-        assert newfilestemp in localTestFileSet.files, 'Test file not ' \
+        
+        assert newfilestemp.issubset(localTestFileSet.files), 'Test file not ' \
                 'present at fileset.files - fileset.commit ' \
                 'not working properly' 
         #Second, testing if the newfile set object attribute is empty
-        assert localTestFileSet.newfiles == None, \
+        assert localTestFileSet.newfiles == Set(), \
                 'Test file not present at fileset.newfiles ' \
                 '- fileset.commit not working properly'
      

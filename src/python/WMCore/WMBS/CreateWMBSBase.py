@@ -4,7 +4,7 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.6 2008/10/03 11:19:36 metson Exp $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.7 2008/10/08 14:28:19 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.Database.DBCreator import DBCreator
@@ -60,10 +60,7 @@ class CreateWMBSBase(DBCreator):
              file        INT(11)   NOT NULL,
              fileset     INT(11)   NOT NULL,
              insert_time TIMESTAMP NOT NULL,
-             status      INT(11),
-             FOREIGN KEY(fileset) references wmbs_fileset(id)
-             FOREIGN KEY(status)  references wmbs_file_status(id)
-               ON DELETE CASCADE)"""
+             FOREIGN KEY(fileset) references wmbs_fileset(id))"""
 
         self.create["04wmbs_file_parent"] = \
           """CREATE TABLE wmbs_file_parent (

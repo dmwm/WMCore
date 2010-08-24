@@ -7,7 +7,7 @@ Inherit from CreateWMBSBase, and add MySQL specific substituions (e.g. add
 INNODB) and specific creaetes (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.17 2008/10/03 11:29:09 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.18 2008/10/08 14:29:16 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -26,7 +26,6 @@ class CreateWMBS(CreateWMBSBase):
           """CREATE TABLE wmbs_fileset_files (
              file        INT(11)   NOT NULL,
              fileset     INT(11)   NOT NULL,
-             status      ENUM ('active', 'inactive', 'invalid'),
              insert_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                ON UPDATE CURRENT_TIMESTAMP,
              FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)

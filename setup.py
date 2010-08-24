@@ -62,6 +62,7 @@ setup (name='wmcore',
                  'WMCore.Services.JSONParser',
                  'WMCore.Services.SiteDB',
                  'WMCore.Services',
+                 'WMCore.SiteScreening',
                  'WMCore.Database',
                  'WMCore'],)
 

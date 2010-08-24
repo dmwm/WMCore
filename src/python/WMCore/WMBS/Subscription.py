@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.26 2009/01/11 17:53:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Subscription.py,v 1.27 2009/01/13 16:45:11 sryu Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from sets import Set
 
@@ -48,15 +48,20 @@ class Subscription(WMBSBase, WMSubscription):
         """
         Add the subscription to the database
         """
+        eflag = self.exists()
+        if eflag != False:
+            self["id"] = eflag
+            return
+        
         action = self.daofactory(classname="Subscriptions.New")
         action.execute(fileset = self["fileset"].id, type = self["type"],
                        split = self["split_algo"],
                        workflow = self["workflow"].id,
                        conn = self.getWriteDBConn(),
                        transaction = self.existingTransaction())
-            
-        self["id"] = self.exists()
+        
         self.commitIfNew()
+        self["id"] = self.exists()
         return
     
     def exists(self):

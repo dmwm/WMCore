@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.4 2008/10/03 12:36:06 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.5 2008/11/12 16:15:04 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import unittest
@@ -22,6 +22,8 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMCore.ThreadPool.ThreadPool import ThreadPool
+
+from WMQuality.TestInit import TestInit
 
 # local import
 from Dummy import Dummy
@@ -43,34 +45,11 @@ class ThreadPoolTest(unittest.TestCase):
         "make a logger instance and create tables"
        
         if not ThreadPoolTest._setup: 
-            logging.basicConfig(level=logging.NOTSET,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema()
 
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('ThreadPoolTest')
-            myThread.dialect = 'MySQL'
-        
-            options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            myThread.dbFactory = DBFactory(myThread.logger, \
-                os.getenv("DATABASE"), options)
-            myThread.dbi = myThread.dbFactory.connect() 
-            myThread.transaction = Transaction(myThread.dbi)
-
-
-            factory = WMFactory("msgService", "WMCore.ThreadPool."+ \
-                myThread.dialect)
-            create = factory.loadObject("Create")
-            createworked = create.execute(conn = myThread.transaction.conn)
-            if createworked:
-                logging.debug("ThreadPool tables created")
-            else:
-                logging.debug("ThreadPool tables could not be created, \
-                    already exists?")
-            myThread.transaction.commit()                                  
             ThreadPoolTest._setup = True
 
     def tearDown(self):
@@ -81,11 +60,7 @@ class ThreadPoolTest(unittest.TestCase):
         myThread = threading.currentThread()
         if ThreadPoolTest._teardown and myThread.dialect == 'MySQL':
             # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
-
+            self.testInit.clearDatabase()
         ThreadPoolTest._teardown = False
                
     def testA(self):
@@ -94,25 +69,14 @@ class ThreadPoolTest(unittest.TestCase):
 
         Test subscription of a component.
         """
+        ThreadPoolTest._teardown = True
         myThread = threading.currentThread()
         # create a 'fake' component that contains a arg dictionary.
         component = Dummy()
-
-        # we want to read this from a file for the actual components.
-        config = Configuration()
-        config.Agent.contact = "fvlingen@caltech.edu"
-        config.Agent.teamName = "Lakers"
-        config.Agent.agentName = "Lebron James"
+        # load default parameters.
+        config = self.testInit.getConfiguration()
         # normally assigned by the harness of the test component.
         config.Agent.componentName = "TestComponent"
-
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql'
-        config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = os.getenv("DBUSER")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        config.CoreDatabase.hostname = os.getenv("DBHOST")
-        config.CoreDatabase.name = os.getenv("DBNAME")
 
         component.config = config
 
@@ -160,8 +124,6 @@ class ThreadPoolTest(unittest.TestCase):
         for j in xrange(0, ThreadPoolTest._nrOfPools):
             assert threadPools[j].countMessages() == 0
         myThread.transaction.commit()
-    
-        ThreadPoolTest._teardown = True
   
     def runTest(self):
         self.testA()

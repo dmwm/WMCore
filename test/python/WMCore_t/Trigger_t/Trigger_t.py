@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.3 2008/10/29 13:21:50 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Trigger_t.py,v 1.4 2008/11/12 16:15:04 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import unittest
@@ -21,6 +21,7 @@ from WMCore.Database.Transaction import Transaction
 from WMCore.Trigger.Trigger import Trigger
 from WMCore.WMFactory import WMFactory
 
+from WMQuality.TestInit import TestInit
 
 class TriggerTest(unittest.TestCase):
     """
@@ -42,13 +43,11 @@ class TriggerTest(unittest.TestCase):
         "make a logger instance "
        
         if not TriggerTest._setup: 
-            print('trigger setup (once)')
-            logging.basicConfig(level=logging.DEBUG,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
-
+            self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema(customModules = ['WMCore.Trigger'], \
+                useDefault = False)
             TriggerTest._setup = True
 
     def tearDown(self):
@@ -58,10 +57,7 @@ class TriggerTest(unittest.TestCase):
         myThread = threading.currentThread()
         if TriggerTest._teardown and myThread.dialect == 'MySQL':
             # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
+            self.testInit.clearDatabase()
 
         if TriggerTest._teardown and myThread.dialect == 'Oracle':
             factory = WMFactory("trigger", "WMCore.Trigger")
@@ -75,32 +71,6 @@ class TriggerTest(unittest.TestCase):
 
         TriggerTest._teardown = False
 
-    def testA(self):
-        "create tables"
-        print('testA')
-        myThread = threading.currentThread()
-        myThread.logger = logging.getLogger('TriggerTest')
-        myThread.dialect = os.getenv('DIALECT')
-        
-        options = {}
-        if myThread.dialect == 'MySQL':
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-        else:
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"))
-    
-        myThread.dbi = dbFactory.connect() 
-
-        factory = WMFactory("trigger", "WMCore.Trigger")
-        create = factory.loadObject(myThread.dialect+".Create")
-        myThread.transaction = Transaction(myThread.dbi)
-        createworked = create.execute(conn = myThread.transaction.conn)
-        if not createworked:
-            raise Exception("Trigger tables could not be created, \
-                already exists?")
-        myThread.transaction.commit()                                  
-
     def testB(self):
         """
         __testSubscribe__
@@ -108,6 +78,8 @@ class TriggerTest(unittest.TestCase):
         Test subscription of a component.
         """
         print('testB')
+        factory = WMFactory("trigger", "WMCore.Trigger")
+
         # perpare trigger name tables if working in multi queue
         myThread = threading.currentThread()
         trigger = Trigger()
@@ -187,7 +159,6 @@ class TriggerTest(unittest.TestCase):
 
 
     def runTest(self):
-        self.testA() 
         self.testB() 
         self.testC() 
         self.testD() 

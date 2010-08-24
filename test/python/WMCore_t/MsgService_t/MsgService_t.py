@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.4 2008/11/04 15:42:42 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: MsgService_t.py,v 1.5 2008/11/12 16:15:04 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import unittest
@@ -21,6 +21,8 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 
 from WMCore.WMFactory import WMFactory
+
+from WMQuality.TestInit import TestInit
 
 class MsgServiceTest(unittest.TestCase):
     """
@@ -46,34 +48,11 @@ class MsgServiceTest(unittest.TestCase):
     def setUp(self):
         "make a logger instance and create tables"
        
-        if not MsgServiceTest._setup: 
-            logging.basicConfig(level=logging.NOTSET,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
-
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('MsgServiceTest')
-            myThread.dialect = 'MySQL'
-        
-            options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-        
-            myThread.dbi = dbFactory.connect() 
-
-            factory = WMFactory("msgService", "WMCore.MsgService."+ \
-                myThread.dialect)
-            create = factory.loadObject("Create")
-            createworked = create.execute()
-            if createworked:
-                logging.debug("MsgService tables created")
-            else:
-                logging.debug("MsgService tables could not be created, \
-                    already exists?")
-                                              
+        if not MsgServiceTest._setup:
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema()
             MsgServiceTest._setup = True
 
     def tearDown(self):
@@ -83,11 +62,7 @@ class MsgServiceTest(unittest.TestCase):
         myThread = threading.currentThread()
         if MsgServiceTest._teardown and myThread.dialect == 'MySQL':
             # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
-
+            self.testInit.clearDatabase()
         MsgServiceTest._teardown = False
 
                
@@ -98,11 +73,12 @@ class MsgServiceTest(unittest.TestCase):
         Test subscription of a component.
         """
         myThread = threading.currentThread()
+        factory = WMFactory("msgService", "WMCore.MsgService."+ \
+            myThread.dialect)
+
         myThread.transaction = Transaction(myThread.dbi)
-        msgService1 = \
-            myThread.factory['msgService'].loadObject("MsgService")
-        msgService2 = \
-            myThread.factory['msgService'].loadObject("MsgService")
+        msgService1 = factory.loadObject("MsgService")
+        msgService2 = factory.loadObject("MsgService")
         msgService1.registerAs("TestComponent1")
         msgService2.registerAs("TestComponent2")
         myThread.transaction.commit()
@@ -346,6 +322,7 @@ class MsgServiceTest(unittest.TestCase):
         and tests the time it takes to do that.
         """
 
+        MsgServiceTest._teardown = True
         # do some insert and get tests and measure it.
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -424,7 +401,6 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.commit()
 
         # purge everything.
-        MsgServiceTest._teardown = True
 
     def runTest(self):
         self.testA()

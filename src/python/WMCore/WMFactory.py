@@ -6,13 +6,9 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.6 2008/09/30 18:25:38 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMFactory.py,v 1.7 2008/11/12 16:15:02 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
-
-#FIXME: need a test for this. But this can only be done if 
-# ../test/python/WMCORE is moved to ../test/python/WMCORE_t 
-#: to prevent similar inclusion roots for the pythonpath.
 
 import logging
 import threading

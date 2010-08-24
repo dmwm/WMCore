@@ -130,8 +130,8 @@ try:
    tests.append((x,"fvlingen"))
 except Exception,ex:
    if not errors.has_key("fvlingen"):
-       errors["metson"] = []
-   errors["metson"].append(("TransactionTest",str(ex)))
+       errors["fvlingen"] = []
+   errors["fvlingen"].append(("TransactionTest",str(ex)))
 
 try:
    x=HarnessTest()

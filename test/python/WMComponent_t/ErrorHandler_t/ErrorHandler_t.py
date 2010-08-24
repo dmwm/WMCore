@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.6 2008/10/03 12:36:05 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.7 2008/11/12 16:15:03 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -22,6 +22,8 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
+from WMQuality.TestInit import TestInit
+
 class ErrorHandlerTest(unittest.TestCase):
     """
     TestCase for TestErrorHandler module 
@@ -36,38 +38,10 @@ class ErrorHandlerTest(unittest.TestCase):
         setup for test.
         """
         if not ErrorHandlerTest._setup_done:
-            logging.basicConfig(level=logging.NOTSET,
-                format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                datefmt='%m-%d %H:%M',
-                filename='%s.log' % __file__,
-                filemode='w')
-
-            myThread = threading.currentThread()
-            myThread.logger = logging.getLogger('ErrorHandlerTest')
-            myThread.dialect = 'MySQL'
-
-            options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
-            dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-
-            myThread.dbi = dbFactory.connect()
-            myThread.transaction = Transaction(myThread.dbi)
-
-            for factoryName in ["WMCore.MsgService", "WMCore.ThreadPool", \
-            "WMComponent.ErrorHandler.Database"]:
-                # need to create these tables for testing.
-                factory = WMFactory(factoryName, factoryName + "." + \
-                    myThread.dialect)
-                create = factory.loadObject("Create")
-                createworked = create.execute(conn = myThread.transaction.conn)
-                if createworked:
-                    logging.debug("Tables for "+ factoryName + " created")
-                else:
-                    logging.debug("Tables " + factoryName + \
-                    " could not be created, already exists?")
-            myThread.transaction.commit()
-
+            self.testInit = TestInit(__file__)
+            self.testInit.setLogging()
+            self.testInit.setDatabaseConnection()
+            self.testInit.setSchema(["WMComponent.ErrorHandler.Database"])
             ErrorHandlerTest._setup_done = True
 
     def tearDown(self):
@@ -77,41 +51,21 @@ class ErrorHandlerTest(unittest.TestCase):
         myThread = threading.currentThread()
         if ErrorHandlerTest._teardown and myThread.dialect == 'MySQL':
             # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
-
+            self.testInit.clearDatabase()
         ErrorHandlerTest._teardown = False
-
 
     def testA(self):
         """
         Mimics creation of component and handles come messages.
         """
+        ErrorHandlerTest._teardown = True
         # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
+        config = self.testInit.getConfiguration(\
+            os.path.join(os.getenv('WMCOREBASE'), \
             'src/python/WMComponent/ErrorHandler/DefaultConfig.py'))
 
         # we set the maxRetries to 10 for testing purposes
         config.ErrorHandler.maxRetries = 10
-        # some general settings that would come from the general default 
-        # config file
-        config.Agent.contact = "fvlingen@caltech.edu"
-        config.Agent.teamName = "Lakers"
-        config.Agent.agentName = "Lebron James"
-
-        config.section_("General")
-        config.General.workDir = os.getenv("TESTDIR")
-
-       
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql' 
-        config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = os.getenv("DBUSER")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        config.CoreDatabase.hostname = os.getenv("DBHOST")
-        config.CoreDatabase.name = os.getenv("DBNAME")
 
         # load a message service as we want to check if total failure
         # messages are returned
@@ -199,7 +153,6 @@ class ErrorHandlerTest(unittest.TestCase):
         retrySize = errQueries.count()
         myThread.transaction.commit()
         assert retrySize == 0
-        ErrorHandlerTest._teardown = True
 
     def runTest(self):
         """

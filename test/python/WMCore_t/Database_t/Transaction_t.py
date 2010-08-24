@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.1 2008/09/25 13:14:01 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Transaction_t.py,v 1.2 2008/11/12 16:15:03 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -100,8 +100,11 @@ class TransactionTest(unittest.TestCase):
             assert len(result2) == 1
             l = len(result2[0].fetchall())
             assert l == 0, "roll back failed, %s records" % l
-            
-            
+           
+    def runTest(self): 
+        self.testGoodTransaction()
+        self.testBadTransaction()
+
 if __name__ == "__main__":
     unittest.main()     
              

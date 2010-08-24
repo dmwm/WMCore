@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.43 2009/02/03 22:32:12 sryu Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: File.py,v 1.44 2009/02/16 16:07:18 sryu Exp $"
+__version__ = "$Revision: 1.44 $"
 
 from sets import Set
 
@@ -43,12 +43,21 @@ class File(WMBSBase, WMFile):
 
     def exists(self):
         """
+        if id is exist (not -1) check with id first
         Does a file exist with this lfn, return the id
         """
-        action = self.daofactory(classname='Files.Exists')
-        return action.execute(lfn = self['lfn'],
-                              conn = self.getReadDBConn(),
-                              transaction = self.existingTransaction())
+        if self['id'] != -1:
+            action = self.daofactory(classname='Files.ExistsByID')
+            return action.execute(id = self['id'], conn = self.getReadDBConn(),
+                                  transaction = self.existingTransaction())
+        else:
+            action = self.daofactory(classname='Files.Exists')
+            id = action.execute(lfn = self['lfn'],
+                                  conn = self.getReadDBConn(),
+                                  transaction = self.existingTransaction())
+            if id != False:
+                self['id'] = id
+            return id
         
     def getInfo(self):
         """

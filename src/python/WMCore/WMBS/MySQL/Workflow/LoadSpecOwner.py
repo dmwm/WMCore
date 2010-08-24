@@ -6,12 +6,12 @@ MySQL implementation of Workflow.Load
 
 """
 __all__ = []
-__revision__ = "$Id: LoadSpecOwner.py,v 1.1 2008/07/03 09:43:56 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadSpecOwner.py,v 1.2 2008/10/09 09:55:27 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Workflow.LoadFromID import LoadFromID
     
-class LoadFromSpecOwner(LoadFromID):
+class LoadSpecOwner(LoadFromID):
     sql = """select id, spec, name, owner from wmbs_workflow where spec = :spec and owner=:owner"""
     def getBinds(self, spec = None, owner=None):
         return self.dbi.buildbinds(self.dbi.makelist(spec), 'spec', 

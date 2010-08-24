@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.18 2008/08/25 01:22:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: DBCore.py,v 1.19 2008/09/09 10:34:11 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -64,12 +64,13 @@ class DBInterface(WMObject):
                 result = connection.execute(s, b)
             return result
         except Exception, e:
-            self.logger.exception('DBInterface.executebinds - exception type: %s' % type(e))
-            self.logger.exception('DBInterface.executebinds - connection type: %s' % type(connection))
-            self.logger.exception('DBInterface.executebinds - connection %s' % connection)
-            self.logger.exception('DBInterface.executebinds - sql : %s' % s)
-            self.logger.exception('DBInterface.executebinds - binds : %s' % b)
-            self.logger.debug(e)
+            self.logger.exception(e.message)
+            self.logger.info('DBInterface.executemanybinds - exception type: %s' % type(e))
+            self.logger.debug('DBInterface.executemanybinds - connection type: %s' % type(connection))
+            self.logger.debug('DBInterface.executemanybinds - connection %s' % connection)
+            self.logger.info('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
+            self.logger.info('DBInterface.executemanybinds - sql : %s' % s)
+            self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
             raise e
         
 
@@ -108,13 +109,13 @@ class DBInterface(WMObject):
             result = connection.execute(s, b)
             return self.makelist(result)
         except Exception, e:
-            self.logger.exception('DBInterface.executemanybinds - exception type: %s' % type(e))
-            self.logger.exception('DBInterface.executemanybinds - connection type: %s' % type(connection))
-            self.logger.exception('DBInterface.executemanybinds - connection %s' % connection)
-            self.logger.exception('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
-            self.logger.exception('DBInterface.executemanybinds - sql : %s' % s)
-            self.logger.exception('DBInterface.executemanybinds - binds : %s' % b)
-            self.logger.debug(e)
+            self.logger.exception(e.message)
+            self.logger.info('DBInterface.executemanybinds - exception type: %s' % type(e))
+            self.logger.debug('DBInterface.executemanybinds - connection type: %s' % type(connection))
+            self.logger.debug('DBInterface.executemanybinds - connection %s' % connection)
+            self.logger.info('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
+            self.logger.info('DBInterface.executemanybinds - sql : %s' % s)
+            self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
             raise e
     
     def connection(self):
@@ -149,7 +150,7 @@ class DBInterface(WMObject):
                 trans = connection.begin()
             try:
                 for i in sqlstmt:
-                    self.logger.warning('''The following statement is not using binds!! \n 
+                    self.logger.info('''The following statement is not using binds!! \n 
                         %s''' % i)
                     
                     r = self.executebinds(i, connection=connection)

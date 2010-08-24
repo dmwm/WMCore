@@ -6,7 +6,7 @@ MySQL implementation of DeleteWorkflow
 
 """
 __all__ = []
-__revision__ = "$Id: DeleteSQL.py,v 1.1 2008/06/09 16:23:08 metson Exp $"
+__revision__ = "$Id: Delete.py,v 1.1 2008/06/12 10:02:06 metson Exp $"
 __version__ = "$Revision: 1.1 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
@@ -23,6 +23,6 @@ class Delete(MySQLBase):
                                    self.dbi.buildbinds(self.dbi.makelist(name), 'name')))
         
     def execute(self, spec=None, owner=None, conn = None, name = None, transaction = False):
-        result = self.dbi.processData(self.sql, self.getBinds(spec, owner, name), 
-                         conn = conn, transaction = transaction)
-        return self.format(result)
+        self.dbi.processData(self.sql, self.getBinds(spec, owner, name), 
+                     conn = conn, transaction = transaction)
+        return True #or raise

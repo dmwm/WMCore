@@ -1,23 +1,28 @@
 #!/usr/bin/env python
 """
-_NewWorkflow_
+_Exists_
 
-MySQL implementation of NewWorkflow
+MySQL implementation of Workflow.Exists
 
 """
 __all__ = []
-__revision__ = "$Id: NewSQL.py,v 1.1 2008/06/09 16:23:08 metson Exp $"
+__revision__ = "$Id: Exists.py,v 1.1 2008/06/12 10:02:06 metson Exp $"
 __version__ = "$Revision: 1.1 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
-class New(MySQLBase):
-    """
-    Create a workflow ready for subscriptions
-    """
-    sql = """insert into wmbs_workflow (spec, owner, name)
-                values (:spec, :owner, :name)"""
+class Exists(MySQLBase):
+    sql = """select count(*) from wmbs_workflow
+            where spec = :spec and owner = :owner and name = :name"""
     
+    def format(self, result):
+        result = MySQLBase.format(self, result)
+        self.logger.debug( result )
+        if result[0][0] > 0:
+            return True
+        else:
+            return False
+        
     def getBinds(self, spec=None, owner=None, name = None):
         return self.dbi.buildbinds(self.dbi.makelist(owner), 'owner',
                                    self.dbi.buildbinds(self.dbi.makelist(spec), 'spec',

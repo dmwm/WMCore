@@ -5,24 +5,12 @@ _NewFilesetAction_
 Add a fileset to WMBS
 """
 
-__revision__ = "$Id: New.py,v 1.1 2008/06/09 16:13:43 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2008/06/12 10:04:47 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.Actions.Action import BaseAction
+from WMCore.WMBS.Actions.Action import BoundAction
+from WMCore.DAOFactory import DAOFactory
 
-class NewFilesetAction(BaseAction):
+class NewFilesetAction(BoundAction):
     name = "Fileset.New"
         
-    def execute(self, name = None, dbinterface = None):
-        """
-        import the approriate SQL object and execute it
-        """ 
-        myclass = self.loadDialect(self.name, dbinterface)
-        self.logger.debug("Adding %s" % name)    
-        action = myclass(self.logger, dbinterface)
-        try:
-            action.execute(name)
-            return True
-        except Exception, e:
-            self.logger.exception(e)
-            return False

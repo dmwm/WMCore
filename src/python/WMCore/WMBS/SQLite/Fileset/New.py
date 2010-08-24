@@ -6,10 +6,10 @@ SQLite implementation of Fileset.New
 
 """
 __all__ = []
-__revision__ = "$Id: NewSQL.py,v 1.1 2008/06/09 16:30:08 metson Exp $"
+__revision__ = "$Id: New.py,v 1.1 2008/06/12 10:02:07 metson Exp $"
 __version__ = "$Revision: 1.1 $"
 
-from WMCore.WMBS.MySQL.Fileset.NewSQL import New as NewFilesetMySQL
+from WMCore.WMBS.MySQL.Fileset.New import New as NewFilesetMySQL
 from WMCore.WMBS.SQLite.Base import SQLiteBase
 
 class New(NewFilesetMySQL, SQLiteBase):

@@ -5,21 +5,11 @@ _NewFilesAction_
 Add a (list of) new file(s) to WMBS
 """
 
-__revision__ = "$Id: New.py,v 1.1 2008/06/10 17:04:46 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2008/06/12 10:05:44 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.Actions.Action import BaseAction
+from WMCore.WMBS.Actions.Action import BoundAction
+from WMCore.DAOFactory import DAOFactory
 
-class NewFileAction(BaseAction):
+class NewFileAction(BoundAction):
     name = "Files.Add"
-        
-    def execute(self, files=None, size=0, events=0, run=0, lumi=0, dbinterface=None):
-        """
-        Add a (list of) new file(s) to WMBS
-        """ 
-        myclass = self.loadDialect(self.name, dbinterface)
-        action = myclass(self.logger, dbinterface)
-        try:
-            return action.execute(files, size, events, run, lumi)
-        except:
-            return False

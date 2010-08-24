@@ -1,7 +1,7 @@
 """
 SQLite implementation of AddFileToFileset
 """
-from WMCore.WMBS.MySQL.Files.AddToFilesetSQL import AddToFileset as AddFileToFilesetMySQL
+from WMCore.WMBS.MySQL.Files.AddToFileset import AddToFileset as AddFileToFilesetMySQL
 from WMCore.WMBS.SQLite.Base import SQLiteBase
 
 class AddToFileset(AddFileToFilesetMySQL, SQLiteBase):

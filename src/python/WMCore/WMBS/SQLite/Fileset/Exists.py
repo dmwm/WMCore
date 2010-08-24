@@ -6,11 +6,11 @@ SQLite implementation of Fileset.Exists
 
 """
 __all__ = []
-__revision__ = "$Id: ExistsSQL.py,v 1.1 2008/06/09 16:30:08 metson Exp $"
+__revision__ = "$Id: Exists.py,v 1.1 2008/06/12 10:02:07 metson Exp $"
 __version__ = "$Revision: 1.1 $"
 
 from WMCore.WMBS.SQLite.Base import SQLiteBase
-from WMCore.WMBS.MySQL.Fileset.ExistsSQL import Exists as ExistsFilesetMySQL
+from WMCore.WMBS.MySQL.Fileset.Exists import Exists as ExistsFilesetMySQL
 
 class Exists(ExistsFilesetMySQL, SQLiteBase):
     sql = ExistsFilesetMySQL.sql

@@ -6,7 +6,7 @@ MySQL implementation of Fileset.New
 
 """
 __all__ = []
-__revision__ = "$Id: NewSQL.py,v 1.1 2008/06/09 16:30:08 metson Exp $"
+__revision__ = "$Id: New.py,v 1.1 2008/06/12 10:02:00 metson Exp $"
 __version__ = "$Revision: 1.1 $"
 
 
@@ -19,6 +19,6 @@ class New(MySQLBase):
         return self.dbi.buildbinds(self.dbi.makelist(name), 'fileset')
     
     def execute(self, name = None, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, self.getBinds(name), 
+        self.dbi.processData(self.sql, self.getBinds(name), 
                          conn = conn, transaction = transaction)
-        return self.format(result)
+        return True #Or raise

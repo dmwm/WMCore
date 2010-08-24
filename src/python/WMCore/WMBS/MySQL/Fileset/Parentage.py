@@ -6,7 +6,7 @@ MySQL implementation of Fileset.Parentage
 
 """
 __all__ = []
-__revision__ = "$Id: ParentageSQL.py,v 1.1 2008/06/09 16:30:08 metson Exp $"
+__revision__ = "$Id: Parentage.py,v 1.1 2008/06/12 10:02:02 metson Exp $"
 __version__ = "$Revision: 1.1 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase

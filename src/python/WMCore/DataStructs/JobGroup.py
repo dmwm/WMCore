@@ -12,12 +12,24 @@ Definition of JobGroup:
     JobGroup:MergedOutFile = N:1
     JobGroup at least one Lumi section
 
+A JobGroup is a set of jobs and a Fileset that contains their output.
+
+JobGroup knows the Subscription and passes the Workflow to Jobs in the group.
+
+Jobs know their status (active, failed, complete) and know the files they run on 
+but don't know the subscription or group. They do know their workflow.
+
+The group has a status call which goes through the jobs and updates the db for 
+state changes and then returns the status of the group (active, failed, complete).
+
+WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.1 2008/08/21 07:24:30 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobGroup.py,v 1.2 2008/09/08 15:42:55 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
+from WMCore.DataStructs.Fileset import Fileset
 from sets import Set
 import datetime
 
@@ -26,28 +38,79 @@ class JobGroup(Pickleable):
     JobGroups are sets of jobs running on files who's output needs to be merged
     together.
     """
-    dict = {}
-    def __init__(self, jobs=Set()):
+    def __init__(self, subscription = None, jobs=Set()):
         """
         Store all the jobs as a set in self.dict
         """
-        self.dict['jobs'] = jobs
+        self.jobs = jobs
+        self.subscription = subscription
+        self.output = Fileset()
+        self.last_update = datetime.datetime.now()
         
     def status(self):
         """
         The status of the job group is the sum of the status of all jobs in the
         group.
         
-        return: active, complete, failed
+        return: ACTIVE, COMPLETE, FAILED
         """
-        pass
+        complete = []
+        failed = []
+        activated = []
+        for j in self.jobs:
+            if j.last_update < self.last_update:
+                # job has been updated
+                if j.status == 'ACTIVE':
+                    activated.append(j)
+                elif j.status == 'FAILED':
+                    failed.append(j)
+                elif j.status == 'COMPLETE':
+                    complete.append(j)
+        self.markAcquire(activated)
+        self.markComplete(complete)
+        self.markFail(failed)
+        
+        self.last_update = datetime.datetime.now()
+    
+        av = len(self.subscription.filesOfStatus('AvailableFiles'))
+        ac = len(self.subscription.filesOfStatus('AcquiredFiles'))
+        fa = len(self.subscription.filesOfStatus('FailedFiles'))
+        cm = len(self.subscription.filesOfStatus('CompletedFiles'))
+    
+        total = av + ac + fa + cm
+        if cm == total:
+            return 'COMPLETE'
+        elif cm + fa == total:
+            return 'FAILED'
+        else:
+            return 'ACTIVE'
+        
+    def markAcquire(self, jobs):
+        jobs = self.makelist(jobs)
+        for j in jobs:
+            self.subscription.acquireFiles(j.listFiles())
+            
+    def markComplete(self, jobs):
+        jobs = self.makelist(jobs)
+        for j in jobs:
+            self.subscription.completeFiles(j.listFiles())
+            
+    def markFail(self, jobs):
+        jobs = self.makelist(jobs)
+        for j in jobs:
+            self.subscription.failFiles(j.listFiles())
     
     def output(self):
         """
         The output is the files produced by the jobs in the group - these must
         be merged up together.
         """
-        if self.status() == 'complete':
+        if self.status() == 'COMPLETE':
             "output only makes sense if the group is completed"
-            pass
-        pass
+            for j in self.jobs:
+                self.addOutput(j.output)
+            return self.output
+        return False
+    
+    def addOutput(self, file):
+        self.output.addFile(file)

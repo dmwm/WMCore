@@ -156,6 +156,10 @@ which generates the actual test_style, test_code, config_test_mysql.py
 and config_test_oracle.py files by analyzing the cvs repository log
 (requires access to the cvs repository to generate log)
 
+NOTE: if you test ensure you are testing using the environment that is packaged
+with wmcor applications (e.g. you can install for example the latest prodagent
+rpms and source this environment (minus the prodagent and prodcommon python libraries).
+
 test_generate
 -------------
 

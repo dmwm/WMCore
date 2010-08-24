@@ -7,8 +7,12 @@ from cherrypy.lib.cptools import accept
 from simplejson import JSONEncoder
 
 class RESTApi(WebAPI):
+    """
+    Don't subclass this, use the RESTModel as a base for your application code
+    """
     __version__ = 1
     def __init__(self, config = {}):
+        
         modelconfig = config.section_('model')
         modelconfig.application = config.application
 

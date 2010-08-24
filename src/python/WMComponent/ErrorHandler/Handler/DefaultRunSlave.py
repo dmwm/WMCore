@@ -5,22 +5,28 @@ Slave used for default run failure handler.
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultRunSlave.py,v 1.1 2008/09/12 13:02:09 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: DefaultRunSlave.py,v 1.2 2008/09/30 18:25:38 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
+import threading
 import time
 import random
 
-from WMCore.ThreadPool.ThreadSlave import ThreadSlave
+from WMComponent.ErrorHandler.Handler.DefaultSlave import DefaultSlave
 
-class DefaultRunSlave(ThreadSlave):
+class DefaultRunSlave(DefaultSlave):
     """
     The default slave for a run failure message
     """
 
     def __call__(self, parameters):
+        DefaultSlave.__call__(self, parameters)
         logging.debug("I am the default run slave called with parameters:"\
             +str(parameters))
         sleepTime = random.randint(0, 5)
+        myThread = threading.currentThread()
+        # we need to do this in our slave otherwise the failure 
+        # messages that might have been published, will not be send.
+        myThread.msgService.finish()
         time.sleep(sleepTime) 

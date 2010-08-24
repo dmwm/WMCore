@@ -11,7 +11,7 @@ qualityScript = '/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/test_style
 # output file:
 qualityReport = '/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/codeQuality.txt'
 # rating threshold (min: 0, max 10)
-threshold = 8
+threshold = 9
 
 packages = {\
         

@@ -4,8 +4,8 @@
 Proxy test TestProxy module and the harness
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.2 2008/09/26 14:48:06 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Proxy_t.py,v 1.3 2008/09/30 18:25:40 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -43,7 +43,7 @@ class ProxyTest(unittest.TestCase):
         """
         if not ProxyTest._setup_done:
             x = raw_input("To run this test you need to have an old msg service setup in a different database and its contact parameters need to be defined in the PROXYDATABASE variable (press key to continue")
-            logging.basicConfig(level=logging.INFO,
+            logging.basicConfig(level=logging.NOTSET,
                 format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                 datefmt='%m-%d %H:%M',
                 filename='%s.log' % __file__,

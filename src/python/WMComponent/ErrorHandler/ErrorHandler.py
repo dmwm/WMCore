@@ -13,8 +13,8 @@ the different failure handlers are configurable in the config file and
 relate to the three stages of a job: create, submit, run 
 """
 
-__revision__ = "$Id: ErrorHandler.py,v 1.2 2008/09/16 15:03:02 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ErrorHandler.py,v 1.3 2008/09/30 18:25:38 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -59,6 +59,10 @@ class ErrorHandler(Harness):
             logging.warning("Using default run failure handler!")
             self.config.ErrorHandler.runFailureHandler =  \
                 'WMComponent.ErrorHandler.Handler.DefaultRun'
+        if not hasattr(self.config.ErrorHandler, "jobSuccessHandler"):
+            logging.warning("Using default job success handler!")
+            self.config.ErrorHandler.jobSuccessHandler =  \
+                'WMComponent.ErrorHandler.Handler.DefaultSuccess'
 
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')
@@ -68,5 +72,7 @@ class ErrorHandler(Harness):
             factory.loadObject(self.config.ErrorHandler.createFailureHandler, self)
         self.messages['RunFailure'] = \
             factory.loadObject(self.config.ErrorHandler.runFailureHandler, self)
+        self.messages['JobSuccess'] = \
+            factory.loadObject(self.config.ErrorHandler.jobSuccessHandler, self)
 
 

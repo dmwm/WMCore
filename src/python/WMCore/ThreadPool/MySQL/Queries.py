@@ -8,9 +8,9 @@ This module implements the mysql backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.3 2008/09/12 13:02:10 fvlingen Exp $"
+    "$Id: Queries.py,v 1.4 2008/09/30 18:25:39 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.3 $"
+    "$Revision: 1.4 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -34,7 +34,9 @@ class Queries(DBFormatter):
         """
         Select work that is not yet being processed.
         """
-
+        # this query takes place in a locked section so 
+        # we do not have to worry about multiple slaves
+        # getting the same work.
         result = ''
         if pooltable in ['tp_threadpool', 'tp_threadpool_buffer_in', \
             'tp_threadpool_buffer_out']:

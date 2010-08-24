@@ -12,8 +12,8 @@ to pass arbitrary objects if needed through the parameters
 attribute.
 """
 
-__revision__ = "$Id: ThreadSlave.py,v 1.5 2008/09/16 15:03:03 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ThreadSlave.py,v 1.6 2008/09/30 18:25:38 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -125,6 +125,8 @@ class ThreadSlave:
         # TODO: add trigger instantiation.
         logging.info("THREAD constructor finished")
 
+    # FIXME: enable the (configurable) possibility to retrieve 
+    # work in bulk (handy when we need to update databases)
     def retrieveWork(self):
         """
         _retrieveWork_

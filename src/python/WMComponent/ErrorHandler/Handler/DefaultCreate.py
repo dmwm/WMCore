@@ -3,9 +3,8 @@
 Default handler for create failures.
 """
 __all__ = []
-__revision__ = "$Id: DefaultCreate.py,v 1.1 2008/09/12 13:02:09 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
-
+__revision__ = "$Id: DefaultCreate.py,v 1.2 2008/09/30 18:25:38 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -32,6 +31,6 @@ class DefaultCreate(BaseHandler):
         """
         # as we defined a threadpool we can enqueue our item
         # and move to the next.
-        self.threadpool.enqueue(event, payload)
+        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload})
 
 

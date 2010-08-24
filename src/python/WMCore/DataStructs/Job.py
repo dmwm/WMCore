@@ -8,8 +8,8 @@ Jobs know their status (active, failed, complete) and know the files they run on
 but don't know the subscription or group. They do know their workflow.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.6 2008/09/19 15:05:21 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Job.py,v 1.7 2008/09/19 17:26:19 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable 
 from WMCore.DataStructs.Fileset import Fileset
@@ -32,6 +32,7 @@ class Job(Pickleable):
             self.file_set = files
         self.last_update = datetime.datetime.now()
         self.status = 'QUEUED'
+        self.name = None
         self.output = Fileset(name='output', logger=files.logger)
         self.report = None
 
@@ -63,17 +64,19 @@ class Job(Pickleable):
         self.last_update = datetime.datetime.now()
         self.status = status
         
-    def submit(self):
+    def submit(self, name):
         """
-        Reset the file status to acquired for files associated to this job
+        Once submitted to a batch queue set status to active and set the job's 
+        name to some id from the batch system
         """
+        self.name = name
         self.changeStatus('ACTIVE')
         
-    def resubmit(self):
+    def resubmit(self, name):
         """
         Reset the file status to acquired for files associated to this job
         """
-        self.submit()        
+        self.submit(name)        
     
     def fail(self, report):
         """

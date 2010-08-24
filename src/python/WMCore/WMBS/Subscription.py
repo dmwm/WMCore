@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0231
 """
 _Subscription_
 
@@ -19,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.17 2008/10/01 21:33:04 metson Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Subscription.py,v 1.18 2008/10/22 17:51:53 metson Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -43,6 +44,9 @@ class Subscription(BusinessObject, WMSubscription):
         self.id = id
         
     def create(self):
+        """
+        Add the subscription to the database
+        """
         try:
             action = self.daofactory(classname="Subscriptions.New")
             action.execute(fileset = self.fileset.id, 
@@ -61,6 +65,9 @@ class Subscription(BusinessObject, WMSubscription):
         return self
     
     def exists(self):
+        """
+        See if the subscription is in the database
+        """
         action = self.daofactory(classname="Subscriptions.Exists")
         value = action.execute(fileset = self.fileset.id, 
                                 type = self.type,
@@ -68,6 +75,9 @@ class Subscription(BusinessObject, WMSubscription):
         return value
     
     def load(self, id=None):
+        """
+        Load the subscription and it's workflow and fileset from the database
+        """
         if not id and self.id > 0:
             id = self.id
         action = self.daofactory(classname='Subscriptions.Load')
@@ -79,11 +89,11 @@ class Subscription(BusinessObject, WMSubscription):
             raise RuntimeError, "Subscription for %s:%s unknown" % \
                                     (self.fileset.name, self.workflow.spec)
         self.fileset = Fileset(id = result['fileset'], 
-                               logger=self.logger, 
-                               dbfactory=self.dbfactory).populate('Fileset.LoadFromID')
+                       logger=self.logger, 
+                       dbfactory=self.dbfactory).populate('Fileset.LoadFromID')
         self.workflow = Workflow(id = result['workflow'], 
-                                 logger=self.logger, 
-                                 dbfactory=self.dbfactory).load('Workflow.LoadFromID')
+                         logger=self.logger, 
+                         dbfactory=self.dbfactory).load('Workflow.LoadFromID')
         self.type = result['type']
         self.id = result['id']
         self.split_algo = result['split_algo']
@@ -105,7 +115,7 @@ class Subscription(BusinessObject, WMSubscription):
             files.add(fl)
         return files 
                      
-    def acquireFiles(self, files = [], size = 0):
+    def acquireFiles(self, files = None, size = 0):
         """
         Acquire size files, activating them for the subscription. If size = 0 
         acquire all files (default behaviour). Return a list of files objects 
@@ -136,10 +146,10 @@ class Subscription(BusinessObject, WMSubscription):
         Mark a (set of) file(s) as completed.
         """
         if not isinstance(files, list) and not isinstance(files, set):
-            files=[files]
+            files = [files]
         statechanger = ChangeStateAction(self.logger)
-        statechanger.execute(subscription=self.id, 
-                                  file=[x for x in files], 
+        statechanger.execute(subscription = self.id, 
+                                  file = [x for x in files], 
                                   daofactory = self.daofactory)
     
     def failFiles(self, files):
@@ -149,9 +159,9 @@ class Subscription(BusinessObject, WMSubscription):
         if not isinstance(files, list) and not isinstance(files, set):
             files=[files]
         statechanger = ChangeStateAction(self.logger)
-        statechanger.execute(subscription=self.id, 
-                                  file=[x for x in files], 
-                                  state="FailFiles",
+        statechanger.execute(subscription = self.id, 
+                                  file = [x for x in files], 
+                                  state = "FailFiles",
                                   daofactory = self.daofactory)
 
     def getJobs(self):

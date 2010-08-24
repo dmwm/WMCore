@@ -40,17 +40,19 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.3 2008/10/01 22:00:05 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobGroup.py,v 1.4 2008/10/22 17:51:53 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Job import Job
+
 from sets import Set
 
 class JobGroup(WMJobGroup, BusinessObject):
-    
+    """
+    A gropu (set) of Jobs
+    """
     def __init__(self, subscription = None, jobs=Set(), id = -1):
         BusinessObject.__init__(self, 
                                 logger=subscription.logger, 
@@ -67,20 +69,25 @@ class JobGroup(WMJobGroup, BusinessObject):
         """
         Add the new jobgroup to WMBS, create the output Fileset object
         """
-        self.id, self.uid = self.daofactory(classname='JobGroup.New').execute(self.subscription.id)
-        self._ouput = Fileset(name="output://%s_%s" % (self.subscription.name(), id),
-                              logger=self.logger, 
-                              dbfactory=self.dbfactory)
-        self._ouput.create()
+        action = self.daofactory(classname='JobGroup.New')
+        self.id, self.uid = action.execute(self.subscription.id)
+        self.groupoutput = Fileset(
+                      name="output://%s_%s" % (self.subscription.name(), id),
+                      logger=self.logger, 
+                      dbfactory=self.dbfactory)
+        self.groupoutput.create()
         return self
     
     def load(self):
+        """
+        Load the JobGroup from the database
+        """
         self.daofactory(classname='JobGroup.Load').execute(self.id)
         id = self.daofactory(classname='JobGroup.Output').execute(self.id)
-        self._ouput = Fileset(id = id,
-                              logger=subscription.logger, 
-                              dbfactory=subscription.dbfactory)
-        self._ouput.load()
+        self.groupoutput = Fileset(id = id,
+                              logger=self.subscription.logger, 
+                              dbfactory=self.subscription.dbfactory)
+        self.groupoutput.populate()
         return self
         
     def add(self, job):
@@ -129,9 +136,9 @@ class JobGroup(WMJobGroup, BusinessObject):
         be merged up together.
         """
         if self.status() == 'COMPLETE':
-            "output only makes sense if the group is completed"
-            "load output from DB" 
-            self._ouput.load()
-            return self._output
+            # output only makes sense if the group is completed
+            # load output from DB 
+            self.groupoutput.populate()
+            return self.groupoutput
         self.logger.debug(self.status(detail=True))
         return False

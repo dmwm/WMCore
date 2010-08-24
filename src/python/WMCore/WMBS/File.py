@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.22 2008/09/29 16:09:28 metson Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: File.py,v 1.23 2008/10/22 17:51:53 metson Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -20,23 +20,25 @@ class File(BusinessObject, WMFile):
     """
     A simple object representing a file in WMBS
     """
+    #pylint: disable-msg=R0913
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
                  parents=Set(), locations=None, logger=None, dbfactory=None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
-        WMFile.__init__(self, lfn=lfn, id=id, size=size, events=events, run=run, lumi=lumi, parents=parents)
-        """
-        Create the file object
-        """
+        WMFile.__init__(self, lfn=lfn, id=id, size=size, events=events, run=run,
+                        lumi=lumi, parents=parents)
+        # Create the file object
         if locations != None:
             self.setdefault("locations", locations)
         self.dict = self
+    #pylint: enable-msg=R0913
         
     def getInfo(self):
         """
         Return the files attributes as a tuple
         """
-        return self['lfn'], self['id'], self['size'], self['events'], self['run'], \
-                                    self['lumi'], list(self['locations']), list(self['parents'])
+        return self['lfn'], self['id'], self['size'], self['events'], \
+               self['run'], self['lumi'], list(self['locations']), \
+               list(self['parents'])
                                     
     def getParentLFNs(self):
         """
@@ -59,9 +61,11 @@ class File(BusinessObject, WMFile):
         """
         result = None 
         if self['id'] > 0:
-            result = self.daofactory(classname='Files.GetByID').execute(self['id'])
+            action = self.daofactory(classname='Files.GetByID')
+            result = action.execute(self['id'])
         else:
-            result = self.daofactory(classname='Files.GetByLFN').execute(self['lfn'])
+            action = self.daofactory(classname='Files.GetByLFN')
+            result = action.execute(self['lfn'])
         assert len(result) == 1, "Found %s files, not one" % len(result)
         result = result[0]
         self['id'] = result[0]
@@ -71,14 +75,18 @@ class File(BusinessObject, WMFile):
         self['run'] = result[4]
         self['lumi'] = result[5]
         
-        self['locations'] = self.daofactory(classname='Files.GetLocation').execute(self['lfn']) 
+        action = self.daofactory(classname='Files.GetLocation')
+        self['locations'] = action.execute(self['lfn']) 
         
         self['parents'] = Set()
         
         if parentage > 0:
-            for lfn in self.daofactory(classname='Files.GetParents').execute(self['lfn']):
-                self['parents'].add( \
-                        File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory).load(parentage=parentage-1))
+            action = self.daofactory(classname='Files.GetParents')
+            for lfn in action.execute(self['lfn']):
+                f = File(lfn=lfn, 
+                    logger=self.logger, 
+                    dbfactory=self.dbfactory).load(parentage=parentage-1)
+                self['parents'].add(f)
         self.dict = self
         return self
     
@@ -89,7 +97,8 @@ class File(BusinessObject, WMFile):
         trans = Transaction(dbinterface = self.dbfactory.connect())
         try:
             try:
-                self.daofactory(classname='Files.Add').execute(files=self['lfn'], 
+                self.daofactory(classname='Files.Add').execute(
+                                                       files=self['lfn'], 
                                                        size=self['size'], 
                                                        events=self['events'],
                                                        conn = trans.conn, 
@@ -99,7 +108,8 @@ class File(BusinessObject, WMFile):
             except Exception, e:
                 raise e
             try:
-                self.daofactory(classname='Files.AddRunLumi').execute(files=self['lfn'],  
+                self.daofactory(classname='Files.AddRunLumi').execute(
+                                                       files=self['lfn'],  
                                                        run=self['run'], 
                                                        lumi=self['lumi'],
                                                        conn = trans.conn, 
@@ -128,9 +138,11 @@ class File(BusinessObject, WMFile):
         if not self['id'] > 0:
             raise Exception, "Parent file doesn't have an id %s" % self['lfn']
         if not child.dict['id'] > 0:
-            raise Exception, "Child file doesn't have an id %s" % child.lfn
+            raise Exception, "Child file doesn't have an id %s" % child['lfn']
         
-        self.daofactory(classname='Files.Heritage').execute(child=child.dict['id'], parent=self['id'])
+        self.daofactory(classname='Files.Heritage').execute(
+                                                        child=child.dict['id'], 
+                                                        parent=self['id'])
         
     def addParent(self, lfn):
         """
@@ -142,12 +154,16 @@ class File(BusinessObject, WMFile):
         if not self['id'] > 0:
             raise Exception, "Child file doesn't have an id %s" % self['lfn']
         if not parent.dict['id'] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % parent.dict['lfn']
+            raise Exception, "Parent file doesn't have an id %s" % \
+                        parent.dict['lfn']
         
-        self.daofactory(classname='Files.Heritage').execute(child=self['id'], parent=parent.dict['id'])
+        action = self.daofactory(classname='Files.Heritage')
+        action.execute(child=self['id'], parent=parent.dict['id'])
         self.dict = self
         
     def setLocation(self, se):
-        self.daofactory(classname='Files.SetLocation').execute(file=self['lfn'], sename=se)
-        self['locations'] = self.daofactory(classname='Files.GetLocation').execute(self['lfn']) 
+        self.daofactory(classname='Files.SetLocation').execute(file=self['lfn'],
+                                                               sename=se)
+        action = self.daofactory(classname='Files.GetLocation')
+        self['locations'] = action.execute(self['lfn']) 
         self.dict = self

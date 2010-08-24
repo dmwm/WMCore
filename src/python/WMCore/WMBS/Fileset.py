@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#Turn off to many arguments
+#pylint: disable-msg=R0913
+#Turn off over riding built in id 
+#pylint: disable-msg=W0622
 """
 _Fileset_
 
@@ -11,8 +15,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.23 2008/09/18 22:36:21 metson Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Fileset.py,v 1.24 2008/10/22 17:51:53 metson Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -36,14 +40,12 @@ class Fileset(BusinessObject, WMFileset):
     def __init__(self, name=None, id=-1, is_open=True, files=Set(), 
                  parents=Set(), parents_open=True, source=None, sourceUrl=None,
                  logger=None, dbfactory = None):
-        "Set up the object"
+        # Set up the object
         WMFileset.__init__(self, name = name, files=files)
-        "Set up all the surrounding WMBS stuff, logger, database etc"
+        # Set up all the surrounding WMBS stuff, logger, database etc
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         
-        """
-        Create a new fileset
-        """
+        # Create a new fileset
         self.id = id
         self.open = is_open
         self.parents = parents
@@ -53,8 +55,10 @@ class Fileset(BusinessObject, WMFileset):
         self.lastUpdate = 0
     
     def addFile(self, file):
-        # Add the file object to the set, but don't commit to the database
-        # Call commit() to do that - enables bulk operations
+        """
+        Add the file object to the set, but don't commit to the database
+        Call commit() to do that - enables bulk operations
+        """
         WMFileset.addFile(self, file)
     
     def setParentage(self, parents, parents_open):
@@ -89,10 +93,12 @@ class Fileset(BusinessObject, WMFileset):
         """
         Remove this fileset from WMBS
         """
-        self.logger.warning('you are removing the following fileset from WMBS %s %s'
-                                 % (self.name))
+        self.logger.warning(
+                        'you are removing the following fileset from WMBS %s %s'
+                         % (self.name))
         
-        return self.daofactory(classname='Fileset.Delete').execute(name=self.name)
+        action = self.daofactory(classname='Fileset.Delete')
+        return action.execute(name=self.name)
     
     def populate(self, method='Fileset.LoadFromName'): #, parentageLevel=0):
         """
@@ -112,10 +118,11 @@ class Fileset(BusinessObject, WMFileset):
         
         self.newfiles = Set()
         self.files = Set()
-        values = self.daofactory(classname='Files.InFileset').execute(fileset=self.name)
+        action = self.daofactory(classname='Files.InFileset')
+        values = action.execute(fileset=self.name)
         
-        for id, lfn, size, events, run, lumi in values:
-            file = File(id=id, logger=self.logger, dbfactory=self.dbfactory)
+        for v in values:
+            file = File(id=v[0], logger=self.logger, dbfactory=self.dbfactory)
             file.load()
             self.files.add(file)
 
@@ -126,18 +133,19 @@ class Fileset(BusinessObject, WMFileset):
         Add contents of self.newfiles to the database, 
         empty self.newfiles, reload self
         """
-        comfiles = []
         if not self.exists():
             self.create()
-        lfns=[]
+        lfns = []
         while len(self.newfiles) > 0:
             #Check file objects exist in the database, save those that don't
             f = self.newfiles.pop()
             self.logger.debug ( "commiting : %s" % f.dict["lfn"] )  
             try:
                 f.save()
-            except IntegrityError, ex:
-                self.logger.warning('File already exists in the database %s' % f.dict["lfn"])
+            except IntegrityError:
+                self.logger.warning(
+                            'File already exists in the database %s' 
+                            % f.dict["lfn"])
             lfns.append(f.dict["lfn"])
         
         self.daofactory(classname='Files.AddToFileset').execute(file=lfns, 

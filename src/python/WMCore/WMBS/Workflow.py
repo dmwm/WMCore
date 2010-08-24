@@ -16,8 +16,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.12 2008/07/03 17:11:16 metson Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Workflow.py,v 1.13 2008/10/22 17:51:53 metson Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -37,7 +37,8 @@ class Workflow(BusinessObject,WMWorkflow):
     workflow + fileset = subscription
     """
 
-    def __init__(self, spec=None, owner=None, name=None, id=-1, logger=None, dbfactory=None):
+    def __init__(self, spec=None, owner=None, name=None, id=-1, logger=None, 
+                        dbfactory=None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         WMWorkflow.__init__(self, spec=spec, owner=owner, name=name)
         self.id = id
@@ -65,7 +66,8 @@ class Workflow(BusinessObject,WMWorkflow):
         """
         Remove this workflow from WMBS
         """
-        self.logger.warning('You are removing the following workflow from WMBS %s (%s) owned by %s'
+        self.logger.warning(
+        'You are removing the following workflow from WMBS %s (%s) owned by %s'
                                  % (self.name, self.spec, self.owner))
         action = self.daofactory(classname='Workflow.Delete')
         action.execute(id=self.id)

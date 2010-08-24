@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#Turn off to many arguments
+#pylint: disable-msg=R0913
+#Turn off over riding built in id 
+#pylint: disable-msg=W0622
 """
 _Job_
 
@@ -42,21 +46,26 @@ TODO: Test/complete load
 TODO: Load/Save Mask
 """
 
-__revision__ = "$Id: Job.py,v 1.8 2008/10/06 11:02:20 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Job.py,v 1.9 2008/10/22 17:51:53 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import datetime
-from sets import Set
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Job(BusinessObject, WMJob):
-    def __init__(self, name=None, files = None, id = -1, logger=None, dbfactory=None):
+    """
+    A job in WMBS
+    """
+    def __init__(self, 
+                 name=None, 
+                 files = None, 
+                 id = -1, 
+                 logger=None, dbfactory=None):
         """
         jobgroup object is used to determine the workflow. 
         file_set is a set that contains the id's of all files 
@@ -72,7 +81,11 @@ class Job(BusinessObject, WMJob):
             self.load()
             
     def create(self, group):
-        self.id = self.daofactory(classname='Jobs.New').execute(group, self.name)
+        """
+        Write the job to the database
+        """
+        action = self.daofactory(classname='Jobs.New')
+        self.id = action.execute(group, self.name)
                     
     def load(self):
         """
@@ -81,6 +94,9 @@ class Job(BusinessObject, WMJob):
         # load the mask
 
     def getFiles(self, type='list'):
+        """
+        Get the files associate to the job
+        """
         file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
         if file_ids == WMJob.getFiles(self, type='id'):
             return WMJob.getFiles(self, type)
@@ -120,7 +136,8 @@ class Job(BusinessObject, WMJob):
             self.daofactory(classname='Jobs.ClearStatus').execute(self.id,
                                                        conn = trans.conn, 
                                                        transaction = True)
-            self.daofactory(classname='Jobs.%s' % self.status.title()).execute(self.id,
+            self.daofactory(
+                    classname='Jobs.%s' % self.status.title()).execute(self.id,
                                                        conn = trans.conn, 
                                                        transaction = True)
             trans.commit()

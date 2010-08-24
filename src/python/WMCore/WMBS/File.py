@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.17 2008/08/13 15:14:09 metson Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: File.py,v 1.18 2008/08/13 15:21:19 metson Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -87,7 +87,7 @@ class File(BusinessObject, WMFile):
                                                        size=self.dict['size'], 
                                                        events=self.dict['events'])
         except IntegrityError, e:
-            pass #Ignore that the file exists
+            self.logger.exception('File %s exists' % (self.dict['lfn']))
         except Exception, e:
             raise e
         try:

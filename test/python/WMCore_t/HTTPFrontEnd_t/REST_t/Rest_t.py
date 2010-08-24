@@ -4,10 +4,9 @@
 """
 Rest test module
 """
-
-__revision__ = "$Id:"
-__version__ = "$Revision:"
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
+__revision__ = "$Id: Rest_t.py,v 1.3 2008/12/19 01:18:35 valya Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -28,17 +27,20 @@ class BadModel:
        implement all required method (get, create, delete, update).
     """
     def __init__(self):
-        self.data = "DATA"
+        self.datatype = 'text/plain'
     def getdata(self, method, params=None):
         """Example of getdata implementation"""
-        self.data = "TestModel getdata method=%s params=%s" % \
-                    (str(method),str(params))
-        return self.data
+        data = "TestModel getdata method=%s params=%s" % \
+               (str(method),str(params))
+        datatype = self.datatype
+        return data, datatype
+
     def createdata(self, method, params=None):
         """Example of createdata implementation"""
-        self.data = "TestModel createdata method=%s params=%s" % \
-                    (str(method),str(params))
-        return self.data
+        data = "TestModel getdata method=%s params=%s" % \
+               (str(method),str(params))
+        datatype = self.datatype
+        return data, datatype
 
 class BadFormatter(object):
     """Simple formatter class. It should format input data according

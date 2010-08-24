@@ -1,5 +1,6 @@
 from cherrypy.lib.static import serve_file
 import os
+import logging
 
 class Downloader:
     """
@@ -8,8 +9,9 @@ class Downloader:
     Serve files from the JobCreator Cache via HTTP
 
     """
-    def __init__(self, rootDir):
-        self.rootDir = rootDir
+    def __init__(self, config):
+        print str(config)
+        self.rootDir = config.dir
 
     def index(self, filepath):
         """

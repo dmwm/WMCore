@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.7 2008/06/09 16:37:47 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Fileset.py,v 1.8 2008/06/19 10:02:54 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -29,7 +29,8 @@ class Fileset(object):
     A simple object representing a Fileset in WMBS.
 
     A fileset is a collection of files for processing. This could be a 
-    complete block, a block in transfer, some user defined dataset etc.
+    complete block, a block in transfer, some user defined dataset, a 
+    many file lumi-section etc.
     
     workflow + fileset = subscription
     
@@ -43,7 +44,6 @@ class Fileset(object):
         self.name = name
         self.files = Set()
         self.newfiles = Set()
-        self.wmbs = wmbs
         self.open = is_open
         self.parents = set()
         self.setParentage(parents, parents_open)
@@ -52,6 +52,10 @@ class Fileset(object):
         self.lastUpdate = 0
         self.dbfactory = dbinterface
         self.logger = none
+        
+        self.daofactory = DAOFactory(package='WMCore.WMBS', 
+                                     logger=self.logger, 
+                                     dbinterface=self.dbfactory.connect())
     
     def setParentage(self, parents, parents_open):
         """
@@ -69,29 +73,23 @@ class Fileset(object):
         """
         Does a fileset exist with this name
         """
-        conn = self.dbfactory.connect()
-        action = FilesetExistsAction(self.logger)
-        return action.execute(name=self.name,
-                               dbinterface=conn)
+        return self.daofactory(classname='Fileset.Exists').execute(name=self.name)
         
     def create(self, conn = None):
         """
         Add the new fileset to WMBS
         """
-        if not conn:
-            conn = self.dbfactory.connect()
             
-        for parent in self.parents:
-            try:
-                #todo: do in a single transaction
-                parent.create(conn)
-            except IntegrityError:
-                self.wmbs.logger.warning('Fileset parent %s exists' % \
-                                                         parent.name)
+#        for parent in self.parents:
+#            try:
+#                #todo: do in a single transaction
+#                parent.create(conn)
+#            except IntegrityError:
+#                self.wmbs.logger.warning('Fileset parent %s exists' % \
+#                                                         parent.name)
         try:
-            action = NewFilesetAction(self.logger)
-            return action.execute(name=self.name,
-                               dbinterface=conn)
+            return self.daofactory(classname='Fileset.Exists').execute(name=self.name)
+        
         except IntegrityError:
             self.wmbs.logger.exception('Fileset %s exists' % self.name)
             #raise
@@ -103,10 +101,8 @@ class Fileset(object):
         """
         self.wmbs.logger.warning('you are removing the following fileset from WMBS %s %s'
                                  % (self.name))
-        conn = self.dbfactory.connect()
-        action = DeleteFilesetAction(self.logger)
-        return action.execute(name=self.name,
-                               dbinterface=conn)
+        
+        return self.daofactory(classname='Fileset.Delete').execute(name=self.name)
     
     def populate(self):
         """

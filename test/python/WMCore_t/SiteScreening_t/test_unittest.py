@@ -2,8 +2,8 @@
 """
 Test case for SiteScreening
 """
-__revision__ = "$Id: test_unittest.py,v 1.2 2008/10/15 13:22:32 ewv Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: test_unittest.py,v 1.3 2008/10/15 13:54:10 ewv Exp $"
+__version__  = "$Revision: 1.3 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -101,6 +101,5 @@ fakeLogger = FakeLogger()
 
 
 if __name__ == '__main__':
-#    common.logger = FakeLogger()
     unittest.main()
 

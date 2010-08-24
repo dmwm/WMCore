@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.1 2008/10/14 14:21:50 ewv Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.2 2008/10/15 13:54:10 ewv Exp $"
+__version__  = "$Revision: 1.2 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -17,7 +17,7 @@ import types
 import fnmatch
 import re
 
-from ProdCommon.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 class BlackWhiteListParser(object):
 
@@ -235,7 +235,7 @@ class SEBlackWhiteListParser(BlackWhiteListParser):
     def __init__(self, cfgParams, logger=None):
         super(SEBlackWhiteListParser, self).__init__(cfgParams, logger)
         self.kind = 'se'
-        self.mapper = self.siteDBAPI.CMSNametoSE
+        self.mapper = self.siteDBAPI.cmsNametoSE
         self.configure(cfgParams)
 
 
@@ -249,5 +249,5 @@ class CEBlackWhiteListParser(BlackWhiteListParser):
     def __init__(self, cfgParams, logger=None):
         super(CEBlackWhiteListParser, self).__init__(cfgParams, logger)
         self.kind = 'ce'
-        self.mapper = self.siteDBAPI.CMSNametoCE
+        self.mapper = self.siteDBAPI.cmsNametoCE
         self.configure(cfgParams)

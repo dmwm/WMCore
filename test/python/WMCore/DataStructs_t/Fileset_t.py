@@ -132,4 +132,6 @@ class FilesetClassTest (unittest.TestCase):
         assert localTestFileSet.newfiles == None, \
                 'Test file not present at fileset.newfiles ' \
                 '- fileset.commit not working properly'
- 
+     
+if __name__ == '__main__':
+    unittest.main()

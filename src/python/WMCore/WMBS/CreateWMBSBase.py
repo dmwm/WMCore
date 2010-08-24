@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.19 2009/02/10 19:34:01 sryu Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.20 2009/02/25 17:49:45 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import threading
 
@@ -66,9 +66,10 @@ class CreateWMBSBase(DBCreator):
              lfn          VARCHAR(255) NOT NULL,
              size         INTEGER,
              events       INTEGER,
-             cksum        INTEGER,
+             cksum        VARCHAR(100),
              first_event  INTEGER,
-             last_event   INTEGER)"""
+             last_event   INTEGER,
+             UNIQUE (lfn))"""
         
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (

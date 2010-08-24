@@ -14,7 +14,7 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 
-class Subscription_t(unittest.TestCase):
+class SubscriptionTest(unittest.TestCase):
     _setup = False
     _teardown = False
     

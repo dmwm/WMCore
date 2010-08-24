@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.8 2009/01/16 22:26:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Fileset_t.py,v 1.9 2009/01/26 13:45:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import logging
@@ -21,7 +21,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMQuality.TestInit import TestInit
 
-class Fileset_t(unittest.TestCase):
+class FilesetTest(unittest.TestCase):
     _setup = False
     _teardown = False
     

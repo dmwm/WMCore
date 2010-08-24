@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable-msg=C0103,R0902,W0104
 """
 _Configuration_
 
@@ -7,9 +6,6 @@ Module dealing with Agent Configuration file in python format
 
 
 """
-__revision__ = "$Id: Configuration.py,v 1.2 2008/09/05 16:49:20 evansde Exp $"
-__version__ = "$Revision: 1.2 $"
-
 
 import os
 import imp
@@ -32,18 +28,17 @@ _SupportedTypes = [
 
 _SupportedTypes.extend(_SimpleTypes)
 
+
 def format(value):
     """
     _format_
-    
+
     format a value as python
     keep parameters simple, trust python...
     """
     if type(value) == types.StringType:
         value = "\'%s\'" % value
     return str(value)
-
-
 
 class ConfigSection(object):
     """
@@ -58,12 +53,20 @@ class ConfigSection(object):
         self._internal_name = name
         self._internal_settings = set()
         self._internal_docstrings = {}
+        self._internal_children = set()
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
             # skip test for internal settinsg
             object.__setattr__(self, name, value)
             return
+        if isinstance(value, self.__class__):
+            # child ConfigSection
+            self._internal_children.add(name)
+            self._internal_settings.add(name)
+            object.__setattr__(self, name, value)
+            return
+
         if type(value) not in _SupportedTypes:
             msg = "Unsupported Type: %s\n" % type(value)
             msg += "Added to WMAgent Configuration"
@@ -82,6 +85,47 @@ class ConfigSection(object):
         self._internal_settings.add(name)
         return
 
+    def __iter__(self):
+        for attr in self._internal_settings:
+            yield getattr(self, attr)
+
+
+    def __add__(self, otherSection):
+        """
+        _addition operator_
+
+        Define addition for two config section objects
+
+        """
+        for setting in otherSection._internal_settings:
+            settingInstance = getattr(otherSection, setting)
+            if setting in self._internal_settings:
+                currentSetting = getattr(self, setting)
+                if type(currentSetting) != type(settingInstance):
+                    msg = "Trying to overwrite a setting with mismatched types"
+                    msg += "%s.%s is not the same type as %s.%s" % (
+                        self._internal_name, setting,
+                        otherSection._internal_name, setting
+                        )
+
+
+                    raise TypeError, msg
+            self.__setattr__(setting, settingInstance)
+        return self
+
+    def section_(self, sectionName):
+        """
+        _section_
+
+        Get a section by name, create it if not present,
+        returns a ConfigSection instance
+
+        """
+        if self.__dict__.has_key(sectionName):
+            return self.__dict__[sectionName]
+        newSection = ConfigSection(sectionName)
+        self.__setattr__(sectionName, newSection)
+        return object.__getattribute__(self, sectionName)
 
 
 
@@ -97,27 +141,38 @@ class ConfigSection(object):
         """
         document = options.get('document', False)
         comment  = options.get('comment',  False)
+        prefix   = options.get('prefix',   None)
+
+        if prefix != None:
+            myName = "%s.%s" % (prefix, self._internal_name)
+        else:
+            myName = self._internal_name
 
         result = []
         if document:
             result.append("%s.document_(\"\"\"%s\"\"\")" % (
-                self._internal_name,
+                myName,
                 self._internal_documentation)
                           )
         if comment:
             result.append("# %s: %s" % (
-                self._internal_name, self._internal_documentation.replace(
+                myName, self._internal_documentation.replace(
                 "\n", "\n# "),
                 ))
         for attr in self._internal_settings:
+            if attr in self._internal_children:
+                result.append("%s.section_(\'%s\')" % (myName, attr))
+                result.extend(getattr(self, attr).pythonise_(
+                    document = document, comment = comment, prefix = myName))
+                continue
             if self._internal_docstrings.has_key(attr):
                 if comment:
                     result.append("# %s.%s: %s" % (
-                        self._internal_name, attr,
+                        myName, attr,
                         self._internal_docstrings[attr].replace("\n", "\n# ")
                         ))
             result.append( "%s.%s = %s" % (
-                self._internal_name,
+                myName,
                 attr, format(getattr(self, attr))
                 ))
 
@@ -125,7 +180,7 @@ class ConfigSection(object):
                 if document:
                     result.append(
                         "%s.document_(\"\"\"%s\"\"\", \'%s\')" % (
-                        self._internal_name,
+                        myName,
                         self._internal_docstrings[attr], attr))
         return result
 
@@ -205,6 +260,20 @@ class Configuration(object):
         self.Agent.hostName = None
         self.Agent.contact = None
 
+    def __add__(self, otherConfig):
+        """
+        _addition operator_
+
+        Define addition for two config section objects
+
+        """
+        for configSect in otherConfig._internal_sections:
+            if configSect not in self._internal_sections:
+                self.section_(configSect)
+            getattr(self, configSect) + getattr(otherConfig, configSect)
+        return self
+
+
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
@@ -264,7 +333,7 @@ class Configuration(object):
 
 
 
-    def _internal_pythonise(self, **options):
+    def pythonise_(self, **options):
         """
         write as python format
 
@@ -299,21 +368,21 @@ class Configuration(object):
         string format of this object
 
         """
-        return self._internal_pythonise()
+        return self.pythonise_()
 
 
     def documentedString_(self):
         """
         python format with document_ calls
         """
-        return self._internal_pythonise(document = True)
+        return self.pythonise_(document = True)
 
 
     def commentedString_(self):
         """
         python format with docs as comments
         """
-        return self._internal_pythonise(comment = True)
+        return self.pythonise_(comment = True)
 
 
 
@@ -368,8 +437,7 @@ def saveConfigurationFile(configInstance, filename, **options):
     """
     comment = options.get("comment", False)
     document = options.get("document", False)
-    if document:
-        comment = False
+    if document: comment = False
 
     handle = open(filename, 'w')
     if document:

@@ -6,14 +6,14 @@ MySQL implementation of Jobs.Save
 """
 
 __all__ = []
-__revision__ = "$Id: Save.py,v 1.2 2008/11/21 17:06:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Save.py,v 1.3 2008/11/24 19:44:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Save(DBFormatter):
     sql = """UPDATE wmbs_job SET JOBGROUP = :jobgroup, NAME = :name,
-              LAST_UPDATE = curtime() WHERE ID = :jobid"""
+              LAST_UPDATE = now() WHERE ID = :jobid"""
     
     def execute(self, jobid, jobgroup, name):
         binds = self.getBinds(jobgroup = jobgroup, name = name,

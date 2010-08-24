@@ -4,15 +4,16 @@ _New_
 MySQL implementation of JobGroup.New
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.5 2008/11/21 17:05:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: New.py,v 1.6 2008/11/24 19:44:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Services.UUID import makeUUID
 
 class New(DBFormatter):
     sql = []
-    sql.append("""insert into wmbs_jobgroup (subscription, uid, output, last_update) values (:subscription, :uid, :output, curtime())""")
+    sql.append("""insert into wmbs_jobgroup (subscription, uid, output,
+                  last_update) values (:subscription, :uid, :output, now())""")
     sql.append("""select id from wmbs_jobgroup where uid=:uid""")
 
     def format(self, result, uid):

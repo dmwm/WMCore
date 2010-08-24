@@ -6,25 +6,20 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.5 2008/05/29 14:43:55 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: File.py,v 1.6 2008/06/14 15:40:27 metson Exp $"
+__version__ = "$Revision: 1.6 $"
+from WMCore.DAOFactory import DAOFactory
+
 
 class File(object):
     """
     A simple object representing a file in WMBS
     """
-#    id = -1
-#    lfn = ''
-#    size = ''
-#    events = ''
-#    run = ''
-#    lumi = ''
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
-                 parents=set(), locations=set(), wmbs=None):
+                 parents=set(), locations=set(), logger=None, dbfactory=None):
         """
         Create the file object
         """
-        self.wmbs = wmbs
         self.id = id
         self.lfn = lfn
         self.size = size 
@@ -33,6 +28,11 @@ class File(object):
         self.lumi = lumi
         self.parents = parents
         self.locations = locations
+        self.dbfactory = dbfactory
+        self.logger = logger
+        self.daofactory = DAOFactory(package='WMCore.WMBS', 
+                                     logger=self.logger, 
+                                     dbinterface=self.dbfactory.connect())
     
     def getInfo(self):
         """
@@ -59,14 +59,16 @@ class File(object):
         """
         use lfn to load file info from db
         """
-        result = self.wmbs.fileDetails(self.lfn)[0]
+        result = self.daofactory(classname='Files.Get').execute(self.lfn)
         self.id = result[0]
         self.lfn = result[1]
         self.size = result[2]
         self.events = result[3]
         self.run = result[4]
         self.lumi = result[5]
-        self.locations = result[6]
+        
+        self.locations = self.daofactory(classname='Files.GetLocation').execute(self.lfn) 
+        
         self.parents = set()
         
         if not parentage > 0:
@@ -75,20 +77,14 @@ class File(object):
         for lfn in self.wmbs.parentsForFile(self.id,
                                 conn = None, transaction = False):
             self.parents.add( \
-                    File(lfn=lfn, wmbs=self.wmbs).load(parentage=parentage-1))
+                    File(lfn=lfn, logger=self.logger, dbfactory=self.dbfactory).load(parentage=parentage-1))
         
         return self
 
-
-#    def __eq__(self, rhs):
-#        """
-#        Are objects the same, go from lfn
-#        """
-#        return self.lfn == rhs.lfn
-#    
-#    def __ne__(self, rhs):
-#        return not self.__eq__(rhs)
-    
+    def setLocation(self, se):
+        self.daofactory(classname='Files.SetLocation').execute(file=self.lfn, sename=se)
+        self.locations = self.daofactory(classname='Files.GetLocation').execute(self.lfn) 
+        
     def __cmp__(self, rhs):
         """
         Sort files in run number and lumi section order
@@ -96,3 +92,17 @@ class File(object):
         if self.run == rhs.run:
             return cmp(self.lumi, rhs.lumi)
         return cmp(self.run, rhs.run)
+    
+    def __eq__(self, rhs):
+        """
+        File is equal if it has the same name, size, runs events and lumi
+        """
+        eq = self.lfn == rhs.lfn 
+        eq = eq and self.size == rhs.size 
+        eq = eq and self.events == rhs.events
+        eq = eq and self.run == rhs.run
+        eq = eq and self.lumi == rhs.lumi
+        return eq
+    
+    def __ne__(self, rhs):
+        return not self.__eq__(rhs)

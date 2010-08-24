@@ -4,10 +4,11 @@
 The workflow manager itself, set up event listeners and work event thread
 """
 __all__ = []
-__revision__ = "$Id: WorkflowManager.py,v 1.3 2009/02/05 23:21:44 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkflowManager.py,v 1.4 2009/02/05 23:26:34 jacksonj Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
+import logging
 
 from WMCore.Agent.Harness import Harness
 from WMCore.WMFactory import WMFactory
@@ -47,4 +48,7 @@ class WorkflowManager(Harness):
         
         # Add event loop to worker manager
         myThread = threading.currentThread()
-        myThread.workerThreadManager.addWorker(WorkflowManagerPoller(), 5)
+        pollInterval = self.config.WorkflowManager.pollInterval
+        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        myThread.workerThreadManager.addWorker(WorkflowManagerPoller(), \
+                                               pollInterval)

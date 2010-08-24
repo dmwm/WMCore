@@ -12,8 +12,10 @@ class MySQLInterface(DBInterface):
         if binds and isinstance(self.engine.dialect, MySQLDialect):
             for k, v in binds.items():
                 self.logger.debug("substituting bind %s, %s" % (k, v))
-                newsql = newsql.replace(':%s' % k, "'%s'" % v)
-                
+                if type(v) == type('string'):
+                    newsql = newsql.replace(':%s' % k, "'%s'" % v)
+                else:
+                    newsql = newsql.replace(':%s' % k, '%s' % v)
         return newsql, None
         
     def executebinds(self, s=None, b=None, connection=None):

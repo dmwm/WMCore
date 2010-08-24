@@ -7,11 +7,11 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: PhEDExNotifier_unit.py,v 1.1 2008/07/23 10:49:46 gowdy Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PhEDExNotifier_unit.py,v 1.2 2008/07/23 11:32:25 gowdy Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
-from WMCore.WMBSFeeder.PhEDExNotifier import PhEDExNotifierComponent
+from WMCore.WMBSFeeder.PhEDExNotifier.PhEDExNotifierComponent import PhEDExNotifierComponent
 from WMCore.DataStructs.Fileset import Fileset
 
 class BasePhEDExNotifierComponentTestCase(unittest.TestCase):
@@ -24,8 +24,9 @@ class BasePhEDExNotifierComponentTestCase(unittest.TestCase):
     
     def testCall(self):
         block = Fileset(name="/HCALNZS/CSA08_STARTUP_V2_v2/RECO#2d041209-fff6-4a71-81fa-2e4b155ed92b")
+        self.callPhEDExNotifier( block )
         dataset = Fileset(name="/GammaJets/CSA08_1PB_V2_RECO_EcalCalElectron_v1/ALCARECO")
-        callPhEDExNotifier( dataset )
+        self.callPhEDExNotifier( dataset )
 
     def callPhEDExNotifier( self, fileset ):
         for i in range(1, 21):
@@ -40,6 +41,6 @@ class BasePhEDExNotifierComponentTestCase(unittest.TestCase):
         # loop so I could do the print out before the first call to
         # PhEDExNotifier
         fileset.commit()
-            
+    
 if __name__ == '__main__':
     unittest.main()

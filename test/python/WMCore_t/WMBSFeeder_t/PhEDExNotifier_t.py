@@ -7,14 +7,14 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: PhEDExNotifier_t.py,v 1.2 2008/11/28 10:15:54 gowdy Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: PhEDExNotifier_t.py,v 1.3 2008/11/28 13:31:37 gowdy Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands
 from WMCore.WMBSFeeder.PhEDExNotifier.PhEDExNotifierComponent import PhEDExNotifierComponent
 from WMCore.DataStructs.Fileset import Fileset
 
-class BasePhEDExNotifierComponentTestCase(unittest.TestCase):
+class PhEDExNotifierTest(unittest.TestCase):
     def setUp(self):
         nodeList = [ "T0_CH_CERN_MSS", "T2_CH_CAF" ]
         self.feeder = PhEDExNotifierComponent( nodeList )
@@ -29,18 +29,16 @@ class BasePhEDExNotifierComponentTestCase(unittest.TestCase):
         self.callPhEDExNotifier( dataset )
 
     def callPhEDExNotifier( self, fileset ):
+        fileset.commit()
+        print "iteration 0: %s new files (%s total)" % (len(fileset.listNewFiles()), len(fileset.listFiles())) 
         for i in range(1, 4):
-            fileset.commit()
-            print "iteration %s: %s new files (%s total)" % (i, len(fileset.listNewFiles()), len(fileset.listFiles())) 
             self.feeder([fileset])
+            print "iteration %s: %s new files (%s total)" % (i, len(fileset.listNewFiles()), len(fileset.listFiles())) 
             set = fileset.listFiles()
             if len(set) > 0:
                 file = set.pop()
                 print file["locations"], file["lfn"]        
-        # I do this outside the loop as I moved this to the start of the
-        # loop so I could do the print out before the first call to
-        # PhEDExNotifier
-        fileset.commit()
+            fileset.commit()
     
 if __name__ == '__main__':
     unittest.main()

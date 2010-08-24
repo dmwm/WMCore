@@ -44,9 +44,11 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
         self.create['wmbs_subs_type'] = """CREATE TABLE wmbs_subs_type (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name varchar(255) NOT NULL)"""
+                
         for subtype in ('Processing', 'Merge', 'Job'):
             self.insert['wmbs_subs_type_%s' % subtype] = """insert into
-                            wmbs_subs_type (name) values (%s)""" % subtype
+                            wmbs_subs_type (name) values ('%s')""" % subtype
+                            
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fileset INT(11) NOT NULL,
@@ -68,10 +70,13 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
                 
     def execute(self, conn = None, transaction = False):
         CreateWMBSMySQL.execute(self, conn, transaction)
-        
-        # insert sqlite only values (i.e. enum's)
-        keys = self.insert.keys()
-        self.logger.debug( keys )
-        self.dbi.processData(self.insert.values(), conn = conn, transaction = transaction)
-        
+        try:
+            # insert sqlite only values (i.e. enum's)
+            keys = self.insert.keys()
+            self.logger.debug( keys )
+            self.dbi.processData(self.insert.values(), conn = conn, transaction = transaction)
+                    
+            return True
+        except Exception, e:
+            raise e
         

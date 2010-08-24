@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.22 2008/09/18 21:51:32 metson Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: DBCore.py,v 1.23 2008/09/18 22:30:14 metson Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -170,7 +170,6 @@ class DBInterface(WMObject):
                 self.logger.info("transaction created in DBInterface")
                 trans = connection.begin()
             while(len(binds) > self.maxBindsPerQuery):
-                print len(binds)
                 self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
                                  conn=connection, transaction = True)
                 binds = binds[self.maxBindsPerQuery:]

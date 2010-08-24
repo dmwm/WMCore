@@ -20,8 +20,6 @@ class MySQLDAOFile_t(FileTest, MySQLDAOTest, TestCase):
 
         MySQLDAOTest.setUp(self)
         FileTest.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
-        #Set the specific threshold for the test
-        self.threshold = 1
 
     def tearDown(self):
         #Call superclass tearDown method

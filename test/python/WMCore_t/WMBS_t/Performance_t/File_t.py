@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import logging, random
+import time
 from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
+from WMCore.WMBS.File import File
 from WMCore.Database.DBFactory import DBFactory
 
 class FileTest(WMBSBase):
@@ -18,6 +20,8 @@ class FileTest(WMBSBase):
     
     def setUp(self, sqlURI='', logarg=''):
         #Call common setUp method from BaseTest
+
+        self.totaltime = 0
                 
         self.logger = logging.getLogger(logarg + 'FilePerformanceTest')
         
@@ -25,84 +29,118 @@ class FileTest(WMBSBase):
         
         WMBSBase.setUp(self,dbf=dbf)
 
+        #Setting specific class test threshold
+        self.threshold = 0.1
+        self.totalthreshold = 1
+
     def tearDown(self):
         #Call superclass tearDown method
         WMBSBase.tearDown(self)
 
-    def testAdd(self):
+    def testAdd(self, times=1):
         print "testAdd"
-        # Can't reuse testfile here - it's already in the database
-        random.seed()
-        random.jumpahead(100)
-        lfn = "/store/user/testfile"+str(random.randint(1000, 9999))
-        size = 25168286
-        events = 10000
-        time = self.perfTest(dao=self.dao, action='Files.Add', files=str(lfn), size=size, events=events)
-        assert time <= self.threshold, 'Add DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testAddRunLumi(self): 
+        list = self.genFileObjects(number=times)        
+        for i in range(times):
+            time = self.perfTest(dao=self.dao, action='Files.Add', files=str(list[i]['lfn']), size=list[i]['size'], events=list[i]['events'])
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'Add DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testAddRunLumi(self, times=1): 
         print "testAddRunLumi"
-        # Can't reuse testfile here - it's already in the database
-        lfn = "/store/user/testfile0001"
-        run = 1234
-        lumi = 8
-        time = self.perfTest(dao=self.dao, action='Files.AddRunLumi', files=str(lfn), run=run, lumi=lumi)
-        assert time <= self.threshold, 'AddRunLumi DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testAddToFileset(self):
+        list = self.genFileObjects(number=times)
+
+        for i in range(times):
+            time = self.perfTest(dao=self.dao, action='Files.AddRunLumi', files=str(list[i]['lfn']), run=list[i]['run'], lumi=list[i]['lumi'])
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'AddRunLumi DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testAddToFileset(self, times=1):
         print "testAddToFileset"
-        
-        time = self.perfTest(dao=self.dao, action='Files.AddToFileset', file=self.testFile['lfn'], fileset=self.testFileset.name)
-        assert time <= self.threshold, 'AddToFileset DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testDelete(self):
+        list = self.genFiles(number=times)
+
+        for i in range(times):
+            time = self.perfTest(dao=self.dao, action='Files.AddToFileset', file=str(list[i]['lfn']), fileset="TestFileset")
+            self.totaltime = self.totaltime + time
+            assert self.totaltime <= self.totalthreshold, 'AddToFileset DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testDelete(self, times=1):
         print "testDelete"
-        
-        time = self.perfTest(dao=self.dao, action='Files.Delete', file=self.testFile["lfn"])
-        assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testGetByID(self):
+        list = self.genFiles(number=times)
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Files.Delete', file=list[i]['lfn'])
+            self.totaltime = self.totaltime + time            
+            assert self.totaltime <= self.totalthreshold, 'Delete DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetByID(self, times=1):
         print "testGetByID"
-        
-        time = self.perfTest(dao=self.dao, action='Files.GetByID', files=self.testFile["id"])
-        assert time <= self.threshold, 'GetByID DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testGetByLFN(self):
+        list = self.genFiles(number=1)
+        for i in range(times):        
+#           time = self.perfTest(dao=self.dao, action='Files.GetByID', files=self.testFile["id"])
+           time = self.perfTest(dao=self.dao, action='Files.GetByID', files=list[0]["id"])
+           self.totaltime = self.totaltime + time                        
+           assert self.totaltime <= self.totalthreshold, 'GetByID DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetByLFN(self, times=1):
         print "testGetByLFN"
-        
-        time = self.perfTest(dao=self.dao, action='Files.GetByLFN', files=self.testFile["lfn"])
-        assert time <= self.threshold, 'GetByLFN DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testGetLocation(self):
+        list = self.genFiles(number=times)
+        for i in range(times):        
+            time = self.perfTest(dao=self.dao, action='Files.GetByLFN', files=list[i]['lfn'])
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'GetByLFN DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetLocation(self, times=1):
         print "testGetLocation"
-        
-        time = self.perfTest(dao=self.dao, action='Files.GetLocation', file=self.testFile['lfn'])
-        assert time <= self.threshold, 'GetLocation DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testGetParents(self):
+        list = self.genFiles(number=1)
+        for i in range(times):        
+#            time = self.perfTest(dao=self.dao, action='Files.GetLocation', file=self.testFile['lfn'])
+            time = self.perfTest(dao=self.dao, action='Files.GetLocation', file=list[0]['lfn'])
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'GetLocation DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testGetParents(self, times=1):
         print "testGetParents"
+
+        list = self.genFiles(number=1)
+        for i in range(times):        
+#            time = self.perfTest(dao=self.dao, action='Files.GetParents', files=self.testFile['lfn'])
+            time = self.perfTest(dao=self.dao, action='Files.GetParents', files=list[0]['lfn'])
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'GetParents DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
                 
-        time = self.perfTest(dao=self.dao, action='Files.GetParents', files=self.testFile['lfn'])
-        assert time <= self.threshold, 'GetParents DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
-
 #    def testHeritage(self):
 #        self.dao(classname='Files.Heritage')                
 #        #TODO - parent and child argument settings
-#        time = self.perfTest(dao=self.dao, execinput='parent= , child= '+self.baseexec)
+#       self.perfTest(dao=self.dao, execinput='parent= , child= '+self.baseexec)
 #        assert time <= self.threshold, 'Heritage DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testInFileset(self):
+    def testInFileset(self, times=1000):
         print "testInFileset"
-        
-        time = self.perfTest(dao=self.dao, action='Files.InFileset', fileset=self.testFileset.id)#+self.baseexec)
-        assert time <= self.threshold, 'InFileset DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testSetLocation(self):
+        list = self.genFileset(number=1)
+        for i in range(times):        
+#            time = self.perfTest(dao=self.dao, action='Files.InFileset', fileset=self.testFileset.id)
+            time = self.perfTest(dao=self.dao, action='Files.InFileset', fileset="TestFileset")
+            self.totaltime = self.totaltime + time                        
+            assert self.totaltime <= self.totalthreshold, 'InFileset DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
+
+    def testSetLocation(self, times=1):
         print "testSetLocation"
 
-        time = self.perfTest(dao=self.dao, action='Files.SetLocation', file=self.testFile["lfn"], sename=self.selist[0])#+self.baseexec)
-        assert time <= self.threshold, 'SetLocation DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+        list = self.genLocations(number=times)
+
+        file = self.genFiles(number=1)[0]        
+        for i in range(times):
+#            time = self.perfTest(dao=self.dao, action='Files.SetLocation', file=self.testFile["lfn"], sename=list[0]) 
+            time = self.perfTest(dao=self.dao, action='Files.SetLocation', file=file["lfn"], sename=list[0]) 
+            self.totaltime = self.totaltime + time            
+            assert self.totaltime <= self.totalthreshold, 'SetLocation DAO class - Operation too slow ( '+str(i)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 
 
 if __name__ == "__main__":

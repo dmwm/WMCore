@@ -48,29 +48,32 @@ class Performance():
         fmtstring = fmtstring.rstrip(",")
         return fmtstring
 
-    def perfTest(self, dao, action, times=1, **input):
+    def perfTest(self, dao, action, **input):
         """
         Method that executes a dao class operation and measures its
         execution time.
         
         """
+        actionstring = action
         #Test each of the DAO classes of the specific WMBS class directory        
         action = dao(classname=action)
         string = self.formatExecInput(input=input)        
         string = "action.execute(%s)" % string
         self.logger.debug('the final string: %s' % string)
         diffTotal = 0
-
-        for i in range(0,times):
-            #Performance testing block START        
-            startTime = time.time()               
-            #Place execute method of the specific classname here
-            #string = compile(string)
-            eval(string)
-            endTime = time.time()
-            diffTime = endTime - startTime
-            #Performance testing block END        
-            diffTotal = diffTotal + diffTime
+       
+        #Performance testing block START        
+        startTime = time.time()               
+        #Place execute method of the specific classname here
+        #string = compile(string)
+        eval(string)
+        endTime = time.time()
+        diffTime = endTime - startTime
+        #Performance testing block END        
+        diffTotal = diffTotal + diffTime
         if self.verbose == 'True':
-            print string + " - " + str(times) +" time(s) " 
+            print string 
+        
+        assert diffTotal <= self.threshold, actionstring+' DAO class - Operation too slow ( elapsed time:'+str(diffTotal)+', threshold:'+str(self.threshold)+' )'
         return diffTotal
+        

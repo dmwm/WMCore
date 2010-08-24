@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.7 2008/10/13 20:13:14 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Harness_t.py,v 1.8 2008/11/04 15:42:41 fvlingen Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -18,6 +18,7 @@ import unittest
 from WMCore_t.Agent_t.TestComponent import TestComponent
 
 from WMCore.Agent.Configuration import Configuration
+from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMFactory import WMFactory

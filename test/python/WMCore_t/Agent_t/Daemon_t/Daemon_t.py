@@ -6,8 +6,8 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.1 2008/10/07 13:54:05 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Daemon_t.py,v 1.2 2008/11/04 15:42:41 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -43,7 +43,7 @@ class DaemonTest(unittest.TestCase):
         "make a logger instance and create tables"
        
         if not DaemonTest._setup: 
-            logging.basicConfig(level=logging.DEBUG,
+            logging.basicConfig(level=logging.NOTSET,
                 format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                 datefmt='%m-%d %H:%M',
                 filename='%s.log' % __file__,
@@ -101,12 +101,12 @@ class DaemonTest(unittest.TestCase):
             time.sleep(2)
             details = Details(os.path.join(os.getenv("TESTDIR"),"Daemon.xml"))
             print(str(details.isAlive()))
-            time.sleep(2)
+            time.sleep(10)
             details.killWithPrejudice()
             print('Daemon killed')
         else:
             while True:
-                logging.debug('I am a deamon')
+                logging.debug('I am a deamon (wait 10 seconds)')
                 time.sleep(1)
         DaemonTest._teardown = True
 

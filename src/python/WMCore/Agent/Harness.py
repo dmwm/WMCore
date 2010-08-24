@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.12 2008/10/16 15:03:19 fvlingen Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Harness.py,v 1.13 2008/11/04 15:42:40 fvlingen Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -383,6 +383,8 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         if pid == 0: 
             self.startComponent()
         # if this is the parent return control to the testing environment.
+
+
 
     def startComponent(self):
         """

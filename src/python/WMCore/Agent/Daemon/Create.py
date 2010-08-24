@@ -22,7 +22,7 @@ References:
 
 __author__ = "Chad J. Schroeder"
 __copyright__ = "Copyright (C) 2005 Chad J. Schroeder"
-__revision__ = "$Id: Create.py,v 1.1 2008/10/07 13:54:04 fvlingen Exp $"
+__revision__ = "$Id: Create.py,v 1.2 2008/11/04 15:42:40 fvlingen Exp $"
 __version__ = "0.2"
 
 # Standard Python modules.
@@ -217,8 +217,10 @@ def createDaemon(workdir, keepParent = False):
     for fd in range(startDescriptor, maxfd):
         try:
             os.close(fd)
-        except OSError:	# ERROR, fd wasn't open to begin with (ignored)
+        except OSError, err:	# ERROR, fd wasn't open to begin with (ignored)
             pass
+        except Exception,ex:
+            print('Daemon problem: '+str(ex))
 
     # Redirect the standard I/O file descriptors to the specified file.  Since
     # the daemon has no controlling terminal, most daemons redirect stdin,
@@ -234,7 +236,7 @@ def createDaemon(workdir, keepParent = False):
         os.dup2(0, 1)			# standard output (1)
         os.dup2(0, 2)			# standard error (2)
       
-    return(0)
+    return 0
 
 if __name__ == "__main__":
 

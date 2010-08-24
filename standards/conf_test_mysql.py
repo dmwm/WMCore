@@ -65,9 +65,9 @@ try:
    x=RunTest()
    tests.append((x,"metson"))
 except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("RunTest",str(ex)))
+   if not errors.has_key("metson"):
+       errors["metson"] = []
+   errors["metson"].append(("RunTest",str(ex)))
 
 try:
    x=TriggerTest()
@@ -129,9 +129,9 @@ try:
    x=TransactionTest()
    tests.append((x,"metson"))
 except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("TransactionTest",str(ex)))
+   if not errors.has_key("metson"):
+       errors["metson"] = []
+   errors["metson"].append(("TransactionTest",str(ex)))
 
 try:
    x=HarnessTest()
@@ -145,9 +145,9 @@ try:
    x=DBCoreTest()
    tests.append((x,"metson"))
 except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("DBCoreTest",str(ex)))
+   if not errors.has_key("metson"):
+       errors["metson"] = []
+   errors["metson"].append(("DBCoreTest",str(ex)))
 
 try:
    x=ErrorHandlerTest()
@@ -169,9 +169,9 @@ try:
    x=DBPerformanceTest()
    tests.append((x,"jcgon"))
 except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("DBPerformanceTest",str(ex)))
+   if not errors.has_key("jcgon"):
+       errors["jcgon"] = []
+   errors["jcgon"].append(("DBPerformanceTest",str(ex)))
 
 try:
    x=MsgServiceTest()
@@ -260,7 +260,6 @@ except Exception,ex:
    if not errors.has_key("jcgon"):
        errors["jcgon"] = []
    errors["jcgon"].append(("SubscriptionTest",str(ex)))
-
 
 
 raw_input('Writing level 2 failures to file: failures2.log (press key to continue)')

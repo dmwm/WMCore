@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.4 2008/10/08 15:34:16 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.5 2008/11/04 15:42:41 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import logging
@@ -109,11 +109,12 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
 
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.format(result)
-        assert output ==  [('value1a', 'value2a'), \
-            ('value1b', 'value2b'), ('value1c', 'value2d')]
+        assert output ==  [['value1a', 'value2a'], \
+            ['value1b', 'value2b'], ['value1c', 'value2d']]
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.formatOne(result)
-        assert output == ('value1a', 'value2a')
+        print('test1 '+str(output))
+        assert output == ['value1a', 'value2a']
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.formatDict(result)
         assert output == [{'bind2': 'value2a', 'bind1': 'value1a'}, \

@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.3 2008/10/03 12:36:05 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MsgService_t.py,v 1.4 2008/11/04 15:42:42 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import unittest
@@ -126,10 +126,10 @@ class MsgServiceTest(unittest.TestCase):
         myThread.transaction.begin()
         subscriptions = msgService1.subscriptions()
         # check if subscription succeeded
-        assert subscriptions == [('Message4TestComponent1',), \
-            ('Message4TestComponent2',), \
-            ('Message4TestComponent3',), \
-            ('Message4TestComponent4',)]
+        assert subscriptions == [['Message4TestComponent1',], \
+            ['Message4TestComponent2',], \
+            ['Message4TestComponent3',], \
+            ['Message4TestComponent4',]]
         myThread.transaction.commit()
 
         # subscribe to priority
@@ -143,10 +143,10 @@ class MsgServiceTest(unittest.TestCase):
         # check if subscription succeeded
         myThread.transaction.begin()
         subscriptions = msgService1.prioritySubscriptions()
-        assert subscriptions == [('PriorityMessage4TestComponent1',), \
-            ('PriorityMessage4TestComponent2',), \
-            ('PriorityMessage4TestComponent3',), \
-            ('PriorityMessage4TestComponent4',)]
+        assert subscriptions == [['PriorityMessage4TestComponent1',], \
+            ['PriorityMessage4TestComponent2',], \
+            ['PriorityMessage4TestComponent3',], \
+            ['PriorityMessage4TestComponent4',]]
         myThread.transaction.commit()
         
     def testB(self):

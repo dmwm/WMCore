@@ -3,8 +3,9 @@
 Handler for dispatching messages to other proxies.
 """
 __all__ = []
-__revision__ = "$Id: Dispatcher.py,v 1.1 2008/09/19 15:34:34 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Dispatcher.py,v 1.2 2008/09/29 16:10:56 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "fvlingen@caltech.edu"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -41,7 +42,7 @@ class Dispatcher(BaseHandler):
         Handles the event with payload. It needs to put in all
         the queues of proxies that want this message.
         """
-        msg = {'name':event,'payload':payload['payload']}
+        msg = {'name':event, 'payload':payload['payload']}
         if self.msgType2Proxy.has_key(event):
             for proxy in self.msgType2Proxy[event].keys():
                 if self.component.proxies.has_key(proxy):

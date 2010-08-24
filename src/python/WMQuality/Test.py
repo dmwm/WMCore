@@ -1,8 +1,28 @@
+#!/usr/bin/env python
+"""
+_Test_
+
+
+Component that can parse a cvs log
+and generate a file for generating test that map
+to developers responsible for the test.
+"""
+
+__revision__ = "$Id: Test.py,v 1.3 2008/09/29 16:10:57 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "fvlingen@caltech.edu"
 
 import os
 import unittest
 
 class Test:
+    """
+    _Test_
+
+    Component that can parse a cvs log
+    and generate a file for generating test that map
+    to developers responsible for the test.
+    """
 
     def __init__(self, tests = []):
         self.tests = tests
@@ -22,14 +42,15 @@ class Test:
         test.
         """
         self.cvsLog = cvsLog
-        # cuts the path from e.g. cvmsserver/repositories/CMSSW/WMCore/src/python/WMCore)
+        # pathCut cuts the path from 
+        # e.g. cvmsserver/repositories/CMSSW/WMCore/src/python/WMCore)
         # to src/python/WMCore
-        self.pathCut = pathCut
+
         # ensures that non relevant modules are not incorporated. e.g.
         # src/python/WMCore becomes WMCore
         self.moduleCut = moduleCut
-        # maximum number of authors for voting.
-        self.maxVotes = maxVotes
+        # maxVotes: maximum number of authors for voting.
+
         # files used for testing.
         self.testFile = {}
 
@@ -54,12 +75,12 @@ class Test:
                     moduleName = ''
                     # do not include the actual file for style testing
                     # (only modules)
-                    for index in xrange(0,len(parts)):
+                    for index in xrange(0, len(parts)):
                         # we cut of part of the path
-                        if index > self.pathCut:
+                        if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
                             if not self.testFile.has_key(moduleName) and \
-                                index > self.pathCut+self.moduleCut and\
+                                index > pathCut + self.moduleCut and\
                                 index == (len(parts)-1):
                                 self.testFile[moduleName] = {}
                                 curFile = moduleName
@@ -76,9 +97,9 @@ class Test:
                 # we voted
                 vote += 1
                 # if we reach maxVotes where done
-                if vote < self.maxVotes:
-                   state = 'file'
-                   vote = 0
+                if vote < maxVotes:
+                    state = 'file'
+                    vote = 0
             nl = logFile.readline()
         # we are done voting
 
@@ -108,9 +129,9 @@ from WMQuality.Test import Test
             # make the import:
             parts = testFile.split('/')
             importStmt = 'from '
-            for part in xrange(0,len(parts)-1):
+            for part in xrange(0, len(parts)-1):
                 if part > self.moduleCut:
-                    importStmt +=parts[part]+"."
+                    importStmt += parts[part]+"."
             importStmt += parts[-1].split('.')[0]
             importStmt += ' import '
             testObject = parts[-1].split('_t.py')[0] + 'Test'
@@ -122,7 +143,8 @@ from WMQuality.Test import Test
         testsFile.writelines('tests = [\\\n')
         # make the object instantiations.
         for testObject in winners:
-            testsFile.writelines('     ('+testObject+"(),'"+winners[testObject]+"'),\\\n")
+            testsFile.writelines('     (' +\
+                testObject+"(),'"+winners[testObject]+"'),\\\n")
         testsFile.writelines('    ]\n')
         tail = """
 test = Test(tests)
@@ -141,22 +163,22 @@ test.summaryText()
         print "*******************FAILURES*******************"
     
         for i in self.testResult.failures:
-           obj,msg=i
-           print('==============================')
-           print(obj.developer+'--->'+obj.__class__.__name__)
-           print('==============================')
-           print(str(msg))
+            obj, msg= i
+            print('==============================')
+            print(obj.developer+'--->'+obj.__class__.__name__)
+            print('==============================')
+            print(str(msg))
     
     
         print "*******************ERRORS********************"
     
         for i in self.testResult.errors:
-           obj,msg=i
-           print('==============================')
-           print(obj.developer+'--->'+obj.__class__.__name__)
-           print('==============================')
-           print(str(msg))
-
+            obj,msg=i
+            print('==============================')
+            print(obj.developer+'--->'+obj.__class__.__name__)
+            print('==============================')
+            print(str(msg))
+ 
         print "*******************SUMMARY*********************"
         print "Number of tests run: "+str(self.testResult.testsRun)
         print "Number of failures:  "+str(len(self.testResult.failures))

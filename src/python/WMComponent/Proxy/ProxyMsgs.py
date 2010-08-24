@@ -6,8 +6,8 @@ down version of the old message service in the prodagent that
 is compliant with the old schema.
 """
 
-__revision__ = "$Id: ProxyMsgs.py,v 1.2 2008/09/26 14:48:03 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ProxyMsgs.py,v 1.3 2008/09/29 16:10:56 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -42,7 +42,7 @@ class ProxyMsgs:
         dbFactory = DBFactory(logging.getLogger(), contactinfo, options)
 
         self.dbi = dbFactory.connect()
-        self.trans= Transaction(self.dbi)
+        self.trans = Transaction(self.dbi)
         self.trans.commit()
         self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
 
@@ -75,7 +75,7 @@ class ProxyMsgs:
                        WHERE name = '""" + name + """'
                      """
         self.trans.begin()
-        result = self.trans.processData(sqlCommand,{})
+        result = self.trans.processData(sqlCommand, {})
         rows = self.dbformat.format(result)
         self.trans.commit()
 
@@ -100,7 +100,7 @@ class ProxyMsgs:
                            WHERE name = '""" + name + """'
                          """
                 self.trans.begin()
-                self.trans.processData(sqlCommand,{})
+                self.trans.processData(sqlCommand, {})
                 self.trans.commit()
                 self.procid = procid
                 return
@@ -116,7 +116,7 @@ class ProxyMsgs:
                          '""" + str(currentPid) + """')
                      """
         self.trans.begin()
-        self.trans.processData(sqlCommand,{})
+        self.trans.processData(sqlCommand, {})
 
         # get id
         sqlCommand = "SELECT LAST_INSERT_ID()"
@@ -137,7 +137,7 @@ class ProxyMsgs:
                        WHERE name = '""" + name + """'
                      """
         self.trans.begin()
-        result = self.trans.processData(sqlCommand,{})
+        result = self.trans.processData(sqlCommand, {})
         rows = self.dbformat.format(result)
 
         # get message type id
@@ -156,11 +156,11 @@ class ProxyMsgs:
                            VALUES
                              ('""" + name + """')
                          """
-            self.trans.processData(sqlCommand,{})
+            self.trans.processData(sqlCommand, {})
             
             # get id
             sqlCommand = "SELECT LAST_INSERT_ID()"
-            result = self.trans.processData(sqlCommand,{})
+            result = self.trans.processData(sqlCommand, {})
             row = self.dbformat.formatOne(result)
             typeid = row[0]
 
@@ -171,7 +171,7 @@ class ProxyMsgs:
                        WHERE procid = '""" + str(self.procid) + """'
                          AND typeid = '""" + str(typeid) + """'
                      """
-        result = self.trans.processData(sqlCommand,{})
+        result = self.trans.processData(sqlCommand, {})
         rows = self.dbformat.format(result)
 
         # entry registered before, just return
@@ -187,12 +187,12 @@ class ProxyMsgs:
                        VALUES ('""" + str(self.procid) + """',
                                '""" + str(typeid) + """')
                      """
-        self.trans.processData(sqlCommand,{})
+        self.trans.processData(sqlCommand, {})
 
         # return
         self.trans.commit()
 
-    def publish(self, name, payload, delay="00:00:00", cursor=None):
+    def publish(self, name, payload, delay="00:00:00"):
         """
         _publish_
         """
@@ -224,11 +224,11 @@ class ProxyMsgs:
                            VALUES
                              ('""" + name + """')
                          """
-            self.trans.processData(sqlCommand,{})
+            self.trans.processData(sqlCommand, {})
 
             # get id
             sqlCommand = "SELECT LAST_INSERT_ID()"
-            result = self.trans.processData(sqlCommand,{})
+            result = self.trans.processData(sqlCommand, {})
             row = self.dbformat.formatOne(result)
             typeid = row[0]
             
@@ -238,13 +238,13 @@ class ProxyMsgs:
                        FROM ms_subscription
                        WHERE typeid = '""" + str(typeid) + """'
                      """
-        result = self.trans.processData(sqlCommand,{})
+        result = self.trans.processData(sqlCommand, {})
         dests = self.dbformat.format(result)
         
         destinations = self.getList(dests)
         
         # add message to database for delivery
-        destCount = 0;
+        destCount = 0
         for dest in destinations:
             sqlCommand = """
                          INSERT
@@ -275,7 +275,7 @@ class ProxyMsgs:
         return destCount
     
     
-    def publishUnique(self, name, payload, delay="00:00:00", cursor=None):
+    def publishUnique(self, name, payload, delay="00:00:00"):
         """
           _publishUnique_
         """
@@ -287,17 +287,17 @@ class ProxyMsgs:
                        WHERE name = '""" + name + """'
                      """
         self.trans.begin()
-        results = self.trans.processData(sqlCommand,{})
+        results = self.trans.processData(sqlCommand, {})
         self.trans.commit()
  
-        rows = self.dbformat(results)
+        rows = self.dbformat.format(results)
 
         if len(rows) == 0:
             # not registered before, so cant have any instances
-            return self.publish(name, payload, delay, cursor)
+            return self.publish(name, payload, delay)
         
         # message type was registered before, get id
-        typeid = row[0]
+        typeid = rows[0]
                         
         # message known - how many in queue?
         sqlCommand = """
@@ -314,7 +314,7 @@ class ProxyMsgs:
         
         if num == 0:
             # no messages - so publish
-            return self.publish(name, payload, delay, cursor)
+            return self.publish(name, payload, delay)
         
         # message exists - do not publish another
         return 0
@@ -346,7 +346,7 @@ class ProxyMsgs:
             result = 0
             # execute command
             self.trans.begin()
-            result = self.trans.processData(sqlCommand,{})
+            result = self.trans.processData(sqlCommand, {})
             self.trans.commit()
             rows = self.dbformat.format(result)
             # there is one, return it
@@ -374,7 +374,7 @@ class ProxyMsgs:
                        LIMIT 1
                      """
         self.trans.begin()
-        self.trans.processData(sqlCommand,{})
+        self.trans.processData(sqlCommand, {})
         self.trans.commit()
 
         return (type, payload)
@@ -391,7 +391,7 @@ class ProxyMsgs:
                        FROM ms_message
                      """
         self.trans.begin()
-        self.trans.processData(sqlCommand,{})
+        self.trans.processData(sqlCommand, {})
         self.trans.commit()
 
     def remove(self, messageType):
@@ -400,9 +400,6 @@ class ProxyMsgs:
 
         """
 
-        # get cursor
-        cursor = self.conn.cursor()
-
         # get message type (if it is in database)
         sqlCommand = """
                      SELECT typeid
@@ -410,7 +407,7 @@ class ProxyMsgs:
                        WHERE name = '""" + messageType + """'
                      """
         self.trans.begin()
-        result = self.trans.processData(sqlCommand,{})
+        result = self.trans.processData(sqlCommand, {})
         rows = self.dbformat.format(result)
         self.trans.commit()
 
@@ -419,7 +416,7 @@ class ProxyMsgs:
             return
 
         # get type
-        typeid = row[0]
+        typeid = rows[0]
 
         # remove all messsages
         sqlCommand = """
@@ -449,7 +446,7 @@ class ProxyMsgs:
                           """ % timeval
 
         self.trans.begin()
-        self.trans.processData(sqlCommand,{})
+        self.trans.processData(sqlCommand, {})
         self.trans.commit()
 
     def getList(self, dests):

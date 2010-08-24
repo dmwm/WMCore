@@ -7,20 +7,16 @@ The proxy component relays messages to other prodagent instances.
 Initially it is designed to communicate with the older prodagent components.
 """
 
-__revision__ = "$Id: Proxy.py,v 1.1 2008/09/19 15:34:33 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Proxy.py,v 1.2 2008/09/29 16:10:56 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 
 import cPickle
-import logging
 import threading
 
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
-# we do not import failure handlers as they are dynamicly 
-# loaded from the config file.
-from WMCore.WMFactory import WMFactory
 
 from WMComponent.Proxy.Handler.CheckProxy import CheckProxy
 from WMComponent.Proxy.Handler.Dispatcher import Dispatcher
@@ -39,6 +35,10 @@ class Proxy(Harness):
         Harness.__init__(self, config)
 
     def preInitialization(self):
+        """
+        Reads the config file to filter out proxy parameters
+        and setup channels/queues to the remote proxy/components.
+        """
         self.addMsgLock = threading.Lock()
         # a handler we use to dispatch messages from our message
         # service to proxies that have subscribed to them.
@@ -54,12 +54,13 @@ class Proxy(Harness):
             # we prefix proxies parameters with PXY_
             if proxy.rfind("PXY_") == 0:
                 # pickle is used to store more complex parameters.
-                details = cPickle.loads(self.config.Proxy.__getattribute__(proxy))
+                details = \
+                    cPickle.loads(self.config.Proxy.__getattribute__(proxy))
                 self.proxies[proxy] = details
                 # associate proxy addresses with a queu in and out for 
                 # sending and receiving messages.
-                self.proxies[proxy]['queueOut'] = ProxyQueue(proxy,details) 
-                self.proxies[proxy]['queueIn'] = ProxyQueue(proxy,details) 
+                self.proxies[proxy]['queueOut'] = ProxyQueue(proxy, details) 
+                self.proxies[proxy]['queueIn'] = ProxyQueue(proxy, details) 
         #FIXME: check if we had previous subscriptions stored in the database.
 
     def addMessage(self, proxy, msgType):
@@ -88,17 +89,18 @@ class Proxy(Harness):
         # then publish a check proxy for all the proxies in 
         # the config file.
         msgs = []
-        sectionDict = self.config.Proxy.dictionary_()
         # publish periodic check proxy message
         for proxy in self.proxies.keys():
-            msg = {'name':'CheckProxy','payload':proxy,'delay':self.config.Proxy.contactIn}
+            msg = {'name':'CheckProxy', 'payload':proxy, \
+                'delay':self.config.Proxy.contactIn}
             msgs.append(msg)
             # publish subscription requests for the individual proxies
             for subscription in self.proxies[proxy]['subscription']:
-                msg ={'name':'ProxySubscribe','payload':subscription}
+                msg = {'name':'ProxySubscribe', 'payload':subscription}
                 self.proxies[proxy]['queueOut'].insert(msg)
-            # also subscribe to the ProxySubscribe from the proxy we connected to.
-            msg = {'name':'ProxySubscribe','payload':'ProxySubscribe'}
+            # also subscribe to the ProxySubscribe 
+            # from the proxy we connected to.
+            msg = {'name':'ProxySubscribe', 'payload':'ProxySubscribe'}
             self.proxies[proxy]['queueOut'].insert(msg)
                     
         

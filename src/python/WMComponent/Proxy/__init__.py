@@ -13,7 +13,8 @@ that be necessary in the future.
 
 """
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.2 2008/09/26 14:48:03 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: __init__.py,v 1.3 2008/09/29 16:10:56 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "fvlingen@caltech.edu"
 
 

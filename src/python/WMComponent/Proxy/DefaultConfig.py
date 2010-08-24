@@ -5,11 +5,11 @@ Defines default config values for proxy specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.1 2008/09/19 15:34:33 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2008/09/29 16:10:56 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
-import cPickle
-import os
+#import cPickle
+#import os
 from WMCore.Agent.Configuration import Configuration
 
 config = Configuration()
@@ -40,7 +40,8 @@ config.Proxy.contactIn = '00:00:3'
 # Stop, Logging.Debug,.... and some special messages such
 # as ProxySubscribe the latter is a signal to this proxy
 # to subscribe the sender of this message to its payload message
-#details['subscription'] = ['Logging.DEBUG','Logging.INFO','Logging.ERROR','Logging.NOTSET','LogState','Stop','JobSuccess','JobFailure','JobCreate']
+#details['subscription'] = ['Logging.DEBUG','Logging.INFO','Logging.ERROR',\
+#   'Logging.NOTSET','LogState','Stop','JobSuccess','JobFailure','JobCreate']
 #config.Proxy.PXY_Classic_1 = cPickle.dumps(details)
 
 # details will be a pickled dictionary

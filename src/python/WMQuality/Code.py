@@ -1,3 +1,16 @@
+#!/usr/bin/env python
+"""
+_Code_
+
+
+Component that can parse a cvs log
+and generate a file for checking the 
+code style.
+"""
+
+__revision__ = "$Id: Code.py,v 1.3 2008/09/29 16:10:57 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
+__author__ = "fvlingen@caltech.edu"
 
 import commands
 import os
@@ -5,6 +18,14 @@ import sys
 
 
 class Code:
+    """
+    _Code_
+    
+    
+    Component that can parse a cvs log
+    and generate a file for checking the 
+    code style.
+    """
 
     def __init__(self, script, report, baseDir, threshold, packages = {}):
         # location of the script to calculate the quality
@@ -32,7 +53,8 @@ class Code:
         print 'Report file:    '+ self.report
         print 'Base dir:       '+ self.baseDir
 
-        cont = raw_input('Are these values correct? Press "A" to abbort or any other key to proceed ')
+        cont = raw_input('Are these values correct? ' + \
+            'Press "A" to abbort or any other key to proceed ')
         if cont == 'A':
             sys.exit(0)
 
@@ -66,19 +88,19 @@ class Code:
         Parses a cvs log to information to generate a style quality
         test.
         """
-        self.cvsLog = cvsLog
-        # cuts the path from e.g. cvmsserver/repositories/CMSSW/WMCore/src/python/WMCore)
+        # pathCuts the path from e.g. 
+        # cvmsserver/repositories/CMSSW/WMCore/src/python/WMCore)
         # to src/python/WMCore
-        self.pathCut = pathCut
-        # ensures that non relevant modules are not incorporated. e.g.
+
+        # moduleCut ensures that non relevant modules are not incorporated. e.g.
         # src/python/WMCore becomes WMCore
-        self.moduleCut = moduleCut
-        # maximum number of authors for voting.
-        self.maxVotes = maxVotes
+
+        # maxVotes: maximum number of authors for voting.
+
         # modules used for testing
         self.module = {}
 
-        logFile = open(self.cvsLog, 'r')
+        logFile = open(cvsLog, 'r')
         nl = logFile.readline()
         state = 'file'
         # reset the vote
@@ -100,12 +122,12 @@ class Code:
                     moduleName = ''
                     # do not include the actual file for style testing
                     # (only modules)
-                    for index in xrange(0,len(parts)-1):
+                    for index in xrange(0, len(parts)-1):
                         # we cut of part of the path
-                        if index > self.pathCut:
+                        if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
                             if not self.module.has_key(moduleName) and \
-                                index > self.pathCut+self.moduleCut:
+                                index > pathCut + moduleCut:
                                 self.module[moduleName] = {}
                                 vote2.append(moduleName)
                     # now we need to find authors and let them vote.
@@ -122,10 +144,10 @@ class Code:
                 # we voted
                 vote += 1
                 # if we reach maxVotes where done
-                if vote < self.maxVotes:
-                   state = 'file'
-                   vote = 0
-                   vote2 = []
+                if vote < maxVotes:
+                    state = 'file'
+                    vote = 0
+                    vote2 = []
             nl = logFile.readline()
         # we are done voting
 
@@ -152,7 +174,7 @@ qualityReport = '%s'
 threshold = %s
 
 packages = {\\
-        """ %(self.script, self.report, self.threshold)
+        """ % (self.script, self.report, self.threshold)
         styleFile.writelines(head)
         styleFile.writelines('\n')
 

@@ -1,9 +1,9 @@
-from WMCore.WMBS.MySQL.Base import MySQLBase
+from WMCore.Database.DBFormatter import DBFormatter
 
-class CreateWMBS(MySQLBase):
+class CreateWMBS(DBFormatter):
     
     def __init__(self, logger, dbinterface):
-        MySQLBase.__init__(self, logger, dbinterface)
+        DBFormatter.__init__(self, logger, dbinterface)
         self.create = {}
         self.constraints = {}
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (

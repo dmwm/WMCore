@@ -2,9 +2,8 @@
 SQLite implementation of NewFileset
 """
 from WMCore.WMBS.MySQL.CreateWMBS import CreateWMBS as CreateWMBSMySQL
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 
-class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
+class CreateWMBS(CreateWMBSMySQL):
     
     def __init__(self, logger, dbinterface):
         CreateWMBSMySQL.__init__(self, logger, dbinterface)

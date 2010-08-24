@@ -1,49 +1,13 @@
 """
 Class to define the standardised formatting of MySQL results.
+
+To be deprecated in preference of WMCore.Database.DBFormatter
 """
 import datetime
 import time
+from WMCore.Database.DBFormatter import DBFormatter
 
-class MySQLBase(object):
+class MySQLBase(DBFormatter):
     def __init__(self, logger, dbinterface):
         self.logger = logger
         self.dbi = dbinterface
-    
-    def truefalse(self, value):
-        if value in ('False', 'FALSE', 'n', 'NO', 'No'):
-            value = 0
-        return bool(value)
-        
-    def convertdatetime(self, t):
-        return int(time.mktime(t.timetuple()))
-          
-    def timestamp(self):
-        """
-        generate a timestamp
-        """
-        t = datetime.datetime.now()
-        return self.convertdatetime(t)
-        
-    def format(self, result):
-        """
-        Some standard formatting
-        """
-        out = []
-        for r in result:
-            for i in r.fetchall():
-                out.append(i)
-        return out
-    
-    def getBinds(self, **kwargs):
-        binds = {}
-        for i in kwargs.keys():
-            binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
-        return binds
-    
-    def execute(self, conn = None, transaction = False):
-        """
-        A simple select with no binds/arguments is the default
-        """
-        result = self.dbi.processData(self.sql, self.getBinds(), 
-                         conn = conn, transaction = transaction)
-        return self.format(result)

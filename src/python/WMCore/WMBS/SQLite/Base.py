@@ -5,6 +5,7 @@ class SQLiteBase(MySQLBase):
     def format(self, result):
         """
         Some standard formatting making allowances for the difference with MySQL
+        To be deprecated in preference of WMCore.Database.DBFormatter
         """
         out = []
         for r in result:

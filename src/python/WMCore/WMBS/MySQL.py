@@ -7,8 +7,8 @@ MySQL Compatibility layer for WMBS
 
 """
 
-__revision__ = "$Id: MySQL.py,v 1.3 2008/04/14 17:42:01 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MySQL.py,v 1.4 2008/05/01 15:40:05 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBCore import DBInterface
 
@@ -36,7 +36,7 @@ class MySQLDialect(DBInterface):
     delete = {}
     
     def __init__(self, logger, engine):
-        DBInterface.__init__(logger, engine)
+        DBInterface.__init__(self, logger, engine)
         self.create['wmbs_fileset'] = """CREATE TABLE wmbs_fileset (
                 id int(11) NOT NULL AUTO_INCREMENT,
                 name varchar(255) NOT NULL,  
@@ -169,6 +169,8 @@ CREATE TABLE wmbs_sub_files_complete (
                 where id in (select file from wmbs_fileset_files where 
                 fileset = (select id from wmbs_fileset where name = :fileset))
             """
+        self.select['filesetexists'] = """select count (*) from wmbs_fileset 
+            where name = :name"""
         self.select['subscriptionsoftype'] = """
             select id, fileset from wmbs_subscription where type=:type
         """
@@ -353,7 +355,21 @@ CREATE TABLE wmbs_sub_files_complete (
         Create the table to link a file to a job instance
         """
         self.processData(self.create['wmbs_job_assoc'])
-
+    
+    def createWMBS(self):
+        self.createFilesetTable()
+        self.createFileTable()
+        self.createFileParentTable()
+        self.createFileDetailsTable()
+        self.createLocationTable()
+        self.createFileLocationsTable()
+        self.createSubscriptionsTable()
+        self.createSubscriptionAcquiredFilesTable()
+        self.createSubscriptionFailedFilesTable()
+        self.createSubscriptionCompletedFilesTable()
+        self.createJobTable()
+        self.createJobAssociationTable()
+        
     def insertFileset(self, fileset = None, conn = None, transaction = False):
         """
         insert a (list of) fileset(s) to WMBS
@@ -376,20 +392,25 @@ CREATE TABLE wmbs_sub_files_complete (
         return self.processData(self.select['allfileset'], 
                                 conn = conn, transaction = transaction)
             
+    def filesetExists(self, name = None, conn = None, transaction = False):
+        binds = {'name': name}
+        return self.processData(self.select['filesetexists'], binds, 
+                                conn = conn, transaction = transaction)
+    
     def insertFiles(self, files=None, size=0, events=0, run=0, lumi=0, 
                     conn = None, transaction = False):
         """
         Add a new file to WMBS
         """ 
         self.logger.debug ("inserting %s " % (files))
+        self.logger.debug (type(files))
+        binds = {}
         if type(files) == type('string'):
             binds = {'lfn': files, 
                      'size': size, 
                      'events': events, 
                      'run': run, 
-                     'lumi':lumi}
-            self.processData(self.insert['newfile'], binds, 
-                             conn = conn, transaction = transaction)  
+                     'lumi':lumi}  
         elif type(files) == type([]):
         # files is a list of tuples containing lfn, size, events, run and lumi
             binds = []
@@ -399,9 +420,8 @@ CREATE TABLE wmbs_sub_files_complete (
                               'events': f[2], 
                               'run': f[3], 
                               'lumi':f[4]})
-                
-            self.processData(self.insert['newfile'], binds, 
-                             conn = conn, transaction = transaction)
+        self.processData(self.insert['newfile'], binds, 
+        					conn = conn, transaction = transaction)
                 
     def insertFilesForFileset(self, files=None, size=0, events=0, run=0, lumi=0,
                               fileset=None, conn = None, transaction = False):
@@ -410,19 +430,17 @@ CREATE TABLE wmbs_sub_files_complete (
         """ 
         self.logger.debug ("inserting %s for fileset %s" % (files, fileset))
         self.insertFiles(files, size, events, run, lumi, conn, transaction)
-        
+        binds = {}
         #Now add the files into the mapping table
         if type(files) == type('string'):            
             binds = {'file': files, 'fileset':fileset}
-            self.processData(self.insert['fileforfileset'], binds, 
-                             conn = conn, transaction = transaction)
         elif type(files) == type([]):
             binds = []
             for f in files:
                 binds.append({'file': f[0], 'fileset':fileset})
-            # Replace with some bulk operation
-            self.processData(self.insert['fileforfileset'], binds, 
-                             conn = conn, transaction = transaction)
+        # Replace with some bulk operation
+        self.processData(self.insert['fileforfileset'], binds, 
+        				conn = conn, transaction = transaction)
             
     def showFilesInFileset(self, fileset = None, 
                            conn = None, transaction = False):

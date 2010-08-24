@@ -12,8 +12,10 @@ class AddToFileset(AddFileToFilesetMySQL, SQLiteBase):
                     
     def getBinds(self, file = None, fileset = None):
         binds = self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset',
-                                    self.dbi.buildbinds(self.dbi.makelist(file), 'file',
-                                        self.dbi.buildbinds(
-                                            self.dbi.makelist(self.timestamp()), 'timestamp')))
+                                self.dbi.buildbinds(
+                                            self.dbi.makelist(file), 'file',
+                                    self.dbi.buildbinds(
+                                        self.dbi.makelist(
+                                              self.timestamp()), 'timestamp')))
         return binds
 

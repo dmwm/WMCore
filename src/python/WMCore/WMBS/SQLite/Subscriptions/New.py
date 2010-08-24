@@ -2,7 +2,7 @@
 """
 _Subscription.New_
 
-MySQL implementation of Subscription.New
+SQLite implementation of Subscription.New
 
 TABLE wmbs_subscription
     id      INT(11) NOT NULL AUTO_INCREMENT,
@@ -12,8 +12,8 @@ TABLE wmbs_subscription
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.4 2008/11/25 17:19:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: New.py,v 1.5 2008/12/05 21:06:58 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.New import New as NewMySQL
 

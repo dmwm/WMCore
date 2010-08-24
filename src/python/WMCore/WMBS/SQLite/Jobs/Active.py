@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 _Active_
-MySQL implementation of Jobs.Active
+SQLite implementation of Jobs.Active
 
 move file into wmbs_group_job_acquired
 """
@@ -11,4 +11,5 @@ class Active(ActiveJobsMySQL):
     sql = ActiveJobsMySQL.sql
 
     def execute(self, job=0, conn = None, transaction = False):
-        ActiveJobsMySQL.execute(self, job=job, conn=conn, transaction=transaction)
+        ActiveJobsMySQL.execute(self, job=job, conn=conn, 
+                                transaction=transaction)

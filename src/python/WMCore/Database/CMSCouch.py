@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.4 2009/03/09 17:11:34 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CMSCouch.py,v 1.5 2009/03/09 17:12:46 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 try:
     # Python 2.6
@@ -70,7 +70,7 @@ class Requests:
         """
         Make a request to the remote database. for a give URI. The type of 
         request will determine the action take by the server (be careful with 
-        DELETE!). Data should be a dictionary of {dataname: datavalue}.
+        DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
         headers = {}
         if type != 'GET':
@@ -107,11 +107,15 @@ class Requests:
 
 class JSONRequests(Requests): 
     """
-    Implementation of Requests that encodes data to JSON
+    Implementation of Requests that encodes data to JSON, and talks to the 
+    CouchDB port (change that?).
     """
     def __init__(self, url = 'localhost:5984'):
+        
+        
         Requests.__init__(self, url)
         self.type = "application/json"
+        
     def encode(self, data):
         """
         encode data as json

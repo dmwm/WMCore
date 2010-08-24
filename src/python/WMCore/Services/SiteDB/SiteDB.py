@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.2 2008/09/18 15:30:00 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SiteDB.py,v 1.3 2008/10/16 10:56:43 ewv Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Services.JSONParser import JSONParser
 import urllib
@@ -27,7 +27,7 @@ class SiteDBJSON:
         """
         Convert DN to Hypernews name
         """
-        file = 'dnUserName_%s.json' % str(dn.__hash__()) 
+        file = 'dnUserName_%s.json' % str(dn.__hash__())
         userinfo = self.parser.getJSON("dnUserName", dn=dn, file=file)
         userName = userinfo['user']
         return userName
@@ -55,11 +55,11 @@ class SiteDBJSON:
         """
         Convert CMS name to list of CEs or SEs
         """
-        
+
         cmsName = cmsName.replace('*','%')
         cmsName = cmsName.replace('?','_')
         theInfo = self.parser.getJSON("CMSNameto"+kind, file=file, name=cmsName)
-    
+
         theList = []
         for index in theInfo:
             try:
@@ -70,25 +70,3 @@ class SiteDBJSON:
                 pass
 
         return theList
-
-
-
-if __name__ == '__main__':
-
-    mySiteDB = SiteDBJSON()
-
-    print "Username for Simon Metson:", \
-          mySiteDB.dnUserName(dn="/C=UK/O=eScience/OU=Bristol/L=IS/CN=simon metson")
-
-    print "CMS name for UNL:", \
-          mySiteDB.parser.getJSON("CEtoCMSName", 
-                                  file="CEtoCMSName", 
-                                  name="red.unl.edu")
-          
-    print "T1 Site Exec's:", \
-          mySiteDB.parser.getJSON("CMSNametoAdmins", 
-                                  file="CMSNametoAdmins", 
-                                  name="T1",
-                                  role="Site Executive")
-    print "Tier 1 CEs:", mySiteDB.cmsNametoCE("T1")
-    print "Tier 1 SEs:", mySiteDB.cmsNametoSE("T1")

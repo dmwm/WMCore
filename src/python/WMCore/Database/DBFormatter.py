@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.14 2008/12/17 22:12:02 afaq Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: DBFormatter.py,v 1.15 2009/03/09 16:17:36 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 import datetime
 import time
 
@@ -15,6 +15,10 @@ from WMCore.DataStructs.WMObject import WMObject
 
 class DBFormatter(WMObject):
     def __init__(self, logger, dbinterface):
+        """
+        The class holds a connection to the database in self.dbi. This is a 
+        DBCore.DBInterface object. 
+        """
         self.logger = logger
         self.dbi = dbinterface
     
@@ -35,7 +39,7 @@ class DBFormatter(WMObject):
         
     def format(self, result):
         """
-        Some standard formatting
+        Some standard formatting, put all records into a list
         """
         out = []
         for r in result:
@@ -83,7 +87,7 @@ class DBFormatter(WMObject):
  
     def formatOneDict(self, result):
         """
-        Return a dictionary representing the results
+        Return a dictionary representing the first record
         """
         out = []
         for r in result:

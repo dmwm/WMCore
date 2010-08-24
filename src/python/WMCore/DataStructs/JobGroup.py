@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.10 2008/11/20 16:09:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobGroup.py,v 1.11 2008/12/18 15:11:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -44,13 +44,13 @@ class JobGroup(Pickleable):
     together.
     """
     def __init__(self, subscription = None, jobs = None):
-        """
-        Store all the jobs as a set in self.dict
-        """
+        self.jobs = Set()
+
         if jobs == None:
-            self.jobs = Set()
+            self.newjobs = Set()
         else:
-            self.jobs = jobs
+            self.newjobs = jobs
+            
         self.subscription = subscription
         self.groupoutput = Fileset()
         self.last_update = datetime.datetime.now()
@@ -58,10 +58,20 @@ class JobGroup(Pickleable):
         self.uid = 0
         
     def add(self, job):        
-        self.jobs = self.jobs | self.makeset(job)
+        self.newjobs = self.newjobs | self.makeset(job)
+
+    def commit(self):
+        """
+        _commit_
+
+        Move any new jobs to the jobs attribute, and empty the newjobs
+        attribute.
+        """
+        self.jobs = self.jobs | self.newjobs
+        self.newjobs = Set()
     
     def __len__(self):
-        return len(self.jobs)
+        return len(self.jobs) + len(self.newjobs)
     
     def status(self, detail=False):
         """
@@ -73,7 +83,7 @@ class JobGroup(Pickleable):
         complete = []
         failed = []
         activated = []
-        for j in self.jobs:
+        for j in (self.jobs | self.newjobs):
             if j.last_update < self.last_update:
                 # job has been updated
                 if j.status == 'ACTIVE':

@@ -1,20 +1,19 @@
 """
-SQLite implementation of AddFileToFileset
+SQLite implementation of AddFileToFilesetByIDs
 """
-from WMCore.WMBS.MySQL.Files.AddToFileset import AddToFileset as AddFileToFilesetMySQL
+from WMCore.WMBS.MySQL.Files.AddToFilesetByIDs import AddToFilesetByIDs as AddFileToFilesetByIDsMySQL
 
-class AddToFileset(AddFileToFilesetMySQL):
+class AddToFilesetByIDs(AddFileToFilesetByIDsMySQL):
     sql = """insert into wmbs_fileset_files 
             (file, fileset, insert_time) 
-            values ((select id from wmbs_file_details where lfn = :file),
+            values (:file_id,
             (select id from wmbs_fileset where name = :fileset), :timestamp)"""
                     
     def getBinds(self, file = None, fileset = None):
         binds = self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset',
                                 self.dbi.buildbinds(
-                                            self.dbi.makelist(file), 'file',
+                                            self.dbi.makelist(file), 'file_id',
                                     self.dbi.buildbinds(
                                         self.dbi.makelist(
                                               self.timestamp()), 'timestamp')))
         return binds
-

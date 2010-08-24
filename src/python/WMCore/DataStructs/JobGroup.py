@@ -17,7 +17,10 @@ A JobGroup is a set of jobs and a Fileset that contains their output.
 JobGroup knows the Subscription and passes the Workflow to Jobs in the group.
 
 Jobs know their status (active, failed, complete) and know the files they run on 
-but don't know the subscription or group. They do know their workflow.
+but don't know the group. They do know their subscription and corresponding 
+workflow. This means Jobs can update their state in the database without talking 
+to the group, and WMBS JobGroups can calculate status from the database instead 
+of the in memory objects. 
 
 The group has a status call which goes through the jobs and updates the db for 
 state changes and then returns the status of the group (active, failed, complete).
@@ -25,8 +28,8 @@ state changes and then returns the status of the group (active, failed, complete
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.2 2008/09/08 15:42:55 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobGroup.py,v 1.3 2008/09/09 17:20:23 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset

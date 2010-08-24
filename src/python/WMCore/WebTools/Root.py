@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.21 2009/02/26 06:37:45 metson Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Root.py,v 1.22 2009/03/05 15:05:07 metson Exp $"
+__version__ = "$Revision: 1.22 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log, tree, engine, dispatch
@@ -65,7 +65,14 @@ class Root(WMObject):
             cpconfig.update ({'log.error_file': int(self.config.error_log_file)})
         except:
             cpconfig.update ({'log.error_file': None})
-
+        try:
+            log.error_log.setLevel(self.config.error_log_level)
+        except:     
+            log.error_log.setLevel(logging.DEBUG)
+        try:
+            log.access_log.setLevel(self.config.access_log_level)
+        except:
+            log.access_log.setLevel(logging.DEBUG)
         cpconfig.update ({
                           'tools.expires.on': True,
                           'tools.response_headers.on':True,
@@ -129,22 +136,9 @@ class Root(WMObject):
                                 severity=logging.DEBUG, 
                                 traceback=False)
         # Load the object
-        if hasattr(component, 'is_rest') and component.is_rest:
-            #load up the rest service and it's model
-            obj = factory.loadObject(component.object, component)
-            model = factory.loadObject(component.model.object)
-            obj.setmodel(model)
-            conf = {mount_point:{'request.dispatch':dispatch.MethodDispatcher()}}
-            log("Mounting %s as REST application" % (component._internal_name), 
-                               context=self.app, 
-                               severity=logging.INFO, 
-                               traceback=False)
-            tree.mount(obj, mount_point, conf)
-            
-        else:
-            obj = factory.loadObject(component.object, component)
-            # Attach the object to cherrypy's tree, at the name of the component
-            tree.mount(obj, "/%s" % mount_point)         
+        obj = factory.loadObject(component.object, component)
+        # Attach the object to cherrypy's tree, at the name of the component
+        tree.mount(obj, "/%s" % mount_point)         
         log("%s available on %s/%s" % (component._internal_name, 
                                        server.base(), 
                                        component._internal_name), 

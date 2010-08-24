@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.3 2009/02/09 10:05:14 jacksonj Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.4 2009/02/09 12:11:45 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import threading
@@ -130,22 +130,27 @@ class WorkerThreadsTest(unittest.TestCase):
         """
         # Create a worker manager
         compDummy = Dummy()
+        print('create manager')
         manager = WorkerThreadManager(compDummy)
         
         # Pause it
+        print('pause workers')
         manager.pauseWorkers()
         
         # Add a worker, and check init method gets called
+        print('add worker')
         manager.addWorker(DummyWorker1(), 1)
         time.sleep(3)
         assert WorkerThreadsTest._setupCalled == True
         
+        print('add resume workers')
         # Run the workers, pause, and check algo method gets called
         manager.resumeWorkers()
         time.sleep(3)
         manager.pauseWorkers()
         assert WorkerThreadsTest._algoCalled == True
         
+        print('add terminate workers')
         # Terminate the workers, and check terminate method gets called
         manager.terminateWorkers()
         time.sleep(3)
@@ -156,8 +161,11 @@ class WorkerThreadsTest(unittest.TestCase):
         Check we can terminate before pausing workers
         """
         compDummy = Dummy()
+        print('create manager')
         manager = WorkerThreadManager(compDummy)
+        print('add worker')
         manager.addWorker(DummyWorker2(), 1)
+        print('terminate worker')
         manager.terminateWorkers()
         
     def runTest(self):

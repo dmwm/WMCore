@@ -37,14 +37,18 @@ CREATE TABLE wmbs_job_assoc (
 
 Jobs are added to the WMBS database by their parent JobGroup, but are 
 responsible for updating their state (and name).
+
+TODO: Test/complete load
+TODO: Load/Save Mask
 """
 
-__revision__ = "$Id: Job.py,v 1.6 2008/10/01 21:30:02 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Job.py,v 1.7 2008/10/01 21:59:28 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import datetime
 from sets import Set
 
+from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.WMBS.File import File
@@ -82,15 +86,14 @@ class Job(BusinessObject, WMJob):
             self.file_set.addFile(file)
         # load the mask
 
-    def submit(self, name):
+    def submit(self, name=None):
         """
         Once submitted to a batch queue set status to active and set the job's
         name to some id from the batch system. Calling this method means the job
         has been submitted to the batch queue.
         """
-        self.name = name
+        WMJob.submit(self, name=name)
         self.daofactory(classname='Jobs.UpdateName').execute(self.id, self.name)
-        self.changeStatus('ACTIVE')
                     
     def associateFiles(self):
         """

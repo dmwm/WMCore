@@ -14,7 +14,7 @@ import logging
 from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.Database.DBFactory import DBFactory
 
-__revision__ = "$Id: File_t.py,v 1.24 2008/11/10 13:26:00 jcgon Exp $"
+__revision__ = "$Id: File_t.py,v 1.25 2008/11/26 19:34:49 sfoulkes Exp $"
 __version__ = "$Reivison: $"
 
 class FileTest(WMBSBase):
@@ -280,7 +280,7 @@ class FileTest(WMBSBase):
 
         for i in range(times):
             time = self.perfTest(dao=self.dao, action='Files.SetLocation', 
-                file=file[i]["lfn"], sename=list[0]) 
+                file=file[i]["lfn"], location=list[0]) 
             self.totaltime = self.totaltime + time            
             assert self.totaltime <= self.totalthreshold, 'SetLocation DAO '+ \
             'class - Operation too slow ( '+str(i+1)+' times, total elapsed'+ \

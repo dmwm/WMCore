@@ -36,7 +36,7 @@ class FileBased(JobFactory):
         end = datetime.datetime.now()
         duration = end - start
         if logger:
-        	self.logger.debug("FileBased algorithm completed in %s s" % duration)
+        	logger.debug("FileBased algorithm completed in %s s" % duration)
         else:
         	print "FileBased algorithm completed in %s s" % duration
         return jobs

@@ -7,8 +7,8 @@ Base class for formatters that create tables.
 
 """
 
-__revision__ = "$Id: DBCreator.py,v 1.2 2008/08/18 14:59:34 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBCreator.py,v 1.3 2008/09/15 09:03:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -31,12 +31,14 @@ class DBCreator(DBFormatter):
         """
         _init_
         
-        pass parameters to parent class
+        Call the constructor of the parent class and create empty dictionaries
+        to hold table create statements, constraint statements and insert
+        statements.
         """
         DBFormatter.__init__(self, logger, dbinterface)
         self.create = {}
         self.constraints = {}
-    
+        self.inserts = {}
             
     def execute(self, conn = None, transaction = False):     
         """
@@ -52,7 +54,7 @@ class DBCreator(DBFormatter):
         # get the keys for the table mapping:
         tableKeys = self.create.keys()
         tableKeys.sort()
-        
+
         for i in tableKeys:
             self.logger.debug( i )
             try:
@@ -67,6 +69,7 @@ class DBCreator(DBFormatter):
             
             keys = self.constraints.keys()
             self.logger.debug( keys )
+
         for i in self.constraints.keys():
             self.logger.debug( i )
             try:
@@ -75,6 +78,15 @@ class DBCreator(DBFormatter):
                                  transaction = transaction)
             except Exception, e:
                 self.logger.debug( e )
-            
+
+        for i in self.inserts.keys():
+            self.logger.debug( i )
+            try:
+                self.dbi.processData(self.inserts[i], 
+                                     conn = conn, 
+                                     transaction = transaction)
+            except Exception, e:
+                self.logger.debug( e )                
+
         return True
    

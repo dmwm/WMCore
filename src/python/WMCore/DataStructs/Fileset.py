@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.14 2008/09/19 16:28:39 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Fileset.py,v 1.15 2008/09/25 13:40:27 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject 
 
@@ -51,9 +51,12 @@ class Fileset(WMObject):
     
     def listFiles(self):
         """
-        List all files in the fileset - returns a set of file objects
+        List all files in the fileset - returns a set of file objects 
+        sorted by lfn.
         """
-        return self.files | self.newfiles
+        files = list(self.files | self.newfiles)
+        files.sort(lambda x, y: cmp(x['lfn'], y['lfn']))
+        return files
     
     def listLFNs(self):
         """
@@ -61,7 +64,7 @@ class Fileset(WMObject):
         """
         def getLFN(file):
             return file.dict["lfn"]
-        return map(getLFN, self.listFiles())   
+        return map(getLFN, self.listFiles()).sort()
             
     def listNewFiles(self):  
         """

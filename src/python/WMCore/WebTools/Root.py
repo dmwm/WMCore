@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.2 2009/01/07 17:37:56 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Root.py,v 1.3 2009/01/10 14:08:41 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -44,11 +44,19 @@ class Root(object):
                 severity=logging.WARNING, traceback=False)
             
         #Configure CherryPy
-        cpconfig.update ({"server.environment": self.config.get('root', 'environment')})
-        cpconfig.update ({"server.socket_port": int(self.config.get('root', 'port'))})
-        
+        try:
+            cpconfig.update ({"server.environment": self.config.get('root', 'environment')})
+        except:
+            cpconfig.update ({"server.environment": 'production'})
+        try:
+            cpconfig.update ({"server.socket_port": int(self.config.get('root', 'port'))})
+        except:
+            cpconfig.update ({"server.socket_port": 8080})
+        try:
+            cpconfig.update ({'tools.expires.secs': int(self.config.get('root', 'expires'))})
+        except:
+            cpconfig.update ({'tools.expires.secs': 300})
         cpconfig.update ({'tools.expires.on': True,
-                          'tools.expires.secs': 300,
                           'tools.response_headers.on':True,
                           'tools.etags.on':True,
                           'tools.etags.autotags':True,
@@ -59,7 +67,7 @@ class Root(object):
         #cpconfig.update ({'tools.proxy.on': True})
         #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})    
         
-        print cpconfig
+        log("loading config: %s" % cpconfig, context=self.app, severity=logging.DEBUG, traceback=False)
         
         self.loadPages(opts, self.config)
         
@@ -68,7 +76,7 @@ class Root(object):
         views = eval(config.get('views', 'active'))
         
         for i in views:
-            log("loading %s" % i, context=self.app, severity=logging.DEBUG, traceback=False)
+            log("loading %s" % i, context=self.app, severity=logging.INFO, traceback=False)
             theclass = config.get(i, 'class')
             
             args = [self.configToDict(config, i)]

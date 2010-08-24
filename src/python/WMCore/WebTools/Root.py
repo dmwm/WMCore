@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.17 2009/02/13 18:49:29 metson Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Root.py,v 1.18 2009/02/16 14:04:43 metson Exp $"
+__version__ = "$Revision: 1.18 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -38,7 +38,8 @@ class Root(WMObject):
         self.config = config.section_("Webtools")
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
- 
+        self.homepage = None
+        
     def configureCherryPy(self):
         #Configure CherryPy
         try:
@@ -112,14 +113,7 @@ class Root(WMObject):
                                     component), 
                                     context=self.app, 
                                     severity=logging.INFO, traceback=False)
-                        
-#            if hasattr(component, 'database'):
-#                log("loading database for %s" % (component._internal_name), 
-#                                    context=self.app, 
-#                                    severity=logging.INFO, 
-#                                    traceback=False)
-#                component.database = self.loadDatabase(component)
-        
+                                
             log("Loading %s" % (component._internal_name), 
                                     context=self.app,
                                     severity=logging.DEBUG, 
@@ -143,8 +137,13 @@ class Root(WMObject):
 
         # now make the index page
         if hasattr(self.appconfig, 'index'):
-            self.homePage = getattr(self, self.appconfig.index)
+            self.homepage = getattr(self, self.appconfig.index)
         else:
+            log("No index defined for %s - instantiating default Welcome page" 
+                                             % (self.app), 
+                                           context=self.app, 
+                                           severity=logging.INFO, 
+                                           traceback=False)
             namesAndDocstrings = []
             # make a default Welcome
             for view in self.appconfig.views.active:
@@ -153,24 +152,6 @@ class Root(WMObject):
                docstring = viewObj.__doc__
                namesAndDocstrings.append((viewName, docstring))
             self.homepage = Welcome(namesAndDocstrings)
-
-    def loadDatabase(self, configSection):
-        #TODO: allow a configSection to contain a DBInterface
-#        dblist = []
-#        if hasattr(configSection, 'database'):
-#            #Configure the database if needed, replace with thread style?
-#            for dburl in self.makelist(configSection.database):
-#                try:
-#                    conn = DBFactory(log.error_log, dburl).connect()
-#                    print "\n \t database connection: \n\t\t%s \n" % type(conn) 
-#                    dblist.append(conn)
-#                    #TODO: Decide how to deal with DAO
-#                    #daofactory = DAOFactory(package=self.app, logger=log.error_log, dbinterface=conn)
-#                except:
-#                    log("Cannot connect to %s" % config['database'], context=self.app, 
-#                        severity=logging.WARNING, traceback=False)
-
-        return self.flatten(self.makelist(configSection.database))
     
     @expose
     def index(self):
@@ -178,8 +159,7 @@ class Root(WMObject):
     
     @expose
     def default(self, *args, **kwargs):
-        index = self.appconfig.index
-        return eval('self.%s.default(*args, **kwargs)' % index)
+        return self.homepage.default(args, kwargs)
 
 if __name__ == "__main__":
     config = __file__.rsplit('/', 1)[0] + '/DefaultConfig.py'

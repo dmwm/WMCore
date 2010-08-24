@@ -4,8 +4,8 @@ _New_
 MySQL implementation of JobGroup.Status
 """
 __all__ = []
-__revision__ = "$Id: Status.py,v 1.5 2008/12/10 23:01:46 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Status.py,v 1.6 2008/12/11 16:33:48 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -21,7 +21,8 @@ class Status(DBFormatter):
         select count(job) from wmbs_group_job_failed where jobgroup=:jobgroup
         ) as fa, (
         select count(job) from wmbs_group_job_complete where jobgroup=:jobgroup
-        ) as cm
+        ) as cm 
+        from dual
     """
 
     def format(self, result):

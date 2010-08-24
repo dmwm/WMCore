@@ -4,8 +4,8 @@ MySQL implementation of File.Get
 from WMCore.WMBS.MySQL.Files.GetByID import GetByID
 
 class GetByLFN(GetByID):
-    sql = """select file.id, file.lfn, file.size, file.events, map.run, map.lumi, file.cksum
-             from wmbs_file_details as file join wmbs_file_runlumi_map as map on map.file = file.id 
+    sql = """select file.id, file.lfn, file.size, file.events, file.cksum
+             from wmbs_file_details as file  
              where lfn = :lfn"""
     #select id, lfn, size, events, run, lumi from wmbs_file_details where id = :file
 
@@ -24,7 +24,7 @@ class GetByLFN(GetByID):
                 # Only want the first record - later ones should be prevented by
                 # the schema.
                 f = f[0]
-                t = int(f[0]), str(f[1]), int(f[2]), int(f[3]), int(f[4]), int(f[5]), int(f[6])
+                t = int(f[0]), str(f[1]), int(f[2]), int(f[3]), int(f[4])
                 out.append(t)
             return out
         else:

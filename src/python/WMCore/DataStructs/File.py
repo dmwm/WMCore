@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.15 2008/12/15 17:46:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: File.py,v 1.16 2008/12/23 22:17:06 afaq Exp $"
+__version__ = "$Revision: 1.16 $"
 from sets import Set
 import datetime
 from WMCore.DataStructs.WMObject import WMObject
@@ -18,13 +18,11 @@ class File(WMObject, dict):
     _File_
     Data object that contains details for a single file
     """
-    def __init__(self, lfn='', size=0, events=0, run=0, lumi=0, cksum=0, parents=None):
+    def __init__(self, lfn='', size=0, events=0, cksum=0, parents=None):
         dict.__init__(self)
         self.setdefault("lfn", lfn)
         self.setdefault("size", size)
         self.setdefault("events", events)
-        self.setdefault("run", run)
-        self.setdefault("lumi", lumi)
 	self.setdefault("cksum", cksum)
         self.setdefault('runs', Set())
         self.setdefault('locations', Set())
@@ -45,13 +43,14 @@ class File(WMObject, dict):
 
 
         """
+
         if not isinstance(run, Run):
             msg = "addRun argument must be of type WMCore.DataStructs.Run"
             raise RuntimeError, msg
         self['runs'].add(run)
-        maxRun = max(self['runs'])
-        self['run']  = maxRun.run
-        self['lumi'] = max(maxRun)
+        #maxRun = max(self['runs'])
+        #self['run']  = maxRun.run
+        #self['lumi'] = max(maxRun)
         return
 
 
@@ -77,9 +76,10 @@ class File(WMObject, dict):
         """
         Sort files in run number and lumi section order
         """
-        if self['run'] == rhs['run']:
-            return cmp(self['lumi'], rhs['lumi'])
-        return cmp(self['run'], rhs['run'])
+        #if self['run'] == rhs['run']:
+        #    return cmp(self['lumi'], rhs['lumi'])
+	
+        return self.__eq__(rhs)
 
     def __eq__(self, rhs):
         """

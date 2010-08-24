@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.32 2008/12/12 19:54:13 afaq Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: File.py,v 1.33 2008/12/23 22:17:07 afaq Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.Database.Transaction import Transaction
@@ -15,6 +15,9 @@ from WMCore.DAOFactory import DAOFactory
 from sqlalchemy.exceptions import IntegrityError
 
 from sets import Set
+
+from WMCore.DataStructs.Run import Run
+
 import threading
 
 class File(WMFile):
@@ -22,10 +25,10 @@ class File(WMFile):
     A simple object representing a file in WMBS
     """
     #pylint: disable-msg=R0913
-    def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0, cksum=0,
+    def __init__(self, lfn='', id=-1, size=0, events=0, cksum=0,
                  parents=None, locations=None):
-        WMFile.__init__(self, lfn=lfn, size=size, events=events, run=run,
-                        lumi=lumi, cksum=cksum, parents=parents)
+        WMFile.__init__(self, lfn=lfn, size=size, events=events, 
+                        cksum=cksum, parents=parents)
 
         myThread = threading.currentThread()
         self.logger = myThread.logger
@@ -56,8 +59,24 @@ class File(WMFile):
         Return the files attributes as a tuple
         """
         return self['lfn'], self['id'], self['size'], self['events'], \
-               self['run'], self['lumi'], self['cksum'], list(self['locations']), \
+               self['cksum'], list(self['runs']), list(self['locations']), \
                list(self['parents'])
+
+
+    def getLocations(self):
+	"""
+	get a list of locations for this file
+	"""
+
+	return list(self['locations'])
+
+    def getRuns(self):
+
+	"""
+	get a list of run lumi objects (List of Set() of type WMCore.DataStructs.Run)
+	"""
+
+	return list(self['runs'])
                                     
     def getParentLFNs(self):
         """
@@ -86,15 +105,19 @@ class File(WMFile):
             action = self.daofactory(classname='Files.GetByLFN')
             result = action.execute(self['lfn'])
         assert len(result) == 1, "Found %s files, not one" % len(result)
-        result = result[0]
+
+	result = result[0]
         self['id'] = result[0]
         self['lfn'] = result[1]
         self['size'] = result[2]
         self['events'] = result[3]
-        self['run'] = result[4]
-        self['lumi'] = result[5]
-	self['cksum'] = result[6]
-        
+	self['cksum'] = result[4]
+       
+	#Get the Run/Lumis
+	action = self.daofactory(classname='Files.GetRunLumiFile')
+	runs = action.execute(self['lfn']) 	
+	[self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+
         action = self.daofactory(classname='Files.GetLocation')
         self['locations'] = action.execute(self['lfn']) 
         self['newlocations'].clear()
@@ -131,9 +154,10 @@ class File(WMFile):
                           events = self["events"], cksum= self["cksum"], conn = conn,
                           transaction = True)
 
-        lumiAction = self.daofactory(classname="Files.AddRunLumi")
-        lumiAction.execute(files = self["lfn"], run = self["run"],
-                           lumi = self["lumi"], conn = conn, transaction = True)
+	if len(self["runs"]) > 0:
+        	lumiAction = self.daofactory(classname="Files.AddRunLumi")
+        	lumiAction.execute(file = self["lfn"], runs = self["runs"],
+                           conn = conn, transaction = True)
         
         # Add new locations if required
         self.updateLocations(trans)

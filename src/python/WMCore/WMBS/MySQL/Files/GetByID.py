@@ -4,8 +4,8 @@ MySQL implementation of File.Get
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetByID(DBFormatter):
-    sql = """select file.id, file.lfn, file.size, file.events, map.run, map.lumi, file.cksum
-             from wmbs_file_details as file join wmbs_file_runlumi_map as map on map.file = file.id 
+    sql = """select file.id, file.lfn, file.size, file.events, file.cksum
+             from wmbs_file_details as file  
              where file.id = :fileid"""
     
     def getBinds(self, files=None):
@@ -23,7 +23,7 @@ class GetByID(DBFormatter):
                 # Only want the first record - later ones should be prevented by
                 # the schema.
                 f = f[0]
-                t = int(f[0]), str(f[1]), int(f[2]), int(f[3]), int(f[4]), int(f[5]), int(f[6])
+                t = int(f[0]), str(f[1]), int(f[2]), int(f[3]), int(f[4]) 
                 out.append(t)
             return out
         else:

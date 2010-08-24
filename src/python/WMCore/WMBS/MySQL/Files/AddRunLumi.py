@@ -2,33 +2,46 @@
 MySQL implementation of AddRunLumi
 """
 from WMCore.Database.DBFormatter import DBFormatter
+from sets import Set
 
 class AddRunLumi(DBFormatter):
+
     sql = """insert wmbs_file_runlumi_map (file, run, lumi) 
             select id, :run, :lumi from wmbs_file_details 
             where lfn = :lfn"""
-                
-    def getBinds(self, files=None, run=0, lumi=0):
-        # Can't use self.dbi.buildbinds here...
-        binds = {}
-        if type(files) == type('string'):
-            binds = {'lfn': files, 
-                     'run': run, 
-                     'lumi':lumi} 
-        elif type(files) == type([]):
-        # files is a list of tuples containing lfn, size, events, run and lumi
-            binds = []
-            for f in files:
-                binds.append({'lfn': f[0], 
-                              'run': f[3], 
-                              'lumi':f[4]})
-        return binds
-    
+
+    def getBinds(self, file=None, runs=None):
+
+	binds = []
+
+	if type(file) == type('string'):
+		lfn = file
+		
+	elif type(file) == type({}):
+		lfn = file('lfn')
+	else:
+	    raise Exception, "Type of file argument is not allowed: %s" \
+                                % type(file)
+
+	if isinstance(runs, (Set, set)):
+		for run in runs:
+			for lumi in run: 
+				binds.append({'lfn': lfn,
+						'run': run.run,
+						'lumi':lumi})
+	else:
+            raise Exception, "Type of runs argument is not allowed: %s" \
+                                % type(runs)
+	return binds
+				
     def format(self, result):
         return True
     
-    def execute(self, files=None, run=0, lumi=0, conn = None, transaction = False):
-        binds = self.getBinds(files, run, lumi)
+    def execute(self, file=None, runs=None, conn = None, transaction = False):
+        binds = self.getBinds(file, runs)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.format(result)
+
+
+

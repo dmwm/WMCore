@@ -9,15 +9,16 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.5 2009/01/20 12:08:44 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Root.py,v 1.6 2009/01/20 21:31:22 rpw Exp $"
+__version__ = "$Revision: 1.6 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
 from cherrypy import config as cpconfig
 # configuration and arguments
-from WMCore.Configuration import Configuration
-from WMCore.Configuration import loadConfigurationFile
+#FIXME
+from WMCore.Agent.Configuration import Configuration
+from WMCore.Agent.Configuration import loadConfigurationFile
 from optparse import OptionParser
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
@@ -31,12 +32,13 @@ import logging
 from WMCore.DataStructs.WMObject import WMObject
 
 class Root(WMObject):
-    def __init__(self, opts):
-        self.opts = opts
-        cfg = loadConfigurationFile(opts.inifile)
-        self.config = cfg.Webtools
+    def __init__(self, config):
+        self.config = config.section_("Webtools")
         self.app = self.config.application
-        
+        self.configureCherryPy()
+        self.loadPages()
+ 
+    def configureCherryPy(self):
         #Configure CherryPy
         try:
             cpconfig.update ({"server.environment": self.config.environment})
@@ -62,24 +64,22 @@ class Root(WMObject):
             cpconfig.update ({'log.error_file': int(self.config.error_log_file)})
         except:
             cpconfig.update ({'log.error_file': None})
-                                  
+
         cpconfig.update ({
                           'tools.expires.on': True,
                           'tools.response_headers.on':True,
                           'tools.etags.on':True,
                           'tools.etags.autotags':True,
-                          'tools.encode.on': True, 
+                          'tools.encode.on': True,
                           'tools.gzip.on': True
                           })
         #cpconfig.update ({'request.show_tracebacks': False})
         #cpconfig.update ({'request.error_response': self.handle_error})
         #cpconfig.update ({'tools.proxy.on': True})
-        #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})    
-        
+        #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})
+        print "LOAD"
         log("loading config: %s" % cpconfig, context=self.app, severity=logging.DEBUG, traceback=False)
-        
-        self.loadPages()
-        
+
     def loadPages(self):
         factory = WMFactory('webtools_factory')
         
@@ -159,5 +159,9 @@ if __name__ == "__main__":
                       action="store_true", dest="verbose", default=False,
                       help="Be more verbose")
     opts, args = parser.parse_args()
-    
-    quickstart(Root(opts))
+    cfg = loadConfigurationFile(opts.inifile)
+    root = Root(cfg)
+    root.configureCherryPy()
+    root.loadPages()
+    quickstart(root)
+    #quickstart(Root(cfg))

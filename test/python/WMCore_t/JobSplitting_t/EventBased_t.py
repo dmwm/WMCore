@@ -5,8 +5,8 @@ _EventBased_
 Event based splitting test
 
 """
-__revision__ = "$Id: EventBased_t.py,v 1.1 2008/09/25 13:14:01 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: EventBased_t.py,v 1.2 2008/10/01 22:03:40 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
@@ -100,7 +100,7 @@ class EventBasedTest(unittest.TestCase):
         jobs = jobfactory(events_per_job = 100)
         self.assertEqual(len(jobs.jobs), 1)
         job = jobs.jobs.pop()
-        self.assertEqual(job.listLFNs(),['/store/SingleFileSplit.root'])
+        self.assertEqual(job.getFiles(type='lfn'),['/store/SingleFileSplit.root'])
         self.assertEqual(job.mask.getMaxEvents(), 100)
         self.assertEqual(job.mask['FirstEvent'], 0)
 
@@ -111,7 +111,7 @@ class EventBasedTest(unittest.TestCase):
         jobs = jobfactory(events_per_job = 1000)
         self.assertEqual(len(jobs.jobs), 1)
         job = jobs.jobs.pop()
-        self.assertEqual(job.listLFNs(),['/store/SingleFileSplit.root'])
+        self.assertEqual(job.getFiles(type='lfn'),['/store/SingleFileSplit.root'])
         self.assertEqual(job.mask.getMaxEvents(), 1000)
         self.assertEqual(job.mask['FirstEvent'], 0)
 
@@ -125,7 +125,7 @@ class EventBasedTest(unittest.TestCase):
         for job in jobs.jobs:
             # 1 file per job, should be same LFN
             self.assertEqual(len(job.file_set), 1)
-            self.assertEqual(job.listLFNs(), ['/store/SingleFileSplit.root'])
+            self.assertEqual(job.getFiles(type='lfn'), ['/store/SingleFileSplit.root'])
             self.assertEqual(job.mask.getMaxEvents(), 50)
             self.failUnless(job.mask['FirstEvent'] in [0, 50])
 
@@ -137,7 +137,7 @@ class EventBasedTest(unittest.TestCase):
         for job in jobs.jobs:
             # 1 file per job, should be same LFN
             self.assertEqual(len(job.file_set), 1)
-            self.assertEqual(job.listLFNs(), ['/store/SingleFileSplit.root'])
+            self.assertEqual(job.getFiles(type='lfn'), ['/store/SingleFileSplit.root'])
             self.assertEqual(job.mask.getMaxEvents(), 99)
             self.failUnless(job.mask['FirstEvent'] in [0, 99])
 
@@ -166,7 +166,7 @@ class EventBasedTest(unittest.TestCase):
         jobs = jobfactory(events_per_job = 100)
         self.assertEqual(len(jobs.jobs), 10)
         for job in jobs.jobs:
-            self.failUnless(len(job.listLFNs()) == 1)
+            self.failUnless(len(job.getFiles(type='lfn')) == 1)
             self.failUnless(
                 job.mask.getMaxEvents() == 100
                 )
@@ -181,7 +181,7 @@ class EventBasedTest(unittest.TestCase):
         jobs = jobfactory(events_per_job = 50)
         self.assertEqual(len(jobs.jobs), 20)
         for job in jobs.jobs:
-            self.failUnless(len(job.listLFNs()) == 1)
+            self.failUnless(len(job.getFiles(type='lfn')) == 1)
             self.failUnless(
                 job.mask.getMaxEvents() == 50
                 )
@@ -196,7 +196,7 @@ class EventBasedTest(unittest.TestCase):
 
         firstEvents = []
         for job in jobs.jobs:
-            self.failUnless(len(job.listLFNs()) in (1,2))
+            self.failUnless(len(job.getFiles(type='lfn')) in (1,2))
             self.failUnless(
                 job.mask.getMaxEvents() == 125
                 )

@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+"""
+_WorkflowExistsTestCase_
+
+Unit tests for Workflow creation and exists, including checks to see that calls 
+are database dialect neutral
+
+"""
+
+__revision__ = "$Id: workflow_unit.py,v 1.2 2008/06/09 16:18:37 metson Exp $"
+__version__ = "$Revision: 1.2 $"
+
 import unittest, logging, os, commands
 from pylint import lint
 from WMCore.Database.DBCore import DBInterface

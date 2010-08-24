@@ -4,11 +4,11 @@
 """
 _CMSCouch_
 
-A simple API to CouchDB that
+A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.1 2009/03/06 15:22:07 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CMSCouch.py,v 1.2 2009/03/06 15:22:53 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import simplejson
 import urllib, urllib2
@@ -44,6 +44,9 @@ class Requests:
         
     def delete(self, uri=None, data=None):
         return self.makeRequest(uri, data, 'DELETE')
+    
+    def update(self, uri=None, data=None):
+        return self.makeRequest(uri, data, 'UPDATE')
         
     def makeRequest(self, uri=None, data=None, type='GET'):
         headers = {}

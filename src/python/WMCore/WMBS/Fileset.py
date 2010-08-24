@@ -11,11 +11,14 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.5 2008/05/12 11:58:06 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Fileset.py,v 1.6 2008/05/29 16:36:54 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
+
+from WMCore.WMBS.Actions.LoadFileset import LoadFilesetAction
+
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Subscription import Subscription
 
@@ -29,11 +32,12 @@ class Fileset(object):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name, wmbs, is_open=True,
-                    parents=None, parents_open=True):
+    def __init__(self, name, wmbs, id=0, is_open=True,
+                    parents=None, parents_open=True, source=None, sourceUrl=None):
         """
-        Create an empty fileset
+        Create a new fileset
         """
+        self.id = id
         self.name = name
         self.files = Set()
         self.newfiles = Set()
@@ -41,7 +45,9 @@ class Fileset(object):
         self.open = is_open
         self.parents = set()
         self.setParentage(parents, parents_open)
-
+        self.source = source
+        self.sourceUrl = sourceUrl 
+        self.lastUpdate = 0
     
     def setParentage(self, parents, parents_open):
         """
@@ -93,11 +99,17 @@ class Fileset(object):
         Load up the files in the file set from the database
         """
         #recursively go through parents
-        for parent in self.wmbs.getFilesetParents(self.name):
-            self.parents.add(Fileset(parent[0], self.wmbs, bool(parent[1])).populate())
+        #for parent in self.wmbs.getFilesetParents(self.name):
+        #    self.parents.add(Fileset(parent[0], self.wmbs, bool(parent[1])).populate())
             
         #get my details
-        self.open = self.wmbs.getFileset(self.name)[1]
+        action = LoadFilesetAction(logger)
+        values = action.execute(name=myfs, 
+                   dbinterface=dbfactory.connect())
+        
+        self.open = values[2]
+        self.lastUpdate = values[3]
+        self.id = values[0]
         
         for f in self.wmbs.showFilesInFileset(self.name):
             id, lfn, size, events, run, lumi = f

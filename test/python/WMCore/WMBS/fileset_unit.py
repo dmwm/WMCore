@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_unit.py,v 1.2 2008/06/10 11:08:11 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: fileset_unit.py,v 1.3 2008/06/10 11:55:01 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands
 from pylint import lint
@@ -114,14 +114,16 @@ class FilesetExistsTestCase(BaseFilesetTestCase):
         thesqllitelist = self.action4.execute(dbinterface=c2)
         self.testlogger.debug(themysqllist)
         self.testlogger.debug(thesqllitelist)        
+                
+        for i in themysqllist, thesqllitelist:
+            assert len(i) == s, \
+                'lists is wrong size %s not %s\n \t %s' % (len(i), s, i)
+            assert type(i) == type([]), \
+                'lists is not type list \n \t %s' % (type(i))
         
         assert themysqllist == thesqllitelist, \
             'lists do not match \n \t %s \n \t %s' % (themysqllist, thesqllitelist)
-        
-        for i in themysqllist, thesqllitelist:
-            assert len(i) == s
-            assert type(i) == type([])
-        
+            
         print " List action is dialect neutral" 
 
       

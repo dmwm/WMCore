@@ -7,8 +7,8 @@ MySQL Compatibility layer for WMBS
 
 """
 
-__revision__ = "$Id: MySQL.py,v 1.4 2008/05/01 15:40:05 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: MySQL.py,v 1.5 2008/05/01 17:31:24 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBCore import DBInterface
 
@@ -83,14 +83,22 @@ class MySQLDialect(DBInterface):
                     ON DELETE CASCADE,
                 FOREIGN KEY(location) REFERENCES wmbs_location(id)
                     ON DELETE CASCADE)"""
+        self.create['wmbs_workflow'] = """CREATE TABLE wmbs_workflow (
+                id           INT(11) NOT NULL AUTO_INCREMENT,
+                spec         VARCHAR(255) NOT NULL,
+                owner        VARCHAR(255),
+                PRIMARY KEY (id))"""
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
                 id      INT(11) NOT NULL AUTO_INCREMENT,
                 fileset INT(11) NOT NULL,
+                workflow INT(11) NOT NULL,
                 type    ENUM("merge", "processing"),
                 last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY(id),
                 FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
+                    ON DELETE CASCADE),
+                FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                     ON DELETE CASCADE)"""
         self.create['wmbs_sub_files_acquired'] = """
 CREATE TABLE wmbs_sub_files_acquired (
@@ -127,8 +135,8 @@ CREATE TABLE wmbs_sub_files_complete (
                 file   INT(11) NOT NULL,
                 FOREIGN KEY (job) REFERENCES wmbs_job(id)
                     ON DELETE CASCADE,
-                FOREIGN KEY (file) REFERENCES wmbs_file(id))"""        
-        # Do we need a WMBS workflow table?
+                FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
+        
         # What history tables do we need?
         # What statistics/monitoring is needed?
         
@@ -142,9 +150,14 @@ CREATE TABLE wmbs_sub_files_complete (
                 values ((select id from wmbs_file_details where lfn = :file),
                 (select id from wmbs_fileset where name = :fileset))
         """
+        self.insert['newworkflow'] = """
+            insert into wmbs_workflow (spec, owner)
+                values (:spec, :owner)
+        """
         self.insert['newsubscription'] = """
-            insert into wmbs_subscription (fileset, type) 
-                values ((select id from wmbs_fileset where name =:fileset), :type)
+            insert into wmbs_subscription (fileset, workflow, type) 
+                values ((select id from wmbs_fileset where name =:fileset), 
+                (select id from wmbs_workflow where spec = :spec and owner = :owner), :type)
         """
         self.insert['newlocation'] = """
             insert into wmbs_location (se_name) values (:location)
@@ -232,6 +245,9 @@ CREATE TABLE wmbs_sub_files_complete (
                 fileset = (select id from wmbs_fileset where name = :fileset)
                 and insert_time > :oldstamp
                 and insert_time < :newstamp)"""
+        self.select['workflowexists'] = """select count (*) from wmbs_workflow
+            where spec = :spec and owner = :owner"""
+            
                
     def createFilesetTable(self):
         """
@@ -356,6 +372,12 @@ CREATE TABLE wmbs_sub_files_complete (
         """
         self.processData(self.create['wmbs_job_assoc'])
     
+    def createWorkflowTable(self):     
+        """
+        Create the table to define workflows
+        """
+        self.processData(self.create['wmbs_workflow'])
+        
     def createWMBS(self):
         self.createFilesetTable()
         self.createFileTable()
@@ -363,6 +385,7 @@ CREATE TABLE wmbs_sub_files_complete (
         self.createFileDetailsTable()
         self.createLocationTable()
         self.createFileLocationsTable()
+        self.createWorkflowTable()
         self.createSubscriptionsTable()
         self.createSubscriptionAcquiredFilesTable()
         self.createSubscriptionFailedFilesTable()
@@ -450,20 +473,39 @@ CREATE TABLE wmbs_sub_files_complete (
         binds = {'fileset' : fileset}
         return self.processData(self.select['filesinfileset'], 
                                 binds, conn = conn, transaction = transaction)
-            
-    def newSubscription(self, fileset = None, subtype='processing', 
+    
+    def newWorkflow(self, spec=None, owner=None, 
+                           conn = None, transaction = False):
+        """
+        Create a workflow ready for subscriptions
+        """
+        binds = {'spec':spec, 'owner':owner}
+        return self.processData(self.insert['newworkflow'], binds, 
+                             conn = conn, transaction = transaction)
+        
+    def workflowExists(self, spec=None, owner=None, 
+                           conn = None, transaction = False):
+        """
+        Check if a workflow exists
+        """
+        binds = {'spec':spec, 'owner':owner}
+        return self.processData(self.select['workflowexists'], binds, 
+                             conn = conn, transaction = transaction)
+                  
+    def newSubscription(self, fileset = None, spec = None, owner = None,
+                        subtype='processing', 
                         conn = None, transaction = False):
         """
         Create a new subscription on a fileset
         """
         if type(fileset) == type('string'):
-            binds = {'fileset': fileset, 'type': subtype}
+            binds = {'fileset': fileset, 'spec': spec, 'owner': owner, 'type': subtype}
             self.processData(self.insert['newsubscription'], binds, 
                              conn = conn, transaction = transaction)
         elif type(fileset) == type([]):
             binds = []
             for f in fileset:
-                binds.append({'fileset': f, 'type': subtype})
+                binds.append({'fileset': f, 'spec': spec, 'owner': owner, 'type': subtype})
             self.processData(self.insert['newsubscription'], binds, 
                              conn = conn, transaction = transaction)  
             
@@ -482,7 +524,10 @@ CREATE TABLE wmbs_sub_files_complete (
                 binds = {'fileset' : fileset}
                 return self.processData(self.select['subscriptionsforfileset'], 
                                 binds, conn = conn, transaction = transaction)
-            
+    def subscriptionsForWorkflow(self):
+        #TODO: return all subscriptions using the workflow
+        pass 
+    
     def listSubscriptionsOfType(self, subtype=None, 
                                 conn = None, transaction = False):
         """

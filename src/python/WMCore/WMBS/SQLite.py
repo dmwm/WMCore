@@ -5,8 +5,8 @@ _WMBSSQLLite_
 SQLite specific implementations
 
 """
-__revision__ = "$Id: SQLite.py,v 1.4 2008/05/01 15:38:48 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SQLite.py,v 1.5 2008/05/01 17:31:24 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 import datetime
 import time
 from WMCore.WMBS.MySQL import MySQLDialect
@@ -46,14 +46,22 @@ class SQLiteDialect(MySQLDialect):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 se_name VARCHAR(255) NOT NULL,
                 UNIQUE(se_name))"""
+        self.create['wmbs_workflow'] = """CREATE TABLE wmbs_workflow (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                spec         VARCHAR(255) NOT NULL,
+                owner        VARCHAR(255))"""
         self.create['wmbs_subscription'] = """CREATE TABLE wmbs_subscription (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 fileset INT(11) NOT NULL,
+                workflow INT(11) NOT NULL,
                 type    INT(11) NOT NULL,
                 last_update timestamp NOT NULL,
                 FOREIGN KEY(fileset) REFERENCES wmbs_fileset(id)
+                    ON DELETE CASCADE
                 FOREIGN KEY(type) REFERENCES wmbs_subs_type(id)
-                ON DELETE CASCADE)""" 
+                    ON DELETE CASCADE
+                FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
+                    ON DELETE CASCADE)""" 
         self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 subscription INT(11) NOT NULL,
@@ -68,9 +76,12 @@ class SQLiteDialect(MySQLDialect):
             values ((select id from wmbs_file_details where lfn = :file),
             (select id from wmbs_fileset where name = :fileset), :timestamp)"""
         self.insert['newsubscription'] = """insert into wmbs_subscription 
-            (fileset, type, last_update) 
+            (fileset, workflow, type, last_update) 
             values ((select id from wmbs_fileset where name =:fileset), 
+            (select id from wmbs_workflow where spec = :spec and owner = :owner),
             (select id from wmbs_subs_type where name = :type), :timestamp)"""
+            
+            
         self.select['nextfiles'] = """
 select file from wmbs_fileset_files where
 fileset = (select fileset from wmbs_subscription where id=:subscription)
@@ -179,13 +190,15 @@ and fileset=(select id from wmbs_fileset where name =:fileset)"""
         self.processData(self.insert['fileforfileset'], binds, 
                          conn = conn, transaction = transaction)
                       
-    def newSubscription(self, fileset = None, subtype='processing', 
-                        conn = None, transaction = False):
+    def newSubscription(self, fileset = None, spec = None, owner = None,
+                        subtype='processing', conn = None, transaction = False):
         """
         Make a new subscription
         """ 
         if type('string') == type(fileset):
             binds = {'fileset': fileset, 
+                     'spec': spec, 
+                     'owner': owner,
                      'type': subtype, 
                      'timestamp':self.timestamp()}
             self.processData(self.insert['newsubscription'], binds)
@@ -193,6 +206,8 @@ and fileset=(select id from wmbs_fileset where name =:fileset)"""
             binds = []
             for f in fileset:
                 binds.append({'fileset': f, 
+                              'spec': spec, 
+                               'owner': owner,
                               'type': subtype, 
                               'timestamp':self.timestamp()})
             self.processData(self.insert['newsubscription'], binds)             

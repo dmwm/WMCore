@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.3 2008/09/05 12:41:32 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Harness.py,v 1.4 2008/09/08 19:34:52 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -99,7 +99,7 @@ class Harness:
             myThread.logger = logging.getLogger()
             logging.info(">>>Setting config for main thread: ")
             myThread.config = self.config
-            logging.info(">>>Initializing Msgservice Factory")
+            logging.info(">>>Initializing MsgService Factory")
             WMFactory("msgService", "WMCore.MsgService."+ \
                 myThread.dialect)
             myThread.msgService = \
@@ -144,7 +144,8 @@ class Harness:
             self.diagnosticMessages.append('Stop')
 
             logging.info(">>>Instantiating trigger service")
-            #FIXME: add when trigger service is ready
+            WMFactory("trigger", "WMCore.Trigger")
+            myThread.trigger = myThread.factory['trigger'].loadObject("Trigger")
             logging.info("Harness part constructor finished")
         except Exception,ex:
             logging.critical("Problem instantiating "+str(ex))

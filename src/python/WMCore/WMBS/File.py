@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.37 2009/01/12 21:37:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: File.py,v 1.38 2009/01/13 16:41:38 sryu Exp $"
+__version__ = "$Revision: 1.38 $"
 
 from sets import Set
 
@@ -143,7 +143,9 @@ class File(WMBSBase, WMFile):
         Create a file.  If no transaction is passed in this will wrap all
         statements in a single transaction.
         """
-        if self.exists() != False:
+        eflag = self.exists()
+        if eflag != False:
+            self["id"] = eflag
             return
 
         addAction = self.daofactory(classname="Files.Add")

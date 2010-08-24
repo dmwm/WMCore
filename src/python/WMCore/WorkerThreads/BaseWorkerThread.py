@@ -7,9 +7,9 @@ Deriving classes should override algorithm, and optionally setup and terminate
 to perform thread-specific setup and clean-up operations
 """
 
-__revision__ = "$Id: BaseWorkerThread.py,v 1.1 2009/02/01 11:03:36 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "fvlingen@caltech.edu"
+__revision__ = "$Id: BaseWorkerThread.py,v 1.2 2009/02/01 11:04:28 jacksonj Exp $"
+__version__ = "$Revision: 1.2 $"
+__author__ = "james.jackson@cern.ch"
 
 import threading
 import logging

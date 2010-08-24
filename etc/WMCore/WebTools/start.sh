@@ -1,5 +1,5 @@
-BASE=/Users/metson/Documents/Workspace/WMCORE/src/python
+export WTBASE=/Users/metson/Documents/Workspace/WMCORE/src
 
-export PYTHONPATH=$PYTHONPATH:$BASE
+export PYTHONPATH=$PYTHONPATH:$WTBASE/python
 
-export PATH=$PATH:$BASE/WMCore/WebTools
+export PATH=$PATH:$WTBASE/python/WMCore/WebTools

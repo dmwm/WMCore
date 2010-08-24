@@ -15,8 +15,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.26 2008/10/28 17:49:14 metson Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Fileset.py,v 1.27 2008/10/29 09:22:53 metson Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -83,10 +83,10 @@ class Fileset(BusinessObject, WMFileset):
         
     def create(self):
         """
-        Add the new fileset to WMBS, does not commit the files!
+        Add the new fileset to WMBS, and commit the files
         """
         self.daofactory(classname='Fileset.New').execute(self.name)
-        self.populate()
+        self.commit()
         return self
     
     def delete(self):

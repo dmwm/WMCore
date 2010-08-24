@@ -32,19 +32,22 @@ class JobGroup_t(Base_t):
     def testNew(self):         
         print "testNew"
         
-        time = self.perfTest(dao=self.dao, action='JobGroup.New', execinput=['subscription=self.testSubscription.id'])
+        #Surprisingly it worked with the same Subscription
+        #TODO - Validate if its working properly
+        time = self.perfTest(dao=self.dao, action='JobGroup.New', subscription=self.testSubscription.id)
         assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
-    def testLoad(self):         
+    def testLoad(self):   
+        # Still no complete JobGroup.Load class
         print "testLoad"
         
-        time = self.perfTest(dao=self.dao, action='JobGroup.Load', execinput=[''])
+        time = self.perfTest(dao=self.dao, action='JobGroup.Load')
         assert time <= self.threshold, 'Load DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testStatus(self):         
         print "testStatus"
         
-        time = self.perfTest(dao=self.dao, action='JobGroup.Status', execinput=['group=self.testJobGroup.id'])
+        time = self.perfTest(dao=self.dao, action='JobGroup.Status', group=self.testJobGroup.id)
         assert time <= self.threshold, 'Status DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
 

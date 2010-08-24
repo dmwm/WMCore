@@ -2,10 +2,11 @@
 """
 _Job_t_
 
+Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.5 2008/12/26 15:31:19 afaq Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Job_t.py,v 1.6 2009/01/06 20:09:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import logging
@@ -77,6 +78,9 @@ class Job_t(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
+        Create and then delete a job.  Use the job class's exists() method to
+        determine if the job has been written to the database before it is
+        created, after it has been created and after it has been deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -116,10 +120,53 @@ class Job_t(unittest.TestCase):
 
         return
 
+    def testCreateDeleteExistsNoFiles(self):
+        """
+        _testCreateDeleteExistsNoFiles_
+
+        Create and then delete a job but don't add any input files to it.
+        Use the job class's exists() method to determine if the job has been
+        written to the database before it is created, after it has been created
+        and after it has been deleted.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testJob = Job(name = "TestJob")
+
+        assert testJob.exists() == False, \
+               "ERROR: Job exists before it was created"
+
+        testJob.create(group = testJobGroup)
+
+        assert testJob.exists() >= 0, \
+               "ERROR: Job does not exist after it was created"
+
+        testJob.delete()
+
+        assert testJob.exists() == False, \
+               "ERROR: Job exists after it was delete"
+
+        return    
+
     def testLoad(self):
         """
         _testLoad_
 
+        Create a job and save it to the database.  Attempt to the load the job
+        from the database using the two load methods and make sure that all the
+        attributes loaded correctly.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")

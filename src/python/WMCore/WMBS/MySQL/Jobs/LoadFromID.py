@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFromID.
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.2 2009/01/11 17:44:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadFromID.py,v 1.3 2009/01/13 17:38:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,30 +16,11 @@ class LoadFromID(DBFormatter):
     _LoadFromID_
 
     Retrieve meta data for a job given it's ID.  This includes the name,
-    job group and last update time.  This will also retrieve the job mask
-    if one exists.
+    job group and last update time.
     """
     sql = """SELECT ID, NAME, JOBGROUP, LAST_UPDATE FROM wmbs_job
              WHERE ID = :jobid"""
     
-    def format(self, resultProxy):
-        """
-        _format_
-
-        Format the results of the SQL query into a dictionary with the
-        following keys:
-          NAME, JOB_GROUP, LAST_UPDATE
-        """
-        results = resultProxy[0].fetchall()
-
-        out = {}
-        out["ID"] = results[0][0]
-        out["NAME"] = results[0][1]
-        out["JOBGROUP"] = results[0][2]
-        out["LAST_UPDATE"] = results[0][3]
-        
-        return out
-               
     def execute(self, jobID, conn = None, transaction = False):
         """
         _execute_
@@ -47,7 +28,6 @@ class LoadFromID(DBFormatter):
         Execute the SQL for the given job ID and then format and return
         the result.
         """
-        binds = self.getBinds(jobid = jobID)
-        result = self.dbi.processData(self.sql, binds, conn = conn,
+        result = self.dbi.processData(self.sql, {"jobid": jobID}, conn = conn,
                                       transaction = transaction)
-        return self.format(result)
+        return self.formatDict(result)[0]

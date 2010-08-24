@@ -16,18 +16,23 @@ class GetByID(MySQLBase):
         return binds
     
     def format(self, result):
-        out = result[0].fetchall()
-        self.logger.debug('File.GetByID format result: %s' % out)
-        if len(out) > 0:
-            out = out[0]
-            out = int(out[0]), str(out[1]), int(out[2]), int(out[3]), int(out[4]), int(out[5])
+        out = []
+        if len(result) > 0:
+            for r in result:
+                f = r.fetchall()
+                # Only want the first record - later ones should be prevented by
+                # the schema.
+                f = f[0]
+                t = int(f[0]), str(f[1]), int(f[2]), int(f[3]), int(f[4]), int(f[5])
+                out.append(t)
             return out
         else:
             raise Exception, "File not found" 
         
     def execute(self, files=None, conn = None, transaction = False):
         binds = self.getBinds(files)
-        
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
+        assert len(result) == len(binds),\
+             "Found %s results for %s input" % (len(result), len(binds))
         return self.format(result)

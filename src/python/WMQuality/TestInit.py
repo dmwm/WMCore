@@ -7,13 +7,14 @@ Test can call the methods from this class to
 initialize their default environment so to 
 minimize code duplication.
 
-This class is not a test but an auxilary class.
+This class is not a test but an auxilary class and 
+is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.1 2008/11/12 16:15:02 fvlingen Exp $"
+    "$Id: TestInit.py,v 1.2 2008/11/18 15:14:53 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -28,6 +29,7 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
+from WMCore.WMInit import WMInit
 
 class TestInit:
     """
@@ -40,42 +42,20 @@ class TestInit:
     def __init__(self, testClassName, backend = 'MySQL'):
         self.testClassName = testClassName
         self.backend = backend
+        self.init = WMInit()
 
     def setLogging(self):
         """
         Sets logging parameters
         """
-        logging.basicConfig(level=logging.DEBUG,\
-            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',\
-            datefmt='%m-%d %H:%M',\
-            filename='%s.log' % self.testClassName,\
-            filemode='w')
-        logging.debug("Log file ready")
-        myThread = threading.currentThread()
-        myThread.logger = logging.getLogger(self.testClassName)
-
+        self.init.setLogging(self.testClassName)
 
     def setDatabaseConnection(self):
         """
         Set up the database connection by retrieving the environment
         parameters.
         """
-
-        myThread = threading.currentThread()
-        myThread.logger = logging.getLogger('ErrorHandlerTest')
-        myThread.dialect = self.backend
-
-        options = {}
-        if myThread.dialect == 'MySQL':
-            options['unix_socket'] = os.getenv("DBSOCK")
-            myThread.dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-        else:
-            myThread.dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"))
-
-        myThread.dbi = myThread.dbFactory.connect()
-        myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.commit()
+        self.init.setDatabaseConnection(self.backend, os.getenv("DATABASE"), os.getenv("DBSOCK"))
 
     def setSchema(self, customModules = [], useDefault = True):
         """
@@ -99,21 +79,7 @@ class TestInit:
         modules = {}
         for module in (defaultModules + customModules):
             modules[module] = 'done'
-
-        myThread.transaction.begin()
-        for factoryName in modules.keys():
-            # need to create these tables for testing.
-            # notice the default structure: <dialect>/Create
-            factory = WMFactory(factoryName, factoryName + "." + \
-                myThread.dialect)
-            create = factory.loadObject("Create")
-            createworked = create.execute(conn = myThread.transaction.conn)
-            if createworked:
-                logging.debug("Tables for "+ factoryName + " created")
-            else:
-                logging.debug("Tables " + factoryName + \
-                " could not be created, already exists?")
-        myThread.transaction.commit()
+        self.init.setSchema(modules.keys())
 
     def getConfiguration(self, configurationFile = None):
         """ 
@@ -149,18 +115,21 @@ class TestInit:
         # after this you can augment it with whatever you need.
         return config
 
-    def clearDatabase(self):
+    def clearDatabase(self, modules = []):
         """
-        Database deletion
+        Database deletion. If no modules are specified
+        it will clear the whole database.
         """
         myThread = threading.currentThread()
         # need to find a way to do this for oracle dbs too.
-        if myThread.dialect == 'MySQL':
+        if myThread.dialect == 'MySQL' and modules == []:
             # call the script we use for cleaning:
             command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
             result = commands.getstatusoutput(command)
             for entry in result:
                 print(str(entry))
+        else:
+            self.init.clearDatabaes(modules)
 
 
 

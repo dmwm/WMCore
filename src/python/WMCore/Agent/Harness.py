@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.13 2008/11/04 15:42:40 fvlingen Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Harness.py,v 1.14 2008/11/18 15:14:53 fvlingen Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -131,6 +131,8 @@ class Harness:
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
             myThread.dbi = myThread.dbFactory.connect()
+            myThread.transaction = Transaction(myThread.dbi)
+            myThread.transaction.commit()
 
             logging.info(">>>Initialize transaction dictionary")
             if not hasattr(coreSect, "dialect"):
@@ -328,8 +330,6 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
 
         logging.info('>>>Setting default transaction')
         myThread = threading.currentThread()
-        myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.commit()
 
         self.preInitialization()
         myThread.transaction.begin()

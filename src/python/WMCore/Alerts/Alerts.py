@@ -5,8 +5,8 @@ _Alerts_
 WMCore alert system.
 """
 
-__revision__ = "$Id: Alerts.py,v 1.4 2008/11/17 12:57:40 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Alerts.py,v 1.5 2008/11/18 15:14:53 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.DataStructs.Alert import Alert
 from WMCore.WMFactory import WMFactory
@@ -26,21 +26,13 @@ class Alerts:
         """
         ___init___
 
-        Initialize the DAO factory and try to create the tables.
+        Initialize the DAO factory
         """
         myThread = threading.currentThread()
         queryDialect = myThread.dialect + ".Queries"
         factory = WMFactory("alerts", "WMCore.Alerts")
         self.query = factory.loadObject(queryDialect)
 
-        try:
-            createDialect = myThread.dialect + ".Create"
-            alertCreate = myThread.factory["alerts"].loadObject(createDialect)
-            alertCreate.execute(conn = myThread.transaction.conn)
-            myThread.transaction.commit()
-        except WMException, ex:
-            myThread.logger.debug("Looks like the alert tables already exist.")
-        
     def publishAlert(self, severity, component, message):
         """
         _publishAlert_

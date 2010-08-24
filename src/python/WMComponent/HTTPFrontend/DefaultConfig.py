@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/01/13 13:58:06 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.4 2009/01/14 05:15:36 rpw Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -25,8 +25,12 @@ config.HTTPFrontEnd.HTTPLogfile = None
 config.HTTPFrontEnd.Host = socket.gethostname()
 config.HTTPFrontEnd.ThreadPool = 10
 config.HTTPFrontEnd.JobCreatorCache = None
-config.HTTPFrontEnd.components = ['ReqMgr.Component.AssignmentManager.AssignmentManager']
+config.HTTPFrontEnd.components = ['ReqMgr.Component.AssignmentManager.AssignmentManager',
+                                  'ReqMgr.Component.RequestDataService.RequestDataService']
 config.HTTPFrontEnd.ComponentDir = '/home/rpw/work/install/HTTPFrontend'
 
-config.component_("AssignmentManager")
-config.AssignmentManager.requestSpecDir= '/home/rpw/work'
+config.component_('Downloader')
+config.Downloader.dir = '/home/rpw/work'
+config.component_('AssignmentManager')
+config.AssignmentManager.requestSpecDir= config.Downloader.dir
+config.component_('RequestDataService')

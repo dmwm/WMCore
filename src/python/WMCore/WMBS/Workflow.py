@@ -12,12 +12,12 @@ the specification file. A workflow can be used with many
 filesets and subscriptions (e.g. repeating the same task on a 
 bunch of data).
 
-workflow + subscription = jobs
+workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.1 2008/05/01 17:31:24 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Workflow.py,v 1.2 2008/05/02 13:46:29 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 class Workflow(object):
     def __init__(self, spec=None, owner=None, wmbs=None):

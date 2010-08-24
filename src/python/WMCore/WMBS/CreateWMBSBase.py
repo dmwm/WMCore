@@ -4,7 +4,7 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.1 2008/09/15 09:04:53 sfoulkes Exp $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.2 2008/09/17 09:54:22 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.Database.DBCreator import DBCreator
@@ -30,7 +30,7 @@ class CreateWMBSBase(DBCreator):
                                "wmbs_job", "wmbs_job_assoc",
                                "wmbs_sub_files_complete"]
 
-    def execute(self, conn, transaction):
+    def execute(self, conn=None, transaction=None):
         """
         _execute_
         

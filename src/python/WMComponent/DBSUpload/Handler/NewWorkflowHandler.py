@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.4 2008/11/03 23:01:11 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.5 2008/11/05 01:20:46 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -19,8 +19,9 @@ from ProdCommon.DataMgmt.DBS import DBSWriterObjects
 from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 
-from DBSAPI.dbsApiException import DbsException
 from DBSAPI.dbsApi import DbsApi
+from DBSAPI.dbsException import *
+from DBSAPI.dbsApiException import *
 from DBSAPI.dbsAlgorithm import DbsAlgorithm
 
 import os
@@ -37,14 +38,9 @@ class NewWorkflowHandler(BaseHandler):
 
     def __init__(self, component):
         BaseHandler.__init__(self, component)
-        try:
-            #TODO: These parameters should come from the Component Config
-            self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
-            self.DropParent=False
-        except DbsException, ex:
-            msg = "Error in DBSWriterError with DbsApi\n"
-            msg += "%s\n" % formatEx(ex)
-            raise DBSWriterError(msg)
+        #TODO: These parameters should come from the Component Config
+        self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
+        self.DropParent=False
         # define a slave threadpool (this is optional
         # and depends on the developer deciding how he/she
         # wants to implement certain logic.
@@ -86,8 +82,8 @@ class NewWorkflowHandler(BaseHandler):
         #
         #
         logging.info("DBSURL %s"%self.dbsurl)
-        #dbswriter = DBSWriter('fakeurl') 
-        dbswriter = DBSWriter(url=self.dbsurl, level='ERROR', USER='NORMAL',version='DBS_2_0_3')
+        args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" :'DBS_2_0_3'}
+        dbswriter = DbsApi(args)
         #  //
         # //  Create Processing Datsets based on workflow
         #//
@@ -128,14 +124,14 @@ class NewWorkflowHandler(BaseHandler):
             dataset['PSetContent']="TMP Contents, actual contents too long so dropping them for testing"
             print "\n\n\nATTENTION: PSetContent being trimmed for TESTING, please delete line above in real world\n\n\n"
             
-            primary = DBSWriterObjects.createPrimaryDataset(dataset, dbswriter.dbs)
+            primary = DBSWriterObjects.createPrimaryDataset(dataset, dbswriter)
             
             if dataset['PSetHash'] != None:  #Which probably is not the case
-                algo = DBSWriterObjects.createAlgorithm(dataset, None, dbswriter.dbs)
+                algo = DBSWriterObjects.createAlgorithm(dataset, None, dbswriter)
             else: algo = DbsAlgorithm()
             
             processed = DBSWriterObjects.createProcessedDataset(
-                primary, algo, dataset, dbswriter.dbs)
+                primary, algo, dataset, dbswriter)
             # RECORD ALGO in DBSBuffer, do not create in DBS if PSetHASH is not present
             # Record this dataset in DBSBuffer
             #First ADD Algo (dataset object contains ALGO information)

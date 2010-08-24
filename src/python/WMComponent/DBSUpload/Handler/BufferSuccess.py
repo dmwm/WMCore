@@ -4,7 +4,7 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.6 2008/10/31 00:55:34 afaq Exp $"
+__revision__ = "$Id: BufferSuccess.py,v 1.7 2008/11/05 01:20:46 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -17,9 +17,13 @@ from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter
 from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 
-from DBSAPI.dbsApiException import DbsException
 from DBSAPI.dbsApi import DbsApi
+from DBSAPI.dbsException import *
+from DBSAPI.dbsApiException import *
 
+from ProdCommon.DataMgmt.DBS import DBSWriterObjects
+
+import base64
 import os
 import string
 import logging
@@ -42,6 +46,7 @@ class BufferSuccess(BaseHandler):
 
     def __init__(self, component):
         BaseHandler.__init__(self, component)
+        self.dbsurl='http://cmssrv17.fnal.gov:8989/DBS_2_0_3_TEST/servlet/DBSServlet'
         # define a slave threadpool (this is optional
         # and depends on the developer deciding how he/she
         # wants to implement certain logic.
@@ -63,20 +68,31 @@ class BufferSuccess(BaseHandler):
         # and move to the next.
         # OK, lets read the Database and find out if there are 
         # Datasets/Files that needs uploading to DBS
+        args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" :'DBS_2_0_3'}
+        dbswriter = DbsApi(args)
+
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
         dbinterface=factory.loadObject("UploadToDBS")
         
         datasets=dbinterface.findUploadableDatasets()
         for aDataset in datasets:
-            #UPLOAD Each Dataset
-            print aDataset
+            #Check Dataset for AlgoInDBS (Uploaded to DBS or not)    
+            print aDataset.keys()
+            algos = dbinterface.findAlgos(aDataset)
+            if aDataset['AlgoInDBS'] == 0:
+                #Check to See if Algo exists
+                #it has PSetHash
+                #and then Upload it to DBS
+                print aDataset.keys()
             #Find files for each dataset and then UPLOAD 10 files at a time 
             #(10 is just a number of choice now, later it will be a configurable parameter)
             files=dbinterface.findUploadableFiles(aDataset)
-            print "Total files", len(files)
-            for aFile in files:
-                print aFile
 
+            print "Total files", len(files)
+            #base64.decodestring(aFile['RunLumiInfo'])
+            DBSWriter.insertFilesForDBSBuffer(files, aDataset['Path'], algos)
+
+        return
     def uploadDataset(self, workflowFile):
         """
         _newDatasetEvent_

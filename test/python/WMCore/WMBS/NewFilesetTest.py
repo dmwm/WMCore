@@ -3,9 +3,12 @@ from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMBS.Actions.NewFileset import NewFilesetAction 
 from WMCore.WMBS.Actions.ListFileset import ListFilesetAction
+from WMCore.WMBS.Actions.LoadFileset import LoadFilesetAction
 from WMCore.WMBS.Actions.CreateWMBS import CreateWMBSAction
 from WMCore.WMBS.Actions.AddFile import AddFileAction
 from WMCore.WMBS.Actions.AddFileToFileset import AddFileToFilesetAction
+from WMCore.WMBS.Actions.SetFileLocation import SetFileLocationAction
+from WMCore.WMBS.Actions.AddLocation import AddLocationAction
 
 "make a logger instance"
 logging.basicConfig(level=logging.DEBUG,
@@ -21,7 +24,11 @@ database = 'sqlite:///filesettest.lite'
 #database = 'mysql://metson@localhost/wmbs'
 dbfactory = DBFactory(logger, database)
 
-createworked = CreateWMBSAction(logger).execute(dbinterface=dbfactory.connect())
+theCreator = CreateWMBSAction(logger)
+theCreator.printschema(dbinterface=dbfactory.connect(), table='wmbs_workflow1231')
+theCreator.printschema(dbinterface=dbfactory.connect(), table='wmbs_workflow')
+
+createworked = theCreator.execute(dbinterface=dbfactory.connect())
 print " made a WMBS instace? %s" % createworked
         
 if createworked:
@@ -41,8 +48,19 @@ if createworked:
     file1 = '/store/user/metson/file1', 123, 234, 345, 456
     file2 = '/store/user/metson/file2', 123, 234, 345, 456
     filelist = [file1, file2]
-    
     action = AddFileAction(logger).execute(filelist, dbinterface=dbfactory.connect())
-    action = AddFileToFilesetAction(logger)
+    
     filelist = [file1[0], file2[0]]
+    se = "lcgse01.phy.bris.ac.uk"
+    action = AddLocationAction(logger)
+    action.execute(se, dbinterface=dbfactory.connect())
+    
+    action = SetFileLocationAction(logger)
+    action.execute(filelist, se, dbinterface=dbfactory.connect())
+    
+    action = AddFileToFilesetAction(logger)
     action.execute(filelist, myfs, dbinterface=dbfactory.connect())
+    
+    action = LoadFilesetAction(logger)
+    print action.execute(name=myfs, 
+                   dbinterface=dbfactory.connect())

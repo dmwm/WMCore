@@ -7,10 +7,12 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2008/08/18 15:00:13 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2008/08/26 13:55:56 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
+import logging
+import threading
 
 from WMCore.Database.DBCreator import DBCreator
 
@@ -23,8 +25,9 @@ class Create(DBCreator):
     
     
     
-    def __init__(self, logger, dbinterface):
-        DBCreator.__init__(self, logger, dbinterface)
+    def __init__(self):
+        myThread = threading.currentThread()
+        DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}
         self.constraints = {}
         msg = """
@@ -35,7 +38,7 @@ Fields:
  typeid   id
  name     message name
         """
-        logger.debug(msg)
+        logging.debug(msg)
         self.create['ta_ms_type'] = """      
 CREATE TABLE `ms_type` (
     `typeid` int(11) NOT NULL auto_increment,
@@ -54,7 +57,7 @@ name     component name
 host     host name
 pid      process id in host name 
 """
-        logger.debug(msg)
+        logging.debug(msg)
         self.create['tb_ms_process'] = """
 CREATE TABLE `ms_process` (
    `procid` int(11) NOT NULL auto_increment,
@@ -78,7 +81,7 @@ Fields:
  payload     message payload
  time        time stamp
 """
-        logger.debug(msg)
+        logging.debug(msg)
         self.create['tc_ms_history'] = """
 CREATE TABLE `ms_history` (
     `messageid` int(11) NOT NULL auto_increment,
@@ -124,7 +127,7 @@ Fields:
  payload     message payload
  time        time stamp
 """
-        logger.debug(msg)
+        logging.debug(msg)
         self.create['te_ms_message'] = """
 CREATE TABLE `ms_message` (
    `messageid` int(11) NOT NULL auto_increment,
@@ -146,7 +149,7 @@ CREATE TABLE `ms_message` (
 ms_message_buffer_in: an input buffer for the message queue
 to prevent inserting messages one, by one in the message queu.
 """
-        logger.debug(msg)
+        logging.debug(msg)
         self.create['tf_ms_message_buffer_in'] = """
 CREATE TABLE `ms_message_buffer_in` (
    `messageid` int(11) NOT NULL auto_increment,
@@ -169,7 +172,7 @@ CREATE TABLE `ms_message_buffer_in` (
 ms_message_buffer_out: an output buffer for the message queue
 to prevent removing message one by one, out of a potential large queue.
 """
-        logger.debug(msg) 
+        logging.debug(msg) 
         self.create['tg_ms_message_buffer_out'] = """ 
 CREATE TABLE `ms_message_buffer_out` (
    `messageid` int(11) NOT NULL auto_increment,
@@ -192,7 +195,7 @@ ms_priority_message: a table for priority messages.
 The message service will first examine this table before
 looking at the other messages.
 """
-        logger.debug(msg)
+        logging.debug(msg)
         self.create['th_ms_priorty_message'] = """
 CREATE TABLE `ms_priority_message` (
    `messageid` int(11) NOT NULL auto_increment,
@@ -254,7 +257,7 @@ Fields:
  procid  component id
  typeid  message type id
 """
-        logger.debug(msg)
+        logging.debug(msg)
         self.create['tk_ms_subscription'] = """
 CREATE TABLE `ms_subscription` (
    `subid` int(11) NOT NULL auto_increment,
@@ -277,7 +280,4 @@ CREATE TABLE `ms_priority_subscription` (
    FOREIGN KEY(`typeid`) references `ms_type`(`typeid`)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
-        
-            
-    
-            
+

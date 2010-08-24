@@ -9,8 +9,8 @@ creation and/or tracking.
 
 If file spans a run will need to create a mask for that file.
 """
-__revision__ = "$Id: RunBased.py,v 1.8 2009/01/28 18:39:39 spiga Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: RunBased.py,v 1.9 2009/01/29 09:14:56 spiga Exp $"
+__version__  = "$Revision: 1.9 $"
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -57,11 +57,11 @@ class RunBased(JobFactory):
             # Acquire run of interest if required
             elif not curRun:
                 for run in f['runs']:
-                    curRun = run
+                    curRun = run.run
                 
             # Add file to primary interest list if contains current run
             for run in f['runs']:
-                if run == curRun:
+                if run.run == curRun:
                     primaryFiles.append(f)
         
         # Create jobs for the available files, split by number of files

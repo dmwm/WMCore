@@ -16,8 +16,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Workflow.py,v 1.9 2008/06/23 16:01:15 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Workflow.py,v 1.10 2008/07/03 09:43:40 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 
@@ -73,5 +73,22 @@ class Workflow(BusinessObject):
         action = self.daofactory(classname='Workflow.Delete')
         action.execute(id=self.id)
         
-        
+    def load(self, method='Workflow.LoadFromName'):
+        """
+        Load a workflow from WMBS
+        """
+        action = self.daofactory(classname=method)
+        if method == 'Workflow.LoadFromName':
+            action.execute(workflow = self.name)
+        elif method == 'Workflow.LoadFromID':
+            action.execute(workflow = self.id)
+        elif method == 'Workflow.LoadFromSpecOwner':
+            action.execute(spec = self.spec, owner = self.owner)
+        else:
+            raise TypeError, "load method not supported"
+            
+            
+            
+            
+            
         

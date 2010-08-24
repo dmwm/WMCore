@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.13 2009/02/13 17:54:23 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Page.py,v 1.14 2009/02/13 18:48:55 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import urllib
 import cherrypy
@@ -74,7 +74,6 @@ class TemplatedPage(Page):
 
 class DatabasePage(TemplatedPage, DBFormatter):
     def __init__(self, config = {}, database = ''):
-        DBFormatter.__init__(self, self, database)
         TemplatedPage.__init__(self, config)
         assert hasattr(self.config, 'database'), "No database configured"
         conn = DBFactory(self, self.config.database).connect()

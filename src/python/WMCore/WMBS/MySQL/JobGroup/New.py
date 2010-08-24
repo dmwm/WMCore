@@ -1,32 +1,25 @@
 #!/usr/bin/env python
 """
 _New_
+
 MySQL implementation of JobGroup.New
 """
+
 __all__ = []
-__revision__ = "$Id: New.py,v 1.7 2008/11/24 20:13:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: New.py,v 1.8 2009/01/11 17:46:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
-from WMCore.Services.UUID import makeUUID
 
 class New(DBFormatter):
-    sql = []
-    sql.append("""insert into wmbs_jobgroup (subscription, uid, output,
-                  last_update) values
-                  (:subscription, :uid, :output, unix_timestamp())""")
-    sql.append("""select id from wmbs_jobgroup where uid=:uid""")
+    sql = """INSERT INTO wmbs_jobgroup (subscription, uid, output,
+             last_update) VALUES (:subscription, :guid, :output,
+             unix_timestamp())"""
 
-    def format(self, result, uid):
-        result = DBFormatter.format(self, result)
-        result = result[0][0]
-        return result, uid
-        
-    def execute(self, uid, subscription=None, output=None, conn = None, transaction = False):
-        binds = self.getBinds(subscription=subscription, uid=uid, output=output)
-        self.logger.debug('JobGroup.New sql: %s' % self.sql)
-        self.logger.debug('JobGroup.New binds: %s' % binds)
-        result = self.dbi.processData(self.sql[0], binds)
-        binds = self.getBinds(uid=uid)
-        result = self.dbi.processData(self.sql[1], binds)
-        return self.format(result, uid)
+    def execute(self, uid, subscription = None, output = None, conn = None,
+                transaction = False):
+        binds = self.getBinds(subscription = subscription, guid = uid,
+                              output = output)
+        result = self.dbi.processData(self.sql, binds, conn = conn,
+                                      transaction = transaction)
+        return

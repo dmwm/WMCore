@@ -34,9 +34,9 @@ class RestServer(Controller):
         self.baseurl = None
         if  context:
             Controller.__init__ (self, context, __file__)
-#            setSQLAlchemyLogger(super(RestServer,self).getHandler(),
+#            setsqlalchemylogger(super(RestServer,self).getHandler(),
 #                                super(RestServer,self).getLogLevel())
-#            setCherryPyLogger(  super(RestServer,self).getHandler(),
+#            setcherrypylogger(  super(RestServer,self).getHandler(),
 #                                super(RestServer,self).getLogLevel())
         rest_service = Service()
         rest_service.rest = RestService()

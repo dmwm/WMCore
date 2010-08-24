@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: File_t.py,v 1.8 2008/12/23 21:22:48 afaq Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: File_t.py,v 1.9 2008/12/23 21:24:22 afaq Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import logging
@@ -120,6 +120,7 @@ class File_t(unittest.TestCase):
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=222)
 	testFile.addRun(Run(1, *[45]))
 	testFile.addRun(Run(2, *[46, 47]))
+	testFile.addRun(Run(2, *[48]))
         testFile.create()
         testFile.setLocation(se = "se1.fnal.gov", immediateSave = False)
         testFile.setLocation(se = "se1.cern.ch", immediateSave = False)
@@ -140,8 +141,7 @@ class File_t(unittest.TestCase):
         
         assert info[4] == testFile["cksum"], \
                "ERROR: File returned wrong cksum"
-	
-	assert len(info[5]) == 2, \
+	assert len(info[5]) == 3, \
 		"ERROR: File returned wrong runs"
 
         assert len(info[6]) == 2, \

@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.16 2009/01/13 17:35:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Job.py,v 1.17 2009/01/14 18:19:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import datetime
 
@@ -205,14 +205,31 @@ class Job(WMBSBase, WMJob):
         are associated to the job in the database.  If the two do not match then
         this object's fileset will be re-populated with files from the database.
         """
+        fileIDs = self.getFileIDs()
+        if fileIDs == None:
+            return None
+        
+        if fileIDs != WMJob.getFiles(self, type = "id"):
+            self.loadData()
+
+        return WMJob.getFiles(self, type)
+
+    def getFileIDs(self):
+        """
+        _getFileIDs_
+
+        Retrieve a list of the file IDs that are associated with this job.  The
+        ID of the job must be set before this is called.
+        """
+        if self.id < 0:
+            logging.error("Need to set job id before files can be retrieved")
+            return None
+        
         fileAction = self.daofactory(classname = "Jobs.LoadFiles")
         fileIDs = fileAction.execute(self.id, conn = self.getReadDBConn(),
                                      transaction = self.existingTransaction())        
         
-        if fileIDs != WMJob.getFiles(self, type = "id"):
-            self.load()
-
-        return WMJob.getFiles(self, type)
+        return fileIDs
             
     def submit(self, name = None):
         """

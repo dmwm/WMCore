@@ -11,8 +11,8 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.13 2008/06/24 17:00:18 metson Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Fileset.py,v 1.14 2008/07/03 09:21:18 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -111,16 +111,13 @@ class Fileset(BusinessObject):
         """
         Add a file to the fileset
         """
-        if file not in self.files:
-            self.newfiles.add(file)
+        self.newfiles = self.newfiles | Set(self.dbfactory.makelist(file))
     
     def listFiles(self):
         """
         List all files in the fileset
         """
-        l = list(self.files)
-        l.extend(list(self.newfiles))
-        return l
+        return list(self.files | self.newfiles)
     
     def listNewFiles(self):  
         """

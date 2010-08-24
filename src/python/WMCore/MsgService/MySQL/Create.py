@@ -7,8 +7,8 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2008/08/26 13:55:56 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2008/08/28 20:40:50 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -98,8 +98,40 @@ CREATE TABLE `ms_history` (
     FOREIGN KEY(`dest`) references `ms_process`(`procid`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
-        self.create['td_ms_priority_history'] = """
-CREATE TABLE `ms_priority_history` (
+        self.create['tca_ms_history_buffer'] = """
+CREATE TABLE `ms_history_buffer` (
+    `messageid` int(11) NOT NULL auto_increment,
+    `type` int(11) NOT NULL default '0',
+    `source` int(11) NOT NULL default '0',
+    `dest` int(11) NOT NULL default '0',
+    `payload` text NOT NULL,
+    `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    `delay` varchar(50) NOT NULL default '00:00:00',
+
+    PRIMARY KEY `messageid` (`messageid`),
+    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
+    FOREIGN KEY(`source`) references `ms_process`(`procid`),
+    FOREIGN KEY(`dest`) references `ms_process`(`procid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+"""
+        self.create['td_ms_history_priority'] = """
+CREATE TABLE `ms_history_priority` (
+   `messageid` int(11) NOT NULL auto_increment,
+   `type` int(11) NOT NULL default '0',
+   `source` int(11) NOT NULL default '0',
+   `dest` int(11) NOT NULL default '0',
+   `payload` text NOT NULL,
+   `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+   `delay` varchar(50) NOT NULL default '00:00:00',
+
+    PRIMARY KEY `messageid` (`messageid`),
+    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
+    FOREIGN KEY(`source`) references `ms_process`(`procid`),
+    FOREIGN KEY(`dest`) references `ms_process`(`procid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+"""
+        self.create['tda_ms_history_priority_buffer'] = """
+CREATE TABLE `ms_history_priority_buffer` (
    `messageid` int(11) NOT NULL auto_increment,
    `type` int(11) NOT NULL default '0',
    `source` int(11) NOT NULL default '0',
@@ -137,7 +169,6 @@ CREATE TABLE `ms_message` (
    `payload` text NOT NULL,
    `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    `delay` varchar(50) NOT NULL default '00:00:00',
-   `state` enum('wait', 'processing','finished'),
 
    PRIMARY KEY `messageid` (`messageid`),
    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
@@ -159,7 +190,6 @@ CREATE TABLE `ms_message_buffer_in` (
    `payload` text NOT NULL,
    `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    `delay` varchar(50) NOT NULL default '00:00:00',
-   `state` enum('wait', 'processing','finished'),
 
    PRIMARY KEY `messageid` (`messageid`),
    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
@@ -182,7 +212,7 @@ CREATE TABLE `ms_message_buffer_out` (
    `payload` text NOT NULL,
    `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    `delay` varchar(50) NOT NULL default '00:00:00',
-   `state` enum('wait', 'processing','finished'),
+   `state` enum('wait', 'processing','finished') default 'wait',
 
    PRIMARY KEY `messageid` (`messageid`),
    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
@@ -205,7 +235,6 @@ CREATE TABLE `ms_priority_message` (
    `payload` text NOT NULL,
    `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    `delay` varchar(50) NOT NULL default '00:00:00',
-   `state` enum('wait', 'processing','finished'),
 
    PRIMARY KEY `messageid` (`messageid`),
    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
@@ -222,7 +251,6 @@ CREATE TABLE `ms_priority_message_buffer_in` (
    `payload` text NOT NULL,
    `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    `delay` varchar(50) NOT NULL default '00:00:00',
-   `state` enum('wait', 'processing','finished'),
 
    PRIMARY KEY `messageid` (`messageid`),
    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
@@ -239,7 +267,7 @@ CREATE TABLE `ms_priority_message_buffer_out` (
    `payload` text NOT NULL,
    `time` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    `delay` varchar(50) NOT NULL default '00:00:00',
-   `state` enum('wait', 'processing','finished'),
+   `state` enum('wait', 'processing','finished') default 'wait',
 
    PRIMARY KEY `messageid` (`messageid`),
    FOREIGN KEY(`type`) references `ms_type`(`typeid`),
@@ -269,8 +297,8 @@ CREATE TABLE `ms_subscription` (
    FOREIGN KEY(`typeid`) references `ms_type`(`typeid`)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
-        self.create['tl_ms_priority_subscription'] = """
-CREATE TABLE `ms_priority_subscription` (
+        self.create['tl_ms_subscription_priority'] = """
+CREATE TABLE `ms_subscription_priority` (
    `subid` int(11) NOT NULL auto_increment,
    `procid` int(11) NOT NULL default '0',
    `typeid` int(11) NOT NULL default '0',
@@ -280,4 +308,20 @@ CREATE TABLE `ms_priority_subscription` (
    FOREIGN KEY(`typeid`) references `ms_type`(`typeid`)
    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
-
+        self.create['tm_ms__available'] = """
+CREATE TABLE `ms_available` (
+  `procid` int(11) NOT NULL,
+  `status` enum('there','not_there') default 'not_there',	
+   UNIQUE (`procid`),
+   FOREIGN KEY(`procid`) references `ms_process`(`procid`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+"""
+        self.create['tn_ms_available_priority'] = """
+CREATE TABLE `ms_available_priority` (
+  `procid` int(11) NOT NULL,
+  `status` enum('there','not_there') default 'not_there',	
+   UNIQUE (`procid`),
+   FOREIGN KEY(`procid`) references `ms_process`(`procid`)
+   ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+"""
+ 

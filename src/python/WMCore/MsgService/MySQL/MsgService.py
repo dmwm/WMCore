@@ -12,12 +12,27 @@ support.
 The interface needs to be implemented supporting the appropriate query.
 For example MySQL, Oracle, or another technology such as Twisted.
 
+This implementation for mysql contains a few optimization w.r.t.
+the previous implementation:
+
+-use of buffers for message queue to prevent single row
+inserts in large tables
+-table that specifies if there is a message in the queue for a component
+to prevent unecessary queries on a large message queue
+-mutli queue option (can be turned of/on): each component creates his own tables, 
+based on the name it registers with and messages for this component are stored
+in these tables, thereby keeping the queue length managable. This option
+creates 6 tables per component (e.g. 10 components create 60 tables)
+-priority messages: separate tables whos messages are examined before
+the normal messages.
+-periodic purging of history queue with option to keep always the last
+<x> messages in the history queue.
 """
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.1 2008/08/26 13:55:56 fvlingen Exp $"
+    "$Id: MsgService.py,v 1.2 2008/08/28 20:40:50 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -58,6 +73,23 @@ class MsgService:
         self.query = myThread.factory['msgService'].loadObject("Queries")
         self.name = "Assigne me a name"
         self.procid = 0
+        # several attributes we use for holding messages 
+        # until they can be delivered (for the oneQueue model)
+        self.priorityMsg = {}
+        self.msg = {}
+        self.instantMsg = {}
+        self.instantPriorityMsg = {}
+        # buffer sizes 
+        self.buffer_size = 400
+        # history_dump size
+        self.history_size = 1000
+        # minimum amount of history we want to keep
+        self.history_min = 100
+        # this means we can have one queue (with buffers)
+        # or separate queues (one per component). The latter
+        # will lead to more tables (6 per component)
+        self.oneQueue = True 
+
 
     ##########################################################################
     # register method 
@@ -85,8 +117,7 @@ class MsgService:
         # check if process name is in database
         result = self.query.checkName(args = {'name' : name})
         # process was registered before
-        if len(result) == 1:
-            result = result[0]
+        if result != {}:
             # if pid and host are the same, get id and return
             if result['host'] == currentHost and result['pid'] == currentPid:
                 self.procid = result['procid']
@@ -102,11 +133,13 @@ class MsgService:
         self.query.insertProcess(args = {'host' : currentHost, \
             'pid' : currentPid, 'name' : name})
         # get id
-        self.dbid = self.query.lastInsertId()
-        #self.procid =
-        
-        
-      
+        self.procid = self.query.lastInsertId()
+        # update message arrived tables
+        self.query.initializeAvailable(args = {'procid' : self.procid})
+
+        if not self.oneQueue:
+            logging.debug("Create additional tables for this component: multiQueue")
+            self.query.insertComponentMsgTables(name) 
         
     ##########################################################################
     # subscribe method
@@ -122,7 +155,28 @@ class MsgService:
         The message type is registered in the database if it was not
         registered before.
         """
-        pass
+        # logging
+        logging.debug("subscribeTo requested")
+        # check if message type is in database
+        result = self.query.checkMessageType(args = {'name' : name})
+        if result != {}:
+            # message type was registered before, get id
+            typeid = result['typeid']
+        else:
+            # not registered before, so register now
+            self.query.insertMessageType({'name' : name})
+            # get id
+            typeid = self.query.lastInsertId()
+        # check if there is an entry in subscription table
+        result = self.query.checkSubscription(args = {'procid' : self.procid, \
+            'typeid' : typeid})
+        # entry registered before, just return
+        if result != {}:
+            return
+        # not registered, do it now
+        self.query.insertSubscription(args = {'procid' : self.procid, \
+            'typeid' : typeid})
+
  
     ##########################################################################
     # priority subscribe method
@@ -138,7 +192,27 @@ class MsgService:
         The message type is registered in the database if it was not
         registered before.
         """
-        pass
+        # logging
+        logging.debug("prioritySubscribeTo requested")
+        # check if message type is in database
+        result = self.query.checkMessageType(args = {'name' : name})
+        if result != {}:
+            # message type was registered before, get id
+            typeid = result['typeid']
+        else:
+            # not registered before, so register now
+            self.query.insertMessageType({'name' : name})
+            # get id
+            typeid = self.query.lastInsertId()
+        # check if there is an entry in subscription table
+        result = self.query.checkPrioritySubscription(args = {'procid' : self.procid, \
+            'typeid' : typeid})
+        # entry registered before, just return
+        if result != {}:
+            return
+        # not registered, do it now
+        self.query.insertPrioritySubscription(args = {'procid' : self.procid, \
+            'typeid' : typeid})
       
     ##########################################################################
     # publish method 
@@ -167,7 +241,156 @@ class MsgService:
          
         {'name' : 'myMessage', 'payload' : 'myPayload', 'delay' : '10:30:45', 'instant' : False}
         """
-        pass
+        
+        # logging
+        logging.debug("publish requested")
+        if type(args) == dict:
+            args = [args]
+        # find message types first
+        messageTypes = {}
+        for message in args:
+            messageTypes[message['name']] = {}
+
+        for messageType in messageTypes.keys():
+            # check if message type is in database
+            result = self.query.checkMessageType(args = {'name' : messageType})
+            # get message type id
+            if result != {}:
+                # message type was registered before, get id
+                messageTypes[messageType]['typeid'] = result['typeid']
+            else:
+                self.query.insertMessageType({'name' : name})
+                # get id
+                typeid = self.query.lastInsertId()
+                messageTypes[messageType]['typeid'] = typeid
+            # get destinations
+            messageTypes[messageType]['destinations'] = \
+                self.query.getDestinations(args = \
+                {'typeid' : messageTypes[messageType]['typeid']})
+            messageTypes[messageType]['priorityDestinations'] = \
+                self.query.getPriorityDestinations(args = \
+                {'typeid' : messageTypes[messageType]['typeid']})
+
+        # format messages
+        for message in args:
+            destinations = messageTypes[message['name']]['destinations']
+            priorityDestinations = messageTypes[message['name']]['priorityDestinations']
+            typeid = messageTypes[message['name']]['typeid']
+            payload = message['payload']
+            if message.has_key('delay'):
+                delay = args['delay']
+            else:
+                delay = "00:00:00"
+            if not message.has_key('instant'):
+                message['instant'] = False
+    
+            for dest in destinations:
+                if self.oneQueue:
+                    tableDest = 'ms_message_buffer_in'
+                else:
+                    tableDest = 'ms_message_'+dest[1]+'_buffer_in'
+                msg = {'type':str(typeid),'source':str(self.procid),'dest':str(dest[0]),'payload':str(payload),'delay':str(delay)}
+                if message['instant']:
+                    if not self.instantMsg.has_key(tableDest):
+                        self.instantMsg[tableDest] = []  
+                    self.instantMsg[tableDest].append(msg)
+                else:
+                    if not self.msg.has_key(tableDest):
+                        self.msg[tableDest] = []  
+                    self.msg[tableDest].append(msg)
+
+            for dest in priorityDestinations:
+                if self.oneQueue:
+                    tableDest = 'ms_priority_message_buffer_in'
+                else:
+                    tableDest = 'ms_priority_message_'+dest[1]+'_buffer_in'
+                msg = {'type':str(typeid),'source':str(self.procid),'dest':str(dest[0]),'payload':str(payload),'delay':str(delay)}
+                if message['instant']:
+                    if not self.instantPriorityMsg.has_key(tableDest):
+                        self.instantPriorityMsg[tableDest] = []  
+                    self.instantPriorityMsg[tableDest].append(msg)
+                else:
+                    if not self.priorityMsg.has_key(tableDest):
+                        self.priorityMsg[tableDest] = []  
+                    self.priorityMsg[tableDest].append(msg)
+
+        # deliver messages that need to be delivered immediately.
+        self.deliver(instant = True)
+
+    def deliver(self,instant = False):
+        """
+        __deliver__
+
+        Delivers the messages when the finish method is called, or when 
+        messages need to be delivered instantantly when published.
+        """
+        # set the message has arrive table entry to true for the destinations.
+
+        # check which type of messages we need to deliver
+        if instant:
+            msg = self.instantMsg
+            priority = self.instantPriorityMsg
+        else:
+            msg = self.msg
+            priority = self.priorityMsg
+
+        # update the metadata that components can use before looking
+        # into the big table. As we use dictionaries of messages that map
+        # the table to the messages we do not need to distinguish between
+        # one or more queues.
+        dest = {}
+        for tableDest in msg.keys():
+            for ms in msg[tableDest]:
+                dest[ms['dest']] = 'update'
+        args = {'table' : 'ms_available', 'msgs' : dest}
+        if len(dest)>0:
+            self.query.msgArrived(args = args)
+
+        dest = {}
+        for tableDest in priority.keys():
+            for ms in priority[tableDest]:
+                dest[ms['dest']] = 'update'
+        args = {'table' : 'ms_available_priority', 'msgs' : dest}
+        if len(dest)>0:
+            self.query.msgArrived(args = args)
+ 
+        # after inserting messages we need to check if certain buffers
+        # are full and purge/move data.
+
+        checkBuffers = ['ms_history_buffer', 'ms_history_priority_buffer']
+        # update the actual message tables/buffers.
+        for tableDest in msg.keys():
+            checkBuffers.append(tableDest)
+            if len(msg[tableDest])>0: 
+                args = {'table' : tableDest, 'msgs' : msg[tableDest]}
+                self.query.insertMsg(args = args)
+                args = {'table' : 'ms_history_buffer', 'msgs' : msg[tableDest]}
+                self.query.insertMsg(args = args)
+
+        for tableDest in priority.keys(): 
+            if len(priority[tableDest])>0:
+                args = {'table' : tableDest, 'msgs' : priority[tableDest]}
+                self.query.insertMsg(args = args)
+                args = {'table' : 'ms_history_priority_buffer', 'msgs' : priority[tableDest]}
+                self.query.insertMsg(args = args)
+
+        # check if we need to emtpty the buffer.
+        logging.debug("Checking if following buffers are full: "+str(checkBuffers))
+        for table_name in checkBuffers:
+            buffer_size = self.query.tableSize(args = table_name)
+            if buffer_size > self.buffer_size:
+                logging.debug("Buffer full for: "+table_name+". Purging")
+                target = table_name[0:table_name.find("_buffer")]
+                args = {'source' : table_name, 'target' : target}
+                logging.debug("moving messages: " + str(args))
+                self.query.moveMsg(args = args)
+        if instant:
+            self.instantMsg = {}
+            self.instantPriorityMsg = {}
+        else:
+            self.msg = {}
+            self.priorityMsg = {}
+
     
     def publishUnique(self, args):
         """
@@ -200,6 +423,7 @@ class MsgService:
         Polling is performed in this prototype implementation to wait for new
         messages.
         """
+        # check if there are any unfinished messages we want to get them first.
         pass
     
     ##########################################################################
@@ -211,13 +435,17 @@ class MsgService:
         __finish__
         
         called after the messages has been handled. this is to prevent long open
-        connections underlying databases. 
+        connections underlying databases without committing. 
         
         MsgService.get()
         ...<do your potentially long standing operations>...
         MsgService.finish()
         """
-        pass
+        # publish unpublished messages.
+        self.deliver()
+        # check if the history tables are not too large
+        self.cleanHistory()
+
     ##########################################################################
     # purgeMessages method 
     ##########################################################################
@@ -245,7 +473,7 @@ class MsgService:
     # remove messages in history
     ##########################################################################
 
-    def cleanHistory(self, hours):
+    def cleanHistory(self, maxSize = 0):
         """
         __cleanHistory__
         
@@ -259,5 +487,51 @@ class MsgService:
             hours -- the number of hours.
         
         """
-        pass
-      
+        if maxSize == 0:
+            maxSize = self.history_size
+        for table in ['ms_history', 'ms_history_priority']:
+            size = self.query.tableSize(args = table)
+            if size > maxSize:
+                newSize = min(self.history_min,size)
+                if newSize > 0:
+                    args = {'table' : table}
+                    maxId = self.query.maxId(args = args)[0]
+                    args = {'table' : table, 'maxId' : maxId-newSize}
+                    self.query.purgeHistory(args = args)
+     
+    def subscriptions(self):
+        """
+        __subscriptions__
+
+        Returns a list (array) of subscriptions
+        """
+        return self.query.subscriptions(args = {'procid' : self.procid}) 
+
+    def prioritySubscriptions(self):
+        """
+        __prioritySubscriptions__
+
+        Returns a list (array) of subscriptions for priority messages
+        """
+        return self.query.prioritySubscriptions(args = {'procid' : self.procid}) 
+
+    def pendingMsgs(self, queueName = None):
+        """
+        __pendingMsgs__
+  
+        Returns the number of messages that are pending (total)
+        """
+        pending = 0 
+        tableNames = []
+        if queueName == None:
+            tables = self.query.showTables()
+            for table in tables:
+                if table[0].rfind('ms_message') == 0:
+                    tableNames.append(table[0])  
+                if table[0].rfind('ms_priority_message') == 0:
+                    tableNames.append(table[0])  
+        else:
+            tableNames = [queueName] 
+        for tableName in tableNames: 
+            pending += self.query.tableSize(args = tableName)
+        return pending

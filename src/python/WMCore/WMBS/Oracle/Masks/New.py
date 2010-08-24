@@ -6,14 +6,16 @@ Oracle implementation of Masks.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.2 2008/12/05 21:06:24 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: New.py,v 1.3 2009/01/11 17:49:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Masks.New import New as NewMasksMySQL
 
 class New(NewMasksMySQL):
+    sql = NewMasksMySQL.sql
     
-    def execute(self, jobid, inclusivemask=None):
+    def execute(self, jobid, inclusivemask = None, conn = None,
+                transaction = False):
         if inclusivemask == None or inclusivemask:
             # default value
             inclusivemask = 'Y'
@@ -21,5 +23,6 @@ class New(NewMasksMySQL):
             inclusivemask = 'N'
                 
         binds = self.getBinds(jobid = jobid, inclusivemask = inclusivemask)
-        result = self.dbi.processData(self.sql, binds)
+        result = self.dbi.processData(self.sql, binds, conn = conn,
+                                      transaction = transaction)
         return self.format(result)

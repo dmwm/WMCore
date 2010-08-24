@@ -1,5 +1,6 @@
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.DataStructs.JobGroup import JobGroup
 class JobFactory(WMObject):
     """
     A JobFactory is created with a subscription (which has a fileset). It is a
@@ -20,7 +21,10 @@ class JobFactory(WMObject):
         module = "%s.%s" % (self.package, jobtype)
         module = __import__(module, globals(), locals(), [jobtype])#, -1)
         job_instance = getattr(module, jobtype.split('.')[-1])
-        return self.algorithm(job_instance=job_instance, *args, **kwargs)
+        
+        group = JobGroup(subscription = self.subscription)
+        group.add(self.algorithm(job_instance=job_instance, *args, **kwargs))
+        return group
     
     def algorithm(self, job_instance=None, *args, **kwargs):
         return Set([job_instance(self.subscription, 

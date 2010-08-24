@@ -13,7 +13,6 @@ from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.DataStructs.Subscription import Subscription
-from unittest import TestCase
 
 class SubscriptionTest(unittest.TestCase):
     """
@@ -392,8 +391,7 @@ class SubscriptionTest(unittest.TestCase):
                 file.setLocation('baddse.cern.ch')
             #Add the new file
             self.dummySubscription.available.addFile(file)
-        #Add the new files
-        self.dummySubscription.available.addFile(dummyFileList)
+            
         self.dummySubscription.markLocation('goodse.cern.ch')
         assert count == len(self.dummySubscription.availableFiles()), \
         "Subscription has %s files available, should have %s" %\

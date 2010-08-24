@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, logging, random
+import os, logging, random, commands
 
 from WMCore_t.Database_t.Performance import Performance
 from WMCore.DAOFactory import DAOFactory
@@ -50,9 +50,21 @@ class WMBSBase(Performance):
         
         filelist = self.genFileObjects(number)
 
-        for x in range(len(filelist)):
-            filelist[x].save()
-            filelist[x].load()
+#        for x in range(len(filelist)):
+        setfiles = set(filelist)
+        fileset = Fileset(name='genFilesSet', 
+                            files=setfiles, 
+                            logger=self.logger, 
+                            dbfactory=self.dbf)
+        fileset.create()
+        fileset.commit()
+        fileset.populate()
+#        for x in filelist:
+#            x.save()
+#            x.load() 
+            #filelist[x].save()
+            #filelist[x].load()
+        print commands.getstatusoutput('mysql -e "select * from wmbs_file_details" wmbs')
     
         return filelist
 

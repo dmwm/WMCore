@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.7 2009/01/12 16:16:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Job_t.py,v 1.8 2009/01/13 17:40:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import logging
@@ -267,9 +267,62 @@ class Job_t(unittest.TestCase):
         """
         _testLoad_
 
-        Create a job and save it to the database.  Attempt to the load the job
-        from the database using the two load methods and make sure that all the
-        attributes loaded correctly.
+        Create a job and save it to the database.  Load it back from the
+        database using the name and the id and then verify that all information
+        was loaded correctly.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(1, *[45]))
+        testFileA.create()
+        testFileB.create()
+
+        testFileset = Fileset(name = "TestFileset",
+                              files = Set([testFileA, testFileB]))
+        testFileset.commit()
+
+        testJobA = Job(name = "TestJob", files = testFileset)
+        testJobA.create(group = testJobGroup)
+
+        testJobB = Job(id = testJobA.id)
+        testJobC = Job(name = "TestJob")
+        testJobB.load()
+        testJobC.load()
+
+        assert (testJobA.id == testJobB.id) and \
+               (testJobA.name == testJobB.name) and \
+               (testJobA.job_group == testJobB.job_group), \
+               "ERROR: Load from ID didn't load everything correctly"
+
+        assert (testJobA.id == testJobC.id) and \
+               (testJobA.name == testJobC.name) and \
+               (testJobA.job_group == testJobC.job_group), \
+               "ERROR: Load from name didn't load everything correctly"        
+               
+        return
+
+    def testLoadData(self):
+        """
+        _testLoadData_
+
+        Create a job and save it to the database.  Load it back from the
+        database using the name and the id.  Verify that all job information
+        is correct including input files and the job mask.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -309,8 +362,8 @@ class Job_t(unittest.TestCase):
 
         testJobB = Job(id = testJobA.id)
         testJobC = Job(name = "TestJob")
-        testJobB.load(method = "Jobs.LoadFromID")
-        testJobC.load(method = "Jobs.LoadFromName")
+        testJobB.loadData()
+        testJobC.loadData()
 
         assert (testJobA.id == testJobB.id) and \
                (testJobA.name == testJobB.name) and \
@@ -346,7 +399,7 @@ class Job_t(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Job didn't load all files"        
         
-        return
+        return    
 
     def testSaveTransaction(self):
         """
@@ -396,7 +449,7 @@ class Job_t(unittest.TestCase):
         testJobA.save()
 
         testJobB = Job(id = testJobA.id)        
-        testJobB.load(method = "Jobs.LoadFromID")
+        testJobB.loadData()
 
         assert testJobA.mask == testJobB.mask, \
                "ERROR: Job mask did not load properly"
@@ -413,7 +466,7 @@ class Job_t(unittest.TestCase):
 
         testJobA.save()
         testJobC = Job(id = testJobA.id)        
-        testJobC.load(method = "Jobs.LoadFromID")
+        testJobC.loadData()
 
         assert testJobA.mask == testJobC.mask, \
                "ERROR: Job mask did not load properly"
@@ -421,7 +474,7 @@ class Job_t(unittest.TestCase):
         myThread.transaction.rollback()
 
         testJobD = Job(id = testJobA.id)
-        testJobD.load(method = "Jobs.LoadFromID")
+        testJobD.loadData()
 
         assert testJobB.mask == testJobD.mask, \
                "ERROR: Job mask did not load properly"        

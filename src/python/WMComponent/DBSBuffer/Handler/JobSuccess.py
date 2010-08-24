@@ -4,7 +4,7 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.6 2008/10/20 19:22:04 afaq Exp $"
+__revision__ = "$Id: JobSuccess.py,v 1.7 2008/11/11 19:27:57 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -96,6 +96,11 @@ class JobSuccess(BaseHandler):
             for aFile in aFJR.files:
                 if l==0:
                     l=1
+                    
+                    import pdb
+                    pdb.set_trace()
+                    
+                    print aFile.keys()
                     addToBuffer.addDataset(aFile.dataset[0])
     
                     """

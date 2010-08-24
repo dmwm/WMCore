@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.6 2008/11/07 03:49:04 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.7 2008/11/11 19:27:58 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -96,6 +96,11 @@ class NewWorkflowHandler(BaseHandler):
         #createDatasets(workflowSpec)
         #datasets = workflowSpec.outputDatasets()
         datasets = workflowSpec.outputDatasetsWithPSet()
+
+        
+        import pdb
+        pdb.set_trace()
+        
         
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
         addToBuffer=factory.loadObject("AddToBuffer")

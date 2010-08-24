@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=C0103,R0902,W0104
 """
 _Configuration_
 
@@ -6,6 +7,9 @@ Module dealing with Agent Configuration file in python format
 
 
 """
+__revision__ = "$Id: Configuration.py,v 1.2 2008/09/05 16:49:20 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
+
 
 import os
 import imp
@@ -27,6 +31,19 @@ _SupportedTypes = [
     ]
 
 _SupportedTypes.extend(_SimpleTypes)
+
+def format(value):
+    """
+    _format_
+    
+    format a value as python
+    keep parameters simple, trust python...
+    """
+    if type(value) == types.StringType:
+        value = "\'%s\'" % value
+    return str(value)
+
+
 
 class ConfigSection(object):
     """
@@ -67,18 +84,8 @@ class ConfigSection(object):
 
 
 
-    def _internal_format(self, value):
-        """
-        _format_
 
-        format a value as python
-        keep parameters simple, trust python...
-        """
-        if type(value) == types.StringType:
-            value = "\'%s\'" % value
-        return str(value)
-
-    def _internal_pythonise(self, **options):
+    def pythonise_(self, **options):
         """
         convert self into list of python format strings
 
@@ -111,7 +118,7 @@ class ConfigSection(object):
                         ))
             result.append( "%s.%s = %s" % (
                 self._internal_name,
-                attr, self._internal_format(getattr(self, attr))
+                attr, format(getattr(self, attr))
                 ))
 
             if self._internal_docstrings.has_key(attr):
@@ -155,7 +162,7 @@ class ConfigSection(object):
         string representation, dump to python format
         """
         result = ""
-        for pystring in self._internal_pythonise():
+        for pystring in self.pythonise_():
             result += "%s\n" % pystring
         return result
 
@@ -165,7 +172,7 @@ class ConfigSection(object):
         include docs as calls to document_
         """
         result = ""
-        for pystring in self._internal_pythonise(document = True):
+        for pystring in self.pythonise_(document = True):
             result += "%s\n" % pystring
         return result
 
@@ -175,7 +182,7 @@ class ConfigSection(object):
         include docs as comments
         """
         result = ""
-        for pystring in self._internal_pythonise(comment = True):
+        for pystring in self.pythonise_(comment = True):
             result += "%s\n" % pystring
         return result
 
@@ -278,7 +285,7 @@ class Configuration(object):
                 result += "config.component_(\'%s\')\n" % sectionName
 
             sectionRef = getattr(self, sectionName)
-            for sectionAttr in sectionRef._internal_pythonise(
+            for sectionAttr in sectionRef.pythonise_(
                 document = document, comment = comment):
                 if sectionAttr.startswith("#"):
                     result += "%s\n" % sectionAttr
@@ -361,7 +368,8 @@ def saveConfigurationFile(configInstance, filename, **options):
     """
     comment = options.get("comment", False)
     document = options.get("document", False)
-    if document: comment = False
+    if document:
+        comment = False
 
     handle = open(filename, 'w')
     if document:

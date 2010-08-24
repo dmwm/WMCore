@@ -11,14 +11,16 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.6 2008/05/29 16:36:54 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Fileset.py,v 1.7 2008/06/09 16:37:47 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 
-from WMCore.WMBS.Actions.LoadFileset import LoadFilesetAction
-
+from WMCore.WMBS.Actions.Fileset.Load import LoadFilesetAction
+from WMCore.WMBS.Actions.Fileset.Exists import FilesetExistsAction
+from WMCore.WMBS.Actions.Fileset.Delete import DeleteFilesetAction
+from WMCore.WMBS.Actions.Fileset.New import NewFilesetAction
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Subscription import Subscription
 
@@ -32,7 +34,7 @@ class Fileset(object):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name, wmbs, id=0, is_open=True,
+    def __init__(self, name=name, dbinterface=None, logger=None, id=0, is_open=True,
                     parents=None, parents_open=True, source=None, sourceUrl=None):
         """
         Create a new fileset
@@ -48,6 +50,8 @@ class Fileset(object):
         self.source = source
         self.sourceUrl = sourceUrl 
         self.lastUpdate = 0
+        self.dbfactory = dbinterface
+        self.logger = none
     
     def setParentage(self, parents, parents_open):
         """
@@ -61,26 +65,33 @@ class Fileset(object):
                     self.parents.add(Fileset(parent, self.wmbs, 
                             is_open=parents_open, parents_open=False))
     
-    
     def exists(self):
         """
         Does a fileset exist with this name
         """
-        return self.wmbs.filesetExists(self.name)[0][0] > 0
+        conn = self.dbfactory.connect()
+        action = FilesetExistsAction(self.logger)
+        return action.execute(name=self.name,
+                               dbinterface=conn)
         
-    def create(self):
+    def create(self, conn = None):
         """
         Add the new fileset to WMBS
         """
+        if not conn:
+            conn = self.dbfactory.connect()
+            
         for parent in self.parents:
             try:
-                parent.create()
+                #todo: do in a single transaction
+                parent.create(conn)
             except IntegrityError:
                 self.wmbs.logger.warning('Fileset parent %s exists' % \
                                                          parent.name)
         try:
-            self.wmbs.insertFileset(self.name, self.open,
-                                    [x.name for x in self.parents])
+            action = NewFilesetAction(self.logger)
+            return action.execute(name=self.name,
+                               dbinterface=conn)
         except IntegrityError:
             self.wmbs.logger.exception('Fileset %s exists' % self.name)
             #raise
@@ -92,7 +103,10 @@ class Fileset(object):
         """
         self.wmbs.logger.warning('you are removing the following fileset from WMBS %s %s'
                                  % (self.name))
-        self.wmbs.deleteFileset(self.name)
+        conn = self.dbfactory.connect()
+        action = DeleteFilesetAction(self.logger)
+        return action.execute(name=self.name,
+                               dbinterface=conn)
     
     def populate(self):
         """

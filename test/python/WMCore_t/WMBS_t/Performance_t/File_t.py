@@ -12,7 +12,6 @@ to run the test
 """
 import logging
 from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
-#from WMCore.WMBS.File import File
 from WMCore.Database.DBFactory import DBFactory
 
 class FileTest(WMBSBase):
@@ -280,8 +279,8 @@ class FileTest(WMBSBase):
 
         for i in range(times):
             time = self.perfTest(dao=self.dao, action='Files.SetLocation', 
-            file=file[i]["lfn"], sename=list[0]) 
-            self.totaltime = self.totaltime + time            
+                file=file[i]["lfn"], sename=list[0]) 
+                self.totaltime = self.totaltime + time            
             assert self.totaltime <= self.totalthreshold, 'SetLocation DAO '+ \
             'class - Operation too slow ( '+str(i+1)+' times, total elapsed'+ \
             ' time:'+str(self.totaltime)+', threshold:'+ \

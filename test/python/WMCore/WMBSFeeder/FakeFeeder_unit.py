@@ -7,11 +7,13 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: FakeFeeder_unit.py,v 1.1 2008/07/21 15:43:20 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FakeFeeder_unit.py,v 1.2 2008/07/21 17:29:28 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from WMCore.WMBSFeeder.Fake.Feeder import Feeder as FakeFeeder
+from WMCore.WMBSFeeder.Fake.UpdatingFeeder import Feeder as UpdatingFakeFeeder
+from WMCore.DataStructs.Fileset import Fileset
 
 class BaseFakeFeederTestCase(unittest.TestCase):
     def setUp(self):
@@ -21,10 +23,20 @@ class BaseFakeFeederTestCase(unittest.TestCase):
         pass
     
     def testCall(self):
-        for i in range(1,20):
-            files = self.feeder()
-            print i, files
-        
-        
+        fileset = Fileset(name="FakeFeederTest")
+        for i in range(1, 21):
+            self.feeder([fileset])
+            print "iteration %s: %s new files (%s total)" % (i, len(fileset.listNewFiles()), len(fileset.listFiles())) 
+            set = fileset.listFiles()
+            if len(set) > 0:
+                file = set.pop()
+                print file.dict["locations"], file.dict["lfn"]        
+            fileset.commit()
+            
+class BaseUpdatingFakeFeederTestCase(BaseFakeFeederTestCase):
+    def setUp(self):
+        self.feeder = UpdatingFakeFeeder(10, 10)
+    
+            
 if __name__ == '__main__':
     unittest.main()

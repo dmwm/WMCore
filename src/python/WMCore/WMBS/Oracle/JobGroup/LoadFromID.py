@@ -6,8 +6,8 @@ Oracle implementation of JobGroup.LoadFromID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.1 2009/01/14 16:35:25 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromID.py,v 1.2 2009/01/16 22:33:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.JobGroup.LoadFromID import LoadFromID as LoadFromIDMySQL
 
@@ -22,12 +22,7 @@ class LoadFromID(LoadFromIDMySQL):
         Rename the guid column to uid to keep compatibility with the MySQL DAO
         objects.
         """
-        formattedResults = LoadFromIDMySQL.formatDict(self, result)
-
-        output = []
-        for formattedResult in formattedResults:
-            formattedResult["uid"] = formattedResult["guid"]
-            del formattedResult["guid"]
-            output.append(formattedResult)
-            
-        return output
+        formattedResult = LoadFromIDMySQL.formatDict(self, result)
+        formattedResult["uid"] = formattedResult["guid"]
+        del formattedResult["guid"]
+        return formattedResult

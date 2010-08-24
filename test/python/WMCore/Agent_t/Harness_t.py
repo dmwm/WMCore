@@ -3,8 +3,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.2 2008/08/29 19:00:15 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Harness_t.py,v 1.3 2008/08/29 20:03:07 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -50,7 +50,7 @@ class HarnessTest(unittest.TestCase):
 
             myThread.dbi = dbFactory.connect()
 
-            factory = WMFactory("msgService", "WMCore.MsgSeRVICE."+ \
+            factory = WMFactory("msgService", "WMCore.MsgService."+ \
                 myThread.dialect)
             create = factory.loadObject("Create")
             createworked = create.execute()

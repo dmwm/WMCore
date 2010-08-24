@@ -61,13 +61,19 @@ class CreateWMBS(CreateWMBSMySQL):
                     ON DELETE CASCADE
                 FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
                     ON DELETE CASCADE)""" 
-        self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
+        self.create['wmbs_job_group'] = """CREATE TABLE wmbs_jobgroup (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 subscription INT(11) NOT NULL,
+                last_update timestamp NOT NULL,
+                FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+                ON DELETE CASCADE)"""
+        self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                jobgroup INT(11) NOT NULL,
                 start INT(11),
                 completed INT(11),
                 last_update timestamp NOT NULL,
-                FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+                FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                 ON DELETE CASCADE)"""
                 
     def execute(self, conn = None, transaction = False):

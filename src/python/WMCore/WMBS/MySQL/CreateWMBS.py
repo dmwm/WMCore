@@ -104,15 +104,23 @@ wmbs_sub_files_complete (
     FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
         ON DELETE CASCADE,
     FOREIGN KEY (file) REFERENCES wmbs_file(id))"""
-        self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
+        self.create['wmbs_jobgroup'] = """CREATE TABLE wmbs_jobgroup (
                 id           INT(11) NOT NULL AUTO_INCREMENT,
                 subscription INT(11) NOT NULL,
+                last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+                    ON DELETE CASCADE)"""          
+        self.create['wmbs_job'] = """CREATE TABLE wmbs_job (
+                id           INT(11) NOT NULL AUTO_INCREMENT,
+                jobgroup INT(11) NOT NULL,
                 start INT(11),
                 completed INT(11),
                 last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+                FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                     ON DELETE CASCADE)"""        
         self.create['wmbs_job_assoc'] = """CREATE TABLE wmbs_job_assoc (
                 job    INT(11) NOT NULL,

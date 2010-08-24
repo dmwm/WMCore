@@ -5,14 +5,38 @@ from WMCore.Database.Dialects import SQLiteDialect
 from WMCore.Database.Dialects import OracleDialect
 
 class DBFactory(object):
-    def __init__(self, logger, dburl):
+    def __init__(self, logger, dburl, options={}):
         self.logger = logger
-        self.dburl = dburl
+        if dburl:
+            self.dburl = dburl
+        else:
+            if options['port']:
+                self.dburl = '%s://%s@%s:%s/%s' % (options['dialect'],
+                                                options['user'],
+                                                options['password'],
+                                                options['port'],
+                                                options['database'])
+                del options['dialect']
+                del options['user']
+                del options['password']
+                del options['port']
+                del options['database']
+            else:
+                self.dburl = '%s://%s@%s/%s' % (options['dialect'],
+                                                options['user'],
+                                                options['password'],
+                                                options['database'])
+                del options['dialect']
+                del options['user']
+                del options['password']
+                del options['database']
+            
         self.engine = create_engine(self.dburl, 
                                #echo_pool=True,
                                convert_unicode=True, 
                                encoding='utf-8',
-                               strategy='threadlocal')
+                               strategy='threadlocal',
+                               connect_args = options)
         self.dia = self.engine.dialect
         
     def connect(self):

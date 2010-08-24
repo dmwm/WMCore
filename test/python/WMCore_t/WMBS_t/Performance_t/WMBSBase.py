@@ -52,13 +52,17 @@ class WMBSBase(Performance):
 
 #        for x in range(len(filelist)):
         setfiles = set(filelist)
+#        setfiles = Set()
+#        setfiles.add(filelist[0])
         fileset = Fileset(name='genFilesSet', 
                             files=setfiles, 
                             logger=self.logger, 
                             dbfactory=self.dbf)
         fileset.create()
-        fileset.commit()
-        fileset.populate()
+        #print fileset.getFiles()
+#        print fileset.newfiles
+#        fileset.commit()
+#        fileset.populate()
 #        for x in filelist:
 #            x.save()
 #            x.load() 
@@ -66,6 +70,7 @@ class WMBSBase(Performance):
             #filelist[x].load()
         print commands.getstatusoutput('mysql -e "select * from wmbs_file_details" wmbs')
     
+        filelist = list(fileset.getFiles())
         return filelist
 
     def genLocations(self, number=0):
@@ -92,7 +97,7 @@ class WMBSBase(Performance):
 
         
         for i in range(rangemax):        
-            filelist = self.genFiles()
+            filelist = self.genFiles(10)
             fileset = Fileset(name='testFileSet'+str(i), 
                             files=filelist, 
                             logger=self.logger, 

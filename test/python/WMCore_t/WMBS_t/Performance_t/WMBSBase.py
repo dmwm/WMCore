@@ -24,7 +24,7 @@ class WMBSBase(Performance):
 
     """
 
-    def genFileObjects(self, number=0):
+    def genFileObjects(self, number=0,name='Test'):
         # Create a Fileset of random, parentless, childless, unlocatied file
         filelist = []
 
@@ -35,7 +35,7 @@ class WMBSBase(Performance):
             rangemax = number
 
         for x in range(rangemax):
-            file = File(lfn='/store/data/genfile'+str(x)+'.root',
+            file = File(lfn='/store/data/'+name+'test'+str(x)+'.root',
                         size=random.randint(1000, 2000),
                         events = 1000,
                         run = random.randint(0, 2000),
@@ -46,24 +46,23 @@ class WMBSBase(Performance):
             filelist.append(file)
         return filelist
 
-    def genFiles(self, number=0):
+    def genFiles(self, number=0, name='Test'):
         
         filelist = self.genFileObjects(number)
 
         setfiles = set(filelist)
 
-        fileset = Fileset(name='genFilesSet', 
+        fileset = Fileset(name=name+'Files', 
                             files=setfiles, 
                             logger=self.logger, 
                             dbfactory=self.dbf)
-        print fileset.name
         fileset.create()
     
         filelist = list(fileset.getFiles())
 
         return filelist
 
-    def genLocations(self, number=0):
+    def genLocations(self, number=0, name='Test'):
         list = []
 
         if number == 0:
@@ -72,11 +71,11 @@ class WMBSBase(Performance):
             rangemax = number
 
         for x in range(rangemax):
-            list.append("Location"+str(x))
+            list.append(name+'Location'+str(x))
 
         return list
 
-    def genFileset(self, number=0):
+    def genFilesetObjects(self, number=0, name='Test'):
 
         list = []
 
@@ -87,17 +86,25 @@ class WMBSBase(Performance):
 
         
         for i in range(rangemax):        
-            filelist = self.genFileObjects(1)
-            fileset = Fileset(name='testFileSet'+str(i), 
+            filelist = self.genFileObjects(1, name=name+'Fileset')
+            fileset = Fileset(name=name+str(i), 
                             files=set(filelist), 
                             logger=self.logger, 
                             dbfactory=self.dbf) 
-            fileset.create()
             list.append(fileset)        
      
         return list
 
-    def genWorkflow(self, number=0):
+    def genFileset(self, number=0, name='Test'):
+        
+        list = self.genFilesetObjects(number, name)
+
+        for x in list:
+            x.create()
+
+        return list
+
+    def genWorkflowObjects(self, number=0, name='Test'):
 
         list = []
 
@@ -107,13 +114,21 @@ class WMBSBase(Performance):
             rangemax = number
 
         for i in range(rangemax):        
-            workflow = Workflow(spec='TestWorkflow'+str(i), owner='PerformanceTestCase', name='TestWorkflow'+str(i), logger=self.logger, dbfactory=self.dbf)
-            workflow.create()
+            workflow = Workflow(spec=name+'Spec'+str(i), owner=name+'Owner'+str(i), name=name+'Workflow'+str(i), logger=self.logger, dbfactory=self.dbf)
             list.append(workflow)
 
         return list
 
-    def genSubscription(self, number=0):
+    def genWorkflow(self, number=0, name='Test'):
+        
+        list = self.genWorkflowObjects(number, name)
+
+        for x in list:
+            x.create()
+
+        return list
+
+    def genSubscription(self, number=0, name='Test'):
 
         list = []
 
@@ -123,11 +138,11 @@ class WMBSBase(Performance):
             rangemax = number
 
         for i in range(rangemax):        
-            list = self.genWorkflow(number=1)
-            workflow = list[0]
+            listtemp = self.genWorkflow(number=1, name=name+'Sub')
+            workflow = listtemp[0]
 
-            list = self.genFileset(number=1)
-            fileset = list[0]
+            listtemp = self.genFileset(number=1, name=name+'Sub')
+            fileset = listtemp[0]
 
             subscription = Subscription(fileset=fileset, 
                         workflow=workflow, logger=self.logger, 
@@ -138,10 +153,7 @@ class WMBSBase(Performance):
 
         return list
 
-
-    def genJob(self, number=0):
-
-        list = []
+    def genJobObjects(self, number=0, name='Test'):
 
         if number == 0:
             rangemax = random.randint(1000,3000)
@@ -149,23 +161,31 @@ class WMBSBase(Performance):
             rangemax = number
 
         for i in range(rangemax):        
-            list = self.genFileset(number=1)
-            fileset = list[0]
-            list = self.genSubscription(number=1)
-            subscription = list[0]
+            fileset = self.genFileset(number=1, name=name+'genJob')[0]
+            subscription = self.genSubscription(number=1, name=name+'genJob')[0]
         
-            job = Job(name='TestJob'+str(i),files=fileset, logger=self.logger, dbfactory=self.dbf)
+            job = Job(name=name+'genJob'+str(i),files=fileset, logger=self.logger, dbfactory=self.dbf)
             jobset = Set()
             jobset.add(job)
-        
+
+        return list(jobset) 
+
+    def genJob(self, number=0, name='Test'):
+
+        list = []
+
+        for i in range(number):        
+
+            joblist = self.genJobObjects(number=number,name=name)
+            jobset = set(joblist)
             jobgroup = JobGroup(subscription=subscription, jobs=jobset)
             job.create(group = jobgroup)
             
             list.append(job)
 
-            return list
+        return list
 
-    def genJobGroup(self, number=0):
+    def genJobGroup(self, number=0, name='Test'):
 
         list = []
         jobs = []
@@ -178,9 +198,9 @@ class WMBSBase(Performance):
 
         for i in range(rangemax):        
 
-            subscription = self.genSubscription(number=1)[0]            
+            subscription = self.genSubscription(number=1, name=name+'genJobGroup')[0]            
 
-            jobs = self.genJob(number=0)
+            jobs = self.genJobObjects(number=0, name=name+'genJobGroup')
 
             for j in jobs:
                 set.add(j)
@@ -192,11 +212,15 @@ class WMBSBase(Performance):
  
     def setUp(self, dbf):
         """
-        Common setUp for all Performance tests
+        Common setUp for all WMBS Performance tests
 
         """
+        #Total time counter for Performance tests
+        self.totaltime = 0
         
+        #Superclass setUp call
         Performance.setUp(self)
+
         #Place common execute method arguments here        
         #TODO -Still to be implemented
         self.baseexec=''

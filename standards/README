@@ -24,7 +24,7 @@ feedback will help improving it for all developers.
 
 SETUP
 =====
-To setup the lirary it is assumed the following conditions
+To setup the library it is assumed the following conditions
 hold:
 
 -You have a recent version of the prodagent installed (this
@@ -67,6 +67,13 @@ for component file that inherits from the harness:
 
 for config file:
 ....WMComponent/<component name>/DefaultConfig.py
+
+WMCORE/bin/wmcore-new-config is a config file aggregator that takes
+as input directories roots and aggregates the config files. This enables 
+operators to generate one config file and edit it as they see fit. Beware that 
+if you import a DefaultConfig.py file in your DefaultConfig.py file this
+can give errors when generating this file as it would overwrite existing
+values.
 
 for storing the message handlers:
 

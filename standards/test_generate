@@ -18,7 +18,7 @@ threshold = 8
 
 code = Code(qualityScript, qualityReport, os.getenv('WMCOREBASE'), threshold)
 code.parseCVS('cvsLog.txt', pathCut = 5, moduleCut = 1, maxVotes = 3)
-code.generate('test_style')
+#code.generate('test_style')
 
 test = Test()
 test.parseCVS('cvsLog.txt', pathCut = 5, moduleCut = 1, maxVotes = 3)

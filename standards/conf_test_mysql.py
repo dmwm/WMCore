@@ -12,11 +12,11 @@ from WMCore_t.WMBS_t.Performance_t.MySQLDAOJobGroup_t import MySQLDAOJobGroupTes
 from WMCore_t.ThreadPool_t.ThreadPool_t import ThreadPoolTest
 from WMCore_t.DataStructs_t.Run_t import RunTest
 from WMCore_t.DataStructs_t.WMObject_t import WMObjectTest
-from WMCore_t.WMBS_t.Performance_t.Job_t import JobTest
 from WMCore_t.FwkJobReport_t.FJR_t import FJRTest
 from WMCore_t.FwkJobReport_t.FileInfo_t import FileInfoTest
 from WMCore_t.WMBS_t.Performance_t.JobGroup_t import JobGroupTest
 from WMCore_t.Database_t.Transaction_t import TransactionTest
+from WMCore_t.WMBS_t.Locations_t import LocationsTest
 from WMCore_t.WMBS_t.Performance_t.Location_t import LocationTest
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMException_t import WMExceptionTest
@@ -24,8 +24,7 @@ from WMCore_t.WMBS_t.Performance_t.File_t import FileTest
 from WMCore_t.MsgService_t.MsgService_t import MsgServiceTest
 from WMCore_t.Agent_t.Configuration_t import ConfigurationTest
 from WMCore_t.WMFactory_t.WMFactory_t import WMFactoryTest
-from WMCore_t.WMBS_t.Performance_t.Fileset_t import FilesetTest
-from WMCore_t.WMBS_t.DBPerformance_t import DBPerformanceTest
+from WMCore_t.Services_t.SiteDB_t.SiteDB_t import SiteDBTest
 from WMCore_t.Database_t.DBFormatter_t import DBFormatterTest
 from WMCore_t.WMBS_t.Performance_t.MySQLDAOLocation_t import MySQLDAOLocationTest
 from WMCore_t.Agent_t.Harness_t import HarnessTest
@@ -34,24 +33,27 @@ from WMCore_t.WMBS_t.Performance_t.MySQLDAOSubscription_t import MySQLDAOSubscri
 from WMComponent_t.Proxy_t.Proxy_t import ProxyTest
 from WMCore_t.DataStructs_t.Fileset_t import FilesetTest
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAOFileset_t import SQLiteDAOFilesetTest
+from WMCore_t.WMBS_t.Performance_t.Fileset_t import FilesetTest
 from WMCore_t.WMBS_t.Performance_t.Workflow_t import WorkflowTest
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAOJob_t import SQLiteDAOJobTest
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAOFile_t import SQLiteDAOFileTest
 from WMComponent_t.DBSUpload_t.DBSUpload_t import DBSUploadTest
 from WMCore_t.Trigger_t.Trigger_t import TriggerTest
-from WMCore_t.Services_t.SiteDB_t.SiteDB_t import SiteDBTest
 from WMCore_t.Alerts_t.Alerts_t import AlertsTest
 from WMCore_t.DataStructs_t.Subscription_t import SubscriptionTest
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAOJobGroup_t import SQLiteDAOJobGroupTest
 from WMCore_t.DataStructs_t.JobGroup_t import JobGroupTest
 from WMCore_t.Database_t.DBCore_t import DBCoreTest
+from WMCore_t.WMBS_t.DBPerformance_t import DBPerformanceTest
 from WMCore_t.WMBS_t.Performance_t.MySQLDAOJob_t import MySQLDAOJobTest
 from WMCore_t.SiteScreening_t.BlackWhiteListParser_t import BlackWhiteListParserTest
+from WMCore_t.WMBS_t.Performance_t.Job_t import JobTest
 from WMCore_t.WMBS_t.Performance_t.MySQLDAOWorkflow_t import MySQLDAOWorkflowTest
 from WMCore_t.WMBS_t.Performance_t.Subscription_t import SubscriptionTest
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAOSubscription_t import SQLiteDAOSubscriptionTest
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAOWorkflow_t import SQLiteDAOWorkflowTest
+from WMCore_t.WMBS_t.Workflow_t import WorkflowTest
 from WMComponent_t.DBSBuffer_t.DBSBuffer_t import DBSBufferTest
 
 errors = {}
@@ -108,11 +110,11 @@ except Exception,ex:
 
 try:
    x=WorkflowTest()
-   tests.append((x,"jcgon"))
+   tests.append((x,"sfoulkes"))
 except Exception,ex:
-   if not errors.has_key("jcgon"):
-       errors["jcgon"] = []
-   errors["jcgon"].append(("WorkflowTest",str(ex)))
+   if not errors.has_key("sfoulkes"):
+       errors["sfoulkes"] = []
+   errors["sfoulkes"].append(("WorkflowTest",str(ex)))
 
 try:
    x=WMExceptionTest()
@@ -172,11 +174,11 @@ except Exception,ex:
 
 try:
    x=JobGroupTest()
-   tests.append((x,"metson"))
+   tests.append((x,"afaq"))
 except Exception,ex:
-   if not errors.has_key("metson"):
-       errors["metson"] = []
-   errors["metson"].append(("JobGroupTest",str(ex)))
+   if not errors.has_key("afaq"):
+       errors["afaq"] = []
+   errors["afaq"].append(("JobGroupTest",str(ex)))
 
 try:
    x=WMObjectTest()
@@ -249,6 +251,14 @@ except Exception,ex:
    if not errors.has_key("jcgon"):
        errors["jcgon"] = []
    errors["jcgon"].append(("MySQLDAOSubscriptionTest",str(ex)))
+
+try:
+   x=LocationsTest()
+   tests.append((x,"sfoulkes"))
+except Exception,ex:
+   if not errors.has_key("sfoulkes"):
+       errors["sfoulkes"] = []
+   errors["sfoulkes"].append(("LocationsTest",str(ex)))
 
 try:
    x=WMFactoryTest()
@@ -380,11 +390,11 @@ except Exception,ex:
 
 try:
    x=AlertsTest()
-   tests.append((x,"fvlingen"))
+   tests.append((x,"sfoulkes"))
 except Exception,ex:
-   if not errors.has_key("fvlingen"):
-       errors["fvlingen"] = []
-   errors["fvlingen"].append(("AlertsTest",str(ex)))
+   if not errors.has_key("sfoulkes"):
+       errors["sfoulkes"] = []
+   errors["sfoulkes"].append(("AlertsTest",str(ex)))
 
 try:
    x=MySQLDAOLocationTest()
@@ -428,8 +438,8 @@ except Exception,ex:
 
 
 
-print('Writing level 2 failures to file: failures2_mysql.rep ')
-failures = open('failures2_mysql.rep','w')
+print('Writing level 2 failures to file: failures_mysql_2.rep')
+failures = open('failures_mysql_2.rep','w')
 
 failures.writelines('Failed instantiation summary (level 2): \n')
 for author in errors.keys():
@@ -440,9 +450,7 @@ for author in errors.keys():
         failures.writelines('\n\n')
 failures.close()
 
-
-
-test = Test(tests,'failures3_mysql.rep')
+test = Test(tests,'failures_mysql_3.rep')
 test.run()
 test.summaryText()
         

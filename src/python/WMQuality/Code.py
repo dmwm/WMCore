@@ -8,8 +8,8 @@ and generate a file for checking the
 code style.
 """
 
-__revision__ = "$Id: Code.py,v 1.3 2008/09/29 16:10:57 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Code.py,v 1.4 2009/01/26 13:23:44 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -144,18 +144,72 @@ class Code:
                 # we voted
                 vote += 1
                 # if we reach maxVotes where done
-                if vote < maxVotes:
+                if vote > maxVotes:
                     state = 'file'
                     vote = 0
                     vote2 = []
             nl = logFile.readline()
         # we are done voting
 
+    def preProcess(self):
+        """
+        Does some preprocessinc on information.
+        If submodules of a module are the responsbility of one developer
+        we aggregrate them in our style check.
+        """
+  
+        for moduleName in self.module.keys():
+            # find the one with the most votes per module:
+            votes = 0
+            winner = ''
+            for voter in self.module[moduleName].keys():
+                if self.module[moduleName][voter] > votes:
+                    votes = self.module[moduleName][voter]
+                    winner = voter
+            self.module[moduleName] = winner
+       
+        # quick and dirty algorithm O(n^2). Can be done in O(n*lg(n))
+        moduleLength = {} 
+        # find module lengths first 
+        for moduleName in self.module.keys():
+            parts = moduleName.split('/')
+            if not moduleLength.has_key(len(parts)):
+                moduleLength[len(parts)] = []
+            moduleLength[len(parts)].append(moduleName)
+        lengths = moduleLength.keys()
+        lengths.sort(reverse = True)
+    
+        for length in lengths:
+            # FIXME: needs to be configurable.
+            if length > 2:
+                parents = {}
+                for moduleName in self.module.keys():
+                    parts = moduleName.split('/')
+                    # group all parts of same length.
+                    if len(parts) == length:
+                        parent = moduleName.rsplit('/',1)[0]
+                        if not parents.has_key(parent):
+                            parents[parent] = []
+                        parents[parent].append([moduleName, self.module[moduleName]])
+                # check if all the children have the same developer as parent. If so remove the children.
+                for parent in parents.keys():
+                    same = True
+                    parentDeveloper = self.module[parent]
+                    for moduleName, developer in parents[parent]:
+                        if developer != parentDeveloper:
+                            same = False
+                    if same:
+                        for moduleName, developer in parents[parent]:
+                            del self.module[moduleName]  
+                print('test '+str(length))
+         
+
     def generate(self, fileName):
         """
         Generates a python file that uses the result of parsing
         and this class to generate a script that checks to code quality.
         """
+        self.preProcess()
         styleFile = open(fileName, 'w')
         # write head part
         head = """#!/usr/bin/env python
@@ -180,14 +234,8 @@ packages = {\\
 
         for moduleName in self.module.keys():
             # find the one with the most votes per module:
-            votes = 0
-            winner = ''
-            for voter in self.module[moduleName].keys():
-                if self.module[moduleName][voter] > votes:
-                    votes = self.module[moduleName][voter]
-                    winner = voter
             # register this.
-            styleFile.writelines("        '"+moduleName+"':'"+winner+"',\\\n")
+            styleFile.writelines("        '"+moduleName+"':'"+self.module[moduleName]+"',\\\n")
         styleFile.writelines('}\n')
         tail = """
 code = Code(qualityScript, qualityReport, os.getenv('WMCOREBASE'), threshold, packages)

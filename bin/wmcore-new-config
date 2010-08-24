@@ -8,8 +8,8 @@ together into one big configuration file that operators can then
 edit.
 """
 
-__revision__ = "$Id: wmcore-new-config,v 1.1 2009/01/14 12:31:22 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: wmcore-new-config,v 1.2 2009/01/26 13:23:43 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -17,8 +17,8 @@ import os
 import sys
 
 from WMCore.Agent.Configuration import Configuration
-from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.Agent.Configuration import saveConfigurationFile
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.Configuration import saveConfigurationFile
 
 def usage():
     msg = """
@@ -103,6 +103,7 @@ for root in roots:
                 for component in config_section.listComponents_():
                     compAttr = config_section.component_(component)
                     compAttr.ComponentDir = os.path.join(config.General.workDir, component)
+                print('adding: '+location)
                 config += config_section
 
 saveConfigurationFile(config, outputFile, comment = True)

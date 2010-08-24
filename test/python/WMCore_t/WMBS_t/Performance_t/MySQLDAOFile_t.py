@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-import unittest
+import unittest, commands
 
 from unittest import TestCase
-from WMCore_t.WMBS_t.Performance_t.Base_t import Base_t
+from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAO_t
 from WMCore_t.WMBS_t.Performance_t.File_t import File_t
 from WMCore.DAOFactory import DAOFactory
 
-class MySQLDAOFile_t(File_t,TestCase):
+class MySQLDAOFile_t(File_t, MySQLDAO_t, TestCase):
     """
     __MySQLDAOFile_t__
 
@@ -17,17 +17,18 @@ class MySQLDAOFile_t(File_t,TestCase):
     """
 
     def setUp(self):
-        #Call common setUp method from Base_t
-        mysqlURI = 'mysql://jcg@localhost/wmbs'
-        
-        File_t.setUp(self,sqlURI=mysqlURI, logname='MySQLFilePerformanceTest')
-        #Set the specific threshold for the test
+
+        MySQLDAO_t.setUp(self)
+        File_t.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
+        #Set the specific threshold for the testm
         self.threshold = 1
 
     def tearDown(self):
         #Call superclass tearDown method
         File_t.tearDown(self)
-
+        MySQLDAO_t.tearDown(self)
+        #DB Specific tearDown code
+        
 
 if __name__ == "__main__":
     unittest.main()

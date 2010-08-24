@@ -1,51 +1,34 @@
 #!/usr/bin/env python
 
-import unittest
-from unittest import TestCase
-from WMCore_t.WMBS_t.Performance_t.Base_t import Base_t
+import unittest, commands
 
-class Location_t(Base_t,TestCase):
+from unittest import TestCase
+from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAO_t
+from WMCore_t.WMBS_t.Performance_t.Location_t import Location_t
+from WMCore.DAOFactory import DAOFactory
+
+class MySQLDAOLocation_t(Location_t, MySQLDAO_t, TestCase):
     """
     __MySQLDAOLocation_t__
 
-     MySQL DAO Performance testcase for Location DAO Class
+     DB Performance testcase for WMBS Location class
 
 
     """
 
     def setUp(self):
-        #Call common setUp method from Base_t
-        Base_t.setUp(self)
+
+        MySQLDAO_t.setUp(self)
+        Location_t.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
+        #Set the specific threshold for the testm
         self.threshold = 1
 
     def tearDown(self):
         #Call superclass tearDown method
-        Base_t.tearDown(self)
-
-    def testNew(self):         
-        print "testNew"
+        Location_t.tearDown(self)
+        MySQLDAO_t.tearDown(self)
+        #DB Specific tearDown code
         
-        time = self.perfTest(dao=self.mysqldao, action='Locations.New', execinput=['sename="TestLocation"'])
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
-    def testList(self):         
-        print "testList"
-        
-        time = self.perfTest(dao=self.mysqldao, action='Locations.List', execinput='')
-        assert time <= self.threshold, 'List DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
-    def testDelete(self):         
-        print "testDelete"
-        
-        time = self.perfTest(dao=self.mysqldao, action='Locations.Delete', execinput=['sename="TestLocation"'])
-        assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
-#    def testFiles(self):         
-#        print "testFiles"
-#        
-#        time = self.perfTest(dao=self.mysqldao, action='Locations.Files', execinput=['sename="TestLocation"'])
-#        assert time <= self.threshold, 'Files DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
 
 if __name__ == "__main__":
     unittest.main()

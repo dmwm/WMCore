@@ -1,11 +1,7 @@
 #!/usr/bin/env python
 
-import os, logging, commands, time, random
+import os, logging, time, random
 
-
-#from unittest import TestCase
-#from WMCore.Database.DBCore import DBInterface
-#from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -19,7 +15,10 @@ class Base_t():
     """
     __Base_t__
 
-    Base class for DB Performance at WMBS
+    Base class for Performance Tests at WMBS
+
+    This class is abstract, proceed to the DB specific testcase
+    to run the test
 
 
     """
@@ -38,6 +37,7 @@ class Base_t():
                     filemode='w')
         self.logger = logging.getLogger('BasePerformanceTest')
         #Place common execute method arguments here        
+        #TODO -Still to be implemented
         self.baseexec=''
 
         #possibly deprecated, need to use selist instead
@@ -116,15 +116,7 @@ class Base_t():
 
     def tearDown(self):
         #Base tearDown method for the DB Performance test
-        self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u jcg drop wmbs'))
-        self.logger.debug(commands.getstatusoutput('mysqladmin -u jcg create wmbs'))
-        self.logger.debug("WMBS MySQL database deleted")
-        try:
-            self.logger.debug(os.remove('dbperftest.lite'))
-        except OSError:
-            #Don't care if the file doesn't exist
-            pass
-        self.logger.debug("WMBS SQLite database deleted")
+        pass
 
     
     def perfTest(self, dao, action, execinput=''):

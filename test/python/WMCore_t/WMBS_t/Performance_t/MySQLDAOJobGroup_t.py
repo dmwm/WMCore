@@ -1,45 +1,34 @@
 #!/usr/bin/env python
 
-import unittest
-from unittest import TestCase
-from WMCore_t.WMBS_t.Performance_t.Base_t import Base_t
+import unittest, commands
 
-class Job_t(Base_t,TestCase):
+from unittest import TestCase
+from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAO_t
+from WMCore_t.WMBS_t.Performance_t.JobGroup_t import JobGroup_t
+from WMCore.DAOFactory import DAOFactory
+
+class MySQLDAOJobGroup_t(JobGroup_t, MySQLDAO_t, TestCase):
     """
     __MySQLDAOJobGroup_t__
 
-     MySQL DAO Performance testcase for WMBS Job class
+     DB Performance testcase for WMBS JobGroup class
 
 
     """
 
     def setUp(self):
-        #Call common setUp method from Base_t
-        Base_t.setUp(self)
+
+        MySQLDAO_t.setUp(self)
+        JobGroup_t.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
+        #Set the specific threshold for the testm
         self.threshold = 1
 
     def tearDown(self):
         #Call superclass tearDown method
-        Base_t.tearDown(self)
-
-    def testNew(self):         
-        print "testNew"
+        JobGroup_t.tearDown(self)
+        MySQLDAO_t.tearDown(self)
+        #DB Specific tearDown code
         
-        time = self.perfTest(dao=self.mysqldao, action='JobGroup.New', execinput=['subscription=self.testmysqlSubscription.id'])
-        assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
-    def testLoad(self):         
-        print "testLoad"
-        
-        time = self.perfTest(dao=self.mysqldao, action='JobGroup.Load', execinput=[''])
-        assert time <= self.threshold, 'Load DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
-    def testStatus(self):         
-        print "testStatus"
-        
-        time = self.perfTest(dao=self.mysqldao, action='JobGroup.Status', execinput=['group=self.testmysqlJobGroup.id'])
-        assert time <= self.threshold, 'Status DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
-
 
 if __name__ == "__main__":
     unittest.main()

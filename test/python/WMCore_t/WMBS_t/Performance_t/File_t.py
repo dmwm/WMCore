@@ -2,13 +2,13 @@
 
 import logging
 from WMCore_t.WMBS_t.Performance_t.Base_t import Base_t
-#from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
+
 class File_t(Base_t):
     """
     __File_t__
 
-     DB Performance testcase for WMBS File class
+     Performance testcase for WMBS File class
 
      This class is abstract, proceed to the DB specific testcase
      to run the test
@@ -16,9 +16,10 @@ class File_t(Base_t):
 
     """
     
-    def setUp(self, sqlURI='', logname='FilePerformanceTest'):
+    def setUp(self, sqlURI='', logarg=''):
         #Call common setUp method from Base_t
-        self.logger = logging.getLogger(logname)
+                
+        self.logger = logging.getLogger(logarg + 'FilePerformanceTest')
         
         dbf = DBFactory(self.logger, sqlURI)
         

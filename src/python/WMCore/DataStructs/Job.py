@@ -8,8 +8,8 @@ Jobs know their status (active, failed, complete) and know the files they run on
 but don't know the subscription or group. They do know their workflow.
 """
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.5 2008/09/10 19:43:17 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Job.py,v 1.6 2008/09/19 15:05:21 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable 
 from WMCore.DataStructs.Fileset import Fileset
@@ -18,7 +18,7 @@ from sets import Set
 import datetime
 
 class Job(Pickleable):
-    def __init__(self, subscription=None, files=Fileset()):
+    def __init__(self, subscription=None, files=None):
         """
         A job has a subscription which gives it its workflow.
         file_set is a Fileset containing files associated to a job
@@ -26,7 +26,10 @@ class Job(Pickleable):
         """
         self.subscription = subscription
         self.workflow = subscription.workflow
-        self.file_set = files
+        if files == None: 
+            self.file_set = Fileset()
+        else:
+            self.file_set = files
         self.last_update = datetime.datetime.now()
         self.status = 'QUEUED'
         self.output = Fileset(name='output', logger=files.logger)

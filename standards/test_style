@@ -7,51 +7,105 @@ from WMQuality.Code import Code
 # output of the log files
 # prefix of the files in cvs
 # quality script for using pylint:
-qualityScript = os.path.join(os.getenv('WMCOREBASE'), 'standards/test_style.sh')
+qualityScript = '/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/test_style.sh'
 # output file:
-qualityReport = os.path.join(os.getenv('WMCOREBASE'), 'standards/codeQuality.txt')
+qualityReport = '/home/fvlingen/programFiles/CMS_CVS/WMCORE/standards/codeQuality.txt'
 # rating threshold (min: 0, max 10)
 threshold = 8
 
-# package to responsible mapping
 packages = {\
-    'src/python/WMComponent/Proxy':'fvlingen',\
-    'src/python/WMComponent/ErrorHandler':'fvlingen',\
-    'src/python/WMComponent':'fvlingen',\
-    'src/python/WMCore/MsgService':'fvlingen',\
-    'src/python/WMCore/Trigger':'fvlingen',\
-    'src/python/WMCore/Agent':'fvlingen',\
-    'src/python/WMCore/JobSplitting':'metson',\
-    'src/python/WMCore/WMBS/Actions':'metson',\
-    'src/python/WMCore/WMBS/WMBSAccountant':'metson',\
-    'src/python/WMCore/WMBS/WMBSAllocater':'metson',\
-    'src/python/WMCore/WMBS/WMBSFeeder':'metson',\
-    'src/python/WMCore/WMBS/T0AST':'metson',\
-    'src/python/WMCore/WMBS':'metson',\
-    'src/python/WMCore/DataStructs':'metson',\
-    'src/python/WMCore/WMBSFeeder':'metson',\
-    'src/python/WMCore/ThreadPool':'fvlingen',\
-    'src/python/WMCore/Services':'metson',\
-    'src/python/WMCore/Database':'metson',\
-    'src/python/WMCore':'fvlingen,metson',\
-    'src/python/WMQuality':'fvlingen',\
-    'test/python/WMComponent_t/Proxy_t':'fvlingen',\
-    'test/python/WMComponent_t/ErrorHandler_t':'fvlingen',\
-    'test/python/WMComponent_t':'fvlingen',\
-    'test/python/WMCore_t/MsgService_t':'fvlingen',\
-    'test/python/WMCore_t/Trigger_t':'fvlingen',\
-    'test/python/WMCore_t/DataStructs_t':'metson',\
-    'test/python/WMCore_t/WMBSFeeder_t':'metson',\
-    'test/python/WMCore_t/WMRegistry_t':'fvlingen',\
-    'test/python/WMCore_t/JobSplitting_t':'metson',\
-    'test/python/WMCore_t/ThreadPool_t':'fvlingen',\
-    'test/python/WMCore_t/Database_t':'metson',\
-    'test/python/WMCore_t/Agent_t':'fvlingen',\
-    'test/python/WMCore_t/WMBS_t/WMBSAccountant_t':'metson',\
-    'test/python/WMCore_t/WMBS_t':'metson',\
-    'test/python/WMCore_t':'fvlingen,metson',\
-    }
+        
+        'src/python/WMCore/WMBSFeeder':'metson',\
+        'src/python/WMCore/WMBS/WMBSAllocater/Allocaters':'swakef',\
+        'src/python/WMCore/WMBS/MySQL/Workflow/Attic':'metson',\
+        'src/python/WMCore/WMBS/MySQL/Fileset/Attic':'metson',\
+        'src/python/WMCore/WMBSFeeder/DBS':'metson',\
+        'src/python/WMCore/MsgService':'fvlingen',\
+        'test/python':'fvlingen,meston',\
+        'src/python/WMCore/WMBS/MySQL/Fileset':'metson',\
+        'src/python/WMQuality':'fvlingen',\
+        'test/python/WMCore_t/JobSplitting_t':'evansde',\
+        'src/python/WMCore/WMBS/MySQL/Files/Attic':'metson',\
+        'src/python/WMCore/Database':'metson',\
+        'src/python/WMCore/WMBS/MySQL/Workflow':'metson',\
+        'src/python/WMCore/WMBS/SQLite/Jobs':'metson',\
+        'src/python/WMCore/WMBS/MySQL/Locations/Attic':'metson',\
+        'test/python/WMCore_t/WMBSFeeder_t':'swakef',\
+        'src/python/WMCore/WMBS/SQLite/Fileset/Attic':'metson',\
+        'src/python/WMCore/WMBSFeeder/PhEDExNotifier':'gowdy',\
+        'src/python/WMCore/WMBSFeeder/PhEDExNotifier/Attic':'gowdy',\
+        'src/python/WMCore/Agent':'fvlingen',\
+        'test/python/WMCore_t/DataStructs_t':'metson',\
+        'test/python/WMCore_t/ThreadPool_t':'fvlingen',\
+        'src/python/WMCore/WMBS/SQLite/Files/Attic':'metson',\
+        'src/python/WMCore':'fvlingen,metson',\
+        'test/python/WMCore_t/MsgService_t':'fvlingen',\
+        'src/python/WMCore/WMBS/SQLite/JobGroup':'metson',\
+        'src/python/WMCore/Database/Attic':'metson',\
+        'src/python/WMCore/WMBS/Actions/Fileset/Attic':'metson',\
+        'test/python/WMCore_t/WMBS_t/WMBSAccountant_t':'swakef',\
+        'src/python/WMCore/WMBS/MySQL':'metson',\
+        'src/python/WMCore/MsgService/MySQL':'fvlingen',\
+        'src/python/WMCore/WMBS/WMBSFeeder/Feeders':'swakef',\
+        'src/python/WMCore/Trigger/Oracle':'fvlingen',\
+        'test/python/WMCore_t/WMBS_t':'metson',\
+        'src/python/WMCore/WMBS/MySQL/Files':'metson',\
+        'src/python/WMCore/WMBSFeeder/Fake':'metson',\
+        'src/python/WMCore/WMBS/MySQL/Subscriptions':'metson',\
+        'src/python/WMCore/WMBS/SQLite/Files':'metson',\
+        'src/python/WMCore/WMBS/WMBSAccountant':'swakef',\
+        'src/python/WMCore/WMBS/WMBSFeeder':'swakef',\
+        'src/python/WMCore/WMBS/SQLite/Fileset':'metson',\
+        'src/python/WMCore/WMBS/MySQL/Locations':'metson',\
+        'src/python/WMCore/WMBS/Actions/Attic':'metson',\
+        'test/python/WMCore_t/Trigger_t':'fvlingen',\
+        'src/python/WMComponent/Proxy/Handler':'fvlingen',\
+        'src/python/WMCore/WMBS/WMBSAllocater':'swakef',\
+        'src/python':'fvlingen,metson',\
+        'src/python/WMCore/WMBS/MySQL/JobGroup':'metson',\
+        'src/python/WMCore/Services/SAM':'metson',\
+        'src/python/WMCore/WMBS/Actions/Files/Attic':'metson',\
+        'src/python/WMComponent/Proxy':'fvlingen',\
+        'src/python/WMCore/WMBS/T0AST':'metson',\
+        'src/python/WMCore/JobSplitting':'evansde',\
+        'test/python/WMComponent_t/Proxy_t':'fvlingen',\
+        'src/python/WMComponent/ErrorHandler':'fvlingen',\
+        'src/python/WMCore/WMBS/SQLite/Workflow/Attic':'metson',\
+        'src/python/WMCore/ThreadPool':'fvlingen',\
+        'src/python/WMCore/WMBS/MySQL/Attic':'metson',\
+        'src/python/WMComponent':'fvlingen',\
+        'src/python/WMCore/WMBS/Actions':'metson',\
+        'test/python/WMComponent_t':'fvlingen',\
+        'src/python/WMCore/WMBS':'metson',\
+        'test/python/WMCore_t':'fvlingen,metson',\
+        'src/python/WMCore/WMBS/SQLite/Attic':'metson',\
+        'src/python/WMCore/WMBS/SQLite':'metson',\
+        'src/python/WMCore/WMBS/SQLite/Workflow':'metson',\
+        'src/python/WMComponent/ErrorHandler/Handler':'fvlingen',\
+        'src/python/WMCore/Trigger/MySQL':'fvlingen',\
+        'src/python/WMCore/Services':'metson',\
+        'test/python/WMCore_t/WMRegistry_t':'fvlingen',\
+        'src/python/WMCore/DataStructs':'metson',\
+        'src/python/WMCore/Services/JSONParser':'metson',\
+        'src/python/WMCore/WMBS/Actions/Fileset':'metson',\
+        'src/python/WMCore/WMBS/Actions/Files':'metson',\
+        'src/python/WMCore/WMBS/Oracle':'metson',\
+        'test/python/WMComponent_t/ErrorHandler_t':'fvlingen',\
+        'test/python/WMCore_t/Agent_t':'fvlingen',\
+        'src/python/WMCore/WMBS/Actions/Subscriptions':'metson',\
+        'src/python/WMCore/WMBS/MySQL/Jobs':'metson',\
+        'src/python/WMCore/Services/Dashboard':'metson',\
+        'src/python/WMCore/WMBS/SQLite/Locations':'metson',\
+        'src/python/WMCore/Trigger':'fvlingen',\
+        'src/python/WMCore/WMBS/SQLite/Locations/Attic':'metson',\
+        'src/python/WMCore/Services/SiteDB':'metson',\
+        'src/python/WMCore/ThreadPool/MySQL':'fvlingen',\
+        'src/python/WMCore/WMBS/SQLite/Subscriptions':'metson',\
+        'test/python/WMCore_t/Database_t':'metson',\
+        'src/python/WMCore/WMBS/Attic':'metson',\
+}
 
-code = Code(qualityScript, qualityReport, os.getenv('WMCOREBASE'), packages, threshold)
+code = Code(qualityScript, qualityReport, os.getenv('WMCOREBASE'), threshold, packages)
 code.run()
 code.summaryText()
+        

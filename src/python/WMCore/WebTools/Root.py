@@ -9,8 +9,8 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.12 2009/01/26 23:45:17 rpw Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Root.py,v 1.13 2009/02/02 12:07:02 metson Exp $"
+__version__ = "$Revision: 1.13 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
@@ -37,8 +37,6 @@ class Root(WMObject):
         self.config = config.section_("Webtools")
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
-        #self.configureCherryPy()
-        #self.loadPages()
  
     def configureCherryPy(self):
         #Configure CherryPy
@@ -83,46 +81,51 @@ class Root(WMObject):
 
     def loadPages(self):
         factory = WMFactory('webtools_factory')
-
+        
+        globalconf = self.appconfig.dictionary_()
+        del globalconf['views'] 
+        del globalconf['index']
+         
         for view in self.appconfig.views.active:
+            #Iterate through each view's configuration and instantiate the class
             config = Configuration()
             component = config.component_(view._internal_name)
             component.application = self.config.application
-            
-            if hasattr(self.appconfig, 'templates'):
-                component.templates = self.appconfig.templates
-            if hasattr(self.appconfig, 'database'):
-                component.database = self.appconfig.database
+            for k in globalconf.keys():
+                # Add the global config to the view
+                component.__setattr__(k, globalconf[k])
             
             dict = view.dictionary_()
             for k in dict.keys():
                 component.__setattr__(k, dict[k])
-            
-            log("loading %s" % view._internal_name, context=self.app, 
+            # component now contains the full configuration (global + view)  
+            # use this throughout 
+            log("loading %s" % component._internal_name, context=self.app, 
                 severity=logging.INFO, traceback=False)
             
-            log("configuration for %s: %s" % (view._internal_name, view), 
-                context=self.app, 
-                severity=logging.INFO, traceback=False)
-            
-            if hasattr(view, 'database'):
-                log("loading database for %s" % (view._internal_name), 
+            log("configuration for %s: %s" % (component._internal_name, 
+                                      component), 
+                                      context=self.app, 
+                                      severity=logging.INFO, traceback=False)
+                        
+            if hasattr(component, 'database'):
+                log("loading database for %s" % (component._internal_name), 
                     context=self.app, 
                 severity=logging.INFO, traceback=False)
-                view.database = self.loadDatabase(view)
+                component.database = self.loadDatabase(component)
         
-            log("Loading %s" % (view._internal_name), 
+            log("Loading %s" % (component._internal_name), 
                                 context=self.app,
                                 severity=logging.DEBUG, 
                                 traceback=False)
             # Load the object
-            obj = factory.loadObject(view.object, component)
-            # Attach the object to cherrypy's root, at the name of the view 
-            eval(compile("self.%s = obj" % view._internal_name, '<string>', 'single'))
-        
-            log("%s available on %s/%s" % (view._internal_name, 
+            obj = factory.loadObject(component.object, component)
+            # Attach the object to cherrypy's root, at the name of the component 
+            eval(compile("self.%s = obj" % component._internal_name, 
+                            '<string>', 'single'))        
+            log("%s available on %s/%s" % (component._internal_name, 
                                            server.base(), 
-                                           view._internal_name), 
+                                           component._internal_name), 
                                            context=self.app, 
                                            severity=logging.INFO, 
                                            traceback=False)
@@ -132,18 +135,22 @@ class Root(WMObject):
             pass
     
     def loadDatabase(self, configSection):
-        dblist = []
-        if hasattr(configSection, 'database'):
-            #Configure the database if needed, replace with thread style?
-            for dburl in self.makelist(configSection.database):
-                try:
-                    conn = DBFactory(log.error_log, dburl).connect()
-                    daofactory = DAOFactory(package=self.app, logger=log.error_log, dbinterface=conn)
-                except:
-                    log("Cannot connect to %s" % config['database'], context=self.app, 
-                        severity=logging.WARNING, traceback=False)
-    
-        return self.flatten(dblist)
+        #TODO: allow a configSection to contain a DBInterface
+#        dblist = []
+#        if hasattr(configSection, 'database'):
+#            #Configure the database if needed, replace with thread style?
+#            for dburl in self.makelist(configSection.database):
+#                try:
+#                    conn = DBFactory(log.error_log, dburl).connect()
+#                    print "\n \t database connection: \n\t\t%s \n" % type(conn) 
+#                    dblist.append(conn)
+#                    #TODO: Decide how to deal with DAO
+#                    #daofactory = DAOFactory(package=self.app, logger=log.error_log, dbinterface=conn)
+#                except:
+#                    log("Cannot connect to %s" % config['database'], context=self.app, 
+#                        severity=logging.WARNING, traceback=False)
+
+        return self.flatten(self.makelist(configSection.database))
     
     @expose
     def index(self):
@@ -169,4 +176,3 @@ if __name__ == "__main__":
     root.configureCherryPy()
     root.loadPages()
     quickstart(root)
-    #quickstart(Root(cfg))

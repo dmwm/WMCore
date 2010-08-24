@@ -119,17 +119,28 @@ class Base_t():
         pass
 
     
-    def perfTest(self, dao, action, execinput=''):
+    def perfTest(self, dao, action, **input):
         """
         Method that executes a dao class operation and measures its
         execution time.
         
         """
-        
         #Test each of the DAO classes of the specific WMBS class directory        
+        action = dao(classname=action)
+        string = ""
+        for i in input.keys():
+            if type(input[i]) == type('string'):
+                string = "%s %s='%s'," % (string, i, input[i])
+            else:
+                string = "%s %s=%s," % (string, i, input[i])
+        string = string.strip()
+        string = string.rstrip(",")
+        string = "action.execute(%s)" % string
+        self.logger.debug('the final string: %s' % string)
         startTime = time.time()               
         #Place execute method of the specific classname here
-        dao(classname=action).execute(execinput)
+        #string = compile(string)
+        eval(string)
         endTime = time.time()
         diffTime = endTime - startTime
         

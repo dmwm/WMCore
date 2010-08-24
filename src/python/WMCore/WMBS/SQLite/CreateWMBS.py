@@ -4,7 +4,7 @@ _CreateWMBS_
 Implementation of CreateWMBS for SQLite.
 """
 
-__revision__ = "$Id: CreateWMBS.py,v 1.10 2008/09/18 22:34:40 metson Exp $"
+__revision__ = "$Id: CreateWMBS.py,v 1.11 2008/09/19 16:32:42 metson Exp $"
 __version__ = "$Reivison: $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -141,6 +141,7 @@ class CreateWMBS(CreateWMBSBase):
              jobgroup    INT(11)   NOT NULL,
              start       INT(11),
              completed   INT(11),
+             retries     INT(11),
              last_update TIMESTAMP NOT NULL,
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE)"""

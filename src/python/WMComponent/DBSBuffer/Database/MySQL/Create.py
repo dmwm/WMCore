@@ -4,7 +4,7 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2008/10/10 21:41:00 afaq Exp $"
+__revision__ = "$Id: Create.py,v 1.3 2008/10/15 08:34:41 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -28,17 +28,7 @@ class Create(DBCreator):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
 
-	self.create["TR_dbsbuf_file_lud"]=\
-                """CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuf_file
-                        FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
-
-        self.create["TR_dbsbuf_ds_lud"]=\
-                """CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuf_dataset
-                        FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
-
-	return
-
-	self.create["dbsbuf_dataset"] = \
+	self.create["01dbsbuf_dataset"] = \
                 """CREATE TABLE dbsbuffer_dataset
 			(
 			   ID     BIGINT UNSIGNED not null auto_increment,
@@ -47,7 +37,7 @@ class Create(DBCreator):
 			   primary key(ID)	
 			) ENGINE=InnoDB"""
 
-        self.create["dbsbuf_file"] = \
+        self.create["02dbsbuf_file"] = \
 		"""CREATE TABLE dbsbuffer_file
 			( 
 			    ID                    BIGINT UNSIGNED not null auto_increment,
@@ -78,13 +68,15 @@ class Create(DBCreator):
 	#	"""CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuf_dataset
 	#		FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
 	
-	self.create["TR_dbsbuf_file_lud"]=\
+	self.create["03TR_dbsbuf_file_lud"]=\
                 """CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuf_file
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
 
-        self.create["TR_dbsbuf_ds_lud"]=\
+        self.create["04TR_dbsbuf_ds_lud"]=\
                 """CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuf_dataset
                         FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
+
+	self.create.sort()
 
 
         

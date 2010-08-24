@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: File_t.py,v 1.3 2008/11/20 16:41:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: File_t.py,v 1.4 2008/11/25 17:18:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import logging
@@ -34,7 +34,7 @@ class File_t(unittest.TestCase):
         _setUp_
 
         Setup the database and logging connection.  Try to create all of the
-        WMBS tables.
+        WMBS tables.  Also add some dummy locations.
         """
         if self._setup:
             return
@@ -247,6 +247,8 @@ class File_t(unittest.TestCase):
         """
         _testAddChild_
 
+        Add a child to some parent files and make sure that all the parentage
+        information is loaded/stored correctly from the database.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, run = 1, lumi = 45)
@@ -303,6 +305,30 @@ class File_t(unittest.TestCase):
 
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"    
+
+    def testLocationsConstructor(self):
+        """
+        _testLocationsConstructor_
+
+        Test to make sure that locations passed into the File() constructor
+        are loaded from and save to the database correctly.
+        """
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                        run = 1, lumi = 45, locations = Set(["se1.fnal.gov"]))
+        testFileA.create()
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.load()
+
+        goldenLocations = ["se1.fnal.gov"]
+
+        for location in testFileB["locations"]:
+            assert location in goldenLocations, \
+                   "ERROR: Unknown file location"
+            goldenLocations.remove(location)
+
+        assert len(goldenLocations) == 0, \
+              "ERROR: Some locations are missing"            
 
 if __name__ == "__main__":
     unittest.main() 

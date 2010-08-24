@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.6 2008/10/07 13:54:05 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Harness_t.py,v 1.7 2008/10/13 20:13:14 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -150,8 +150,14 @@ class HarnessTest(unittest.TestCase):
             testComponent.handleMessage('TestComponent:Logging.ERROR','')
             testComponent.handleMessage('TestComponent:Logging.INFO','')
             testComponent.handleMessage('TestComponent:Logging.SQLDEBUG','')
-
-       
+            # test a non existing message (to generate an error)
+            errorMsg = ''
+            try:
+                testComponent.handleMessage('NonExistingMessageType','')
+            except Exception,ex:
+                errorMsg = str(ex)
+            assert errorMsg.startswith('Message NonExistingMessageType with payload')
+                 
         # try starting a component as a deamon:
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing

@@ -16,6 +16,7 @@ echo "-->Granting access to user for testing"
 # granting access
 mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "${SQLCREATE}"
 mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "create database ${DBNAME}"
+mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "${GRANTSUPER}"
 
 # ADD BELOW OTHER DATABASES IF NEEDED FOR MYSQL BACKEND TESTS.
 mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "${PROXYCREATE}"

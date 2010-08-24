@@ -9,6 +9,8 @@ then
     echo '-->Using mysql DB: ' $DATABASE
     mysql -u $DBMASTERUSER --password=$DBMASTERPASS --socket=$DBSOCK --exec "${SQLCREATE}"
     mysql -u $DBMASTERUSER --password=$DBMASTERPASS --socket=$DBSOCK --exec "create database ${DBNAME}"
+    echo '-->Granting super '
+    mysql -u $DBMASTERUSER --password=$DBMASTERPASS --socket=$DBSOCK --exec "${GRANTSUPER}"
 
     mysql -u $DBMASTERUSER --password=$DBMASTERPASS --socket=$DBSOCK --exec "drop database ${PROXYDB}"
     echo '-->Using mysql DB: ' $PROXYDATABASE
@@ -20,6 +22,8 @@ else
     echo '-->Using mysql DB: ' $DATABASE
     mysql -u $DBMASTERUSER --password=$DBMASTERPASS -h $DBHOST --exec "${SQLCREATE}"
     mysql -u $DBMASTERUSER --password= $DBMASTERPASS -h $DBHOST --exec "create database ${DBNAME}"
+    echo '-->Granting super '
+    mysql -u $DBMASTERUSER --password= $DBMASTERPASS -h $DBHOST --exec "${GRANTSUPER}"
 
     mysql -u $DBMASTERUSER --password=$DBMASTERPASS -h $DBHOST --exec "drop database ${PROXYDB}"
     echo '-->Using mysql DB: ' $PROXYDATABASE

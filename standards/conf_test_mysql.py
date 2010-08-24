@@ -29,7 +29,7 @@ tests = [\
      (ConfigurationTest(),'fvlingen'),\
      (DBFormatterTest(),'fvlingen'),\
      (HarnessTest(),'fvlingen'),\
-     (DBSBufferTest(),'afaq'),\
+     #(DBSBufferTest(),'afaq'),\
      (ErrorHandlerTest(),'fvlingen'),\
      (MsgServiceTest(),'fvlingen'),\
      (ProxyTest(),'fvlingen'),\

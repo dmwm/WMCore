@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.10 2008/10/07 13:54:04 fvlingen Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Harness.py,v 1.11 2008/10/13 20:13:14 fvlingen Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -231,19 +231,11 @@ class Harness:
     def __call__(self, event, payload):
         """
         Loads the correct handler and performs the apropiate actions
+        Note that it is possible for developers to overload the 
+        diagnostic messages. That is they can augment the functionality.
         """
         compName = self.config.Agent.componentName
-        # check if it is not a diagnostic event.
-        if not event in self.diagnosticMessages:
-            if not event in self.messages.keys():
-                msg = """
-Message %s with payload: %s has no handler in this component.
-I am going to throw a fatal error! The following message subscriptions 
-which have a handler, have been found: diagnostic: %s and component specific: %s 
-                """ % (event, payload, str(self.diagnosticMessages), \
-                str(self.messages.keys()))
-                logging.critical(msg)
-                raise Exception(msg)
+        if event in self.messages.keys():
             handler = self.messages[event]
             logging.debug("Retrieving Handler for event: "+event)
             logging.debug("Executing Payload " + str(payload))
@@ -251,7 +243,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             logging.debug("Event " + str(event) + " successfully handled")
         # diagnostics are tiny operations so we put them here rather 
         # than in separate handlers
-        else:
+        if event in self.diagnosticMessages:
             if(event.startswith(compName+':Logging')  or
                 event.startswith('Logging') ):
                 logLevel = event.split('.')[-1]
@@ -260,6 +252,17 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             elif(event == compName+':LogState') or \
                 (event == 'LogState'):
                 logging.info(str(self))
+        # if there is no handler, throw an error.
+        if not event in self.diagnosticMessages and \
+            not event in self.messages.keys():
+                msg = """Message %s with payload: %s 
+has no handler in this component.
+I am going to throw a fatal error! The following message subscriptions 
+which have a handler, have been found: diagnostic: %s and component specific: %s 
+                """ % (event, payload, str(self.diagnosticMessages), \
+                str(self.messages.keys()))
+                logging.critical(msg)
+                raise Exception(msg)
 
     def initialization(self):
         """

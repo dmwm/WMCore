@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.4 2008/05/12 11:58:07 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: File.py,v 1.5 2008/05/29 14:43:55 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 class File(object):
     """
@@ -40,6 +40,20 @@ class File(object):
         """
         return self.lfn, self.id, self.size, self.events, self.run, \
                                     self.lumi, list(self.locations), list(self.parents)
+                                    
+    def getParentLFNs(self):
+        """
+        get a flat list of parent LFN's
+        """
+        result = []
+        parents = self.parents
+        while parents:
+            result.extend([x.lfn for x in parents])
+            temp = []
+            for parent in parents:
+                temp.extend(parent.parents)
+            parents = temp
+        return result
     
     def load(self, parentage=0):
         """
@@ -66,11 +80,19 @@ class File(object):
         return self
 
 
-    def __eq__(self, rhs):
-        """
-        Are objects the same, go from lfn
-        """
-        return self.lfn == rhs.lfn
+#    def __eq__(self, rhs):
+#        """
+#        Are objects the same, go from lfn
+#        """
+#        return self.lfn == rhs.lfn
+#    
+#    def __ne__(self, rhs):
+#        return not self.__eq__(rhs)
     
-    def __ne__(self, rhs):
-        return not self.__eq__(rhs)
+    def __cmp__(self, rhs):
+        """
+        Sort files in run number and lumi section order
+        """
+        if self.run == rhs.run:
+            return cmp(self.lumi, rhs.lumi)
+        return cmp(self.run, rhs.run)

@@ -11,7 +11,7 @@ __revision__ = "$Id:"
 __version__ = "$Revision:"
 
 import cherrypy
-from services.rest.RestServer import RestServer
+from WMCore.HTTPFrontEnd.REST.services.rest.RestServer import RestServer
 
 # test model and formatter
 from WMCore.HTTPFrontEnd.REST.services.test.TestModel import TestModel

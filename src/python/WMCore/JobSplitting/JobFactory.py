@@ -1,3 +1,4 @@
+import logging
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -29,13 +30,24 @@ class JobFactory(WMObject):
         group = group_instance(subscription = self.subscription)
         
         basename = "%s-%s" % (self.subscription.name(), group.id)
+
+        logging.debug("A")
         
         jobs = self.algorithm(job_instance=job_instance, jobname=basename,
                                   *args, **kwargs)
+
+        logging.debug("B")
+        
         group.add(jobs)
+
+        logging.debug("C")
+        
         # Acquire the files used in the job group, job groups should run on 
         # complete files.
         group.recordAcquire(list(jobs))
+
+        logging.debug("D")
+        
         return group
     
     def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):

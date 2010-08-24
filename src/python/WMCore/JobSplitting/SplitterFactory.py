@@ -1,4 +1,8 @@
+
 from WMCore.DataStructs.WMObject import WMObject
+
+import logging
+
 class SplitterFactory(WMObject):
     """
     A splitter factory is called with a subscription. From that subscription it
@@ -17,7 +21,7 @@ class SplitterFactory(WMObject):
         run that algorithm on subscription
         """
         algorithm = subscription['split_algo']
-        
+
         module = "%s.%s" % (self.package, algorithm)
         module = __import__(module, globals(), locals(), [algorithm])#, -1)
         splitter = getattr(module, algorithm.split('.')[-1])

@@ -7,8 +7,8 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2008/09/04 14:32:07 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2008/12/11 09:06:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import threading
@@ -40,7 +40,7 @@ CREATE TABLE tp_threadpool(
    thread_pool_id          varchar(255) NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) TYPE=InnoDB;
+   ) ENGINE=InnoDB;
 """
         self.create['threadpool_buffer_in'] = """      
 CREATE TABLE tp_threadpool_buffer_in(
@@ -51,7 +51,7 @@ CREATE TABLE tp_threadpool_buffer_in(
    thread_pool_id          varchar(255) NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) TYPE=InnoDB;
+   ) ENGINE=InnoDB;
 """
         self.create['threadpool_buffer_out'] = """      
 CREATE TABLE tp_threadpool_buffer_out(
@@ -62,6 +62,6 @@ CREATE TABLE tp_threadpool_buffer_out(
    thread_pool_id          varchar(255) NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) TYPE=InnoDB;
+   ) ENGINE=InnoDB;
 """
  

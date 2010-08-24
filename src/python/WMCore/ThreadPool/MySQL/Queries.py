@@ -8,9 +8,9 @@ This module implements the mysql backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.4 2008/09/30 18:25:39 fvlingen Exp $"
+    "$Id: Queries.py,v 1.5 2008/12/11 09:06:11 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.4 $"
+    "$Revision: 1.5 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -210,7 +210,7 @@ CREATE TABLE %s(
    payload                 text         NOT NULL,
    state                 enum('queued','process') default 'queued',
    primary key(id)
-   ) TYPE=InnoDB; """ % (threadpool)
+   ) ENGINE=InnoDB; """ % (threadpool)
 
         self.execute(sqlStr, {})
 

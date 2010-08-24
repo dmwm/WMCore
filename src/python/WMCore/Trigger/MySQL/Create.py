@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2008/09/09 13:50:36 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2008/12/11 09:06:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import threading
@@ -38,7 +38,7 @@ CREATE TABLE tr_trigger(
    time timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
    UNIQUE(id,trigger_id,flag_id),
    INDEX(trigger_id)
-   ) TYPE=InnoDB;
+   ) ENGINE=InnoDB;
 """
         self.create['b_tr_trigger'] = """
 CREATE TABLE tr_action(
@@ -50,6 +50,6 @@ CREATE TABLE tr_action(
    action_name VARCHAR(255) NOT NULL,
    payload text,
    UNIQUE(id,trigger_id)
-   ) TYPE=InnoDB;
+   ) ENGINE=InnoDB;
 """
  

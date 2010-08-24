@@ -19,8 +19,8 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.15 2008/08/09 22:22:17 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Subscription.py,v 1.16 2008/08/13 15:16:30 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -49,7 +49,8 @@ class Subscription(BusinessObject, WMSubscription):
                            workflow = self.workflow.id)
             
         except IntegrityError:
-            self.logger.exception('Subcription %s:%s exists' % (self.fileset, self.workflow))
+            self.logger.exception('Subcription %s:%s exists' % (self.fileset, 
+                                                                self.workflow))
         
         action = self.daofactory(classname="Subscriptions.Exists")
         for i in action.execute(fileset = self.fileset.id, 

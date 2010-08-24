@@ -40,59 +40,64 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.12 2009/01/06 15:55:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobGroup.py,v 1.13 2009/01/11 17:53:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
-from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.Services.UUID import makeUUID
 
 from sets import Set
-import threading
 
-class JobGroup(WMJobGroup):
+class JobGroup(WMBSBase, WMJobGroup):
     """
     A group (set) of Jobs
     """
     def __init__(self, subscription = None, jobs=None, id = -1, uid = None):
+        WMBSBase.__init__(self)
         WMJobGroup.__init__(self, subscription=subscription, jobs = jobs)
 
-        myThread = threading.currentThread()
-        self.logger = myThread.logger
-        self.dialect = myThread.dialect
-        self.dbi = myThread.dbi
-        self.daofactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = self.logger,
-                                     dbinterface = self.dbi)
-                                        
         self.id = id
+
         if uid == None:
             self.uid = makeUUID()
         else:
             self.uid = uid
-            
+
+        return
+    
     def create(self):
         """
         Add the new jobgroup to WMBS, create the output Fileset object
         """
+        self.beginTransaction()
+        
         self.groupoutput = Fileset(name = makeUUID())
         self.groupoutput.create()
 
-        action = self.daofactory(classname='JobGroup.New')
-        self.id, self.uid = action.execute(self.uid, self.subscription["id"],
-                                           self.groupoutput.id)
-
+        action = self.daofactory(classname="JobGroup.New")
+        action.execute(self.uid, self.subscription["id"],
+                       self.groupoutput.id, conn = self.getWriteDBConn(),
+                       transaction = self.existingTransaction())
+        
+        self.id = self.exists()
+        self.commitIfNew()
         return
 
     def delete(self):
         """
         Remove a jobgroup from WMBS
         """
-        self.daofactory(classname='JobGroup.Delete').execute(id = self.id)
+        deleteAction = self.daofactory(classname = "JobGroup.Delete")
+        deleteAction.execute(id = self.id, conn = self.getWriteDBConn(),
+                             transaction = self.existingTransaction())
+
+        self.commitIfNew()
+        return
 
     def exists(self):
         """
@@ -100,22 +105,32 @@ class JobGroup(WMJobGroup):
         return the id
         """
         if self.id != -1:
-            action = self.daofactory(classname='JobGroup.ExistsByID')
-            return action.execute(id = self.id)
+            action = self.daofactory(classname = "JobGroup.ExistsByID")
+            return action.execute(id = self.id, conn = self.getReadDBConn(),
+                                  transaction = self.existingTransaction())
         else:
-            action = self.daofactory(classname='JobGroup.Exists')
-            return action.execute(uid = self.uid)
+            action = self.daofactory(classname = "JobGroup.Exists")
+            return action.execute(uid = self.uid, conn = self.getReadDBConn(),
+                                  transaction = self.existingTransaction())
     
     def load(self):
         """
         Load the JobGroup from the database
         """
         if self.id == -1:
-            self.id = self.daofactory(classname='JobGroup.LoadIDFromUID').execute(self.uid)
+            idAction = self.daofactory(classname = "JobGroup.LoadIDFromUID")
+            self.id = idAction.execute(self.uid, conn = self.getReadDBConn(),
+                                       transaction = self.existingTransaction())
             
-        subID = self.daofactory(classname='JobGroup.LoadSubscription').execute(self.id)
-        jobIDs = self.daofactory(classname='JobGroup.LoadJobs').execute(self.id)
-        outputID = self.daofactory(classname='JobGroup.LoadOutput').execute(self.id)
+        subAction = self.daofactory(classname = "JobGroup.LoadSubscription")
+        subID = subAction.execute(self.id, conn = self.getReadDBConn(),
+                                  transaction = self.existingTransaction())
+        jobAction = self.daofactory(classname = "JobGroup.LoadJobs")
+        jobIDs = jobAction.execute(self.id, conn = self.getReadDBConn(),
+                                   transaction = self.existingTransaction())
+        outputAction = self.daofactory(classname = "JobGroup.LoadOutput")
+        outputID = outputAction.execute(self.id, conn = self.getReadDBConn(),
+                                        transaction = self.existingTransaction())
 
         self.subscription = Subscription(id = subID)
         self.subscription.load()
@@ -137,19 +152,17 @@ class JobGroup(WMJobGroup):
         Write any new jobs to the database, creating them in the database if
         necessary.
         """
-        trans = Transaction(dbinterface = self.dbi)
-        try:
-            for j in self.newjobs:
-                j.create(group=self)
-                j.associateFiles()
+        self.beginTransaction()
+        
+        for j in self.newjobs:
+            j.create(group=self)
+            j.associateFiles()
             
-            WMJobGroup.commit(self)
-            trans.commit()
-        except Exception, e:
-            trans.rollback()
-            raise e
+        WMJobGroup.commit(self)
+        self.commitIfNew()
+        return
     
-    def status(self, detail=False):
+    def status(self, detail = False):
         """
         The status of the job group is the sum of the status of all jobs in the
         group.
@@ -159,10 +172,11 @@ class JobGroup(WMJobGroup):
         statuses.
         
         return: ACTIVE, COMPLETE, FAILED
-        """        
-        
-        av, ac, fa, cm = \
-                self.daofactory(classname='JobGroup.Status').execute(self.id)
+        """
+        statusAction = self.daofactory(classname = "JobGroup.Status")
+        av, ac, fa, cm = statusAction.execute(self.id,
+                                              conn = self.getReadDBConn(),
+                                              transaction = self.existingTransaction())
     
         total = av + ac + fa + cm
         

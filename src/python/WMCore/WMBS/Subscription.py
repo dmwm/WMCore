@@ -20,64 +20,43 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.25 2009/01/02 19:25:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
-
-import threading
+__revision__ = "$Id: Subscription.py,v 1.26 2009/01/11 17:53:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from sets import Set
-from sqlalchemy.exceptions import IntegrityError
+
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Actions.Subscriptions.ChangeState import ChangeStateAction
+from WMCore.WMBS.WMBSBase import WMBSBase
+
 from WMCore.DataStructs.Subscription import Subscription as WMSubscription
-from WMCore.DAOFactory import DAOFactory
 
-class Subscription(WMSubscription):
+class Subscription(WMBSBase, WMSubscription):
     def __init__(self, fileset = None, workflow = None, id = -1,
-                 whitelist = None, blacklist = None, type = "Processing",
-                 split_algo = "FileBased"): 
+                 whitelist = None, blacklist = None, split_algo = "FileBased",
+                 type = "Processing"):
+        WMBSBase.__init__(self)
+        WMSubscription.__init__(self, fileset = fileset, workflow = workflow,
+                                whitelist = whitelist, blacklist = blacklist,
+                                split_algo = split_algo, type = type)
 
-        if whitelist == None:
-            whitelist = Set()
-        if blacklist == None:
-            blacklist = Set()
-
-        myThread = threading.currentThread()
-        self.logger = myThread.logger
-        self.dialect = myThread.dialect
-        self.dbi = myThread.dbi
-        self.daofactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = self.logger,
-                                     dbinterface = self.dbi)
-        
-        self.setdefault('fileset', fileset)
-        self.setdefault('workflow', workflow)
-        self.setdefault('type', type)
-        self.setdefault('split_algo', split_algo)
-        self.setdefault('id', id)
-        self.setdefault('whitelist', whitelist)
-        self.setdefault('blacklist', blacklist)
+        self.setdefault("id", id)
+        return
         
     def create(self):
         """
         Add the subscription to the database
         """
-        try:
-            action = self.daofactory(classname="Subscriptions.New")
-            action.execute(fileset = self["fileset"].id, 
-                           type = self["type"], split = self["split_algo"],
-                           workflow = self["workflow"].id)
+        action = self.daofactory(classname="Subscriptions.New")
+        action.execute(fileset = self["fileset"].id, type = self["type"],
+                       split = self["split_algo"],
+                       workflow = self["workflow"].id,
+                       conn = self.getWriteDBConn(),
+                       transaction = self.existingTransaction())
             
-        except IntegrityError:
-            self.logger.exception('Subcription %s:%s exists' % (self['fileset'], 
-                                                                self['workflow']))
-        
-        action = self.daofactory(classname="Subscriptions.Exists")
-        self['id'] = action.execute(fileset = self['fileset'].id, 
-                                    type = self['type'],
-                                    workflow = self['workflow'].id)
+        self["id"] = self.exists()
+        self.commitIfNew()
         return
     
     def exists(self):
@@ -85,9 +64,11 @@ class Subscription(WMSubscription):
         See if the subscription is in the database
         """
         action = self.daofactory(classname="Subscriptions.Exists")
-        value = action.execute(fileset = self["fileset"].id, 
+        value = action.execute(fileset = self["fileset"].id,
                                type = self["type"],
-                               workflow = self["workflow"].id)
+                               workflow = self["workflow"].id,
+                               conn = self.getReadDBConn(),
+                               transaction = self.existingTransaction())
         return value
     
     def load(self):
@@ -95,25 +76,26 @@ class Subscription(WMSubscription):
         _load_
 
         """
+        fileset = None
         if self["fileset"] != None:
-            fileset = self["fileset"].id
-        else:
-            fileset = None
+            if "id" in dir(self["fileset"]):
+                fileset = self["fileset"].id
 
         if self["workflow"] != None:
             workflow = self["workflow"].id
         else:
             workflow = None
 
-        action = self.daofactory(classname='Subscriptions.Load')
-        result = action.execute(fileset = fileset,
-                                workflow = workflow,
-                                id = self["id"], 
-                                type = self['type'])
+        action = self.daofactory(classname = "Subscriptions.Load")
+        result = action.execute(fileset = fileset, workflow = workflow,
+                                id = self["id"], type = self["type"],
+                                conn = self.getReadDBConn(),
+                                transaction = self.existingTransaction())
         
         if not result:
             raise RuntimeError, "Subscription for %s:%s unknown" % \
                                     (self['fileset'].name, self['workflow'].spec)
+        
         self['fileset'] = Fileset(id = result['fileset']).load('Fileset.LoadFromID')
         self['workflow'] = Workflow(id = result['workflow'])
         self["workflow"].load(method = 'Workflow.LoadFromID')
@@ -121,38 +103,38 @@ class Subscription(WMSubscription):
         self['type'] = result['type']
         self['id'] = result['id']
         self.split_algo = result['split_algo']
-
-        # load available files
-        # load acquired files
-        # load completed files
-        # load failed files
+        return
     
     def markLocation(self, location, whitelist = True):
         """
         Add a location to the subscriptions white or black list
         """
-        # Check the location exists, add it if not
-        try:
-            self.daofactory(classname='Locations.New').execute(location)
-        except IntegrityError:
-            # location exists, do nothing
-            pass
+        locationAction = self.daofactory(classname='Locations.New')
+        locationAction.execute(location, conn = self.getWriteDBConn(),
+                               transaction = self.existingTransaction())
         
         # Mark the location as appropriate
-        action = self.daofactory(classname='Subscriptions.MarkLocation')
-        action.execute(self['id'], location, whitelist)
+        action = self.daofactory(classname = "Subscriptions.MarkLocation")
+        action.execute(self["id"], location, whitelist,
+                       conn = self.getWriteDBConn(),
+                       transaction = self.existingTransaction())
+
+        self.commitIfNew()
+        return
           
-    def filesOfStatus(self, status=None):
+    def filesOfStatus(self, status = None):
         """
         fids will be a set of id's, we'll then load the corresponding file 
         objects.
         """
         files = Set()
-        action = self.daofactory(classname='Subscriptions.Get%s' % status)
-        for f in action.execute(self):
+        action = self.daofactory(classname = "Subscriptions.Get%s" % status)
+        for f in action.execute(self, conn = self.getReadDBConn(),
+                                transaction = self.existingTransaction()):
             fl = File(id=f[0])
             fl.load()
             files.add(fl)
+            
         return files 
     
     def acquireFiles(self, files = None, size = 0):
@@ -161,25 +143,30 @@ class Subscription(WMSubscription):
         acquire all files (default behaviour). Return a list of files objects 
         for those acquired.
         """
-        action = self.daofactory(classname='Subscriptions.AcquireFiles')
+        action = self.daofactory(classname = "Subscriptions.AcquireFiles")
         if files:
             files = self.makelist(files)
-            action.execute(self['id'], [x['id'] for x in files])
+            action.execute(self['id'], [x['id'] for x in files],
+                           conn = self.getWriteDBConn(),
+                           transaction = self.existingTransaction())
+            self.commitIfNew()
             return files
-        else:
-            acq = self.acquiredFiles()
-            files = self.availableFiles()
-            l = Set()
-            if len(files) < size or size == 0:
-                size = len(files)
-            i = 0
-            while i < size:
-                l.add(files.pop()['id'])
-                i = i + 1
-            action.execute(self['id'], [x for x in l])
-            ret = self.acquiredFiles() - acq
-            
-            return ret
+        
+        acq = self.acquiredFiles()
+        files = self.availableFiles()
+        l = Set()
+        if len(files) < size or size == 0:
+            size = len(files)
+        i = 0
+        while i < size:
+            l.add(files.pop()['id'])
+            i = i + 1
+        action.execute(self['id'], [x for x in l], conn = self.getWriteDBConn(),
+                       transaction = self.existingTransaction())
+        ret = self.acquiredFiles() - acq
+
+        self.commitIfNew()
+        return ret
     
     def completeFiles(self, files):
         """
@@ -187,10 +174,20 @@ class Subscription(WMSubscription):
         """
         if files and not isinstance(files, list) and not isinstance(files, set):
             files = [files]
-        statechanger = ChangeStateAction(self.logger)
-        statechanger.execute(subscription = self['id'], 
-                                  file = [x['id'] for x in files], 
-                                  daofactory = self.daofactory)
+
+        completeAction = self.daofactory(classname = "Subscriptions.CompleteFiles")
+        completeAction.execute(subscription = self["id"],
+                               file = [x["id"] for x in files],
+                               conn = self.getWriteDBConn(),
+                               transaction = self.existingTransaction())
+        deleteAction = self.daofactory(classname = "Subscriptions.DeleteAcquiredFiles")
+        deleteAction.execute(subscription = self["id"],
+                             file = [x["id"] for x in files],
+                             conn = self.getWriteDBConn(),
+                             transaction = self.existingTransaction())
+
+        self.commitIfNew()
+        return
     
     def failFiles(self, files):
         """
@@ -198,17 +195,30 @@ class Subscription(WMSubscription):
         """
         if files and not isinstance(files, list) and not isinstance(files, set):
             files=[files]
-        statechanger = ChangeStateAction(self.logger)
-        statechanger.execute(subscription = self['id'], 
-                                  file = [x['id'] for x in files], 
-                                  state = "FailFiles",
-                                  daofactory = self.daofactory)
 
+        failAction = self.daofactory(classname = "Subscriptions.FailFiles")
+        failAction.execute(subscription = self["id"],
+                           file = [x["id"] for x in files],
+                           conn = self.getWriteDBConn(),
+                           transaction = self.existingTransaction())
+        deleteAction = self.daofactory(classname = "Subscriptions.DeleteAcquiredFiles")
+        deleteAction.execute(subscription = self["id"],
+                             file = [x["id"] for x in files],
+                             conn = self.getWriteDBConn(),
+                             transaction = self.existingTransaction())
+
+        self.commitIfNew()
+        return
+    
     def getJobs(self):
         """
         Return a list of all the jobs associated with a subscription
         """
-        return self.daofactory(classname='Subscriptions.Jobs')
+        jobsAction = self.daofactory(classname = "Subscriptions.Jobs")
+        jobs = jobsAction.execute(subscription = self["id"],
+                                  conn = self.getReadDBConn(),
+                                  transaction = self.existingTransaction())
+        return jobs
         
     def delete(self):
         """
@@ -216,4 +226,8 @@ class Subscription(WMSubscription):
 
         """
         action = self.daofactory(classname = "Subscriptions.Delete")
-        action.execute(id = self["id"])
+        action.execute(id = self["id"], conn = self.getWriteDBConn(),
+                       transaction = self.existingTransaction())
+
+        self.commitIfNew()
+        return

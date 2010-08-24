@@ -6,51 +6,15 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.1 2008/04/10 19:45:10 evansde Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBCore.py,v 1.2 2008/04/11 15:54:41 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from sqlalchemy.databases.mysql import MySQLDialect
 from sqlalchemy.databases.sqlite import SQLiteDialect 
 from sqlalchemy.databases.oracle import OracleDialect
-
-class wmbsSQLFactory(object):
-    """
-    _wmbsSQLFactory_
     
-    Factory to create WMBS instances. Could do something similar else where.
-
-    DAVE: Factor into WMBSFactory module??? How general is this???
-    
-    """
-    logger = ""
-    def __init__(self, logger):
-        self.logger = logger
-        self.logger.info("Instantiating WMBS SQL Factory")
-        
-    def connect (self, engine):
-        """
-        _connect_
-        
-        """
-        dia = engine.dialect
-        if isinstance(dia, OracleDialect):
-            from WMBSOracle import wmbsOracle
-            return wmbsOracle (self.logger, engine)
-        elif isinstance(dia, SQLiteDialect):
-            from WMBSSQLite import wmbsSQLite
-            return wmbsSQLite (self.logger, engine)
-        elif isinstance(dia, MySQLDialect):
-            from WMBSMySQL import wmbsMySQL
-            return wmbsMySQL (self.logger, engine)    
-        else:
-            "Could return the wmbsSQL object and hope that the connection"
-            "can handle it but that might be a bit dangerous!"
-            raise "unknown connection type"
-
-#Make a similar factory for T0AST?
-    
-class wmSQL(object):    
+class DBInterface(object):    
     """
     Base class for doing SQL operations using a SQLAlchemy engine, or
     pre-exisitng connection.
@@ -112,7 +76,8 @@ class wmSQL(object):
         
         TODO: convert resultset stuff into lists of tuples/dictionaries
         """
-        if not conn: conn = self.engine.connect()
+        if not conn: connection = self.engine.connect()
+        else: connection = conn
         result = []
         "Can take either a single statement or a list of staments and binds"
         if type(sqlstmt) == type("string") and binds is None:
@@ -120,29 +85,29 @@ class wmSQL(object):
             Should never get executed - should be using binds!!
             """
             self.logger.warning('%s is not using binds!!' % sqlstmt)
-            result.append(self.executebinds(sqlstmt, binds, connection=conn))            
+            result.append(self.executebinds(sqlstmt, binds, connectionection=connection))            
         elif type(sqlstmt) == type("string") and isinstance(binds, dict):
             # single statement plus binds
-            result.append(self.executebinds(sqlstmt, binds, connection=conn))
+            result.append(self.executebinds(sqlstmt, binds, connectionection=connection))
         elif type(sqlstmt) == type("string") and isinstance(binds, list):
             #Run single SQL statement for a list of binds
-            if not transaction: trans = conn.begin()
+            if not transaction: trans = connection.begin()
             try:
                 for b in binds:
                     result.append(self.executebinds(sqlstmt, b,
-                                                    connection=conn))
+                                                    connectionection=connection))
                 if not transaction: trans.commit()
             except Exception, e:
                 if not transaction: trans.rollback()
                 raise e
         elif isinstance(sqlstmt, list) and isinstance(binds, list) and len(binds) == len(sqlstmt):            
             # Run a list of SQL for a list of binds
-            if not transaction: trans = conn.begin()
+            if not transaction: trans = connection.begin()
             try:
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
                     result.append(self.executebinds(sqlstmt, b,
-                                                    connection=conn))
+                                                    connectionection=connection))
                 if not transaction: trans.commit()
             except Exception, e:
                 if not transaction: trans.rollback()
@@ -154,11 +119,12 @@ class wmSQL(object):
             self.logger.debug('binds are %s items long' % len(binds))
             self.logger.debug('are binds and sql same length? : %s' % (
                 len(binds) == len(sqlstmt)),)
-            self.logger.debug( sqlstmt, binds, conn, transaction)
+            self.logger.debug( sqlstmt, binds, connection, transaction)
             self.logger.debug( type(sqlstmt), type(binds),
                                type("string"), type({}),
-                               type(conn), type(transaction))
+                               type(connection), type(transaction))
             raise 'some clever exception type'
+        if not conn: connection.close() # Return connection to the pool
         if result:
             return result
         else: 

@@ -22,7 +22,7 @@ class Subscription_t(unittest.TestCase):
         _setUp_
 
         Setup the database and logging connection.  Try to create all of the
-        WMBS tables.
+        WMBS tables.  Also, create some dummy locations.
         """
         if self._setup:
             return
@@ -70,6 +70,8 @@ class Subscription_t(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
+        Create and delete a subscription and use the exists() method to
+        determine if the create()/delete() methods were successful.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -120,6 +122,8 @@ class Subscription_t(unittest.TestCase):
         """
         _testFailFiles_
 
+        Create a subscription and fail a couple of files in it's fileset.  Test
+        to make sure that only the failed files are marked as failed.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -171,6 +175,8 @@ class Subscription_t(unittest.TestCase):
         """
         _testCompleteFiles_
 
+        Create a subscription and complete a couple of files in it's fileset.  Test
+        to make sure that only the completed files are marked as complete.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -197,7 +203,6 @@ class Subscription_t(unittest.TestCase):
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
-
         testSubscription.completeFiles([testFileA, testFileC])
         completedFiles = testSubscription.filesOfStatus(status = "CompletedFiles")
 
@@ -222,6 +227,8 @@ class Subscription_t(unittest.TestCase):
         """
         _testAcquireFiles_
 
+        Create a subscription and acquire a couple of files in it's fileset.  Test
+        to make sure that only the acquired files are marked as acquired.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -268,6 +275,77 @@ class Subscription_t(unittest.TestCase):
         testFileB.delete()
         testFileC.delete()
         return
+
+    def testAvailableFiles(self):
+        """
+        _testAvailableFiles_
+
+        Create a subscription and mark a couple files as failed, complete and
+        acquired.  Test to make sure that the remainder of the files show up
+        as available.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
+                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
+                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+        testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
+                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        testFileD.create()
+        testFileE.create()
+        testFileF.create()        
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.addFile(testFileD)
+        testFileset.addFile(testFileE)
+        testFileset.addFile(testFileF)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testSubscription.acquireFiles([testFileA])
+        testSubscription.completeFiles([testFileB])
+        testSubscription.failFiles([testFileC])
+        availableFiles = testSubscription.availableFiles()
+
+        goldenFiles = [testFileD, testFileE, testFileF]
+        for availableFile in availableFiles:
+            assert availableFile in goldenFiles, \
+                   "ERROR: Unknown available file"
+            goldenFiles.remove(availableFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Missing available files"
+
+        testSubscription.delete()
+        testWorkflow.delete()
+        testFileset.delete()
+        testFileA.delete()
+        testFileB.delete()
+        testFileC.delete()
+        testFileD.delete()
+        testFileE.delete()
+        testFileF.delete()        
+        return    
     
     def testAvailableFilesWhiteList(self):
         """
@@ -394,7 +472,7 @@ class Subscription_t(unittest.TestCase):
                 testFile.setLocation("badse.cern.ch")
 
             testFileset.addFile(testFile)
-            
+           
         testFileset.commit()   
         testSubscription.markLocation("badse.cern.ch", whitelist = False)
         testSubscription.markLocation("goodse.cern.ch")
@@ -407,6 +485,8 @@ class Subscription_t(unittest.TestCase):
         """
         _testLoad_
 
+        Create a subscription and save it to the database.  Test the various
+        load methods to make sure that everything saves/loads.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")

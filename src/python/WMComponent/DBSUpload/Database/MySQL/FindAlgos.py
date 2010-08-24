@@ -5,8 +5,8 @@ _DBSUpload.FindAlgos_
 Find algos in datasets
 
 """
-__revision__ = "$Id: FindAlgos.py,v 1.2 2008/11/07 03:49:05 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FindAlgos.py,v 1.3 2008/11/18 23:25:29 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -37,8 +37,7 @@ class FindAlgos(DBFormatter):
 
     def execute(self, datasetInfo=None, conn=None, transaction = False):
         binds = self.getBinds(datasetInfo)
-        print "SQL: %s" %(self.sql)
-        print "BINDS: %s" %str(binds)
+        
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.format(result)

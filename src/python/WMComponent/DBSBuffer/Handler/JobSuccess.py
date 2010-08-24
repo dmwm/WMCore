@@ -4,8 +4,8 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.8 2008/11/11 19:47:49 afaq Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobSuccess.py,v 1.9 2008/11/18 23:25:28 afaq Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -87,8 +87,8 @@ class JobSuccess(BaseHandler):
         # and move to the next.
 
         jobReports = self.readJobReportInfo(payload)
-	factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
-	addToBuffer=factory.loadObject("AddToBuffer")
+        factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
+        addToBuffer=factory.loadObject("AddToBuffer")
 
         for aFJR in jobReports:
             l=0
@@ -96,21 +96,33 @@ class JobSuccess(BaseHandler):
             for aFile in aFJR.files:
                 if l==0:
                     l=1
-                    
-                    import pdb
-                    pdb.set_trace()
-                    
-                    print aFile.keys()
-                    addToBuffer.addDataset(aFile.dataset[0])
-    
-                    """
-				    print "Dataset Path : " + \
-					"/"+aFile.dataset[0]['PrimaryDataset']+ \
-					"/"+aFile.dataset[0]['ProcessedDataset']+ \
-					"/"+aFile.dataset[0]['DataTier']
-				    """
-                addToBuffer.addFile(aFile)
-            
+                    # This shouldn't be required any more
+                    # Dataset is being added with workflow spec
+                    for dataset in aFile.dataset:
+                        #Heck if it already exists in DBS Buffer
+                        addToBuffer.addAlgo(dataset)                    
+                        addToBuffer.addDataset(dataset, algoInDBS=0)
+
+                        """
+                        print "Dataset Path : " + \
+                        "/"+aFile.dataset[0]['PrimaryDataset']+ \
+                        "/"+aFile.dataset[0]['ProcessedDataset']+ \
+                        "/"+aFile.dataset[0]['DataTier']
+                        """
+
+                        #Lets see if ALGO info is present in the dataset
+                        #### Lets fake test it
+                        pset=aFile['PSetHash']="ABCDEFGHIJKL12345676"
+                        print "FAKING PSetHash in file <<<<<<<<<"
+                        if aFile['PSetHash'] != None:
+                            #Pass in the dataset, that contains all info about Algo
+                            # 
+                            addToBuffer.updateAlgo(dataset, pset)
+                print "\n\nDetermine if there can be more than one datasets in a File and which one to pick here"
+                dataset=aFile.dataset[0]
+                
+                addToBuffer.addFile(aFile, dataset)
+                
                 """
 			    print "\n\n\n"
                 print aFile['LFN']
@@ -123,8 +135,4 @@ class JobSuccess(BaseHandler):
 			    print aFile.getLumiSections()
 			    print "aFile['inputFiles']"
                 """
-			
-	# Now lets see if we can call the methods from Database/Interface
-	print "DONE! "
-    
-    
+                

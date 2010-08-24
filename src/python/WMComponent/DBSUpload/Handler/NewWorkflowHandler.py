@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.7 2008/11/11 19:27:58 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.8 2008/11/18 23:25:30 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -54,16 +54,9 @@ class NewWorkflowHandler(BaseHandler):
 
     def __call__(self, event, workflowFile):
         """
-        Extract relevant info from the WorkFlowSpecification and loop over Dataset
+        Extract relevant info from the WorkFlowSpecification and loop over Datasets
+        Store them in DBSBuffer database and create in DBS
         """
-        #Payload in this case is a workflow configuration.
-        #TODO: EXTRACT Dataset information and store it in database at this point ?
-        # OR just go ahead and create it in DBS ?
-        
-        
-        #factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
-        #dbinterface=factory.loadObject("UploadToDBS")
-        #datasets=dbinterface.findUploadableDatasets()
         #
         logging.debug("Reading the NewDataset event payload from WorkFlowSpec: ")
         workflowFile=string.replace(workflowFile,'file://','')
@@ -93,14 +86,7 @@ class NewWorkflowHandler(BaseHandler):
            for adataset in workflowSpec.payload._OutputDatasets:
                adataset['ParentDataset']=None
 
-        #createDatasets(workflowSpec)
-        #datasets = workflowSpec.outputDatasets()
-        datasets = workflowSpec.outputDatasetsWithPSet()
-
-        
-        import pdb
-        pdb.set_trace()
-        
+        datasets = workflowSpec.outputDatasetsWithPSet()        
         
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
         addToBuffer=factory.loadObject("AddToBuffer")
@@ -130,11 +116,12 @@ class NewWorkflowHandler(BaseHandler):
             print "\n\n\nATTENTION: PSetContent being trimmed for TESTING, please delete line above in real world\n\n\n"
             
             primary = DBSWriterObjects.createPrimaryDataset(dataset, dbswriter)
-            
+            algoInDBS=0 #Using binary values 0/1 
             if dataset['PSetHash'] != None:  #Which probably is not the case
                 algo = DBSWriterObjects.createAlgorithm(dataset, None, dbswriter)
-            else: algo = DbsAlgorithm()
-            
+                algoInDBS=1
+            else: algo = DBSWriterObjects.createAlgorithm(dataset) #Just create the object, do not upload in DBS
+                            
             processed = DBSWriterObjects.createProcessedDataset(
                 primary, algo, dataset, dbswriter)
             # RECORD ALGO in DBSBuffer, do not create in DBS if PSetHASH is not present
@@ -142,23 +129,14 @@ class NewWorkflowHandler(BaseHandler):
             #First ADD Algo (dataset object contains ALGO information)
             addToBuffer.addAlgo(dataset)
             #Than Add Processed Dataset
-            addToBuffer.addDataset(dataset)
-        
+            addToBuffer.addDataset(dataset, algoInDBS)
         #  //
         # //  Create Merged Datasets for that workflow as well
         #//
         #TODO: Investigate following ?????? (Merged datasets ?)
-        logging.info(">>>>> create Merged Dataset ???????????????  <<<<<<<<")
+        print ">>>>> create Merged Dataset ???????????????  <<<<<<<<"
         #dbswriter.createMergeDatasets(workflowSpec,getFastMergeConfig())
         #
-        #TODO: UPDATE DATASET STATUS in Database???
-        #Get the dataset PATH and then update the status in database
-        #Store the Algo/PSet information as well
-        
-        
-
-        
-
         return
 
 

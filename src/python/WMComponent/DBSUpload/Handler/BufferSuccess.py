@@ -4,8 +4,8 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.9 2008/11/11 19:47:49 afaq Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: BufferSuccess.py,v 1.10 2008/11/18 23:25:30 afaq Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -80,13 +80,21 @@ class BufferSuccess(BaseHandler):
         datasets=dbinterface.findUploadableDatasets()
         for aDataset in datasets:
             #Check Dataset for AlgoInDBS (Uploaded to DBS or not)    
-            print aDataset.keys()
+            #We need to get algos anyways for File insertion
+            
+            #WE can upload dataset (primary/Processed) here as well, in case workflow-spec fails to load them (May be after some testing)
             algos = dbinterface.findAlgos(aDataset)
             if aDataset['AlgoInDBS'] == 0:
                 #Check to See if Algo exists
                 #it has PSetHash
                 #and then Upload it to DBS
-                print aDataset.keys()
+                #TODO: Check that Algo has PSetHash and then Upload it to DBS
+                for algo in algos:
+                    DBSWriterObjects.createAlgorithm(dict(algo), configMetadata = None, apiRef = self.dbswriter.dbs)
+                    #TODO: Update Algorithm status in DBS
+                   
+                    dbinterface.updateDSAlgo(dict(aDataset))
+                
             #Find files for each dataset and then UPLOAD 10 files at a time 
             #(10 is just a number of choice now, later it will be a configurable parameter)
             files=dbinterface.findUploadableFiles(aDataset)
@@ -95,39 +103,13 @@ class BufferSuccess(BaseHandler):
             #base64.decodestring(aFile['RunLumiInfo'])
             
             self.dbswriter.insertFilesForDBSBuffer(files, dict(aDataset), algos, jobType = "NotMerge", insertDetectorData = False)
+            #Update UnMigratedFile Count here !!!!
+            
+            dbinterface.updateDSFileCount(aDataset, 10)
+            #TODO: Update the files as well to Migrated
+            
+            print "NEXT to be implemented"
+            dbinterface.updateFilesStatus(files, dict(aDataset))
+            
 
         return
-    def uploadDataset(self, workflowFile):
-        """
-        
-        NOT YET USED, May never be used 
-        _newDatasetEvent_
-
-        Extract relevant info from the WorkFlowSpecification and loop over Dataset
-        """
-        #  //                                                                      
-        # //  Contact DBS using the DBSWriter
-        #//`
-        logging.info("DBSURL %s"%self.args['DBSURL'])
-        
-        #  //
-        # //  Create Processing Datsets based on workflow
-        #//
-
-        logging.info(">>>>> create Processing Dataset ")
-        #// optionally drop dataset parentage 
-        if self.DropParent:
-           for adataset in workflowSpec.payload._OutputDatasets:
-               adataset['ParentDataset']=None
-
-        dbswriter.createDatasets(workflowSpec)
-        #  //
-        # //  Create Merged Datasets for that workflow as well
-        #//
-        logging.info(">>>>> create Merged Dataset ")
-        dbswriter.createMergeDatasets(workflowSpec,getFastMergeConfig())
-        return
-
-        
-        
-	

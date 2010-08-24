@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.6 $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -91,11 +91,12 @@ class DBSUploadTest(unittest.TestCase):
 
     def testA(self):
         
-        return True
         """
         Mimics creation of component and handles come messages.
         """
-
+        
+        #return True
+        
         # read the default config first.
         config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
             'src/python/WMComponent/DBSUpload/DefaultConfig.py'))
@@ -123,7 +124,7 @@ class DBSUploadTest(unittest.TestCase):
         # for testing purposes we use this method instead of the 
         # StartComponent one.
         testDBSUpload.handleMessage('BufferSuccess', \
-				'/home/anzar/devWMCore/WMCORE/test/python/WMComponent_t/DBSUpload_t/FJR/FrameworkJobReport.xml')
+				'NoPayLoad')
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\
@@ -136,7 +137,12 @@ class DBSUploadTest(unittest.TestCase):
         """
         Mimics creation of component and handles come messages.
         """
-
+        
+        
+        return True
+        
+        
+        
         # read the default config first.
         config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
             'src/python/WMComponent/DBSUpload/DefaultConfig.py'))
@@ -163,8 +169,11 @@ class DBSUploadTest(unittest.TestCase):
         testDBSUpload.prepareToStart()
         # for testing purposes we use this method instead of the 
         # StartComponent one.
+        
+        #testDBSUpload.handleMessage('NewWorkflow', \
+        #        'C:\\WORK\\FJR\\workflow.xml')
         testDBSUpload.handleMessage('NewWorkflow', \
-                'C:\\WORK\\FJR\\workflow.xml')
+                                    'C:\\WORK\\FJR\\RepackMerge-Run58733-RAW-BarrelMuon-Merge-Workflow.xml')
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\

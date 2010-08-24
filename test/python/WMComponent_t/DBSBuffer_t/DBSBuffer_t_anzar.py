@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.6 2008/11/11 19:47:50 afaq Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.7 2008/11/18 23:25:29 afaq Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -185,10 +185,9 @@ class DBSBufferTest(unittest.TestCase):
         testDBSBuffer = DBSBuffer(config)
         testDBSBuffer.prepareToStart()
  
-
         myThread.dbi = dbFactory.connect()
         myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.begin()
+        #########myThread.transaction.begin()
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # for testing purposes we use this method instead of the
         # StartComponent one.
@@ -196,7 +195,7 @@ class DBSBufferTest(unittest.TestCase):
         #        'C:\WORK\FJR\fjr_01.xml')
         testDBSBuffer.handleMessage('JobSuccess', \
                 'C:\WORK\FJR\FrameworkJobReport.xml')
-        myThread.transaction.commit()
+        #########myThread.transaction.commit()
          
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\

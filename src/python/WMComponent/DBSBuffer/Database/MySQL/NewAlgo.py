@@ -5,13 +5,14 @@ _DBSBuffer.NewAlgo_
 Add a new algorithm to DBS Buffer
 
 """
-__revision__ = "$Id: NewAlgo.py,v 1.1 2008/11/03 23:01:10 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: NewAlgo.py,v 1.2 2008/11/18 23:25:29 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
 from WMCore.Database.DBFormatter import DBFormatter
 from sqlalchemy.exceptions import IntegrityError
+import exceptions
 
 class NewAlgo(DBFormatter):
     
@@ -56,7 +57,7 @@ class NewAlgo(DBFormatter):
         try:
                         
             result = self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
-        except IntegrityError, ex:
+        except Exception, ex:
             if ex.__str__().find("Duplicate entry") != -1 :
                 #print "DUPLICATE: so what !!"
                 return

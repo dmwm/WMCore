@@ -5,12 +5,14 @@ _DBSBuffer.NewFile_
 Add a new file to DBS Buffer
 
 """
-__revision__ = "$Id: NewFile.py,v 1.7 2008/11/07 03:49:04 afaq Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: NewFile.py,v 1.8 2008/11/18 23:25:29 afaq Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
 import base64
+import exceptions
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -32,17 +34,16 @@ class NewFile(DBFormatter):
 				SET A.UnMigratedFiles = A.UnMigratedFiles + 1"""
 
 	#sqlUpdateDS = """UPDATE dbsbuffer_dataset SET UnMigratedFiles = UnMigratedFiles + 1 WHERE ID = (select ID from dbsbuffer_dataset where Path=:path)"""
-
-    	def __init__(self):
+	def __init__(self):
         	myThread = threading.currentThread()
         	DBFormatter.__init__(self, myThread.logger, myThread.dbi)
 		
-	def getBinds(self, file=None):
+	def getBinds(self, file=None, dataset=None):
 	    	# binds a list of dictionaries
 	   	binds =  { 'lfn': file['LFN'],
-			'path': '/'+file.dataset[0]['PrimaryDataset']+'/'+ \
-					file.dataset[0]['ProcessedDataset']+'/'+ \
-					file.dataset[0]['DataTier'],
+			'path': '/'+dataset['PrimaryDataset']+'/'+ \
+					dataset['ProcessedDataset']+'/'+ \
+					dataset['DataTier'],
 			'checksum' : file.checksums['cksum'],
 			'events' : file['TotalEvents'],
 			'size' : file['Size'],
@@ -55,14 +56,20 @@ class NewFile(DBFormatter):
 	def format(self, result):
 		return True
 
-	def execute(self, file=None, conn=None, transaction = False):
-		binds = self.getBinds(file)
-        
-        	result = self.dbi.processData(self.sql, binds, 
-                         conn = conn, transaction = transaction)
+	def execute(self, file=None, dataset=None, conn=None, transaction = False):
 		
-		result = self.dbi.processData(self.sqlUpdateDS, binds,
-                         conn = conn, transaction = transaction)
-        	return 
-        	#return self.format(result)
+		binds = self.getBinds(file, dataset)
 
+		try:
+			result = self.dbi.processData(self.sql, binds, 
+                         conn = conn, transaction = transaction)
+			#Update the File Count in Dataset
+			result = self.dbi.processData(self.sqlUpdateDS, binds,
+                         conn = conn, transaction = transaction)
+			print "I am here"
+		except Exception, ex:
+			if ex.__str__().find("Duplicate entry") != -1 :
+				pass
+			else:
+				raise ex
+			

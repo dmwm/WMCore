@@ -5,8 +5,8 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.4 2009/02/01 12:30:57 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.5 2009/02/01 12:35:03 jacksonj Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -19,10 +19,11 @@ class WorkerThreadManager:
     """
     Manages regular worker slave threads
     """
-    def __init__(self):
+    def __init__(self, component):
         """
         Set up the events used to pause, resume and terminate worker threads
         """
+        self.component = component
         self.terminateSlaves = threading.Event()
         self.pauseSlaves = threading.Event()
         self.resumeSlaves = threading.Event()
@@ -47,15 +48,13 @@ class WorkerThreadManager:
         """
         # Work timing
         worker.frequency = frequency
+        worker.component = self.component
         
         # Thread synchronisation
         worker.notifyTerminate = self.terminateSlaves
         worker.terminateCallback = self.slaveTerminateCallback
         worker.notifyPause = self.pauseSlaves
         worker.notifyResume = self.resumeSlaves
-        
-        # Parent component
-        #worker.component = self.component
 
     def addWorker(self, worker, frequency = 60, parameters = None):
         """

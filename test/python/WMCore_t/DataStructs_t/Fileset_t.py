@@ -7,8 +7,10 @@ Testcase for Fileset
 """
 import unittest, logging, random
 from sets import Set
+
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
+from WMCore.DataStructs.Run import Run
 
 class FilesetTest (unittest.TestCase):
     """ 
@@ -35,7 +37,7 @@ class FilesetTest (unittest.TestCase):
         self.initialSet.add(initialfile)
         
         #Create a Fileset, containing a initial file on it.
-        self.fileset = Fileset(name = 'self.fileset', files = self.initialSet, logger = self.logger )
+        self.fileset = Fileset(name = 'self.fileset', files = self.initialSet)
         #Populate the fileset with random files
         for i in range(1,1000):
             lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999),
@@ -70,58 +72,60 @@ class FilesetTest (unittest.TestCase):
         testFileSame = File('/tmp/lfntest',9999,9,9)
         testFileSame.setLocation(Set('dummyse.dummy.com'))
         self.fileset.addFile(testFileSame)
-        assert(testFileSame in  self.fileset.listFiles(),'Same file copy ' +
+        assert(testFileSame in  self.fileset.getFiles(),'Same file copy ' +
                'failed - fileset.addFile not updating location of already ' +
                'existing files' )
-        assert(testfile in self.fileset.listFiles(),'Same file copy ' +
+        assert(testfile in self.fileset.getFiles(),'Same file copy ' +
                'failed - fileset.addFile unable to remove previous file ' +
                'from list')
         #Third test - Add file that was already at Fileset.newfiles , 
         #and check if it gets updated
         assert(testFileSame in  self.fileset.listNewFiles(),'Same file copy ' +
                'failed - fileset.addFile not adding file to fileset.newFiles')
+        
     def testListFiles(self):
         """
-            Testcase for the listFiles method of the Fileset class
-            
+        _testListFiles_
+        
+        Testcase for the getFiles() method of the Fileset class
         """
-        filesettemp = self.fileset.listFiles()
+        filesettemp = self.fileset.getFiles()
         for x in filesettemp:
             assert x in (self.fileset.files | self.fileset.newfiles), \
-            'Missing file %s from file list returned from fileset.ListFiles' % x.dict["lfn"]
+            'Missing file %s from file list returned from fileset.ListFiles' % x["lfn"]
             
     def testSetFiles(self):
         """
         Check that all files returned by the set are the same as those added to 
         the fileset
         """
-        filesettemp = self.fileset.setFiles()
+        filesettemp = self.fileset.getFiles(type = "set")
         for x in filesettemp:
             assert x in (self.fileset.files | self.fileset.newfiles), \
-            'Missing file %s from file list returned from fileset.ListFiles' % x.dict["lfn"]
+            'Missing file %s from file list returned from fileset.ListFiles' % x["lfn"]
             
     def testSetListCompare(self):
         """
-        Test that all files in fileset.setFiles are in fileset.listFiles()
+        Test that all files in fileset.setFiles are in fileset.getFiles()
         """
-        thelist = self.fileset.listFiles()
-        theset = self.fileset.setFiles()
+        thelist = self.fileset.getFiles()
+        theset = self.fileset.getFiles(type = "set")
         for x in thelist:
             assert x in (theset), \
-            'Missing file %s from file list returned from fileset.ListFiles' % x.dict["lfn"]
+            'Missing file %s from file list returned from fileset.ListFiles' % x["lfn"]
     
     def testSorting(self):
         """
-        Fileset.listFiles() should be sorted the same as Fileset.listLFNs(), 
+        Fileset.getFiles() should be sorted the same as Fileset.getFiles(type = "lfn"), 
         assert that this is the case here.
         """
-        files = self.fileset.listFiles()
-        lfns = self.fileset.listLFNs()
+        files = self.fileset.getFiles()
+        lfns = self.fileset.getFiles(type = "lfn")
         for x in files:
-            assert x.dict["lfn"] in (lfns), \
-            'Missing file %s from file list returned ' % x.dict["lfn"]
-            assert lfns[files.index(x)] == x.dict["lfn"], \
-            'Sorting not consistent: lfn = %s, file = %s' % (lfns[files.index(x)], x.dict["lfn"])
+            assert x["lfn"] in (lfns), \
+            'Missing file %s from file list returned ' % x["lfn"]
+            assert lfns[files.index(x)] == x["lfn"], \
+            'Sorting not consistent: lfn = %s, file = %s' % (lfns[files.index(x)], x["lfn"])
             
     def testListLFNs(self):
         """
@@ -130,13 +134,13 @@ class FilesetTest (unittest.TestCase):
         """
         #Kinda slow way of verifying if the raw LFN from each file at the
         #fileset is returned from the meth
-        allFiles = self.fileset.listFiles()
+        allFiles = self.fileset.getFiles()
         
         #For each file returned by method listFiles, it checks if LFN is
         #present at the output of method listLFNs 
         for x in allFiles:
-            assert x.dict['lfn'] in self.fileset.listLFNs(), 'Missing %s from ' \
-            'list returned from fileset.ListLFNs' % x.dict["lfn"] 
+            assert x['lfn'] in self.fileset.getFiles(type = "lfn"), 'Missing %s from ' \
+            'list returned from fileset.ListLFNs' % x["lfn"] 
         #Im a bit confused with this method, leave to discuss it at the meeting with Simon
         
     def testListNewFiles(self):
@@ -153,12 +157,12 @@ class FilesetTest (unittest.TestCase):
             
         """
         localTestFileSet = Fileset('LocalTestFileset', self.initialSet)
-        fsSize = len(localTestFileSet.listLFNs())
+        fsSize = len(localTestFileSet.getFiles(type = "lfn"))
         #Dummy file to test
         fileTestCommit = File('/tmp/filetestcommit',0000,1,1)
         #File is added to the newfiles attribute of localTestFileSet
         localTestFileSet.addFile(fileTestCommit)
-        assert fsSize == len(localTestFileSet.listLFNs()) - 1, 'file not added'\
+        assert fsSize == len(localTestFileSet.getFiles(type = "lfn")) - 1, 'file not added'\
                 'correctly to test fileset'
         newfilestemp = localTestFileSet.newfiles
         assert fileTestCommit in newfilestemp, 'test file not in the new files'\

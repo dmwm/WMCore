@@ -14,6 +14,8 @@ from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.DataStructs.Subscription import Subscription
+from WMCore.DataStructs.Run import Run
+
 from unittest import TestCase
 
 class JobTest(unittest.TestCase):
@@ -33,7 +35,7 @@ class JobTest(unittest.TestCase):
         
         """
         #Setting a Dummy Subscription for the Job
-        self.dummyFile = File('/tmp/dummyfile',9999,0,0,0,0)
+        self.dummyFile = File('/tmp/dummyfile',9999,0,0)
         self.dummySet = Set() 
         self.dummySet.add(self.dummyFile)
         self.dummyFileSet = Fileset(name = 'SubscriptionTestFileset', files = self.dummySet)
@@ -66,29 +68,29 @@ class JobTest(unittest.TestCase):
         """
         Testcase for the listFiles method of the Subscription Class
         """
-        assert self.dummyJob.listFiles() == self.dummyFileSet2.listFiles(),'Initial fileset does\'nt match Job fileset - listFiles method mismatch'
+        assert self.dummyJob.getFiles() == self.dummyFileSet2.getFiles(),'Initial fileset does\'nt match Job fileset - listFiles method mismatch'
 
     def testListLFNs(self):
         """
         Testcase for the listLFNs method of the Subscription Class
         """
-        assert self.dummyJob.listLFNs() == self.dummyFileSet2.listLFNs(),'Initial fileset does\'nt match fileset - listLFNs method mismatch'
+        assert self.dummyJob.getFiles(type = "lfn") == self.dummyFileSet2.getFiles(type = "lfn"),'Initial fileset does\'nt match fileset - listLFNs method mismatch'
 
     def testaddFile(self):
         """
         Testcase for the addFile method of the Subscription Class
         """
-        dummyFileAddFile = File('/tmp/dummyFileAddFileTest',1234,1,2,3,4)
+        dummyFileAddFile = File('/tmp/dummyFileAddFileTest',1234,1,2)
         self.dummyJob.addFile(dummyFileAddFile)
-        assert dummyFileAddFile in self.dummyJob.file_set.listFiles(), 'Couldn\'t add file to Job - addFile method error'
+        assert dummyFileAddFile in self.dummyJob.file_set.getFiles(), 'Couldn\'t add file to Job - addFile method error'
 
     def testaddOutput(self):
         """
         Testcase for the addOutput method of the Subscription Class
         """
-        dummyFileAddOutput = File('/tmp/dummyFileAddOutputTest',1234,1,2,3,4)
+        dummyFileAddOutput = File('/tmp/dummyFileAddOutputTest',1234,1,2)
         self.dummyJob.addOutput(dummyFileAddOutput)
-        assert dummyFileAddOutput in self.dummyJob.output.listFiles(), 'Couldn\'t add output file to Job - addOutput method error'
+        assert dummyFileAddOutput in self.dummyJob.output.getFiles(), 'Couldn\'t add output file to Job - addOutput method error'
 
     def testChangeStatus(self):
         """

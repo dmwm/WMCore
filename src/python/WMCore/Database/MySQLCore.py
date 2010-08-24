@@ -47,13 +47,20 @@ class MySQLInterface(DBInterface):
         newsql = s
         binds = b[0].keys()
         binds.sort(key=s.index)
-        for k in binds:
-            self.logger.debug("rewriting sql for execute_many: bind %s" % k)
-            newsql = newsql.replace(':%s' % k, '%s')
-
-        bind_list = []
-        for i in b:
-            tpl = tuple( [ i[x] for x in binds] )
-            bind_list.append(tpl)
+        try: 
+            self.logger.debug("rewriting sql for execute_many: sql %s" % 
+                              s.replace('\n', ' '))
+            for k in binds:
+                newsql = newsql.replace(':%s' % k, '%s')
+    
+            bind_list = []
+            for i in b:
+                tpl = tuple( [ i[x] for x in binds] )
+                bind_list.append(tpl)
+                
+            self.logger.debug("rewritten sql for execute_many: sql %s" % \
+                              newsql.replace('\n', ' '))
+        except Exception, e:
+            print s, b
 
         return DBInterface.executemanybinds(self, newsql, bind_list, connection)

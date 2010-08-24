@@ -11,18 +11,15 @@ workflow + fileset = subscription
 
 """
 
-__revision__ = "$Id: Fileset.py,v 1.8 2008/06/19 10:02:54 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Fileset.py,v 1.9 2008/06/19 11:30:58 swakef Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
 
-from WMCore.WMBS.Actions.Fileset.Load import LoadFilesetAction
-from WMCore.WMBS.Actions.Fileset.Exists import FilesetExistsAction
-from WMCore.WMBS.Actions.Fileset.Delete import DeleteFilesetAction
-from WMCore.WMBS.Actions.Fileset.New import NewFilesetAction
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.File import Subscription
 
 class Fileset(object):
     """
@@ -35,8 +32,9 @@ class Fileset(object):
     workflow + fileset = subscription
     
     """
-    def __init__(self, name=name, dbinterface=None, logger=None, id=0, is_open=True,
-                    parents=None, parents_open=True, source=None, sourceUrl=None):
+    def __init__(self, name=None, id=0, is_open=True, parents=None,
+                 parents_open=True, source=None, sourceUrl=None,
+                 logger=None, dbfactory=None):
         """
         Create a new fileset
         """
@@ -50,9 +48,8 @@ class Fileset(object):
         self.source = source
         self.sourceUrl = sourceUrl 
         self.lastUpdate = 0
-        self.dbfactory = dbinterface
-        self.logger = none
-        
+        self.dbfactory = dbfactory
+        self.logger = logger
         self.daofactory = DAOFactory(package='WMCore.WMBS', 
                                      logger=self.logger, 
                                      dbinterface=self.dbfactory.connect())
@@ -66,14 +63,14 @@ class Fileset(object):
                 if isinstance(parent, Fileset):
                     self.parents.add(parent)
                 else:
-                    self.parents.add(Fileset(parent, self.wmbs, 
+                    self.parents.add(Fileset(name=parent, db_factory=self.dbfactory, 
                             is_open=parents_open, parents_open=False))
     
     def exists(self):
         """
         Does a fileset exist with this name
         """
-        return self.daofactory(classname='Fileset.Exists').execute(name=self.name)
+        return self.daofactory(classname='Fileset.Exists').execute(self.name)
         
     def create(self, conn = None):
         """
@@ -81,30 +78,31 @@ class Fileset(object):
         """
             
 #        for parent in self.parents:
-#            try:
-#                #todo: do in a single transaction
-#                parent.create(conn)
-#            except IntegrityError:
-#                self.wmbs.logger.warning('Fileset parent %s exists' % \
-#                                                         parent.name)
-        try:
-            return self.daofactory(classname='Fileset.Exists').execute(name=self.name)
-        
-        except IntegrityError:
-            self.wmbs.logger.exception('Fileset %s exists' % self.name)
-            #raise
+#            if not parent.exists():
+#                parent.create()
+#        try:
+#            self.daofactory(classname='Fileset.New').execute(self.name)
+#            action = NewFilesetAction(self.logger)
+#            return action.execute(name=self.name,
+#                               dbinterface=conn)
+#        except IntegrityError:
+#            self.wmbs.logger.exception('Fileset %s exists' % self.name)
+#            #raise
+        #TODO: Add other fields soure etc..
+        self.daofactory(classname='Fileset.New').execute(self.name)
+        self.populate()
         return self
     
     def delete(self):
         """
         Remove this fileset from WMBS
         """
-        self.wmbs.logger.warning('you are removing the following fileset from WMBS %s %s'
+        self.logger.warning('you are removing the following fileset from WMBS %s %s'
                                  % (self.name))
         
         return self.daofactory(classname='Fileset.Delete').execute(name=self.name)
     
-    def populate(self):
+    def populate(self): #, parentageLevel=0):
         """
         Load up the files in the file set from the database
         """
@@ -113,17 +111,16 @@ class Fileset(object):
         #    self.parents.add(Fileset(parent[0], self.wmbs, bool(parent[1])).populate())
             
         #get my details
-        action = LoadFilesetAction(logger)
-        values = action.execute(name=myfs, 
-                   dbinterface=dbfactory.connect())
-        
+        values = self.daofactory(classname='Fileset.Load').execute(name=self.name)
         self.open = values[2]
         self.lastUpdate = values[3]
         self.id = values[0]
         
-        for f in self.wmbs.showFilesInFileset(self.name):
-            id, lfn, size, events, run, lumi = f
-            file = File(lfn, id, size, events, run, lumi)
+        values = self.daofactory(classname='File.InFileset').execute(name=self.name)
+        for id, lfn, size, events, run, lumi in values:
+            #id, lfn, size, events, run, lumi = f
+            file = File(lfn, id, size, events, run, lumi, \
+                        logger=self.logger, dbfactory=self.dbfactory)
             self.files.add(file)
 
         return self
@@ -156,17 +153,16 @@ class Fileset(object):
         comfiles = []
         for f in self.newfiles:
             #comfiles.append(f.getInfo())
-            self.wmbs.logger.debug ( "commiting : %s" % comfiles )  
+            self.logger.debug ( "commiting : %s" % f.lfn )  
             try:
-            #self.wmbs.insertFilesForFileset(files=comfiles, fileset=self.name)
-                self.wmbs.addNewFileToNewLocation(f.getInfo(), fileset=self.name)
+                f.save()
+                self.daofactory(classname='File.AddToFileset').execute(file=f.lfn, name=self.name)
+                self.newfiles.remove(f)
             except IntegrityError, ex:
-                self.wmbs.logger.exception('File already exists in the database %s' % f)
-                self.wmbs.logger.exception(str(ex))
-                    #for i in self.newfiles:
-                        #print i.getInfo()
-                raise IntegrityError, 'File already exists in the database'
-        self.newfiles = Set()
+                self.logger.exception('File already exists in the database %s' % f.lfn)
+                self.logger.exception(str(ex))
+                raise IntegrityError, 'File %s already exists in the database' % f.lfn
+        #self.newfiles = Set()
         self.populate()
     
     def createSubscription(self, workflow=None, subtype='Processing', parentage=0):
@@ -174,7 +170,8 @@ class Fileset(object):
         Create a subscription for the fileset using the given workflow 
         """
         s = Subscription(fileset = self, workflow = workflow, 
-                         type = subtype, parentage=parentage, wmbs = self.wmbs)
+                         type = subtype, parentage=parentage,
+                         logger=self.logger, dbfactory=self.dbfactory)
         s.create()
         return s
         
@@ -183,12 +180,16 @@ class Fileset(object):
         Return all subscriptions for a fileset
         """
         #TODO: types should come from DB
-        if subtype in (None, "Merge", "Processing", "Job"):
-            #TODO: change subscriptionsForFileset to return the workflow spec
-            subscriptions = self.wmbs.subscriptionsForFileset(self.name, 
-                                                              subtype)
-        else:
-            self.wmbs.logger.exception('%s is an unknown subscription type' % 
+        if not type in (None, "Merge", "Processing", "Job"):
+            self.logger.exception('%s is an unknown subscription type' % 
                                        subtype)
             raise TypeError, '%s is an unknown subscription type' % subtype
-        return subscriptions
+        
+        result = []
+        #TODO: change subscriptionsForFileset to return the workflow spec
+        #TODO: Add query for subtype
+        temp = self.daofactory(classname='Subscriptions.ForFileset').execute(fileset=self.name) #type=subtype)
+        for sub in temp:
+            result.append(Subscription(id=sub,
+                            logger=self.logger, dbfactory=self.dbfactory))
+        return result

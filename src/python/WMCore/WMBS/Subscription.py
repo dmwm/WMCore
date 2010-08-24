@@ -14,8 +14,8 @@ subscription + application logic = jobs
 
 """
 
-__revision__ = "$Id: Subscription.py,v 1.2 2008/05/12 11:58:06 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Subscription.py,v 1.3 2008/06/19 11:30:58 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 from sqlalchemy.exceptions import IntegrityError
@@ -50,12 +50,16 @@ class Subscription(object):
 #        return self
     def load(self):
         
-        result = self.wmbs.subscriptionID(self.fileset.name, self.workflow.spec, 
+        if self.id != -1:
+            # load from db get filesets and workflow (use fileset.populate with parentage level of subscription)
+            pass
+        else:
+            result = self.wmbs.subscriptionID(self.fileset.name, self.workflow.spec, 
                                   self.workflow.owner, self.type)
-        if not result:
-            raise RuntimeError, "Subscription for %s:%s unknown" % \
+            if not result:
+                raise RuntimeError, "Subscription for %s:%s unknown" % \
                                     (self.fileset.name, self.workflow.spec)
-        self.id = result[0][0]
+            self.id = result[0][0]
         return self
              
     def availableFiles(self):

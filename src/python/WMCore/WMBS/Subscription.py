@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.28 2009/01/14 16:49:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Subscription.py,v 1.29 2009/01/14 16:52:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.29 $"
 
 from sets import Set
 
@@ -79,6 +79,9 @@ class Subscription(WMBSBase, WMSubscription):
         """
         _load_
 
+        Load any meta data about the subscription.  This include the id, type,
+        split algorithm, fileset id and workflow id.  Either the subscription id
+        or the fileset id and workflow id must be specified for this to work.
         """
         if self["id"] > 0:
             action = self.daofactory(classname = "Subscriptions.LoadFromID")
@@ -104,6 +107,8 @@ class Subscription(WMBSBase, WMSubscription):
         """
         _loadData_
 
+        Load all data having to do with the subscription including all the
+        files contained in the fileset and the workflow meta data.
         """
         if self["id"] < 0 or self["fileset"] == None or \
                self["workflow"] == None:

@@ -2,12 +2,12 @@
 """
 _DBCore_t_
 
-Unit tests for the
+Unit tests for the DBInterface class
 
 """
 
-__revision__ = "$Id: DBCore_t.py,v 1.1 2008/08/21 07:22:51 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBCore_t.py,v 1.2 2008/08/21 17:30:31 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -15,8 +15,8 @@ import logging
 import os
 
 from sqlalchemy import create_engine
-
-from WMCore.Database.DBCore import DBInterface
+from sqlalchemy.exceptions import OperationalError
+from WMCore.Database.DBFactory import DBFactory
 
 class DBCoreTest(unittest.TestCase):
     def setUp(self):
@@ -30,33 +30,47 @@ class DBCoreTest(unittest.TestCase):
         
         self.logger = logging.getLogger('DBCoreTest')
         
+        self.sqlitedb = 'transaction_test.lite'
+        self.mysqldb = 'transaction_test'
+        
         self.tearDown()
         
-        self.db = []
-        self.db.append(DBInterface(logger, 
-                              create_engine('mysql://metson@localhost/test')))
-        self.db.append(DBFactory(logger, 
-                              create_engine('sqlite:///dbcoretest.lite')))
+        self.db = {}
+        self.db['mysql'] = DBFactory(self.logger,
+                         'mysql://metson@localhost/%s' % self.mysqldb).connect()
+        self.db['sqlite'] = DBFactory(self.logger,
+                         'sqlite:///%s' % self.sqlitedb).connect()
         #add in Oracle
             
     def tearDown(self):
         """
         Delete the databases
         """
-        self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root drop test'))
-        self.logger.debug(commands.getstatusoutput('mysqladmin -u root create test'))
-        self.logger.debug("database deleted")
+        self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root drop %s' % self.mysqldb))
+        self.logger.debug(commands.getstatusoutput('mysqladmin -u root create %s' % self.mysqldb))
+        self.logger.debug("mysql database deleted")
+        try:
+            self.logger.debug(os.remove(self.sqlitedb))
+        except OSError:
+            #Don't care if the file doesn't exist
+            pass
         
     def createTable(self):
-        sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-        self.runTest(sql)
+        try:
+            sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
+            self.runTest(sql)
+        except OperationalError, oe:
+            print oe
         
-    def runTest(self, sql, binds=None):
-        for dbi in self.db:
-            dbi.processData(sql, binds)
+        
+    def runTest(self, sql, binds={}):
+        result = {}
+        for name, dbi in self.db.items():
+            result[name] = dbi.processData(sql, binds)
+        return result
     
     def fillTable(self):
-        sql = "insert into thing (bind1, bind2) values (:bind1, :bind2)"
+        sql = "insert into test (bind1, bind2) values (:bind1, :bind2)"
         b = [ {'bind1':'value1a', 'bind2': 'value2a'},
               {'bind1':'value1b', 'bind2': 'value2b'},
               {'bind1':'value1c', 'bind2': 'value2d'} ]
@@ -67,10 +81,9 @@ class DBCoreTest(unittest.TestCase):
         
     def testInsert(self):
         self.createTable()
-        sql = "insert into thing (bind1, bind2) values (:bind1, :bind2)"
+        sql = "insert into test (bind1, bind2) values (:bind1, :bind2)"
         b = {'bind1':'value1a', 'bind2': 'value2a'}
         self.runTest(sql, b)
-        
         
     def testInsertMany(self):
         self.createTable()
@@ -78,17 +91,31 @@ class DBCoreTest(unittest.TestCase):
 
     def testSelect(self):
         self.createTable()
-        sql = "select * from thing"
+        self.fillTable()
+        sql = "select * from test"
         result = self.runTest(sql)
-        print result
+        
+        for name in self.db.keys():
+            assert len(result[name]) == 1
+            assert len(result[name][0].fetchall()) == 3
         
     def testSelectMany(self):
         self.createTable()
-        sql = "select * from thing where bind1 = :value"
+        self.fillTable()
+        sql = "select * from test where bind1 = :value"
         b = [ {'value':'value1a'},
               {'value':'value1b'} ]
         result = self.runTest(sql, b)
-        print result
+        for name in self.db.keys():
+            "should have two results, one for each set of binds"
+            assert len(result[name]) == 2
+            "should have one record per result"
+            for i in result[name]:
+                assert len(i.fetchall()) == 1
         
+      
             
+if __name__ == "__main__":
+    unittest.main()     
+                   
     

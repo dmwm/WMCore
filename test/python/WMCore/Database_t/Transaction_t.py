@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.2 2008/08/21 16:12:05 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Transaction_t.py,v 1.3 2008/08/21 17:30:31 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import unittest
@@ -67,8 +67,6 @@ class TransactionTest(unittest.TestCase):
     
     def testGoodTransaction(self):
         for name, dbi in self.db.items():
-            print name, type(dbi)
-            
             trans = Transaction(dbi)
             trans.processData(self.create[name])
             trans.processData(self.insert, self.insert_binds)
@@ -85,7 +83,6 @@ class TransactionTest(unittest.TestCase):
             
     def testBadTransaction(self):
         for name, dbi in self.db.items():
-            print name, type(dbi)
             trans = Transaction(dbi)
             trans.processData(self.create[name])
             

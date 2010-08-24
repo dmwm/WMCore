@@ -62,7 +62,8 @@ class WMBSBase(Performance):
 
         return filelist
 
-    def genLocations(self, number=0, name='Test'):
+    def genLocationObjects(self, number=0, name='Test'):
+
         list = []
 
         if number == 0:
@@ -73,6 +74,15 @@ class WMBSBase(Performance):
         for x in range(rangemax):
             list.append(name+'Location'+str(x))
 
+        return list
+
+    def genLocation(self, number=0, name='Test'):
+
+        list = self.genLocationObjects(number=number, name=name)
+
+        for x in list:
+            self.dao(classname='Locations.New').execute(sename=x)      
+        
         return list
 
     def genFilesetObjects(self, number=0, name='Test'):

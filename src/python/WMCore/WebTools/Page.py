@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.7 2009/01/24 01:26:51 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Page.py,v 1.8 2009/01/26 23:44:37 rpw Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import cherrypy
 from cherrypy import log as cplog
@@ -17,7 +17,7 @@ class Page(object):
     Page is a base class that holds a configuration
     """
     def __init__(self, config = {}):
-        self.config = config.component_(config.listComponents_()[0])
+        self.config = config
     
     def warning(self, msg):
         self.log(msg, logging.WARNING)

@@ -44,10 +44,11 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.21 2009/01/26 13:25:32 sfoulkes Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Job.py,v 1.22 2009/01/26 20:51:35 sryu Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import datetime
+from sets import Set
 
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
@@ -219,7 +220,7 @@ class Job(WMBSBase, WMJob):
 
         return WMJob.getFiles(self, type)
 
-    def getFileIDs(self):
+    def getFileIDs(self, type="list"):
         """
         _getFileIDs_
 
@@ -233,9 +234,70 @@ class Job(WMBSBase, WMJob):
         fileAction = self.daofactory(classname = "Jobs.LoadFiles")
         fileIDs = fileAction.execute(self.id, conn = self.getReadDBConn(),
                                      transaction = self.existingTransaction())        
+        if type == "list":
+            fileIDList = []
+            for id in fileIDs:
+                fileIDList.append(id["id"])
+            return fileIDList
+        elif type == "dict":
+            return fileIDs
         
-        return fileIDs
-            
+    
+    def addOutput(self, file):
+        """
+        add output file to job groups groupoutput file set.
+        then, update the file parentage
+        also add run-lumi information
+        take wmbs file object as a argument (doesn't have to be loaded). 
+        """ 
+        # this requires Jobgroup to call addOutput to commit to database
+        WMJob.addOutput(self, file)
+        
+        # This dosen't require JobGreoup to call addOutput seperately but need 
+        # to import JobGroup with in the job
+#        from WMCore.WMBS.JobGroup import JobGroup
+#        
+#        jobGroup = JobGroup(id=self.job_group)
+#        jobGroup.load()
+#        jobGroup.groupoutput.addFile(file)
+#        jobGroup.groupoutput.commit()
+        
+        inputFiles = self.getFiles()
+        
+        # this doesn't have opitmal performance
+        # if the performance is problem access directly DAO object
+        # update the parentage and add runRumi
+        newRunSet = Set()
+        for inputFile in inputFiles:
+            inputFile.addChild(file["lfn"])
+              
+            for inputRun in inputFile.getRuns():
+                addFlag = False
+                for runMember in newRunSet:
+                    if runMember.run == inputRun.run:
+                        # this rely on Run object overwrite __add__ to update
+                        # self 
+                        runMember + inputRun
+                        addFlag = True
+                        
+                if not addFlag:
+                    newRunSet.add(inputRun)
+        
+        file.addRunSet(newRunSet)
+                
+         # if the performance is the problem use following to access directly 
+#        # DOA. Still need to add the code to AddRunLimi
+#        #set the parentage
+#        inputFileIDs = self.getFileIDs()
+#        
+#        fileAction = self.daofactory(classname = "Files.Heritage")
+#        
+#        for inputFileID in inputFileIDs:
+#            fileAction.execute(parent=inputFileID, child=file["id"],
+#                               conn = self.getReadDBConn(),
+#                               transaction = self.existingTransaction())
+#            
+           
     def submit(self, name = None):
         """
         _submit_

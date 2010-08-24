@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.10 2008/06/09 15:21:59 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: DBCore.py,v 1.11 2008/07/03 11:33:29 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from copy import copy   
 class DBInterface(object):    
@@ -140,7 +140,7 @@ class DBInterface(object):
             try:
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
-                    result.append(self.executebinds(sqlstmt, b,
+                    result.append(self.executebinds(s, b,
                                             connection=connection))
                 if not transaction: 
                     trans.commit()
@@ -156,15 +156,16 @@ class DBInterface(object):
                 "DBInterface.processData SQL = %s" % sqlstmt)
             self.logger.debug('DBInterface.processData  sql is %s items long' % len(sqlstmt))
             self.logger.debug('DBInterface.processData  binds are %s items long' % len(binds))
-            asser_value = False
+            assert_value = False
             if len(binds) == len(sqlstmt):
-                asser_value =True 
+                assert_value =True 
             self.logger.debug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
             self.logger.debug( sqlstmt, binds, connection, transaction)
             self.logger.debug( type(sqlstmt), type(binds),
                                type("string"), type({}),
                                type(connection), type(transaction))
-            raise Exception
+            raise Exception, """DBInterface.processData Nothing executed, problem with your arguments 
+Probably mismatched sizes for sql (%i) and binds (%i)""" % (len(sqlstmt), len(binds))
         if not conn: 
             connection.close() # Return connection to the pool
         return result

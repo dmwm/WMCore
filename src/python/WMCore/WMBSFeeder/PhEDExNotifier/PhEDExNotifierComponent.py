@@ -6,15 +6,15 @@ ProdAgent Component to notify clients of new transfers
 
 """
 __all__ = []
-__revision__ = "$Id: PhEDExNotifierComponent.py,v 1.8 2008/07/23 14:49:42 gowdy Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: PhEDExNotifierComponent.py,v 1.9 2008/07/30 11:57:51 gowdy Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import logging
 
 from WMCore.DataStructs.File import File
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 
-from urllib2 import urlopen
+from urllib import urlopen
 from urllib import quote
 
 class PhEDExNotifierComponent(FeederImpl):
@@ -23,7 +23,7 @@ class PhEDExNotifierComponent(FeederImpl):
 
     """
     
-    def __init__( self, nodes, phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas", dbsURL = "https://cmsweb.cern.ch/dbs_discovery/aSearch?dbsInst=cms_dbs_prod_global&html=0&caseSensitive=on&_idx=0&pagerStep=10&xml=0&details=0&cff=0&method=dd&userInput=", dbsQuery = "find %s where file=%s" ):
+    def __init__( self, nodes, phedexURL = "http://cmsweb.cern.ch/phedex/datasvc/json/prod/fileReplicas", dbsURL = "http://cmsweb.cern.ch/dbs_discovery/aSearch?dbsInst=cms_dbs_prod_global&html=0&caseSensitive=on&_idx=0&pagerStep=10&xml=0&details=0&cff=0&method=dd&userInput=", dbsQuery = "find %s where file=%s" ):
         
         # Add the node specification the URL
         nodeList = self.makelist( nodes )
@@ -94,8 +94,11 @@ class PhEDExNotifierComponent(FeederImpl):
         files = blocks[0][ 'file' ]
         for file in files:
             lfn = file[ 'name' ]
-            events = self.getEvents( lfn )
-            fileToAdd = File( lfn, file[ 'bytes'], events )
+            # Comment this out as the query https connection doesn't work
+            # This needs reworked anyway SJG 30/7/2008
+            # events = self.getEvents( lfn )
+            # fileToAdd = File( lfn, file[ 'bytes'], events )
+            fileToAdd = File( lfn, file[ 'bytes'] )
             replicas = file[ 'replica' ]
             if len( replicas ) > 0:
                 locations = []

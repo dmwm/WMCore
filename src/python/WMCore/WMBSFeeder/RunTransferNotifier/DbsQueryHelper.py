@@ -33,7 +33,7 @@ class DbsQueryHelper:
             nodes = xml.getElementsByTagName(nodelist[0])
             retList = []
             for node in nodes:
-                retList.append(getText(node.childNodes))
+                retList.append(self.getText(node.childNodes))
             return retList
         else:
             node = xml.getElementsByTagName(nodelist[0])[0]
@@ -51,21 +51,21 @@ class DbsQueryHelper:
         Queries DBS and extracts block info from the result
         """
         result = self.query(query)
-        return self.getXmlNodeValues(result, ["ddresponse","output","name"])
+        return self.getXmlNodeValues(result, ["ddresponse","output","column"])
     
     def queryFileInfo(self, query):
         """
         Queries DBS and extracts file info from the result
         """
         result = self.query(query)
-        return self.getXmlNodeValues(result, ["ddresponse","output","logicalfilename"])
+        return self.getXmlNodeValues(result, ["ddresponse","output","column"])
 
     def queryRunInfo(self, query):
         """
         Queries DBS and extracts run info from the result
         """
         result = self.query(query)
-        return self.getXmlNodeValues(result, ["ddresponse","output","runnumber"])
+        return self.getXmlNodeValues(result, ["ddresponse","output","column"])
     
     def getParentFiles(self, files):
         """
@@ -81,11 +81,11 @@ class DbsQueryHelper:
         """
         Queries DBS to get the blocks containing all the passed files
         """
-        parentBlocks = Set()
+        allBlocks = Set()
         for f in files:
             blocks = self.queryBlockInfo("find block where file = %s" % f)
-            parentBlocks.update(blocks)
-        return parentBlocks
+            allBlocks.update(blocks)
+        return allBlocks
         
     def getBlockFiles(self, blocks):
         """

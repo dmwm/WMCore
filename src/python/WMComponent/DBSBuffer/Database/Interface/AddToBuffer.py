@@ -5,8 +5,8 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.7 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.7 2008/12/12 19:23:57 afaq Exp $"
+__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.8 2008/12/23 20:34:02 afaq Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -37,10 +37,9 @@ class AddToBuffer:
         myThread.transaction.begin()
 
         wmbsFile = File(lfn = file['LFN'], size = file['Size'], events = file['TotalEvents'], 
-				run=0, lumi = 0, cksum=file['Checksum'])
-				#run = runLumiInfo['RunNumber'], lumi = int(runLumiInfo['LumiSectionNumber']) )
-	
-	#For nwo this may work, later I can compact this into a function call and make the code efficient !!
+				cksum=file['Checksum'])
+
+
 	runLumiList=file.getLumiSections()
 	runList=[x['RunNumber'] for x in runLumiList]
 	for runNumber in runList:
@@ -61,6 +60,7 @@ class AddToBuffer:
         for inputFile in file.inputFiles:
 		#Parent file in this case doesn't get added to DBSBuffer
 		parentFile = File(lfn=inputFile['LFN'])
+
 		if parentFile.exists() == False: 
 			parentFile.create() 
 		else: 

@@ -110,7 +110,7 @@ except Exception,ex:
 
 try:
    x=WorkflowTest()
-   tests.append((x,"sfoulkes"))
+#DANGER!   tests.append((x,"sfoulkes"))
 except Exception,ex:
    if not errors.has_key("sfoulkes"):
        errors["sfoulkes"] = []
@@ -254,7 +254,7 @@ except Exception,ex:
 
 try:
    x=LocationsTest()
-   tests.append((x,"sfoulkes"))
+#DANGER   tests.append((x,"sfoulkes"))
 except Exception,ex:
    if not errors.has_key("sfoulkes"):
        errors["sfoulkes"] = []
@@ -435,8 +435,6 @@ except Exception,ex:
    if not errors.has_key("jcgon"):
        errors["jcgon"] = []
    errors["jcgon"].append(("SQLiteDAOFileTest",str(ex)))
-
-
 
 print('Writing level 2 failures to file: failures_mysql_2.rep')
 failures = open('failures_mysql_2.rep','w')

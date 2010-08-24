@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.5 2009/02/06 10:15:37 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Configuration.py,v 1.6 2009/02/06 15:26:35 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import imp
@@ -337,8 +337,8 @@ class Configuration(object):
         compSection = self.section_(componentName)
         if componentName not in self._internal_components:
             self._internal_components.append(componentName)
+            compSection.ComponentDir = None
 
-        compSection.ComponentDir = None
         return compSection
 
 

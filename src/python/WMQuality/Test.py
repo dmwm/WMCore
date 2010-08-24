@@ -8,8 +8,8 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.7 2009/01/26 14:08:06 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Test.py,v 1.8 2009/02/06 15:26:35 fvlingen Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -45,7 +45,7 @@ class Test:
         """
 
         for test in self.tests:
-            print('Test: '+test[0].__class__.__name__+ ' Developer: '+test[1])
+            print('*********************Test: '+test[0].__class__.__name__+ ' Developer: '+test[1])
             try:
                 testSuite = unittest.TestSuite()
                 test[0].developer = test[1]

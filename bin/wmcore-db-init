@@ -1,0 +1,146 @@
+#!/usr/bin/env python
+
+"""
+Commands for initializing the proper database tables
+or cleaning the database.
+"""
+
+__revision__ = "$Id: wmcore-db-init,v 1.1 2009/02/06 15:26:34 fvlingen Exp $"
+__version__ = "$Revision: 1.1 $"
+__author__ = "fvlingen@caltech.edu"
+
+import getopt
+import logging
+import os
+import sys
+import time
+
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.WMFactory import WMFactory
+from WMCore.WMInit import WMInit
+
+def usage():
+
+    msg = """
+Usage: wmcore-db-init --config (--create | --clear )<options>
+
+options
+--modules= comma separated list of modules whose tables
+need to be created.
+"""
+    print(msg)
+
+
+valid = ['config=', 'create', 'clear', 'modules=']
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "", valid)
+except getopt.GetoptError, ex:
+    print str(ex)
+    usage()
+    sys.exit(1)
+
+config = None
+command = None
+modules = []
+defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
+    "WMCore.Trigger"]
+
+
+for opt, arg in opts:
+    if opt == "--create":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "create"
+    if opt == "--clear":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "clear"
+    if opt == "--modules":
+        modules = arg.split(',')
+    if opt == "--config":
+        config = arg
+   
+if command == None:
+    msg = "No command specified\n"
+    print(msg)
+    usage()
+    sys.exit(0)
+ 
+if config == None:            
+    msg = "No Config file provided\n"
+    msg += "provide one with the --config option"
+    print(msg)
+    usage()
+    sys.exit(0)
+
+modules = modules + defaultModules
+
+# load the config file here.
+cfgObject = loadConfigurationFile(config)
+
+wmInit = WMInit()
+
+def connectionTest(config):
+    """
+    _connectionTest_
+
+    Create a DB Connection instance to test the connection specified
+    in the config file.
+
+    """
+    print 'checking default database connection'
+    databaseStr = config.CoreDatabase.dialect +'://'+config.CoreDatabase.masterUser+':'+config.CoreDatabase.masterPasswd+'@'+config.CoreDatabase.hostname+'/'+config.CoreDatabase.name
+    try:
+       wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.DEBUG)
+       wmInit.setDatabaseConnection(dbConfig = databaseStr, dialect = config.CoreDatabase.dialect, socketLoc = config.CoreDatabase.socket)
+    except Exception, ex:
+        msg = "Unable to make connection to using \n"
+        msg += "parameters provided in %s\n" % databaseStr 
+        msg += str(ex)
+        print msg
+        raise ex
+    print 'default database connection tested'
+
+    
+def create(config):
+    wmInit.setSchema(modules) 
+
+def executeCommand(command):
+    stdin,stdout,stderr = os.popen3(command)
+    for x in [stdout, stderr]:
+        line = x.read()
+        while line:
+            print(line)
+            line = x.read()
+    
+
+def clear(config):
+    if config.CoreDatabase.dialect == 'mysql':
+        if config.CoreDatabase.socket !='':
+            command1 = 'mysql -u '+config.CoreDatabase.masterUser+' --password='+config.CoreDatabase.masterPasswd+' --socket='+config.CoreDatabase.socket+" --exec "
+        else:
+            command1 = 'mysql -u '+config.CoreDatabase.masterUser+' --password='+config.CoreDatabase.masterPasswd+' -h '+config.CoreDatabase.hostname+" --exec "
+        command = command1+' "drop database if exists '+config.CoreDatabase.name+'"'
+        executeCommand(command)
+        command = command1+' "create database '+config.CoreDatabase.name+'"'
+        executeCommand(command)
+        command = command1+' "GRANT ALL PRIVILEGES ON '+config.CoreDatabase.name+\
+            ".* TO '"+config.CoreDatabase.user+"'@'"+config.CoreDatabase.hostname+\
+            "' IDENTIFIED BY '"+config.CoreDatabase.passwd+"' WITH GRANT OPTION"+'"'
+        executeCommand(command)
+
+if command == "create":
+    connectionTest(cfgObject)
+    create(cfgObject)
+    sys.exit(0)
+
+elif command == "clear":
+    clear(cfgObject)
+    sys.exit(0)

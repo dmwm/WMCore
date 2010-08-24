@@ -24,7 +24,9 @@ test = Test()
 test.parseCVS('cvsLog.txt', pathCut = 5, moduleCut = 1, maxVotes = 3)
 test.generate('conf_test_mysql.py')
 test.generate('conf_test_oracle.py')
+test.missingTests('missingTests.txt')
 
+print("Generated: test_style, conf_test_mysql.py, conf_test_orale.py, missingTests.txt")
 print("Edit generated files as necessary. E.g. some tests do only run on 1 backend (oracle/mysql)")
 
 

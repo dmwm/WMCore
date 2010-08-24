@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.11 2008/10/13 20:13:14 fvlingen Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Harness.py,v 1.12 2008/10/16 15:03:19 fvlingen Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -304,7 +304,9 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             logging.info(">>>Before I start I purge any stop messages send "+\
                 "to me")
             myThread.msgService.remove("Stop")
+            myThread.msgService.remove("StopAndWait")
             myThread.msgService.remove(self.config.Agent.componentName+":Stop")
+            myThread.msgService.remove(self.config.Agent.componentName+":StopAndWait")
         except Exception,ex:
             logging.critical("Prolem initializing : "+str(ex))
             raise
@@ -360,9 +362,6 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         """ 
         logging.debug("Receiving message of type: "+str(type)+\
         ", payload: "+str(payload))
-         # check if it is a stop message:
-        if type == 'Stop' or type == self.config.Agent.componentName+':Stop':
-            return
         self.__call__(type, payload)
 
     def startDeamon(self, keepParent = False):

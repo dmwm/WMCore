@@ -5,11 +5,13 @@ from WMQuality.Test import Test
 
 from WMCore_t.WMException_t import WMExceptionTest        
 from WMComponent_t.DBSBuffer_t.DBSBuffer_t import DBSBufferTest
+from WMComponent_t.DBSUpload_t.DBSUpload_t import DBSUploadTest
 from WMComponent_t.ErrorHandler_t.ErrorHandler_t import ErrorHandlerTest
 from WMComponent_t.Proxy_t.Proxy_t import ProxyTest
 
 from WMCore_t.FwkJobReport_t.FileInfo_t import FileInfoTest
 from WMCore_t.FwkJobReport_t.FJR_t import FJRTest
+#from WMCore_t.HTTPFrontEnd_t.REST_t.Rest_t import RestTest
 from WMCore_t.ThreadPool_t.ThreadPool_t import ThreadPoolTest
 from WMCore_t.MsgService_t.MsgService_t import MsgServiceTest
 from WMCore_t.Agent_t.Configuration_t import ConfigurationTest
@@ -29,7 +31,9 @@ tests = [\
      (ConfigurationTest(),'fvlingen'),\
      (DBFormatterTest(),'fvlingen'),\
      (HarnessTest(),'fvlingen'),\
+     #(DBSUploadTest(),'afaq'),\
      #(DBSBufferTest(),'afaq'),\
+     #(RestTest(), 'valya'),\
      (ErrorHandlerTest(),'fvlingen'),\
      (MsgServiceTest(),'fvlingen'),\
      (ProxyTest(),'fvlingen'),\

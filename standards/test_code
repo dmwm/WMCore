@@ -13,7 +13,7 @@ python conf_test_mysql.py
 # clean backend specific stuff
 ./cleanup_mysql.sh
 
-echo '\n'
+echo ''
 echo '======================================================'
 echo 'mysql backend tested, press any key for oracle backend'
 echo '======================================================'

@@ -8,8 +8,8 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.3 2008/09/29 16:10:57 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Test.py,v 1.4 2008/10/16 15:03:19 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import os
@@ -102,6 +102,13 @@ class Test:
                     vote = 0
             nl = logFile.readline()
         # we are done voting
+
+    def missingTests(self, filename):
+        """
+        Parses the cvs log and finds what modules have missing
+        tests.
+        """
+        pass
 
     def generate(self, filename):
         """

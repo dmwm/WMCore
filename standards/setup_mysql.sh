@@ -29,6 +29,6 @@ export DATABASE=mysql://${DBUSER}:${DBPASS}@${DBHOST}/${DBNAME}
 echo '-->Using mysql DB: ' $DATABASE
 export SQLCREATE="GRANT ALL PRIVILEGES ON ${DBNAME}.* TO '${DBUSER}'@'$DBHOST' IDENTIFIED BY '${DBPASS}' WITH GRANT OPTION;"
 # we need to grand super if we use stored procedures.
-export GRANTSUPER="GRANT SUPER on ${DBNAME}.* to '${DBUSER}'@'$DBHOST';" 
+export GRANTSUPER="GRANT SUPER on *.* to '${DBUSER}'@'$DBHOST';" 
 
 

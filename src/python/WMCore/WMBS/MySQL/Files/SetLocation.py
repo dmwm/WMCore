@@ -2,6 +2,7 @@
 MySQL implementation of SetLocation
 """
 from WMCore.Database.DBFormatter import DBFormatter
+from sets import Set
 
 class SetLocation(DBFormatter):
     
@@ -16,12 +17,15 @@ class SetLocation(DBFormatter):
         if type(location) == type('string'):
             return self.dbi.buildbinds(self.dbi.makelist(file), 'file', 
                    self.dbi.buildbinds(self.dbi.makelist(location), 'location'))
-        elif type(location) == type([]):
+        elif isinstance(location, (list, Set, set)):
             binds = []
             for l in location:
                 binds.extend(self.dbi.buildbinds(self.dbi.makelist(file), 'file', 
                    self.dbi.buildbinds(self.dbi.makelist(l), 'location')))
             return binds
+        else:
+            raise Exception, "Type of location argument is not allowed: %s" \
+                                % type(location)
         
     def execute(self, file = None, sename = None, conn = None, transaction = False):
         binds = self.getBinds(file, sename)

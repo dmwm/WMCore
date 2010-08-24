@@ -6,8 +6,8 @@ A simple object representing a file in WMBS
 
 """
 
-__revision__ = "$Id: File.py,v 1.27 2008/10/28 17:42:54 metson Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: File.py,v 1.28 2008/11/03 10:13:15 jacksonj Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.File import File as WMFile
@@ -22,14 +22,14 @@ class File(BusinessObject, WMFile):
     """
     #pylint: disable-msg=R0913
     def __init__(self, lfn='', id=-1, size=0, events=0, run=0, lumi=0,
-                 parents=Set(), locations=None, logger=None, dbfactory=None):
+                 parents=Set(), locations=Set(), logger=None, dbfactory=None):
         BusinessObject.__init__(self, logger=logger, dbfactory=dbfactory)
         WMFile.__init__(self, lfn=lfn, id=id, size=size, events=events, run=run,
                         lumi=lumi, parents=parents)
         # Create the file object
-        if locations != None:
-            self.setdefault("locations", locations)
+        self.setdefault("locations", locations)
         self.dict = self
+        self['newlocations'] = Set()
 
     def exists(self):
         """
@@ -83,6 +83,7 @@ class File(BusinessObject, WMFile):
         
         action = self.daofactory(classname='Files.GetLocation')
         self['locations'] = action.execute(self['lfn']) 
+        self['newlocations'].clear()
         
         self['parents'] = Set()
         
@@ -127,10 +128,16 @@ class File(BusinessObject, WMFile):
                 pass #Ignore that the file exists
             except Exception, e:
                 raise e
+            
+            # Add new locations if required
+            self.updateLocations(trans)
+        
             if newtrans:
                 trans.commit()
         except Exception, e:
-            trans.rollback()
+            # Only roll back transaction if it was created in this scope
+            if newtrans:
+                trans.rollback()
             raise e
     
     def delete(self):
@@ -170,10 +177,52 @@ class File(BusinessObject, WMFile):
         action = self.daofactory(classname='Files.Heritage')
         action.execute(child=self['id'], parent=parent.dict['id'])
         self.dict = self
+    
+    def updateLocations(self, trans = None):
+        """
+        Saves any new locations, and refreshes location list from DB
+        """
+        newtrans = False
+        if not trans:
+            trans = Transaction(dbinterface = self.dbfactory.connect())
+            newtrans = True
+        try:
+            # Add new locations if required
+            if len(self['newlocations']) > 0:
+                self.daofactory(classname='Files.SetLocation').execute(
+                                                    file=self['lfn'],
+                                                    sename=self['newlocations'],
+                                                    conn = trans.conn,
+                                                    transaction = True)
+            
+            # Update locations from the DB    
+            action = self.daofactory(classname='Files.GetLocation')
+            self['locations'] = action.execute(self['lfn'], conn = trans.conn,
+                                               transaction = True)
+            self['newlocations'].clear()
         
-    def setLocation(self, se):
-        self.daofactory(classname='Files.SetLocation').execute(file=self['lfn'],
-                                                               sename=se)
-        action = self.daofactory(classname='Files.GetLocation')
-        self['locations'] = action.execute(self['lfn']) 
-        self.dict = self
+            if newtrans:
+                trans.commit()
+        except Exception, e:
+            # Only roll back transaction if it was created in this scope
+            if newtrans:
+                trans.rollback()
+            raise e
+        
+    def setLocation(self, se, immediateSave = True):
+        """
+        Sets the location of a file. If immediateSave is True, commit change to
+        the DB immediately, otherwise queue for addition when save() is called.
+        Also removes previous error where a file would have to be saved before
+        locations could be added - confusing when file requires locations on its
+        first creation (breaks transaction model in Fileset commits etc)
+        """
+        if isinstance(se, str):
+            self['newlocations'].add(se)
+            self['locations'].add(se)
+        else:
+            self['newlocations'].update(se)
+            self['locations'].update(se)
+        
+        if immediateSave:
+            self.updateLocations()

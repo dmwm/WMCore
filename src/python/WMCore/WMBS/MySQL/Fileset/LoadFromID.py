@@ -6,8 +6,8 @@ MySQL implementation of Fileset.LoadFromID
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.6 2009/01/16 22:38:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: LoadFromID.py,v 1.7 2009/03/03 14:55:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -26,6 +26,12 @@ class LoadFromID(DBFormatter):
         formattedResult = DBFormatter.formatDict(self, result)[0]
         formattedResult["id"] = int(formattedResult["id"])
         formattedResult["last_update"] = int(formattedResult["last_update"])
+
+        if int(formattedResult["open"]) == 1:
+            formattedResult["open"] = True
+        else:
+            formattedResult["open"] = False            
+
         return formattedResult
             
     def execute(self, fileset = None, conn = None, transaction = False):

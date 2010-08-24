@@ -131,6 +131,14 @@ class PhEDExNotifierComponent:
         updatedConnection.close()
         createdConnection.close()
 
+        if updatedString[2:7] != "phedex":
+            logging.debug( "PhEDExNotifier: bad updated string from server follows." )
+            logging.debug( "%s" % updatedString )
+
+        if createdString[2:7] != "phedex":
+            logging.debug( "PhEDExNotifier: bad created string from server follows." )
+            logging.debug( "%s" % createdString )
+
         updated = eval( updatedString, {}, {} )
         created = eval( createdString, {}, {} )
         

@@ -26,8 +26,8 @@ CREATE TABLE wmbs_job_assoc (
 
 """
 
-__revision__ = "$Id: Job.py,v 1.2 2008/08/05 17:59:31 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Job.py,v 1.3 2008/08/09 22:21:53 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import datetime
 from sets import Set
@@ -40,7 +40,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.BusinessObject import BusinessObject
 
 class Job(BusinessObject, WMJob):
-    def __init__(self, subscription=None, files = Fileset(), id = -1, logger=None, dbfactory = None):
+    def __init__(self, subscription=None, files = Fileset(), id = -1):
         """
         Subscription object is used to determine the workflow. 
         file_set is a set that contains the id's of all files the job should use.
@@ -65,9 +65,10 @@ class Job(BusinessObject, WMJob):
         """
         Load the subscription and file id's from the database for a job of known id
         """
+        self.file_set = Fileset()
         file_ids = self.daofactory(classname='Jobs.Load').execute(self.id)
         for i in file_ids:
-            file = File(id=i)
+            file = File(id=i, logger=self.logger, dbfactory=self.dbfactory)
             file.load()
             self.file_set.addFile(file)
             

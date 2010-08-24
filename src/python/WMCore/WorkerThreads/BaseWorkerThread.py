@@ -9,8 +9,8 @@ to perform thread-specific setup and clean-up operations
 """
 
 __revision__ = \
-        "$Id: BaseWorkerThread.py,v 1.12 2009/02/05 23:30:52 jacksonj Exp $"
-__version__ = "$Revision: 1.12 $"
+        "$Id: BaseWorkerThread.py,v 1.13 2009/02/09 10:00:45 jacksonj Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -160,10 +160,10 @@ class BaseWorkerThread:
             msg = "Error in event loop: %s %s"
             msg = msg % (str(self), str(ex))
             logging.error(msg)
-        finally:
-            # Notify manager
-            self.terminateCallback()
+        
+        # Indicate to manager that thread is done
+        self.terminateCallback()
             
-            # All done
-            msg = "Worker thread %s terminated" % str(self)
-            logging.info(msg)
+        # All done
+        msg = "Worker thread %s terminated" % str(self)
+        logging.info(msg)

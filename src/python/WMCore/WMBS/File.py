@@ -2,41 +2,29 @@
 """
 _File_
 
-A simple object representing a file in WMBS
-
+A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.35 2009/01/05 23:00:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.35 $"
-
-from WMCore.DataStructs.File import File as WMFile
-from WMCore.Database.Transaction import Transaction
-from WMCore.DAOFactory import DAOFactory
-from sqlalchemy.exceptions import IntegrityError
+__revision__ = "$Id: File.py,v 1.36 2009/01/08 21:58:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.36 $"
 
 from sets import Set
 
+from WMCore.DataStructs.File import File as WMFile
 from WMCore.DataStructs.Run import Run
 
-import threading
+from WMCore.WMBS.WMBSBase import WMBSBase
 
-class File(WMFile):
+class File(WMBSBase, WMFile):
     """
     A simple object representing a file in WMBS
     """
     #pylint: disable-msg=R0913
     def __init__(self, lfn='', id=-1, size=0, events=0, cksum=0,
                  parents=None, locations=None):
+        WMBSBase.__init__(self)
         WMFile.__init__(self, lfn=lfn, size=size, events=events, 
                         cksum=cksum, parents=parents)
-
-        myThread = threading.currentThread()
-        self.logger = myThread.logger
-        self.dialect = myThread.dialect
-        self.dbi = myThread.dbi
-        self.daofactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = self.logger,
-                                     dbinterface = self.dbi)
 
         if locations == None:
             self.setdefault("newlocations", Set())
@@ -55,7 +43,9 @@ class File(WMFile):
         Does a file exist with this lfn, return the id
         """
         action = self.daofactory(classname='Files.Exists')
-        return action.execute(lfn = self['lfn'])
+        return action.execute(lfn = self['lfn'],
+                              conn = self.getReadDBConn(),
+                              transaction = self.existingTransaction())
         
     def getInfo(self):
         """
@@ -65,23 +55,22 @@ class File(WMFile):
                self['cksum'], list(self['runs']), list(self['locations']), \
                list(self['parents'])
 
-
     def getLocations(self):
 	"""
-	get a list of locations for this file
+	Get a list of locations for this file
 	"""
-
 	return list(self['locations'])
 
     def getRuns(self):
 	"""
-	get a list of run lumi objects (List of Set() of type WMCore.DataStructs.Run)
+	Get a list of run lumi objects (List of Set() of type
+        WMCore.DataStructs.Run)
 	"""
 	return list(self['runs'])
                                     
     def getParentLFNs(self):
         """
-        get a flat list of parent LFN's
+        Get a flat list of parent LFNs
         """
         result = []
         parents = self['parents']
@@ -101,10 +90,13 @@ class File(WMFile):
         result = None 
         if self['id'] > 0:
             action = self.daofactory(classname='Files.GetByID')
-            result = action.execute(self['id'])
+            result = action.execute(self['id'], conn = self.getReadDBConn(),
+                                    transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname='Files.GetByLFN')
-            result = action.execute(self['lfn'])
+            result = action.execute(self['lfn'], conn = self.getReadDBConn(),
+                                    transaction = self.existingTransaction())
+            
         assert len(result) == 1, "Found %s files, not one" % len(result)
 
 	result = result[0]
@@ -116,23 +108,26 @@ class File(WMFile):
        
 	#Get the Run/Lumis
 	action = self.daofactory(classname='Files.GetRunLumiFile')
-	runs = action.execute(self['lfn']) 	
+	runs = action.execute(self['lfn'], conn = self.getReadDBConn(), 
+                              transaction = self.existingTransaction())
 	[self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
 
         action = self.daofactory(classname='Files.GetLocation')
-        self['locations'] = action.execute(self['lfn']) 
+        self['locations'] = action.execute(self['lfn'], conn = self.getReadDBConn(),
+                                           transaction = self.existingTransaction())
         self['newlocations'].clear()
-        
         self['parents'] = Set()
         
         if parentage > 0:
             action = self.daofactory(classname='Files.GetParents')
-            for lfn in action.execute(self['lfn']):
+            parentLFNs = action.execute(self['lfn'],  conn = self.getReadDBConn(),
+                                        transaction = self.existingTransaction())
+            for lfn in parentLFNs:
                 f = File(lfn=lfn).load(parentage=parentage-1)
                 self['parents'].add(f)
         return self
     
-    def create(self, trans = None):
+    def create(self):
         """
         _create_
 
@@ -142,50 +137,35 @@ class File(WMFile):
         if self.exists() != False:
             return
 
-        myThread = threading.currentThread()
-        if myThread.transaction == None:
-            newtrans = True
-            myThread.transaction = Transaction(self.dbi)
-        else:
-            newtrans = False
-
         addAction = self.daofactory(classname="Files.Add")
         addAction.execute(files = self["lfn"], size = self["size"],
                           events = self["events"], cksum= self["cksum"],
-                          transaction = True)
+                          conn = self.getWriteDBConn(),
+                          transaction = self.existingTransaction())
 
 	if len(self["runs"]) > 0:
         	lumiAction = self.daofactory(classname="Files.AddRunLumi")
         	lumiAction.execute(file = self["lfn"], runs = self["runs"],
-                                   transaction = True)
+                                   conn = self.getWriteDBConn(),
+                                   transaction = self.existingTransaction())
         
         # Add new locations if required
         self.updateLocations()
-
-        if newtrans:
-            myThread.transaction.commit()
-            myThread.transaction = None            
-        
         self["id"] = self.exists()
+
+        self.commitIfNew()
         return
     
     def delete(self):
         """
         Remove a file from WMBS
         """
-        myThread = threading.currentThread()
-        if myThread.transaction == None:
-            newtrans = True
-            myThread.transaction = Transaction(self.dbi)
-        else:
-            newtrans = False
-            
         self.daofactory(classname='Files.Delete').execute(file=self['lfn'],
-                                                          transaction = True)
+                                                          conn = self.getWriteDBConn(),
+                                                          transaction = self.existingTransaction())
 
-        if newtrans:
-            myThread.transaction.commit()
-            myThread.transaction = None            
+        self.commitIfNew()
+        return
         
     def addChild(self, lfn):
         """
@@ -198,27 +178,16 @@ class File(WMFile):
         if not child['id'] > 0:
             raise Exception, "Child file doesn't have an id %s" % child['lfn']
 
-        myThread = threading.currentThread()
-        if myThread.transaction == None:
-            newtrans = True
-            myThread.transaction = Transaction(self.dbi)
-        else:
-            newtrans = False
-            
-        self.daofactory(classname='Files.Heritage').execute(
-                                                        child=child['id'], 
-                                                        parent=self['id'],
-                                                        transaction = True)
-
-        if newtrans:
-            myThread.transaction.commit()
-            myThread.transaction = None            
+        heritageAction = self.daofactory(classname='Files.Heritage')
+        heritageAction.execute(child=child['id'], parent=self['id'], conn = self.getWriteDBConn(),
+                               transaction = self.existingTransaction())
+        self.commitIfNew()
+        return
         
     def addParent(self, lfn):
         """
         Set an existing file (lfn) as a parent of this file
         """
-
         parent = File(lfn=lfn)
         parent.load()
         self['parents'].add(parent)
@@ -227,20 +196,12 @@ class File(WMFile):
         if not parent['id'] > 0:
             raise Exception, "Parent file doesn't have an id %s" % \
                         parent['lfn']
-
-        myThread = threading.currentThread()
-        if myThread.transaction == None:
-            newtrans = True
-            myThread.transaction = Transaction(self.dbi)
-        else:
-            newtrans = False
         
         action = self.daofactory(classname='Files.Heritage')
-        action.execute(child=self['id'], parent=parent['id'], transaction = True)
-
-        if newtrans:
-            myThread.transaction.commit()
-            myThread.transaction = None
+        action.execute(child=self['id'], parent=parent['id'], conn = self.getWriteDBConn(),
+                       transaction = self.existingTransaction())
+        self.commitIfNew()
+        return
     
     def updateLocations(self):
         """
@@ -250,28 +211,20 @@ class File(WMFile):
         written to the database all locations will be reloaded from the
         database.
         """
-        myThread = threading.currentThread()
-        if myThread.transaction == None:
-            newtrans = True
-            myThread.transaction = Transaction(self.dbi)
-        else:
-            newtrans = False
-        
         # Add new locations if required
         if len(self["newlocations"]) > 0:
             addAction = self.daofactory(classname = "Files.SetLocation")
             addAction.execute(file = self["lfn"], location = self["newlocations"],
-                              transaction = True)
+                              conn = self.getWriteDBConn(),
+                              transaction = self.existingTransaction())
 
         # Update locations from the DB    
         getAction = self.daofactory(classname = "Files.GetLocation")
-        self["locations"] = getAction.execute(self["lfn"], transaction = True)
+        self["locations"] = getAction.execute(self["lfn"], conn = self.getWriteDBConn(),
+                                              transaction = self.existingTransaction())
         self["newlocations"].clear()
 
-        if newtrans:
-            myThread.transaction.commit()
-            myThread.transaction = None            
-            
+        self.commitIfNew()
         return
         
     def setLocation(self, se, immediateSave = True):

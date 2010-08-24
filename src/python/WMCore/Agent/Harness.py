@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.5 2008/09/16 15:03:03 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Harness.py,v 1.6 2008/09/17 15:17:04 fvlingen Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -79,7 +79,7 @@ class Harness:
             try:
                 os.makedirs(compSect.componentDir)
             except :
-                print('component dir already exists. Continue on with initialization')
+                print('Component dir already exists. Continue on with initialization')
             logHandler = RotatingFileHandler(compSect.logFile,
                 "a", 1000000, 3)
             logFormatter = \
@@ -151,7 +151,9 @@ class Harness:
             self.diagnosticMessages.append('Logging.NOTSET')
             # events to stop the component.
             self.diagnosticMessages.append(compName + ':Stop')
+            self.diagnosticMessages.append(compName + ':StopAndWait')
             self.diagnosticMessages.append('Stop')
+            self.diagnosticMessages.append('StopAndWait')
 
             logging.info(">>>Instantiating trigger service")
             WMFactory("trigger", "WMCore.Trigger")
@@ -395,7 +397,20 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                 logging.debug(">>>Finished handling message of type "+ \
                     str(msg['name'])+ " \n")
                 if msg['name'] == 'Stop' or msg['name'] == self.config.Agent.componentName+':Stop':
-                    logging.info(">>>Gracefully shutting down component")
+                    logging.info(">>>Quick shut down of component")
+                    break
+                if msg['name'] == 'StopAndWait' or msg['name'] == self.config.Agent.componentName+':StopAndWait':
+                    logging.info(">>>Shut down of component while waiting for threads to finish")
+                    # check if nr of threads is specified.
+                    activeThreads = 1
+                    if msg['payload'] !="":
+                        activeThreads = int(msg['payload'])
+                        if activeThreads < 1:
+                            activeThreads = 1
+                    while threading.activeCount() > activeThreads: 
+                        logging.info('>>>Currently '+str(threading.activeCount())+' threads active')
+                        logging.info('>>>Waiting for les then '+str(activeThreads)+' to be active')
+                        time.sleep(5)
                     break
         except Exception,ex:
             logging.info(\

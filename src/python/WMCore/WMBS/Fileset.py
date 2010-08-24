@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.36 2009/01/16 22:43:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Fileset.py,v 1.37 2009/02/16 16:08:07 sryu Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from sets import Set
 
@@ -162,20 +162,20 @@ class Fileset(WMBSBase, WMFileset):
         
         if not self.exists():
             self.create()
-        lfns = []
+        ids = []
         
         while len(self.newfiles) > 0:
             #Check file objects exist in the database, save those that don't
             f = self.newfiles.pop()
             if not f.exists():
                 f.create()
-            lfns.append(f["lfn"])
+            ids.append(f["id"])
             self.files.add(f)
 
         #Add Files to DB only if there are any files on newfiles            
-        if len(lfns) > 0:
-            addAction = self.daofactory(classname='Files.AddToFileset')
-            addAction.execute(file = lfns, fileset = self.name,
+        if len(ids) > 0:
+            addAction = self.daofactory(classname='Files.AddToFilesetByIDs')
+            addAction.execute(file = ids, fileset = self.name,
                               conn = self.getWriteDBConn(),
                               transaction = self.existingTransaction())
         self.commitIfNew()

@@ -1,8 +1,8 @@
-from WMCore.Agent.Configuration import Configuration
+from WMCore.Configuration import Configuration
 config = Configuration()
 config.component_('Webtools')
 config.Webtools.application = 'webtools'
-config.Webtools.templates = '/Users/metson/WMCORE/src/templates/WMCore/WebTools'
+config.Webtools.templates = '/home/rpw/COMP/WMCORE/src/templates/WMCore/WebTools'
 config.Webtools.index = 'welcome'
 
 config.Webtools.section_('views')

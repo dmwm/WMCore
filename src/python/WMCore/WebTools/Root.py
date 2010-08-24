@@ -9,16 +9,16 @@ loaded dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.6 2009/01/20 21:31:22 rpw Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Root.py,v 1.7 2009/01/20 23:49:51 rpw Exp $"
+__version__ = "$Revision: 1.7 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log
 from cherrypy import config as cpconfig
 # configuration and arguments
 #FIXME
-from WMCore.Agent.Configuration import Configuration
-from WMCore.Agent.Configuration import loadConfigurationFile
+from WMCore.Configuration import Configuration
+from WMCore.Configuration import loadConfigurationFile
 from optparse import OptionParser
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
@@ -77,7 +77,6 @@ class Root(WMObject):
         #cpconfig.update ({'request.error_response': self.handle_error})
         #cpconfig.update ({'tools.proxy.on': True})
         #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})
-        print "LOAD"
         log("loading config: %s" % cpconfig, context=self.app, severity=logging.DEBUG, traceback=False)
 
     def loadPages(self):

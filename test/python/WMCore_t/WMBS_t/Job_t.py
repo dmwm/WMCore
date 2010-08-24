@@ -2,11 +2,10 @@
 """
 _Job_t_
 
-Unit tests for the WMBS Job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.3 2008/12/18 15:00:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Job_t.py,v 1.4 2008/12/26 15:06:40 afaq Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import logging
@@ -29,7 +28,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class JobTest(unittest.TestCase):
+class Job_t(unittest.TestCase):
     _setup = False
     _teardown = False
     
@@ -77,9 +76,6 @@ class JobTest(unittest.TestCase):
         """
         _testCreateDeleteExists_
 
-        Create a job and save it to the database.  Use the exists() method of
-        the job class to determine if the job exists in the database before the
-        job is created, after it is created and after it is deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -95,10 +91,8 @@ class JobTest(unittest.TestCase):
         testJobGroup = JobGroup(subscription = testSubscription)
         testJobGroup.create()
         
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         run = 1, lumi = 45)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         run = 1, lumi = 45)        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileA.create()
         testFileB.create()
 
@@ -125,9 +119,6 @@ class JobTest(unittest.TestCase):
         """
         _testLoad_
 
-        Create a job and save it to the database.  Load the same job from the
-        database and verify that all the attributes of the loaded job match the
-        original.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001")
@@ -143,10 +134,10 @@ class JobTest(unittest.TestCase):
         testJobGroup = JobGroup(subscription = testSubscription)
         testJobGroup.create()
         
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                         run = 1, lumi = 45)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                         run = 1, lumi = 45)        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(1, *[45]))
         testFileA.create()
         testFileB.create()
 

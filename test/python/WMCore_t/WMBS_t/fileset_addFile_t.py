@@ -6,8 +6,8 @@ objects and multiple objects contained in a list or Set.
 """
 
 
-__revision__ = "$Id: fileset_addFile_t.py,v 1.1 2008/09/25 13:31:27 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: fileset_addFile_t.py,v 1.2 2008/12/26 15:06:40 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -125,8 +125,10 @@ class WMBSTestCase(DataStructsTestCase):
     
     def createFile(self, thelfn):
         from WMCore.WMBS.File import File
-        file = File(lfn=thelfn, size=1000, events=230, run=1234, lumi=1, 
+        file = File(lfn=thelfn, size=1000, events=230, cksum=1, 
                     logger=self.logger, dbfactory = self.dbf)
+        file.addRun(Run(10, *[12312]))
+
         file.save()
         return file
      

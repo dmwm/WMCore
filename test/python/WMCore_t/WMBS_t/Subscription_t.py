@@ -1,12 +1,4 @@
 #!/usr/bin/env python
-""" 
-Subscription_t
-
-Unit tests for the WMBS Subscription class.
-"""
-
-__revision__ = "$Id: Subscription_t.py,v 1.4 2008/12/18 15:00:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
 
 import unittest, os, logging, commands, random, threading
 from sets import Set
@@ -21,7 +13,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class SubscriptionTest(unittest.TestCase):
+class Subscription_t(unittest.TestCase):
     _setup = False
     _teardown = False
     
@@ -86,11 +78,11 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -138,11 +130,11 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -191,11 +183,11 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -243,11 +235,11 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -297,17 +289,17 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+                         locations = Set(["goodse.cern.ch"]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+                         locations = Set(["goodse.cern.ch"]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+                         locations = Set(["goodse.cern.ch"]))
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
-                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+                         locations = Set(["goodse.cern.ch"]))
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
-                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+                         locations = Set(["goodse.cern.ch"]))
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
-                         run = 1, lumi = 45, locations = Set(["goodse.cern.ch"]))
+                         locations = Set(["goodse.cern.ch"]))
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -382,7 +374,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
     
-            testFile = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            testFile = File(lfn=lfn, size=size, events=events)
+            testFile.addRun(Run(run, *[lumi]))
             testFile.create()
             
             if random.randint(1, 2) > 1:
@@ -426,7 +419,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
     
-            testFile = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            testFile = File(lfn=lfn, size=size, events=events)
+            testFile.addRun(Run(run, *[lumi]))
             testFile.create()
             
             if random.randint(1, 2) > 1:
@@ -470,7 +464,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
     
-            testFile = File(lfn=lfn, size=size, events=events, run=run, lumi=lumi)
+            testFile = File(lfn=lfn, size=size, events=events)
+            testFile.addRun(Run(run, *[lumi]))
             testFile.create()
             
             if random.randint(1, 2) > 1:
@@ -501,11 +496,11 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20, run = 1, lumi = 45)
+                         events = 20)
         testFileA.create()
         testFileB.create()
         testFileC.create()

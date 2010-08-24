@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: files_DAOFactory_t.py,v 1.4 2008/11/04 11:02:07 jacksonj Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: files_DAOFactory_t.py,v 1.5 2008/12/26 15:06:40 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -180,8 +180,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
         self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
-        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
-        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         myfile1 = File(lfn=file, logger=self.mysqllogger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=self.sqlitelogger, dbfactory=self.dbf2)
         
@@ -194,8 +194,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
         self.daofactory2(classname='Files.Add').execute(files=file, size=2000, events=1000)
-        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
-        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile3 = File(lfn=file, logger=self.mysqllogger, dbfactory=self.dbf1)
         myfile4 = File(lfn=file, logger=self.sqlitelogger, dbfactory=self.dbf2)
@@ -237,8 +237,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
         self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
-        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
-        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
@@ -279,8 +279,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
         self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
-        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
-        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
@@ -324,8 +324,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
         self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
-        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
-        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
@@ -370,8 +370,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
         self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
-        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
-        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
@@ -412,8 +412,8 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         
         self.daofactory1(classname='Files.Add').execute(files=file, size=1000, events=2000)
         self.daofactory2(classname='Files.Add').execute(files=file, size=1000, events=2000)
-        self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
-        self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory1(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
+        #self.daofactory2(classname='Files.AddRunLumi').execute(files=file, run=10, lumi=12312)
         
         myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1)
         myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2)
@@ -455,9 +455,12 @@ class FileBusinessObjectTestCase(BaseFilesTestCase):
         file = "/store/data/Electrons/8236/1379/rrrrasgdflj4eii.root"
         
         myfile1 = File(lfn=file, logger=logger, dbfactory=self.dbf1, size=1000,
-                       events=2000, run=10, lumi=12312)
+                       events=2000, cksum=1)
+        myfile1.addRun(Run(10, *[12312]))
+
         myfile2 = File(lfn=file, logger=logger, dbfactory=self.dbf2, size=1000,
-                       events=2000, run=10, lumi=12312)
+                       events=2000, cksum=1)
+        myfile2.addRun(Run(10, *[12312]))
                 
         myfile1.setLocation(self.selist[0], immediateSave=False)
         myfile2.setLocation(self.selist[0], immediateSave=False)

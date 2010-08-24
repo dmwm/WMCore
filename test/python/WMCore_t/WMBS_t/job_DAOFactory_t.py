@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: job_DAOFactory_t.py,v 1.1 2008/09/25 13:31:27 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: job_DAOFactory_t.py,v 1.2 2008/12/26 15:06:40 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands, random, datetime
 from sets import Set
@@ -187,7 +187,7 @@ class JobBusinessObjectTestCase(BaseJobsTestCase):
             for i in range(0,10):
                 print i, len(job.listLFNs())
                 file = File(lfn="/store/data/%s.root" % i, 
-                                 size=1000, events=2000, lumi=10 + i, run=12312, logger=testlogger, dbfactory = dbi)
+                                 size=1000, events=2000, cksum=100, logger=testlogger, dbfactory = dbi)
                 print file.dict['id']
                 file.save()
                 print file.dict['id']

@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: fileset_DAOFactory_t.py,v 1.1 2008/09/25 13:31:27 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: fileset_DAOFactory_t.py,v 1.2 2008/12/26 15:06:40 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from sets import Set
@@ -160,7 +160,7 @@ class FilesetBusinessObjectTestCase(BaseFilesetTestCase):
         factories = [self.dbf1, self.dbf2]
         for dbf in factories:
             for i in range(0,num_files):
-                filelist.add(File(size=1000, run=2000, lumi=10+i, events=12312,
+                filelist.add(File(size=1000, events=12312,
                   lfn="/store/data/Electrons/1234/5678/hkh112kj1232%s.root" % i, 
                   logger=self.sqlitelogger, dbfactory=dbf))
 
@@ -182,7 +182,7 @@ class FilesetBusinessObjectTestCase(BaseFilesetTestCase):
             assert len(fs.listFiles()) == num_files, \
                 "Fileset has wrong number of files: %i %i" % \
                         (len(fs.listFiles()), num_files)
-            file = File(size=1000, run=2000, lumi=60 + i, events=12312,
+            file = File(size=1000, events=12312,
               lfn="/store/data/Electrons/5678/1234/hkh123g12kj1232%s.root" % i, 
               logger=self.sqlitelogger, dbfactory=dbf)
             fs.addFile(file)

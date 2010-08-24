@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.2 2008/07/03 16:56:23 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Fileset.py,v 1.3 2008/07/07 09:38:37 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable 
 
@@ -44,3 +44,4 @@ class Fileset(Pickleable):
         Add contents of self.newfiles to self, empty self.newfiles
         """
         self.files = self.files | self.newfiles
+        self.newfiles = Set()

@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: PhEDExNotifier_t.py,v 1.1 2008/09/25 13:14:02 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PhEDExNotifier_t.py,v 1.2 2008/11/28 10:15:54 gowdy Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest, logging, os, commands
 from WMCore.WMBSFeeder.PhEDExNotifier.PhEDExNotifierComponent import PhEDExNotifierComponent
@@ -29,14 +29,14 @@ class BasePhEDExNotifierComponentTestCase(unittest.TestCase):
         self.callPhEDExNotifier( dataset )
 
     def callPhEDExNotifier( self, fileset ):
-        for i in range(1, 21):
+        for i in range(1, 4):
             fileset.commit()
             print "iteration %s: %s new files (%s total)" % (i, len(fileset.listNewFiles()), len(fileset.listFiles())) 
             self.feeder([fileset])
             set = fileset.listFiles()
             if len(set) > 0:
                 file = set.pop()
-                print file.dict["locations"], file.dict["lfn"]        
+                print file["locations"], file["lfn"]        
         # I do this outside the loop as I moved this to the start of the
         # loop so I could do the print out before the first call to
         # PhEDExNotifier

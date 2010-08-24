@@ -22,7 +22,7 @@ from WMCore.Agent.Harness import Harness
 # we do not import failure handlers as they are dynamicly
 # loaded from the config file.
 from WMCore.WMFactory import WMFactory
-from WMComponent.HTTPFrontend import Downloader
+from WMCore.HTTPFrontEnd import Downloader
 from WMCore.WebTools.Root import Root
 
 factory = WMFactory('generic')

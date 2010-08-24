@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.3 2008/11/19 11:15:56 fvlingen Exp $"
+    "$Id: TestInit.py,v 1.4 2008/11/20 22:20:08 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.3 $"
+    "$Revision: 1.4 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -48,7 +48,8 @@ class TestInit:
         """
         Sets logging parameters
         """
-        self.init.setLogging(self.testClassName, self.testClassName)
+        self.init.setLogging(self.testClassName, self.testClassName,
+                             logExists = False)
 
     def setDatabaseConnection(self):
         """

@@ -30,8 +30,8 @@ class CreateWMBS(CreateWMBSMySQL, SQLiteBase):
                 lfn     VARCHAR(255) NOT NULL,
                 size    int(11),
                 events  int(11),
-                run     int(11),
-                lumi    int(11))"""
+                first_event  int(11),
+                last_event  int(11))"""
         self.create['wmbs_location'] = """CREATE TABLE wmbs_location (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 se_name VARCHAR(255) NOT NULL,

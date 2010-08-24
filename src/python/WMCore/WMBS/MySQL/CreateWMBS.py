@@ -36,11 +36,17 @@ class CreateWMBS(MySQLBase):
                 lfn     VARCHAR(255) NOT NULL,
                 size    int(11),
                 events  int(11),
-                run     int(11),
-                lumi    int(11),
+                first_event  int(11),
+                last_event  int(11),
                 UNIQUE(lfn),
                 PRIMARY KEY(id),
                 INDEX (lfn))"""
+        self.create['wmbs_file_runlumi_map'] = """CREATE TABLE wmbs_file_runlumi_map (
+                file    int(11),
+                run     int(11),
+                lumi    int(11),
+                FOREIGN KEY (file) references wmbs_file(id)
+                    ON DELETE CASCADE)"""
         self.create['wmbs_location'] = """CREATE TABLE wmbs_location (
                 id int(11) NOT NULL AUTO_INCREMENT,
                 se_name VARCHAR(255) NOT NULL,

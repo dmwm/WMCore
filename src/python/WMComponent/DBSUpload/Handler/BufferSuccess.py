@@ -4,7 +4,7 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.3 2008/10/23 19:18:37 afaq Exp $"
+__revision__ = "$Id: BufferSuccess.py,v 1.4 2008/10/27 21:38:30 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -69,6 +69,7 @@ class BufferSuccess(BaseHandler):
         for aDataset in datasets:
             print aDataset
             files=dbinterface.findUploadableFiles(aDataset)
+            print "Total files", len(files)
             for aFile in files:
                 print aFile
 

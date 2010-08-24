@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.6 2008/07/21 15:21:35 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: subscription_DAOFactory_unit.py,v 1.7 2008/09/09 17:03:02 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest, logging, os, commands, random, datetime
 import sys, traceback
@@ -29,7 +29,7 @@ class BaseFilesTestCase(unittest.TestCase):
         logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='%s.log' % __file__,
+                    filename=__file__.replace('.py','.log'),
                     filemode='w')
         
         self.mysqllogger = logging.getLogger('wmbs_mysql')
@@ -54,6 +54,7 @@ class BaseFilesTestCase(unittest.TestCase):
             self.testlogger.debug("WMBS MySQL database created")
         else:
             self.testlogger.debug("WMBS MySQL database could not be created, already exists?")
+            
         createworked = False
         try:   
             theSQLiteCreator = self.daofactory2(classname='CreateWMBS')
@@ -94,6 +95,7 @@ class SubscriptionDAOObjectTestCase(BaseFilesTestCase):
 class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
     ran = False
     def setUp(self):
+        print '\nsetUp\n'
         if not self.ran:
             BaseFilesTestCase.setUp(self)
             c = 0
@@ -114,10 +116,12 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
             self.ran = True
         
     def tearDown(self):
+        print '\ntearDown\n'
         if not self.ran:
             BaseFilesTestCase.tearDown(self)
             
     def createSubs(self, testlogger):
+        print '\ncreateSubs\n'
         subscriptions = []
         c = 0
         for dbi in [self.dbf1, self.dbf2]:
@@ -130,6 +134,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
         return subscriptions
             
     def testCreate(self):
+        print '\ntestCreate\n'
         testlogger = logging.getLogger('testCreate')
         subscriptions = self.createSubs(testlogger)
          
@@ -137,6 +142,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
             assert i.exists(), "Subscription does not exist"
             
     def testLoad(self):
+        print '\ntestLoad\n'
         testlogger = logging.getLogger('testLoad')
         self.createSubs(testlogger) #Put some subscriptions into the database
         subscriptions = []
@@ -150,26 +156,36 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
             c = c + 1
     
     def testFileCycle(self):
+        print '\ntestFileCycle\n'
         testlogger = logging.getLogger('testFileCycle')
         self.createSubs(testlogger)
         filelist = []
         num_files = 1000
-        for i in range(0,num_files):
-            filelist.append(("/store/data/Electrons/1234/5678/hkh123ghk12khj3hk123ljhkj1232%s.root" % i, 
-                             1000, 2000, 10 + i, 12312))
-        for dao in self.daofactory1, self.daofactory2:
-            dao(classname='Files.Add').execute(files=filelist)
-            dao(classname='Files.AddRunLumi').execute(files=filelist)
         
-        def strim(tuple): return tuple[0]
-        filelist = map(strim, filelist)
-        
-        for dao in self.daofactory1, self.daofactory2:     
-            dao(classname='Files.AddToFileset').execute(file=filelist, fileset='MyCoolFiles')
+        c = 0
+        for dbi in [self.dbf1]:#, self.dbf2]:
+            for i in range(0,num_files):
+                f = File(lfn="/store/data/Electrons/1234/5678/%s.root" % i, 
+                         size=1000, 
+                         events=2000, 
+                         run=12313213, 
+                         lumi=10 + i, 
+                         logger=testlogger, \
+                         dbfactory = dbi)
+                filelist.append(f)
+                
+            print "len(filelist)", len(filelist)
+            self.fileset[c] = Fileset(name='MyCoolFiles', 
+                                      logger=testlogger, 
+                                      dbfactory = dbi)
+            self.fileset[c].addFile(filelist)
+            print len(self.fileset[c].listNewFiles())
+            self.fileset[c].commit()
+            c = c + 1
         
         subscriptions = []
         c = 0
-        for dbi in [self.dbf1, self.dbf2]:
+        for dbi in [self.dbf1]:#, self.dbf2]:
             subscriptions.append(Subscription(fileset = self.fileset[c], 
                                             workflow = self.workflow[c], 
                                             logger=testlogger, 

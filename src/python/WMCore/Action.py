@@ -10,7 +10,7 @@ from WMCore.Database.Dialects import OracleDialect
 
 class BaseAction(object):
     name = "BaseAction"
-    def __init__(self, package='WMCore', logger):
+    def __init__(self, package='WMCore', logger=None):
         self.package = package
         self.logger = logger
         self.logger.debug("Instantiating %s Action object" % self.name)

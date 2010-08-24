@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.2 2008/11/19 11:15:56 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMInit.py,v 1.3 2008/11/19 14:55:20 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -83,7 +83,7 @@ class WMInit:
 
         options = {}
         if not type(dbConfig) == str:
-            myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDBConf)
+            myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDbConf)
         else:
             if myThread.dialect == 'MySQL':
                 if socketLoc != None:
@@ -129,7 +129,7 @@ class WMInit:
         Associated to modules. Note this only works if there 
         is the module has a Destroy class.
         """
-
+        myThread = threading.currentThread()
         for module in modules:
             factory = WMFactory("clear", module)
             destroy = factory.loadObject(myThread.dialect+".Destroy")

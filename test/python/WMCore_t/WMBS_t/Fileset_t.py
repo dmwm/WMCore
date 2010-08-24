@@ -4,11 +4,10 @@ Testcase for Fileset
 
 Instantiate a Fileset, with an initial file on its Set. After being populated with 1000 random files,
 its access methods and additional file insert methods are tested
-
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.5 2008/12/23 22:31:19 afaq Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Fileset_t.py,v 1.6 2009/01/08 22:00:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import logging
@@ -66,7 +65,7 @@ class Fileset_t(unittest.TestCase):
         myThread.transaction.commit()
         
         self._teardown = True
-        return                                                                                
+        return                              
 
     def testCreateDeleteExists(self):
         """
@@ -89,6 +88,66 @@ class Fileset_t(unittest.TestCase):
 
         assert testFileset.exists() == False, \
                "ERROR: Fileset exists after it was deleted"
+
+        return
+
+    def testCreateTransaction(self):
+        """
+        _testCreateTransaction_
+
+        Create a Fileset and commit it to the database and then roll back the
+        transaction.  Use the fileset's exists() method to verify that it
+        doesn't exist in the database before create() is called, that is does
+        exist after create() is called and that it does not exist after the
+        transaction is rolled back.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testFileset = Fileset(name = "TestFileset")
+
+        assert testFileset.exists() == False, \
+               "ERROR: Fileset exists before it was created"
+
+        testFileset.create()
+
+        assert testFileset.exists() >= 0, \
+               "ERROR: Fileset does not exist after it was created"
+
+        myThread.transaction.rollback()
+
+        assert testFileset.exists() == False, \
+               "ERROR: Fileset exists after transaction was rolled back."
+
+        return    
+
+    def testDeleteTransaction(self):
+        """
+        _testDeleteTransaction_
+
+        """
+        testFileset = Fileset(name = "TestFileset")
+
+        assert testFileset.exists() == False, \
+               "ERROR: Fileset exists before it was created"
+
+        testFileset.create()
+
+        assert testFileset.exists() >= 0, \
+               "ERROR: Fileset does not exist after it was created"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testFileset.delete()
+
+        assert testFileset.exists() == False, \
+               "ERROR: Fileset exists after it was deleted"
+
+        myThread.transaction.rollback()
+
+        assert testFileset.exists() >= 0, \
+               "ERROR: Fileset doesn't exist after transaction was rolled back."
 
         return
 
@@ -243,7 +302,7 @@ class Fileset_t(unittest.TestCase):
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, cksum = 3)
         testFileC.addRun(Run( 1, *[45]))
-        testFileB.create()
+        testFileC.create()
 
         testFilesetA = Fileset(name = "TestFileset")
         testFilesetA.create()
@@ -286,8 +345,84 @@ class Fileset_t(unittest.TestCase):
         testFileA.delete()
         testFileB.delete()
         testFileC.delete()
+
+    def testFileCreateTransaction(self):
+        """
+        _testFileCreateTransaction_
+
+        Create several files and add them to a fileset.  Commit the fileset
+        and the files to the database, verifying that they can loaded back
+        from the database.  Rollback the transaction to the point after the
+        fileset has been created buy before the files have been associated with
+        the filset.  Load the filesets from the database again and verify that
+        they do not have any files.
+        """
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, cksum = 3)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20, cksum = 3)
+        testFileB.addRun(Run( 1, *[45]))
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20, cksum = 3)
+        testFileC.addRun(Run( 1, *[45]))
+        testFileC.create()
+
+        testFilesetA = Fileset(name = "TestFileset")
+        testFilesetA.create()
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        testFilesetA.addFile(testFileA)
+        testFilesetA.addFile(testFileB)
+        testFilesetA.addFile(testFileC)
+        testFilesetA.commit()
+
+        testFilesetB = Fileset(name = testFilesetA.name)
+        testFilesetB.load(method = "Fileset.LoadFromName")
+        testFilesetC = Fileset(id = testFilesetA.id)
+        testFilesetC.load(method = "Fileset.LoadFromID")
+
+        assert testFilesetB.id == testFilesetA.id, \
+               "ERROR: Load from name didn't load id"
+
+        assert testFilesetC.name == testFilesetA.name, \
+               "ERROR: Load from id didn't load name"
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testFilesetB.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        goldenFiles = [testFileA, testFileB, testFileC]
+        for filesetFile in testFilesetC.files:
+            assert filesetFile in goldenFiles, \
+                   "ERROR: Unknown file in fileset"
+            goldenFiles.remove(filesetFile)
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Fileset is missing files"
+
+        myThread.transaction.rollback()
+
+        testFilesetB.load(method = "Fileset.LoadFromName")
+        testFilesetC.load(method = "Fileset.LoadFromID")
+
+        assert len(testFilesetB.files) == 0, \
+               "ERROR: Fileset B has too many files"
+
+        assert len(testFilesetC.files) == 0, \
+               "ERROR: Fileset C has too many files"        
         
-    # test parentage
-    
+        testFilesetA.delete()
+        testFileA.delete()
+        testFileB.delete()
+        testFileC.delete()
+            
 if __name__ == "__main__":
         unittest.main()

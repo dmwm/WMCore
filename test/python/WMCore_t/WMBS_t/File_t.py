@@ -2,13 +2,11 @@
 """
 _File_t_
 
-Unit tests for File creation, location and exists, including checks to see that calls 
-are database dialect neutral.
-
+Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.10 2009/01/02 19:27:32 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: File_t.py,v 1.11 2009/01/08 22:00:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import logging
@@ -68,16 +66,20 @@ class File_t(unittest.TestCase):
         
         if self._teardown:
             return
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
 
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        if myThread.transaction == None:
+            myThread.transaction = Transaction(self.dbi)
+        
         myThread.transaction.begin()
+
+        factory = WMFactory("WMBS", "WMCore.WMBS")        
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
         destroyworked = destroy.execute(conn = myThread.transaction.conn)
+
         if not destroyworked:
             raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-            
+        
+        myThread.transaction.commit()    
         self._teardown = True
             
     def testCreateDeleteExists(self):
@@ -103,6 +105,72 @@ class File_t(unittest.TestCase):
 
         assert testFile.exists() == False, \
                "ERROR: File exists after it has been deleted"
+        return
+
+    def testCreateTransaction(self):
+        """
+        _testCreateTransaction_
+
+        Begin a transaction and then create a file in the database.  Afterwards,
+        rollback the transaction.  Use the File class's exists() method to
+        to verify that the file doesn't exist before it was created, exists
+        after it was created and doesn't exist after the transaction was rolled
+        back.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=1111)
+
+        assert testFile.exists() == False, \
+               "ERROR: File exists before it was created"
+
+	testFile.addRun(Run(1, *[45]))
+        testFile.create()
+
+        assert testFile.exists() > 0, \
+               "ERROR: File does not exist after it was created"
+
+        myThread.transaction.rollback()
+
+        assert testFile.exists() == False, \
+               "ERROR: File exists after transaction was rolled back."
+        return    
+
+    def testDeleteTransaction(self):
+        """
+        _testDeleteTransaction_
+
+        Create a file and commit it to the database.  Start a new transaction
+        and delete the file.  Rollback the transaction after the file has been
+        deleted.  Use the file class's exists() method to verify that the file
+        does not exist after it has been deleted but does exist after the
+        transaction is rolled back.
+        """
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                        cksum=1111)
+
+        assert testFile.exists() == False, \
+               "ERROR: File exists before it was created"
+
+	testFile.addRun(Run(1, *[45]))
+        testFile.create()
+
+        assert testFile.exists() > 0, \
+               "ERROR: File does not exist after it was created"
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testFile.delete()
+
+        assert testFile.exists() == False, \
+               "ERROR: File exists after it has been deleted"
+
+        myThread.transaction.rollback()
+
+        assert testFile.exists() > 0, \
+               "ERROR: File does not exist after transaction was rolled back."
         return
 
     def testGetInfo(self):
@@ -291,6 +359,62 @@ class File_t(unittest.TestCase):
         assert len(goldenFiles) == 0, \
               "ERROR: Some parents are missing"
         return
+
+    def testAddChildTransaction(self):
+        """
+        _testAddChildTransaction_
+
+        Add a child to some parent files and make sure that all the parentage
+        information is loaded/stored correctly from the database.  Rollback the
+        addition of one of the childs and then verify that it does in fact only
+        have one parent.
+        """
+        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                              events = 20, cksum = 1)
+        testFileParentA.addRun(Run( 1, *[45]))
+        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                              events = 20, cksum = 1)
+        testFileParentB.addRun(Run( 1, *[45]))
+        testFileParentA.create()
+        testFileParentB.create()
+
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                         cksum = 1)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+
+        testFileParentA.addChild("/this/is/a/lfn")
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testFileParentB.addChild("/this/is/a/lfn")
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.load(parentage = 1)
+
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            assert parentFile in goldenFiles, \
+                   "ERROR: Unknown parent file"
+            goldenFiles.remove(parentFile)
+
+        assert len(goldenFiles) == 0, \
+              "ERROR: Some parents are missing"
+
+        myThread.transaction.rollback()
+        testFileB.load(parentage = 1)
+
+        goldenFiles = [testFileParentA]
+        for parentFile in testFileB["parents"]:
+            assert parentFile in goldenFiles, \
+                   "ERROR: Unknown parent file"
+            goldenFiles.remove(parentFile)
+
+        assert len(goldenFiles) == 0, \
+              "ERROR: Some parents are missing"
+        
+        return
     
     def testSetLocation(self):
         """
@@ -320,6 +444,51 @@ class File_t(unittest.TestCase):
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"    
         return
+
+    def testSetLocationTransaction(self):
+        """
+        _testSetLocationTransaction_
+
+        """
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                        cksum = 1)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        testFileA.setLocation(["se1.fnal.gov"])
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testFileA.setLocation(["se1.cern.ch"])
+        testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
+                              immediateSave = False)
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.load()
+
+        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
+
+        for location in testFileB["locations"]:
+            assert location in goldenLocations, \
+                   "ERROR: Unknown file location"
+            goldenLocations.remove(location)
+
+        assert len(goldenLocations) == 0, \
+              "ERROR: Some locations are missing"
+
+        myThread.transaction.rollback()
+        testFileB.load()
+
+        goldenLocations = ["se1.fnal.gov"]
+
+        for location in testFileB["locations"]:
+            assert location in goldenLocations, \
+                   "ERROR: Unknown file location"
+            goldenLocations.remove(location)
+
+        assert len(goldenLocations) == 0, \
+              "ERROR: Some locations are missing"
+        return    
 
     def testLocationsConstructor(self):
         """

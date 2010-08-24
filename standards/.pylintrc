@@ -26,7 +26,6 @@ evaluation='10.0 - ((float(5 * errors + warnings) / statements) * 10)'
 # Add a comment according to your evaluation note. This is used by the global
 # evaluation report (R0004).
 comment=no
-
 # Include message's id in output
 include-ids=no
 
@@ -73,16 +72,16 @@ no-docstring-rgx=__.*__
 min-name-length=3
 
 # Regular expression which should only match correct module names
-module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+module-rgx=[A-Z][a-zA-Z0-9]+$
 
 # Regular expression which should only match correct class names
 class-rgx=[A-Z][a-zA-Z0-9]+$
 
 # Regular expression which should only match correct function names
-function-rgx=([a-z][a-zA-Z0-9]*$)|([_][A-Z][a-zA-Z0-9]*$)
+function-rgx=[a-z][a-zA-Z0-9]*$
 
 # Regular expression which should only match correct method names
-method-rgx=([a-z][a-zA-Z0-9]*$)|([_][A-Z][a-zA-Z0-9]*$)|([_]{2}[a-z]+[_]{2}$)
+method-rgx=([a-z][a-zA-Z0-9]*$)|([_]{2}[a-z]+[_]{2}$)
 
 # Regular expression which should only match correct argument names
 argument-rgx=[a-z][a-zA-Z0-9]*$
@@ -90,8 +89,11 @@ argument-rgx=[a-z][a-zA-Z0-9]*$
 # Regular expression which should only match correct variable names
 variable-rgx=[a-z][a-zA-Z0-9]*$
 
+# Regular expression which should only match correct class attr names
+attr-rgx=[a-z][a-zA-Z0-9]*$
+
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run
+good-names=i,j,k,ex,
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata,kludge

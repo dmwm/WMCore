@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.6 2008/11/13 16:05:40 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: MsgService_t.py,v 1.7 2009/02/27 22:19:22 fvlingen Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import commands
 import unittest
@@ -399,7 +399,6 @@ class MsgServiceTest(unittest.TestCase):
         # we should now have 0 messages left.
         assert msgServiceL[0].pendingMsgs() == 2*MsgServiceTest._minMsg*10
         myThread.transaction.commit()
-
         # purge everything.
 
     def runTest(self):
@@ -408,5 +407,6 @@ class MsgServiceTest(unittest.TestCase):
         self.testC()
         self.testD()
         self.testE()
+
 if __name__ == "__main__":
     unittest.main()

@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.9 2009/02/09 21:00:14 fvlingen Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Harness_t.py,v 1.10 2009/02/27 22:19:22 fvlingen Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -176,7 +176,7 @@ class HarnessTest(unittest.TestCase):
     def testC(self):
         config = self.setConfig()
         # try starting a component as a deamon:
-        config.TestComponent.componentDir = os.path.join(config.General.workDir, "TestComponent1")
+        config.TestComponent.componentDir = os.path.join(config.General.workDir, "Components/TestComponent1")
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
         testComponent.startDeamon(keepParent = True)
@@ -195,7 +195,7 @@ class HarnessTest(unittest.TestCase):
     def testD(self):
         config = self.setConfig()
         # try starting a component as a deamon:
-        config.TestComponent.componentDir = os.path.join(config.General.workDir, "TestComponent2")
+        config.TestComponent.componentDir = os.path.join(config.General.workDir, "Components/TestComponent2")
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
         testComponent.startDeamon(keepParent = True)

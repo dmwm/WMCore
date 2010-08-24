@@ -98,10 +98,43 @@ directly interfaces with the OS. If we want to generalize this we would need to 
 module and proxies in both components where the proxies communicate with eachother through the ProxyMsgs
 module and via for example http requests.
 
+An example:
+
+Lets say a NC publishes 'messageX' to which NCs and OCs need to subscribe to:
+
+-For NCs this is no problem as they subscribe to it via the well establised 
+mechanism
+-OCs need to do 2 things: 
+(1) subscribe themselves with within the OA to these 'messageX' types via 
+the well established mechanism through the old message service
+(2) At least one OC (or perhaps some other app) needs to publish a message 
+of type 'ProxySubscribe' with payload 'messageX' . This is picked up by the 
+Proxy component and allows it to relay messages of type messageX to the OCs
+
+Lets say a OC publishes 'messageY' to which NCs and OCs need to subscribe to:
+
+-For OCs this is no problem as they subscribe to it via the well established 
+mechanism through the old message service
+-NCs need to do 2 things:
+(1) Subscribe themselves within the NA to this 'messageY' types via the
+well established mechanism in the NA through the new message service.
+(2) the message needs to be defined in the subscription field in for the 
+proxy component so the proxy component will subscribe to it at the OA.
+
+So the additional 'work' so to say w.r.t. to one message service is that per 
+message that needs to be published both ways and is published on both sides 
+(e.g. messageX = messageY) is and additional 'ProxySubscribe' publication 
+in the OA and a specification of the message type in the proxy config file. 
+The subscription part of the individual components would have need to be 
+done anyway with one message service so that part is not additional work.
+
+Basically the additional work is telling the other msg service: send this
+particular message to the proxy which forwards it.
+
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.10 2009/02/13 12:39:21 fvlingen Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Proxy_t.py,v 1.11 2009/02/27 22:19:22 fvlingen Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands

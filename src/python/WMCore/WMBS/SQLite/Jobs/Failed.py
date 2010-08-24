@@ -6,10 +6,9 @@ SQLite implementation of Jobs.Failed
 move file into wmbs_group_job_failed
 """
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Jobs.Failed import Failed as FailedJobsMySQL
 
-class Failed(SQLiteBase, FailedJobsMySQL):
+class Failed(FailedJobsMySQL):
     sql = FailedJobsMySQL.sql
         
     def execute(self, job=0, conn = None, transaction = False):

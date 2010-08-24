@@ -12,11 +12,10 @@ TABLE wmbs_subscription
     last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.2 2008/07/21 14:27:06 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Exists.py,v 1.3 2008/11/20 21:54:27 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Subscriptions.Exists import Exists as ExistsMySQL
 
-class Exists(ExistsMySQL, SQLiteBase):
+class Exists(ExistsMySQL):
     sql = ExistsMySQL.sql

@@ -11,13 +11,12 @@ TABLE wmbs_subscription
     type    ENUM("merge", "processing")
 """
 __all__ = []
-__revision__ = "$Id: Load.py,v 1.2 2008/07/21 14:27:05 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Load.py,v 1.3 2008/11/20 21:54:27 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Subscriptions.Load import Load as LoadMySQL
 
-class Load(LoadMySQL, SQLiteBase):
+class Load(LoadMySQL):
     def format(self,result):
         """
         TODO: return id, fileset, workflow, type as a dictionary

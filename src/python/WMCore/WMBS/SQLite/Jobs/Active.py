@@ -6,9 +6,8 @@ MySQL implementation of Jobs.Active
 move file into wmbs_group_job_acquired
 """
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Jobs.Active import Active as ActiveJobsMySQL
-class Active(SQLiteBase, ActiveJobsMySQL):
+class Active(ActiveJobsMySQL):
     sql = ActiveJobsMySQL.sql
 
     def execute(self, job=0, conn = None, transaction = False):

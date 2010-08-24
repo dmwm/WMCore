@@ -2,9 +2,8 @@
 SQLite implementation of AddFileToFileset
 """
 from WMCore.WMBS.MySQL.Files.AddToFileset import AddToFileset as AddFileToFilesetMySQL
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 
-class AddToFileset(AddFileToFilesetMySQL, SQLiteBase):
+class AddToFileset(AddFileToFilesetMySQL):
     sql = """insert into wmbs_fileset_files 
             (file, fileset, insert_time) 
             values ((select id from wmbs_file_details where lfn = :file),

@@ -6,13 +6,12 @@ SQLite implementation of LoadFileset
 
 """
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.2 2008/07/21 14:19:36 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadFromID.py,v 1.3 2008/11/20 21:54:26 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Fileset.LoadFromID import LoadFromID as LoadFilesetMySQL
 
-class LoadFromID(LoadFilesetMySQL, SQLiteBase):
+class LoadFromID(LoadFilesetMySQL):
     sql = LoadFilesetMySQL.sql
     
     def format(self, result):

@@ -6,12 +6,11 @@ SQLite implementation of DeleteWorkflow
 
 """
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.1 2008/06/12 10:02:10 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Delete.py,v 1.2 2008/11/20 21:54:26 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.WMBS.SQLite.Base import SQLiteBase
 from WMCore.WMBS.MySQL.Workflow.Delete import Delete as DeleteWorkflowMySQL
 
-class Delete(DeleteWorkflowMySQL, SQLiteBase):
+class Delete(DeleteWorkflowMySQL):
     sql = DeleteWorkflowMySQL.sql
     

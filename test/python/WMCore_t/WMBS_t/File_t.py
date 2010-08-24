@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.13 2009/01/16 22:26:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: File_t.py,v 1.14 2009/01/21 14:51:04 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import logging
@@ -287,7 +287,7 @@ class File_t(unittest.TestCase):
         LFN of a file.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1)
+                        cksum = 1, first_event = 2, last_event = 3)
         testFileA.create()
                                                         
         testFileB = File(lfn = testFileA["lfn"])
@@ -309,6 +309,10 @@ class File_t(unittest.TestCase):
                "ERROR: File events is not an integer type."
         assert type(testFileB["cksum"]) == int, \
                "ERROR: File cksum is not an integer type."
+        assert type(testFileB["first_event"]) == int, \
+               "ERROR: File first_event is not an integer type."
+        assert type(testFileB["last_event"]) == int, \
+               "ERROR: File last_event is not an integer type."
         
         assert type(testFileC["id"]) == int, \
                "ERROR: File id is not an integer type."
@@ -318,6 +322,10 @@ class File_t(unittest.TestCase):
                "ERROR: File events is not an integer type."
         assert type(testFileC["cksum"]) == int, \
                "ERROR: File cksum is not an integer type."
+        assert type(testFileC["first_event"]) == int, \
+               "ERROR: File first_event is not an integer type."
+        assert type(testFileC["last_event"]) == int, \
+               "ERROR: File last_event is not an integer type."
 
         testFileA.delete()
         return

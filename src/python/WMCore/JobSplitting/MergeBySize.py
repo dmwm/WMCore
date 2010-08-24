@@ -7,8 +7,8 @@ based on the size of the files
 
 """
 
-__revision__ = "$Id: MergeBySize.py,v 1.3 2008/10/01 22:01:33 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MergeBySize.py,v 1.4 2009/02/26 20:06:40 ewv Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -27,7 +27,7 @@ class MergeBySize(JobFactory):
 
 
     """
-    def algorithm(self, job_instance = None, jobname=None, *args, **kwargs):
+    def algorithm(self, jobInstance = None, jobName=None, *args, **kwargs):
         """
         _algorithm_
 
@@ -35,7 +35,6 @@ class MergeBySize(JobFactory):
 
         """
         jobs = Set()
-
         fileset = list(self.subscription.availableFiles())
 
         mergeSize = kwargs['merge_size']
@@ -44,21 +43,21 @@ class MergeBySize(JobFactory):
 
         accumSize = 0
         accumFiles = []
-        
+
         for f in fileset:
             accumSize += f['size']
             accumFiles.append(f)
             if accumSize >= mergeSize:
-                job  = job_instance(name = '%s-%s' % (jobname, len(jobs) +1))
+                job  = jobInstance(name = '%s-%s' % (jobName, len(jobs) +1))
                 job.addFile(accumFiles)
                 job.mask.setMaxAndSkipEvents(-1, 0)
                 jobs.add(job)
                 accumSize = 0
                 accumFiles = []
-                
+
         if len(accumFiles) > 0:
             if overflow:
-                job =  job_instance(name = '%s-%s' % (jobname, len(jobs) +1 ))
+                job =  jobInstance(name = '%s-%s' % (jobName, len(jobs) +1 ))
                 job.addFile(accumFiles)
                 job.mask.setMaxAndSkipEvents(-1, 0)
                 jobs.add(job)

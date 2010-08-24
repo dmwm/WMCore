@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.12 2008/07/03 17:01:02 metson Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: DBCore.py,v 1.13 2008/08/12 18:48:01 metson Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -69,6 +69,32 @@ class DBInterface(WMObject):
             self.logger.exception('DBInterface.executebinds - binds : %s' % b)
             self.logger.debug(e)
             raise e
+        
+
+    def executemanybinds(self, s=None, b=None, connection=None):
+        """
+        _executemanybinds_
+        b is a list of dictionaries for the binds, e.g.:
+        
+        b = [ {'bind1':'value1a', 'bind2': 'value2a'},
+        {'bind1':'value1b', 'bind2': 'value2b'} ]
+        
+        see: http://www.gingerandjohn.com/archives/2004/02/26/cx_oracle-executemany-example/
+        """
+        try:
+            self.logger.debug ('DBInterface.executebinds - sql : %s' % s)
+            self.logger.debug ('DBInterface.executebinds - binds : %s' % b)
+            #Maybe need to get the cursor???
+            result = connection.executemany(s, b)
+            return result
+        except Exception, e:
+            self.logger.exception('DBInterface.executebinds - exception type: %s' % type(e))
+            self.logger.exception('DBInterface.executebinds - connection type: %s' % type(connection))
+            self.logger.exception('DBInterface.executebinds - connection %s' % connection)
+            self.logger.exception('DBInterface.executebinds - sql : %s' % s)
+            self.logger.exception('DBInterface.executebinds - binds : %s' % b)
+            self.logger.debug(e)
+            raise e
             
     def processData(self, sqlstmt, binds = None, conn = None,
                     transaction = False):
@@ -116,8 +142,7 @@ class DBInterface(WMObject):
             if not transaction: 
                 trans = connection.begin()
             try:
-                for b in binds:
-                    result.append(self.executebinds(sqlstmt, b,
+                result.append(self.executemanybinds(sqlstmt, binds,
                                             connection=connection))
                 if not transaction: 
                     trans.commit()

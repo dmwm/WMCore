@@ -32,19 +32,23 @@ class Location_t(Base_t):
     def testNew(self):         
         print "testNew"
         
-        time = self.perfTest(dao=self.dao, action='Locations.New', execinput=['sename="TestLocation"'])
+        sename='TestLocation'
+
+        time = self.perfTest(dao=self.dao, action='Locations.New', sename=sename)
         assert time <= self.threshold, 'New DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testList(self):         
         print "testList"
         
-        time = self.perfTest(dao=self.dao, action='Locations.List', execinput='')
+        sename='TestLocation'
+
+        time = self.perfTest(dao=self.dao, action='Locations.List')
         assert time <= self.threshold, 'List DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testDelete(self):         
         print "testDelete"
         
-        time = self.perfTest(dao=self.dao, action='Locations.Delete', execinput=['sename="TestLocation"'])
+        time = self.perfTest(dao=self.dao, action='Locations.Delete', sename=self.sename)
         assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
 #    def testFiles(self):         

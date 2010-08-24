@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.12 2008/12/05 21:05:22 sryu Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Job.py,v 1.13 2008/12/10 22:27:15 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import datetime
 import threading
@@ -216,7 +216,7 @@ class Job(WMJob):
         
         trans = Transaction(self.dbi)
         try:
-            statusClass = "Job.%s" % self.status
+            statusClass = "Jobs.%s" % self.status
             self.daofactory(classname = "Jobs.ClearStatus").execute(self.id,
                                                                     conn = trans.conn,
                                                                     transaction = True)

@@ -4,30 +4,24 @@ _New_
 MySQL implementation of Jobs.New
 """
 __all__ = []
-__revision__ = "$Id: New.py,v 1.1 2008/07/03 17:03:59 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2008/10/01 15:43:08 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
 class New(MySQLBase):
     sql = []
-    sql.append("insert into wmbs_job (subscription) values (:subscription)")
-    sql.append("select id, last_update from wmbs_job where id = (select LAST_INSERT_ID()) and subscription = :subscription")
-                
-    def getBinds(self, subscription=0):
-        # Can't use self.dbi.buildbinds here...
-        binds = [{'subscription':subscription},
-                 {'subscription':subscription}]
-        return binds
+    sql.append("insert into wmbs_job (jobgroup, name) values (:jobgroup, :name)")
+    sql.append("select id from wmbs_job where jobgroup = :jobgroup and name = :name")
     
     def format(self, result):
         result = MySQLBase.format(self, result)
-        return result[0]
+        print result[0][0]
+        return result[0][0]
         
-    def execute(self, subscription=0, conn = None, transaction = False):
-        binds = self.getBinds(subscription)
+    def execute(self, jobgroup=0, name=None, conn = None, transaction = False):
+        binds = self.getBinds(jobgroup=jobgroup, name=name) * 2
         self.logger.debug('Job.Add sql: %s' % self.sql)
         self.logger.debug('Job.Add binds: %s' % binds)
-        result = self.dbi.processData(self.sql, binds)
         
-        return self.format(result)
+        return self.format(self.dbi.processData(self.sql, binds))

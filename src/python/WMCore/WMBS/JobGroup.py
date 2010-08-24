@@ -28,45 +28,101 @@ state changes and then returns the status of the group (active, failed,
 complete).
 
 WMAgent deals with groups and calls group.status periodically
+
+CREATE TABLE wmbs_jobgroup (
+     id           INTEGER      PRIMARY KEY AUTOINCREMENT,
+     subscription INT(11)    NOT NULL,
+     output       INT(11),
+     last_update  TIMESTAMP NOT NULL,
+     FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+       ON DELETE CASCADE,
+     FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
+            ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.1 2008/09/12 17:07:19 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobGroup.py,v 1.2 2008/10/01 21:28:41 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
+from WMCore.WMBS.BusinessObject import BusinessObject
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from sets import Set
 
-class JobGroup(WMJobGroup):
+class JobGroup(WMJobGroup, BusinessObject):
+    
     def __init__(self, subscription = None, jobs=Set(), id = -1):
         BusinessObject.__init__(self, 
                                 logger=subscription.logger, 
                                 dbfactory=subscription.dbfactory)
         WMJobGroup.__init__(self, subscription=subscription, jobs = jobs)
         self.id = id
-        if self.id == -1:
+        if self.id <= 0:
+            print "Creating WMBS JobGroup"
             self.create()
         else:
             self.load()
+            
+    def create(self):
+        """
+        Add the new jobgroup to WMBS, create the output Fileset object
+        """
+        self.id, self.uid = self.daofactory(classname='JobGroup.New').execute(self.subscription.id)
+        self._ouput = Fileset(name="output://%s_%s" % (self.subscription.name(), id),
+                              logger=self.logger, 
+                              dbfactory=self.dbfactory)
+        self._ouput.create()
+        print self.id, self.uid
+        return self
     
-    def add(self, job):  
-        pass
+    def load(self):
+        self.daofactory(classname='JobGroup.Load').execute(self.id)
+        id = self.daofactory(classname='JobGroup.Output').execute(self.id)
+        self._ouput = Fileset(id = id,
+                              logger=subscription.logger, 
+                              dbfactory=subscription.dbfactory)
+        self._ouput.load()
+        return self
+        
+    def add(self, job):
+        """
+        Input must be (subclasses of) WMBS jobs. Input may be a list or set as 
+        well as single jobs.
+        """
+        # Iterate through all the jobs in the group
+        for j in job:
+            j.create(group=self.id)
+            j.associateFiles()
+            
+        self.jobs = self.jobs | self.makeset(job)
     
     def status(self, detail=False):
         """
         The status of the job group is the sum of the status of all jobs in the
         group.
         
+        The status of the jobs can be correctly inferred by comparing the start,
+        complete and update times. The groups status is the sum of these 
+        statuses.
+        
         return: ACTIVE, COMPLETE, FAILED
-        """
-        pass
-
-    def recordAcquire(self, jobs):
-        pass
-            
-    def recordComplete(self, jobs):
-        pass
-            
-    def recordFail(self, jobs):
-        pass
+        """        
+        
+        av, ac, fa, cm = \
+                self.daofactory(classname='JobGroup.Status').execute(self.id)
+    
+        total = av + ac + fa + cm
+        
+        if total > 0:
+            report = ''
+            if detail:
+                report = ' (av %s, ac %s, fa %s, cm %s)' % (av, ac, fa, cm)
+            if cm == total:
+                return 'COMPLETE%s' % report
+            elif fa == total:
+                return 'FAILED%s' % report
+            else:
+                return 'ACTIVE%s' % report
     
     def output(self):
         """
@@ -76,9 +132,7 @@ class JobGroup(WMJobGroup):
         if self.status() == 'COMPLETE':
             "output only makes sense if the group is completed"
             "load output from DB" 
+            self._ouput.load()
             return self._output
         print self.status(detail=True)
         return False
-    
-    def addOutput(self, file):
-        pass

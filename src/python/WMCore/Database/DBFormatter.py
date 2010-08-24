@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.13 2008/12/17 16:37:31 afaq Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: DBFormatter.py,v 1.14 2008/12/17 22:12:02 afaq Exp $"
+__version__ = "$Revision: 1.14 $"
 import datetime
 import time
 
@@ -61,24 +61,7 @@ class DBFormatter(WMObject):
             for i in r.fetchone():
                 out.append(i)
         return out
-        
-    def formatDictPreserveCase(self, result):
-        """
-        Returns an array of dictionaries representing the results
-        """
-        dictOut = []
-        for r in result:
-            descriptions = r.keys
-            for i in r.fetchall():
-                #WARNING: this can generate errors for some stupid reason
-                # in both oracle and mysql.
-                entry = {}
-                for index in xrange(0,len(descriptions)):
-                    # WARNING: Oracle returns table names in CAP!
-                    entry[str(descriptions[index])] = i[index]
-                dictOut.append(entry) 
-                #dictOut.append(dict(zip(description, i)))
-        return dictOut 
+
     def formatDict(self, result):
         """
         Returns an array of dictionaries representing the results

@@ -19,6 +19,7 @@
 				<tr>
 			    <td>
 				    <dl>
+				      #try
 					    #for m in $methods
 					    <dt>$m: </dt>
 					    <dd>
@@ -39,6 +40,10 @@
 					    </dd>
 					    <hr/>
 					    #end for
+					    #except
+					    <p>No API calls available, make sure you update self.methods() 
+					    with your API calls. <b>TODO: More documentation here</b>.</p>
+					    #end try
 				    </dl>
 	    	</td>
 		  </tr>

@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.17 2009/01/26 20:52:38 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: JobGroup.py,v 1.18 2009/01/29 16:44:04 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -204,16 +204,41 @@ class JobGroup(WMBSBase, WMJobGroup):
         return
     
     def recordAcquire(self):
+        """
+        __recordAcquire__
+        update the all the input file status as a whole
+        """
+        if self.status() != "ACTIVE":
+            return False
+        
         for j in self.getJobIDs(type="JobList"):
             self.subscription.acquireFiles(j.getFileIDs(type="dict"))
-            
+        return True
+    
     def recordComplete(self):
+        """
+        __recordComplete__
+        update the all the input file status as a whole
+        """
+        if self.status() != "COMPLETE":
+            return False
+        
         for j in self.getJobIDs(type="JobList"):
             self.subscription.completeFiles(j.getFileIDs(type="dict"))
-            
+        return True
+    
     def recordFail(self):
+        """
+        __recordFail__
+        update the all the input file status as a whole
+        """
+        
+        if self.status() != "FAILED":
+            return False
+        
         for j in self.getJobIDs(type="JobList"):
             self.subscription.failFiles(j.getFileIDs(type="dict"))
+        return True
     
     def status(self, detail = False):
         """
@@ -238,13 +263,8 @@ class JobGroup(WMBSBase, WMJobGroup):
             if detail:
                 report = ' (av %s, ac %s, fa %s, cm %s)' % (av, ac, fa, cm)
             if cm == total:
-                # update the File status to complete as a whole
-                self.recordComplete()
                 return 'COMPLETE%s' % report
             elif fa > 0:
-                # update the File status to Fail as a whole
-                # even if there is some jobs are successful
-                self.recordFail()
                 return 'FAILED%s' % report
             else:
                 # all the file status should be acquired at this point

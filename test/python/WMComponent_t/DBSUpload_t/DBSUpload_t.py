@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.7 $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -63,31 +63,21 @@ class DBSUploadTest(unittest.TestCase):
         """
         Database deletion
         """
-	
-	# For testing not deleteing anything from Database yet
-	return True
-
+        """
+        Database deletion
+        """
+        
+        #return True # I do not want to remove my database
+        
         myThread = threading.currentThread()
-        if DBSUploadTest._teardown and myThread.dialect == 'MySQL':
-            command = 'mysql -u root '
-	    +' --socket='\
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "drop database ' \
-            + os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
+        if DBSBufferTest._teardown and myThread.dialect == 'MySQL':
+            # call the script we use for cleaning:
+            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+            result = commands.getstatusoutput(command)
+            for entry in result:
+                print(str(entry))
 
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
-            + os.getenv('SQLCREATE') + '"'
-            commands.getstatusoutput(command)
-
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "create database ' \
-            +os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
-        DBSUploadTest._teardown = False
-
+        DBSBufferTest._teardown = False
 
     def testA(self):
         
@@ -123,8 +113,12 @@ class DBSUploadTest(unittest.TestCase):
         testDBSUpload.prepareToStart()
         # for testing purposes we use this method instead of the 
         # StartComponent one.
-        testDBSUpload.handleMessage('BufferSuccess', \
-				'NoPayLoad')
+        #testDBSUpload.handleMessage('BufferSuccess', \
+		#		'NoPayLoad')
+        for i in xrange(0, DBSUploadTest._maxMessage):
+            testDBSUpload.handleMessage('BufferSuccess', \
+                'YourMessageHere'+str(i))
+
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\
@@ -138,10 +132,7 @@ class DBSUploadTest(unittest.TestCase):
         Mimics creation of component and handles come messages.
         """
         
-        
-        return True
-        
-        
+        #return True
         
         # read the default config first.
         config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
@@ -172,8 +163,11 @@ class DBSUploadTest(unittest.TestCase):
         
         #testDBSUpload.handleMessage('NewWorkflow', \
         #        'C:\\WORK\\FJR\\workflow.xml')
-        testDBSUpload.handleMessage('NewWorkflow', \
-                                    'C:\\WORK\\FJR\\RepackMerge-Run58733-RAW-BarrelMuon-Merge-Workflow.xml')
+        #testDBSUpload.handleMessage('NewWorkflow', \
+        #                            'C:\\WORK\\FJR\\RepackMerge-Run58733-RAW-BarrelMuon-Merge-Workflow.xml')
+        for i in xrange(0, DBSUploadTest._maxMessage):
+            testDBSUpload.handleMessage('NewWorkflow', \
+                'YourMessageHere'+str(i))
 
         while threading.activeCount() > 1:
             print('Currently: '+str(threading.activeCount())+\

@@ -2,11 +2,11 @@
 """
 _DBSBuffer.UpdateFileStatus_
 
-Update Algo status in a Dataset to promoted
+Update file status to promoted
 
 """
-__revision__ = "$Id: UpdateFilesStatus.py,v 1.1 2008/11/18 23:25:30 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: UpdateFilesStatus.py,v 1.2 2008/11/19 19:12:35 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -14,39 +14,45 @@ import exceptions
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-class UpdateFileStatus(DBFormatter):
+class UpdateFilesStatus(DBFormatter):
 
-    sql = """UPDATE dbsbuffer_file SET FileStatus = :status where LFN IN (???????????)Path=:path"""
+    def sql(self, files=None):
+        sql = """UPDATE dbsbuffer_file SET FileStatus = :status where ID IN """
+        if len(files) <= 0: raise Exception("Cannot change status of all files in DBS Buffer")
+        count=0
+        for afile in files:
+            if count == 0:
+                sql += "(:id"+str(count)
+            else: sql += ",:id"+str(count)
+            count += 1
+        sql += ")"
+        return sql
 
-    sql_delme = """UPDATE dbsbuffer_dataset as A
-                   inner join (
-                      select * from dbsbuffer_dataset
-                          where Path=:path
-                   ) as B on A.ID = B.ID
-                SET A.AlgoInDBS = 1"""
-
-    #sqlUpdateDS = """UPDATE dbsbuffer_dataset SET UnMigratedFiles = UnMigratedFiles + 1 WHERE ID = (select ID from dbsbuffer_dataset where Path=:path)"""
     def __init__(self):
             myThread = threading.currentThread()
             DBFormatter.__init__(self, myThread.logger, myThread.dbi)
         
-    def getBinds(self, dataset=None):
+    def getBinds(self, files=None):
             # binds a list of dictionaries
            binds =  { 
-            'path': dataset['Path']
+            'status': 'UPLOADED',
             }
-           
+           count=0
+           for afile in files:
+               key="id"+str(count)
+               binds[key]=afile['ID']
+               count += 1
            return binds
        
     def format(self, result):
         return True
 
-    def execute(self, dataset=None, conn=None, transaction = False):
-        
-        binds = self.getBinds(dataset)
+    def execute(self, files=None, conn=None, transaction = False):
+                
+        binds = self.getBinds(files)
 
         try:
-            result = self.dbi.processData(self.sql, binds, 
+            result = self.dbi.processData(self.sql(files), binds, 
                          conn = conn, transaction = transaction)
 
         except Exception, ex:

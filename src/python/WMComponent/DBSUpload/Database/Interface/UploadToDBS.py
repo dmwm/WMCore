@@ -5,8 +5,8 @@ _UploadToDBS_
 APIs related to adding file to DBS
 
 """
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: UploadToDBS.py,v 1.4 2008/11/18 23:25:30 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: UploadToDBS.py,v 1.5 2008/11/19 19:12:35 afaq Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -64,7 +64,7 @@ class UploadToDBS:
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
-        factory = WMFactory("dbsUpload", "WMComponent.DBSBuffer.Database."+ \
+        factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("UpdateDSAlgo")
         newDS.execute(dataset=dataset, conn = myThread.transaction.conn, transaction=myThread.transaction)
@@ -77,11 +77,25 @@ class UploadToDBS:
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
-        factory = WMFactory("dbsUpload", "WMComponent.DBSBuffer.Database."+ \
+        factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("UpdateDSFileCount")
         newDS.execute(dataset=dataset, count=count, conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
+
+    def updateFilesStatus(self, files):
+        # Add the algo to the buffer (API Call)
+        # dataset object contains the algo information
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
+                        myThread.dialect)
+        newDS = factory.loadObject("UpdateFilesStatus")
+        newDS.execute(files=files, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        myThread.transaction.commit()
+        return
+
 
 

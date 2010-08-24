@@ -4,8 +4,8 @@ DBS Buffer handler for BufferSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: BufferSuccess.py,v 1.10 2008/11/18 23:25:30 afaq Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: BufferSuccess.py,v 1.11 2008/11/19 19:12:38 afaq Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -105,11 +105,12 @@ class BufferSuccess(BaseHandler):
             self.dbswriter.insertFilesForDBSBuffer(files, dict(aDataset), algos, jobType = "NotMerge", insertDetectorData = False)
             #Update UnMigratedFile Count here !!!!
             
-            dbinterface.updateDSFileCount(aDataset, 10)
+            print "COMMENTED line below for testing..."
+            #dbinterface.updateDSFileCount(aDataset, 10)
             #TODO: Update the files as well to Migrated
             
             print "NEXT to be implemented"
-            dbinterface.updateFilesStatus(files, dict(aDataset))
+            dbinterface.updateFilesStatus(files)
             
 
         return

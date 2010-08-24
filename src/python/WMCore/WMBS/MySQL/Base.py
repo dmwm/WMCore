@@ -12,10 +12,7 @@ class MySQLBase(object):
             for i in r.fetchall():
                 out.append(i)
         return out
-    
-    def getBinds(self):
-        return {}
-    
+        
     def execute(self, conn = None, transaction = False):
         """
         A simple select with no binds/arguments is the default

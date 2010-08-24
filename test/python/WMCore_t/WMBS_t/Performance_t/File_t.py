@@ -73,10 +73,10 @@ class FileTest(WMBSBase):
         if self.testtimes != 0:
             times=self.testtimes
 
-        list = self.genFiles(number=times)
+        list = self.genFiles(number=times, name="TestNew")
 
         for i in range(times):
-            time = self.perfTest(dao=self.dao, action='Files.AddToFileset', file=str(list[i]['lfn']), fileset="TestFileset")
+            time = self.perfTest(dao=self.dao, action='Files.AddToFileset', file=str(list[i]['lfn']), fileset="TestNewFiles")
             self.totaltime = self.totaltime + time
             assert self.totaltime <= self.totalthreshold, 'AddToFileset DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'
 

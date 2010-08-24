@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup (name='wmcore',
        version='1.0',
-       package_dir={'WMCore': 'src/python/WMCore','WMComponent' : 'src/python/WMComponent'},
+       package_dir={'WMCore': 'src/python/WMCore','WMComponent' : 'src/python/WMComponent','WMQuality' : 'src/python/WMQuality'},
        packages=['WMComponent.Proxy.Handler',
                  'WMComponent.Proxy',
                  'WMComponent.ErrorHandler.Handler',

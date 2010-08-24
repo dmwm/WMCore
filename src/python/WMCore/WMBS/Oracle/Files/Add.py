@@ -10,5 +10,7 @@ class Add(AddFileMySQL):
     overwirtes MySQL Files.Add.sql to use oracle sequence instead of auto 
     increments
     """
-    sql = """insert into wmbs_file_details (id, lfn, filesize, events, cksum) 
-             values (wmbs_file_details_SEQ.nextval, :lfn, :filesize, :events, :cksum)"""
+    sql = """INSERT INTO wmbs_file_details (id, lfn, filesize, events, cksum,
+                                            first_event, last_event) 
+             VALUES (wmbs_file_details_SEQ.nextval, :lfn, :filesize, :events,
+                     :cksum, :first_event, :last_event)"""

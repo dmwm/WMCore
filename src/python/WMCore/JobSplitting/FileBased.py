@@ -1,5 +1,6 @@
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
+from WMCore.DataStructs.Fileset import Fileset 
 
 class FileBased(JobFactory):
     """
@@ -9,7 +10,9 @@ class FileBased(JobFactory):
         if 'files_per_job' not in kwargs.keys():
             kwargs['files_per_job'] = 10
         jobs = Set()
+        thesub = self.subscription 
         while len(self.subscription.availableFiles()) > 0:
-            job = job_instance(self.subscription, self.subscription.acquireFiles(size=kwargs['files_per_job']))
+            thefiles = Fileset(files=thesub.acquireFiles(size=kwargs['files_per_job']))
+            job = job_instance(subscription=thesub, files=thefiles)
             jobs.add(job)
         return jobs

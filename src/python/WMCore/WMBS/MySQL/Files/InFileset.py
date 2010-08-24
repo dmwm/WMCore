@@ -4,7 +4,7 @@ MySQL implementation of Files.InFileset
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
 class InFileset(MySQLBase):
-    sql = """select file.id, file.lfn, file.size, file.events, map.run, map.lumi
+    sql = """select distinct file.id, file.lfn, file.size, file.events, map.run, map.lumi
             from wmbs_file_details as file join wmbs_file_runlumi_map as map on map.file = file.id 
             where id in (select file from wmbs_fileset_files where 
             fileset = (select id from wmbs_fileset where name = :fileset))"""

@@ -4,7 +4,7 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2008/10/15 08:34:41 afaq Exp $"
+__revision__ = "$Id: Create.py,v 1.4 2008/10/15 12:53:37 afaq Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -43,7 +43,6 @@ class Create(DBCreator):
 			    ID                    BIGINT UNSIGNED not null auto_increment,
 			    LFN                   varchar(500)      unique not null,
 			    Dataset 		  BIGINT UNSIGNED   not null,
-			    BlockName             varchar(500)      not null,
 			    Checksum              varchar(100)      not null,
 			    NumberOfEvents        BIGINT UNSIGNED   not null,
 			    FileSize              BIGINT UNSIGNED   not null,
@@ -59,14 +58,6 @@ class Create(DBCreator):
     			 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
 
 	#self.triggers IS NOT a member so I will just use self.create for now
-	
-	#self.triggers["TR_dbsbuf_file_lud"]=\
-	#	"""CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuf_file
-	#		FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
-
-        #self.triggers["TR_dbsbuf_ds_lud"]=\
-	#	"""CREATE TRIGGER TR_dbsbuf_ds_lud BEFORE INSERT ON dbsbuf_dataset
-	#		FOR EACH ROW SET NEW.LastModificationDate = UNIX_TIMESTAMP();"""
 	
 	self.create["03TR_dbsbuf_file_lud"]=\
                 """CREATE TRIGGER TR_dbsbuf_file_lud BEFORE INSERT ON dbsbuf_file

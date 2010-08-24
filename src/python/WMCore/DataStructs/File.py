@@ -6,11 +6,11 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.4 2008/07/21 17:23:44 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: File.py,v 1.5 2008/08/13 03:15:38 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 from sets import Set
-from WMCore.DataStructs.Pickleable import Pickleable 
-class File(Pickleable):
+from WMCore.DataStructs.WMObject import WMObject 
+class File(WMObject):
     """
     _File_
     Data object that contains details for a single file
@@ -24,6 +24,13 @@ class File(Pickleable):
         self.dict["lumi"] = lumi
         self.dict["parents"] = parents
         self.dict['locations'] = Set()
+    
+    def load(self):
+        """
+        A DataStructs file has nothing to load from, other implementations will
+        over-ride this method.
+        """
+        pass
         
     def setLocation(self, se):
         self.dict['locations'] = self.dict['locations'] | Set(self.makelist(se))
@@ -35,6 +42,7 @@ class File(Pickleable):
         if self.dict['run'] == rhs.run:
             return cmp(self.dict['lumi'], rhs.lumi)
         return cmp(self.dict['run'], rhs.run)
+    
     
     def __eq__(self, rhs):
         """
@@ -49,3 +57,13 @@ class File(Pickleable):
     
     def __ne__(self, rhs):
         return not self.__eq__(rhs)
+    
+    def __hash__(self):
+        #print "I AM TEH HASH"
+        hash = self.dict['lfn'].__hash__() 
+        hash = hash + self.dict['size'].__hash__()
+        hash = hash + self.dict['events'].__hash__()
+        hash = hash + self.dict['run'].__hash__()
+        hash = hash + self.dict['lumi'].__hash__()
+        #print hash, WMObject.__hash__(self)
+        return hash

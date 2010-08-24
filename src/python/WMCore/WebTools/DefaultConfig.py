@@ -49,3 +49,4 @@ maint = config.WebtoolsDocs.views.section_('maintenance')
 
 active.section_('masthead')
 active.masthead.object = 'WMCore.WebTools.Masthead'
+active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Masthead'

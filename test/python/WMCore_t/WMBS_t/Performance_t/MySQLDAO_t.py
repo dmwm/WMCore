@@ -19,6 +19,7 @@ class MySQLDAO_t():
         self.dbuser = cfg.get('database', 'user')
         self.dbhost = cfg.get('database', 'host')
         self.dbinst = cfg.get('database', 'instance')
+        self.verbose = cfg.get('output','verbose')
         self.sqlURI = 'mysql://%s@%s/%s' % (self.dbuser, self.dbhost, self.dbinst)
 
     def tearDown(self):

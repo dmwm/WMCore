@@ -14,16 +14,20 @@ def input():
     parser.add_option("-i", "--instance", dest="inst", default='wmbs',
                       help="User INSTANCE", metavar="INSTANCE")
     parser.add_option("-u", "--user", dest="user", metavar="USER",
-                      help="Conect to the database as USER")
+                      help="Connect to the database as USER")
     parser.add_option("-o", "--host", dest="host", metavar="HOST", 
                       help="Database is running on HOST")
-    
+    parser.add_option("-v", "--verbose", dest="verbose", default=False,
+                      help="Set query verbose mode", action="store_true")
+ 
     return parser.parse_args()
 
 def config(options):
     config = ConfigParser ()
+    config.add_section("output")    
     config.add_section("database")
-    
+
+    config.set("output", "verbose", options.verbose)
     config.set("database", "user", options.user)
     config.set("database", "host", options.host)
     config.set("database", "instance", options.inst)

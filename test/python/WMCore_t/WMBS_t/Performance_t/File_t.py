@@ -60,13 +60,13 @@ class File_t(Base_t):
         assert time <= self.threshold, 'Delete DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testGetByID(self):
-        print "testGetByID (%s)" % self.testFile['id']
+        print "testGetByID"
         
         time = self.perfTest(dao=self.dao, action='Files.GetByID', files=self.testFile["id"])
         assert time <= self.threshold, 'GetByID DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
 
     def testGetByLFN(self):
-        print "testGetByLFN (%s)" % self.testFile['lfn']
+        print "testGetByLFN"
         
         time = self.perfTest(dao=self.dao, action='Files.GetByLFN', files=self.testFile["lfn"])
         assert time <= self.threshold, 'GetByLFN DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'

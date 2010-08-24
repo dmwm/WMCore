@@ -141,6 +141,8 @@ class Base_t():
         #Place execute method of the specific classname here
         #string = compile(string)
         eval(string)
+        if self.verbose == 'True':
+            print string
         endTime = time.time()
         diffTime = endTime - startTime
         

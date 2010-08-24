@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.1 2008/09/26 14:48:07 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Trigger_t.py,v 1.2 2008/10/03 12:36:06 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import commands
 import unittest
@@ -79,22 +79,12 @@ class TriggerTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         if TriggerTest._teardown and myThread.dialect == 'MySQL':
-            command = 'mysql -u root --socket='\
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "drop database ' \
-            + os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
+            # call the script we use for cleaning:
+            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+            result = commands.getstatusoutput(command)
+            for entry in result:
+                print(str(entry))
 
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
-            + os.getenv('SQLCREATE') + '"'
-            commands.getstatusoutput(command)
-
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "create database ' \
-            +os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
         if TriggerTest._teardown and myThread.dialect == 'Oracle':
             factory = WMFactory("trigger", "WMCore.Trigger")
             destroy = factory.loadObject(myThread.dialect+".Destroy")

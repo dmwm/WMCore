@@ -6,8 +6,8 @@ Unit tests for the DBFormatter class
 
 """
 
-__revision__ = "$Id: DBFormatter_t.py,v 1.2 2008/09/26 14:48:06 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBFormatter_t.py,v 1.3 2008/10/03 12:36:05 fvlingen Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import logging
@@ -78,22 +78,12 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         """
         myThread = threading.currentThread()
         if DBFormatterTest._teardown and myThread.dialect == 'MySQL':
-            command = 'mysql -u root --socket='\
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "drop database ' \
-            + os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
+            # call the script we use for cleaning:
+            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+            result = commands.getstatusoutput(command)
+            for entry in result:
+                print(str(entry))
 
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
-            + os.getenv('SQLCREATE') + '"'
-            commands.getstatusoutput(command)
-
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "create database ' \
-            +os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
         DBFormatterTest._teardown = False
 
     def testAPrepare(self):

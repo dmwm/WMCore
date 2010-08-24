@@ -4,8 +4,8 @@
 Proxy test TestProxy module and the harness
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.4 2008/10/01 11:09:13 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Proxy_t.py,v 1.5 2008/10/03 12:36:05 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -109,22 +109,12 @@ need to be defined in the PROXYDATABASE variable (press key to continue")
         """
         myThread = threading.currentThread()
         if ProxyTest._teardown and myThread.dialect == 'MySQL':
-            command = 'mysql -u root --socket='\
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "drop database ' \
-            + os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
+            # call the script we use for cleaning:
+            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+            result = commands.getstatusoutput(command)
+            for entry in result:
+                print(str(entry))
 
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR')+'/mysqldata/mysql.sock --exec "' \
-            + os.getenv('SQLCREATE') + '"'
-            commands.getstatusoutput(command)
-
-            command = 'mysql -u root --socket=' \
-            + os.getenv('TESTDIR') \
-            + '/mysqldata/mysql.sock --exec "create database ' \
-            +os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
         ProxyTest._teardown = False
 
 

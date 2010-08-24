@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.3 2008/10/03 12:17:24 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.4 2008/10/03 12:36:06 fvlingen Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import commands
 import unittest
@@ -80,22 +80,12 @@ class ThreadPoolTest(unittest.TestCase):
         # FIXME: this might not work if your not using socket.
         myThread = threading.currentThread()
         if ThreadPoolTest._teardown and myThread.dialect == 'MySQL':
-            command = 'mysql -u root --socket='\
-            + os.getenv('DBSOCK') \
-            +' --exec "drop database ' \
-            + os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
+            # call the script we use for cleaning:
+            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+            result = commands.getstatusoutput(command)
+            for entry in result:
+                print(str(entry))
 
-            command = 'mysql -u root --socket=' \
-            + os.getenv('DBSOCK')+' --exec "' \
-            + os.getenv('SQLCREATE') + '"'
-            commands.getstatusoutput(command)
-
-            command = 'mysql -u root --socket=' \
-            + os.getenv('DBSOCK') \
-            + ' --exec "create database ' \
-            +os.getenv('DBNAME')+ '"'
-            commands.getstatusoutput(command)
         ThreadPoolTest._teardown = False
                
     def testA(self):

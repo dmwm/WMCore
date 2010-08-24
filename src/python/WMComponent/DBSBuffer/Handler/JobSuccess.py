@@ -4,7 +4,7 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccess.py,v 1.1 2008/10/02 19:57:14 afaq Exp $"
+__revision__ = "$Id: JobSuccess.py,v 1.2 2008/10/03 12:36:04 fvlingen Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -53,9 +53,9 @@ class JobSuccess(BaseHandler):
 	print event, payload
 	print event + " ::::::: Handled"
 
-	fjrPickle = open("fjr.pck", 'w')
-	cPickle.dump(str(open(payload, 'r').read()), fjrPickle)
-	fjrPickle.close()
+	#fjrPickle = open("fjr.pck", 'w')
+	#cPickle.dump(str(open(payload, 'r').read()), fjrPickle)
+	#fjrPickle.close()
 
 
         #self.threadpool.enqueue(event, payload)

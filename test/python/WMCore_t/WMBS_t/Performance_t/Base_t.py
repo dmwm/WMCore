@@ -33,8 +33,10 @@ class Base_t():
         
         self.logger = logging.getLogger('DBPerformanceTest')
         
+        self.tearDown()
+        
         self.DBList = ['MySQL','SQLite']
-        mysqlURI = 'mysql://jcg@localhost/wmbs'
+        mysqlURI = 'mysql://metson@localhost/wmbs'
         sqliteURI = 'sqlite:///dbperftest.lite'
 
         self.mysqldbf = DBFactory(self.logger, mysqlURI)
@@ -45,13 +47,18 @@ class Base_t():
         self.sqlitedao = DAOFactory(package='WMCore.WMBS', logger=self.logger, 
                         dbinterface=self.sqlitedbf.connect())        
         
+        assert self.mysqldao(classname='CreateWMBS').execute()
+
+        assert self.sqlitedao(classname='CreateWMBS').execute()
+
     def tearDown(self):
+        print "tear it up"
         #Base tearDown method for the DB Performance test
         self.logger.debug(commands.getstatusoutput('echo yes | mysqladmin -u root drop wmbs'))
         self.logger.debug(commands.getstatusoutput('mysqladmin -u root create wmbs'))
         self.logger.debug("WMBS MySQL database deleted")
         try:
-            self.logger.debug(os.remove('filesettest.lite'))
+            self.logger.debug(os.remove('dbperftest.lite'))
         except OSError:
             #Don't care if the file doesn't exist
             pass

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_AcquireFiles_
+_AvailableFiles_
 
 MySQL implementation of Subscription.GetAvailableFiles
 
@@ -28,8 +28,8 @@ CREATE TABLE wmbs_subscription_location (
 """
 
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.8 2009/01/16 22:42:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.9 2009/02/03 20:44:21 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

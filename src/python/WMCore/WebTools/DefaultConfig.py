@@ -7,24 +7,37 @@ from WMCore.Configuration import Configuration
 from os import environ
 
 config = Configuration()
+
+# This component has all the configuration of CherryPy
 config.component_('Webtools')
-config.Webtools.application = 'webtools'
-config.Webtools.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
-config.Webtools.index = 'welcome'
 
-config.Webtools.section_('views')
-active = config.Webtools.views.section_('active')
-config.Webtools.views.section_('maintenance')
-
-active.section_('documentation')
-active.documentation.object = 'WMCore.WebTools.Documentation'
-
+# This is the application
+config.Webtools.application = 'WebtoolsDocs'
+# This is the config for the application
+config.component_('WebtoolsDocs')
+# Define the default location for templates for the app
+config.WebtoolsDocs.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
+# Define the class that is the applications index
+config.WebtoolsDocs.index = 'welcome'
+# Views are all pages 
+config.WebtoolsDocs.section_('views')
+active = config.WebtoolsDocs.views.section_('active')
+# Controllers are standard way to return minified gzipped css and js
 active.section_('controllers')
 active.controllers.object = 'WMCore.WebTools.Controllers'
 active.controllers.css = {'reset': environ['YUIHOME'] + '/reset/reset.css', 
                           'cms_reset': '../../../css/WMCore/WebTools/cms_reset.css', 
                           'style': '../../../css/WMCore/WebTools/style.css'}
 active.controllers.js = {}
-
+# The section name is also the location the class will be located
+# e.g. http://localhost:8080/documentation
+active.section_('documentation')
+# The class to load for this class
+active.documentation.object = 'WMCore.WebTools.Documentation'
+# I could add a variable to the documenation object if I wanted to as follows:
+# active.documentation.foo = 'bar'
 active.section_('welcome')
 active.welcome.object = 'WMCore.WebTools.Welcome'
+
+# These are pages in "maintenance mode" - to be completed
+maint = config.WebtoolsDocs.views.section_('maintenance')

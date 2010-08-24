@@ -21,31 +21,25 @@ class JobFactory(WMObject):
         """
         module = "%s.%s" % (self.package, jobtype)
         module = __import__(module, globals(), locals(), [jobtype])#, -1)
-        job_instance = getattr(module, jobtype.split('.')[-1])
+        jobInstance = getattr(module, jobtype.split('.')[-1])
         
         module = "%s.%s" % (self.package, grouptype)
         module = __import__(module, globals(), locals(), [grouptype])
-        group_instance = getattr(module, grouptype.split('.')[-1])
+        groupInstance = getattr(module, grouptype.split('.')[-1])
 
-        group = group_instance(subscription = self.subscription)
-        
-        basename = "%s-%s" % (self.subscription.name(), group.id)
+        jobGroups = self.algorithm(groupInstance = groupInstance,
+                                   jobInstance = jobInstance,
+                                   *args, **kwargs)
 
-        jobs = self.algorithm(job_instance=job_instance, jobname=basename,
-                                  *args, **kwargs)
-
-        group.add(jobs)
-        group.commit()
-
-        # Acquire the files used in the job group, job groups should run on 
-        # complete files.
-        group.recordAcquire(list(jobs))
-        return group
+        return jobGroups
     
-    def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):
+    def algorithm(self, groupInstance = None, jobInstance = None, *args,
+                  **kwargs):
         """
-        a splitting algorithm to be overridden by a proper algorithm that does 
-        something, anything!
+        _algorithm_
+
+        A splitting algorithm that takes all available files from the
+        subscription and splits them into jobs and inserts them into job groups.
+        The algorithm must return a list of job groups.
         """
-        return Set([job_instance(name=jobname, 
-                                 files=self.subscription.availableFiles())])
+        pass

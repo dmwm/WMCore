@@ -1,42 +1,50 @@
+#!/usr/bin/env python
+"""
+_EventBased_
+
+Event based splitting algorithm that will chop a fileset into
+a set of jobs based on event counts
+"""
+
+__revision__ = "$Id: FileBased.py,v 1.8 2009/02/19 19:53:04 sfoulkes Exp $"
+__version__  = "$Revision: 1.8 $"
+
 from sets import Set
+
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.File import File 
-import datetime
+from WMCore.Services.UUID import makeUUID
 
 class FileBased(JobFactory):
     """
-    Return a set of jobs split along file boundaries. Acquiring files from the 
-    subscription is slow and needs some optimising.
+    Split jobs by number of files.
     """
-    def algorithm(self, job_instance=None, jobname=None, *args, **kwargs):
-        start = datetime.datetime.now()
-        if 'files_per_job' not in kwargs.keys():
-            kwargs['files_per_job'] = 10
-        jobs = Set()
-        thesub = self.subscription
-        logger = None 
-        dbf = None 
-        try:
-            logger = thesub.logger
-            dbf = thesub.dbfactory
-        except:
-            pass
+    def algorithm(self, groupInstance = None, jobInstance = None, *args,
+                  **kwargs):
+        """
+        _algorithm_
 
-        num_files = len(self.subscription.availableFiles())
-        allfiles = list(thesub.acquireFiles(size=num_files))
-        
-        while num_files > 0:
-            thefiles = Fileset(files=allfiles[:kwargs['files_per_job']])
-            allfiles = allfiles[kwargs['files_per_job']:]
-            job = job_instance(name = '%s-%s' % (jobname, len(jobs) +1), 
-                               files=thefiles, logger=logger, dbfactory=dbf)
-            jobs.add(job)
-            num_files = num_files - len(thefiles)
-        end = datetime.datetime.now()
-        duration = end - start
-        if logger:
-        	logger.debug("FileBased algorithm completed in %s s" % duration)
-        else:
-        	print "FileBased algorithm completed in %s s" % duration
-        return jobs
+        Split up all the available files such that each job will process a
+        maximum of "files_per_job".  If the "files_per_job" parameters is not
+        passed in jobs will process a maximum of 10 files.
+        """
+        filesPerJob = kwargs.get("files_per_job", 10)
+        filesInJob = 0
+        jobs = Set()
+
+        baseName = makeUUID()
+
+        for availableFile in self.subscription.availableFiles():
+            if filesInJob == 0 or filesInJob == filesPerJob:
+                job = jobInstance(name = "%s-%s" % (baseName, len(jobs) + 1))
+                jobs.add(job)
+                filesInJob = 0
+
+            filesInJob += 1
+            job.addFile(availableFile)
+
+        jobGroup = groupInstance(subscription = self.subscription)
+        jobGroup.add(jobs)
+        jobGroup.commit()
+        jobGroup.recordAcquire(list(jobs))
+
+        return [jobGroup]

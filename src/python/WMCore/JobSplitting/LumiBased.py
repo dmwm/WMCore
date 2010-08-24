@@ -5,29 +5,25 @@ _LumiBased_
 
 Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
-
 """
-__revision__ = "$Id: LumiBased.py,v 1.1 2008/09/25 14:48:28 evansde Exp $"
-__version__  = "$Revision: 1.1 $"
 
-
+__revision__ = "$Id: LumiBased.py,v 1.2 2009/02/19 19:53:05 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from sets import Set
+
 from WMCore.JobSplitting.JobFactory import JobFactory
-
-
-
 
 class LumiBased(JobFactory):
     """
     Split jobs by number of events
     """
-    def algorithm(self, job_instance = None, *args, **kwargs):
+    def algorithm(self, groupInstance = None, jobInstance = None, *args,
+                  **kwargs):
         """
         _algorithm_
 
-        Implement event based splitting algorithm
-
+        Implement lumi based splitting algorithm
         """
         jobs = Set()
 
@@ -44,7 +40,7 @@ class LumiBased(JobFactory):
             for lumi in range(0, lumisInFile):
                 accumLumis.append(lumi)
                 if len(accumLumis) == lumisPerJob:
-                    job = job_instance(self.subscription)
+                    job = jobInstance(self.subscription)
                     job.addFile(f)
                     job.mask.setMaxAndSkipLumis(lumisPerJob, lumi)
                     jobs.add(job)
@@ -55,11 +51,9 @@ class LumiBased(JobFactory):
                 job.mask.setMaxAndSkipLumis(lumisPerJob, lumi)
                 jobs.add(job)
 
+        jobGroup = groupInstance(subscription = self.subscription)
+        jobGroup.add(jobs)
+        jobGroup.commit()
+        jobGroup.recordAcquire(list(jobs))
 
-
-
-
-        return jobs
-
-
-
+        return jobGroup

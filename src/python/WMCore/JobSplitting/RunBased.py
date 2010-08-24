@@ -9,15 +9,19 @@ creation and/or tracking.
 
 If file spans a run will need to create a mask for that file.
 """
-__revision__ = "$Id: RunBased.py,v 1.11 2009/02/02 23:42:03 jacksonj Exp $"
-__version__  = "$Revision: 1.11 $"
+
+__revision__ = "$Id: RunBased.py,v 1.12 2009/02/19 19:53:05 sfoulkes Exp $"
+__version__  = "$Revision: 1.12 $"
 
 from sets import Set
+
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
+from WMCore.Services.UUID import makeUUID
 
 class RunBased(JobFactory):
-    def algorithm(self, job_instance = None, jobname = None, *args, **kwargs):
+    def algorithm(self, groupInstance = None, jobInstance = None, *args,
+                  **kwargs):
         """
         _algorithm_
         
@@ -27,11 +31,10 @@ class RunBased(JobFactory):
         kwargs can take:
         files_per_job - e.g. 20 - Number of files per each split job
         """
-        # Set default inputs if required
-        if 'files_per_job' not in kwargs.keys():
-            kwargs['files_per_job'] = 300
-        if 'require_run_closed' not in kwargs.keys():
-            kwargs['require_run_closed'] = False
+        filesPerJob = kwargs.get("files_per_job", 300)
+        requireRunClosed = kwargs.get("require_run_closed", False)
+
+        baseName = makeUUID()
         
         # Resulting job set
         jobs = Set()
@@ -63,14 +66,18 @@ class RunBased(JobFactory):
         num_files = len(primaryFiles)
         while num_files > 0:
             # Extract a subset of primary files
-            jobFiles = Fileset(files=primaryFiles[:kwargs['files_per_job']])
-            primaryFiles = primaryFiles[kwargs['files_per_job']:]
+            jobFiles = Fileset(files=primaryFiles[:filesPerJob])
+            primaryFiles = primaryFiles[filesPerJob:]
             num_files = num_files - len(jobFiles)
 
             # Create the job
-            job = job_instance(name = '%s-%s' % (jobname, len(jobs) + 1),
-                               files = jobFiles)
+            job = jobInstance(name = '%s-%s' % (baseName, len(jobs) + 1),
+                              files = jobFiles)
             jobs.add(job)
         
-        # Return the jobs
-        return jobs
+        jobGroup = groupInstance(subscription = self.subscription)
+        jobGroup.add(jobs)
+        jobGroup.commit()
+        jobGroup.recordAcquire(list(jobs))
+
+        return jobGroup

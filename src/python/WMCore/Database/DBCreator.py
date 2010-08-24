@@ -7,8 +7,8 @@ Base class for formatters that create tables.
 
 """
 
-__revision__ = "$Id: DBCreator.py,v 1.3 2008/09/15 09:03:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBCreator.py,v 1.4 2008/09/18 13:04:54 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -39,6 +39,7 @@ class DBCreator(DBFormatter):
         self.create = {}
         self.constraints = {}
         self.inserts = {}
+        self.indexes = {}
             
     def execute(self, conn = None, transaction = False):     
         """
@@ -54,7 +55,7 @@ class DBCreator(DBFormatter):
         # get the keys for the table mapping:
         tableKeys = self.create.keys()
         tableKeys.sort()
-
+        
         for i in tableKeys:
             self.logger.debug( i )
             try:
@@ -62,6 +63,7 @@ class DBCreator(DBFormatter):
                                      conn = conn, 
                                      transaction = transaction)
             except Exception, e:
+                
                 msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
                                   str(self.create[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
@@ -78,6 +80,15 @@ class DBCreator(DBFormatter):
                                  transaction = transaction)
             except Exception, e:
                 self.logger.debug( e )
+                
+        for i in self.indexes.keys():
+            self.logger.debug( i )
+            try:
+                self.dbi.processData(self.indexes[i], 
+                                     conn = conn, 
+                                     transaction = transaction)
+            except Exception, e:
+                self.logger.debug( e ) 
 
         for i in self.inserts.keys():
             self.logger.debug( i )

@@ -22,8 +22,10 @@ code.generate('test_style')
 
 test = Test()
 test.parseCVS('cvsLog.txt', pathCut = 5, moduleCut = 1, maxVotes = 3)
+# generates separate test files for different backends which can be customized.
 test.generate('conf_test_mysql.py')
 test.generate('conf_test_oracle.py')
+# generates a report for missing tests.
 test.missingTests('missingTests.txt')
 
 print("Generated: test_style, conf_test_mysql.py, conf_test_orale.py, missingTests.txt")

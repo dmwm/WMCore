@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.4 2008/12/12 19:54:12 afaq Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMInit.py,v 1.5 2009/01/15 13:48:11 fvlingen Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -122,6 +122,33 @@ class WMInit:
             else:
                 logging.debug("Tables " + factoryName + \
                 " could not be created, already exists?")
+        myThread.transaction.commit()
+
+    def initializeSchema(self, modules = []):
+        """
+        Sometimes you need to initialize the schema before 
+        starting the program. This methods lets you pass
+        modules that have an execute method which contains
+        arbitrary sql statements.
+        """
+        myThread = threading.currentThread()
+
+        # filter out unique modules
+
+        myThread.transaction.begin()
+
+        factory = WMFactory("schema")
+
+        for factoryName in modules:
+            # need to create these tables for testing.
+            # notice the default structure: <dialect>/Create
+            create = factory.loadObject(factoryName)
+            createworked = create.execute(conn = myThread.transaction.conn)
+            if createworked:
+                logging.debug("SQL for "+ factoryName + " executed")
+            else:
+                logging.debug("SQL " + factoryName + \
+                " could not be executed, already exists?")
         myThread.transaction.commit()
 
     def clearDatabase(self, modules = []):

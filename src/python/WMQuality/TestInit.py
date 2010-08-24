@@ -12,13 +12,14 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.5 2008/12/18 14:53:16 fvlingen Exp $"
+    "$Id: TestInit.py,v 1.6 2009/01/15 13:48:11 fvlingen Exp $"
 __version__ = \
-    "$Revision: 1.5 $"
+    "$Revision: 1.6 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
 import commands
+import logging
 import os
 import threading
 
@@ -40,12 +41,12 @@ class TestInit:
         self.backend = backend
         self.init = WMInit()
 
-    def setLogging(self):
+    def setLogging(self, logLevel = logging.INFO):
         """
         Sets logging parameters
         """
         self.init.setLogging(self.testClassName, self.testClassName,
-                             logExists = False)
+                             logExists = False, logLevel = logLevel)
 
     def setDatabaseConnection(self):
         """
@@ -76,6 +77,15 @@ class TestInit:
         for module in (defaultModules + customModules):
             modules[module] = 'done'
         self.init.setSchema(modules.keys())
+
+    def initializeSchema(self, modules = []):
+        """
+        Sometimes you need to initialize the schema before
+        starting the program. This methods lets you pass
+        modules that have an execute method which contains
+        arbitrary sql statements.
+        """
+        self.init.initializeSchema(modules)
 
     def getConfiguration(self, configurationFile = None):
         """ 

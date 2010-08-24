@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.8 2008/10/01 22:15:02 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobGroup.py,v 1.9 2008/10/24 14:01:42 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -49,10 +49,11 @@ class JobGroup(Pickleable):
         """
         self.jobs = jobs
         self.subscription = subscription
-        self._output = Fileset()
+        self.groupoutput = Fileset()
         self.last_update = datetime.datetime.now()
         self.id = self.last_update.__hash__() 
-    
+        self.uid = 0
+        
     def add(self, job):        
         self.jobs = self.jobs | self.makeset(job)
     
@@ -124,9 +125,9 @@ class JobGroup(Pickleable):
             "output only makes sense if the group is completed"
             for j in self.jobs:
                 self.addOutput(j.output.listFiles())
-            return self._output
+            return self.groupoutput
         print self.status(detail=True)
         return False
     
     def addOutput(self, file):
-        self._output.addFile(file)
+        self.groupoutput.addFile(file)

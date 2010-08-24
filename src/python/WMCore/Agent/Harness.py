@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.18 2009/02/09 21:00:13 fvlingen Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Harness.py,v 1.19 2009/02/11 16:51:21 fvlingen Exp $"
+__version__ = "$Revision: 1.19 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -400,7 +400,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                 time.sleep(5)
 
 
-    def handleMessage(self, type, payload):
+    def handleMessage(self, type = '', payload = ''):
         """
         __handleMessage_
 
@@ -408,6 +408,14 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         This method is mainly used for testing frameworks where you want to 
         have immediate feedback on the handling of a message in the test framework.
         """ 
+        # if the type of message is empty, check the message service 
+        # for a messages.
+        if type == '':
+            myThread = threading.currentThread()
+            msg = myThread.msgService.get()
+            type = msg['name']
+            payload = msg['payload']
+
         logging.debug("Receiving message of type: "+str(type)+\
         ", payload: "+str(payload))
         self.__call__(type, payload)

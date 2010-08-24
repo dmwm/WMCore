@@ -2,15 +2,15 @@
 """
 Test case for SiteDB
 """
-__revision__ = "$Id: SiteDB_t.py,v 1.3 2008/10/16 12:49:56 ewv Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: SiteDB_t.py,v 1.4 2008/11/24 20:10:36 ewv Exp $"
+__version__  = "$Revision: 1.4 $"
 __author__   = "ewv@fnal.gov"
 
 import unittest
 
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
-class SiteDBJSONTest(unittest.TestCase):
+class SiteDBTest(unittest.TestCase):
     """
     Unit tests for SiteScreening module
     """
@@ -27,14 +27,11 @@ class SiteDBJSONTest(unittest.TestCase):
         """
         Tests CmsNametoSE
         """
-        target = ['cmssrm.fnal.gov', 'ralsrmb.rl.ac.uk',
-                  'gridka-dCache.fzk.de', 'srm-cms.cern.ch',
-                  'castorsrm.cr.cnaf.infn.it', 'ccsrm.in2p3.fr',
-                  'srm.grid.sinica.edu.tw', 'srm2.grid.sinica.edu.tw',
+        target = ['ralsrmb.rl.ac.uk',
                   'ralsrma.rl.ac.uk', 'srm-cms.gridpp.rl.ac.uk',
                   'ralsrme.rl.ac.uk', 'ralsrmf.rl.ac.uk']
-        results = self.mySiteDB.cmsNametoSE("T1")
-        self.failUnless(results == target)
+        results = self.mySiteDB.cmsNametoSE("T1_UK_RAL")
+        self.failUnless(results.sort() == target.sort())
 
 
     def testCmsNametoCE(self):
@@ -52,11 +49,11 @@ class SiteDBJSONTest(unittest.TestCase):
         """
         Tests the JSON parser directly
         """
-        cmsName = "red.unl.edu"
+        cmsName = "cmsgrid02.hep.wisc.edu"
         results = self.mySiteDB.parser.getJSON("CEtoCMSName",
                                   file="CEtoCMSName",
                                   name=cmsName)
-        self.failUnless(results['0']['name'] == "T2_US_Nebraska")
+        self.failUnless(results['0']['name'] == "T2_US_Wisconsin")
 
 
     def testDNUserName(self):

@@ -41,7 +41,8 @@ class CreateWMBS(DBFormatter):
                 UNIQUE(lfn),
                 PRIMARY KEY(id),
                 INDEX (lfn))"""
-        self.create['wmbs_file_runlumi_map'] = """CREATE TABLE wmbs_file_runlumi_map (
+        self.create['wmbs_file_runlumi_map'] = """
+            CREATE TABLE wmbs_file_runlumi_map (
                 file    int(11),
                 run     int(11),
                 lumi    int(11),
@@ -121,21 +122,36 @@ wmbs_sub_files_complete (
                 FOREIGN KEY (file) REFERENCES wmbs_file(id)
                     ON DELETE CASCADE)"""
         
-        self.constraints['uniquewfname'] = "CREATE UNIQUE INDEX uniq_wf_name on wmbs_workflow (name)"
-        self.constraints['uniquewfspecowner'] = "CREATE UNIQUE INDEX uniq_wf_spec_owner on wmbs_workflow (spec, owner)"
-        
-    def execute(self, fileset = None, conn = None, transaction = False):
-        try:
-            keys = self.create.keys()
-            self.logger.debug( keys )
+        self.constraints['uniquewfname'] = """
+            CREATE UNIQUE INDEX uniq_wf_name 
+            on wmbs_workflow (name)"""
+        self.constraints['uniquewfspecowner'] = """
+            CREATE UNIQUE INDEX uniq_wf_spec_owner 
+            on wmbs_workflow (spec, owner)"""
+        self.constraints['uniquelfn'] = """
+            CREATE UNIQUE INDEX uniq_lfn 
+            on wmbs_file_details (lfn)"""
             
-            self.dbi.processData(self.create.values(), conn = conn, transaction = transaction)
+    def execute(self, fileset = None, conn = None, transaction = False):
+        for i in self.create.keys():
+            self.logger.debug( i )
+            try:
+                self.dbi.processData(self.create[i], 
+                                     conn = conn, 
+                                     transaction = transaction)
+            except Exception, e:
+                self.logger.debug( e )
             
             keys = self.constraints.keys()
             self.logger.debug( keys )
+        for i in self.constraints.keys():
+            self.logger.debug( i )
+            try:
+                self.dbi.processData(self.constraints[i], 
+                                 conn = conn, 
+                                 transaction = transaction)
+            except Exception, e:
+                self.logger.debug( e )
             
-            self.dbi.processData(self.constraints.values(), conn = conn, transaction = transaction)
+        return True
             
-            return True
-        except Exception, e:
-            raise e

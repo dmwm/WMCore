@@ -162,12 +162,12 @@ class WorkflowTest(WMBSBase):
                     'elapsed time:'+str(self.totaltime)+ \
                     ', threshold:'+str(self.totalthreshold)+' )'
 
-    def testLoadSpecOwner(self, times=1):         
+    def testLoadFromSpecOwner(self, times=1):         
         """
             Testcase for the Workflow.LoadSpecOwner DAO class
             
         """
-        print "testLoadSpecOwner"
+        print "testLoadFromSpecOwner"
 
         #If testtimes is not set, the arguments are used for how many times
         #the test method will be run
@@ -177,10 +177,10 @@ class WorkflowTest(WMBSBase):
         list = self.genWorkflow(number=times)
 
         for i in range(times):        
-            time = self.perfTest(dao=self.dao, action='Workflow.LoadSpecOwner', 
+            time = self.perfTest(dao=self.dao, action='Workflow.LoadFromSpecOwner', 
                    spec=list[i].spec, owner=list[i].owner)
             self.totaltime = self.totaltime + time                        
-            assert self.totaltime <= self.totalthreshold, 'LoadSpecOwner DAO '+\
+            assert self.totaltime <= self.totalthreshold, 'LoadFromSpecOwner DAO '+\
                     'class - Operation too slow ( '+str(i+1)+' times, total '+\
                     'elapsed time:'+str(self.totaltime)+ \
                     ', threshold:'+str(self.totalthreshold)+' )'

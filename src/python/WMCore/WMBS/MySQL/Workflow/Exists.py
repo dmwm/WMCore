@@ -6,23 +6,20 @@ MySQL implementation of Workflow.Exists
 
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.1 2008/06/12 10:02:06 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Exists.py,v 1.2 2008/06/23 09:35:01 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
 class Exists(MySQLBase):
-    sql = """select count(*) from wmbs_workflow
+    sql = """select id from wmbs_workflow
             where spec = :spec and owner = :owner and name = :name"""
     
     def format(self, result):
         result = MySQLBase.format(self, result)
         self.logger.debug( result )
-        if result[0][0] > 0:
-            return True
-        else:
-            return False
-        
+        return result[0][0]
+    
     def getBinds(self, spec=None, owner=None, name = None):
         return self.dbi.buildbinds(self.dbi.makelist(owner), 'owner',
                                    self.dbi.buildbinds(self.dbi.makelist(spec), 'spec',

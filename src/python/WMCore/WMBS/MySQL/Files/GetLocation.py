@@ -28,7 +28,6 @@ class GetLocation(MySQLBase):
     def execute(self, file=None, conn = None, transaction = False):
         binds = self.getBinds(file)
         
-        self.logger.debug('File.GetLocation binds: %s' % binds)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.format(result)

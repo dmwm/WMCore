@@ -6,8 +6,8 @@ MySQL implementation of Files.Exists
 """
 
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.1 2008/10/22 19:08:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Exists.py,v 1.2 2008/11/20 16:46:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Base import MySQLBase
 
@@ -16,12 +16,11 @@ class Exists(MySQLBase):
     
     def format(self, result):
         result = MySQLBase.format(self, result)
-        try:
-            return result[0][0]
-        except Exception, e:
-            self.logger.error('Exists Exception: %s' % e)
-            self.logger.debug( 'Exists Result: %s' % result )
+
+        if len(result) == 0:
             return False
+        else:
+            return result[0][0]
     
     def getBinds(self, lfn=None):
         return self.dbi.buildbinds(self.dbi.makelist(lfn), "lfn")

@@ -34,11 +34,11 @@ class MySQLBase(object):
                 out.append(i)
         return out
     
-    def getBinds(self):
-        """
-        Return the appropriately formatted binds for the sql
-        """
-        return {}
+    def getBinds(self, **kwargs):
+        binds = {}
+        for i in kwargs.keys():
+            binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
+        return binds
     
     def execute(self, conn = None, transaction = False):
         """

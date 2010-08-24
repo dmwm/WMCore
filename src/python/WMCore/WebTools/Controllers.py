@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.1 2009/01/07 11:47:15 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Controllers.py,v 1.2 2009/01/20 12:09:41 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
@@ -24,16 +24,19 @@ from Page import Page
 class Controllers(Page):
     def __init__(self, config):
         Page.__init__(self, config)
+        print 
+        print config
+        print 
         self.dict = dict
         self.cssmap = {}
         self.jsmap = {}
         self.cache = {}
         try:
-            self.cssmap = self.config[0]['css']
+            self.cssmap = self.config['css']
         except:
             pass
         try:
-            self.jsmap = self.config[0]['js']
+            self.jsmap = self.config['js']
         except:
             pass
          

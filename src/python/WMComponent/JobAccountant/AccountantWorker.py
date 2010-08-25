@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.18 2010/03/09 20:05:52 mnorman Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.19 2010/03/10 17:53:55 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import os
 import threading
@@ -79,9 +79,11 @@ class AccountantWorker:
         self.stateChanger = ChangeState(config)
 
         # Hold data for later commital
-        self.dbsFilesToCreate = []
-        self.wmbsFilesToBuild = []
-        self.fileLocation     = None
+        self.dbsFilesToCreate  = []
+        self.wmbsFilesToBuild  = []
+        self.fileLocation      = None
+        self.mergedOutputFiles = []
+        self.listOfJobsToSave  = []
 
         
         return
@@ -147,26 +149,40 @@ class AccountantWorker:
         Handle a completed job.  The parameters dictionary will contain the job
         ID and the path to the framework job report.
         """
-        logging.info("Handling %s" % parameters["fwjr_path"])
-
+        returnList = []
         self.transaction.begin()
+        for job in parameters['input']:
+            logging.info("Handling %s" % job["fwjr_path"])
+            
 
-        fwkJobReport = self.loadJobReport(parameters)
-        jobSuccess = None
+            
+            fwkJobReport = self.loadJobReport(job)
+            jobSuccess = None
+            
+            if not self.didJobSucceed(fwkJobReport):
+                logging.error("I have a bad jobReport for %i" %(job['id']))
+                self.handleFailed(jobID = job["id"],
+                                  fwkJobReport = fwkJobReport)
+                jobSuccess = False
+            else:
+                self.handleSuccessful(jobID = job["id"],
+                                      fwkJobReport = fwkJobReport,
+                                      fwkJobReportPath = job['fwjr_path'])
+                jobSuccess = True
+                
 
-        if not self.didJobSucceed(fwkJobReport):
-            logging.error("I have a bad jobReport for %i" %(parameters['id']))
-            self.handleFailed(jobID = parameters["id"],
-                              fwkJobReport = fwkJobReport)
-            jobSuccess = False
-        else:
-            self.handleSuccessful(jobID = parameters["id"],
-                                  fwkJobReport = fwkJobReport,
-                                  fwkJobReportPath = parameters['fwjr_path'])
-            jobSuccess = True
+            returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
+
+
+        # Now things done at the end of the job
+
+        # Now do WMBSJobs
+        #self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
         self.transaction.commit()
-        return {'id': parameters["id"], 'jobSuccess': jobSuccess}
+            
+        return returnList
+
 
     def outputFilesetsForJob(self, outputMap, merged, moduleLabel):
         """
@@ -431,7 +447,7 @@ class AccountantWorker:
         wmbsJob.getMask()
         outputID = wmbsJob.loadOutputID()
 
-        wmbsJob["fwjr"] = fwkJobReportPath
+        wmbsJob["fwjr"]    = fwkJobReportPath
 
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.transaction.conn,
@@ -489,14 +505,15 @@ class AccountantWorker:
         # Create DBSBufferFiles
         self.createFilesInDBSBuffer(jobLocation = list(fileList[0]['locations'])[0])
 
-        wmbsJob.completeInputFiles()
 
 
         # Only save once job is done, and we're sure we made it through okay
+        # self.listOfJobsToSave.append(wmbsJob)
         wmbsJob.save()
-        self.stateChanger.propagate([wmbsJob], "success", "complete")
         wmbsJob.completeInputFiles()
+        self.stateChanger.propagate([wmbsJob], "success", "complete")
 
+        # Straighten out DBS Parentage
         for mergedOutputFile in mergedOutputFiles:
             self.setupDBSFileParentage(mergedOutputFile)
 

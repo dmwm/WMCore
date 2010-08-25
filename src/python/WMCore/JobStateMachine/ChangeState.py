@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.37 2010/04/12 15:20:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: ChangeState.py,v 1.38 2010/04/12 20:31:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -37,7 +37,7 @@ class ChangeState(WMObject, WMConnectionBase):
         self.dbi = self.myThread.dbi
 
         if couchDbName == None:
-            couchDbName = gettattr(self.config.JobStateMachine, "couchDBName",
+            couchDbName = getattr(self.config.JobStateMachine, "couchDBName",
                                    "Unknown")
             
         self.dbname = couchDbName
@@ -182,7 +182,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
             doc["state_changes"].append(transDict)
 
-            if job.has_key("fwjr"):
+            if job["fwjr"] != None:
                 doc["fwkjrs"].append(job["fwjr"])
                 del job["fwjr"]
 
@@ -192,10 +192,7 @@ class ChangeState(WMObject, WMConnectionBase):
             setCouchDAO.execute(bulkList = couchRecordsToUpdate, conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
             
-        docsCommitted = self.database.commit()
-        assert len(jobs) == len(docsCommitted), \
-               "Got less than I was expecting from CouchDB: \n %s" % docsCommitted
-
+        self.database.commit()
         return
 
     def createDatabase(self):

@@ -25,19 +25,19 @@ StatusList = [
     ]
 
 NextStatus = {
- "new" : ["testing-approved", "assignment-approved", "rejected", "failed"],
- "testing-approved" : ["testing", "test-failed"],
- "testing" : ["tested", "test-failed"],
- "tested" : ["assignment-approved","failed", "rejected"],
- "test-failed" : ["testing-approved", "rejected"],
- "assignment-approved" : ["assigned", "rejected"],
+ "new" : ["new", "testing-approved", "assignment-approved", "rejected", "failed"],
+ "testing-approved" : ["testing-approved", "testing", "test-failed"],
+ "testing" : ["testing", "tested", "test-failed"],
+ "tested" : ["tested", "assignment-approved","failed", "rejected"],
+ "test-failed" : ["test-failed", "testing-approved", "rejected"],
+ "assignment-approved" : ["assignment-approved", "assigned", "rejected"],
  "assigned" : ["assigned", "assigned-prodmgr", "rejected", "failed"],
- "assigned-prodmgr" : ["running", "failed"],
- "running" : ["completed", "aborted", "failed", "epic-FAILED"], 
- "failed" : ["testing-approved", "assignment-approved", "assigned"],
- "epic-FAILED" : [],
- "completed" : [],
- "aborted" : ["testing-approved", "assignment-approved", "assigned", "rejected", "failed"],
- "rejected" : []
+ "assigned-prodmgr" : ["assigned-prodmgr", "running", "failed"],
+ "running" : ["running", "completed", "aborted", "failed", "epic-FAILED"], 
+ "failed" : ["failed", "testing-approved", "assignment-approved", "assigned"],
+ "epic-FAILED" : ["epic-FAILED"],
+ "completed" : ["completed"],
+ "aborted" : ["aborted", "testing-approved", "assignment-approved", "assigned", "rejected", "failed"],
+ "rejected" : ["rejected"]
 }
 

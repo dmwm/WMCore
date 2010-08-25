@@ -6,8 +6,8 @@ creates logger handler for logging
  
 """
 
-__revision__ = "$Id: CommonUtil.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CommonUtil.py,v 1.5 2009/09/29 12:23:01 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import logging

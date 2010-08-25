@@ -7,8 +7,8 @@ _HeartbeatPollHandler_
 
 """
 
-__revision__ = "$Id: HeartbeatPollHandler.py,v 1.1 2009/08/11 14:09:27 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: HeartbeatPollHandler.py,v 1.2 2009/09/29 12:23:04 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 #import os

@@ -7,8 +7,8 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQSubmitApi.py,v 1.3 2009/07/08 17:28:07 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TQSubmitApi.py,v 1.4 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 import threading
@@ -17,6 +17,7 @@ import xml.dom.minidom
 
 from TQComp.Apis.TQApi import TQApi
 from TQComp.Apis.TQApiData import validateTask
+from TQComp.Constants import taskStates
 
 
 class TQSubmitApi(TQApi):
@@ -147,3 +148,27 @@ not set. Doing nothing.")
         self.transaction.begin()
         self.queries.updatePilot(pilotId, vars)
         self.transaction.commit()
+
+
+    def killTasks(self, taskIds):
+        """
+        Kill all tasks whose Id is included in the 'taskIds' list
+        (and exist in the queue, others are just ignored).
+
+        Actions:
+          NOT YET DONE For those running, tell the pilot to kill the real job.
+          For all tasks, change state to "Killed" and 
+            archive them (eliminate them from the queue).
+        """
+        if not taskIds:
+            return 
+        
+        self.transaction.begin()
+        # TODO: for each running task, prepare a message for its pilot, so that
+        #       it is told to kill the real job (on reply of next hbeat message
+        self.queries.updateTasks(taskIds, ['state'], [taskStates['Killed']])
+        self.queries.archiveTasksById(taskIds)
+        self.queries.removeTasksById(taskIds)
+        self.transaction.commit()
+
+

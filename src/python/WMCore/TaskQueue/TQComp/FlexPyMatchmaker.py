@@ -9,8 +9,8 @@ at configuration time as matcherPlugin. Otherwise, the default one in this modul
 is used.
 """
 
-__revision__ = "$Id: FlexPyMatchmaker.py,v 1.3 2009/08/11 14:09:26 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FlexPyMatchmaker.py,v 1.4 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 

@@ -3,8 +3,8 @@
 Base handler for addFile.
 """
 __all__ = []
-__revision__ = "$Id: AddFileHandler.py,v 1.3 2009/08/11 14:09:27 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: AddFileHandler.py,v 1.4 2009/09/29 12:23:03 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -66,22 +66,33 @@ class AddFileHandler(object):
 '%s' field in payload" % param}
 #                    myThread.transaction.rollback()
                     return {'msgType': result, 'payload': fields}
-            pilotId= payload['pilotId']
+
+
+            pilotId = payload['pilotId']
             files = []
-            for i in payload['fileList']:
-                file = {}
-                file['guid'] = i['fileGuid']
-                file['size'] = i['fileSize']
-                file['type'] = i['fileType']
-#                    self.logger.debug('fileId: %s' % file['guid'])
-                files.append(file)
+            guids = []
+            try:
+                for i in payload['fileList']:
+                    file = {}
+                    file['guid'] = i['fileGuid']
+                    file['size'] = i['fileSize']
+                    file['type'] = i['fileType']
+    #                    self.logger.debug('fileId: %s' % file['guid'])
+                    files.append(file)
+                    guids.append({'guid': i['fileGuid']})
+            except:
+                messg = "Malformed fileList. Each file requires:"
+                messg += "'fileGuid', 'fileSize', 'fileType'"
+                return {'msgType': 'Error', 'payload': {'Error': messg}}
 
             try:
                 myThread.transaction.begin()
                 
                 # Get pilot info from DB (check that it's registered)
-                res = self.queries.getPilotsWithFilter({'id': pilotId}, \
-                                    ['id'], None, asDict = False)
+#                res = self.queries.getPilotsWithFilter({'id': pilotId}, \
+#                                    ['id'], None, asDict = False)
+                res = self.queries.selectWithFilter('tq_pilots', \
+                      {'id': pilotId}, ['id'], None, asDict = False)
                 if not res:
                     result = 'Error'
                     fields = {'Error': 'Not registered pilot', \
@@ -90,17 +101,12 @@ class AddFileHandler(object):
                     return {'msgType': result, 'payload': fields}
 
 
-                # Add the files to the DB
-                # TODO: Is there a better way to do this in bulk mode?
-                for file in files:
-
-                    # Add file to data table (or retrieve it, if already there)
-                    self.queries.addFile({'guid': file['guid'], 'type': \
-                                         file['type'], 'size': file['size']})
-                    self.logger.debug('addFile: %s' % file['guid'])
-                    
-                    # Register file with pilot's host (if not already there)
-                    self.queries.addFileHost(pilotId, file['guid'])
+                # Add the files to the DB (existing files are just skipped)
+                self.logger.debug('addFilesBulk: %s' % files)
+                self.queries.addFilesBulk(files)
+                        
+                # Register file with pilot's host (if not already there)
+                self.queries.addFileHostBulk(pilotId, guids)
 
                 # Update last heartbeat
                 self.queries.updatePilot(pilotId, {'last_heartbeat': None})

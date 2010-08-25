@@ -3,8 +3,8 @@
 Base handler for getTask.
 """
 __all__ = []
-__revision__ = "$Id: GetTaskHandler.py,v 1.5 2009/08/11 14:09:27 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: GetTaskHandler.py,v 1.6 2009/09/29 12:23:03 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 
 #from WMCore.Agent.BaseHandler import BaseHandler
 #from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -98,8 +98,10 @@ class GetTaskHandler(object):
                 myThread.transaction.begin()
 
                 # Get pilot info from DB (check that it's registered)
-                res = self.queries.getPilotsWithFilter({'id': pilotId}, \
-                                    ['host', 'se'], None, asDict = True)
+#                res = self.queries.getPilotsWithFilter({'id': pilotId}, \
+#                                    ['host', 'se'], None, asDict = True)
+                res = self.queries.selectWithFilter('tq_pilots', \
+                      {'id': pilotId}, ['host', 'se'], None, asDict = True)
                 if not res:
                     result = 'Error'
                     fields = {'Error': 'Not registered pilot', \
@@ -161,7 +163,10 @@ class GetTaskHandler(object):
 
                     # Check & lock the state of the task (not yet running)
                     resLock = self.queries.lockTask(taskId)
+#                    self.logger.debug('resLock: %s, %s' % (resLock[0]['state'], taskStates['Queued']))
+#                    if int(resLock[0]['state']) != taskStates['Queued']:
                     if resLock[0]['state'] != taskStates['Queued']:
+#                        self.logger.debug("error...")
                         raise Exception('Task not in Queued state')
                     
                     # Update task table with this assignment

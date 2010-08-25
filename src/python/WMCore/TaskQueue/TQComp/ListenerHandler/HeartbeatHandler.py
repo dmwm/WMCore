@@ -3,8 +3,8 @@
 Base handler for heartbeat.
 """
 __all__ = []
-__revision__ = "$Id: HeartbeatHandler.py,v 1.3 2009/08/11 14:09:27 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: HeartbeatHandler.py,v 1.4 2009/09/29 12:23:03 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -68,36 +68,76 @@ class HeartbeatHandler(object):
             pilotId = payload['pilotId']
             ttl = payload['ttl']
 
+            # Look for extra optional parameters 
+
+            # Cache Update: Just try to add all known files (not delete 
+            # any). If known, it will be skipped.           
+            if 'cache' in payload:
+                files = []
+                guids = []
+                try:
+                    for i in payload['cache']:
+                        file = {}
+                        file['guid'] = i['fileGuid']
+                        file['size'] = i['fileSize']
+                        file['type'] = i['fileType']
+    #                        self.logger.debug('fileId: %s' % file['guid'])
+                        files.append(file)
+                        guids.append({'guid': i['fileGuid']})
+                except:
+                    messg = "Malformed cache. Each file requires:"
+                    messg += "'fileGuid', 'fileSize', 'fileType'"
+                    return {'msgType': 'Error', 'payload': {'Error': messg}}
+
+
+            # Any other optional field?
 
             try:
                 myThread.transaction.begin()
               
                 # Get pilot info from DB (check that it's registered)
-                res = self.queries.getPilotsWithFilter({'id': pilotId}, \
-                                    ['id'], None, asDict = False)
+#                res = self.queries.getPilotsWithFilter({'id': pilotId}, \
+#                                    ['id'], None, asDict = False)
+                res = self.queries.selectWithFilter('tq_pilots', \
+                   {'id': pilotId}, ['id', 'host', 'se'], None, asDict = True)
                 if not res:
                     result = 'Error'
                     fields = {'Error': 'Not registered pilot', \
                               'PilotId': pilotId}
                     myThread.transaction.rollback()
                     return {'msgType': result, 'payload': fields}
+                host = res[0]['host']
+                se = res[0]['se']
 
 
                 # Update TTL, TTL time, and last heartbeat values
                 self.queries.updatePilot(pilotId, {'ttl': ttl, \
                          'ttl_time': None,   'last_heartbeat': None})
                
-                # Look for extra optional parameters 
-
-                # cacheUpdate
+                # Cache Update: Just try to add all known files (not delete 
+                # any). If known, it will be skipped.           
                 if 'cache' in payload:
-                    # TODO: Update cache if required based on this info
-                    pass
 
-                # others?
+                    # Add the files
+                    self.logger.debug('addFilesBulk: %s' % files)
+                    self.queries.addFilesBulk(files)
+                        
+                    # Register file with pilot's host (if not already there)
+                    self.queries.addFileHostBulk(pilotId, guids)
+                
 
-                # Give the result back
+                # Get the list of pilots in the same host for the response
+                pilotList = self.queries.getPilotsAtHost(host, se, True)
+                for i in pilotList:
+                    if i['pilotid'] == pilotId: 
+                        pilotList.remove(i)
+                        break
+
+                self.logger.debug("PilotList: %s" % pilotList)
+
+                # Give the result back, including the list of pilots in the host
                 fields['info'] = 'Done'
+                fields['otherPilots'] = pilotList
                 result = 'heartbeatAck'
       
                 # Commit

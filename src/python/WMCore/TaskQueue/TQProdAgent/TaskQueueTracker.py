@@ -5,8 +5,8 @@ _TaskQueueTracker_
 Tracker for TaskQueue submissions.
 """
 
-__revision__ = "$Id: TaskQueueTracker.py,v 1.1 2009/07/08 17:14:37 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TaskQueueTracker.py,v 1.2 2009/09/29 12:23:04 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import os
@@ -124,7 +124,7 @@ class TaskQueueTracker(TrackerPlugin):
 
         # Now remove all tasks that deserve so
         if toRemove:
-            self.tqApi.removeTasksById(toRemove)
+            self.tqApi.archiveTasksById(toRemove)
         
         return
 
@@ -143,6 +143,8 @@ class TaskQueueTracker(TrackerPlugin):
         # Query for all tasks and then read one by one from the result
         states = self.tqApi.getStateOfTasks(running)
 
+        logging.debug("TaskQueueTracker: Received states: %s" % states)
+
         toRemove = []
         for runId in running:
             try:
@@ -160,6 +162,13 @@ class TaskQueueTracker(TrackerPlugin):
             if jobState == None:
                 self.TrackerDB.jobFailed(runId)
                 logging.debug("Job %s has been lost" % (runId))
+                continue
+
+            # Queued: task probably re-scheduled, do the same
+            if jobState == taskStates["Queued"]:
+                logging.debug("Job %s is back to Queued, re-queuing" % (runId))
+                # TODO: Need to set the job as killed? If so, how?
+                self.TrackerDB.submitJob(runId)
                 continue
 
             # Still running, nothing to do
@@ -184,7 +193,7 @@ class TaskQueueTracker(TrackerPlugin):
                 logging.error("Unknown job state: %s" % jobState)
    
         # Now remove all tasks that deserve so
-        self.tqApi.removeTasksById(toRemove)
+        self.tqApi.archiveTasksById(toRemove)
         
         return
 

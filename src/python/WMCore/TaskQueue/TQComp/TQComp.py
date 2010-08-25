@@ -4,8 +4,8 @@
 Main component of the Task Queue
 """
 
-__revision__ = "$Id: TQComp.py,v 1.5 2009/08/11 14:09:26 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: TQComp.py,v 1.6 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import os

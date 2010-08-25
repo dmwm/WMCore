@@ -7,12 +7,13 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQStateApi.py,v 1.5 2009/08/11 14:09:26 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: TQStateApi.py,v 1.6 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 
 #import logging
 import threading
 import time
+from inspect import stack
 
 from TQComp.Apis.TQApi import TQApi
 from TQComp.Apis.TQApiData import TASK_FIELDS, PILOT_FIELDS
@@ -63,7 +64,21 @@ class TQStateApi(TQApi):
 #        self.logger.debug('%s: Starting' % ('getTasks'))
         
         return self.__getTable__(filter, fields, limit, asDict, 'tq_tasks', \
-                     TASK_FIELDS, 'getTasks', self.queries.getTasksWithFilter)
+                     TASK_FIELDS)
+
+
+
+    def getTasksArchive(self, filter={}, fields=[], limit=None, asDict=False):
+        """
+        Returns the filtered contents of the tasks_archive DB.
+        
+        Arguments as the same as those of the getTasks method.
+        """
+        
+        self.logger.debug('%s: Starting' % ('getTasksArchive'))
+        
+        return self.__getTable__(filter, fields, limit, asDict, \
+               'tq_tasks_archive', TASK_FIELDS)
 
 
 
@@ -87,16 +102,32 @@ class TQStateApi(TQApi):
 #        self.logger.debug('%s: Starting' % ('getPilots'))
         
         return self.__getTable__(filter, fields, limit, asDict, 'tq_pilots', \
-                  PILOT_FIELDS, 'getPilots', self.queries.getPilotsWithFilter)
+                  PILOT_FIELDS)
 
 
-    def __getTable__(self, filter, fields, limit, asDict, table, fList, \
-                     caller, method):
+    def getPilotsArchive(self, filter={}, fields=[], limit=None, asDict=False):
+        """
+        Returns the filtered contents of the tasks_archive DB.
+        
+        Arguments as the same as those of the getPilots method.
+        """
+        
+#        self.logger.debug('%s: Starting' % ('getPilotsArchive'))
+        
+        return self.__getTable__(filter, fields, limit, asDict, \
+               'tq_pilots_archive', PILOT_FIELDS)
+
+
+
+    def __getTable__(self, filter, fields, limit, asDict, table, fList):
         """
         Internal. For use of getTasks and getPilots.
         """
-        
+       
+        who = stack()[1][3]
+       
 #        self.logger.debug('%s: Starting' % ('__getTable__'))
+
         filter2 = {}
         for key in filter.keys():
             if key in fList:
@@ -108,31 +139,33 @@ class TQStateApi(TQApi):
                 fields2.append(field)
                
         if filter and (not filter2):
-            self.logger.error('%s: Filter keys not valid: %s' % (caller, filter))
-            self.logger.error('%s: Refusing to dump all entries' % (caller))
+            self.logger.error('%s: Filter keys not valid: %s' % (who, filter))
+            self.logger.error('%s: Refusing to dump all entries' % (who))
             return None
             
         if fields and (not fields2):
-            self.logger.error('%s: No valid field requested: %s' % (caller, fields))
-            self.logger.error('%s: Aborting query' % (caller))
+            self.logger.error('%s: No valid field requested: %s' % \
+                               (who, fields))
+            self.logger.error('%s: Aborting query' % (who))
             return None
            
         if len(filter2) < len(filter):
             self.logger.warning('%s: Not all filter keys valid: %s' % \
-                            (caller, filter))
-            self.logger.warning('%s: Using filter: %s' % (caller, filter2))
+                            (who, filter))
+            self.logger.warning('%s: Using filter: %s' % (who, filter2))
         else:
-            self.logger.debug('%s: Using filter: %s' % (caller, filter2))
+            self.logger.debug('%s: Using filter: %s' % (who, filter2))
 
         if len(fields2) < len(fields):
-            self.logger.warning('%s: Not all fields valid: %s' % (caller, fields))
-            self.logger.warning('%s: Requesting fields: %s' % (caller, fields2))
+            self.logger.warning('%s: Not all fields valid: %s' % (who, fields))
+            self.logger.warning('%s: Requesting fields: %s' % (who, fields2))
         else:
-            self.logger.debug('%s: Requesting fields: %s' % (caller, fields2))
+            self.logger.debug('%s: Requesting fields: %s' % (who, fields2))
 
         # Perform query
         self.transaction.begin()
-        result = method(filter2, fields2, limit, asDict)
+        result = self.queries.selectWithFilter(table, filter2, fields2,\
+                                               limit, asDict)
         self.transaction.commit()
         return result
 
@@ -265,7 +298,8 @@ class TQStateApi(TQApi):
         active = self.queries.getActivePilotsBySite()
         idle = self.queries.getIdlePilotsBySite()
         self.transaction.commit()
-
+        print active
+        print idle 
         for i in active:
             result[i[0]] = {'ActivePilots': i[1]}
             result[i[0]]['IdlePilots'] = 0
@@ -274,7 +308,10 @@ class TQStateApi(TQApi):
             if not result.has_key(i[0]):
                 result[i[0]] = {'ActivePilots': 0}
             result[i[0]]['IdlePilots'] = i[1]
-        
+
+        if ( len(active) == 0 and len(idle) == 0 ):
+            result = {"NoRecords":{'ActivePilots':0, 'IdlePilots':0} }       
+
         return result
 
 
@@ -306,14 +343,17 @@ class TQStateApi(TQApi):
             self.queries.removeTasksById(taskIds)
             self.transaction.commit()
 
-    def getPilotLogs(self, pilotId, limit = None):
+    def getPilotLogs(self, pilotId, limit = None, fields = None, asDict = True):
         """
         Get the records in tq_pilot_log that correspond to the specified
         pilotId (or to all if None). If limit is not None, do not return
-        more than those records.
+        more than those records. If fields is not None, but a list, return
+        only the fields whose name is specified in that list (presence of
+        non existing fields will produce an error). The last argument selects 
+        whether the result must be a dict or a list of the values.
         """
         self.transaction.begin()
-        result = self.queries.getPilotLogs(pilotId, limit)
+        result = self.queries.getPilotLogs(pilotId, limit, fields, asDict)
         self.transaction.commit()
 
         return result

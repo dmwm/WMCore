@@ -3,8 +3,8 @@
 Base handler for taskEnd.
 """
 __all__ = []
-__revision__ = "$Id: TaskEndHandler.py,v 1.5 2009/08/11 14:09:27 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: TaskEndHandler.py,v 1.6 2009/09/29 12:23:03 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -90,8 +90,10 @@ class TaskEndHandler(object):
                 myThread.transaction.begin()
 
                 # Retrieve the task spec and check the task is in this pilot
-                res = self.queries.getTasksWithFilter({'id': taskId}, \
-                                          fields = ['spec', 'pilot'])
+                res = self.queries.selectWithFilter('tq_tasks', \
+                         {'id': taskId}, fields = ['spec', 'pilot'])
+#                res = self.queries.getTasksWithFilter({'id': taskId}, \
+#                                          fields = ['spec', 'pilot'])
                 self.logger.debug("Res: %s" % res)
                 if (not res) or (res[0][1] != pilotId):
                     result = 'Error'

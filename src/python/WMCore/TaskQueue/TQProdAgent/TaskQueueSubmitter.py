@@ -6,8 +6,8 @@ TaskQueue Submitter implementation. It gets jobs and enqueues them into the TQ.
 
 """
 
-__revision__ = "$Id: TaskQueueSubmitter.py,v 1.1 2009/07/08 17:14:37 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TaskQueueSubmitter.py,v 1.2 2009/09/29 12:23:04 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import os

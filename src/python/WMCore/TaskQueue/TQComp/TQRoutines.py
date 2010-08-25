@@ -3,8 +3,8 @@
 Function library for use of different handlers dealing with pilots.
 """
 __all__ = []
-__revision__ = "$Id: TQRoutines.py,v 1.1 2009/08/11 14:09:26 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQRoutines.py,v 1.2 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from traceback import extract_tb
 import sys
@@ -23,16 +23,31 @@ def rescheduleTasks(handler, taskList):
     @param handler: a ref to the calling handler.
     @param taskList: list of dicts, each containing an 'id' field
     """
+#    idList = map(lambda x: x['id'], taskList)
 
-    # Extract ids
-    idList = map(lambda x: x['id'], taskList)
-        
-# TODO: Need a more sophisticated logic for this?
-#       This is just changing state of all tasks to queued (never abort?)
+    # TODO: Need a more sophisticated logic for this? Never abort?
 
-    # Update all tasks to be queued
-    handler.queries.updateTasks(idList, ['state', 'pilot'], \
-                             [taskStates['Queued'], None])
+    # If the task is in state Done or Failed, just set pilot to
+    # None (someone else should care about archiving them)
+    # If the task was Running, set it back to queued
+    runningList = []
+    othersList = []
+    for task in taskList:
+        if task['state'] == taskStates['Running']:
+            runningList.append(task['id'])
+        else:
+            othersList.append(task['id'])
+
+    # Running
+    if runningList:
+        handler.logger.debug("Updating running: %s" % runningList)
+        handler.queries.updateTasks(runningList, ['state', 'pilot'], \
+                                    [taskStates['Queued'], None])
+
+    # The rest
+    if othersList:
+        handler.logger.debug("Updating not running: %s" % othersList)
+        handler.queries.updateTasks(othersList, ['pilot'], [None])
 
 
 
@@ -92,8 +107,10 @@ def finishPilot(handler, transaction, pilotId, reason = None):
 
         # Check if there are tasks with this pilot
         # and if so, run the procedure for rescheduling/abort
-        res = handler.queries.getTasksWithFilter( \
-                  {'pilot': pilotId}, asDict = True)
+        res = handler.queries.selectWithFilter('tq_tasks', \
+                             {'pilot': pilotId}, asDict = True)
+#        res = handler.queries.getTasksWithFilter( \
+#                  {'pilot': pilotId}, asDict = True)
         if res: 
             rescheduleTasks(handler, res)
 

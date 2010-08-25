@@ -15,7 +15,9 @@ uploadRoot = 'upload'
 
 # TODO: Should this be loaded from DB or uploaded from conf file?
 #       => conf file probably not. DB... Is it any better than having it here?
-taskStates = {'Queued': 0, 'Assigned': 1, 'Running': 2, 'Done': 3, 'Failed': 4}
+taskStates = {'Queued': 0, 'Assigned': 1, 'Running': 2, \
+              'Done': 3, 'Failed': 4, 'Killed': 5}
+
 
 
 # These could basically be anything

@@ -3,18 +3,14 @@
 Base handler for pilotShutdown.
 """
 __all__ = []
-__revision__ = "$Id: PilotShutdownHandler.py,v 1.3 2009/08/11 14:09:27 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: PilotShutdownHandler.py,v 1.4 2009/09/29 12:23:03 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMFactory import WMFactory
 
 from traceback import extract_tb
 import sys
 import threading
-
-## This is for the reschedule method
-## TODO: If this is used by someone else, factorize to an external lib module
-#from TQComp.Constants import taskStates
 
 from TQComp.TQRoutines import finishPilot
 
@@ -84,97 +80,3 @@ class PilotShutdownHandler(object):
             pass
     
     
-#        # load queries for backend.
-#        myThread = threading.currentThread()
-#   
-#        # Now handle the message
-#        fields = {}
-#        if event in ['pilotShutdown']:
-#   
-#            self.logger.debug('PilotShutdownHandler:PilotShutdown:payload: %s' % payload)
-#            
-#            try:
-#                myThread.transaction.begin()
-#              
-#                # Extract message attributes
-#                required = ['pilotId']
-#                for param in required:
-#                    if not param in payload:
-#                        result = 'Error'
-#                        fields = {'Error': "pilotShutdown message requires \
-#'%s' field in payload" % param}
-#                        myThread.transaction.rollback()
-#                        return {'msgType': result, 'payload': fields}
-#                pilotId= payload['pilotId']
-#                if 'reason' in payload:
-#                    reason = payload['reason']
-
-#                # See if this was the last pilot on its own host
-#                # and if so, remove its cache from that host
-#                res = self.queries.countPilotMates(pilotId)
-#                self.logger.debug("countPilotMates: %s" % res)
-
-#                if res == 0:
-#                    result = 'Error'
-#                    fields = {'Error': 'Not registered pilot', \
-#                              'PilotId': pilotId}
-#                    myThread.transaction.rollback()
-#                    return {'msgType': result, 'payload': fields}
-
-#                if res == 1:
-#                    self.queries.removeFileHost(None, pilotId)
-
-#                # Now, if the data was not at other host,
-#                # remove it also from the tq_data table
-#                self.queries.removeLooseData()
-
-#                # Check if there are tasks with this pilot
-#                # and if so, run the procedure for rescheduling/abort
-#                res = self.queries.getTasksWithFilter( \
-#                          {'pilot': pilotId}, asDict = True)
-#                if res: 
-#                    self.rescheduleTasks(res)
-
-#                # Log the pilot end
-#                self.queries.logPilotEvent(pilotId, 'PilotShutdown')
-#                
-#                # Finally, archive the pilot
-#                self.queries.archivePilot(pilotId)
-#                self.queries.removePilot(pilotId)
-#
-#                self.logger.debug('fileId: %s' % fileId)
-#                
-#                # Give the result back
-#                fields['info'] = 'Done'
-#                result = 'pilotShutdownAck'
-#      
-#                # Commit
-#                myThread.transaction.commit()
-#              
-#            except:
-#                type, val, tb = sys.exc_info()
-#                myThread.transaction.rollback()
-#                messg = 'Error in PilotShutdown, due to: %s - %s '% (type, val)
-#                self.logger.warning(messg + "Trace: %s"% extract_tb(tb,limit=5))
-#                result = 'Error'
-#                fields = {'Error': messg}
-#              
-#            return {'msgType': result, 'payload': fields}
-#   
-#        else:
-#            # unexpected message, scream?
-#            pass
-#    
-#    # TODO: If this is used by someone else, factorize to an external lib module
-#    def rescheduleTasks(self, taskList):
-#
-#        # Extract ids
-#        idList = map(lambda x: x['id'], taskList)
-#            
-#    # TODO: Need a more sophisticated logic for this?
-#    #       This is just changing state of all tasks to queued (never abort?)
-#
-#        # Update all tasks to be queued
-#        self.queries.updateTasks(idList, ['state', 'pilot'], \
-#                                 [taskStates['Queued'], None])
-

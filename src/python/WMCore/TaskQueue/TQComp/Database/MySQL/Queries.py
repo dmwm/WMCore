@@ -9,9 +9,9 @@ This module implements the mysql backend for the TQComp
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.5 2009/08/11 14:09:27 delgadop Exp $"
+    "$Id: Queries.py,v 1.6 2009/09/29 12:23:02 delgadop Exp $"
 __version__ = \
-    "$Revision: 1.5 $"
+    "$Revision: 1.6 $"
 __author__ = \
     "delgadop@cern.ch"
 
@@ -75,10 +75,47 @@ class Queries(DBFormatter):
         self.execute(sqlStr, dict(task))
 
 
+#    def getTasksWithFilter(self, filter, fields=None, limit=None, \
+#                           asDict=False, table='tq_tasks'):
+#        """
+#        Returns all tasks that match the specified filter. Filter must be
+#        a dict containing valid fields as keys and the corresponding values
+#        to match. The optional argument fields may contain a list of 
+#        fields to return; otherwise, all are returned. The optional argument 
+#        limit can be used to limit the maximum number of records returned.
+#        If the optional argument 'asDict' is True, the result is returned as 
+#        a dict with field names as keys; otherwise, result is a list of field
+#        values.
+#        """
+#        
+##        logging.debug("getTasksWithFilter running:", filter, fields, limit, asDict)
+#        filterStr = limitStr = ""
+#        fieldsStr = '*'
+#    
+#        if filter:
+#            filterStr = "WHERE %s" % reduce(commas, map(bindWhere, filter))
+#        if fields:
+#            fieldsStr = "%s" % (reduce(commas, fields))
+#        if limit:
+#            limitStr = "LIMIT %s" % (limit)
+#    
+#        sqlStr = """
+#        SELECT %s FROM tq_tasks %s %s
+#        """ % (fieldsStr, filterStr, limitStr)
+##        logging.debug("getTasksWithFilter sqlStr:", sqlStr)
+#        
+#        result = self.execute(sqlStr, filter)
+#    
+#        if asDict:
+#            return self.formatDict(result)
+#        else:
+#            return self.format(result)
 
-    def getTasksWithFilter(self, filter, fields=None, limit=None, asDict=False):
+
+    def selectWithFilter(self, table, filter, fields=None, limit=None, \
+                           asDict=False):
         """
-        Returns all tasks that match the specified filter. Filter must be
+        Returns all records that match the specified filter. Filter must be
         a dict containing valid fields as keys and the corresponding values
         to match. The optional argument fields may contain a list of 
         fields to return; otherwise, all are returned. The optional argument 
@@ -87,8 +124,10 @@ class Queries(DBFormatter):
         a dict with field names as keys; otherwise, result is a list of field
         values.
         """
-        
-#        logging.debug("getTasksWithFilter running:", filter, fields, limit, asDict)
+       
+        logging.debug("selectWithFilter running:", table, filter, fields, \
+                      limit, asDict)
+
         filterStr = limitStr = ""
         fieldsStr = '*'
     
@@ -100,9 +139,10 @@ class Queries(DBFormatter):
             limitStr = "LIMIT %s" % (limit)
     
         sqlStr = """
-        SELECT %s FROM tq_tasks %s %s
-        """ % (fieldsStr, filterStr, limitStr)
-#        logging.debug("getTasksWithFilter sqlStr:", sqlStr)
+        SELECT %s FROM %s %s %s
+        """ % (fieldsStr, table, filterStr, limitStr)
+
+        logging.debug("selectWithFilter sqlStr:", sqlStr)
         
         result = self.execute(sqlStr, filter)
     
@@ -151,6 +191,7 @@ class Queries(DBFormatter):
         else:
             return self.format(result)
 
+
     def getTaskAtState(self, state):
         """
         Returns first task at given state 
@@ -169,6 +210,8 @@ class Queries(DBFormatter):
         "FOR UPDATE" so that we are sure that nobody will
         modify or read the task until we comit our transaction.
         """
+        self.logger.debug("Locking task: %s" % taskId)
+
         sqlStr = """
         SELECT * FROM tq_tasks WHERE id = :id FOR UPDATE
         """
@@ -512,39 +555,38 @@ class Queries(DBFormatter):
 
 
 
-    def getPilotsWithFilter(self, filter, fields=None, limit=None, asDict=False):
-        """
-        Returns all pilots that match the specified filter. Filter must be
-        a dict containing valid fields as keys and the corresponding values
-        to match. The optional argument fields may contain a list of 
-        fields to return; otherwise, all are returned. The optional argument 
-        limit can be used to limit the maximum number of records returned.
-        If the optional argument 'asDict' is True, the result is returned as 
-        a list with field names as keys; otherwise, result is a list of field
-        values.
-        """
-        
-        filterStr = limitStr = ""
-        fieldsStr = '*'
-    
-        if filter:
-            filterStr = "WHERE %s" % reduce(commas, map(bindWhere, filter))
-        if fields:
-            fieldsStr = "%s" % (reduce(commas, fields))
-        if limit:
-            limitStr = "LIMIT %s" % (limit)
-    
-        sqlStr = """
-        SELECT %s FROM tq_pilots %s %s
-        """ % (fieldsStr, filterStr, limitStr)
-    
-        result = self.execute(sqlStr, filter)
-    
-        if asDict:
-            return self.formatDict(result)
-        else:
-            return self.format(result)
-
+#    def getPilotsWithFilter(self, filter, fields=None, limit=None, asDict=False):
+#        """
+#        Returns all pilots that match the specified filter. Filter must be
+#        a dict containing valid fields as keys and the corresponding values
+#        to match. The optional argument fields may contain a list of 
+#        fields to return; otherwise, all are returned. The optional argument 
+#        limit can be used to limit the maximum number of records returned.
+#        If the optional argument 'asDict' is True, the result is returned as 
+#        a list with field names as keys; otherwise, result is a list of field
+#        values.
+#        """
+#        
+#        filterStr = limitStr = ""
+#        fieldsStr = '*'
+#    
+#        if filter:
+#            filterStr = "WHERE %s" % reduce(commas, map(bindWhere, filter))
+#        if fields:
+#            fieldsStr = "%s" % (reduce(commas, fields))
+#        if limit:
+#            limitStr = "LIMIT %s" % (limit)
+#    
+#        sqlStr = """
+#        SELECT %s FROM tq_pilots %s %s
+#        """ % (fieldsStr, filterStr, limitStr)
+#    
+#        result = self.execute(sqlStr, filter)
+#    
+#        if asDict:
+#            return self.formatDict(result)
+#        else:
+#            return self.format(result)
 
 
     def getPilotsAtHost(self, host, se, asDict=False):
@@ -670,13 +712,21 @@ class Queries(DBFormatter):
         self.execute(sqlStr, vars)
 
 
-    def getPilotLogs(self, pilotId, limit = None):
+    def getPilotLogs(self, pilotId, limit = None, fields = None, asDict = True):
         """
         Get the records in tq_pilot_log that correspond to the specified
         pilotId (or to all if None). If limit is not None, do not return
-        more than those records.
+        more than those records. If fields is not None, but a list, return
+        only the fields whose name is specified in that list (presence of
+        non existing fields will produce an error). The last argument selects 
+        whether the result must be a dict or a list of the values.
         """
-        sqlStr = """SELECT * FROM tq_pilot_log"""
+        if fields:
+            fieldsStr = "%s" % (reduce(commas, fields))
+        else:
+            fieldsStr = '*'
+
+        sqlStr = """SELECT %s FROM tq_pilot_log""" % (fieldsStr)
         vars = {}
          
         if pilotId:
@@ -689,7 +739,10 @@ class Queries(DBFormatter):
             sqlStr += """ LIMIT %s""" % (limit)
 
         result = self.execute(sqlStr, vars)
-        return self.formatDict(result)
+        if asDict:
+            return self.formatDict(result)
+        else:
+            return self.format(result)
 
  
     def checkPilotsTtl(self):
@@ -762,6 +815,28 @@ class Queries(DBFormatter):
         return self.format(result)
 
 
+
+    def addFilesBulk(self, dataList):
+        """
+        Inserts a bunch of data entries, if they do not exist in the DB (if 
+        they do, they are skipped). The criteria to determine whether the 
+        data exists is that the 'guid' field of the entries must be unique.
+        The 'dataList' argument is a list of dicts, each containing information
+        for a data entry (as the argument of addFile).
+        """
+#         INSERT IGNORE INTO tq_data(id, spec, sandbox, wkflow, type, reqs, req_se) 
+#         VALUES (:id, :spec, :sandbox, :wkflow, :type, :reqs, :req_se) 
+        logging.debug("Queries.addFilesBulk: %s entries" % (len(dataList)))
+        
+        if not dataList: return
+        
+        sqlStr = """
+         INSERT IGNORE INTO tq_data(%s) VALUES(%s)
+        """ % (reduce(commas, dataList[0]), \
+               reduce(commas, map(bindVals, dataList[0])))
+        self.execute(sqlStr, dataList)
+
+
     def addFile(self, vars):
         """
         Inserts a new data entry, if it does not exist in the DB (if it 
@@ -787,9 +862,11 @@ class Queries(DBFormatter):
         """
         Inserts a new host<->data association, given the data guid and
         a pilot on the host. If the association exists already
-        (unique pair), the insert is skipped silently.
+        (the pair must be unique), the insert is skipped silently.
         """
 
+        if (not data) or (not pilot): return
+        
 #             (SELECT host from tq_pilots WHERE id = :pilot), 
         sqlStr = """
          INSERT IGNORE INTO tq_hostdata(host, se, data) 
@@ -801,7 +878,27 @@ class Queries(DBFormatter):
         
 #        self.execute(sqlStr, {'host': host, 'data': data})
         self.execute(sqlStr, {'pilot': pilot, 'data': data})
-    
+   
+
+    def addFileHostBulk(self, pilot, dataList):
+        """
+        Inserts a bunch of host<->data associations, given a list of data 
+        guids and a pilot on the host. If the association exists already
+        (the pair must be unique), the insert is skipped silently.
+        The 'dataList' argument is a list of dicts, each containing only 
+        one field with 'guid' as key.
+        """
+        logging.debug("Queries.addFileHostBulk: %s entries" % (len(dataList)))
+
+        if not dataList: return
+        
+        sqlStr = """
+         INSERT IGNORE INTO tq_hostdata(host, se, data) 
+             SELECT host, se, :guid FROM tq_pilots WHERE id = %s
+        """ % (pilot)
+
+        self.execute(sqlStr, dataList)
+
     
     def removeFileHost(self, data, pilot):
         """

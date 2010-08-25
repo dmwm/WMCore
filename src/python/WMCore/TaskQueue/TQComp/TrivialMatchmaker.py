@@ -9,8 +9,8 @@ pilot requesting a task it just returns the first available task in the queue
 a reference example and not meant to be used in production.
 """
 
-__revision__ = "$Id: TrivialMatchmaker.py,v 1.1 2009/06/01 09:55:08 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TrivialMatchmaker.py,v 1.2 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 
@@ -46,5 +46,6 @@ class TrivialMatchmaker(object):
         """
 #        return self.queries.getTaskAtState(taskStates['Queued'])
         filter = {'state': taskStates['Queued']}
-        return self.queries.getTasksWithFilter(filter, asDict = True)
+#        return self.queries.getTasksWithFilter(filter, asDict = True)
+        return self.queries.selectWithFilter('tq_tasks', filter, asDict = True)
         

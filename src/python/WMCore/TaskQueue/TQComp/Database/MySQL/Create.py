@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for the error handler.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2009/08/11 14:09:26 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Create.py,v 1.5 2009/09/29 12:23:02 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "delgadop@cern.ch"
 
 import threading
@@ -156,21 +156,21 @@ CREATE TABLE `tq_tasks_archive` (
     `state` tinyint unsigned NOT NULL default 0,
     `creat_time` timestamp default CURRENT_TIMESTAMP,
     `current_state_time` timestamp default 0,
-    PRIMARY KEY `id` (`id`)
+    INDEX `id` (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
 
 # Pilots archival for post-mortem inspection
         self.create['tq_pilots_archive'] = """      
 CREATE TABLE `tq_pilots_archive` (
-    `id` int unsigned NOT NULL AUTO_INCREMENT,
+    `id` int unsigned NOT NULL,
     `host` varchar(255),
     `se` varchar(255),
     `cachedir` varchar(255),
     `ttl` int unsigned,
     `ttl_time` timestamp default 0,
     `last_heartbeat` timestamp default CURRENT_TIMESTAMP,
-    PRIMARY KEY `id` (`id`)
+    INDEX `id` (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
 

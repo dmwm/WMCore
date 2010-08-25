@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.13 2010/01/26 17:44:57 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.14 2010/02/01 21:42:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import logging
 import os.path
@@ -1758,22 +1758,22 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
-        print("  Filling DB...")
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 1)
 
         accountant = JobAccountantPoller(config)
         accountant.setup()
 
-        print("  Running accountant...")
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.algorithm()
         endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the
@@ -1796,23 +1796,23 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using two worker processes.
         """
-        print("Two process load test:")
-        print("  Filling DB...")
+        logging.debug("Two process load test:")
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 2)
 
         accountant = JobAccountantPoller(config)
         accountant.setup()
 
-        print("  Running accountant...")
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.algorithm()
         endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the
@@ -1835,23 +1835,23 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using four workers processes.
         """
-        print("Four process load test:")
-        print("  Filling DB...")
+        logging.debug("Four process load test:")
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 4)
 
         accountant = JobAccountantPoller(config)
         accountant.setup()
 
-        print("  Running accountant...")
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.algorithm()
         endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the
@@ -1874,23 +1874,23 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using eight workers processes.
         """
-        print("Eight process load test:")
-        print("  Filling DB...")
+        logging.debug("Eight process load test:")
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 8)
 
         accountant = JobAccountantPoller(config)
         accountant.setup()
 
-        print("  Running accountant...")
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.algorithm()
         endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the
@@ -1913,23 +1913,23 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using sixteen workers processes.
         """
-        print("Sixteen process load test:")
-        print("  Filling DB...")
+        logging.debug("Sixteen process load test:")
+        logging.debug("  Filling DB...")
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 16)
 
         accountant = JobAccountantPoller(config)
         accountant.setup()
 
-        print("  Running accountant...")
+        logging.debug("  Running accountant...")
 
         startTime = time.time()
         accountant.algorithm()
         endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
+            logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
             jobReports = readJobReport(fwjrPath)
 
             # There are some job reports missing, so we'll just ignore the

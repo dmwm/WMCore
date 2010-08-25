@@ -1,5 +1,20 @@
+#!/usr/bin/env python
+"""
+WorkQueue provides functionality to queue large chunks of work,
+thus acting as a buffer for the next steps in job processing
+  
+WMSpec objects are fed into the queue, split into coarse grained work units
+and released when a suitable resource is found to execute them.
+    
+TODO: Persist WQElements
+     
+"""
+
 import time
-from sets import Set
+try:
+    set
+except ImportError:
+    from sets import Set as set
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WorkQueue.DBSHelper import DBSHelper
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
@@ -12,53 +27,93 @@ class _WQElement(WMObject):
     WQElement container
 
     """
-    def __init__(self, specUrl = None, primaryBlock=None, blockLocations={}, priority = 0, 
-                 online = 0, njobs = 0, whiteList=[], blackList=[]):
+    def __init__(self, specUrl, primaryBlock = None, blockLocations = None,
+                 priority = 0, online = 0, njobs = 0, whiteList = None,
+                 blackList = None):
         WMObject.__init__(self)
         self.specUrl = specUrl
         # blockLocations is dict format of {blockName:[location List], ...}
-        self.blockLocations = blockLocations
+        self.blockLocations = blockLocations or {}
         #self.locations = locations
         self.primaryBlock = primaryBlock
-        self.whiteList = whiteList
-        self.blackList = blackList
+        self.whiteList = whiteList or []
+        self.blackList = blackList or []
         self.priority = priority
         self.online = online
         self.njobs = njobs
         self.time = time.time()
         self.status = "Available"
+        self.subscription = None
         self.wmSpec = WorkSpecParser(specUrl)
 
-    def __cmp__(self, x, y):
-        tfactor = x.time
+
+    def __cmp__(self, y):
+        """
+        Compare work units so they can be sorted by priority
+          priority determined by a weighted average of the 
+            static priority and the queueing time
+        """
+        tfactor = self.time
         current = time.time()
         weight = 0.01
-        return (x.priority + weight*(current - x.time)) - (y.priority + weight*(current - y.time))
-        
+        return (self.priority + weight*(current - self.time)) - (y.priority + weight*(current - y.time))
+
+
     def _sites(self):
-        return [] #sites that contain all blocks
-    
+        """
+        Return sites that contain all blocks
+        """
+        return []
+
+
     def _online(self):
-        return True #are all blocks staged?
-    
+        """
+        Are all blocks online?
+        """
+        return True
+
+
     def match(self, conditions):
         """
         Function to match a unit of work to a condition
         
-        Take list of current conditions and return the best match,
-          or None if no match found
+        Take list of current conditions and 
+        returns tuple containing a bool and a dict.
+        Boolean indicates if a match was made, the dict contains the
+        original conditions passed in minus any that were used in the match
         """
-        #TODO: Match against conditions dict, and return updated dict with taken resources removed
         if not self._online():
-            return None
-        #For now just return first matching requirement 
-        # Later add some ranking so most restrictive requirements match first
-        for condition in conditions:
-            site = conditions['Site']
-            
-            if site in self._sites:
-                return condition
-        return None 
+            return False, conditions
+
+        #TODO: Add some ranking so most restrictive requirements match first
+        for site, slots in conditions.iteritems():
+            #For now just return first matching requirement 
+            #TODO: add ranking so most restrictive requirements match first
+            for condition in conditions:
+                site = condition['Site']
+                
+                #TODO: Refine slot calc,
+                #Options: Strict matching?, x% of block slots available?
+                #For now strict - assume block small enough to release
+                if site in self._sites and slots > self.njobs:
+                    newconditions = {}
+                    newconditions.update(conditions)
+                    newslots = slots - self.njobs
+                    if newslots > 0:
+                        newconditions[site] = newslots
+                    else:
+                        newconditions.pop(site)
+                    return True, newconditions
+        # if here - never matched anything
+        return False, conditions
+
+
+    def setStatus(self, status):
+        """
+        Change status to that given
+        """
+        self.status = status
+        
     
     def getLocations(self):
         """
@@ -67,9 +122,9 @@ class _WQElement(WMObject):
         return list of locations in the WQElement only if there is some common location
         in a primary block and its parent block
         """
-        commonLocation = Set(self.blockLocations[self.primaryBlock])
+        commonLocation = set(self.blockLocations[self.primaryBlock])
         for locations in self.blockLocations.values():
-            commonLocation = commonLocation.intersection(Set(locations))
+            commonLocation = commonLocation.intersection(set(locations))
         return list(commonLocation)
     
             
@@ -84,7 +139,10 @@ class _WQElement(WMObject):
             # just replace the location since the previous location might be
             # deleted 
             self.blockLocations[block] = locations    
-            
+
+
+
+
 class WorkQueue(WMObject):
     """
     _WorkQueue_
@@ -98,13 +156,16 @@ class WorkQueue(WMObject):
         self.elements = [ ]
         self.dbsHelper = DBSHelper(dbsUrl)
 
-    def addElement(self, specUrl = None, primaryBlock = None, parentBlocks=[], priority = 0, 
-                   whiteList, blackList, nJobs, dbsUrl):
+
+    def addElement(self, specUrl, nJobs, dbsUrl, primaryBlock = None,
+                   parentBlocks = None, priority = 0,
+                   whiteList = None, blackList = None):
         """
         _addElement_
         
         TODO: eventually this will be the database update for WorkQueue table set
         """
+        parentBlocks = parentBlocks or []
         dbsHelper = DBSHelper(dbsUrl)
         blockLocations = {primaryBlock:
                           dbsHelper.getBlockLocations(primaryBlock)} # TODO: Should be automated contains both primaryBlock and parentBlock 
@@ -116,6 +177,7 @@ class WorkQueue(WMObject):
                              nJobs, whiteList, blackList)
         self.elements.append(newElem) 
 
+
     def match(self, conditions):
         """
         Loop over internal queue in priority order, 
@@ -125,23 +187,32 @@ class WorkQueue(WMObject):
         self.reorderList()
         for element in self.elements:
             #Act of matching returns the remaining match attributes 
-            matched = element.match(conditions)
+            matched, conditions = element.match(conditions)
             if matched:
                 results.append(element)
-                conditions.pop(matched) #Remove used resource from further matches
+                if not conditions:
+                    break # stop matching when no resources left      
+        return results
         
         return results
 
     def reorderList(self):
         self.elements.sort()    
-    
+
+
     def setStatus(self, subscription, status):
         """
         _setStatus_
         """
         # set the status of give subscription and status
-        pass
-    
+        results = []
+        for element in self.elements:
+            if element.subscription == subscription:
+                element.setStatus(status)
+                results.append(element)
+        return results
+
+
     def setPriority(self, idnumber, newpriority):
         found = 0
         count = 0
@@ -152,13 +223,15 @@ class WorkQueue(WMObject):
             if (not found):
                 print "Element not found nothing changed"
             else:
-                self.reorderList
+                self.reorderList()
                 
+
     def updateLocationInfo(self):
         
         for element in self.elements:
             element.updateLocations(self.dbsHelper)
-            
+
+
     def getWork(self, siteJobs):
         """
         _getWork_
@@ -187,20 +260,20 @@ class WorkQueue(WMObject):
                                                     	     workflowName=workflowName)
                 results[site] = subscription
         return results
+
     
     def gotWork(self, subscription):
         """
         _gotWork_
         
         this is called by JSM
-        update the WorkQueue status form table
+        update the WorkQueue status table and remove from further consideration
         """
-        try:
-            self.setStatus(subscription, "Acquired")
-            return True
-        except:
-            return False
-    
+        taken_blocks = self.setStatus(subscription, "Acquired")
+        [self.elements.remove(x) for x in [taken_blocks]] 
+        return True
+
+
     def doneWork(self, subscription):
         """
         _doneWork_
@@ -208,11 +281,8 @@ class WorkQueue(WMObject):
         this is called by JSM
         update the WorkQueue status form table
         """
-        try:
-            self.setStatus(subscription, "Done")
-            return True
-        except:
-            return False
+        self.setStatus(subscription, "Done")
+        return True
 
 
     def queueWork(self, wmspec):
@@ -229,3 +299,4 @@ class WorkQueue(WMObject):
                             blacklist = spec.siteBlacklist(),
                             nJobs = jobs,
                             dbsUrl = spec.wmSpec.dbsUrl)
+        return True

@@ -6,22 +6,22 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.2 2009/05/12 16:41:15 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.3 2009/05/21 18:22:54 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import pickle
 from ProdCommon.DataMgmt.DBS import DBSReader
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, newWorkload
 
-
-class WorkSpecParser(Object):
+class WorkSpecParser:
     """
     Helper object to parse a WMSpec and return chunks of work
     """
     
     def __init__(self, url, defaultBlockSize=100):
         self.specUrl = url
-        self.wmSpec = pickle.load(open(self.specUrlurl)) #TODO: Replace by WMSpec load method
-        self.initialTask = self.wmSpec.taskIterator()
+        self.wmSpec = newWorkload(url) #pickle.load(open(self.specUrl)) #TODO: Replace by WMSpec load method
+        self.initialTask = self.wmSpec.taskIterator().next()
         self.dbs = DBSReader(self.wmSpec.dbsUrl)
         self.defaultBlockSize = defaultBlockSize
         self.results = [] # [name (block or fake), [blocks], jobs] 
@@ -75,10 +75,10 @@ class WorkSpecParser(Object):
         count = 0
         while total > 0:
             jobs = self.__estimateJobs(self.defaultBlockSize * perJob, total)
-            #count += 1
+            count += 1
             total -= jobs * perJob
         #for i in range(self.__estimateJobs(self.defaultBlockSize, total)):
-            self.results.append((str(i), (), jobs))
+            self.results.append((str(count), (), jobs))
             
 
     def __estimateJobs(self, unit, total):
@@ -92,7 +92,7 @@ class WorkSpecParser(Object):
         count = 0
         while total:
             count += 1
-            if total < eventsPerBlock:
+            if total < unit:
                 eventsPerBlock = total
         return count
 

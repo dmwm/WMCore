@@ -2,14 +2,14 @@
 """
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
-__revision__ = "$Id: WMBSHelper.py,v 1.2 2009/05/11 16:34:59 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.3 2009/05/21 18:22:54 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 
-class WMBSHelper(Object):
+class WMBSHelper:
     
     def __init__(self, wmSpec):        
         #TODO: 

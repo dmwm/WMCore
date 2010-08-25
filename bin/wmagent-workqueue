@@ -134,9 +134,9 @@ def main():
     elif options.queueWork:
         wf = args[0]
         workqueue.queueWork(wf)
-    elif options.resetWork():
+    elif options.resetWork:
         workqueue.resetWork(options.id)
-    elif options.flushNegotiationFailures():
+    elif options.flushNegotiationFailures:
         workqueue.flushNegotiationFailures()
     elif options.deleteWork:
         workqueue.deleteWork(options.id)

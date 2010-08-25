@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.10 2009/10/13 21:09:38 meloam Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.11 2009/10/13 21:14:39 meloam Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "fvlingen@caltech.edu"
 
 import os
@@ -45,7 +45,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

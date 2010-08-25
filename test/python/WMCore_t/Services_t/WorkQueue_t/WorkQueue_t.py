@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 import unittest
+import json
 
+from WMCore.Wrappers import jsonwrapper
+from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
+from WorkQueuePopulator import createProductionSpec, createProcessingSpec, getGlobalQueue
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+from WMCore.Services.Requests import JSONThunker
 
 class WorkQueueServiceTest(RESTBaseUnitTest):
     """
@@ -18,6 +23,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         self.config.setDBUrl('sqlite:////home/sryu/resttest.db')
         self.schemaModules = ["WMCore.WorkQueue.Database"]
         
+        
     def setUp(self):
         """
         setUP global values
@@ -25,13 +31,22 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         RESTBaseUnitTest.setUp(self)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
-        print self.config.getServerUrl()
-    
+        
+        self.globalQueue = getGlobalQueue(dbi = self.testInit.getDBInterface(),
+                                          CacheDir = 'global',
+                                          NegotiationTimeout = 0,
+                                          QueueURL = self.config.getServerUrl())    
+        
     def testGetWork(self):
+        self.globalQueue.queueWork(createProductionSpec())
         
         wqApi = WorkQueue(self.params)
 
-        print wqApi.getWork({'SiteB' : 15, 'SiteA' : 15}, "http://test.url")
+        data = wqApi.getWork({'SiteB' : 15, 'SiteA' : 15}, "http://test.url")
+        data = json.loads(data)
+        assert len(data) == 1, "only 1 element needs to be back. Got (%s)" % len(data['data'])
+        assert data[0]['wmspec_name'] == 'BasicProduction', "spec name is not BasicProduction: %s" \
+                                % data['wmspec_name']
          
     def testSynchronize(self):
         wqApi = WorkQueue(self.params)

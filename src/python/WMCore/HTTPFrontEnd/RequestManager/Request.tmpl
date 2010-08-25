@@ -1,0 +1,52 @@
+<html><body>
+#if $docId != None
+<a href="../showOriginalConfig/$docId" >Original Config</a> &nbsp&nbsp&nbsp
+<a href="../showFullConfig/$docId" >Full Config</a> &nbsp&nbsp&nbsp
+<a href="../showTweakFile/$docId" >TweakFile</a><br><br>
+#end if
+
+<hr><table>
+#for $key, $value in $requestSchema.items()
+     ## make a hyperlink to workflow
+     #if $key == 'RequestWorkflow'
+         <tr><td> $key </td><td>  <a href="../showWorkload?filepath=$workloadDir/$value">$value</a> </td></tr>
+     #else
+         <tr><td> $key </td><td> $value </td></tr>
+     #end if
+#end for
+</table>
+
+<br>Assignments<br><hr>
+<table>
+#if $assignments != None:
+#for $assignment in $assignments
+     <tr><td>TeamName</td><td> $assignment</td></tr>
+#end for
+#end if
+</table>
+<form action="../doAdmin" method="POST">
+$adminHtml
+<input type=submit>
+</form>
+
+<br>Messages:<br>---------<br>
+#if $messages != None
+#for $message in $messages:
+    message[0]<br>
+#end for
+#end if
+## Updates
+<br><hr>
+<table>
+#if $updateDictList != None
+#for $updateDict in $updateDictList
+    <br>----------<br>
+    #for $key in $updateDict
+        <tr><td>$key</td><td>$updateDict[$key]</td></tr>
+    #end for
+#end for
+#end if
+</table>
+</body>
+</html>
+

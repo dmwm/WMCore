@@ -1,0 +1,167 @@
+import WMCore.RequestManager.RequestMaker.Production
+import WMCore.RequestManager.RequestMaker.Processing.StoreResultsRequest
+from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
+from WMCore.RequestManager.RequestDB.Settings.RequestTypes import TypesList
+from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
+from WMCore.Services.Requests import JSONRequests
+from WMCore.HTTPFrontEnd.RequestManager.CmsDriverWebRequest import CmsDriverWebRequest
+import simplejson as json
+import cherrypy
+import os
+import time
+import urllib
+from WMCore.WebTools.Page import TemplatedPage
+
+
+class WebRequestSchema(TemplatedPage):
+    def __init__(self, config):
+        TemplatedPage.__init__(self, config)
+        # set the database to whatever the environment defines
+        self.templatedir = __file__.rsplit('/', 1)[0]
+        self.requestor = config.requestor
+        self.cmsswInstallation = config.cmsswInstallation
+        self.cmsswVersion = config.cmsswDefaultVersion
+        self.reqMgrHost = config.reqMgrHost
+        self.jsonSender = JSONRequests(config.reqMgrHost)
+        self.cmsDriver = CmsDriverWebRequest(config)
+        self.couchUrl = config.configCacheUrl
+        self.couchDBName = config.configCacheDBName
+        cherrypy.config.update({'tools.sessions.on': True})
+
+        # download all the sites from siteDB
+        url = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
+        data = json.loads(urllib.urlopen(url).read().replace("'", '"'))
+        # kill duplicates, then put in alphabetical order
+        siteset = set([d['name'] for d in data.values()])
+        # warning: alliteration
+        self.sites = list(siteset)
+        self.sites.sort() 
+        self.defaultProcessingConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
+        self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
+
+    def index(self, requestType=None):
+        self.versions = self.jsonSender.get('/reqMgr/version')[0]
+        self.versions.sort()
+
+        if not self.requestor in self.jsonSender.get('/reqMgr/user')[0]:
+           return "User " + self.requestor + " is not registered.  Contact a ReqMgr administrator."
+
+        groups = self.jsonSender.get('/reqMgr/group?user='+self.requestor)[0]
+        if groups == []:
+           return "User " + self.requestor + " is not in any groups.  Contact a ReqMgr administrator."
+        #reqTypes = TypesList
+        reqTypes = ["ReReco"]
+        return self.templatepage("WebRequestSchema", requestor=self.requestor,
+          groups=groups, reqTypes=reqTypes, 
+          versions=self.versions, defaultVersion=self.cmsswVersion,sites=self.sites, 
+          defaultProcessingConfig=self.defaultProcessingConfig, defaultSkimConfig=self.defaultSkimConfig)
+    index.exposed = True
+
+
+    def makeSchema(self, cmsswVersion=None, scramArch=None, requestType=None,
+            requestPriority=None, requestSizeEvents=None, requestSizeFiles=None,
+            acquisitionEra=None, scenario=None, globalTag=None, processingVersion=None,
+            group=None, requestor=None, filein=None, inputMode=None, couchDBConfig = None,
+            skimInput=None, dbs=None, lfnCategory=None,
+            processingConfig=None,
+            skimConfig=None,
+            runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None,
+            siteWhitelist=None, siteBlacklist=None, RECO=None, ALCA=None, AOD=None,
+            minMergeSize=None, maxMergeSize=None, maxMergeEvents=None):
+        current_time = time.strftime('%y%m%d_%H%M%S',
+                                 time.localtime(time.time()))
+
+        maker = retrieveRequestMaker(requestType)
+        schema = maker.newSchema()
+        schema['Requestor'] = self.requestor
+        schema['RequestName'] = self.requestor + '_' + current_time
+        schema["RequestType"] = requestType
+        schema["RequestPriority"] = requestPriority
+        schema["RequestSizeEvents"] = requestSizeEvents
+        schema["RequestSizeFiles"] = requestSizeFiles
+        schema["AcquisitionEra"] = acquisitionEra
+        schema["GlobalTag"] = globalTag
+        schema["Group"] = group
+        schema["CMSSWVersion"] = cmsswVersion
+        schema["ScramArch"] = scramArch
+        schema["InputDataset"] = filein
+        schema["InputDatasets"] = [filein]
+        schema["SkimInput"] = skimInput
+        schema["DbsUrl"] = dbs
+        # FIXME duplicate
+        schema["LFNCategory"] = lfnCategory
+        schema["UnmergedLFNBase"] = lfnCategory
+        schema["RunWhitelist"] = eval("[%s]"%runWhitelist)
+        schema["RunBlacklist"] = eval("[%s]"%runBlacklist)
+        schema["BlockWhitelist"] = eval("[%s]"%blockWhitelist)
+        schema["BlockBlacklist"] = eval("[%s]"%blockBlacklist)
+        schema["SiteWhitelist"] = siteWhitelist
+        schema["SiteBlacklist"] = siteBlacklist
+        schema['CmsPath'] = self.cmsswInstallation
+        schema['ProcessingVersion'] = processingVersion
+        schema["CouchUrl"] = self.couchUrl
+        schema["CouchDBName"] = self.couchDBName
+
+
+        schema["SkimConfig"] = skimConfig
+        if minMergeSize != None:  
+            schema["MinMergeSize"] = minMergeSize
+        if maxMergeSize != None:
+            schema["MaxMergeSize"] = minMergeSize
+        if maxMergeEvents != None:
+            schema["MaxMergeEvents"] = minMergeSize
+
+        schema["Label"] = "WHATEVER"
+        tiers = []
+        if RECO != None:
+           tiers.append("RECO")
+        if ALCA != None:
+           tiers.append("ALCA")
+        if AOD != None:
+           tiers.append("AOD")
+        schema["OutputTiers"] = tiers
+
+        if requestType == "CmsGen":
+            # No idea what I'm doing here
+            schema['CmsGenParameters'] = {'generator' : 'madgraph'}
+            schema['CmsGenConfiguration'] = """madgraph\nttjets\ntarballnamehere"""
+        cherrypy.session['schema'] = schema
+
+        schema["Scenario"] = ""
+        schema["ProcessingConfig"] = ""
+        if inputMode == "scenario":
+            schema["Scenario"] = scenario
+        elif inputMode == "url":
+            schema["ProcessingConfig"] = processingConfig
+        elif inputMode == "couchDB":
+            schema["ProcessingConfig"] = couchDBConfig
+        elif inputMode == "cmsDriver":
+            # FIXME output dataset isn't just LFNCategory
+            url = 'cmsDriver?'
+            # add a few options
+            if requestType in ['Reco',  'ReReco']:
+               url += '&reco=True'
+            if requestType in ['MonteCarlo', 'CmsGen']:
+               if schema["RequestSizeEvents"] == -1:
+                   raise RuntimeError("Must set the number of events to generate")
+               url += '&gen=True'
+            raise cherrypy.HTTPRedirect(url)
+        else:
+            print "Warning: bad configuration option"
+
+        return self.submit()
+    makeSchema.exposed = True
+
+
+    def submit(self):
+        schema = cherrypy.session.get('schema', None)
+        if schema == None:
+           return "Where did that darn schema go?"
+        schema['PSetHash'] = cherrypy.session.get('PSetHash', None)
+        newLabel = cherrypy.session.get('Label', None)
+        if newLabel != None:
+           schema['Label'] = newLabel
+        schema['ProductionChannel'] = cherrypy.session.get('ProductionChannel', None)
+        result = self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
+        raise cherrypy.HTTPRedirect('http://'+self.reqMgrHost+'/reqMgrBrowser/requestDetails/'+schema['RequestName'])
+    submit.exposed = True

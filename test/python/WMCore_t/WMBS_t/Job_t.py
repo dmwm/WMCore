@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.37 2010/02/04 16:22:18 mnorman Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: Job_t.py,v 1.38 2010/02/16 16:38:58 mnorman Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import unittest
 import logging
@@ -1137,6 +1137,10 @@ class JobTest(unittest.TestCase):
         finalJob = testJob.getDataStructsJob()
 
         for key in finalJob.keys():
+            if key == 'input_files':
+                for file in testJob['input_files']:
+                    self.assertEqual(file.returnDataStructsFile() in finalJob['input_files'], True)
+                continue
             self.assertEqual(testJob[key], finalJob[key])
 
         self.assertEqual(str(finalJob.__class__), "<class 'WMCore.DataStructs.Job.Job'>")

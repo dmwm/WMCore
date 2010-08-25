@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.Save
 """
 
 __all__ = []
-__revision__ = "$Id: Save.py,v 1.3 2010/05/10 12:57:39 spigafi Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Save.py,v 1.4 2010/08/16 11:14:17 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -17,8 +17,9 @@ class Save(DBFormatter):
     BossLite.Jobs.Save
     """
     
-    sql = """UPDATE bl_job SET job_id = :jobId, task_id = :taskId,
-                name = :name, executable = :executable, events = :events,
+    sql = """UPDATE bl_job SET job_id = :jobId, task_id = :taskId, 
+                wmbs_job_id = :wmbsJobId, name = :name, 
+                executable = :executable, events = :events,
                 arguments = :arguments, stdin = :standardInput,
                 stdout = :standardOutput, stderr = :standardError,
                 input_files = :inputFiles, output_files = :outputFiles,

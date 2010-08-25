@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Task.GetJobs
 """
 
 __all__ = []
-__revision__ = "$Id: GetJobs.py,v 1.5 2010/05/30 14:38:00 spigafi Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: GetJobs.py,v 1.6 2010/08/16 11:14:17 mcinquil Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -20,6 +20,7 @@ class GetJobs(DBFormatter):
     sql = """SELECT id as id, 
                     job_id as jobId, 
                     task_id as taskId, 
+                    wmbs_job_id as wmbsJobId
                     name as name, 
                     executable as executable, 
                     events as events, 

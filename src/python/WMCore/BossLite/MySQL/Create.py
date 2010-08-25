@@ -4,8 +4,8 @@ _Create_
 Base class for creating the BossLite database.
 """
 
-__revision__ = "$Id: Create.py,v 1.8 2010/07/29 09:32:54 mcinquil Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Create.py,v 1.9 2010/08/16 11:14:16 mcinquil Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 
@@ -69,6 +69,7 @@ class Create(DBCreator):
     id INT auto_increment,
     task_id INT NOT NULL,
     job_id INT NOT NULL,
+    wmbs_job_id INT NOT NULL,
     name VARCHAR(255),
     executable TEXT,
     events INT,
@@ -84,6 +85,7 @@ class Create(DBCreator):
     PRIMARY KEY(id),
     INDEX sub_n (submission_number),
     UNIQUE(job_id, task_id),
+--    FOREIGN KEY(wmbs_job_id) refereces wmbs_job(id) ON DELETE CASCADE,
     FOREIGN KEY(task_id) references bl_task(id) ON DELETE CASCADE
   )
 ENGINE = InnoDB DEFAULT CHARSET=latin1;

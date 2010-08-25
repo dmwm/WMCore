@@ -14,6 +14,39 @@ from WMCore.WMSpec.WMStep import WMStepHelper
 
 getStepName = lambda step: WMStepHelper(step).name()
 
+def getStepSpace(stepName):
+    """
+    _getStepSpace_
+    
+    Util to get the runtime step space.
+    This imports dynamic runtime libraries so be careful how
+    you use it
+    
+    """
+    
+    modName = "WMTaskSpace"
+    if modName in sys.modules.keys():
+        taskspace = sys.modules[modName]
+    else:
+        try:
+            taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
+            
+        except ImportError, ex:
+            msg = "Unable to load WMTaskSpace module:\n"
+            msg += str(ex)
+            #TODO: Generic ExecutionException...
+            raise RuntimeError, msg
+        
+    try:
+        stepSpace = taskspace.taskSpace.stepSpace(stepName)
+    except Exception, ex:
+        msg = "Error retrieving stepSpace from TaskSpace:\n"
+        msg += str(ex)
+        raise RuntimeError, msg
+    return stepSpace
+
+
+
 class Executor:
     """
     _Executor_
@@ -39,7 +72,7 @@ class Executor:
         self.step = step
         self.job = job
         self.stepName = getStepName(self.step)
-        self.stepSpace = self.getStepSpace(self.stepName)
+        self.stepSpace = getStepSpace(self.stepName)
         self.task = self.stepSpace.getWMTask()
         self.report = Report(self.stepName)
         self.report.data.task = self.task.name()
@@ -110,33 +143,4 @@ class Executor:
 
 
 
-    def getStepSpace(self, stepName):
-        """
-        _getStepSpace_
 
-        Util to get the runtime step space.
-        This imports dynamic runtime libraries so be careful how
-        you use it
-
-        """
-
-        modName = "WMTaskSpace"
-        if modName in sys.modules.keys():
-            taskspace = sys.modules[modName]
-        else:
-            try:
-                taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
-
-            except ImportError, ex:
-                msg = "Unable to load WMTaskSpace module:\n"
-                msg += str(ex)
-                #TODO: Generic ExecutionException...
-                raise RuntimeError, msg
-
-        try:
-            stepSpace = taskspace.taskSpace.stepSpace(stepName)
-        except Exception, ex:
-            msg = "Error retrieving stepSpace from TaskSpace:\n"
-            msg += str(ex)
-            raise RuntimeError, msg
-        return stepSpace

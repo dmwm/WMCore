@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.106 2010/05/12 19:16:20 sryu Exp $"
-__version__ = "$Revision: 1.106 $"
+__revision__ = "$Id: WorkQueue.py,v 1.107 2010/05/12 19:43:56 sryu Exp $"
+__version__ = "$Revision: 1.107 $"
 
 
 import time
@@ -333,17 +333,41 @@ class WorkQueue(WorkQueueBase):
         this is called by JSM
         update the WorkQueue status table
         """
-        self.setStatus('Done', elementIDs, id_type)
+        try:
+            self.setStatus('Done', elementIDs, id_type)
+        except RuntimeError:
+            if id_type == "subscription_id":
+                self.logger.info("""Done Update: Only some subscription is 
+                                    updated Might be the child subscriptions""")
+                return elemntIDs
+            else
+                raise
         return elementIDs
 
     def failWork(self, elementIDs, id_type = 'id'):
         """Mark work as failed"""
-        self.setStatus('Failed', elementIDs, id_type)
+        try:
+            self.setStatus('Failed', elementIDs, id_type)
+        except RuntimeError:
+            if id_type == "subscription_id":
+                self.logger.info("""Fail update: Only some subscription is 
+                                    updated Might be the child subscriptions""")
+                return elemntIDs
+            else
+                raise
         return elementIDs
 
     def cancelWork(self, elementIDs, id_type = 'id'):
         """Mark work as canceled"""
-        self.setStatus('Canceled', elementIDs, id_type)
+        try:
+            self.setStatus('Canceled', elementIDs, id_type)
+        except RuntimeError:
+            if id_type == "subscription_id":
+                self.logger.info("""Cancel update: Only some subscription is 
+                                    updated Might be the child subscriptions""")
+                return elemntIDs
+            else
+                raise
         return elementIDs
 
     def gotWork(self, elementIDs):

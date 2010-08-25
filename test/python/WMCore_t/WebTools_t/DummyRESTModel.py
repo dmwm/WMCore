@@ -55,6 +55,7 @@ class DummyRESTModel(RESTModel):
         self.addMethod('GET', 'list1', self.list1)
         self.addMethod('GET', 'list2', self.list2, args=['num0', 'num1', 'num2'])
         self.addWrappedMethod('GET', 'list3', self.list3, args=['a', 'b'])
+        self.addMethod('POST', 'list3', self.list3, args=['a', 'b'])
         
         self.daofactory = DummyDAOFac()
         self.addDAO('GET', 'data1', 'DummyDAO1', [])
@@ -82,7 +83,7 @@ class DummyRESTModel(RESTModel):
     def val_0(self, input):
         # checks whether input is right number
         if len(input) != 2:
-            raise HTTPError(404, 'val_5 failed: input length is not 2 -- (%s)' % len(input))
+            raise HTTPError(404, 'val_0 failed: input length is not 2 -- (%s)' % len(input))
         return input
     
     def val_1(self, input):
@@ -97,7 +98,7 @@ class DummyRESTModel(RESTModel):
         try:
             assert type(input['int']) == type(123) 
         except AssertionError:
-            raise HTTPError(400, 'val_1 failed: %s not int' % type(input['int']))
+            raise AssertionError, 'val_1 failed: %s not int' % type(input['int'])
         return input
     
     def val_2(self, input):

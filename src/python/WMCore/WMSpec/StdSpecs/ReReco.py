@@ -10,6 +10,7 @@ import subprocess
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
+from WMCore.Services.Requests import JSONRequests
 
 from WMCore.Cache.ConfigCache import WMConfigCache
 
@@ -24,7 +25,10 @@ class ReRecoWorkloadFactory():
         """
         _getOutputModuleInfo_
 
+        Use the outputmodules-from-config utility to retrieve output module
+        metadata.
         """
+        self.encoder = JSONRequests()
         config = {"cmsPath": self.cmsPath, "scramArch": self.scramArch,
                   "frameworkVersion": self.frameworkVersion,
                   "configUrl": configUrl, "scenarioName": scenarioName,
@@ -33,7 +37,10 @@ class ReRecoWorkloadFactory():
         outmodProcess = subprocess.Popen(["outputmodules-from-config"],
                                          stdin = subprocess.PIPE,
                                          stdout = subprocess.PIPE)
-        
+        outmodProcess.stdin.write("%s\n" % self.encoder.encode(config))
+        outmodProcess.stdin.flush()
+        output = outmodProcess.stdout.readline()
+        return self.encoder.decode(output)
     
     def addDashboardMonitoring(self, task):
         """
@@ -300,10 +307,13 @@ class ReRecoWorkloadFactory():
                                  configDoc = procConfigDoc) 
         self.addLogCollectTask(procTask)
 
-        
-
         procOutput = {}
-        for (outputModuleName, datasetInfo) in self.processingOutputModules.iteritems():
+
+        processingOutputModules = self.getOutputModuleInfo(self.processingConfig,
+                                                           self.scenario, "promptReco",
+                                                           scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]})
+        
+        for (outputModuleName, datasetInfo) in processingOutputModules.iteritems():
             mergeTask = self.addOutputModule(procTask, outputModuleName, datasetInfo["dataTier"],
                                              datasetInfo["filterName"])
             procOutput[outputModuleName] = mergeTask
@@ -319,7 +329,11 @@ class ReRecoWorkloadFactory():
                                  configDoc = skimConfigDoc)
         #addLogCollectTask(skimTask)
 
-        for (outputModuleName, datasetInfo) in self.skimOutputModules.iteritems():
+        skimOutputModules = self.getOutputModuleInfo(self.skimConfig,
+                                                     self.scenario, "promptReco",
+                                                     scenarioArgs = {})
+
+        for (outputModuleName, datasetInfo) in skimOutputModules.iteritems():
             self.addOutputModule(skimTask, outputModuleName, datasetInfo["dataTier"],
                                  datasetInfo["filterName"])
             

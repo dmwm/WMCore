@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.12 2010/05/03 09:55:53 spigafi Exp $"
-__revision__ = "$Revision: 1.12 $"
+__version__ = "$Id: Job.py,v 1.13 2010/05/03 15:40:28 spigafi Exp $"
+__revision__ = "$Revision: 1.13 $"
 
 
 # imports
@@ -109,12 +109,6 @@ class Job(DbObject):
         
         # is this 'if' necessary? This check is probably duplicated...
         #if not self.existsInDataBase:
-        """
-        action = self.daofactory(classname = "Job.New")
-        action.execute(binds = self.data,
-                       conn = self.getDBConn(),
-                       transaction = self.existingTransaction)
-        """
         db.objCreate(self)
         
         # update ID & check... necessary call!
@@ -135,12 +129,6 @@ class Job(DbObject):
                 return self.data['id']
 
         # Then use the database    
-        """
-        action = self.daofactory(classname = "Job.Exists")
-        tmpId = action.execute(name = self.data['name'],
-                            conn = self.getDBConn(),
-                            transaction = self.existingTransaction)
-        """
         tmpId = db.objExists(self)
         
         if tmpId:
@@ -159,12 +147,6 @@ class Job(DbObject):
             # Then we don't have an entry yet
             self.create(db)
         else:
-            """
-            action = self.daofactory(classname = "Job.Save")
-            action.execute(binds = self.data,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
-            """
             db.objSave(self)
             
         # create entry for runningJob
@@ -173,7 +155,7 @@ class Job(DbObject):
             self.runningJob['jobId']      = self.data['jobId']
             self.runningJob['taskId']     = self.data['taskId']
             self.runningJob['submission'] = self.data['submissionNumber']
-            self.runningJob.save()
+            self.runningJob.save(db)
             
         return
 
@@ -189,35 +171,7 @@ class Job(DbObject):
             raise JobError("The following job instance cannot be loaded," + \
                      " since it is not completely specified: %s" % self)
         
-        """
-        # the select MUST be done taking care of these three fields...
-        if self.data['id'] > 0:
-            # Then load by ID
-            value = self.data['id']
-            column = 'id'
-
-        elif self.data['jobId'] > 0:
-            # Then use jobID
-            value = self.data['jobId']
-            column = 'job_id'
-
-        elif self.data['name']:
-            # Then use name
-            value = self.data['name']
-            column = 'name'
-
-        else:
-            # We have no identifiers.  We're screwed
-            # this branch doesn't exist
-            return
-
-        # this DAO MUST be reviewed
-        action = self.daofactory(classname = "Job.SelectJob")
-        result = action.execute(value = value,
-                                column = column,
-                                conn = self.getDBConn(),
-                                transaction = self.existingTransaction)
-        """
+        
         result = db.objLoad(self)
         
         if result == []:
@@ -360,23 +314,7 @@ class Job(DbObject):
             raise JobError("The following job instance cannot be removed," + \
                      " since it is not completely specified: %s" % self) 
         
-        """
-        # verify data is complete
-        if self.valid(['id']):
-            value  = self.data['id']
-            column = 'id'
-
-        elif self.valid(['name']):
-            value  = self.data['name']
-            column = 'name'
-            
-            # TODO: Find some way to do job_id:task_id
-        elif self.valid(['jobId']):
-            value  = self.data['jobId']
-            column = 'job_id'
-
-        else:
-        """ 
+        
         db.objRemove(self)
         
         # update status

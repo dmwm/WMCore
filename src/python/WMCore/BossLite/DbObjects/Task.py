@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.14 2010/05/03 10:45:09 spigafi Exp $"
-__revision__ = "$Revision: 1.14 $"
+__version__ = "$Id: Task.py,v 1.15 2010/05/03 15:40:28 spigafi Exp $"
+__revision__ = "$Revision: 1.15 $"
 
 import os.path
 # import threading # seems unused
@@ -100,13 +100,6 @@ class Task(DbObject):
         
         if not noDB:
             
-            """
-            action = db.daofactory(classname = 'Task.Exists')
-            tmpId = action.execute(name = self.data['name'],
-                                   conn = db.getDBConn(),
-                                   transaction = db.existingTransaction)
-            """
-            
             tmpId = db.objExists(self)
             
             if tmpId:
@@ -130,12 +123,7 @@ class Task(DbObject):
         status = 0
         
         if self.existsInDataBase : 
-            """
-            action = self.daofactory(classname = "Task.Save")
-            action.execute(binds = self.data,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
-            """
+            
             db.objSave(self)
             
         else:
@@ -157,12 +145,6 @@ class Task(DbObject):
         Create a new task in the database      
         """
         
-        """
-        action = engine.daofactory(classname = "Task.New")
-        action.execute(binds = self.data,
-                       conn = engine.getDBConn(),
-                       transaction = engine.existingTransaction)
-        """
         db.objCreate(self)
         
         # update ID & check... necessary call!
@@ -176,23 +158,6 @@ class Task(DbObject):
         Load a task     
         """
         
-        """
-        if self.data['id'] > 0:
-            action = self.daofactory(classname = "Task.SelectTask")
-            result = action.execute(value = self.data['id'],
-                                    column = 'id',
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction)
-        elif self.data['name']:
-            action = self.daofactory(classname = "Task.SelectTask")
-            result = action.execute(value = self.data['name'],
-                                    column = 'name',
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction)
-        else:
-            # Then you're screwed
-            return
-        """
         result = db.objLoad(self)
         
         if result == []:
@@ -229,12 +194,7 @@ class Task(DbObject):
         if self.data['id'] < 0:
             self.exists(db)
         
-        """
-        action = self.daofactory(classname = 'Task.GetJobs')
-        jobList = action.execute(id = self.data['id'],
-                                 conn = self.getDBConn(),
-                                 transaction = self.existingTransaction)
-        """
+        
         jobList = db.objLoad(self, classname = 'Task.GetJobs') 
         
         
@@ -275,22 +235,7 @@ class Task(DbObject):
             raise TaskError("The following task instance cannot be removed" + \
                       " since it is not in the database: %s" % self)
         
-        """
-        action = self.daofactory(classname = 'Task.Delete')
         
-        # verify data is complete
-        if not self.valid(['id']):
-            # We can delete by name without an ID
-            action.execute(column = 'name',
-                           value = self.data['name'],
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
-        else:
-            action.execute(column = 'id',
-                           value = self.data['id'],
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
-        """
         db.objRemove(self) 
                 
         # update status
@@ -406,7 +351,7 @@ class Task(DbObject):
             
             # compute full path for output files
             job['fullPathInputFiles'] = [
-                self.joinPath( self.data['startDirectory'],  ofile)
+                self.joinPath( self.data['startDirectory'],  ifile)
                 for ifile in job['inputFiles']
                 if ifile != '']
         

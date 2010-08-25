@@ -5,12 +5,13 @@ _DbObject_
 Base class for all objects in the database
 """
 
-__version__ = "$Id: DbObject.py,v 1.6 2010/05/03 13:22:00 spigafi Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: DbObject.py,v 1.7 2010/05/03 15:40:28 spigafi Exp $"
+__revision__ = "$Revision: 1.7 $"
 
-import logging
-import traceback
-import threading
+
+#import logging
+#import traceback
+#import threading
 
 class DbObject(object):
     """

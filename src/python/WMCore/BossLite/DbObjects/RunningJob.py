@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.5 2010/05/03 09:55:53 spigafi Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: RunningJob.py,v 1.6 2010/05/03 15:40:28 spigafi Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 # imports
 import time
@@ -131,20 +131,12 @@ class RunningJob(DbObject):
             else:
                 return False
         else:
-            """
-            action = self.daofactory(classname = "RunningJob.Exists")
-            id = action.execute(submission = self.data['submission'],
-                                jobID = self.data['jobId'], 
-                                taskID = self.data['taskId'],
-                                conn = self.getDBConn(),
-                                transaction = self.existingTransaction )
-            """
-            id = db.objExists(self)
+            tmpId = db.objExists(self)
                         
-            if id:
-                self.data['id'] = id
+            if tmpId:
+                self.data['id'] = tmpId
             self.existsInDataBase = True
-            return id
+            return tmpId
 
     ##########################################################################
 
@@ -153,12 +145,6 @@ class RunningJob(DbObject):
         Create a new Running Job
         """
 
-        """
-        action = self.daofactory(classname = "RunningJob.New")
-        action.execute(binds = self.data,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
-        """
         db.objCreate(self)
 
     ##########################################################################
@@ -171,12 +157,6 @@ class RunningJob(DbObject):
         if not self.exists(db):
             self.create(db)
         else:
-            """
-            action = self.daofactory(classname = "RunningJob.Save")
-            action.execute(binds = self.data,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
-            """
             db.objSave(self)               
 
         self.existsInDataBase = True
@@ -187,28 +167,8 @@ class RunningJob(DbObject):
     def load(self, db, deep = True):
         """
         Load from the database
-
         """
         
-        """
-        if self.data['id'] > 0:
-            action = self.daofactory(classname = "RunningJob.LoadByID")
-            result = action.execute(id = self.data['id'], 
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction)
-            
-        elif (self.data['jobId'] and self.data['taskId'] and \
-                self.data['submission']) :
-            action = self.daofactory(classname = "RunningJob.LoadByParameters")
-            result = action.execute(jobID = self.data['jobId'], 
-                                    taskID = self.data['taskId'],
-                                    submission = self.data['submission'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction)
-        else:
-            # We have nothing
-            return
-        """
         result = db.objLoad(self)
 
         if result == []:
@@ -217,7 +177,7 @@ class RunningJob(DbObject):
             
             # is this message useful?
             #logging.error(
-            #    "Attempted to load non-existant runningJob with parameters:\n %s" 
+            # "Attempted to load non-existant runningJob with parameters:\n %s" 
             #            % (self.data) )
             return
 
@@ -236,14 +196,7 @@ class RunningJob(DbObject):
             logging.error("Cannot remove non-existant runningJob %s" 
                           % (self.data) )
             return 0
-
-        """
-        action = self.daofactory(classname = "RunningJob.Delete")
-        result = action.execute(value = self.data['id'],
-                                column = 'id',
-                                conn = self.getDBConn(),
-                                transaction = self.existingTransaction)
-        """
+        
         db.objRemove(self) 
         
         # update status

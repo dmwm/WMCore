@@ -31,7 +31,6 @@ class CMSSWExecutor_t(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testDir = self.testInit.generateWorkDir()
-        #self.testDir = "/Users/evansde/Documents/AptanaWorkspace/WMCORE/tmp"
         
         self.workload = newWorkload("UnitTests")
         self.task = self.workload.newTask("CMSSWExecutor")
@@ -61,10 +60,8 @@ class CMSSWExecutor_t(unittest.TestCase):
         self.job = Job(name = "/UnitTest/CMSSWExecutor/ExecutorTest-test-job")
         
         binDir = inspect.getsourcefile(ModuleLocator)
-        binDir.replace("__init__.py", "bin")
-        
-        
-        binDir = "/Users/evansde/Documents/AptanaWorkspace/WMCORE/bin"
+        binDir = binDir.replace("__init__.py", "bin")
+
         if not binDir in os.environ['PATH']:
             os.environ['PATH'] = "%s:%s" % (os.environ['PATH'], binDir)
         

@@ -5,8 +5,8 @@ _CompleteInput_
 MySQL implementation of Jobs.Complete
 """
 
-__revision__ = "$Id: CompleteInput.py,v 1.2 2009/10/14 20:29:46 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: CompleteInput.py,v 1.3 2009/10/26 16:50:48 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -100,11 +100,11 @@ class CompleteInput(DBFormatter):
                       (SELECT file FROM wmbs_job_assoc
                        WHERE job = :jobid))"""
     
-    def execute(self, jobID, conn = None, transaction = False):
-        self.dbi.processData(self.acquiredDelete, {"jobid": jobID}, conn = conn,
+    def execute(self, id, conn = None, transaction = False):
+        self.dbi.processData(self.acquiredDelete, {"jobid": id}, conn = conn,
                              transaction = transaction)
-        self.dbi.processData(self.failedDelete, {"jobid": jobID}, conn = conn,
+        self.dbi.processData(self.failedDelete, {"jobid": id}, conn = conn,
                              transaction = transaction)
-        self.dbi.processData(self.sql, {"jobid": jobID}, conn = conn,
+        self.dbi.processData(self.sql, {"jobid": id}, conn = conn,
                              transaction = transaction)        
         return

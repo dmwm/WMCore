@@ -5,8 +5,8 @@ _FailInput_
 MySQL implementation of Jobs.FailInput
 """
 
-__revision__ = "$Id: FailInput.py,v 1.1 2009/10/13 20:04:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FailInput.py,v 1.2 2009/10/26 16:51:16 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -49,11 +49,11 @@ class FailInput(DBFormatter):
                    wmbs_job.jobgroup = wmbs_jobgroup.id
                WHERE wmbs_job_assoc.job = :jobid"""
 
-    def execute(self, jobID, conn = None, transaction = False):
-        self.dbi.processData(self.acquiredDelete, {"jobid": jobID}, conn = conn,
+    def execute(self, id, conn = None, transaction = False):
+        self.dbi.processData(self.acquiredDelete, {"jobid": id}, conn = conn,
                              transaction = transaction)
-        self.dbi.processData(self.completeDelete, {"jobid": jobID}, conn = conn,
+        self.dbi.processData(self.completeDelete, {"jobid": id}, conn = conn,
                              transaction = transaction)
-        self.dbi.processData(self.sql, {"jobid": jobID}, conn = conn,
+        self.dbi.processData(self.sql, {"jobid": id}, conn = conn,
                              transaction = transaction)        
         return

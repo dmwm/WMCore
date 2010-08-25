@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.9 2009/12/07 19:01:59 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.10 2010/02/24 21:44:40 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 
@@ -43,20 +43,21 @@ config.DBSUpload.newWorkflowHandler = \
 #config.DBSUpload.pollThread = \
 #    'WMComponent.DBSUpload.Handler.PollDBSUpload'
 
-config.DBSUpload.dbsurl = \
-                        'http://cmssrv49.fnal.gov:8989/DBS/servlet/DBSServlet'
+config.DBSUpload.dbsurl = 'http://cmssrv49.fnal.gov:8989/DBS209P5_2/servlet/DBSServlet'
+#    'http://cmssrv49.fnal.gov:8989/DBS/servlet/DBSServlet'
 #    'http://cmssrv17.fnal.gov:8989/DBSAnzar/servlet/DBSServlet'
 
 config.DBSUpload.dbsversion = \
-                            'DBS_2_0_6'
+                            'DBS_2_0_9'
 #    'DBS_2_0_4'
 # Number of files taht will be Batch inserted into DBS
 config.DBSUpload.uploadFileMax = 500
 
 config.DBSUpload.pollInterval = 10
-config.DBSUpload.globalDBSUrl = 'http://cmssrv49.fnal.gov:8989/DBS209/servlet/DBSServlet'
+config.DBSUpload.globalDBSUrl = 'http://cmssrv49.fnal.gov:8989/DBS209P5_2/servlet/DBSServlet'
+#config.DBSUpload.globalDBSUrl = 'http://cmssrv49.fnal.gov:8989/DBS209/servlet/DBSServlet'
 #config.DBSUpload.globalDBSUrl = 'http://cmssrv49.fnal.gov:8989/DBS/servlet/DBSServlet'
-config.DBSUpload.globalDBSVer = 'DBS_2_0_8'
+config.DBSUpload.globalDBSVer = 'DBS_2_0_9'
 
 #Config variables for block sizes in DBS
 config.DBSUpload.DBSMaxSize      = 999999999

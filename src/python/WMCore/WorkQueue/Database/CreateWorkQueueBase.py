@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.15 2009/09/07 14:41:30 swakef Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.16 2009/09/14 19:11:29 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import threading
 
@@ -66,7 +66,7 @@ class CreateWorkQueueBase(DBCreator):
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL,
-             input_id         INTEGER    NOT NULL,
+             input_id         INTEGER,
              parent_queue_id  INTEGER,
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
@@ -121,9 +121,12 @@ class CreateWorkQueueBase(DBCreator):
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_wmspec_element
                  FOREIGN KEY(wmspec_id) REFERENCES wq_wmspec(id)"""
 
-        self.constraints["FK_wq_input_element"] = \
-              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_input_element
-                 FOREIGN KEY(input_id) REFERENCES wq_data(id)"""
+#TODO : not sure whether it is better to allow input id to be null on production job
+#0r have associate table with wq_element id and input id that way it will handle the multiple 
+# blocks given one work queue element if necessary
+#        self.constraints["FK_wq_input_element"] = \
+#              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_input_element
+#                 FOREIGN KEY(input_id) REFERENCES wq_data(id)"""
 
         self.constraints["FK_wq_element_sub"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_sub

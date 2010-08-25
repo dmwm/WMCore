@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.7 2010/05/03 20:38:39 spigafi Exp $"
-__revision__ = "$Revision: 1.7 $"
+__version__ = "$Id: RunningJob.py,v 1.8 2010/05/09 19:59:06 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 # imports
 import time
@@ -84,8 +84,8 @@ class RunningJob(DbObject):
                  'outputEnqueueTime' : None,
                  'getOutputRetry' : 0,
                  'outputDirectory' : None,
-                 'storage' : None,
-                 'lfn' : '',
+                 'storage' : [],
+                 'lfn' : [],
                  'applicationReturnCode' : None,
                  'wrapperReturnCode' : None,
                  'processStatus' : None,
@@ -148,9 +148,9 @@ class RunningJob(DbObject):
 
         db.objCreate(self)
         
-        # update ID & check... necessary call!
-        if self.exists(db) : 
-            self.existsInDataBase = True
+        # "if self.exists(db)" is not necessary because to save & create 
+        # a valid RunningJob (jobID, taskID, submission) must be valid!  
+        self.existsInDataBase = True
 
     ##########################################################################
 

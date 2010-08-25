@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.7 2009/11/06 22:12:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.8 2009/11/09 14:54:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import time
@@ -141,9 +141,11 @@ class AccountantWorker:
         subscription.
         """
         if not outputMap.has_key(moduleLabel):
+            logging.info("Output module label missing.")
             return None
 
         if merged == False:
+            logging.info("Unmerged...")
             return outputMap[moduleLabel]["fileset"]
 
         if len(outputMap[moduleLabel]["children"]) == 1:
@@ -235,8 +237,7 @@ class AccountantWorker:
         if merged:
             self.addFileToDBS(fwjrFile, dbsParentLFNs)
 
-        return (wmbsFile["id"], fwjrFile["ModuleLabel"],
-                fwjrFile["MergedBySize"])
+        return (wmbsFile["id"], fwjrFile["ModuleLabel"], merged)
 
     def handleSuccessful(self, jobID, fwkJobReport):
         """
@@ -274,7 +275,9 @@ class AccountantWorker:
                      self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
                                         jobFiles, dbsParentLFNs)
 
+            logging.info("Job: %s, %s, %s, %s" % (jobID, outputMap, merged, moduleLabel)) 
             outputFileset = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
+            logging.info("Output fileset: %s" % outputFileset)
             if outputFileset != None:
                 filesetAssoc.append({"fileid": fileID, "fileset": outputFileset})
 

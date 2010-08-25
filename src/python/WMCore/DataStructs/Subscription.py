@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.30 2010/06/28 19:01:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Subscription.py,v 1.31 2010/08/11 20:34:56 meloam Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import copy
 from WMCore.DataStructs.Pickleable import Pickleable
@@ -143,14 +143,17 @@ class Subscription(Pickleable, dict):
         elif status == 'Failed':
             return self.failed.getFiles(type='set')
 
-    def availableFiles(self):
+    def availableFiles(self, limit = None):
         """
         _availableFiles_
 
         Return a Set of files that are available for processing
         (e.g. not already in use)
         """
-        return self.filesOfStatus(status = "Available")
+        if limit:
+            return self.filesOfStatus(status = "Available")[:limit]
+        else:
+            return self.filesOfStatus(status = "Available")
 
     def acquiredFiles(self):
         """

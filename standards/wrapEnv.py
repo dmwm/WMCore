@@ -19,9 +19,8 @@ requestedDB     = sys.argv[2]
 # the buildconfig file will end up being in the buildslave's main path
 
 
-print "this is ridiculous"
-print sys.path
-__import__('buildslave', globals(),locals(),[],2)
+sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
+import buildslave
 
 if ( not (requestedPython in buildslave.conf) ):
     print "Requested python version isn't in the slave configuration"

@@ -80,7 +80,7 @@ class StageOutTest():
     def tearDown(self):
         self.testInit.delWorkDir()        
         
-    def atestUnitTestBackend(self):
+    def testUnitTestBackend(self):
         executor = StageOutExecutor.StageOut()
         self.realstep.addFile("testin1", "testout1")
         # let's ride the win-train
@@ -109,28 +109,6 @@ class StageOutTest():
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
         step.override.__setattr__('se-name','DUMMYSE')
         
-    def atestCPBackendStageOutOld(self):
-        executor = StageOutExecutor.StageOut()
-        self.realstep.addFile("/etc/hosts", "OLDOUTPUTFILE")
-        self.realstep.addFile("/etc/hosts", "/DUMMYDIR/OLDOUTPUTFILE2")
-        self.setLocalOverride(self.realstep.data)
-        executor.step = self.realstep.data
-        executor.execute( )
-        self.assertTrue(os.path.exists( os.path.join(self.testDir, 'OLDOUTPUTFILE')))
-        # there isn'ta  leading / because os.path assumes you want an absolute path. lame
-        self.assertTrue(os.path.exists( os.path.join(self.testDir,'DUMMYDIR', 'OLDOUTPUTFILE2')))
-    
-    def atestCPBackendStageOutNew(self):
-        executor = StageOutExecutor.StageOut()
-        self.realstep.addFile("/etc/hosts", "NEWOUTPUTFILE")
-        self.realstep.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")
-        self.setLocalOverride(self.realstep.data)
-        self.realstep.data.override.newStageOut = True
-        executor.step = self.realstep.data
-        executor.execute( )
-        self.assertTrue(os.path.exists( os.path.join(self.testDir, 'NEWOUTPUTFILE')))
-        # there isn'ta  leading / because os.path assumes you want an absolute path. lame
-        self.assertTrue(os.path.exists( os.path.join(self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
         
 class otherStageOutTest(unittest.TestCase):       
 
@@ -138,6 +116,8 @@ class otherStageOutTest(unittest.TestCase):
         # stolen from CMSSWExecutor_t. thanks, dave
         self.oldpath = sys.path[:]
         self.testInit = TestInit(__file__)
+
+            
         self.testDir = self.testInit.generateWorkDir()
         self.job = Job(name = "/UnitTests/DeleterTask/DeleteTest-test-job")
         shutil.copyfile('/etc/hosts', os.path.join(self.testDir, 'testfile'))
@@ -155,21 +135,19 @@ class otherStageOutTest(unittest.TestCase):
         
 
         self.stepdata = stepHelper.data
-        self.stephelp = stepHelper
-        print "GO GREEN RANGER"
+        self.stephelp = StageOutTemplate.StageOutStepHelper(stepHelper.data)
         self.task.applyTemplates()
 
         self.executor = StepFactory.getStepExecutor(self.stephelp.stepType())
-        taskMaker = TaskMaker(self.workload, self.testDir)
+        taskMaker = TaskMaker(self.workload, os.path.join(self.testDir))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
         
         
-        self.task.build(self.testDir)
+        self.task.build(os.path.join(self.testDir, 'UnitTests'))
 
         sys.path.append(self.testDir)
         sys.path.append(os.path.join(self.testDir, 'UnitTests'))
-        print "path is sys.path %s" % sys.path
 
         
 #        binDir = inspect.getsourcefile(ModuleLocator)
@@ -177,12 +155,11 @@ class otherStageOutTest(unittest.TestCase):
 #
 #        if not binDir in os.environ['PATH']:
 #            os.environ['PATH'] = "%s:%s" % (os.environ['PATH'], binDir)
-        
+        open( os.path.join( self.testDir, 'UnitTests', '__init__.py'),'w').close()
         shutil.copyfile( os.path.join( os.path.dirname( __file__ ), 'MergeSuccess.pkl'), 
-                         os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+                         os.path.join( self.testDir, 'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
             
     def tearDown(self):
-        print "tearing down"
         sys.path = self.oldpath[:]
         modsToDelete = []
         # not sure what happens if you delete from
@@ -193,42 +170,33 @@ class otherStageOutTest(unittest.TestCase):
             # they are cached and we look at old taskspaces
             if modname.startswith('WMTaskSpace'):
                 modsToDelete.append(modname)
+            if modname.startswith('WMSandbox'):
+                modsToDelete.append(modname)
         for modname in modsToDelete:
             del sys.modules[modname]
-                
-        self.stephelp = None
-        self.stepdata = None
-        self.workload = None
-        self.task     = None
-        self.stepdata = None
-        self.executor = None
-        self.cmsswHelper = None
-        self.cmsswStep = None
+        
 
-        print dir(self)
-    
+        self.testInit.delWorkDir()
      
     def testCPBackendStageOutAgainstReportNew(self):
         myReport = Report('cmsRun1')
-        myReport.unpersist(os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 0
-        myReport.persist(os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         executor = StageOutExecutor.StageOut()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         self.stepdata.override.newStageOut = True
         executor.step = self.stepdata
-        print "I think testdir is %s" % self.testDir
         executor.execute( )
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
     
-    def testCPBackendStageOutAgainstReportFailedStep(self):
+    def testCPBackendStageOutAgainstReportFailedStepNew(self):
         myReport = Report('cmsRun1')
-        myReport.unpersist(os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         myReport.data.cmsRun1.status = 1
-        myReport.persist(os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        
+        myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         executor = StageOutExecutor.StageOut()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
@@ -237,7 +205,102 @@ class otherStageOutTest(unittest.TestCase):
         executor.execute( )
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
-
+        
+    def testCPBackendStageOutAgainstReportOld(self):
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 0
+        myReport.persist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        executor = StageOutExecutor.StageOut()
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+#    
+    def testCPBackendStageOutAgainstReportFailedStepOld(self):
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 1
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        
+        executor = StageOutExecutor.StageOut()
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+    
+    def testCPBackendStageOutAgainstManualFileXFerNew(self):
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 0
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
+        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")
+        executor = StageOutExecutor.StageOut()
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        self.stepdata.override.newStageOut = True
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
+        
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+    
+    def testCPBackendStageOutAgainstManualFileXFerFailedStepNew(self):
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 0
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
+        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")       
+        executor = StageOutExecutor.StageOut()
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        self.stepdata.override.newStageOut = True
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
+        
+    def testCPBackendStageOutAgainstManualFileXFerOld(self):
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 0
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
+        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")
+        executor = StageOutExecutor.StageOut()
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
+        
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+    
+    def testCPBackendStageOutAgainstManualFileXFerFailedStepOld(self):
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 0
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
+        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")       
+        executor = StageOutExecutor.StageOut()
+        executor.initialise( self.stepdata, self.job)
+        self.setLocalOverride(self.stepdata)
+        executor.step = self.stepdata
+        executor.execute( )
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
+        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
+#        
     def setLocalOverride(self, step):
         step.section_('override')
         step.override.command    = 'cp'
@@ -245,22 +308,7 @@ class otherStageOutTest(unittest.TestCase):
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
         step.override.__setattr__('se-name','DUMMYSE')        
         
-#    
-#    def CPBackend(self):
-#        executor = StageOutExecutor.StageOut()
-#
-#        
-#        pfn = "/etc/hosts"
-#        lfn = "/tmp/stageOutTest-%s" % int(time.time())
-#        self.realstep.addFile(pfn, lfn)
-#        self.realstep.addOverride(override = 'command', overrideValue='cp')
-#        self.realstep.addOverride(override = 'option', overrideValue='')
-#        self.realstep.addOverride(override = 'se-name', overrideValue='se-name')
-#        self.realstep.addOverride(override = 'lfn-prefix', overrideValue='')
-#        executor.step = self.realstep        
-#        executor.execute( )
-#        self.assert_( os.path.exists(lfn) )
-#        os.remove(lfn)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

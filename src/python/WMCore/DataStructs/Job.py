@@ -5,15 +5,15 @@ _Job_
 Data object that describes a job
 
 Jobs know their status (active, failed, complete) and know the files they run on
-but don't know the subscription or workflow. They are kept together by a 
-JobGroup which knows the subscription and corresponding workflow. A Job is not a 
-job in a batch system, it's more abstract - it's the piece of 
+but don't know the subscription or workflow. They are kept together by a
+JobGroup which knows the subscription and corresponding workflow. A Job is not a
+job in a batch system, it's more abstract - it's the piece of
 work that needs to get done.
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.20 2009/05/01 15:40:53 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Job.py,v 1.21 2009/05/08 15:04:18 ewv Exp $"
+__version__ = "$Revision: 1.21 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -39,7 +39,7 @@ class Job(Pickleable):
         self.job_group = -1
         self.status = 'QUEUED'
         self.name = name
-        
+
         self.output = Fileset(name = 'output')
         self.report = None
         self.mask = Mask()
@@ -78,7 +78,10 @@ class Job(Pickleable):
 
         Add a to the job's input.
         """
-        self.inputFiles.append(file)
+        if type(file) == list:
+            self.inputFiles.extend(file)
+        else:
+            self.inputFiles.append(file)
         return
 
     def addOutput(self, file):
@@ -123,6 +126,6 @@ class Job(Pickleable):
         """
         self.changeStatus('COMPLETE')
         self.report = report
-    
+
     def getStatus(self):
         return self.status

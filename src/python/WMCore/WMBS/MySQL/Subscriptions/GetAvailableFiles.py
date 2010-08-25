@@ -28,14 +28,13 @@ CREATE TABLE wmbs_subscription_location (
 """
 
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.10 2009/03/16 16:58:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.11 2009/03/18 13:21:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
-    def getSQLAndBinds(self, subscription, maxFiles, conn = None,
-                       transaction = None):
+    def getSQLAndBinds(self, subscription, conn = None, transaction = None):
         sql = ""
         binds = {'subscription': subscription}
         
@@ -55,8 +54,6 @@ class GetAvailableFiles(DBFormatter):
             elif i[0] > 0 and i[1] == 1:
                 whitelist = True
 
-        binds = {"subscription": subscription, "maxfiles": maxFiles}
-        
         if whitelist:
             sql = """select file from wmbs_fileset_files where
             fileset = (select fileset from wmbs_subscription where id=:subscription)
@@ -72,7 +69,6 @@ class GetAvailableFiles(DBFormatter):
                         subscription=:subscription and
                         valid = 1)
                 )
-            limit :maxfiles
             """
             
         elif blacklist:
@@ -90,7 +86,6 @@ class GetAvailableFiles(DBFormatter):
                         subscription=:subscription and
                         valid = 0)
                 )
-            limit :maxfiles
             """
                 
         else:
@@ -104,7 +99,6 @@ class GetAvailableFiles(DBFormatter):
                 (select file from wmbs_sub_files_complete where subscription=:subscription)
             and file in
                 (select file from wmbs_file_location)
-            limit :maxfiles
             """
                 
         return sql, binds
@@ -127,9 +121,8 @@ class GetAvailableFiles(DBFormatter):
 
         return formattedResults
            
-    def execute(self, subscription = None, maxFiles = 100, conn = None,
-                transaction = False):
-        sql, binds = self.getSQLAndBinds(subscription, maxFiles, conn = conn,
+    def execute(self, subscription = None, conn = None, transaction = False):
+        sql, binds = self.getSQLAndBinds(subscription, conn = conn,
                                          transaction = transaction)
         results = self.dbi.processData(sql, binds, conn = conn,
                                       transaction = transaction)

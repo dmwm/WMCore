@@ -6,15 +6,14 @@ MySQL implementation of Subscription.GetFailedFiles
 """
 
 __all__ = []
-__revision__ = "$Id: GetFailedFiles.py,v 1.7 2009/03/16 16:58:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetFailedFiles.py,v 1.8 2009/03/18 13:21:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetFailedFiles(DBFormatter):
     sql = """SELECT file FROM wmbs_sub_files_failed
              WHERE subscription = :subscription
-             LIMIT :maxfiles
              """
 
     def formatDict(self, results):
@@ -35,9 +34,7 @@ class GetFailedFiles(DBFormatter):
 
         return formattedResults
     
-    def execute(self, subscription = None, maxFiles = 100, conn = None,
-                transaction = False):
-        results = self.dbi.processData(self.sql, {"subscription": subscription,
-                                                  "maxfiles": maxFiles},
+    def execute(self, subscription = None, conn = None, transaction = False):
+        results = self.dbi.processData(self.sql, {"subscription": subscription},
                          conn = conn, transaction = transaction)
         return self.formatDict(results)

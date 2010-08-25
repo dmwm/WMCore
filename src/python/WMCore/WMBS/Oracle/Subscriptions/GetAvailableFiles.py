@@ -8,16 +8,15 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.7 2009/03/16 16:58:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.8 2009/03/18 13:21:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import \
      GetAvailableFiles as GetAvailableFilesMySQL
 
 class GetAvailableFiles(GetAvailableFilesMySQL):
     
-    def getSQLAndBinds(self, subscription, maxFiles, conn = None,
-                       transaction = None):
+    def getSQLAndBinds(self, subscription, conn = None, transaction = None):
         sql = ""
         binds = {'subscription': subscription}
         
@@ -37,8 +36,6 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
             elif i[0] > 0 and i[1] == '1':
                 whitelist = True
 
-        binds = {"subscription": subscription, "maxfiles": maxFiles}
-        
         if whitelist:
             sql = """select fileid from wmbs_fileset_files where
             fileset = (select fileset from wmbs_subscription where id=:subscription)
@@ -54,7 +51,6 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                         subscription=:subscription and
                         valid = 1)
                 )
-            and rownum <= :maxfiles    
             """
             
         elif blacklist:
@@ -72,7 +68,6 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                         subscription=:subscription and
                         valid = 0)
                 )
-            and rownum <= :maxfiles    
             """
                 
         else:
@@ -86,7 +81,6 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
                 (select fileid from wmbs_sub_files_complete where subscription=:subscription)
             and fileid in
                 (select fileid from wmbs_file_location)
-            and rownum <= :maxfiles
             """
                 
         return sql, binds

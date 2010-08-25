@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.9 2010/05/21 15:56:44 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.10 2010/06/07 18:28:18 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 import os.path
@@ -51,6 +51,8 @@ class CondorGlideInPlugin(PluginBase):
 
         self.packageDir = None
         self.unpacker   = None
+        self.agent      = None
+        self.sandbox    = None
 
         return
 
@@ -69,6 +71,8 @@ class CondorGlideInPlugin(PluginBase):
         for entry in parameters:
             jobList = entry.get('jobs', [])
             self.packageDir = entry.get('packageDir', None)
+            self.agent      = entry.get('agentName', 'test')
+            self.sandbox    = entry.get('sandbox', None)
             index           = entry.get('index', 0)
             self.unpacker   = os.path.join(getWMBASE(),
                                            'src/python/WMCore/WMRuntime/Unpacker.py')
@@ -91,7 +95,7 @@ class CondorGlideInPlugin(PluginBase):
                 # Then we got nothing
                 logging.error("No JDL file made!")
                 return {'NoResult': [0]}
-            jdlFile = "%s/submit.jdl" % (self.config['submitDir'])
+            jdlFile = "%s/submit_%i.jdl" % (self.config['submitDir'], os.getpid())
             handle = open(jdlFile, 'w')
             handle.writelines(jdlList)
             handle.close()
@@ -102,6 +106,8 @@ class CondorGlideInPlugin(PluginBase):
             command = ["condor_submit", jdlFile]
             pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
+
+            
 
 
             for job in jobList:
@@ -143,6 +149,7 @@ class CondorGlideInPlugin(PluginBase):
         # Things that are necessary for the glide-in
         jdl.append('+DESIRED_Sites = \"FNAL\"\n')
         jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
+        jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
         
         return jdl
     
@@ -176,10 +183,10 @@ class CondorGlideInPlugin(PluginBase):
             job['location'] = job['custom'].get('location', None)
             jdl.append("initialdir = %s\n" % job['cache_dir'])
             jdl.append("transfer_input_files = %s, %s/%s, %s\n" \
-                       % (job['sandbox'], self.packageDir,
+                       % (self.sandbox, self.packageDir,
                           'JobPackage.pkl', self.unpacker))
             argString = "arguments = %s %i\n" \
-                        % (os.path.basename(job['sandbox']), index)
+                        % (os.path.basename(self.sandbox), index)
             jdl.append(argString)
 
             # Transfer the output files into new names

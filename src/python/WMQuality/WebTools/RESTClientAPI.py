@@ -14,12 +14,12 @@ def makeRequest(url, values=None, type='GET', accept="text/plain",
     if type == 'GET' and values:
         data = urllib.urlencode(values)
     elif type != 'GET' and values:
-        if contentType == "application/json":
-            data = jsonwrapper.dumps(values)
         # needs to test other encoding type
-        elif contentType == "application/x-www-form-urlencoded":
+        if contentType == "application/x-www-form-urlencoded":
             data = urllib.urlencode(values)
-        
+        else:
+            # for other encoding scheme values assumed to be encoded already
+            data = values
     parser = urlparse(url)
     uri = parser.path
     if parser.query:

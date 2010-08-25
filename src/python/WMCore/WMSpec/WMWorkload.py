@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.3 2009/05/22 16:04:49 evansde Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMWorkload.py,v 1.4 2009/06/13 01:50:47 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 
@@ -55,6 +55,9 @@ class WMWorkloadHelper(PersistencyHelper):
     """
     def __init__(self, wmWorkload = None):
         self.data = wmWorkload
+
+    def name(self):
+        return self.data._internal_name
 
     def getTask(self, taskName):
         """

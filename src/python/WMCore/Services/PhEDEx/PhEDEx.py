@@ -11,12 +11,13 @@ from WMCore.Services.AuthorisedService import AuthorisedService
 # This should be deprecated in preference to simplejson once SiteDB spits out
 # correct json
 from WMCore.Services.JSONParser.JSONParser import JSONParser
-#try:
+
+try:
     # Python 2.6
-    #import json
-#except:
+    import json
+except:
     # Prior to 2.6 requires simplejson
-    #import simplejson as json
+    import simplejson as json
 
 #TODO: this should move to the AuthorisedService class
 class PhEDEx(AuthorisedService):
@@ -37,11 +38,7 @@ class PhEDEx(AuthorisedService):
         
         #PhEDEx Service default is using POST 
         self.setdefault("method", 'POST')    
-        #if self.responseType == 'json':
-            #self.parser = JSONParser()
-        #elif self.responseType == 'xml':
-            #self.parser = XMLParser()
-            
+
         if os.getenv('CMS_PHEDEX_CACHE_DIR'):
             dict['cachepath'] = os.getenv('CMS_PHEDEX_CACHE_DIR') + '/.cms_phedexcache'
         elif os.getenv('HOME'):
@@ -79,8 +76,11 @@ class PhEDEx(AuthorisedService):
             f.close()
         except IOError, ex:
             raise RuntimeError("URL not available: %s" % callname )
-        # TODO use parser (json, xml) if needed depending on the reply type
-        # self.responseType
+
+        if self.responseType == "json":
+            decoder = json.JSONDecoder()
+            return decoder.decode(result)
+        
         return result 
 
     def injectBlocks(self, dbsUrl, node, datasetPath = None, verbose=0, strict=1, *blockNames):
@@ -102,7 +102,7 @@ class PhEDEx(AuthorisedService):
         args['node'] = node
         
         xml = PhEDExXMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
-        
+
         args['data'] = xml
         args['verbose'] = verbose
         args['strict'] = strict

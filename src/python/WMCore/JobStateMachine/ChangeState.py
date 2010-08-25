@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.53 2010/08/10 20:53:32 sfoulkes Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: ChangeState.py,v 1.54 2010/08/13 15:56:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.54 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -168,7 +168,7 @@ class ChangeState(WMObject, WMConnectionBase):
             else:
                 transitionDocument["location"] = "Agent"
                 
-            self.database.queue(transitionDocument)
+            self.database.queue(transitionDocument, viewlist = ["jobDump/jobsByJobID"])
 
             if couchDocID == None:
                 jobDocument = {}
@@ -211,14 +211,14 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                
-                self.database.queue(jobDocument)
+                self.database.queue(jobDocument, viewlist = ["jobDump/jobsByJobID"])
                 newJobCounter += 1
             elif job.get("fwjr", None):
                 fwjrDocument = {"jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}
-                self.database.queue(fwjrDocument)
+                self.database.queue(fwjrDocument, viewlist = ["jobDump/jobsByJobID"])
 
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,

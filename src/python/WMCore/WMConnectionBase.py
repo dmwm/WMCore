@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.2 2009/10/12 19:24:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.3 2009/11/24 22:44:30 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -17,7 +17,7 @@ class WMConnectionBase:
     """
     Generic db connection and transaction methods used by all of the WMCore classes.
     """
-    def __init__(self, daoPackage):
+    def __init__(self, daoPackage, logger=None, dbi=None):
         """
         ___init___
 
@@ -27,17 +27,25 @@ class WMConnectionBase:
         create one but leave the transaction closed.
         """
         myThread = threading.currentThread()
-        self.logger = myThread.logger
-        self.dialect = myThread.dialect
-        self.dbi = myThread.dbi
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = myThread.logger
+        if dbi:
+            self.dbi = dbi
+        else:
+            self.dbi = myThread.dbi
+        
         self.daofactory = DAOFactory(package = daoPackage,
                                      logger = self.logger,
                                      dbinterface = self.dbi)
 
-        if "transaction" not in dir(myThread):
-            myThread.transaction = Transaction(self.dbi)
+        try:
+            getattr(myThread, "transaction")
+        except AttributeError:
+            myThread.transaction = Transaction()
             myThread.transaction.commit()
-
+            
         return
 
     def getDBConn(self):
@@ -46,10 +54,21 @@ class WMConnectionBase:
 
         Retrieve the database connection that is associated with the current
         dataabase transaction.
+        It transaction exists, it will return connection 
+        which that transaction belong to.
+        This won't create the transaction if it doesn't exist, it will just return 
+        None. 
         """
         myThread = threading.currentThread()
+        
+        try:
+            getattr(myThread, "transaction")
+        except AttributeError:
+            print "no transaction"
+            return None
+        #if transaction is created properly conn attribute should exist
         return myThread.transaction.conn
-
+            
     def beginTransaction(self):
         """
         _beginTransaction_
@@ -57,7 +76,15 @@ class WMConnectionBase:
         Begin a database transaction if one does not already exist.
         """
         myThread = threading.currentThread()
-        if myThread.transaction.conn == None:
+        
+        try:
+            getattr(myThread, "transaction")
+        except AttributeError:
+            #This creates and begins a new transaction 
+            myThread.transaction = Transaction(self.dbi)
+            return False
+        
+        if myThread.transaction.transaction == None:
             myThread.transaction.begin()
             return False
 
@@ -70,7 +97,12 @@ class WMConnectionBase:
         Return True if there is an open transaction, False otherwise.
         """
         myThread = threading.currentThread()
-        if myThread.transaction.conn != None:
+        try:
+            getattr(myThread, "transaction")
+        except AttributeError:
+            return False
+        
+        if myThread.transaction.transaction != None:
             return True
 
         return False
@@ -84,6 +116,5 @@ class WMConnectionBase:
         if not existingTransaction:
             myThread = threading.currentThread()
             myThread.transaction.commit()
-            myThread.transaction.conn = None
-
+            
         return

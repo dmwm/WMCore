@@ -6,8 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.22 2009/01/21 22:15:37 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Fileset.py,v 1.23 2009/07/22 16:37:14 meloam Exp $"
+__version__ = "$Revision: 1.23 $"
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject 
 
@@ -22,11 +22,14 @@ class Fileset(WMObject):
         """
         self.name = name
         self.files = Set()
-
+        
         if files == None:
             self.newfiles = Set()
         else:
             self.newfiles = files
+            
+        # assume that the fileset is open at first
+        self.open = True
                 
     def addFile(self, file):
         """
@@ -100,3 +103,12 @@ class Fileset(WMObject):
     def __iter__(self):
         for file in self.getFiles():
             yield file
+    
+    def markOpen(self, isOpen):
+        """
+        _markOpen_
+
+        Change the open status of this fileset.  The isOpen parameter is a bool
+        representing whether or not the fileset is open.
+        """
+        self.open = isOpen

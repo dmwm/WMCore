@@ -8,7 +8,7 @@ class PhEDExSubscription(object):
     PhEDEx subscription data service 
     """
     def __init__(self, datasetPathList, nodeList, group,
-                 level='dataset', priority='high', move='n', static='n', 
+                 level='dataset', priority='normal', move='n', static='n', 
                  custodial='n', requestOnly='y'):
         """
         initialize PhEDEx subscription with default value

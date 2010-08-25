@@ -34,7 +34,9 @@ class PhEDEx(AuthorisedService):
         if not dict.has_key('endpoint'):
             dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
                                 self.responseType
-            
+        
+        #PhEDEx Service default is using POST 
+        self.setdefault("method", 'GET')    
         #if self.responseType == 'json':
             #self.parser = JSONParser()
         #elif self.responseType == 'xml':
@@ -68,16 +70,11 @@ class PhEDEx(AuthorisedService):
 
         TODO: Probably want to move this up into Service
         """
-        query = callname
-        if args:
-            params = urllib.urlencode(args)
-            query += '?' + params
-        
         result = ''
         if clearCache:
-            self.clearCache(file)
+            self.clearCache(file, args)
         try:
-            f = self.refreshCache(file, query)
+            f = self.refreshCache(file, callname, args)
             result = f.read()
             f.close()
         except IOError, ex:
@@ -100,15 +97,15 @@ class PhEDEx(AuthorisedService):
         """
         
         callname = 'inject'
-        args = []
+        args = {}
         
-        args.append(('node', '%s' % node))
+        args['node'] = node
         
         xml = PhEDExXMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
         
-        args.append(('data', xml))
-        args.append(('verbose', verbose))
-        args.append(('strict', strict))
+        args['data'] = xml
+        args['verbose'] = verbose
+        args['strict'] = strict
         
         return self._getResult(callname, args=args)
      
@@ -119,23 +116,24 @@ class PhEDEx(AuthorisedService):
         
         Subscription is PhEDEX subscription structure
         """
-        callname = 'subscribe'
-        args = []
-        args += [('op','node:and')]
         
+        callname = 'subscribe'
+        args = {}
+        
+        args['node'] = []
         for node in subscription.nodes:
-            args.append(('node', '%s' % node))
+            args['node'].append(node)
             
         xml = PhEDExXMLDrop.makePhEDExXMLForDatasets(dbsUrl, subscription.getDatasetPaths())
         
-        args.append(('data', xml))
-        args.append(('level', '%s' % subscription.level))
-        args.append(('priority', '%s' % subscription.priority))
-        args.append(('move', '%s' % subscription.move))
-        args.append(('static', '%s' % subscription.static))
-        args.append(('custodial', '%s' % subscription.custodial))
-        args.append(('group', '%s' % subscription.group))
-        args.append(('request_only', '%s' % subscription.request_only))
+        args['data'] = xml
+        args['level'] = subscription.level
+        args['priority'] = subscription.priority
+        args['move'] = subscription.move
+        args['static'] = subscription.static
+        args['custodial'] = subscription.custodial
+        args['group'] = subscription.group
+        args['request_only'] = subscription.request_only
         
         return self._getResult(callname, args=args)
      

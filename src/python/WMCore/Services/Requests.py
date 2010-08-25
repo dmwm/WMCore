@@ -149,11 +149,11 @@ class JSONSetEncoder(json.JSONEncoder):
             tempDict = {'_hack_to_encode_a_set_in_json':True}
             counter = 0
             for item in toEncode:
-                tempDict[counter] = item
-                ++counter
+                tempDict[counter] = JSONSetEncoder.encode(self, item)
+                counter += 1
             return tempDict
         else:
-            return json.JSONEencoder(toEncode)
+            return "**PLACEHOLDER** NEED TO FIX"
                 
 def JSONDecodeSetCallback(toDecode):
     if '_hack_to_encode_a_set_in_json' in toDecode:

@@ -7,8 +7,8 @@ Base class for formatters that create tables.
 
 """
 
-__revision__ = "$Id: DBCreator.py,v 1.7 2009/08/24 13:52:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DBCreator.py,v 1.8 2009/09/08 14:34:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -104,7 +104,8 @@ class DBCreator(DBFormatter):
                                      conn = conn, 
                                      transaction = transaction)
             except Exception, e:
-                self.logger.debug( e ) 
+                self.logger.debug( e )
+                raise e
 
         for i in self.constraints.keys():
             self.logger.debug( i )
@@ -114,6 +115,7 @@ class DBCreator(DBFormatter):
                                  transaction = transaction)
             except Exception, e:
                 self.logger.debug( e )
+                raise e
                 
         for i in self.inserts.keys():
             self.logger.debug( i )
@@ -122,7 +124,8 @@ class DBCreator(DBFormatter):
                                      conn = conn, 
                                      transaction = transaction)
             except Exception, e:
-                self.logger.debug( e )                
+                self.logger.debug( e )
+                raise e
 
         return True
    

@@ -5,21 +5,21 @@ _GetFinishedSubscriptions_
 Oracle implementation of Subscription.GetFinishedSubscriptions
 """
 
-__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.4 2010/08/05 20:41:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.5 2010/08/06 14:00:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFinishedSubscriptions import GetFinishedSubscriptions as MySQLFinishedSubscriptions
 
 class GetFinishedSubscriptions(MySQLFinishedSubscriptions):
     sql = """SELECT DISTINCT wmbs_sub.id FROM wmbs_subscription wmbs_sub
                INNER JOIN wmbs_fileset ON wmbs_fileset.id = wmbs_sub.fileset
-               LEFT OUTER JOIN (SELECT fileset, COUNT(fileid) AS total_files
+               LEFT OUTER JOIN (SELECT fileset, COUNT(DISTINCT fileid) AS total_files
                       FROM wmbs_fileset_files GROUP BY fileset) fileset_size ON
                       wmbs_sub.fileset = fileset_size.fileset
-               LEFT OUTER JOIN (SELECT subscription, COUNT(fileid) AS total_files
+               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                       FROM wmbs_sub_files_complete GROUP BY subscription) sub_complete ON
                       wmbs_sub.id = sub_complete.subscription
-               LEFT OUTER JOIN (SELECT subscription, COUNT(fileid) AS total_files
+               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                       FROM wmbs_sub_files_failed GROUP BY subscription) sub_failed ON
                       wmbs_sub.id = sub_failed.subscription
                LEFT OUTER JOIN

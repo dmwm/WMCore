@@ -5,8 +5,8 @@ _GetFinishedSubscriptions_
 MySQL implementation of Subscription.GetFinishedSubscriptions
 """
 
-__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.5 2010/08/05 20:41:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.6 2010/08/06 14:00:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import time
 import logging
@@ -16,13 +16,13 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetFinishedSubscriptions(DBFormatter):
     sql = """SELECT DISTINCT wmbs_sub.id FROM wmbs_subscription wmbs_sub
                INNER JOIN wmbs_fileset ON wmbs_fileset.id = wmbs_sub.fileset
-               LEFT OUTER JOIN (SELECT fileset, COUNT(file) AS total_files
+               LEFT OUTER JOIN (SELECT fileset, COUNT(DISTINCT file) AS total_files
                       FROM wmbs_fileset_files GROUP BY fileset) fileset_size ON
                       wmbs_sub.fileset = fileset_size.fileset
-               LEFT OUTER JOIN (SELECT subscription, COUNT(file) AS total_files
+               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
                       FROM wmbs_sub_files_complete GROUP BY subscription) sub_complete ON
                       wmbs_sub.id = sub_complete.subscription
-               LEFT OUTER JOIN (SELECT subscription, COUNT(file) AS total_files
+               LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
                       FROM wmbs_sub_files_failed GROUP BY subscription) sub_failed ON
                       wmbs_sub.id = sub_failed.subscription
                LEFT OUTER JOIN

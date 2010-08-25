@@ -5,9 +5,10 @@ _GetFinishedSubscriptions_
 MySQL implementation of Subscription.GetFinishedSubscriptions
 """
 
-__all__ = []
-__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.1 2009/12/14 22:25:42 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.2 2010/03/31 17:58:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
+
+import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -36,12 +37,8 @@ class GetFinishedSubscriptions(DBFormatter):
                       INNER JOIN wmbs_subscription ON wmbs_subscription.id = wmbs_jobgroup.subscription
                       WHERE :currTime - wmbs_job.state_time < :timeOut) = 0"""
 
-    
     def execute(self, timeOut = 0, conn = None, transaction = False):
-
-
-        binds = {'currTime': self.timestamp(), 'timeOut': timeOut}
-        #binds = {}
+        binds = {'currTime': int(time.time()), 'timeOut': timeOut}
         results = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.formatDict(results)

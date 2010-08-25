@@ -3,11 +3,12 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.19 2009/11/30 21:45:00 sryu Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.20 2009/12/02 20:34:56 swakef Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import unittest
 import os
+import shutil
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -30,6 +31,8 @@ def createSpec(name, path, dataset = None,
     if dataset:
         task.addInputDataset(**dataset)
         task.setSplittingAlgorithm("FileBased", size = 1)
+        wmspec.data.policies.start.policyName = 'DatasetBlock'
+        wmspec.data.policies.end.policyName = 'SingleShot'
 
         #FixMe? need setter for blocklist and whitelist
         if blacklist:
@@ -39,6 +42,8 @@ def createSpec(name, path, dataset = None,
         task.data.input.dataset.dbsurl = 'http://example.com'
     else:
         task.setSplittingAlgorithm("EventBased", size = 100)
+        wmspec.data.policies.start.policyName = 'MonteCarlo'
+        wmspec.data.policies.end.policyName = 'SingleShot'
         #FIXME need to add WMSpec to save total event properly for production j
         task.addProduction(totalevents = 1000)
     wmspec.addTask(task)
@@ -227,7 +232,9 @@ class WorkQueueTest(WorkQueueTestCase):
         #self.globalQueue = WorkQueue(SplitByBlock = False, # Global queue
         #                             PopulateFilesets = False,
         #                             CacheDir = None)
-        self.globalQueue = globalQueue(CacheDir = None, NegotiationTimeout = 0)
+        self.globalQueue = globalQueue(CacheDir = 'global',
+                                       NegotiationTimeout = 0,
+                                       QueueURL = 'global.example.com')
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
 #                            ParentQueue = self.globalQueue,
@@ -237,11 +244,11 @@ class WorkQueueTest(WorkQueueTestCase):
 #                            ParentQueue = self.globalQueue,
 #                            CacheDir = None)
         self.localQueue = localQueue(ParentQueue = self.globalQueue,
-                                     CacheDir = None,
+                                     CacheDir = 'local',
                                      ReportInterval = 0,
                                      QueueURL = "local.example.com")
         # standalone queue for unit tests
-        self.queue = WorkQueue(CacheDir = None)
+        self.queue = WorkQueue(CacheDir = 'standalone')
         mockDBS = MockDBSReader('http://example.com')
         for queue in (self.queue, self.localQueue, self.globalQueue):
             queue.dbsHelpers['http://example.com'] = mockDBS
@@ -258,6 +265,9 @@ class WorkQueueTest(WorkQueueTestCase):
                 os.unlink(f)
             except OSError:
                 pass
+        for d in ('standalone', 'global', 'local'):
+            shutil.rmtree(d, ignore_errors = True)
+
 
 
     def testProduction(self):
@@ -266,7 +276,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         specfile = self.specFile
         numBlocks = 2
-        njobs = [10] * numBlocks # array of jobs per block
+        njobs = [1] * numBlocks # array of jobs per block
         total = sum(njobs)
 
         # Queue Work & check accepted
@@ -291,8 +301,6 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Test priority change functionality
         """
-        #TODO: This tests nothing! Fix.
-
         numBlocks = 2
         njobs = [10] * numBlocks # array of jobs per block
         total = sum(njobs)
@@ -318,7 +326,7 @@ class WorkQueueTest(WorkQueueTestCase):
         Enqueue and get work for a processing WMSpec.
         """
         specfile = self.processingSpecFile
-        njobs = [5, 10] # array of jobs per block
+        njobs = [1, 1] # array of jobs per block
         total = sum(njobs)
 
         # Queue Work & check accepted
@@ -330,6 +338,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'SiteA' : njobs[0] - 1,
                                    'SiteB' : njobs[1] - 1})
         self.assertEqual(len(work), 0)
+
         # Only 1 block at SiteB
         work = self.queue.getWork({'SiteB' : total})
         self.assertEqual(len(work), 1)
@@ -487,6 +496,8 @@ class WorkQueueTest(WorkQueueTestCase):
         before = self.localQueue.lastFullReportToParent
         self.localQueue.updateParent()
         self.assertNotEqual(before, self.localQueue.lastFullReportToParent)
+        self.assertEqual(len(self.globalQueue.status('Acquired')), 1)
+        self.assertEqual(len(self.globalQueue.status('Available')), 2)
 
         # run work
         self.globalQueue.updateLocationInfo()

@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.8 2010/04/29 15:00:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: LogArchive.py,v 1.9 2010/04/29 19:04:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import os.path
@@ -28,8 +28,7 @@ class Alarm(Exception):
 def alarmHandler(signum, frame):
     raise Alarm
 
-lfnGroup = lambda j : str(j.get('counter', 0)/500).zfill(4)
-
+lfnGroup = lambda j : str(j.get("counter", 0) / 10).zfill(4)
 
 class LogArchive(Executor):
     """
@@ -180,28 +179,10 @@ class LogArchive(Executor):
         else:
             reqTime = time.gmtime()
 
-        runPadding = None
-        runNumber  = None
-
-        for f in self.job['input_files']:
-            for run in f['runs']:
-                runNumber  = int(run.run)
-                runPadding = str(runNumber // 1000).zfill(4)
-
-        if not runNumber:
-            # no jobNumber - use day and hope for no collisions
-            runPadding = time.gmtime()[7] # what day is it?
-            runNumber  = self.job['name']
-
-
         year, month, day = reqTime[:3]
 
-        #LFN = 'test'
-        
-
-        LFN = "/store/unmerged/logs/prod/%s/%s/%s/%s/%s/%s/%s/%s-%s" % \
+        LFN = "/store/unmerged/logs/prod/%s/%s/%s/%s/%s/%s-%s" % \
               (year, month, day, self.report.data.workload,
-               runPadding, runNumber, lfnGroup(self.job), self.job["name"], tarName)
-
+               lfnGroup(self.job), self.job["name"], tarName)
 
         return LFN

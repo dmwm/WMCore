@@ -12,8 +12,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.32 2010/05/25 20:54:08 mnorman Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.33 2010/05/25 20:59:28 mnorman Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import os
 import threading
@@ -638,8 +638,6 @@ class AccountantWorker:
             parentLFNs.extend(list(newParents))
 
         # Now we get whether or not the parents exist
-        print "About to parse parents"
-        print len(parentLFNs)
         #exists = self.dbsExistsAction.execute(lfn = parentLFNs)
         #for parent in parentLFNs:
         #    if not parent in exists:

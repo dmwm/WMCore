@@ -12,8 +12,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.37 2010/07/13 22:11:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.38 2010/07/22 15:53:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import os
 import threading
@@ -23,7 +23,7 @@ import gc
 from WMCore.Agent.Configuration  import Configuration
 from WMCore.FwkJobReport.Report  import Report
 from WMCore.DAOFactory           import DAOFactory
-from WMCore.Database.Transaction import Transaction
+from WMCore.WMConnectionBase     import WMConnectionBase
 
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.File       import File
@@ -33,23 +33,19 @@ from WMCore.WMBS.JobGroup   import JobGroup
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
-class AccountantWorker:
+class AccountantWorker(WMConnectionBase):
     """
     Class that actually does the work of parsing FWJRs for the Accountant
     Run through ProcessPool
     """
-    
     def __init__(self, **kwargs):
         """
         __init__
 
         Create all DAO objects that are used by this class.
         """
+        WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
-        self.transaction = myThread.transaction
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
         self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)
@@ -57,19 +53,18 @@ class AccountantWorker:
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)
         
-
-        self.getOutputMapAction      = self.daoFactory(classname = "Jobs.GetOutputMap")
-        self.bulkAddToFilesetAction  = self.daoFactory(classname = "Fileset.BulkAddByLFN")
-        self.bulkParentageAction     = self.daoFactory(classname = "Files.AddBulkParentage")
-        self.getJobTypeAction        = self.daoFactory(classname = "Jobs.GetType")
-        self.getParentInfoAction     = self.daoFactory(classname = "Files.GetParentInfo")
-        self.getMergedChildrenAction = self.daoFactory(classname = "Files.GetMergedChildren")
-        self.setParentageByJob       = self.daoFactory(classname = "Files.SetParentageByJob")
-        self.setFileRunLumi          = self.daoFactory(classname = "Files.AddRunLumi")
-        self.setFileLocation         = self.daoFactory(classname = "Files.SetLocationByLFN")
-        self.setFileAddChecksum      = self.daoFactory(classname = "Files.AddChecksumByLFN")
-        self.addFileAction           = self.daoFactory(classname = "Files.Add")
-        self.jobCompleteInput        = self.daoFactory(classname = "Jobs.CompleteInput")
+        self.getOutputMapAction      = self.daofactory(classname = "Jobs.GetOutputMap")
+        self.bulkAddToFilesetAction  = self.daofactory(classname = "Fileset.BulkAddByLFN")
+        self.bulkParentageAction     = self.daofactory(classname = "Files.AddBulkParentage")
+        self.getJobTypeAction        = self.daofactory(classname = "Jobs.GetType")
+        self.getParentInfoAction     = self.daofactory(classname = "Files.GetParentInfo")
+        self.getMergedChildrenAction = self.daofactory(classname = "Files.GetMergedChildren")
+        self.setParentageByJob       = self.daofactory(classname = "Files.SetParentageByJob")
+        self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
+        self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
+        self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
+        self.addFileAction           = self.daofactory(classname = "Files.Add")
+        self.jobCompleteInput        = self.daofactory(classname = "Jobs.CompleteInput")
 
         self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
@@ -106,17 +101,14 @@ class AccountantWorker:
         self.count = 0
         self.assocID           = None
 
-        
         return
 
     def reset(self):
         """
         _reset_
 
-        Reset all global vars between runs
-
+        Reset all global vars between runs.
         """
-
         self.dbsFilesToCreate  = []
         self.wmbsFilesToBuild  = []
         self.fileLocation      = None
@@ -124,7 +116,6 @@ class AccountantWorker:
         self.listOfJobsToSave  = []
         self.filesetAssoc      = []
         gc.collect()
-
         return
 
     def loadJobReport(self, parameters):
@@ -174,13 +165,11 @@ class AccountantWorker:
         and make sure the status is 'Success'.  If a step does not return
         'Success', the job will fail.
         """
-
         if not hasattr(jobReport, 'data'):
             return False
 
         if not hasattr(jobReport.data, 'steps'):
             return False
-
 
         for step in jobReport.data.steps:
             report = getattr(jobReport.data, step)
@@ -197,7 +186,7 @@ class AccountantWorker:
         ID and the path to the framework job report.
         """
         returnList = []
-        self.transaction.begin()
+        self.beginTransaction()
 
         for job in parameters:
             logging.info("Handling %s" % job["fwjr_path"])
@@ -216,15 +205,10 @@ class AccountantWorker:
                                       fwkJobReportPath = job['fwjr_path'])
                 jobSuccess = True
                 
-
             returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
             self.count += 1
-            #if self.count%1000 == 0:
-            #    pdb.set_trace()
-            #break
 
         # Now things done at the end of the job
-
         # Do what we can with WMBS files
         self.handleWMBSFiles()
 
@@ -234,25 +218,24 @@ class AccountantWorker:
         # Handle filesetAssoc
         if len(self.filesetAssoc) > 0:
             self.bulkAddToFilesetAction.execute(binds = self.filesetAssoc,
-                                                conn = self.transaction.conn,
-                                                transaction = True)
+                                                conn = self.getDBConn(),
+                                                transaction = self.existingTransaction())
         # Now do WMBSJobs
         idList = []
         for wmbsJob in self.listOfJobsToSave:
             idList.append(wmbsJob['id'])
         if len(idList) > 0:
             self.jobCompleteInput.execute(id = idList,
-                                          conn = self.transaction.conn,
-                                          transaction = True)
+                                          conn = self.getDBConn(),
+                                          transaction = self.existingTransaction())
 
         # Straighten out DBS Parentage
         if len(self.mergedOutputFiles) > 0:
             self.handleDBSBufferParentage()
-            pass
 
         self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
-        self.transaction.commit()
+        self.commitTransaction(existingTransaction = False)
         self.reset()
         return returnList
 
@@ -309,12 +292,8 @@ class AccountantWorker:
             dbsFile.addRun(newRun)
 
         dbsFile.setLocation(se = list(jobReportFile["locations"])[0], immediateSave = False)
-
         self.dbsFilesToCreate.append(dbsFile)
-
         return
-
-
 
     def findDBSParents(self, lfn):
         """
@@ -324,11 +303,10 @@ class AccountantWorker:
         This is meant to be called recursively
         """
         parentsInfo = self.getParentInfoAction.execute([lfn],
-                                                       conn = self.transaction.conn,
-                                                       transaction = True)
+                                                       conn = self.getDBConn(),
+                                                       transaction = self.existingTransaction())
         newParents = set()
         for parentInfo in parentsInfo:
-
             # This will catch straight to merge files that do not have redneck
             # parents.  We will mark the straight to merge file from the job
             # as a child of the merged parent.
@@ -353,7 +331,6 @@ class AccountantWorker:
                     newParents.add(parent)
 
         return newParents
-        
 
     def addFileToWMBS(self, jobType, fwjrFile, jobMask, jobID = None):
         """
@@ -395,12 +372,12 @@ class AccountantWorker:
         wmbsJob["fwjr"]    = fwkJobReport
 
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
-                                                    conn = self.transaction.conn,
-                                                    transaction = True)
+                                                    conn = self.getDBConn(),
+                                                    transaction = self.existingTransaction())
 
         jobType = self.getJobTypeAction.execute(jobID = jobID,
-                                                conn = self.transaction.conn,
-                                                transaction = True)
+                                                conn = self.getDBConn(),
+                                                transaction = self.existingTransaction())
 
         fileList = fwkJobReport.getAllFiles()
 
@@ -409,12 +386,6 @@ class AccountantWorker:
                                           jobID = jobID)
             merged = fwjrFile['merged']
             moduleLabel = fwjrFile["module_label"]
-            if not wmbsFile and not moduleLabel:
-                # Something got screwed up in addFileToWMBS.  Send job to FAIL
-                self.transaction.rollback()
-                self.transaction.begin()
-                self.handleFailed(jobID = jobID, fwkJobReport = fwkJobReport)
-                return
 
             if merged:
                 self.mergedOutputFiles.append(wmbsFile)
@@ -464,19 +435,15 @@ class AccountantWorker:
         report.data.cmsRun1.status = "Failed"
         return report
 
-
-
     def createFilesInDBSBuffer(self):
         """
         _createFilesInDBSBuffer_
         It does the actual job of creating things in DBSBuffer
         WARNING: This assumes all files in a job have the same final location
         """
-
         if len(self.dbsFilesToCreate) == 0:
             # Whoops, nothing to do!
             return
-
 
         dbsFileTuples = []
         dbsLocations  = []
@@ -508,28 +475,27 @@ class AccountantWorker:
 
 
         self.dbsInsertLocation.execute(siteName = jobLocation,
-                                       conn = self.transaction.conn,
-                                       transaction = True)
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
 
         self.dbsCreateFiles.execute(files = dbsFileTuples,
-                                    conn = self.transaction.conn,
-                                    transaction = True)
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
 
         self.dbsSetLocation.execute(binds = dbsFileLoc,
-                                    conn = self.transaction.conn,
-                                    transaction = True)
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
 
         self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
-                                    conn = self.transaction.conn,
-                                    transaction = True)
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
 
         self.dbsSetRunLumi.execute(file = runLumiBinds,
-                                   conn = self.transaction.conn,
-                                   transaction = True)
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
 
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = []
-
         return
 
 
@@ -539,7 +505,6 @@ class AccountantWorker:
 
         Do what can be done in bulk in bulk
         """
-
         if len(self.wmbsFilesToBuild) == 0:
             # Nothing to do
             return
@@ -573,34 +538,29 @@ class AccountantWorker:
                                wmbsFile["last_event"],
                                wmbsFile['merged']])
 
-
-        
         self.addFileAction.execute(files = fileCreate,
-                                   conn = self.transaction.conn,
-                                   transaction = True)
-
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
         
         self.setParentageByJob.execute(binds = parentageBinds,
-                                       conn = self.transaction.conn,
-                                       transaction = True)
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
 
         self.setFileRunLumi.execute(file = runLumiBinds,
-                                    conn = self.transaction.conn,
-                                    transaction = True)
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
 
         self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
-                                        conn = self.transaction.conn,
-                                        transaction = True)
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
 
         self.setFileLocation.execute(lfn = fileLocations,
                                      location = self.fileLocation,
-                                     conn = self.transaction.conn,
-                                     transaction = True)
-
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
 
         # Clear out finished files
         self.wmbsFilesToBuild = []
-
         return
 
     def createFileFromDataStructsFile(self, file, jobID):
@@ -626,106 +586,27 @@ class AccountantWorker:
 
         return wmbsFile
 
-
     def handleDBSBufferParentage(self):
         """
         _handleDBSBufferParentage_
 
         Handle all the DBSBuffer Parentage in bulk if you can
         """
-
         outputLFNs = [f['lfn'] for f in self.mergedOutputFiles]
         bindList         = []
         parentLFNs       = []
-        parentMissing    = set()
         for lfn in outputLFNs:
             newParents = self.findDBSParents(lfn = lfn)
             for parentLFN in newParents:
                 bindList.append({'child': lfn, 'parent': parentLFN})
             parentLFNs.extend(list(newParents))
 
-        # Now we get whether or not the parents exist
-        #exists = self.dbsExistsAction.execute(lfn = parentLFNs)
-        #for parent in parentLFNs:
-        #    if not parent in exists:
-        #        parentMissing.add(parent)
-
-
-        if len(parentMissing) > 0:
-            # Then we have to create parents
-            # First, do we need to create a dummy dataset?
-            if self.assocID == None:
-                # Then we do
-                self.createDummyAlgoDataset()
-
-
-            # Now we just need to add the files
-            myThread = threading.currentThread()
-            localTransaction = Transaction(myThread.dbi)
-            localTransaction.begin()
-
-            # Execute missing parent addition
-            action = self.dbsDaoFactory(classname = "DBSBufferFiles.AddIgnore")
-            action.execute(lfns = list(parentMissing), datasetAlgo = self.assocID,
-                           status = "AlreadyInDBS",
-                           conn = localTransaction.conn,
-                           transaction = True)
-
-            localTransaction.commit()
-
-
         # Now all the parents should exist
         # Commit them to DBSBuffer
         logging.info("About to commit all DBSBuffer Heritage information")
         logging.info(len(bindList))
         
-
         self.dbsLFNHeritage.execute(binds = bindList,
-                                    conn = self.transaction.conn,
-                                    transaction = True)
-
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
         return
-
-
-
-
-    def createDummyAlgoDataset(self):
-        """
-        _createDummyAlgoDataset_
-        
-        Create a dummy algo and dataset for parents
-        That have not yet made it into DBS
-        """
-
-        logging.info("Creating a bogus dataset and algo")
-
-        myThread = threading.currentThread()
-        localTransaction = Transaction(myThread.dbi)
-        localTransaction.begin()
-        self.dbsNewAlgoAction.execute(appName = "cmsRun", appVer = "UNKNOWN",
-                                      appFam = "UNKNOWN", psetHash = "GIBBERISH",
-                                      configContent = "MOREBIGGERISH",
-                                      conn = localTransaction.conn,
-                                      transaction = True)
-        
-        self.dbsNewDatasetAction.execute(datasetPath = "/bogus/dataset/path",
-                                         conn = localTransaction.conn,
-                                         transaction = True)
-        
-        assocID = self.dbsAssocAction.execute(appName = "cmsRun", appVer = "UNKNOWN",
-                                              appFam = "UNKNOWN", psetHash = "GIBBERISH",
-                                              datasetPath = "/bogus/dataset/path",
-                                              conn = localTransaction.conn,
-                                              transaction = True)
-        
-        self.dbsSetDatasetAlgoAction.execute(datasetAlgo = assocID, inDBS = 1,
-                                             conn = localTransaction.conn,
-                                             transaction = True)
-
-        self.assocID = assocID
-
-        localTransaction.commit()
-
-
-        return
-    

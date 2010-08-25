@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.35 2010/07/06 18:07:53 mnorman Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.36 2010/07/22 15:53:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import logging
 import os.path
@@ -83,7 +83,6 @@ class JobAccountantTest(unittest.TestCase):
         dbsLocationAction.execute(siteName = "srm-cms.cern.ch")
 
         self.testDir = self.testInit.generateWorkDir()
-        
         return
 
     def tearDown(self):
@@ -173,8 +172,6 @@ class JobAccountantTest(unittest.TestCase):
 
         assert testJob["state"] == "jobfailed", \
                "Error: test job in wrong state: %s" % testJob["state"]
-        assert testJob["retry_count"] == 1, \
-               "Error: test job has wrong retry count: %s" % testJob["retry_count"]
         assert testJob["outcome"] == "failure", \
                "Error: test job has wrong outcome: %s" % testJob["outcome"]
 
@@ -956,7 +953,7 @@ class JobAccountantTest(unittest.TestCase):
         self.verifyJobSuccess(self.testJob["id"])
         return
 
-    def setupDBForLoadTest(self):
+    def setupDBForLoadTest(self, maxJobs = 100):
         """
         _setupDBForLoadTest_
 
@@ -1000,7 +997,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testSubscription.create()
 
         self.jobs = []
-        for i in range(100):
+        for i in range(maxJobs):
             testJobGroup = JobGroup(subscription = self.testSubscription)
             testJobGroup.create()
 
@@ -1069,10 +1066,44 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
+    def testDBRollback(self):
+        """
+        _testDBRollback_
+
+        Verify that if we encounter an error in the accountant the database
+        will be rolled back properly.
+        """
+        self.setupDBForLoadTest(maxJobs = 25)
+
+        # We just need to make two jobs process the same report so that we get a
+        # duplicate LFN error.
+        fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                "LoadTest07.pkl")
+        self.setFWJRAction.execute(jobID = 10, fwjrPath = fwjrPath)
+        
+        config = self.createConfig()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+
+        try:
+            accountant.algorithm()
+        except Exception, ex:
+            pass
+
+        sql = "SELECT COUNT(*) FROM wmbs_file_details"
+        myThread = threading.currentThread()
+        numFiles = myThread.dbi.processData(sql)[0].fetchall()[0][0]
+
+        assert numFiles == 25, \
+               "Error: There should only be 25 files in the database: %s" % numFiles
+
+        return
+
     def setupDBFor4GMerge(self):
         """
         _setupDBFor4GMerge_
-
+        
         Setup for the MergeSuccess with added generations of parentage
         """
         self.recoOutputFileset = Fileset(name = "RECO")
@@ -1083,28 +1114,28 @@ class JobAccountantTest(unittest.TestCase):
         self.aodOutputFileset.create()
         self.mergedAodOutputFileset = Fileset(name = "MergedAOD")
         self.mergedAodOutputFileset.create()        
-
+        
         self.testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
                                      name = "TestWF", task = "None")
         self.testWorkflow.create()
         self.testWorkflow.addOutput("output", self.recoOutputFileset)
         self.testWorkflow.addOutput("ALCARECOStreamCombined", self.aodOutputFileset)
-
+        
         self.testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
                                               name = "TestRecoMergeWF", task = "None")
         self.testRecoMergeWorkflow.create()
         self.testRecoMergeWorkflow.addOutput("Merged", self.mergedRecoOutputFileset)
-
+        
         self.testAodMergeWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
                                              name = "TestAodMergeWF", task = "None")
         self.testAodMergeWorkflow.create()
         self.testAodMergeWorkflow.addOutput("Merged", self.mergedAodOutputFileset)
-
+        
         masterFile1 = File(lfn = "/path/to/some/lfn1", size = 600000, events = 60000,
                            locations = "cmssrm.fnal.gov", merged = True)
         
         masterFile1.create()
-
+        
         masterFile2 = File(lfn = "/path/to/some/lfn2", size = 600000, events = 60000,
                            locations = "cmssrm.fnal.gov", merged = False)
         

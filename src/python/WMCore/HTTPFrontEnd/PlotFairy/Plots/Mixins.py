@@ -256,6 +256,22 @@ def numeric_bins(data):
     
     
                 
+def fix_y_axis_labels(axes,props,text,labels):    
+    ylabel_width = text_size('',axes.get_yaxis().get_label().get_size())[1]
+    space = props.axes_left*props.width - ylabel_width - props.linepadding
+            
+    sizes = [font_size(t,space) for t in text]
+    minsize = min(sizes)
+    if minsize<6:
+        space = text_size(text[sizes.index(minsize)],6)[0]
+        req_space = space + ylabel_width + props.linepadding
+                
+        props.avail_width = (props.avail_width - (req_space-props.axes_left*props.width))
+        props.axes_left = req_space/props.width
+        axes.set_position([props.axes_left,props.axes_bottom,float(props.avail_width)/props.width,float(props.avail_height)/props.height])
+        sizes = [font_size(t,space) for t in text]
+    for s,l in zip(sizes,labels):
+        l.set_size(s)
 class NumericAxisMixin(Mixin):  
     def __init__(self,*args,**kwargs):
         self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default='',doc_user="Axis label."),
@@ -295,7 +311,13 @@ class NumericAxisMixin(Mixin):
         if data['min'] or data['max']:
             axis.set_view_interval(data['min'],data['max'])
         
-        
+        if self.__axis=='yaxis' and self.props.yaxis['format']=='time':
+            formatter = axes.get_yaxis().get_major_formatter()
+            text = [str(formatter(i)) for i in axes.get_yticks()]
+            labels = axes.get_yticklabels()
+            
+            fix_y_axis_labels(axes,self.props,text,labels)
+            
 XNumericAxisMixin = UniqueAxis(NumericAxisMixin,'xaxis')
 YNumericAxisMixin = UniqueAxis(NumericAxisMixin,'yaxis')
         
@@ -373,7 +395,13 @@ class BinnedNumericAxisMixin(Mixin):
         
         if data['min'] or data['max']:
             axis.set_view_interval(data['min'],data['max'])
-                
+            
+        if self.__axis=='yaxis' and data['format']=='time':
+            formatter = axes.get_yaxis().get_major_formatter()
+            text = [str(formatter(i)) for i in axes.get_yticks()]
+            labels = axes.get_yticklabels()
+            fix_y_axis_labels(axes,self.props,text,labels)
+                    
 XBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'xaxis')
 YBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'yaxis')
 
@@ -416,7 +444,19 @@ class AnyBinnedAxisMixin(Mixin):
         axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
         if data['min'] or data['max']:
-            axis.set_view_interval(data['min'],data['max'])    
+            axis.set_view_interval(data['min'],data['max'])
+            
+        if self.__axis=='yaxis':
+            if data['format']=='time':
+                formatter = axes.get_yaxis().get_major_formatter()
+                text = [str(formatter(i)) for i in axes.get_yticks()]
+                labels = axes.get_yticklabels()
+            elif data['labels']!=None:
+                text = data['labels']
+                labels = axes.get_yticklabels()
+            else:
+                return
+            fix_y_axis_labels(axes,self.props,text,labels)    
 
 XAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'xaxis')
 YAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'yaxis')
@@ -441,19 +481,35 @@ class LabelledAxisMixin(Mixin):
         data['bins'] = len(data['labels'])
         data['edges'] = range(len(data['labels'])+1)
         
-        #super(LabelledAxisMixin,self).predata(*args,**kwargs)
+    def postdata(self):
+        axes = self.figure.gca()
+        axis = getattr(axes,self.__axis)
+        data = self.props.get(self.__axis)
+        
+        if self.__axis=='yaxis':
+            text = [str(formatter(i)) for i in axes.get_yticks()]
+            labels = data['labels']
+            fix_y_axis_labels(axes,self.props,text,labels)
 
 XLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'xaxis')
 YLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'yaxis')
     
 class AutoLabelledAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default='',doc_user="Axis label.")])]
+        self.validators += [DictElementBase(self.__axis,True,
+                                            [StringBase('label',None,default='',doc_user="Axis label."),
+                                             ElementBase('log',bool,default=False,doc_user="Use logarithmic scale."),
+                                             FloatBase('logbase',min=0,default=10,doc_user="Exponent of log scale, if enabled."),
+                                             StringBase('timeformat',default=None,doc_user="Time format to use, if format=time. Can either be a strftime() format string or a preset from ('second','minute','hour','day','week','month','year','decade')."),
+                                             StringBase('format',('num','time','binary','si','hex'),default='num',doc_user="Formatting to use for numbers on this axis."),   
+                                             ])
+                            ]
         #print 'AutoLabelledAxisMixin::__init__',self.__class__,self.__dict__.keys()
         super(AutoLabelledAxisMixin,self).__init__(*args,**kwargs)
     def predata(self,*args,**kwargs):
         #print 'AutoLabelledAxisMixin::predata',self.__class__,self.__dict__.keys()
         axes = self.figure.gca()
+        axis = getattr(axes,self.__axis)
         data = self.props.get(self.__axis)
         if self.__axis=='xaxis':
             axes.set_xlabel(data['label'])
@@ -461,6 +517,17 @@ class AutoLabelledAxisMixin(Mixin):
             axes.set_ylabel(data['label'])
         data['bins']=0
         data['edges']=[]
+        
+        axis_format(axis,data)
+        
+        if data['log']:
+            if self.__axis=='xaxis':
+                axes.set_xscale('log',basex=data['logbase'])
+            elif self.__axis=='yaxis':
+                axes.set_yscale('log',basey=data['logbase'])
+            setattr(self.props,'log_%s'%self.__axis[0].lower(),True)
+        else:
+            setattr(self.props,'log_%s'%self.__axis[0].lower(),False)
 
 XAutoLabelledAxisMixin = UniqueAxis(AutoLabelledAxisMixin,'xaxis')
 YAutoLabelledAxisMixin = UniqueAxis(AutoLabelledAxisMixin,'yaxis')

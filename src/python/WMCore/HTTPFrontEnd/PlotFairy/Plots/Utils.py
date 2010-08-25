@@ -19,10 +19,10 @@ def elem(what,inner='',**kwargs):
     argstr = ' '.join([what]+["%s='%s'"%(k,v) for k,v in kwargs.items()])
     return '<%s>%s</%s>'%(argstr,inner,what)
 
-def text_size(string,fontsize,dpi=96):
+def text_size(string,fontsize,dpi=100):
     return 0.6*len(string)*(dpi/72.)*fontsize,1.4*(dpi/72.)*fontsize
 
-def font_size(string,space,dpi=96):
+def font_size(string,space,dpi=100):
     return space/(0.6*(len(string)+2)*(dpi/72.))
 
         

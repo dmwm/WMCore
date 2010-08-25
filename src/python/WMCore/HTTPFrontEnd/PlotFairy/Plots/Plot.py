@@ -58,6 +58,7 @@ class Plot(type):
                     method(self)
                 return self.figure
             except Exception as e:
+                traceback.print_exc(file=sys.stderr)
                 return self._error(str(e))
                 #return self._error(traceback.format_exc())
         attrs['__call__']=__call__

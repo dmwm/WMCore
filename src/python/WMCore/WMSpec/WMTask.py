@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.5 2009/05/12 15:03:33 evansde Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: WMTask.py,v 1.6 2009/05/22 16:04:49 evansde Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -19,6 +19,43 @@ from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
+
+
+def findTaskAboveNode(node):
+    """
+    _findTaskAboveNode_
+
+    Given a config section (tree or not) traverse up the parent
+    structure until finding the first entry containing an objectType
+    setting that is set to WMTask
+
+    """
+    if getattr(node, "objectType", None) == "WMTask":
+        return node
+    if node._internal_parent_ref == None:
+        return None
+    return findTaskAboveNode(node._internal_parent_ref)
+
+def getTaskFromStep(stepRef):
+    """
+    _getTaskFromStep_
+
+    Traverse up the step tree until finding the first WMTask entry,
+    return it wrapped in a WMTaskHelper
+
+    """
+    nodeData = stepRef
+    if isinstance(stepRef, WMStepHelper):
+        nodeData = stepRef.data
+
+    taskNode = findTaskAboveNode(nodeData)
+    if taskNode == None:
+        msg = "Unable to find Task containing step\n"
+        #TODO: Replace with real exception class
+        raise RuntimeError, msg
+
+    return WMTaskHelper(taskNode)
+
 
 
 class WMTaskHelper(TreeHelper):
@@ -46,12 +83,14 @@ class WMTaskHelper(TreeHelper):
         return node
 
 
+
     def steps(self):
         """get WMStep structure"""
         if self.data.steps.topStepName == None:
             return None
         step = getattr(self.data.steps, self.data.steps.topStepName, None)
         return WMStepHelper(step)
+
 
     def setStep(self, wmStep):
         """set topStep to be the step instance provided"""
@@ -68,6 +107,16 @@ class WMTaskHelper(TreeHelper):
         setattr(self.data.steps, "topStepName" ,stepName)
         return
 
+
+    def listAllStepNames(self):
+        """
+        _listAllStepNames_
+
+        Get a list of all the step names contained in this task
+
+        """
+        step = self.steps()
+        return step.allNodeNames()
 
     def getStep(self, stepName):
         """get a particular step from the workflow"""
@@ -154,7 +203,7 @@ class WMTask(ConfigSectionTree):
     """
     def __init__(self, name):
         ConfigSectionTree.__init__(self, name)
-
+        self.objectType = self.__class__.__name__
         self.section_("steps")
         self.steps.topStepName = None
         self.section_("parameters")

@@ -7,8 +7,8 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-__revision__ = "$Id: ConfigSectionTree.py,v 1.2 2009/02/05 17:10:28 evansde Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ConfigSectionTree.py,v 1.3 2009/05/22 16:04:49 evansde Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from WMCore.Configuration import ConfigSection
@@ -129,6 +129,21 @@ def getNode(node, nodeNameToGet):
     mapping = nodeMap(topNode)
     return mapping.get(nodeNameToGet, None)
 
+def findTop(node):
+    """
+    _findTop_
+
+    Ignoring tree structure, find the top node that contains the node
+    provided.
+
+    Will work for any ConfigSection, not limited to ConfigSectionTree
+
+    """
+    if node._internal_parent_ref == None:
+        return node
+    return findTop(node._internal_parent_ref)
+
+
 def nodeIterator(node):
     """
     _nodeIterator_
@@ -189,6 +204,16 @@ class TreeHelper:
     def findTopNode(self):
         """get ref to the top node in the tree containing this node"""
         return findTopNode(self.data)
+
+    def getTopConfigSection(self):
+        """
+        _getTopConfigSection_
+
+        Ignore tree structure & fetch the absolute top of the pile
+        ConfigSection containing this node
+
+        """
+        return findTop(self.data)
 
     def nodeIterator(self):
         """

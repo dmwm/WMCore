@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.39 2010/02/02 16:44:56 mnorman Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: File_t.py,v 1.40 2010/02/16 16:38:41 mnorman Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import unittest
 import logging
@@ -1269,11 +1269,11 @@ class FileTest(unittest.TestCase):
 
 
 
-    def testLoadFromDataStructsFile(self):
+    def testDataStructsFile(self):
         """
-        _testLoadFromDataStructsFile_
+        _testDataStructsFile_
 
-        Tests our ability to create a WMBS file from a DataStructs File
+        Tests our ability to create a WMBS file from a DataStructs File and vice versa
         """
 
         myThread = threading.currentThread()
@@ -1307,12 +1307,14 @@ class FileTest(unittest.TestCase):
         self.assertEqual(loadFile['events'], testEvents)
         self.assertEqual(loadFile['checksums'], testCksum)
         self.assertEqual(loadFile['locations'], set([testSE]))
-        self.assertEqual(loadFile['parents'].pop()['lfn'], 'lfn2')
+        #self.assertEqual(loadFile['parents'].pop()['lfn'], 'lfn2')
 
-        run = loadFile['runs'].pop()
-        self.assertEqual(run, testRun)
+        wmFile = loadFile.returnDataStructsFile()
+        self.assertEqual(wmFile == inputFile, True)
 
         return
+
+
     
         
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ MySQL implementation of File.Get
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetByID(DBFormatter):
-    sql = """SELECT id, lfn, size, events, cksum, first_event, last_event, merged
+    sql = """SELECT id, lfn, size, events, first_event, last_event, merged
              FROM wmbs_file_details WHERE id = :fileid"""
 
     def formatOneDict(self, result):
@@ -17,7 +17,6 @@ class GetByID(DBFormatter):
         formattedResult = DBFormatter.formatDict(self, result)[0]
         formattedResult["id"] = int(formattedResult["id"])
         formattedResult["events"] = int(formattedResult["events"])
-        formattedResult["cksum"] = int(formattedResult["cksum"])
         formattedResult["first_event"] = int(formattedResult["first_event"])
         formattedResult["last_event"] = int(formattedResult["last_event"])
         formattedResult["merged"] = bool(int(formattedResult["merged"]))
@@ -48,7 +47,6 @@ class GetByID(DBFormatter):
             tmpDict["id"]          = int(entry["id"])
             tmpDict["lfn"]         = entry["lfn"]
             tmpDict["events"]      = int(entry["events"])
-            tmpDict["cksum"]       = int(entry["cksum"])
             tmpDict["first_event"] = int(entry["first_event"])
             tmpDict["last_event"]  = int(entry["last_event"])
             if "size" in entry.keys():

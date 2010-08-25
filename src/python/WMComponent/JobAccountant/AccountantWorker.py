@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.24 2010/04/14 20:58:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.25 2010/04/23 16:44:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import os
 import threading
@@ -136,7 +136,7 @@ class AccountantWorker:
 
     def didJobSucceed(self, jobReport):
         """
-        _getJobReportStatus_
+        _didJobSucceed_
         
         Get the status of the jobReport.  This will loop through all the steps
         and make sure the status is 'Success'.  If a step does not return
@@ -457,13 +457,6 @@ class AccountantWorker:
         filesetAssoc = []
         mergedOutputFiles = []
         fileList = fwkJobReport.getAllFiles()
-        if not fileList:
-            # Well, then we failed somewhere in getting the files
-            # Ergo: the job should fail
-            self.transaction.rollback()
-            self.transaction.begin()
-            self.handleFailed(jobID = jobID, fwkJobReport = fwkJobReport)
-            return
 
         for fwjrFile in fileList:
             wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
@@ -485,15 +478,11 @@ class AccountantWorker:
             if outputFileset != None:
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
 
-
-
         # Only save once job is done, and we're sure we made it through okay
         self.listOfJobsToSave.append(wmbsJob)
         wmbsJob.save()
 
         return
-
-    
         
     def handleFailed(self, jobID, fwkJobReport):
         """

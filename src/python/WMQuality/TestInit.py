@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.9 2009/06/05 16:47:09 sryu Exp $"
+    "$Id: TestInit.py,v 1.10 2009/07/02 14:25:55 meloam Exp $"
 __version__ = \
-    "$Revision: 1.9 $"
+    "$Revision: 1.10 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -83,7 +83,6 @@ class TestInit:
         modules = {}
         for module in (defaultModules + customModules):
             modules[module] = 'done'
-        self.init.setSchema(modules.keys())
 
     def initializeSchema(self, modules = []):
         """
@@ -137,6 +136,9 @@ class TestInit:
         if myThread.dialect == 'MySQL' and modules == []:
             # call the script we use for cleaning:
             # FIXME: need to be more general
+            if (os.getenv('WMCOREBASE') == None):
+                raise RuntimeError, "WMCOREBASE environment variable undefined"
+            
             command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
             result = commands.getstatusoutput(command)
             for entry in result:

@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.32 2010/06/18 15:12:53 swakef Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.33 2010/07/22 16:57:05 swakef Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import logging
 
@@ -139,7 +139,7 @@ class WMBSHelper:
         as well as run lumi update
         """
 
-        for dbsFile in dbsBlock['Files']:
+        for dbsFile in self.validFiles(dbsBlock['Files']):
             self.topLevelFileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
                                               dbsBlock['StorageElements']))
                     
@@ -243,3 +243,21 @@ class WMBSHelper:
         return wmbsFile
         
 
+    def validFiles(self, files):
+        """Apply run white/black list and return valid files"""
+        runWhiteList = self.topLevelTask.inputRunWhitelist()
+        runBlackList = self.topLevelTask.inputRunBlacklist()
+        results = []
+        for f in files:
+            if runWhiteList or runBlackList:
+                runs = set([x['RunNumber'] for x in f['LumiList']])
+                # apply blacklist
+                runs = runs.difference(runBlackList)
+                # if whitelist only accept listed runs
+                if runWhiteList:
+                    runs = runs.intersection(runWhiteList)
+                # any runs left are ones we will run on, if none ignore file
+                if not runs:
+                    continue
+            results.append(f)
+        return results

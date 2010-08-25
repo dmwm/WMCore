@@ -5,29 +5,17 @@ _ReportEmu_
 Class for creating bogus framework job reports.
 """
 
-__revision__ = "$Id: ReportEmu.py,v 1.6 2010/03/23 20:14:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ReportEmu.py,v 1.7 2010/03/23 20:48:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os.path
 
 from WMCore.Services.UUID import makeUUID 
-from WMCore.FwkJobReport.Report import Report
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 
-def addRunsToFile(fileSection, runs):
-    """
-    _addRunsToFile_
-    
-    Given a list of DataStruct run objects add them to the given file section.
-    """
-    fileSection.section_("runs")
-    
-    for run in runs:
-        setattr(fileSection.runs, str(run.run), tuple(run.lumis))
-        
-    return
-    
+from WMCore.FwkJobReport import Report
+
 class ReportEmu(object):
     """
     _ReportEmu_
@@ -53,10 +41,10 @@ class ReportEmu(object):
         report.addInputSource("PoolSource")
 
         for inputFile in self.job["input_files"]:
-            inputFileSection = report.addInputFile("PoolSource", LFN = inputFile["lfn"],
+            inputFileSection = report.addInputFile("PoolSource", lfn = inputFile["lfn"],
                                                    size = inputFile["size"],
-                                                   TotalEvents = inputFile["events"])
-            addRunsToFile(inputFileSection, inputFile["runs"])
+                                                   events = inputFile["events"])
+            Report.addRunInfoToFile(inputFileSection, inputFile["runs"])
 
         return
 
@@ -103,7 +91,6 @@ class ReportEmu(object):
             f.close()
 
         for outputModuleName in self.step.listOutputModules():
-
             outputModuleSection = self.step.getOutputModule(outputModuleName)
             outputModuleSection.fixedLFN    = False
             outputModuleSection.disableGUID = False
@@ -113,8 +100,9 @@ class ReportEmu(object):
             outputFile = File(lfn = outputLFN, size = outputSize, events = outputEvents,
                               merged = False)
             outputFile.setLocation(self.job["location"])
-            outputFile['PFN'] = "ReportEmuTestFile.txt"
-            outputFile['GUID'] = "ThisIsGUID"
+            outputFile['pfn'] = "ReportEmuTestFile.txt"
+            outputFile['guid'] = "ThisIsGUID"
+            outputFile["checksums"] = {"adler32": "1234", "cksum": "5678"}
             outputFile["dataset"] = {"primaryDataset": outputModuleSection.primaryDataset,
                                      "processedDataset": outputModuleSection.processedDataset,
                                      "dataTier": outputModuleSection.dataTier,
@@ -124,15 +112,12 @@ class ReportEmu(object):
             
             outputFileSection = report.addOutputFile(outputModuleName, outputFile)
             for inputFile in self.job["input_files"]:
-                addRunsToFile(outputFileSection, inputFile["runs"])
+                Report.addRunInfoToFile(outputFileSection, inputFile["runs"])
 
-
-            
-            
         return
         
     def __call__(self):
-        report = Report(self.step.name())
+        report = Report.Report(self.step.name())
         
         report.id = self.job["id"]
         report.task = self.job["task"]

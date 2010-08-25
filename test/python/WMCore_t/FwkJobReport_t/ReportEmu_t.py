@@ -5,8 +5,8 @@ _ReportEmu_t_
 Tests for the JobReport emulator.
 """
 
-__revision__ = "$Id: ReportEmu_t.py,v 1.2 2010/03/09 20:34:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ReportEmu_t.py,v 1.3 2010/03/23 20:48:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 
@@ -36,7 +36,7 @@ class ReportEmuTest(unittest.TestCase):
         self.primaryDataset = "MinimumBias"
 
         arguments = {
-            "OutputTiers" : ["RECO", "ALCA", "AOD"],
+            "OutputTiers" : ["RECO", "ALCARECO"],
             "AcquisitionEra" : self.acquisitionEra,
             "GlobalTag" : "GR09_R_34X_V5::All",
             "LFNCategory" : self.mergedLFNBase,
@@ -124,7 +124,7 @@ class ReportEmuTest(unittest.TestCase):
         assert len(reportInputFiles) == 1, \
                "Error: Wrong number of input files for the job."
         assert reportInputFiles[0]["lfn"] == inputFile["lfn"], \
-               "Error: Input LFNs do not match."
+               "Error: Input LFNs do not match: %s" % reportInputFiles[0]["lfn"]
         assert reportInputFiles[0]["size"] == inputFile["size"], \
                "Error: Input file sizes do not match."
         assert reportInputFiles[0]["events"] == inputFile["events"], \
@@ -148,27 +148,21 @@ class ReportEmuTest(unittest.TestCase):
         assert len(goldenRuns) == 0, \
                "Error: Run information wrong on input file."
 
-        recoOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputRECO")
-        alcaOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputALCA")
-        aodOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputAOD")
-        
+        recoOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputRECORECO")
+        alcaOutputFiles = report.getFilesFromOutputModule("cmsRun1", "outputALCARECORECO")
+
         assert len(recoOutputFiles) == 1, \
                "Error: There should only be one RECO output file."
         assert len(alcaOutputFiles) == 1, \
                "Error: There should only be one ALCA output file."
-        assert len(aodOutputFiles) == 1, \
-               "Error: There should only be one AOD output file."        
 
-        assert recoOutputFiles[0]["ModuleLabel"] == "outputRECO", \
+        assert recoOutputFiles[0]["module_label"] == "outputRECORECO", \
                "Error: RECO file has wrong output module."
-        assert alcaOutputFiles[0]["ModuleLabel"] == "outputALCA", \
+        assert alcaOutputFiles[0]["module_label"] == "outputALCARECORECO", \
                "Error: ALCA file has wrong output module."
-        assert aodOutputFiles[0]["ModuleLabel"] == "outputAOD", \
-               "Error: AOD file has wrong output module."
         
         self.verifyOutputMetaData(recoOutputFiles[0], processingJob)
         self.verifyOutputMetaData(alcaOutputFiles[0], processingJob)
-        self.verifyOutputMetaData(aodOutputFiles[0], processingJob)        
 
         # It seems there's no convention for processed dataset name so we won't
         # verify that here...
@@ -177,18 +171,16 @@ class ReportEmuTest(unittest.TestCase):
                "Error: LFN of RECO file is wrong."
         assert alcaOutputFiles[0]["lfn"].startswith(lfnBase), \
                "Error: LFN of ALCA file is wrong."
-        assert aodOutputFiles[0]["lfn"].startswith(lfnBase), \
-               "Error: LFN of AOD file is wrong."        
 
-        dataTierMap = {"outputRECO": "RECO", "outputALCA": "ALCA", "outputAOD": "AOD"}
-        for outputFile in [recoOutputFiles[0], alcaOutputFiles[0], aodOutputFiles[0]]:
+        dataTierMap = {"outputRECORECO": "RECO", "outputALCARECORECO": "ALCARECO"}
+        for outputFile in [recoOutputFiles[0], alcaOutputFiles[0]]:
             assert outputFile["dataset"]["applicationName"] == "cmsRun", \
                    "Error: Application name is incorrect."
             assert outputFile["dataset"]["primaryDataset"] == self.primaryDataset, \
                    "Error: Primary dataset is incorrect."
             assert outputFile["dataset"]["applicationVersion"] == self.cmsswVersion, \
                    "Error: Framework version is incorrect."
-            assert outputFile["dataset"]["dataTier"] == dataTierMap[outputFile["ModuleLabel"]], \
+            assert outputFile["dataset"]["dataTier"] == dataTierMap[outputFile["module_label"]], \
                    "Error: Data tier is incorrect."
 
         return

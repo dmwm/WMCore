@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.22 2010/02/25 21:51:04 mnorman Exp $"
-__version__  = "$Revision: 1.22 $"
+__revision__ = "$Id: JobFactory.py,v 1.23 2010/03/31 21:35:59 sfoulkes Exp $"
+__version__  = "$Revision: 1.23 $"
 
 
 import logging
@@ -91,7 +91,8 @@ class JobFactory(WMObject):
         Instantiate a new Job onject, apply all the generators to it
         """
         self.currentJob = self.jobInstance(name, files)
-        self.currentJob.task = self.subscription.taskName()
+        self.currentJob["task"] = self.subscription.taskName()
+        self.currentJob["workflow"] = self.subscription.workflowName()        
         for gen in self.generators:
             gen(self.currentJob)
         self.currentGroup.add(self.currentJob)
@@ -115,17 +116,13 @@ class JobFactory(WMObject):
         """
         Bulk commit the JobGroups all at once
         """
-
         self.appendJobGroup()
 
-        if len(self.jobGroups) > 0:
-            self.subscription.bulkCommit(jobGroups = self.jobGroups)
+        if len(self.jobGroups) == 0:
+            return
 
+        self.subscription.bulkCommit(jobGroups = self.jobGroups)
         return
-
-
-
-        
 
     def sortByLocation(self):
         """

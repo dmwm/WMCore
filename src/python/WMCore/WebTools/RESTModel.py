@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.9 2009/07/24 14:19:04 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: RESTModel.py,v 1.10 2009/07/24 14:36:40 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response
@@ -20,23 +20,20 @@ class RESTModel(WebAPI):
     def __init__(self, config = {}):
         WebAPI.__init__(self, config)
         self.methods = {'GET':{
-                               'ping': {'args':[], 
-                                        'kwargs': {},
+                               'ping': {'default_data':1234, 
                                         'call':self.ping,
                                         'version': 1}
                                },
                         'POST':{
-                               'echo': {'args':['default argument'], 
-                                        'kwargs': {'keyword':'defaults'},
-                                        'call':self.echo,
+                               'echo': {'call':self.echo,
                                         'version': 1},
                                }
                          }
         
-    def ping(self, args, kwargs): 
-        return 'hello'
+    def ping(self, verb, args, kwargs): 
+        return 'hello %s' % self.methods[verb][args[0]]['default_data'] 
     
-    def echo(self, args, kwargs): 
+    def echo(self, verb, args, kwargs): 
         return {'echo': {'args': args, 'kwargs':kwargs}}
    
     def handler(self, verb, args=[], kwargs={}):
@@ -44,18 +41,15 @@ class RESTModel(WebAPI):
         Call the appropriate method from self.methods for a given VERB. args are
         URI path elements, the first (arg[0]) is the method name, other elements
         (arg[1:]) are positional arguments to the method. kwargs are query string
-        parameters (e.g. method?thing1=abc&thing2=def).
-          
-        Default arguments and keyword arguments are appended/updated to the data
-        provided by the client.
+        parameters (e.g. method?thing1=abc&thing2=def). All args and kwargs are 
+        passed to the model method, this is so configuration for a given method 
+        can be identified.
         """
         verb = verb.upper()
         if verb in self.methods.keys():
             method = args[0]
-            args = args[1:] + tuple(self.methods[verb][method]['args'])
-            kwargs = kwargs.update(self.methods[verb][method]['kwargs'])
             if method in self.methods[verb].keys():
-                data = self.methods[verb][method]['call'](args, kwargs)
+                data = self.methods[verb][method]['call'](verb, args, kwargs)
                 return data 
             else:
                 data = {"message": "Unsupported method for %s: %s" % (verb, args[0]),

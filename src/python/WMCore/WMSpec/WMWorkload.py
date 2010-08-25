@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.10 2009/11/16 16:24:46 evansde Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WMWorkload.py,v 1.11 2009/12/09 17:04:57 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 
 
@@ -95,6 +95,59 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.request.priority
 
+    def setStartPolicy(self, policyName, **params):
+        """
+        _setStartPolicy_
+
+        Set the Start policy and its parameters
+        """
+        self.data.policies.start.policyName = policyName
+        [ setattr(self.data.policies.start, key, val)
+          for key, val in params.items() ]
+
+    def startPolicy(self):
+        """
+        _startPolicy_
+
+        Get Start Policy name
+        """
+        return getattr(self.data.policies.start, "policyName", None)
+
+    def startPolicyParameters(self):
+        """
+        _startPolicyParameters_
+
+        Get Start Policy parameters
+        """
+        datadict = getattr(self.data.policies, "start")
+        return datadict.dictionary_()
+
+    def setEndPolicy(self, policyName, **params):
+        """
+        _setEndPolicy_
+
+        Set the End policy and its parameters
+        """
+        self.data.policies.end.policyName = policyName
+        [ setattr(self.data.policies.end, key, val)
+          for key, val in params.items() ]
+
+    def endPolicy(self):
+        """
+        _endPolicy_
+
+        Get End Policy name
+        """
+        return getattr(self.data.policies.end, "policyName", None)
+
+    def endPolicyParameters(self):
+        """
+        _startPolicyParameters_
+
+        Get Start Policy parameters
+        """
+        datadict = getattr(self.data.policies, "end")
+        return datadict.dictionary_()
 
     def getTask(self, taskName):
         """

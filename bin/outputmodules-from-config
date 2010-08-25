@@ -9,9 +9,9 @@ import sys
 import tempfile
 import os
 import urllib
+import imp
 
 from WMCore.Services.Requests import JSONRequests
-from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
 
 def setupCMSSWEnv(cmsPath, scramArch, frameworkVersion):
     """
@@ -76,8 +76,9 @@ def outputModulesFromConfig(configHandle):
     Go through all the output modules in a config and extract the meta data.
     """
     outputModules = {}
-    for outputModuleName in configHandle.process.outputModules.keys():
-        outputModule = getattr(configHandle.process, outputModuleName)
+    for outputModuleName in configHandle.outputModules.keys():
+        outputModule = getattr(configHandle, outputModuleName)
+        outputModules[outputModuleName] = {}
         if hasattr(outputModule, "dataset"):
             outputModules[outputModuleName] = {"dataTier": str(getattr(outputModule.dataset, "dataTier", None).value()),
                                                "filterName": str(getattr(outputModule.dataset, "filterName", None).value())}
@@ -91,22 +92,25 @@ if __name__ == "__main__":
    config = jsonHandler.decode(encodedConfig)
 
    setupCMSSWEnv(config["cmsPath"], config["scramArch"],
-                        config["frameworkVersion"])
+                 config["frameworkVersion"])
 
    if config.get("configUrl", None):
        tempDir = tempfile.mkdtemp()
        configPath = os.path.join(tempDir, "cmsswConfig.py")
-       configString = urllib.urlopen(newConfig).read(-1)
-       configFile = open(configPath)
+       compConfigPath = os.path.join(tempDir, "cmsswConfig.pyc")
+       configString = urllib.urlopen(config["configUrl"]).read(-1)
+       configFile = open(configPath, "w")
        configFile.write(configString)
        configFile.close()
-       process = loadConfig(configPath)
+       process = loadConfig(configPath).process
        os.remove(configPath)
+       os.remove(compConfigPath)
        os.rmdir(tempDir)
    else:
+       from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
        mySetup = SetupCMSSWPset()
-       mySetup.creatProcess(config["scenarioName"], config["scenarioFunc"],
-                            config["scenarioArgs"])
+       mySetup.createProcess(config["scenarioName"], config["scenarioFunc"],
+                             config["scenarioArgs"])
        process = mySetup.process
 
    outputModules = outputModulesFromConfig(process)

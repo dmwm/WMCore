@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.126 2010/07/29 21:39:19 sryu Exp $"
-__version__ = "$Revision: 1.126 $"
+__revision__ = "$Id: WorkQueue.py,v 1.127 2010/07/30 09:49:43 swakef Exp $"
+__version__ = "$Revision: 1.127 $"
 
 
 import time
@@ -166,7 +166,8 @@ class WorkQueue(WorkQueueBase):
         self.SiteDB = SiteDB()
 
         if self.params['Teams'] in types.StringTypes:
-            self.params['Teams'] = self.params['Teams'].split(',')
+            self.params['Teams'] = [x.strip() for x in \
+                                    self.params['Teams'].split(',')]
         #only import WMBSHelper when it needed
 #        if self.params['PopulateFilesets']:
 #            from WMCore.WMRuntime.SandboxCreator import SandboxCreator

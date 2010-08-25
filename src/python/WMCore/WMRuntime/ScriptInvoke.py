@@ -16,6 +16,7 @@ import os
 import sys
 
 from WMCore.WMRuntime.ScriptFactory import getScript
+import WMCore.WMRuntime.Bootstrap as Bootstrap
 
 class ScriptInvoke:
     """
@@ -27,11 +28,14 @@ class ScriptInvoke:
 
     """
     def __init__(self, stepModule, scriptModule):
-        self.step = stepModule
+        self.stepModule = stepModule
         self.module = scriptModule
         self.exitCode = 0
         self.stepSpace = None
         self.script = None
+        self.step = None
+        self.task = None
+        self.job = None
 
     def boot(self):
         """
@@ -41,10 +45,26 @@ class ScriptInvoke:
         Get an instance of the Script from the Script Factory
 
         """
-        self.stepSpace = __import__(self.step,
-                                    globals(), locals(), ['stepSpace'], -1)
+        self.job = Bootstrap.loadJobDefinition()
+        self.task = Bootstrap.loadTask(self.job)
+        
+        
+        stepSpaceMod = __import__(self.stepModule,
+                                  globals(), locals(), ['stepSpace'], -1)
+
+        self.stepSpace = stepSpaceMod.stepSpace
+
+        self.step = self.task.getStep(self.stepSpace.stepName)
+        
+        
+        
         self.script = getScript(scriptModule)
+        self.script.task = self.task
+        self.script.step = self.step
+        self.script.job = self.job
         self.script.stepSpace = self.stepSpace
+        
+
 
     def invoke(self):
         """

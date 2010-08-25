@@ -28,7 +28,7 @@ class DBSReader:
         args = { "url" : url, "level" : 'ERROR'}
         args.update(contact)
         try:
-         self.dbs = DbsApi(args)
+            self.dbs = DbsApi(args)
         except DbsException, ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
@@ -43,7 +43,7 @@ class DBSReader:
             dlsType = 'DLS_TYPE_DBS'
             dlsUrl = url
         try:
-            self.dls = dlsClient.getDlsApi(dls_type = dlsType, dls_endpoint = dlsUrl)
+            self.dls = dlsClient.getDlsApi(dls_type = dlsType, dls_endpoint = dlsUrl, version = args['version'])
         except DlsApiError, ex:
             msg = "Error in DBSReader with DlsApi\n"
             msg += "%s\n" % str(ex)

@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.7 2009/10/21 15:06:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.8 2009/10/28 20:33:09 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import logging
 import os.path
@@ -104,7 +104,9 @@ class JobAccountantTest(unittest.TestCase):
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60
         config.JobAccountant.workerThreads = workerThreads
-        
+        config.JobAccountant.componentDir = os.path.join(os.getcwd(), 'Components')
+        config.JobAccountant.logLevel = 'SQLDEBUG'
+
         return config
 
     def setupDBForJobFailure(self, jobName, fwjrName):
@@ -156,10 +158,11 @@ class JobAccountantTest(unittest.TestCase):
         should be executing, the outcome should be "fail", the retry count
         should be 1 and all the input files should be marked as failed.
         """
+
         testJob = Job(name = jobName)
         testJob.load()
 
-        assert testJob["state"] == "executing", \
+        assert testJob["state"] == "jobfailed", \
                "Error: test job in wrong state: %s" % testJob["state"]
         assert testJob["retry_count"] == 1, \
                "Error: test job has wrong retry count: %s" % testJob["retry_count"]
@@ -180,6 +183,8 @@ class JobAccountantTest(unittest.TestCase):
         Run a failed job that has a vaid job report through the accountant.
         Verify that it functions correctly.
         """
+
+
         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
                                   fwjrName = "SkimFailure.xml")
         config = self.createConfig(workerThreads = 1)
@@ -198,6 +203,7 @@ class JobAccountantTest(unittest.TestCase):
         Run an empty framework job report through the accountant.  Verify that
         it functions correctly.
         """
+
         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
                                   fwjrName = "EmptyJobReport.xml")
         config = self.createConfig(workerThreads = 1)
@@ -216,6 +222,9 @@ class JobAccountantTest(unittest.TestCase):
         Run a framework job report that has invalid XML through the accountant.
         Verify that it functions correctly.
         """
+
+        #1
+
         self.setupDBForJobFailure(jobName = "T0Merge-Run1-Mu-AOD-722",
                                   fwjrName = "MergeSuccessBadXML.xml")
         config = self.createConfig(workerThreads = 1)
@@ -225,6 +234,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.pollForJobs()
 
         self.verifyJobFailure("T0Merge-Run1-Mu-AOD-722")
+
         return
 
     def setupDBForSplitJobSuccess(self):
@@ -323,7 +333,7 @@ class JobAccountantTest(unittest.TestCase):
         testJob = Job(id = jobID)
         testJob.load()
 
-        assert testJob["state"] == "closeout", \
+        assert testJob["state"] == "success", \
                "Error: test job in wrong state: %s" % testJob["state"]
         assert testJob["retry_count"] == 0, \
                "Error: test job has wrong retry count: %s" % testJob["retry_count"]
@@ -513,6 +523,7 @@ class JobAccountantTest(unittest.TestCase):
         mainly to verify that the input for a series of split jobs is not marked
         as complete until all the split jobs are complete.
         """
+
         self.setupDBForSplitJobSuccess()
         config = self.createConfig(workerThreads = 1)
 
@@ -594,6 +605,7 @@ class JobAccountantTest(unittest.TestCase):
         """
         _setupDBForMergedSkimSuccess_
 
+
         Initialize the database so that we can test the result of a skim job
         that produced merged output.  This needs to setup merge workflows and
         filesset to hold the "merged" files.
@@ -673,6 +685,7 @@ class JobAccountantTest(unittest.TestCase):
         Test how the accounant handles a skim that produces merged out.  Verify
         that merged files are inserted into the correct output filesets.
         """
+
         self.setupDBForMergedSkimSuccess()
         config = self.createConfig(workerThreads = 1)
 
@@ -824,6 +837,7 @@ class JobAccountantTest(unittest.TestCase):
 
         Test the accountant's handling of a merge job.
         """
+
         self.setupDBForMergeSuccess()
         config = self.createConfig(workerThreads = 1)
 
@@ -938,7 +952,6 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
-        logging.info("One process load test:")
 
         logging.info("  Filling DB...")
         self.setupDBForLoadTest()
@@ -978,6 +991,7 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using two worker processes.
         """
+
         logging.info("Two process load test:")
 
         logging.info("  Filling DB...")
@@ -1018,6 +1032,7 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using four workers processes.
         """
+
         logging.info("Four process load test:")
 
         logging.info("  Filling DB...")
@@ -1058,6 +1073,7 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using eight workers processes.
         """
+
         logging.info("Eight process load test:")
 
         logging.info("  Filling DB...")

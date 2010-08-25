@@ -16,6 +16,7 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 # // Set up the basic workload task and step structure
 #//
 workload = newWorkload("MultiTaskProduction")
+workload.setOwner("WMTest")
 workload.setStartPolicy('MonteCarlo')
 workload.setEndPolicy('SingleShot')
 

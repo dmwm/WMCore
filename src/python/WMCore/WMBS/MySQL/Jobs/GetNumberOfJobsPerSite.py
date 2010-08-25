@@ -6,8 +6,8 @@ MySQL implementation of Jobs.GetNumberOfJobsPerSite
 """
 
 __all__ = []
-__revision__ = "$Id: GetNumberOfJobsPerSite.py,v 1.1 2009/09/10 15:41:07 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetNumberOfJobsPerSite.py,v 1.2 2010/01/22 20:45:04 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 
@@ -21,7 +21,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
     database.
     """
 
-    def buildSQL(self, states):
+    def buildSQL(self, states, type):
         """
         _buildSQL_
 
@@ -29,10 +29,25 @@ class GetNumberOfJobsPerSite(DBFormatter):
         """
         
         
-        sql = """SELECT count(*) FROM wmbs_job
+        baseSQL = """SELECT count(*) FROM wmbs_job
               WHERE location = (SELECT ID FROM wmbs_location WHERE site_name = :location)
               AND state IN (SELECT ID FROM wmbs_job_state js WHERE js.name IN (
         """
+
+        typeSQL = """SELECT count(*) FROM wmbs_job
+                       INNER JOIN wmbs_jobgroup ON wmbs_job.jobgroup = wmbs_jobgroup.id
+                       INNER JOIN wmbs_subscription ON wmbs_jobgroup.subscription = wmbs_subscription.id
+                       INNER JOIN wmbs_job_state ON wmbs_job.state = wmbs_job_state.id
+                       INNER JOIN wmbs_location ON wmbs_job.location = wmbs_location.id
+                       INNER JOIN wmbs_sub_types ON wmbs_subscription.subtype = wmbs_sub_types.id
+                       WHERE wmbs_location.site_name = :location
+                       AND wmbs_sub_types.name = :type
+                       AND wmbs_job_state.name IN ("""
+
+        if type:
+            sql = typeSQL
+        else:
+            sql = baseSQL
 
         states = list(states)
         
@@ -42,7 +57,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
                 sql += ", "
             sql += ":state%i" %(count)
             count += 1
-        sql += "))"
+        sql += ")"
 
         return sql
             
@@ -59,7 +74,7 @@ class GetNumberOfJobsPerSite(DBFormatter):
             return results[0].fetchall()[0]
 
 
-    def buildBinds(self, location, states):
+    def buildBinds(self, location, states, type):
         """
 
         _buildBinds_
@@ -76,11 +91,14 @@ class GetNumberOfJobsPerSite(DBFormatter):
             binds["state%i" %(count)] = state
             count += 1
 
+        if type:
+            binds['type'] = type
+
 
         return binds
 
         
-    def execute(self, location, states, conn = None, transaction = False):
+    def execute(self, location, states, type = None, conn = None, transaction = False):
         """
         _execute_
 
@@ -88,9 +106,9 @@ class GetNumberOfJobsPerSite(DBFormatter):
         the result.
         """
 
-        sql = self.buildSQL(states)
+        sql = self.buildSQL(states, type)
 
-        binds = self.buildBinds(location, states)
+        binds = self.buildBinds(location, states, type)
 
         #print "In Jobs.GetNumberOfJobsPerSite"
         #print sql

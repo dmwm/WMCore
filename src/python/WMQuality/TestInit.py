@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.59 2010/04/21 19:04:11 meloam Exp $"
+    "$Id: TestInit.py,v 1.60 2010/06/16 18:21:55 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.59 $"
+    "$Revision: 1.60 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -46,6 +46,27 @@ def deleteDatabaseAfterEveryTest( areYouSerious ):
         #"I'm glad you weren't serious"
         print "We are not going to trash databases after every test"
         trashDatabases = False
+
+def requiresPython26(testMethod, *args, **kwargs):
+    """
+    _requiresPython26_
+
+    A decorator for unit tests that will skip a test if a python version less
+    than 2.6 is being used.
+    """
+    def skipTest(*args, **kwargs):
+        print "SKIPPING"
+        #raise nose.SkipTest
+        
+    import sys
+
+    majorVersion = sys.version_info[0]
+    minorVersion = sys.version_info[1]
+
+    if (majorVersion == 2 and minorVersion >= 6) or majorVersion > 2:
+        return testMethod
+
+    return skipTest
         
 class TestInit:
     """

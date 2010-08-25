@@ -13,7 +13,7 @@ T0/DAS/Database/Oracle/RunsByStates.py
 """
 
 __all__ = []
-__revision__ = "$Id: ElementsById.py,v 1.1 2010/02/06 01:23:22 maxa Exp $"
+__revision__ = "$Id: ElementsById.py,v 1.1 2010/06/03 15:48:06 sryu Exp $"
 __version__ = "$Revision: 1.1 $"
 
 from WMCore.Database.DBFormatter import DBFormatter

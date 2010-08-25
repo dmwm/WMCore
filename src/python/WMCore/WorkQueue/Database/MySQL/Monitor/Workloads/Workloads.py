@@ -7,7 +7,7 @@ DAO object for WorkQueue
 """
 
 __all__ = []
-__revision__ = "$Id: Workloads.py,v 1.1 2010/03/25 16:37:20 maxa Exp $"
+__revision__ = "$Id: Workloads.py,v 1.1 2010/06/03 15:48:06 sryu Exp $"
 __version__ = "$Revision: 1.1 $"
 
 

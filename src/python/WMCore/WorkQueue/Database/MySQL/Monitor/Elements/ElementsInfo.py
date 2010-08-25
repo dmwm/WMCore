@@ -9,14 +9,14 @@ WMCore/WorkQueue/Database/CreateWorkQueueBase.py
 """
 
 __all__ = []
-__revision__ = "$Id: ElementsInfoWithLimit.py,v 1.2 2010/06/02 21:34:54 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ElementsInfo.py,v 1.1 2010/06/03 15:48:06 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
 
-class ElementsInfoWithLimit(DBFormatter):
+class ElementsInfo(DBFormatter):
     """
     Use pagination (and synchronize with YUI table) 
     """
@@ -28,10 +28,7 @@ class ElementsInfoWithLimit(DBFormatter):
              INNER JOIN wq_wmspec ws ON (ws.id = wt.wmspec_id)
              LEFT OUTER JOIN wq_data wd ON (wd.id = we.input_id)
              LEFT OUTER JOIN wq_queues wq ON (wq.id = we.child_queue)
-             ORDER BY we.id
-             LIMIT :startIndex, :results """
-    
-    sqlCount = "SELECT count(*) FROM wq_element"
+             ORDER BY we.id"""
              
     def convertStatus(self, data):
         """
@@ -41,14 +38,10 @@ class ElementsInfoWithLimit(DBFormatter):
         for item in data:
             item.update(status = States[item['status']])
 
-    def execute(self, startIndex, results, conn = None, transaction = False):
-        binds = {'startIndex': startIndex, 'results': results}
-        results = self.dbi.processData(self.sql, binds, conn = conn,
+    def execute(self, conn = None, transaction = False):
+        results = self.dbi.processData(self.sql, conn = conn,
                                        transaction = transaction)
         
-        countResult = self.dbi.processData(self.sqlCount, conn = conn,
-                                       transaction = transaction)
-        totalCount = self.formatOne(countResult)
         formResults = self.formatDict(results) 
         self.convertStatus(formResults)
-        return {'totalRecords': totalCount, 'data': formResults}
+        return formResults

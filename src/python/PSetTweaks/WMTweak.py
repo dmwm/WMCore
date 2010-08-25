@@ -98,6 +98,10 @@ _TweakParams = [
 
     ]
 
+#  //
+# // Standard util to pad a run/job number to make an LFN Group
+#//
+lfnGroup = lambda j : str(j.get('counter', 0)/1000).zfill(4)
 
 def hasParameter(pset, param, nopop = False):
     """
@@ -395,6 +399,32 @@ def makeJobTweak(job):
 
     return result
 
+
+
+def makeOutputTweak(outMod, job):
+    """
+    _makeOutputTweak_
+
+    Make a PSetTweak for the output module and job instance provided
+
+    """
+    result = PSetTweak()
+    # output filenames
+    modName = getattr(outMod, "_internal_name")
+    fileName = "%s.root" % modName
+
+    result.addParameter("process.%s.fileName" % modName, fileName)
+
+    lfnBase = getattr(outMod, "lfnBase", None)
+    if lfnBase != None:
+        lfn = "%s/%s/%s.root" % (lfnBase, lfnGroup(job), modName)
+        result.addParameter("process.%s.logicalFileName" % modName, lfn)
+    
+
+    #TODO: Nice standard way to meddle with the other parameters in the
+    #      output module based on the settings in the section
+    
+    return result
 
 
 

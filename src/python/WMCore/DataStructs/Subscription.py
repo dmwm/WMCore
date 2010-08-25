@@ -8,8 +8,8 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.23 2009/03/18 13:22:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Subscription.py,v 1.24 2009/05/01 19:40:19 sryu Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import copy
 from sets import Set
@@ -125,14 +125,15 @@ class Subscription(Pickleable, dict):
         Return a Set of File objects that are associated with the subscription
         and have a particular status.  
         """
-        if status == 'AvailableFiles':
+        status = status.title()
+        if status == 'Available':
             return self.available.getFiles(type='set') - \
             (self.acquiredFiles() | self.completedFiles() | self.failedFiles())
-        elif status == 'AcquiredFiles':
+        elif status == 'Acquired':
             return self.acquired.getFiles(type='set')
-        elif status == 'CompletedFiles':
+        elif status == 'Completed':
             return self.completed.getFiles(type='set')
-        elif status == 'FailedFiles':
+        elif status == 'Failed':
             return self.failed.getFiles(type='set')
     
     
@@ -162,7 +163,7 @@ class Subscription(Pickleable, dict):
                     magicfiles.add(f)
             return magicfiles
 
-        files = self.filesOfStatus(status = "AvailableFiles")
+        files = self.filesOfStatus(status = "Available")
 
         if len(self['whitelist']) > 0:
             # Return files at white listed sites
@@ -177,16 +178,16 @@ class Subscription(Pickleable, dict):
         """
         Set of files marked as acquired.
         """
-        return self.filesOfStatus(status = "AcquiredFiles")
+        return self.filesOfStatus(status = "Acquired")
         
     def completedFiles(self):
         """
         Set of files marked as completed.
         """
-        return self.filesOfStatus(status = "CompletedFiles")
+        return self.filesOfStatus(status = "Completed")
     
     def failedFiles(self):
         """
         Set of files marked as failed. 
         """
-        return self.filesOfStatus(status = "FailedFiles")
+        return self.filesOfStatus(status = "Failed")

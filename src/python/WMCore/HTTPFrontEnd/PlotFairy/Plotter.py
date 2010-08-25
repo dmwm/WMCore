@@ -5,12 +5,9 @@ from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.Services.Requests import JSONRequests
 from WMCore.WMFactory import WMFactory
 
-from matplotlib.pyplot import figure
-import matplotlib.cm as cm
-from matplotlib.patches import Rectangle
 from cherrypy import request
-import numpy as np
 import urllib
+
 try:
     # Python 2.6
     import json
@@ -35,15 +32,17 @@ class Plotter(RESTModel):
                                          'call':self.plot,
                                          'args': ['type', 'data', 'url'],
                                          'expires': 300}}
-        self.factory = WMFactory('WMCore.HTTPFrontEnd.PlotFairy.Plots')
+        self.factory = WMFactory('plot_fairy',
+                                 'WMCore.HTTPFrontEnd.PlotFairy.Plots')
         
     def plot(self, *args, **kwargs):
-        input = self.sanitise_input(args, kwargs)
+        input = self.sanitise_input(*args, **kwargs)
         if not input['data']:
             # We have a URL for some json - we hope!
             jr = JSONRequests(input['url'])
             input['data'] = jr.get()
-        plot = self.factory(input['type'])
+        plot = self.factory.loadObject(input['type'])
+        
         return {'figure': plot(input['data'])}
             
     def validate_input(self, input, verb, method):
@@ -69,7 +68,5 @@ class Plotter(RESTModel):
         assert 'type' in input.keys(), \
                 "no type provided - what kind of plot do you want? " +\
                 "Choose one of %s" % self.plot_types.keys()
-        assert input['type'] in self.plot_types.keys(), \
-                "the plot you chose (%s) is not in the supported types (%s)" %\
-                        (input['type'],self.plot_types.keys()) 
+         
         return input

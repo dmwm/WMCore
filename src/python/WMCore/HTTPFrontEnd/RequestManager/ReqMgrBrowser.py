@@ -68,10 +68,13 @@ class ReqMgrBrowser(TemplatedPage):
                 docId = parts[1]
         except:
             pass
+        d = helper.data.request.schema.dictionary_()
+        d['RequestWorkflow'] = request['RequestWorkflow']
+        self.addHtmlLinks(d)
         assignments= self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0]
         adminHtml = self.statusMenu(requestName, request['RequestStatus']) \
                   + self.priorityMenu(requestName, request['RequestPriority'])
-        return self.templatepage("Request", requestSchema=request, 
+        return self.templatepage("Request", requestSchema=d,
                                 workloadDir = self.workloadDir, 
                                 docId=docId, assignments=assignments,
                                 adminHtml = adminHtml,
@@ -101,6 +104,16 @@ class ReqMgrBrowser(TemplatedPage):
         return str(helper.data).replace('\n', '<br>')
     showWorkload.exposed = True
  
+    def addHtmlLinks(self, d):
+        for key, value in d.iteritems():
+            if isinstance(value, str) and value.startswith('http'):
+                target = value
+                # assume CVS browsers need extra tags
+                if 'cvs' in target:
+                    target += '&view=markup'
+                d[key] = '<a href="%s">%s</a>' % (target, value)
+        print d
+
     def remakeWorkload(self, requestName):
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
         # Should really get by RequestType

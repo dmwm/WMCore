@@ -24,7 +24,7 @@ import WMCore.Database.CMSCouch as CMSCouch
 
 class testJSONRequests(unittest.TestCase):
     def setUp(self):
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.request = Requests.JSONRequests()
@@ -87,7 +87,7 @@ class testJSONRequests(unittest.TestCase):
 #        """
 #
 #        self.transitions = Transitions()
-#        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+#        self.testInit = TestInit(__file__)
 #        self.testInit.setLogging()
 #        self.testInit.setDatabaseConnection()
 #    

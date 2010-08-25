@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.10 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: MsgService_t.py,v 1.11 2009/10/13 23:06:09 meloam Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import commands
 import unittest
@@ -45,7 +45,7 @@ class MsgServiceTest(unittest.TestCase):
     def setUp(self):
         "make a logger instance and create tables"
        
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema()

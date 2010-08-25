@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.1 2009/08/06 16:44:53 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.2 2009/10/13 23:06:10 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
@@ -39,7 +39,7 @@ class EventBasedTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

@@ -6,8 +6,8 @@ Unit tests for the DBInterface class
 
 """
 
-__revision__ = "$Id: DBCore_t.py,v 1.2 2009/06/05 18:33:10 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBCore_t.py,v 1.3 2009/10/13 23:06:09 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import unittest
@@ -43,7 +43,7 @@ class DBCoreTest(unittest.TestCase):
         #I might want to remove that dependency later.
         # -mnorman
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

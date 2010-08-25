@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.2 2009/10/13 21:42:38 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.3 2009/10/13 23:06:12 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import logging
@@ -46,7 +46,7 @@ class JobArchiverTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()

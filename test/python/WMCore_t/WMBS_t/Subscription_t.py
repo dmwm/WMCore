@@ -28,7 +28,7 @@ class SubscriptionTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also, create some dummy locations.
         """
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

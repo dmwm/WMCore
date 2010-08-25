@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.6 2009/10/13 22:42:57 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.7 2009/10/13 23:06:10 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from sets import Set
 import unittest
@@ -43,7 +43,7 @@ class EventBasedTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

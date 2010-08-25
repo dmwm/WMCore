@@ -5,8 +5,8 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-__revision__ = "$Id: SplitFileBased_t.py,v 1.3 2009/10/13 22:42:57 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SplitFileBased_t.py,v 1.4 2009/10/13 23:06:10 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -41,7 +41,7 @@ class SplitFileBasedTest(unittest.TestCase):
 
         Create database connection and load up the WMBS schema.
         """
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

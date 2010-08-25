@@ -7,8 +7,8 @@ Unit tests for ResourceControl.
 
 """
 
-__revision__ = "$Id: ResourceControl_t.py,v 1.1 2009/10/05 19:57:08 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ResourceControl_t.py,v 1.2 2009/10/13 23:06:11 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import threading
@@ -35,7 +35,7 @@ class ResourceControlTest(unittest.TestCase):
         myThread.dialect = os.getenv("DIALECT")
         myThread.transaction = None
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()

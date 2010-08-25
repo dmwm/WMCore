@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.5 2009/10/13 20:57:14 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.6 2009/10/13 23:06:10 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -31,7 +31,7 @@ class FileTest(unittest.TestCase):
         DBSBuffer tables.  Also add some dummy locations.
         """
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],

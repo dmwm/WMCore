@@ -5,8 +5,8 @@ _EndOfRun_t_
 End of run splitting test
 """
 
-__revision__ = "$Id: EndOfRun_t.py,v 1.2 2009/10/13 22:42:57 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: EndOfRun_t.py,v 1.3 2009/10/13 23:06:10 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -44,7 +44,7 @@ class EndOfRunTest(unittest.TestCase):
 
 
         
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

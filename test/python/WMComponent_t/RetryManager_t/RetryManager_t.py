@@ -4,8 +4,8 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.2 2009/10/13 22:04:43 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.3 2009/10/13 23:06:13 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "mnorman@fnal.gov"
 
 import os
@@ -46,7 +46,7 @@ class RetryManagerTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()

@@ -5,8 +5,8 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-__revision__ = "$Id: Periodic_t.py,v 1.4 2009/10/13 22:42:57 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Periodic_t.py,v 1.5 2009/10/13 23:06:10 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 import unittest
@@ -40,7 +40,7 @@ class PeriodicTest(unittest.TestCase):
 
         Create a single subscription with one file.
         """
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

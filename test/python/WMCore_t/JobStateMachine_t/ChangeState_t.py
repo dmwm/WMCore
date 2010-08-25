@@ -34,7 +34,7 @@ class TestChangeState(unittest.TestCase):
 
         """
         self.transitions = Transitions()
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 

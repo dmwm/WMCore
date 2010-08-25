@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.30 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Job_t.py,v 1.31 2009/10/13 23:06:11 meloam Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import unittest
 import logging
@@ -48,7 +48,7 @@ class JobTest(unittest.TestCase):
         """
 
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

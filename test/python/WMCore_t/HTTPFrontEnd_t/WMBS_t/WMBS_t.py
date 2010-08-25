@@ -37,7 +37,7 @@ class WMBSServiceTest(unittest.TestCase):
         WMCORE/src/python/WMCore/WebTools/Root.py --ini=WMCORE/src/python/WMCore/HTTPFrontEnd/WMBSDefaultConfig.py
         """
         self.server_url = 'localhost:8080'
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

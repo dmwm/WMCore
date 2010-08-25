@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.28 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: File_t.py,v 1.29 2009/10/13 23:06:11 meloam Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import unittest
 import logging
@@ -34,7 +34,7 @@ class FileTest(unittest.TestCase):
         WMBS tables.  Also add some dummy locations.
         """
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],

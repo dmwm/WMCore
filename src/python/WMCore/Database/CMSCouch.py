@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.62 2010/05/18 19:30:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.62 $"
+__revision__ = "$Id: CMSCouch.py,v 1.63 2010/06/10 18:24:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.63 $"
 
 import urllib
 import datetime
@@ -450,7 +450,7 @@ class CouchError(Exception):
     
 class CouchBadRequestError(CouchError):
     def __init__(self, reason, data, result):
-        CouchError.__init__(reason, data, result)
+        CouchError.__init__(self, reason, data, result)
         self.type = "CouchBadRequestError"
                 
 class CouchNotFoundError(CouchError):

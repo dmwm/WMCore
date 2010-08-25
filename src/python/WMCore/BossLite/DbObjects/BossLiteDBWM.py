@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.7 2010/05/14 11:24:06 spigafi Exp $"
-__revision__ = "$Revision: 1.7 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.8 2010/05/17 13:01:15 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 from copy import deepcopy
 import threading
@@ -939,7 +939,7 @@ class BossLiteDBWM(BossLiteDBInterface):
                                     conn = self.engine.getDBConn(),
                                     transaction = self.existingTransaction)
             
-            return NotImplementedError
+            return result
         
         elif type(obj) == RunningJob :
 

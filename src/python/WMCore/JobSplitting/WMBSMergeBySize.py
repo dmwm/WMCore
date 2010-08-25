@@ -6,12 +6,13 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.8 2010/03/08 17:06:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.9 2010/03/11 21:11:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 
 from WMCore.WMBS.File import File
+from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -63,7 +64,9 @@ def sortedFilesFromMergeUnits(mergeUnits):
         mergeUnit["files"].sort(fileCompare)
 
         for file in mergeUnit["files"]:
-            newFile = File(id = file["file_id"], lfn = file["file_lfn"])
+            newFile = File(id = file["file_id"], lfn = file["file_lfn"],
+                           events = file["file_events"])
+            newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             sortedFiles.append(newFile)
 
     return sortedFiles
@@ -135,7 +138,6 @@ class WMBSMergeBySize(JobFactory):
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
         for file in sortedFiles:
-            file.loadData()
             self.currentJob.addFile(file)
     
     def defineMergeJobs(self, mergeUnits):

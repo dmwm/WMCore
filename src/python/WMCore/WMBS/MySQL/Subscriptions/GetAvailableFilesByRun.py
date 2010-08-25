@@ -10,8 +10,8 @@ black/white lists.
 """
 
 __all__ = []
-__revision__ = "$Id: GetAvailableFilesByRun.py,v 1.1 2009/05/01 19:41:31 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetAvailableFilesByRun.py,v 1.2 2009/05/26 15:39:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -40,9 +40,9 @@ class GetAvailableFilesByRun(DBFormatter):
                   INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset
                   INNER JOIN wmbs_file_runlumi_map wm ON (wm.file = wff.file) 
                   INNER JOIN wmbs_file_location wfl ON wfl.file = wff.file
-                  LEFT OUTER JOIN  wmbs_sub_files_acquired wa ON wa.file = wff.file
-                  LEFT OUTER JOIN  wmbs_sub_files_failed wf ON wf.file = wff.file
-                  LEFT OUTER JOIN  wmbs_sub_files_complete wc ON wc.file = wff.file
+                  LEFT OUTER JOIN  wmbs_sub_files_acquired wa ON ( wa.file = wff.file AND wa.subscription = ws.id )
+                  LEFT OUTER JOIN  wmbs_sub_files_failed wf ON ( wf.file = wff.file AND wf.subscription = ws.id )
+                  LEFT OUTER JOIN  wmbs_sub_files_complete wc ON ( wc.file = wff.file AND wc.subscription = ws.id )
                   WHERE ws.id=:subscription AND wm.run = :run AND wa.file is NULL 
                         AND wf.file is NULL AND wc.file is NULL    
               """

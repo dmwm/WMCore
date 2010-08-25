@@ -1,11 +1,7 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.19 2010/04/13 21:20:21 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
-
-#setup emulator for test, this needs to be at top of the file
-from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
-ConfigFile = emulatorSetup(dbs=True)
+__revision__ = "$Id: JobCreator_t.py,v 1.20 2010/04/15 21:07:37 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import unittest
 import random
@@ -50,16 +46,6 @@ class JobCreatorTest(unittest.TestCase):
     """
 
     sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN']
-
-    def setEmulator(self):
-        """
-        Don't use real dbs, phedex or requestMgr.
-        Use emulator. - since this is not really testing those libraries.
-        """
-        self.phedexFlag = True
-        self.dbsFlag = True
-        self.requestMgrFlag = True
-        self.siteDBFlag = True
 		
     def setUp(self):
         """

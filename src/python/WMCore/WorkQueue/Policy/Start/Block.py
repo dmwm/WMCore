@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: Block.py,v 1.18 2010/08/13 22:01:37 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Block.py,v 1.19 2010/08/13 22:15:34 sryu Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -17,7 +17,8 @@ class Block(StartPolicyInterface):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
-
+        self.lumiType = "NumberOfLumis"
+        
     def split(self):
         """Apply policy to spec"""
         for block in self.validBlocks(self.initialTask, self.dbs()):
@@ -27,7 +28,12 @@ class Block(StartPolicyInterface):
                 if not parents:
                     msg = "Parentage required but no parents found for %s"
                     raise RuntimeError, msg % block['Name']
-
+            
+            #TODO: use this when dbs api is supported
+            #if self.args['SliceType'] == self.lumiType:
+                #blockSummary = dbs.getDBSSummary(block = block["Name"])
+                #block[self.lumiType] = blockSummary[self.lumiType]
+                
             self.newQueueElement(Data = block['Name'],
                                  ParentData = parents,
                                  Jobs = ceil(float(block[self.args['SliceType']]) /

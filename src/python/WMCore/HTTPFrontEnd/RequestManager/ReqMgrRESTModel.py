@@ -66,6 +66,10 @@ class ReqMgrRESTModel(RESTModel):
                                   'team' :  {'call':self.deleteTeam, 'args':['team']}
                                  }
                        }
+        # stop caching for all GET', PUT, POST, and DELETEs
+        #for call in ['PUT', 'POST', 'DELETE']:
+        #   for method, paramDict in self.methods[call].iteritems():
+        #       paramDict['expires'] = 0
 
     def initThread(self):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
@@ -273,9 +277,12 @@ class ReqMgrRESTModel(RESTModel):
     def putUser(self, userName, email, dnName=None):
         """ Needs to be passed an e-mail address, maybe dnName """
         self.initThread()
+        print "PUTUSER"
         if Registration.isRegistered(userName):
             return "User already exists"
-        return Registration.registerUser(userName, email, dnName)
+        result = Registration.registerUser(userName, email, dnName)
+        print self.getUser()
+        return result
 
     def putGroup(self, group, user=None):
         self.initThread()

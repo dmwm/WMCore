@@ -5,24 +5,34 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/05/12 11:52:35 afaq Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/07/30 19:25:52 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from WMCore.Agent.Configuration import Configuration
+import os
+import os.path
 
 config = Configuration()
 config.component_("RetryManager")
-#The log level of the component. 
 config.RetryManager.logLevel = 'DEBUG'
-#The namespace of the component
 config.RetryManager.namespace = 'WMComponent.RetryManager.RetryManager'
-# maximum number of threads we want to deal
-# with messages per pool.
-config.RetryManager.maxThreads = 30
-# maximum number of retries we want for job
 config.RetryManager.maxRetries = 10
-# depending on the application an operator can reconfigure what we use.
-# but these are the default settings.
-# The poll interval at which to look for failed jobs
-config.ErrrorHandler.pollInterval = 60
+config.RetryManager.pollInterval = 10
+#These are the cooloff times for the RetryManager, the times it waits
+#Before attempting resubmission
+config.RetryManager.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
+#Path to plugin directory
+config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
+config.RetryManager.pluginName = ''
+config.RetryManager.WMCoreBase = os.getenv('WMCOREBASE')
+
+
+jsm = config.component_('JobStateMachine')
+
+if (os.getenv('COUCHURL') != None):
+    jsm.couchurl = os.getenv('COUCHURL')
+else:
+    jsm.couchurl = 'cmssrv48.fnal.gov:5984'
+
+jsm.default_retries = 1

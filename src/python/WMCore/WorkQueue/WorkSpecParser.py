@@ -6,8 +6,8 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.7 2009/06/25 16:04:41 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.8 2009/06/25 16:41:30 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 from ProdCommon.MCPayloads.UUID import makeUUID
@@ -211,6 +211,18 @@ class WorkSpecParser:
         """wm spec name - should be unique"""
         return self.wmSpec.name()
     name = property(name)
+    
+    def owner(self):
+        """wm spec owner - should be unique"""
+        #TODO currently spec doesn't have owner property. - need to be added
+        #return self.wmSpec.owner
+        return "wmspecOwner"
+    owner = property(owner)
+    
+    def topLevelTaskName(self):
+        """topLevel task name name - should be unique"""
+        return self.initialTask.name()
+    topLevelTaskName = property(topLevelTaskName)
     
     def whitelist(self):
         """Site whitelist as defined in task"""

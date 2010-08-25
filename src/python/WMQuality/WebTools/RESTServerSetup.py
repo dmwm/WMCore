@@ -68,16 +68,17 @@ class DefaultConfig(Configuration):
         return self.UnitTests.views.active.rest
         
 
-def configureServer(restModel='WMCore.WebTools.RESTModel', das=False, config=None):
+def configureServer(restModel=None, das=False, config=None):
     """
     either pass custom config or use default config,
     if default config is used, rest model and format time can be rest.
     """
     if config:
         dummycfg = config
+        if restModel:
+            dummycfg.setModel(restModel)
     else:
         dummycfg = DefaultConfig(restModel)
-    dummycfg.setModel(restModel)
     
     if das:
         dummycfg.setFormatter('WMCore.WebTools.DASRESTFormatter')

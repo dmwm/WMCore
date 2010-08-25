@@ -5,8 +5,8 @@ _GetFinishedSubscriptions_
 MySQL implementation of Subscription.GetFinishedSubscriptions
 """
 
-__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.4 2010/04/23 16:42:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.5 2010/08/05 20:41:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import time
 import logging
@@ -16,7 +16,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetFinishedSubscriptions(DBFormatter):
     sql = """SELECT DISTINCT wmbs_sub.id FROM wmbs_subscription wmbs_sub
                INNER JOIN wmbs_fileset ON wmbs_fileset.id = wmbs_sub.fileset
-               INNER JOIN (SELECT fileset, COUNT(file) AS total_files
+               LEFT OUTER JOIN (SELECT fileset, COUNT(file) AS total_files
                       FROM wmbs_fileset_files GROUP BY fileset) fileset_size ON
                       wmbs_sub.fileset = fileset_size.fileset
                LEFT OUTER JOIN (SELECT subscription, COUNT(file) AS total_files
@@ -34,7 +34,8 @@ class GetFinishedSubscriptions(DBFormatter):
                   GROUP BY wmbs_subscription.id) child_subscriptions ON
                  wmbs_sub.id = child_subscriptions.id     
                WHERE wmbs_fileset.open = 0 AND child_subscriptions.total IS Null
-               AND fileset_size.total_files = (COALESCE(sub_complete.total_files, 0) +
+               AND COALESCE(fileset_size.total_files, 0) =
+                     (COALESCE(sub_complete.total_files, 0) +
                       COALESCE(sub_failed.total_files, 0))
                AND (SELECT COUNT(wmbs_job.id) FROM wmbs_job
                       INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup

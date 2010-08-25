@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-__revision__ = "$Id: Subscription_t.py,v 1.60 2010/07/06 20:41:18 mnorman Exp $"
-__version__ = "$Revision: 1.60 $"
+__revision__ = "$Id: Subscription_t.py,v 1.61 2010/08/05 20:41:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.61 $"
 
 
 import unittest
@@ -1593,6 +1593,66 @@ class SubscriptionTest(unittest.TestCase):
 
         return
 
+    def testGetFinishedSubscriptions(self):
+        """
+        _testGetFinishedSubscriptions_
+
+        Verify that the GetFinishedSubscriptions DAO works correctly for
+        workflows that don't produce any files.
+        """
+        testOutputFileset1 = Fileset(name = "TestOutputFileset1")
+        testOutputFileset1.create()
+        testOutputFileset2 = Fileset(name = "TestOutputFileset2")
+        testOutputFileset2.create()
+        testOutputFileset3 = Fileset(name = "TestOutputFileset3")
+        testOutputFileset3.create()
+
+        testOutputFileset1.markOpen(False)
+        testOutputFileset2.markOpen(False)
+        testOutputFileset3.markOpen(False)
+        
+        testInputFileset = Fileset(name = "TestInputFileset")
+        testInputFileset.create()
+        testInputFileset.markOpen(False)
+
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
+                                 name = "wf001", task = "sometask")
+        testWorkflow1.create()
+        testWorkflow1.addOutput("out1", testOutputFileset1)
+
+        testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
+                                 name = "wf002", task = "sometask")
+        testWorkflow2.create()
+        testWorkflow2.addOutput("out2", testOutputFileset2)
+
+        testWorkflow3 = Workflow(spec = "spec3.xml", owner = "Steve",
+                                 name = "wf003", task = "sometask")
+        testWorkflow3.create()
+        testWorkflow3.addOutput("out3", testOutputFileset3)
+
+        testSubscription1 = Subscription(fileset = testInputFileset,
+                                         workflow = testWorkflow1)
+        testSubscription1.create()
+        testSubscription2 = Subscription(fileset = testOutputFileset1,
+                                         workflow = testWorkflow2)
+        testSubscription2.create()
+        testSubscription3 = Subscription(fileset = testOutputFileset2,
+                                         workflow = testWorkflow3)
+        testSubscription3.create()        
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        finishedDAO = daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
+        finishedSubs = finishedDAO.execute()
+
+        assert len(finishedSubs) == 1, \
+               "Error: Wrong number of finished subscriptions."
+
+        assert finishedSubs[0]["id"] == testSubscription3["id"], \
+               "Error: Wrong subscription id."
+
+        return
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,16 +5,15 @@ _GetFinishedSubscriptions_
 Oracle implementation of Subscription.GetFinishedSubscriptions
 """
 
-__all__ = []
-__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.3 2010/04/23 16:42:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.4 2010/08/05 20:41:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFinishedSubscriptions import GetFinishedSubscriptions as MySQLFinishedSubscriptions
 
 class GetFinishedSubscriptions(MySQLFinishedSubscriptions):
     sql = """SELECT DISTINCT wmbs_sub.id FROM wmbs_subscription wmbs_sub
                INNER JOIN wmbs_fileset ON wmbs_fileset.id = wmbs_sub.fileset
-               INNER JOIN (SELECT fileset, COUNT(fileid) AS total_files
+               LEFT OUTER JOIN (SELECT fileset, COUNT(fileid) AS total_files
                       FROM wmbs_fileset_files GROUP BY fileset) fileset_size ON
                       wmbs_sub.fileset = fileset_size.fileset
                LEFT OUTER JOIN (SELECT subscription, COUNT(fileid) AS total_files
@@ -32,7 +31,8 @@ class GetFinishedSubscriptions(MySQLFinishedSubscriptions):
                   GROUP BY wmbs_subscription.id) child_subscriptions ON
                  wmbs_sub.id = child_subscriptions.id     
                WHERE wmbs_fileset.open = 0 AND child_subscriptions.total IS Null
-               AND fileset_size.total_files = (COALESCE(sub_complete.total_files, 0) +
+               AND COALESCE(fileset_size.total_files, 0) =
+                     (COALESCE(sub_complete.total_files, 0) +
                       COALESCE(sub_failed.total_files, 0))
                AND (SELECT COUNT(wmbs_job.id) FROM wmbs_job
                       INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup

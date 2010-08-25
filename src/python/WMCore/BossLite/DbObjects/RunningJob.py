@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.6 2010/05/03 15:40:28 spigafi Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: RunningJob.py,v 1.7 2010/05/03 20:38:39 spigafi Exp $"
+__revision__ = "$Revision: 1.7 $"
 
 # imports
 import time
@@ -117,6 +117,7 @@ class RunningJob(DbObject):
 
         # flag for scheduler interaction
         self.active = True
+        self.existsInDataBase = False
 
     ##########################################################################
 
@@ -135,7 +136,7 @@ class RunningJob(DbObject):
                         
             if tmpId:
                 self.data['id'] = tmpId
-            self.existsInDataBase = True
+            
             return tmpId
 
     ##########################################################################
@@ -146,6 +147,10 @@ class RunningJob(DbObject):
         """
 
         db.objCreate(self)
+        
+        # update ID & check... necessary call!
+        if self.exists(db) : 
+            self.existsInDataBase = True
 
     ##########################################################################
 
@@ -154,7 +159,7 @@ class RunningJob(DbObject):
         Save the job
         """
 
-        if not self.exists(db):
+        if not self.existsInDataBase:
             self.create(db)
         else:
             db.objSave(self)               
@@ -170,21 +175,23 @@ class RunningJob(DbObject):
         """
         
         result = db.objLoad(self)
-
+        
         if result == []:
             # Then the job did not exist
             # no exception will raise?
             
-            # is this message useful?
+            # is this message useful? TEMPORARY SUPPRESSED
             #logging.error(
             # "Attempted to load non-existant runningJob with parameters:\n %s" 
             #            % (self.data) )
-            return
-
+            return 
+        
         self.data.update(result[0])
+        
+        # consistency?
         self.existsInDataBase = True
         
-        return
+        return 
 
     ##########################################################################
 
@@ -192,8 +199,9 @@ class RunningJob(DbObject):
         """
         remove job object from database
         """
-        if not self.exists(db):
-            logging.error("Cannot remove non-existant runningJob %s" 
+        
+        if not self.existsInDataBase:
+            logging.error("Cannot remove from DB non-existant runningJob %s" 
                           % (self.data) )
             return 0
         
@@ -219,48 +227,6 @@ class RunningJob(DbObject):
     def update(self, db, deep = True):
         """
         update job information in database
-        -> NEED TO PORTED ??? from Job, update is triggered by save() using 
-            appropriate method 'updateRunningInstance' (NdFilippo)
         """
 
-        # verify if the object exists in database
-        if not self.existsInDataBase:
-
-            # no, use save instead of update
-            return self.save(db)
-
-        # verify data is complete
-        if not self.valid(['submission', 'jobId', 'taskId']):
-            raise JobError("The following job instance cannot be updated," + \
-                     " since it is not completely specified: %s" % self)
-
-        # convert timestamp fields as required by mysql ('YYYY-MM-DD HH:MM:SS')
-        for key in self.timeFields :
-            try :
-                self.data[key] = time.strftime("%Y-%m-%d %H:%M:%S", \
-                                              time.gmtime(int(self.data[key])))
-            # skip None and already formed strings
-            except TypeError :
-                pass
-            except ValueError :
-                pass
-
-        # skip closed jobs?
-        if deep :
-            skipAttributes = None
-        else :
-            skipAttributes = {'closed' : 'Y'}
-
-        # update it on database
-        try:
-            status = db.update(self, skipAttributes)
-            # if status < 1:
-            #     raise JobError("Cannot update job %s" % str(self))
-
-        # database error
-        except DbError, msg:
-            raise JobError(str(msg))
-
-        # return number of entries updated.
-        # since (submission + jobId) is a key,it will be 0 or 1
-        return status
+        return self.save(db, deep)

@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.39 2010/04/14 16:04:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Harness.py,v 1.40 2010/06/23 18:09:59 sryu Exp $"
+__version__ = "$Revision: 1.40 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -40,6 +40,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore import WMLogging
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 from WMCore.Agent.ConfigDBMap import ConfigDBMap
+from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 
 class Harness:
     """
@@ -87,6 +88,7 @@ class Harness:
             pass
 
         self.threadManagerName = ''
+        
         return
 
     def initInThread(self):
@@ -98,7 +100,7 @@ class Harness:
             self.messages = {}
             # the component name is the last part of its module name
             # and it should override any name give through the arguments.
-            compName = self.__class__.__name__
+            compName = self.config.Agent.componentName
             compSect = getattr(self.config, compName, None) 
             if not hasattr(compSect, "logFile"):
                 compSect.logFile = os.path.join(compSect.componentDir, \
@@ -343,7 +345,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
             myThread.msgService.remove(self.config.Agent.componentName+":Stop")
             myThread.msgService.remove(self.config.Agent.componentName+":StopAndWait")
         except Exception,ex:
-            logging.critical("Prolem initializing : "+str(ex))
+            logging.critical("Problem initializing : "+str(ex))
             raise
 
     def prepareToStart(self):
@@ -359,11 +361,15 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         self.initInThread()
         # note: every component gets a (unique) name: 
         # self.config.Agent.componentName
+        logging.info(">>>Registering Component - %s" % self.config.Agent.componentName)
+        self.heartbeatAPI = HeartbeatAPI(self.config.Agent.componentName)
+        self.heartbeatAPI.registerComponent()
+        
         logging.info('>>>Starting initialization\n')
 
         logging.info('>>>Setting default transaction')
         myThread = threading.currentThread()
-
+        
         self.preInitialization()
         myThread.transaction.begin()
         self.initialization()

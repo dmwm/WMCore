@@ -4,8 +4,8 @@ _HartbeatAPI_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: HeartbeatAPI.py,v 1.1 2010/06/21 21:20:00 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: HeartbeatAPI.py,v 1.2 2010/06/23 18:09:59 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import os
@@ -17,7 +17,7 @@ class HeartbeatAPI(WMConnectionBase):
     """
     Generic methods used by all of the WMBS classes.
     """
-    def __init__(self, component, logger=None, dbi=None):
+    def __init__(self, componentName, logger=None, dbi=None):
         """
         ___init___
 
@@ -29,31 +29,38 @@ class HeartbeatAPI(WMConnectionBase):
         WMConnectionBase.__init__(self, daoPackage = "WMCore.Agent.Database", 
                                   logger = logger, dbi = dbi)
         
-        self.component = component
+        self.componentName = componentName
         self.pid = os.getpid()
         
     def registerComponent(self):
         
         insertAction = self.daofactory(classname = "InsertComponent")
-        insertAction.execute(self.component, self.pid,
+        insertAction.execute(self.componentName, self.pid,
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         
-    def updateWorkerHeartbeat(self, workerName, state = None):
+    def updateWorkerHeartbeat(self, workerName, state = "Start"):
         
         existAction = self.daofactory(classname = "ExistWorker")
-        componentID = existAction.execute(self.component, workerName, state,
+        componentID = existAction.execute(self.componentName, workerName, state,
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         if not componentID:
             print componentID
             action = self.daofactory(classname = "InsertWorker")
-            action.execute(self.component, workerName, state,
+            action.execute(self.componentName, workerName, state,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "UpdateWorker")
             action.execute(componentID, workerName, state,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction())
+    
+    def updateWorkerError(self, workerName, errorMessage):
+        
+        action = self.daofactory(classname = "UpdateWorkerError")
+        action.execute(self.componentName, workerName, errorMessage,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
             

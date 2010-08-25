@@ -1,0 +1,234 @@
+#!/usr/bin/env python
+"""
+wmagent-workflow-summary
+
+"""
+
+import sys
+import os
+
+from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Configuration import loadConfigurationFile
+
+if not os.environ.has_key("WMAGENT_CONFIG"):
+    print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
+    sys.exit(1)
+
+if not os.path.exists(os.environ["WMAGENT_CONFIG"]):
+    print "Can't find config: %s" % os.environ["WMAGENT_CONFIG"]
+    sys.exit(1)
+
+wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
+couchURL = wmAgentConfig.JobStateMachine.couchurl
+couchDBName = wmAgentConfig.JobStateMachine.couchDBName
+
+if len(sys.argv) != 2:
+    print "Usage:"
+    print "  wmagent-workflow-summary WORKFLOWNAME"
+    sys.exit(1)
+    
+workflowName = sys.argv[1]
+
+# Task, Step, Error Message
+failureInfo = {}
+failedJobs = []
+transientFailedJobs = []
+
+def didJobFailCompletely(jobID):
+    """
+    _didJobFailCompletely_
+
+    """
+    if jobID in transientFailedJobs:
+        return False
+    if jobID in failedJobs:
+        return True
+
+    couchServer = CouchServer(dburl = couchURL)
+    changeStateDB = couchServer.connectDatabase(dbname = couchDBName)
+
+    options = {"startkey": jobID, "endkey": jobID}
+    result = changeStateDB.loadView("JobDump", "stateTransitionsByJobID",
+                                     options)
+
+    for row in result["rows"]:
+        if row["value"]["newstate"] == "exhausted":
+            failedJobs.append(jobID)
+            return True
+
+    transientFailedJobs.append(jobID)
+    return False
+
+def printWorkflowOutput():
+    """
+    _printWorkflowOutput_
+
+    """
+    couchServer = CouchServer(dburl = couchURL)
+    changeStateDB = couchServer.connectDatabase(dbname = couchDBName)
+
+    options = {"startkey": [workflowName], "endkey": [workflowName, {}],
+               "group_level": 2}
+
+    result = changeStateDB.loadView("JobDump", "outputByWorkflowName",
+                                     options)
+
+    print "Workflow Output:"
+    for row in result["rows"]:
+        numFiles = row["value"]["count"]
+        numEvents = row["value"]["events"]
+        numBytes = row["value"]["size"]
+        datasetPath = row["key"][1]
+
+        if numFiles == 1:
+            filesString = "%s file," % numFiles
+        else:
+            filesString = "%s files, " % numFiles
+
+        if numEvents == 1:
+            eventsString = "%s event, " % numEvents
+        else:
+            eventsString = "%s events, " % numEvents
+
+        if numBytes == 1:
+            bytesString = "%s byte" % numBytes
+        elif (numBytes / 1073741824) > 1:
+            bytesString = "%.2f GB" % (numBytes / 1073741824.0)
+        elif (numBytes / 1048576) > 1:
+            bytesString = "%.2f MB" % (numBytes / 1048576.0)
+        elif (numBytes / 1024) > 1:
+            bytesString = "%.2f KB" % (numBytes / 1024.0)
+        else:
+            bytesString = "%s bytes" % (numBytes)
+
+        print "  %s %s %s %s" % (datasetPath, filesString, eventsString,
+                                 bytesString)
+
+    return
+
+def retrieveLumiInfoFromFWJR(jobID):
+    """
+    _retrieveLumiInfoFromFWJR_
+
+    """
+    couchServer = CouchServer(dburl = couchURL)
+    changeStateDB = couchServer.connectDatabase(dbname = couchDBName)
+    options = {"startkey": jobID, "endkey": jobID, "include_docs": True}
+    fwjrDocResults = changeStateDB.loadView("JobDump", "fwjrsByJobID", options)    
+
+    inputFiles = {}
+    for fwjrDocResult in fwjrDocResults["rows"]:
+        if not fwjrDocResult["doc"]["fwjr"]["steps"].has_key("cmsRun1"):
+            continue
+
+        cmsRunStep = fwjrDocResult["doc"]["fwjr"]["steps"]["cmsRun1"]
+        if not cmsRunStep["input"].has_key("source"):
+            continue
+
+        for inputFile in cmsRunStep["input"]["source"]:
+            if not inputFiles.has_key(inputFile["lfn"]):
+                inputFiles[inputFile["lfn"]] = {}
+
+            for runNumber in inputFile["runs"]:
+                if not inputFiles[inputFile["lfn"]].has_key(int(runNumber)):
+                    inputFiles[inputFile["lfn"]][int(runNumber)] = []
+
+                for lumi in inputFile["runs"][runNumber]:
+                    if int(lumi) not in inputFiles[inputFile["lfn"]][int(runNumber)]:
+                        inputFiles[inputFile["lfn"]][int(runNumber)].append(int(lumi))
+
+    print inputFiles
+
+def retrieveFailureInfo():
+    """
+    _retrieveFailureInfo_
+
+    """
+    couchServer = CouchServer(dburl = couchURL)
+    changeStateDB = couchServer.connectDatabase(dbname = couchDBName)
+
+    options = {"startkey": workflowName, "endkey": workflowName}
+    result = changeStateDB.loadView("JobDump", "errorsByWorkflowName",
+                                     options)
+
+    for resultRow in result["rows"]:
+        taskPath = resultRow["value"]["task"]
+        stepName = resultRow["value"]["step"]
+        jobID = resultRow["value"]["jobid"]
+        errorDesc = resultRow["value"]["error"][0]["details"]
+        exitCode = resultRow["value"]["error"][0]["exitCode"]
+        errorType = resultRow["value"]["error"][0]["type"]
+
+        if not didJobFailCompletely(jobID):
+            continue
+        
+        if not failureInfo.has_key(taskPath):
+            failureInfo[taskPath] = {}
+        if not failureInfo[taskPath].has_key(stepName):
+            failureInfo[taskPath][stepName] = {}
+        if not failureInfo[taskPath][stepName].has_key(errorDesc):
+            failureInfo[taskPath][stepName][errorDesc] = {"jobs": [],
+                                                          "files": [],
+                                                          "type": errorType,
+                                                          "code": exitCode}
+
+        if jobID not in failureInfo[taskPath][stepName][errorDesc]["jobs"]:
+            failureInfo[taskPath][stepName][errorDesc]["jobs"].append(jobID)
+            
+            options = {"startkey": jobID, "endkey": jobID, "include_docs": True}
+            jobDocResult = changeStateDB.loadView("JobDump", "jobsByJobID", options)
+
+            retrieveLumiInfoFromFWJR(jobID)
+
+            for inputFile in jobDocResult["rows"][0]["doc"]["inputfiles"]:
+                if inputFile["lfn"] not in failureInfo[taskPath][stepName][errorDesc]["files"]:
+                    failureInfo[taskPath][stepName][errorDesc]["files"].append(inputFile["lfn"])
+
+def printFailureInfo():
+    """
+    _printFailureInfo_
+
+    """
+    retrieveFailureInfo()
+
+    print "Failures:"
+    for taskPath in failureInfo.keys():
+        print "  %s:" % taskPath
+
+        for stepName in failureInfo[taskPath].keys():
+            print "    %s:" % stepName
+
+            for errorDesc in failureInfo[taskPath][stepName].keys():
+                specificFailure = failureInfo[taskPath][stepName][errorDesc]
+                specificFailure["jobs"].sort()
+                specificFailure["files"].sort()
+
+                print "      Error Type: %s" % specificFailure["type"]
+                print "      Exit Code: %s" % specificFailure["code"]
+                print "      Error Message:"
+
+                for errorLine in errorDesc.split("\n"):
+                    print "        %s" % errorLine
+            
+                jobCounter = 0
+                print "\n      Jobs:\n       ",            
+                for job in specificFailure["jobs"]:
+                    jobCounter += 1
+                    if jobCounter == len(specificFailure["jobs"]):
+                        print "%s" % job
+                    elif jobCounter % 10 == 0:
+                        print "%s,\n        "
+                    else:
+                        print "%s, " % job,
+
+                print "\n      Files:"
+                for file in specificFailure["files"]:
+                    print "        %s" % file
+
+    return
+
+if __name__ == '__main__':
+    printWorkflowOutput()
+    print ""
+    printFailureInfo()    
+    print ""

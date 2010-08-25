@@ -81,7 +81,7 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
                 "reason": traceback
             }
         curlcall = subprocess.Popen( [ 'curl', '-X', 'PUT', couchURL, '-H', 'Content-Type: application/json',
-                     '-d', urllib.urlencode(json.dumps(myData, separators=(',',':')))],
+                     '-d', urllib.quote(json.dumps(myData, separators=(',',':')))],
                      stdout = sys.stdout,
                      stderr = sys.stderr)
         curlcall.communicate()

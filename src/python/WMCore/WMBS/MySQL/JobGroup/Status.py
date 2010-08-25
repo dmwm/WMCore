@@ -4,17 +4,19 @@ _New_
 MySQL implementation of JobGroup.Status
 """
 __all__ = []
-__revision__ = "$Id: Status.py,v 1.9 2009/04/22 23:28:53 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Status.py,v 1.10 2009/04/23 00:02:12 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Status(DBFormatter):
     sql = """select (
-        select count(id) from wmbs_job where jobgroup=:jobgroup 
-            and id not in (select job from wmbs_group_job_acquired) 
-            and id not in (select job from wmbs_group_job_failed)
-            and id not in (select job from wmbs_group_job_complete)
+        select count(id) from wmbs_job wj
+            left outer join wmbs_group_job_acquired wa on wj.id = wa.job
+            left outer join wmbs_group_job_failed wf on wj.id = wf.job
+            left outer join wmbs_group_job_complete wc on wj.id = wc.job
+            where jobgroup=:jobgroup and wa.job is null
+                  and wf.job is null and wc.job is null
         ) as av, (
         select count(job) from wmbs_group_job_acquired where jobgroup=:jobgroup
         ) as ac, (

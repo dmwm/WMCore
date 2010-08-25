@@ -7,10 +7,11 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.14 2010/05/17 20:46:32 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.15 2010/05/18 20:17:57 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import threading
+import traceback
 
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -56,7 +57,12 @@ class ExecuteMaster:
                 self.doExecution(executor, step, wmbsJob)
                 myThread.watchdogMonitor.notifyStepEnd(step)
             except Exception, ex:
+                msg = "Encountered error while running ExecuteMaster"
+                msg += str(ex)
+                msg += str(traceback.format_exc())
                 self.toTaskDirectory()
+                logging.error(msg)
+                #raise Exception(msg)
                 break
 
         myThread.watchdogMonitor.notifyJobEnd(task)

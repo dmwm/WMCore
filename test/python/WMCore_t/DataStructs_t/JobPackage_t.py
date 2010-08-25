@@ -3,145 +3,143 @@
 _JobPackage_
 
 Unittests for JobPackage persistency mechanism
-
 """
-
 
 import os
 import unittest
+
+from WMQuality.TestInit import TestInit
 
 from WMCore.DataStructs.JobPackage import JobPackage
 from WMCore.DataStructs.Job import Job
 
 class JobPackageTest(unittest.TestCase):
-    """
-    TestCase for JobPackage object
-
-    """
     def setUp(self):
-        """set up"""
-        self.persistFile = "/tmp/JobPackage_t.pkl"
+        """
+        _setUp_
 
-
+        Create a temporary file to presist the JobPackage to.
+        """
+        self.testInit = TestInit(__file__)
+        self.persistFile = os.path.join(self.testInit.generateWorkDir(),
+                                        "JobPackage.pkl")
+        return
 
     def tearDown(self):
-        """cleanup"""
-        if os.path.exists(self.persistFile):
-            os.remove(self.persistFile)
+        pass
 
+    def testAddingJobs(self):
+        """
+        _testAddingJobs_
 
-
-    def testA(self):
-        """instantiation"""
-
-        try:
-            package = JobPackage()
-        except Exception, ex:
-            msg = "Failed to instantiate JobPackage object:\n"
-            msg += str(ex)
-            self.fail(msg)
-
-
-    def testB(self):
-        """population"""
-
+        Verify that adding jobs to the package works as expected.
+        """
         package = JobPackage()
-        numJobs = 100
 
-        jobs = [ Job("Job%s" % i) for i in range(0, numJobs)]
+        for i in range(100):
+            newJob = Job("Job%s" % i)
+            newJob["id"] = i
+            package[i] = newJob
 
-        try:
-            package.extend(jobs)
-        except Exception, ex:
-            msg = "Error adding list of Jobs to JobPackage:\n"
-            msg += str(ex)
-            self.fail(msg)
+        assert len(package.keys()) == 100, \
+               "Error: Wrong number of jobs in package."
+               
+        for i in range(100):
+            job = package[i]
+            assert job["id"] == i, \
+                   "Error: Jobs has wrong ID."
+            assert job["name"] == "Job%d" % i, \
+                   "Error: Job has wrong name."
 
+        return
 
-        self.assertEqual(len(jobs), len(package))
-        # order should be preserved
-        for i, j in zip(jobs, package):
-            self.assertEqual(i['name'], j['name'])
+    def testPersist(self):
+        """
+        _testPersist_
 
-    def testC(self):
-        """save/load"""
-
+        Verify that we're able to save and load the job package.
+        """
         package = JobPackage()
-        package.extend([ Job("Job%s" % i) for i in range(0, 100)])
 
-        try:
-            package.save(self.persistFile)
-        except Exception, ex:
-            msg = "Failed to save JobPackage:\n"
-            msg += str(ex)
-            self.fail(msg)
+        for i in range(100):
+            newJob = Job("Job%s" % i)
+            newJob["id"] = i
+            package[i] = newJob
 
-        self.failUnless(os.path.exists(self.persistFile))
+        package.save(self.persistFile)
+        
+        assert os.path.exists(self.persistFile), \
+               "Error: Package file was never created."
 
         newPackage = JobPackage()
-        try:
-            newPackage.load(self.persistFile)
-        except Exception, ex:
-            msg = "Failed to load JobPackage:\n"
-            msg += str(ex)
-            self.fail(msg)
+        newPackage.load(self.persistFile)
 
-        self.assertEqual(len(newPackage), len(package))
+        assert len(newPackage.keys()) == 100, \
+               "Error: Wrong number of jobs in package."
 
-        # order should be preserved
-        for i, j in zip(newPackage, package):
-            self.assertEqual(i['name'], j['name'])
+        for i in range(100):
+            job = newPackage[i]
+            assert job["id"] == i, \
+                   "Error: Jobs has wrong ID."
+            assert job["name"] == "Job%d" % i, \
+                   "Error: Job has wrong name."
 
+        return
 
+    def testBaggage(self):
+        """
+        _testBaggage_
 
-    def testD(self):
-        """save/load with baggage"""
+        Verify that job baggage is persisted with the package.
+        """
         package = JobPackage()
-        jobs = [ Job("Job%s" % i) for i in range(0, 100)]
-        for job in jobs:
-            baggage = job.getBaggage()
-            setattr(baggage, "thisJob", job['name'])
+
+        for i in range(100):
+            newJob = Job("Job%s" % i)
+            newJob["id"] = i
+            baggage = newJob.getBaggage()
+            setattr(baggage, "thisJob", newJob["name"])
             setattr(baggage, "seed1", 11111111)
             setattr(baggage, "seed2", 22222222)
             setattr(baggage, "seed3", 33333333)
             setattr(baggage, "seed4", 44444444)
-            setattr(baggage, "seed5", 55555555)
+            setattr(baggage, "seed5", 55555555)            
+            package[i] = newJob
 
-
-        package.extend(jobs)
-
-
-
-
-        try:
-            package.save(self.persistFile)
-        except Exception, ex:
-            msg = "Failed to save JobPackage:\n"
-            msg += str(ex)
-            self.fail(msg)
-
-        self.failUnless(os.path.exists(self.persistFile))
-
-
+        package.save(self.persistFile)
+        
+        assert os.path.exists(self.persistFile), \
+               "Error: Package file was never created."
 
         newPackage = JobPackage()
-        try:
-            newPackage.load(self.persistFile)
-        except Exception, ex:
-            msg = "Failed to load JobPackage:\n"
-            msg += str(ex)
-            self.fail(msg)
+        newPackage.load(self.persistFile)
+
+        assert len(newPackage.keys()) == 100, \
+               "Error: Wrong number of jobs in package."
+
+        for i in range(100):
+            job = newPackage[i]
+            assert job["id"] == i, \
+                   "Error: Jobs has wrong ID."
+            assert job["name"] == "Job%d" % i, \
+                   "Error: Job has wrong name."
+            jobBaggage = job.getBaggage()
+
+            assert jobBaggage.thisJob == "Job%d" % i, \
+                   "Error: Job baggage has wrong name."
+            assert jobBaggage.seed1 == 11111111, \
+                   "Error: Job baggee has wrong value for seed1."
+            assert jobBaggage.seed2 == 22222222, \
+                   "Error: Job baggee has wrong value for seed2."
+            assert jobBaggage.seed3 == 33333333, \
+                   "Error: Job baggee has wrong value for seed3."
+            assert jobBaggage.seed4 == 44444444, \
+                   "Error: Job baggee has wrong value for seed4."
+            assert jobBaggage.seed5 == 55555555, \
+                   "Error: Job baggee has wrong value for seed5."
 
 
-        for i, j in zip(newPackage, package):
-            self.assertEqual(i.baggage.thisJob, j.baggage.thisJob)
-
-
-
-
-
+        return
 
 if __name__ == '__main__':
     unittest.main()
-
-

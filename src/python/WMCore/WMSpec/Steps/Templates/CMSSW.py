@@ -126,6 +126,25 @@ class CMSSWStepHelper(CoreHelper):
         Retrieve the version of the framework used for this step.
         """
         return self.data.application.setup.cmsswVersion
+
+    def setGlobalTag(self, globalTag):
+        """
+        _setGlobalTag_
+
+        Set the global tag.
+        """
+        self.data.application.configuration.section_('arguments')
+        self.data.application.configuration.arguments.globalTag = globalTag
+        return
+
+    def setMinMergeSize(self, minMergeSize):
+        """
+        _setMinMergeSize_
+
+        Set the mininum size for promoting a file to merged status.
+        """
+        self.data.output.minMergeSize = minMergeSize
+        return
     
 class CMSSW(Template):
     """

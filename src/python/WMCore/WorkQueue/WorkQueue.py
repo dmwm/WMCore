@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.74 2010/02/23 17:14:56 swakef Exp $"
-__version__ = "$Revision: 1.74 $"
+__revision__ = "$Id: WorkQueue.py,v 1.75 2010/02/23 18:34:50 sryu Exp $"
+__version__ = "$Revision: 1.75 $"
 
 
 import time
@@ -80,6 +80,9 @@ class WorkQueue(WorkQueueBase):
         self.lastFullReportToParent = 0
         self.parent_queue = None
         self.params = params
+        #TODO: set correct default global dbs 
+        self.params.setdefault("GlobalDBS", 
+                               "http://cmsdbsprod.cern.ch/cms_dbs_prod_global")
         self.params.setdefault('ParentQueue', None) # Get more work from here
         self.params.setdefault('QueueDepth', 2) # when less than this locally
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
@@ -127,6 +130,7 @@ class WorkQueue(WorkQueueBase):
         if self.params['ParentQueue'] is not None:
             self.parent_queue = self._get_remote_queue(self.params['ParentQueue'])
 
+        self.dbsHelpers[self.params["GlobalDBS"]] = DBSReader(self.params["GlobalDBS"])
     #  //
     # // External API
     #//
@@ -783,7 +787,10 @@ class WorkQueue(WorkQueueBase):
         response = self.phedexService.subscriptions(**args)['phedex']
         self.lastLocationUpdate = response['request_timestamp']
         result = {}
-
+        
+        print "*********************"
+        print args['dataset']
+        print response['dataset']
         # iterate over response as can't jump to specific datasets
         for dset in response['dataset']:
 

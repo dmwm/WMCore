@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.25 2009/10/13 19:39:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Harness.py,v 1.26 2009/10/15 21:00:38 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -79,6 +79,8 @@ class Harness:
             #print('--> '+compSect.componentDir)
             #print('Continue on with initialization')
         #print('Component Initialized')
+
+        self.threadManagerName = ''
 
     def initInThread(self):
         """
@@ -155,13 +157,17 @@ class Harness:
             myThread.transaction.commit()
 
             # Attach a worker manager object to the main thread
-            myThread.workerThreadManager = WorkerThreadManager(self)
+            if not hasattr(myThread, 'workerThreadManager'):
+                myThread.workerThreadManager = WorkerThreadManager(self)
+            else:
+                myThread.workerThreadManager.terminateSlaves.clear()
             myThread.workerThreadManager.pauseWorkers()
 
             logging.info(">>>Initialize transaction dictionary")
             if not hasattr(coreSect, "dialect"):
                 raise WMException(WMEXCEPTION['WMCORE-5'],'WMCORE-5')
             logging.info(">>>Determining Dialect: "+coreSect.dialect)
+
             if coreSect.dialect.lower() == 'mysql':
                 myThread.dialect = 'MySQL'
             elif coreSect.dialect.lower() == 'oracle':
@@ -377,6 +383,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
 
         logging.info(">>>Starting worker threads")
         myThread.workerThreadManager.resumeWorkers()
+
 
         logging.info(">>>Initialization finished!\n")    
         # wait for messages

@@ -5,8 +5,8 @@ _T0PromptRecoEventBased_t_
 T0 Prompt Reco event based splitting test.
 """
 
-__revision__ = "$Id: T0PromptRecoEventBased_t.py,v 1.2 2009/10/27 09:03:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: T0PromptRecoEventBased_t.py,v 1.3 2009/10/29 09:57:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -171,7 +171,8 @@ class EventBasedTest(unittest.TestCase):
         greater than the number of events in the input file.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.singleFileSubscription)
         
         jobGroups = jobFactory(events_per_job = 1000)
         
@@ -202,7 +203,8 @@ class EventBasedTest(unittest.TestCase):
         50, this should result in two jobs.        
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.singleFileSubscription)
         
         jobGroups = jobFactory(events_per_job = 50)
         
@@ -232,7 +234,8 @@ class EventBasedTest(unittest.TestCase):
         99, this should result in two jobs.        
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.singleFileSubscription)
         
         jobGroups = jobFactory(events_per_job = 99)
         
@@ -262,7 +265,8 @@ class EventBasedTest(unittest.TestCase):
         more than one file available.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)
 
         jobGroups = jobFactory(events_per_job = 100)
 
@@ -292,10 +296,8 @@ class EventBasedTest(unittest.TestCase):
         more than one file available.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)        
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)        
 
         jobGroups = jobFactory(events_per_job = 50)
 
@@ -326,10 +328,8 @@ class EventBasedTest(unittest.TestCase):
         code will put at most one file in a job.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)        
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)        
 
         jobGroups = jobFactory(events_per_job = 150)
 

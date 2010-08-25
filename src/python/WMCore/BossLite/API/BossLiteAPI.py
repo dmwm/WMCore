@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.12 2010/05/30 14:43:48 spigafi Exp $"
-__revision__ = "$Revision: 1.12 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.13 2010/06/13 15:18:42 spigafi Exp $"
+__revision__ = "$Revision: 1.13 $"
 
 #import logging
 import copy
@@ -564,6 +564,43 @@ class BossLiteAPI(object):
             self.getRunningInstance( job, attrs )
             self.updateDB( job )
 
+        # self.updateDB( task )
+
+        # all done
+        return task
+    
+    
+    def declareNewJobs( self, xml, task, proxyFile=None ) :
+        """
+        Register job related informations in the db
+        """
+        
+        taskInfo, jobInfos, rjAttrs = self.deserialize( xml )
+        jobRange= range(len(task.getJobs())+1)
+        jobRange.remove(0)  
+        
+        # reconstruct jobs and fill the data
+        jobs = []
+        for jI in jobInfos:
+            # check if jobs is new 
+            if int(jI['jobId']) not in jobRange:
+                job = Job( jI )
+                job['taskId'] = task['id']  
+                subn = int( job['submissionNumber'] )
+                
+                if subn > 0 :
+                    job['submissionNumber'] = subn - 1
+                else :
+                    job['submissionNumber'] = subn
+                #jobs.append(job)
+                task.appendJob(job)
+        
+        for job in task.jobs:
+            if int(job['jobId']) not in jobRange:
+                attrs = rjAttrs[ str(job['name']) ]
+                self.getRunningInstance( job, attrs )
+                self.updateDB( job )
+          
         # self.updateDB( task )
 
         # all done

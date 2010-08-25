@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.28 2010/08/10 17:51:15 swakef Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.29 2010/08/13 15:06:43 sryu Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import threading
 
@@ -177,11 +177,13 @@ class CreateWorkQueueBase(DBCreator):
         
         self.constraints["FK_wq_element_child"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_child
-                 FOREIGN KEY(child_queue) REFERENCES wq_queues(id)"""
+                 FOREIGN KEY(child_queue) REFERENCES wq_queues(id)
+                 ON DELETE CASCADE"""
         
         self.constraints["FK_wq_element_valid"] = \
               """ALTER TABLE wq_element_site_validation ADD CONSTRAINT FK_wq_element_valid
-                 FOREIGN KEY(element_id) REFERENCES wq_element(id)"""
+                 FOREIGN KEY(element_id) REFERENCES wq_element(id)
+                 ON DELETE CASCADE"""
 
         
 #TODO : not sure whether it is better to allow input id to be null on production job

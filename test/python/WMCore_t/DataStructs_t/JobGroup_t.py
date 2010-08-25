@@ -155,5 +155,39 @@ class JobGroupTest(unittest.TestCase):
 
         return
 
+    def testLen(self):
+        """
+        __testLen__
+
+        Test that the __len__ function will actualy return the correct length.
+
+        """
+
+        #print "testLen"
+
+        #This is simple.  It should just have a length equal to the number of committed
+        #And yet to be committed jobs
+
+        testJobA = Job()
+        testJobB = Job()
+        testJobC = Job()
+        testJobD = Job()
+        testJobGroup = JobGroup(jobs = [testJobA, testJobB])
+        testJobGroup.commit()
+
+        self.assertEqual(len(testJobGroup), 2)
+
+        testJobGroup.add(testJobC)
+
+        self.assertEqual(len(testJobGroup), 3)
+
+        testJobGroup.commit()
+        testJobGroup.add(testJobD)
+
+        self.assertEqual(len(testJobGroup), 4)
+
+        return
+        
+
 if __name__ == '__main__':
     unittest.main()

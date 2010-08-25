@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.15 2009/12/04 21:27:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Workflow_t.py,v 1.16 2010/06/01 17:28:43 riahi Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import os
@@ -14,6 +14,7 @@ import threading
 
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.DAOFactory import DAOFactory
 
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
@@ -241,6 +242,33 @@ class WorkflowTest(unittest.TestCase):
                "ERROR: Output map incorrectly maps filesets."
         assert testWorkflowC.outputMap["outModTwo"]["output_parent"] == None, \
                "ERROR: Output map has incorrect parent."
+
+        return
+
+    def testLoadFromTask(self):
+        """
+        _testLoadFromTask_
+        Verify that Workflow.LoadFromTask DAO correct turns
+        the workflow by task
+        """
+
+
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Hassen",
+                                 name = "wf001", task = "sometask")
+        testWorkflow1.create()
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        loadFromTaskDAO = daoFactory(classname = "Workflow.LoadFromTask")
+
+        listFromTask = loadFromTaskDAO.execute(task=testWorkflow1.task)
+
+        assert len(listFromTask) == 1, \
+               "ERROR: listFromTask should be 1."
+
+        assert listFromTask[0]['task'] == "sometask", \
+               "ERROR: task  should be sometask."
 
         return
 

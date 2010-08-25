@@ -12,12 +12,6 @@ is based on the WMCore.WMInit class.
 
 """
 
-    "$Id: TestInit.py,v 1.64 2010/08/18 15:39:56 meloam Exp $"
-
-    "$Revision: 1.64 $"
-
-    "fvlingen@caltech.edu"
-
 import commands
 import logging
 import os

@@ -3,8 +3,11 @@ Created on Dec 28, 2009
 
 @author: evansde
 '''
-import uuid
+#import uuid
+from WMCore.Services.UUID       import makeUUID 
 from WMCore.FwkJobReport.Report import Report
+from WMCore.DataStructs.File    import File
+from WMCore.DataStructs.File    import Run
 
 
 def addRunToFile(fileSection, run, *lumis):
@@ -92,20 +95,17 @@ class ReportEmu(object):
         for omod in self.step.listOutputModules():
             omodRef = self.step.getOutputModule(omod)
             report.addOutputModule(omod)
-            guid = str(uuid.uuid4())
+            #guid = str(uuid.uuid4())
+            guid = str(makeUUID())
             basename = "%s.root" % guid
-            outFile = {
-                       "ModuleName" : omod,
-                       "LFN" : "%s/%s" % (omodRef.lfnBase, basename ),
-                       "PFN" : basename,
-                       "DataType": "Data",
-                       "OutputModuleClass" : 'PoolOutputModule' ,
-                       "BranchHash" : str(uuid.uuid4()),
-                       "GUID" : guid,
-                               }
-            repOutFile = report.addOutputFile(omod, **outFile)
-            for ifile in inpFiles:
-                addContributingInput(repOutFile, ifile[0], ifile[1])
+            outFile = File(lfn = "%s/%s" % (omodRef.lfnBase, basename ),
+                           size = 100, events = 10, merged = False)
+            outFile.setLocation(se = 'bad.cern.ch')
+            outFile.addRun(Run(1, *[45]))
+            outFile['dataset'] = {'name': '/Primary/Processed/Tier', 'ApplicationVersion' : '101', "ApplicationName" : 'JustSomeName'}
+            repOutFile = report.addOutputFile(omod, outFile)
+            #for ifile in inpFiles:
+            #    addContributingInput(repOutFile, ifile[0], ifile[1])
             for run in runs:
                 addRunToFile(repOutFile, run.run, *run.lumis)
     

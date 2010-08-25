@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.7 2010/04/29 14:52:04 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: LogArchive.py,v 1.8 2010/04/29 15:00:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import os
 import os.path
@@ -115,6 +115,7 @@ class LogArchive(Executor):
         except Exception, ex:
             self.report.addError(self.stepName, 1, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
+            self.report.persist("Report.pkl")
             raise
         
         signal.alarm(0)

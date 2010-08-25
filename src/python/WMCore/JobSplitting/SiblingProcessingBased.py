@@ -6,8 +6,8 @@ Launch jobs to run over a file once all other subscriptions that process the fil
 have completed processing it.
 """
 
-__revision__ = "$Id: SiblingProcessingBased.py,v 1.2 2010/04/22 21:27:32 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: SiblingProcessingBased.py,v 1.3 2010/04/23 16:43:25 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 import threading
 import logging
@@ -59,7 +59,7 @@ class SiblingProcessingBased(JobFactory):
                 
             completeFiles = completeFiles[filesPerJob:]
 
-        if filesetClosed:
+        if filesetClosed and len(completeFiles) > 0:
             self.newJob(name = makeUUID())
             for jobFile in completeFiles:
                 newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],

@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.10 2009/12/02 14:52:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.11 2009/12/02 17:55:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import logging
@@ -56,11 +56,17 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
 
         self.getUninjected = daofactory(classname = "GetUninjectedFiles")
+        self.getMigrated = daofactory(classname = "GetMigratedBlocks")
 
         daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)   
         self.setStatus = daofactory(classname = "DBSBufferFiles.SetStatus")
+
+        daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                logger = self.logger,
+                                dbinterface = myThread.dbi)   
+        self.setBlockStatus = daofactory(classname = "SetBlockStatus")        
 
         nodeMappings = self.phedex.getNodeMap()
         for node in nodeMappings["phedex"]["node"]:
@@ -73,16 +79,12 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return
 
-    def algorithm(self, parameters):
+    def injectFiles(self):
         """
-        _algorithm_
+        _injectFiles_
 
-        Poll the database for uninjected files and attempt to inject them into
-        PhEDEx.
         """
         myThread = threading.currentThread()
-        myThread.transaction.begin()
-
         uninjectedFiles = self.getUninjected.execute()
 
         injectedFiles = []
@@ -124,6 +126,72 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             self.setStatus.execute(injectedFiles, "InPhEDEx", 
                                      conn = myThread.transaction.conn,
                                      transaction = myThread.transaction)
+
+        return
+
+    def closeBlocks(self):
+        """
+        _closeBlocks_
+
+        """
+        myThread = threading.currentThread()
+        migratedBlocks = self.getMigrated.execute()
+
+        closedBlocks = []
+        for siteName in migratedBlocks.keys():
+            # SE names can be stored in DBSBuffer as that is what is returned in
+            # the framework job report.  We'll try to map the SE name to a
+            # PhEDEx node name here. 
+            location = None
+
+            if siteName in self.nodeNames:
+                location = siteName
+            else:
+                if self.seMap.has_key("MSS"):
+                    if self.seMap["MSS"].has_key(siteName):
+                        location = self.seMap["MSS"][siteName]
+                elif self.seMap.has_key("Disk"):
+                    if self.seMap["Disk"].has_key(siteName):
+                        location = self.seMap["Disk"][siteName]
+
+            if location == None:
+                logging.error("Could not map SE %s to PhEDEx node." % \
+                              siteName)
+                continue
+
+            injectRes = self.phedex.injectBlocksFromDB(self.dbsUrl,
+                                                       migratedBlocks[siteName],
+                                                       location, 1, 0)
+
+            if not injectRes.has_key("error"):
+                for datasetName in migratedBlocks[siteName]:
+                    for blockName in migratedBlocks[siteName][datasetName]:
+                        closedBlocks.append(blockName)
+            else:
+                logging.error("Error injecting data %s: %s" % \
+                              (uninjectedFiles[siteName], injectRes["error"]))
+
+        for closedBlock in closedBlocks:
+            self.setBlockStatus.execute(closedBlock, locations = None,
+                                        open_status = "Closed", 
+                                        conn = myThread.transaction.conn,
+                                        transaction = myThread.transaction)
+
+
+        return
+        
+    def algorithm(self, parameters):
+        """
+        _algorithm_
+
+        Poll the database for uninjected files and attempt to inject them into
+        PhEDEx.
+        """
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        self.injectFiles()
+        self.closeBlocks()
 
         myThread.transaction.commit()
         return

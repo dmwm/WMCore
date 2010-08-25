@@ -5,8 +5,8 @@ _FileAndEventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FileAndEventBased_t.py,v 1.1 2009/03/20 14:44:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FileAndEventBased_t.py,v 1.2 2009/03/23 16:07:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
@@ -77,6 +77,14 @@ class FileAndEventBasedTest(unittest.TestCase):
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
 
+        self.zeroEventFileset = Fileset(name = "TestFileset3")
+        self.zeroEventFileset.create()
+        zeroEventFile = File("/some/file/name", size = 1000, events = 0,
+                             locations = Set(["somese.cern.ch"]))
+        zeroEventFile.create()
+        self.zeroEventFileset.addFile(zeroEventFile)
+        self.zeroEventFileset.commit()        
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001")
         testWorkflow.create()
@@ -90,6 +98,11 @@ class FileAndEventBasedTest(unittest.TestCase):
                                                    split_algo = "FileAndEventBased",
                                                    type = "Processing")
         self.singleFileSubscription.create()
+        self.zeroEventSubscription = Subscription(fileset = self.zeroEventFileset,
+                                                  workflow = testWorkflow,
+                                                  split_algo = "FileAndEventBased",
+                                                  type = "Processing")
+        self.zeroEventSubscription.create()        
         return
 
     def tearDown(self):
@@ -146,6 +159,37 @@ class FileAndEventBasedTest(unittest.TestCase):
                "ERROR: Job's first event is incorrect."
 
         return
+
+    def testZeroEvents(self):
+        """
+        _testZeroEvents_
+
+        Test how the job splitting code works with 0 event files.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.zeroEventSubscription)
+
+        jobGroups = jobFactory(events_per_job = 100)
+
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 1, \
+               "ERROR: JobFactory didn't create a single job."
+
+        job = jobGroups[0].jobs.pop()
+
+        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+               "ERROR: Job contains unknown files."
+        
+        assert job.mask.getMaxEvents() == 100, \
+               "ERROR: Job's max events is incorrect."
+        
+        assert job.mask["FirstEvent"] == 0, \
+               "ERROR: Job's first event is incorrect."
+
+        return    
 
     def testMoreEvents(self):
         """

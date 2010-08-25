@@ -6,44 +6,44 @@ _Run_
 container representing a run, and its constituent lumi sections
 
 """
-__revision__ = "$Id: Run.py,v 1.3 2009/02/17 17:58:29 sryu Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: Run.py,v 1.4 2009/08/05 22:09:32 meloam Exp $"
+__version__  = "$Revision: 1.4 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 
-class Run(WMObject, list):
+class Run(WMObject):
     """
     _Run_
 
     Run container, is a list of lumi sections
 
     """
-    def __init__(self, runNumber = None, *lumis):
+    def __init__(self, runNumber = None, *newLumis):
         WMObject.__init__(self)
-        list.__init__(self)
         self.run = runNumber
-        self.extend(lumis)
+        self.lumis = []
+        self.lumis.extend(newLumis)
 
     def __str__(self):
-        return "Run%s:%s" % (self.run, list(self))
+        return "Run%s:%s" % (self.run, list(self.lumis))
 
 
     def __lt__(self, rhs):
         if self.run != rhs.run:
             return self.run < rhs.run
-        return list(self) < list(rhs)
+        return list(self.lumis) < list(rhs.lumis)
 
 
 
     def __gt__(self, rhs):
         if self.run != rhs.run:
             return self.run > rhs.run
-        return list(self) > list(rhs)
+        return list(self.lumis) > list(rhs.lumis)
 
 
     def __cmp__(self, rhs):
         if self.run == rhs.run:
-            return cmp(list(self), list(rhs))
+            return cmp(list(self.lumis), list(rhs.lumis))
         if self.run > rhs.run:
             return 1
         if self.run < rhs.run:
@@ -63,18 +63,29 @@ class Run(WMObject, list):
         
         #newRun = Run(self.run, *self)
         #[ newRun.append(x) for x in rhs if x not in newRun ]
-        [ self.append(x) for x in rhs if x not in self ]
+        [ self.lumis.append(x) for x in rhs.lumis if x not in self.lumis ]
         
         return self
-
-
+    def __iter__(self):
+        return self.lumis.__iter__()
+    
+    def __next__(self):
+        return self.lumis.__next__()
+    def __len__(self):
+        return self.lumis.__len__()
+    def __getitem__(self,key):
+        return self.lumis.__getitem__(key)
+    def __setitem__(self,key,value):
+        return self.lumis.__setitem__(key,value)
+    def __delitem__(self,key):
+        return self.lumis.__delitem__(key)
 
     def __eq__(self, rhs):
         if not isinstance(rhs, Run) :
             return False
         if self.run != rhs.run:
             return False
-        return list(self) == list(rhs)
+        return list(self.lumis) == list(rhs.lumis)
 
     def __ne__(self, rhs):
         return not self.__eq__(rhs)
@@ -82,7 +93,7 @@ class Run(WMObject, list):
     def __hash__(self):
 
         value = self.run.__hash__()
-        self.sort()
-        for lumi in self:
+        self.lumis.sort()
+        for lumi in self.lumis:
             value += lumi.__hash__()
         return value

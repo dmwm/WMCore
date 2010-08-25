@@ -8,8 +8,8 @@ Implementation of StageOutImpl interface for DCCPFNAL
 import os
 import commands
 
-from Storage.Registry import registerStageOutImpl
-from Storage.StageOutImpl import StageOutImpl
+from WMCore.Storage.Registry import registerStageOutImpl
+from WMCore.Storage.StageOutImpl import StageOutImpl
 
 from WMCore.WMException import WMException
 
@@ -62,12 +62,14 @@ class DCCPFNALImpl(StageOutImpl):
         will be seen from the worker node
 
         """
+        print "createOutputDirectory(): %s" % targetPFN
+
         # only create dir on remote storage
-        if targetPFN.find('/pnfs/') == -1:
+        if targetPFN.find('/pnfs/') == -1 and targetPFN.find('lustre') == -1:
             return
 
         # handle dcache or lustre location
-        if targetPFN.find('/store/unmerged/lustre/') == -1:
+        if targetPFN.find('lustre') == -1:
             pfnSplit = targetPFN.split("WAX/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             directory = os.path.dirname(filePath)
@@ -78,13 +80,11 @@ class DCCPFNALImpl(StageOutImpl):
             command += "fi\n"
             self.executeCommand(command)
         else: 
-            pfnSplit = targetPFN.split("/store/unmerged/lustre/", 1)[1]
-            filePath = "/lustre/unmerged/%s" % pfnSplit
-            targetdir= os.path.dirname(filePath)
+            targetdir= os.path.dirname(targetPFN)
             checkdircmd="/bin/ls %s > /dev/null " % targetdir
             print "Check dir existence : %s" %checkdircmd 
             try:
-                checkdirexitCode = self.run(checkdircmd)
+                (checkdirexitCode, output) = commands.getstatusoutput(checkdircmd)
             except Exception, ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % checkdircmd
@@ -96,7 +96,7 @@ class DCCPFNALImpl(StageOutImpl):
                 mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
                 print "=> creating the dir : %s" %mkdircmd
                 try:
-                    self.run(mkdircmd)
+                    self.executeCommand(mkdircmd)
                 except Exception, ex:
                     msg = "Warning: Exception while invoking command:\n"
                     msg += "%s\n" % mkdircmd
@@ -145,7 +145,7 @@ class DCCPFNALImpl(StageOutImpl):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
 
         
-        if targetPFN.find('/store/unmerged/lustre/') == -1:
+        if targetPFN.find('lustre') == -1:
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
@@ -207,7 +207,7 @@ fi
         """
 
 
-        if targetPFN.find('/store/unmerged/lustre/') == -1:
+        if targetPFN.find('lustre') == -1:
             optionsStr = ""
             if options != None:
                 optionsStr = str(options)
@@ -260,15 +260,12 @@ fi
             return result
 
         else:
-
-            pfnSplit = sourcePFN.split("/store/unmerged/lustre/", 1)[1]
-            filePath = "/lustre/unmerged/%s" % pfnSplit
-            original_size = os.stat(filePath)[6]
+            original_size = os.stat(sourcePFN)[6]
             print "Local File Size is: %s" % original_size
             result = "/bin/cp "
             if options != None:
                 result += " %s " % options
-            result += " %s " % filePath
+            result += " %s " % sourcePFN
             result += " %s " % targetPFN
             result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
             return result

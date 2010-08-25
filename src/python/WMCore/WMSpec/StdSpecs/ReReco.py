@@ -44,7 +44,7 @@ def rerecoWorkload(workloadName, arguments):
     processingVersion = arguments.get("ProcessingVersion", "v99")
     scenario = arguments.get("Scenario", "cosmics")
     cmsswVersion = arguments.get("CMSSWVersion", "CMSSW_3_3_5_patch3")
-    scramArchitecture = options.get("ScramArch", "slc5_ia32_gcc434")
+    scramArchitecture = arguments.get("ScramArch", "slc5_ia32_gcc434")
     
     
     #  //
@@ -71,7 +71,7 @@ def rerecoWorkload(workloadName, arguments):
     # // likely to be ~stable
     #//
     dbsUrl = arguments.get("DBSURL","http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" )
-    softwareInitCommand = options.get("softwareInitCommand", " . /uscmst1/prod/sw/cms/shrc prod")
+    softwareInitCommand = arguments.get("SoftwareInitCommand", " . /uscmst1/prod/sw/cms/shrc prod")
     tempLfnCategory =  arguments.get("TemporaryLFNCategory", "/store/unmerged")
 
     
@@ -119,8 +119,8 @@ def rerecoWorkload(workloadName, arguments):
         run_blacklist = runBlacklist,
         run_whitelist = runWhitelist
         )
-    rereco.constraints.sites.whitelist = siteWhitelist
-    rereco.constraints.sites.blacklist = siteBlacklist
+    rereco.data.constraints.sites.whitelist = siteWhitelist
+    rereco.data.constraints.sites.blacklist = siteBlacklist
     
 
     rerecoCmsswHelper.cmsswSetup(

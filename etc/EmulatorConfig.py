@@ -9,3 +9,4 @@ config.section_("Emulator")
 config.Emulator.PhEDEx = True
 config.Emulator.DBSReader = True
 config.Emulator.RequestManager = True
+config.Emulator.SiteDB = True

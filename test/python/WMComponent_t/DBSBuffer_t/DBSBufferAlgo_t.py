@@ -5,8 +5,8 @@ _DBSBufferAlgo_t_
 Unit tests for manipulating algorithm in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferAlgo_t.py,v 1.1 2009/06/19 15:37:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBSBufferAlgo_t.py,v 1.2 2009/10/13 20:49:44 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -23,16 +23,7 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class DBSBufferDatasetTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """
@@ -41,8 +32,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         DBSBuffer tables.
         """
-        if self._setup:
-            return
+
 
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
@@ -55,8 +45,6 @@ class DBSBufferDatasetTest(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-        self._setup = True
-        return
           
     def tearDown(self):        
         """
@@ -66,8 +54,6 @@ class DBSBufferDatasetTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         
-        if self._teardown:
-            return
 
         if myThread.transaction == None:
             myThread.transaction = Transaction(self.dbi)
@@ -82,7 +68,6 @@ class DBSBufferDatasetTest(unittest.TestCase):
             raise Exception("Could not complete DBSBuffer tear down.")
         
         myThread.transaction.commit()    
-        self._teardown = True
             
     def testCreate(self):
         """

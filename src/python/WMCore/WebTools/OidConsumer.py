@@ -256,6 +256,8 @@ class OidConsumer(cherrypy.Tool):
             return
         if authzfunc == None:
             authzfunc = self.defaultAuth
+
+        # Now prepares arguments to pass to the authzfunc
         permissions = cherrypy.session[self.session_name]['permissions']
         if type(permissions) == type('str'):
             permissions = self.decoder.decode(permissions)
@@ -263,45 +265,50 @@ class OidConsumer(cherrypy.Tool):
                 'permissions':permissions,
                 'fullname': cherrypy.session[self.session_name]['fullname'],
                 'dn': cherrypy.session[self.session_name]['dn']}
-        
-        if authzfunc and not authzfunc(role, group, site, user):
-            # Not allowed
-            msg = 'You are not allowed to access %s' % cherrypy.request.path_info
-            cherrypy.session[self.session_name]['info'] = msg
-            raise cherrypy.HTTPRedirect(self.authz_path)
-    
-    def defaultAuth(self, role=[], group=[], site=[], user={}):
-        """
-        A deafult authorisation function. Returns True/False. It checks that the
-        user has the roles for either the groups or sites specified. If the site
-        or group list is 0 length it just checks the user has the named role. If
-        there is no role specified check that user is a non-empty dict. 
-        
-        Other authorisation functions should have the same signature and behave 
-        in the same manner.
-        """
+
+        # For arguments to be lists
         if role and not isinstance(role, list):
             role = [role]
         if group and not isinstance(group, list):
             group = [group]
         if site and not isinstance(site, list):
             site = [site]
+
+        # Finally checks if the user is allowed
+        if not authzfunc(user, role, group, site):
+            # Not allowed
+            msg = 'You are not allowed to access %s' % cherrypy.request.path_info
+            cherrypy.session[self.session_name]['info'] = msg
+            raise cherrypy.HTTPRedirect(self.authz_path)
+        
+    def defaultAuth(self, user, role=[], group=[], site=[]):
+        """
+        A default authorisation function. Returns True/False. It checks that the
+        user has the roles for either the groups or sites specified. If the site
+        or group list is 0 length it just checks the user has the named role. If
+        there is no role specified check that user is a non-empty dict. 
+        
+        Other authorisation functions should have the same signature and behave 
+        in the same manner.
+
+        This code is only reached if the user is already authenticated 
+        """
+        assert(user) # user shouldn't be empty here
         if role == [] and group == [] and site == []:
-            if not user == {}:
-                return True
-            else:
-                return False
+            return True  # Allow if no authorization requeriment is present
+
         if len(role):
+            # one or more roles specified 
             for r in role:
-                if len(group) == 0 and len(site) == 0:
-                    if r in user['permissions'].keys():
+                if r in user['permissions'].keys():
+                    if len(group) == 0 and len(site) == 0:
                         return True
-                for g in group:
-                    if g in user['permissions'][r]:
-                        return True
-                for s in site:
-                    if s in user['permissions'][r]:
-                        return True
+                    for g in group:
+                        if g in user['permissions'][r]:
+                            return True
+                    for s in site:
+                        if s in user['permissions'][r]:
+                            return True
         else:
             # no role specified
             l = []
@@ -314,7 +321,7 @@ class OidConsumer(cherrypy.Tool):
                 if s in l:
                     return True
             for g in group:
-                if s in l:
+                if g in l:
                     return True
    
         return False

@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.11 2010/05/07 19:40:10 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: LogArchive.py,v 1.12 2010/05/07 20:09:26 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import os.path
@@ -108,6 +108,8 @@ class LogArchive(Executor):
         signal.alarm(waitTime)
         try:
             manager(fileInfo)
+            self.report.addOutputModule(moduleName = "LOGS")
+            self.report.addOutputFile(outputModule = "LOGS", file = fileInfo)
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
@@ -119,11 +121,7 @@ class LogArchive(Executor):
         
         signal.alarm(0)
 
-        outputRef = getattr(self.report.data, self.stepName)
-        outputRef.output.LOGS.section_("file0")
-        outputRef.output.LOGS.file0.pfn = fileInfo['PFN']
-        outputRef.output.LOGS.file0.location = fileInfo['SEName']
-        outputRef.output.LOGS.file0.lfn = fileInfo['LFN']
+        
 
         return
 

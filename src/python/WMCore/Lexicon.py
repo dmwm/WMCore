@@ -7,8 +7,8 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True. 
 """
 
-__revision__ = "$Id: Lexicon.py,v 1.2 2009/02/03 17:49:44 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Lexicon.py,v 1.3 2009/07/27 16:04:34 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import re
 
@@ -16,10 +16,19 @@ def sitetier(candidate):
     return check("^T[0-3]", candidate)
     
 def cmsname(candidate):
-    return check("^T[0-3]_[A-Z]{2}_[A-Za-z]+", candidate)
+    """
+    Check candidate as a (partial) CMS name. Should pass:    
+        T2
+        T2_UK
+        T2_UK_SGrid
+        T2_UK_SGrid_Bristol
+    """
+    #remove any trailing _'s
+    candidate = candidate.rstrip('_')
+    return check("^T[0-3]((_[A-Z]{2})(_[A-Za-z]+)?)?", candidate)
 
 def countrycode(candidate):
-    #TODO: do properly
+    #TODO: do properly with a look up table
     return check("^[A-Z]{2}$", candidate)
 
 def check(regexp, candidate):

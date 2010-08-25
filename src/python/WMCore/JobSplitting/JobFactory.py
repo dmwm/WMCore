@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.30 2010/06/11 19:11:13 sfoulkes Exp $"
-__version__  = "$Revision: 1.30 $"
+__revision__ = "$Id: JobFactory.py,v 1.31 2010/06/23 18:29:42 sfoulkes Exp $"
+__version__  = "$Revision: 1.31 $"
 
 
 import logging
@@ -37,20 +37,20 @@ class JobFactory(WMObject):
         self.baseUUID      = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
 
-
-
-
-
-    def __call__(self, jobtype='Job', grouptype='JobGroup', *args, **kwargs):
+    def __call__(self, jobtype = "Job", grouptype = "JobGroup", *args, **kwargs):
         """
-        The default behaviour of JobFactory.__call__ is to return a single
-        Job associated with all the files in the subscription's fileset
+        __call__
+
+        
         """
 
         #Need to reset the internal data for multiple calls to the factory
         self.jobGroups = []
         self.currentGroup = None
         self.currentJob = None
+
+        self.siteBlackList = kwargs.get("siteBlackList", [])
+        self.siteWhiteList = kwargs.get("siteWhiteList", [])
 
         # Every time we restart, re-zero the jobs
         self.nJobs = 0
@@ -86,7 +86,7 @@ class JobFactory(WMObject):
         self.newGroup(args, kwargs)
         self.newJob(name='myJob')
 
-    def newGroup(self):
+    def newGroup(self, *args, **kwargs):
         """
         Return and new JobGroup
         """
@@ -102,6 +102,9 @@ class JobFactory(WMObject):
         self.currentJob["task"] = self.subscription.taskName()
         self.currentJob["workflow"] = self.subscription.workflowName()
         self.currentJob["owner"] = self.subscription.owner()
+        self.currentJob["siteBlackList"] = self.siteBlackList
+        self.currentJob["siteWhiteList"] = self.siteWhiteList
+
         self.nJobs += 1
         for gen in self.generators:
             gen(self.currentJob)

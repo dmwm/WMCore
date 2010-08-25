@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.13 2010/01/13 19:51:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.14 2010/03/01 15:18:05 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import os
@@ -620,6 +620,8 @@ class DBSBufferFileTest(unittest.TestCase):
         Verify that the addParents() method works correctly even if the parents
         do not already exist in the database.
         """
+        myThread = threading.currentThread()
+        
         testFile = DBSBufferFile(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
                                  locations = "se1.fnal.gov")
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -644,13 +646,31 @@ class DBSBufferFileTest(unittest.TestCase):
         parentLFNs = verifyFile.getParentLFNs()
 
         for parentLFN in parentLFNs:
-            assert parentLFN in goldenLFNs, \
-                   "Error: unknown lfn %s" % parentLFN
-
+            self.assertTrue(parentLFN in goldenLFNs, "Error: unknown lfn %s" % parentLFN)
             goldenLFNs.remove(parentLFN)
 
-        assert len(goldenLFNs) == 0, \
-               "Error: missing LFNs..."
+        self.assertEqual(len(goldenLFNs), 0, "Error: missing LFNs...")
+        
+        # Check that the bogus dataset is listed as inDBS
+        sqlCommand = """SELECT in_dbs FROM dbsbuffer_algo_dataset_assoc das
+                          INNER JOIN dbsbuffer_dataset ds ON das.dataset_id = ds.id
+                          WHERE ds.path = '/bogus/dataset/path'"""
+
+        status = myThread.dbi.processData(sqlCommand)[0].fetchall()[0][0]
+
+        self.assertEqual(status, 1)
+
+
+        # Now make sure the dummy files are listed as being in DBS
+        sqlCommand = """SELECT status FROM dbsbuffer_file df
+                          INNER JOIN dbsbuffer_algo_dataset_assoc das ON das.id = df.dataset_algo
+                          INNER JOIN dbsbuffer_dataset ds ON das.dataset_id = ds.id
+                          WHERE ds.path = '/bogus/dataset/path' """
+
+        status = myThread.dbi.processData(sqlCommand)[0].fetchall()
+
+        for entry in status:
+            self.assertEqual(entry, ('AlreadyInDBS',))
 
         return
 

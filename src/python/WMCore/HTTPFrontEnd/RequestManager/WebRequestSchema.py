@@ -5,12 +5,11 @@ from WMCore.RequestManager.RequestDB.Settings.RequestTypes import TypesList
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.RequestManager.CmsDriverWebRequest import CmsDriverWebRequest
-import WMCore.Wrappers.JsonWrapper as JsonWrapper
+import WMCore.HTTPFrontEnd.RequestManager.Sites
 from httplib import HTTPException
 import cherrypy
 import os
 import time
-import urllib
 from WMCore.WebTools.Page import TemplatedPage
 
 
@@ -29,14 +28,7 @@ class WebRequestSchema(TemplatedPage):
         self.couchDBName = config.configCacheDBName
         cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
 
-        # download all the sites from siteDB
-        url = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
-        data = JsonWrapper.loads(urllib.urlopen(url).read().replace("'", '"'))
-        # kill duplicates, then put in alphabetical order
-        siteset = set([d['name'] for d in data.values()])
-        # warning: alliteration
-        self.sites = list(siteset)
-        self.sites.sort() 
+        self.sites = WMCore.HTTPFrontEnd.RequestManager.Sites.sites()
         self.defaultProcessingConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8"
         self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
 
@@ -63,9 +55,10 @@ class WebRequestSchema(TemplatedPage):
             requestPriority=None, requestSizeEvents=None, requestSizeFiles=None,
             acquisitionEra=None, scenario=None, globalTag=None, processingVersion=None,
             group=None, requestor=None, filein=None, inputMode=None, couchDBConfig = None,
-            skimInput=None, dbs=None, lfnCategory=None,
+            dbs=None, lfnCategory=None,
             processingConfig=None,
-            skimConfig=None, mergedLFNBase = None, unmergedLFNBase = None,
+            skimInput1= None, skimConfig1= None,
+            mergedLFNBase = None, unmergedLFNBase = None,
             splitAlgo=None, filesPerJob=None, lumisPerJob=None, eventsPerJob=None, splitFilesBetweenJob=False,
             skimSplitAlgo=None, skimFilesPerJob=None, skimTwoFilesPerJob=None,
             runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None,
@@ -89,7 +82,7 @@ class WebRequestSchema(TemplatedPage):
         schema["ScramArch"] = scramArch
         schema["InputDataset"] = filein
         schema["InputDatasets"] = [filein]
-        schema["SkimInput"] = skimInput
+        schema["SkimInput"] = skimInput1
         schema["DbsUrl"] = dbs
         # FIXME duplicate
         schema["LFNCategory"] = lfnCategory
@@ -115,7 +108,7 @@ class WebRequestSchema(TemplatedPage):
         schema["CouchDBName"] = self.couchDBName
         print "SCHEMA " + str(schema)
 
-        schema["SkimConfig"] = skimConfig
+        schema["SkimConfig"] = skimConfig1
         if minMergeSize != None:  
             schema["MinMergeSize"] = minMergeSize
         if maxMergeSize != None:

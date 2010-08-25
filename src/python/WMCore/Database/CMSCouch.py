@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.19 2009/05/15 20:28:19 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: CMSCouch.py,v 1.20 2009/05/19 15:12:07 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 try:
     # Python 2.6
@@ -185,7 +185,7 @@ class Database(CouchDBRequests):
         doc['_deleted'] = True
         self.queue(doc)
 
-    def commit(self, doc=None, returndocs = False, timestamp = False):
+    def commit(self, doc=None, returndocs = False, timestamp = False, ):
         """
         Add doc and/or the contents of self._queue to the database. If returndocs
         is true, return document objects representing what has been committed. If
@@ -262,6 +262,12 @@ class Database(CouchDBRequests):
             return self.get('/%s/_design/%s/_view/%s' % \
                             (self.name, design, view), options)
 
+    def createDesignDoc(self, design='myview', language='javascript'):
+        view = Document('_design/%s' % design)
+        view['language'] = language
+        view['views'] = {}
+        return view
+        
     def allDocs(self):
         return self.get('/%s/_all_docs' % self.name)
 

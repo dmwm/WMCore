@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.8 2010/06/04 10:24:58 mcinquil Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.9 2010/06/28 18:56:54 spigafi Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -36,12 +36,10 @@ class LoadByRunningJobAttr(DBFormatter):
                 bl_job.closed as closed
                 FROM bl_job
                 INNER JOIN bl_runningjob ON 
-                        ( bl_runningjob.job_id = bl_job.job_id AND 
-                          bl_runningjob.task_id = bl_job.task_id )
-                WHERE bl_runningjob.submission = 
-                        ( SELECT MAX(submission) FROM bl_runningjob, bl_job
-                            WHERE bl_runningjob.job_id = bl_job.job_id )
-                        AND %s """
+                        (bl_runningjob.job_id = bl_job.job_id AND 
+                         bl_runningjob.task_id = bl_job.task_id AND
+                         bl_runningjob.submission = bl_job.submission_number) 
+                    AND %s """
 
     def execute(self, binds, limit = None, conn = None, transaction = False):
         """
@@ -59,28 +57,28 @@ class LoadByRunningJobAttr(DBFormatter):
                 # This is a time-stamp
                 if type(binds[x]) == list and len(binds[x]) == 2 : 
                     # I have an interval (2 time-stamps)
-                    whereStatement.append("bl_runningjob.%s > %s" % \
-                                       (tmp, binds[x][0]) )
-                    whereStatement.append("bl_runningjob.%s < %s" % \
-                                       (tmp, binds[x][1]) )
+                    whereStatement.append("bl_runningjob.%s >= %s" % \
+                                       (tmp, str(binds[x][0])) )
+                    whereStatement.append("bl_runningjob.%s <= %s" % \
+                                       (tmp, str(binds[x][1])) )
                     
                 elif type(binds[x]) == list and len(binds[x]) == 1 :
                     # From a specified time-stamp until now
-                    whereStatement.append("bl_runningjob.%s > %s" % \
-                                       (tmp, binds[x][0]) )
+                    whereStatement.append("bl_runningjob.%s >= %s" % \
+                                       (tmp, str(binds[x][0])) )
                 
                 elif type(binds[x]) == int :
                     # From a specified time-stamp until now
-                    whereStatement.append("bl_runningjob.%s > %s" % \
-                                       (tmp, binds[x]) )
+                    whereStatement.append("bl_runningjob.%s >= %s" % \
+                                       (tmp, str(binds[x])) )
                                           
             elif type(binds[x]) == str :
                 whereStatement.append( "bl_runningjob.%s = '%s'" % \
-                                       (tmp, binds[x]) )
+                                       (tmp, str(binds[x]) ))
                 
             else:
                 whereStatement.append( "bl_runningjob.%s = %s" % \
-                                       (tmp, binds[x]) )
+                                       (tmp, binds[x] ))
                 
         #whereClause = ' AND '.join(whereStatement)
         

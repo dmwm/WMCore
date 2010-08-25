@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.37 2010/07/16 15:19:27 swakef Exp $"
-__revision__ = "$Revision: 1.37 $"
+__version__ = "$Id: WMTask.py,v 1.38 2010/07/19 10:50:18 swakef Exp $"
+__revision__ = "$Revision: 1.38 $"
 
 import os
 import os.path
@@ -494,10 +494,10 @@ class WMTaskHelper(TreeHelper):
                 continue
             if opt == 'dbsurl':
                 self.data.input.dataset.dbsurl = arg
-            if opt == "runs_whitelist":
-                [ self.data.input.runs.whitelist.section_(str(i)) for i in arg ]
-            if opt == "runs_blacklist":
-                [ self.data.input.runs.blacklist.section_(str(i)) for i in arg ]
+            if opt == "run_whitelist":
+                [ self.data.input.dataset.runs.whitelist.section_(str(i)) for i in arg ]
+            if opt == "run_blacklist":
+                [ self.data.input.dataset.runs.blacklist.section_(str(i)) for i in arg ]
             
             # all other options
             

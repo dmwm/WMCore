@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.28 2009/09/19 10:48:00 metson Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Root.py,v 1.29 2009/09/19 11:32:00 metson Exp $"
+__version__ = "$Revision: 1.29 $"
 
 # CherryPy
 import cherrypy
@@ -100,7 +100,13 @@ class Root(WMObject):
             tools.cernoid = CernOidConsumer(self.secconfig)
             if not self.secconfig.use_decorators:
                 # do not enable it if you intend to use auth decorators
-                cpconfig.update({'tools.cernoid.on': True}) 
+                cpconfig.update({'tools.cernoid.on': True})
+            pagecfg = self.secconfig
+            pagecfg.object = pagecfg.handler
+            self.mountPage(pagecfg, 
+                           pagecfg.mount_point, 
+                           self.appconfig.dictionary_(), 
+                           WMFactory('webtools_factory'))    
             root.auth = tools.cernoid.defhandler
         log("loading config: %s" % cpconfig, 
                                    context=self.app, 

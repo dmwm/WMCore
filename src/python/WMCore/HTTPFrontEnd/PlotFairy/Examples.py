@@ -1,3 +1,6 @@
+import json
+import random 
+
 def generate_random_baobab():
 	def random_recurse(total,depth_left):
 		if depth_left==0:
@@ -89,3 +92,10 @@ simple_quality_map = {
 		[1.0,.9,.8,.7,.6,.5,.4,.3,.2,.1]
 	]
 }
+
+print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Sparkline&data=%s'>" % json.dumps(simple_sparkline)
+print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Baobab&data=%s'>" % json.dumps(simple_baobab)
+print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Bar&data=%s'>" % json.dumps(simple_bar_labels)
+print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Bar&data=%s'>" % json.dumps(simple_bar_numeric)
+print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Bar&data=%s'>" % json.dumps(simple_bar_time)
+print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=QualityMap&data=%s'>" % json.dumps(simple_quality_map)

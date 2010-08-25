@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.31 2009/10/16 18:18:58 mnorman Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: ChangeState.py,v 1.32 2009/10/28 10:36:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -40,11 +40,17 @@ class ChangeState(WMObject, WMConnectionBase):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self.logger,
                                      dbinterface = self.dbi)
-        self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-        if self.dbname not in self.couchdb.listDatabases():
-            self.createDatabase()
+        try:
+            self.couchdb = None
+            self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
+            if self.dbname not in self.couchdb.listDatabases():
+                self.createDatabase()
 
-        self.database = self.couchdb.connectDatabase(couchDbName)
+            self.database = self.couchdb.connectDatabase(couchDbName)
+        except Exception, ex:
+            logging.error("Error connecting to couch: %s" % str(ex))
+
+        return
 
     def propagate(self, jobs, newstate, oldstate):
         """
@@ -62,7 +68,11 @@ class ChangeState(WMObject, WMConnectionBase):
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
         # 2. Document the state transition
-        self.recordInCouch(jobs, newstate, oldstate)
+        try:
+            self.recordInCouch(jobs, newstate, oldstate)
+        except Exception, ex:
+            logging.error("Error updating job in couch: %s" % str(ex))
+            
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
 
@@ -85,8 +95,14 @@ class ChangeState(WMObject, WMConnectionBase):
         returns an attachment with the given name in the couch record
         identified by couchID
         """
-        return self.database.getAttachment(couchID, name)
-    
+        results = None
+        
+        try:
+            results = self.database.getAttachment(couchID, name)
+        except Exception, ex:
+            logging.error("Error retrieving attachment: %s" % str(ex))
+            
+        return results 
     
     def check(self, newstate, oldstate):
         """
@@ -133,8 +149,6 @@ class ChangeState(WMObject, WMConnectionBase):
 
         couchRecordsToUpdate = []
                 
-        #print couchRecordList
-        
         for job in jobs:
             doc = None
             couchRecord = job.get('couch_record', None)

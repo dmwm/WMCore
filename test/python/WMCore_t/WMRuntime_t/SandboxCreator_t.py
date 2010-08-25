@@ -4,6 +4,9 @@
     
     Tests sandbox production
 """
+
+__revision__ = "$Id: SandboxCreator_t.py,v 1.3 2009/06/11 23:12:49 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 import unittest
 import WMCore.WMRuntime.SandboxCreator as SandboxCreator
 import tempfile
@@ -16,10 +19,11 @@ import shutil
 class SandboxCreator_t(unittest.TestCase):
     
     def testMakeSandbox(self):
-        creator = SandboxCreator.SandboxCreator()
+        creator  = SandboxCreator.SandboxCreator()
         workload = TestWorkloads.oneTaskTwoStep()
         task     = workload.getTask("FirstTask")
-        boxpath = creator.makeSandbox(tempdir, workload, task)
+        tempdir  = tempfile.mkdtemp()
+        boxpath  = creator.makeSandbox(tempdir, workload, task)
         
         # extract our sandbox to test it
         extractDir = tempfile.mkdtemp()

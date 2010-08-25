@@ -4,6 +4,8 @@
     
     Given a path, workflow and task, create a sandbox within the path
 """
+__revision__ = "$Id: SandboxCreator.py,v 1.3 2009/06/11 23:12:48 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 import os
 import re
 import tarfile
@@ -18,7 +20,13 @@ class SandboxCreator:
         pass
     
     def makeSandbox(self, buildItHere, workload, task):
-        
+        """
+            __makeSandbox__
+            
+            MakeSandbox creates and archives a sandbox in buildItHere,
+            returning the path to the archive and putting it in the 
+            task
+        """
         # generate the real path and make it 
         workloadName = workload.name()
         taskName     = task.name()

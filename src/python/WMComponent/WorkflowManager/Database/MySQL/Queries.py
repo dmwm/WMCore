@@ -5,23 +5,19 @@ _Queries_
 
 This module implements the mysql backend for the 
 WorkflowManager
-
 """
 
-__revision__ = "$Id: Queries.py,v 1.6 2009/02/05 23:34:23 jacksonj Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Queries.py,v 1.7 2009/10/04 14:44:48 riahi Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Queries(DBFormatter):
     """
     _Queries_
-    
     This module implements the MySQL backend for the WorkflowManager
-    
     """
     
     def __init__(self):
@@ -36,6 +32,7 @@ class Queries(DBFormatter):
                         (workflow, fileset_match, split_algo, type)
                     VALUES (:workflow, :fileset_match, :split_algo, :type)
                     """
+
         self.execute(sqlStr, {'workflow' : workflowId, \
                               'fileset_match' : filesetMatch, \
                               'split_algo' : splitAlgo, \
@@ -74,13 +71,34 @@ class Queries(DBFormatter):
                     """
         result = self.execute(sqlStr, {})
         return self.formatDict(result)
+
+    def getUnsubscribedWorkflows(self):
+        """
+        Returns all workflows  that do not have a subscription
+        """
+        sqlStr = """SELECT id, workflow, fileset_match, split_algo, type
+                    FROM wm_managed_workflow 
+                    WHERE workflow NOT in (SELECT workflow from wmbs_subscription)
+                    """
+        result = self.execute(sqlStr, {})
+        return self.formatDict(result)
+
+    def getAllFilesets(self):
+        """
+        Returns all filesets 
+        """
+        sqlStr = """SELECT wmbs_fileset.id, wmbs_fileset.name 
+                    FROM wmbs_fileset 
+                    """
+        result = self.execute(sqlStr, {})
+        return self.formatDict(result)
     
     def getLocations(self, managedWorkflowId):
         """
         Returns all marked locations for a watched workflow / fileset match
         """
         sqlStr = """
-          SELECT wmbs_location.se_name, wm_managed_workflow_location.valid
+          SELECT wmbs_location.site_name, wm_managed_workflow_location.valid
           FROM wmbs_location, wm_managed_workflow_location
           WHERE wmbs_location.id = wm_managed_workflow_location.location
           AND wm_managed_workflow_location.managed_workflow = :managed_workflow;
@@ -97,7 +115,7 @@ class Queries(DBFormatter):
                                                       valid) 
            VALUES ((SELECT id from wm_managed_workflow
                      WHERE workflow = :workflow AND fileset_match = :fsmatch),
-                   (SELECT id FROM wmbs_location WHERE se_name = :location),
+                   (SELECT id FROM wmbs_location WHERE site_name = :location),
                    :valid);
            """
         self.execute(sqlStr, {'workflow' : workflowId, \
@@ -114,7 +132,7 @@ class Queries(DBFormatter):
                                        WHERE workflow = :workflow
                                        AND fileset_match = :fsmatch)
             AND location = (SELECT id FROM wmbs_location
-                             WHERE se_name = :location)
+                             WHERE site_name = :location)
             """
         self.execute(sqlStr, {'workflow' : workflowId, \
                               'fsmatch' : filesetMatch, \
@@ -128,4 +146,4 @@ class Queries(DBFormatter):
         """
         myThread = threading.currentThread()
         currentTransaction = myThread.transaction
-        return currentTransaction.processData(sqlStr, args) 
+        return currentTransaction.processData(sqlStr, args)

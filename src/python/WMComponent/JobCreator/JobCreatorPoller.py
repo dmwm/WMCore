@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.9 2010/02/26 18:31:29 mnorman Exp $"
-__version__  = "$Revision: 1.9 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.10 2010/03/02 15:01:32 mnorman Exp $"
+__version__  = "$Revision: 1.10 $"
 
 import threading
 import logging
@@ -185,7 +185,7 @@ init jobCreator
 
         #First, get list of Subscriptions
 
-        subscriptionList = self.daoFactory(classname = "Subscriptions.List")
+        subscriptionList = self.daoFactory(classname = "Subscriptions.ListIncomplete")
         subscriptions    = subscriptionList.execute()
 
         myThread.transaction.commit()

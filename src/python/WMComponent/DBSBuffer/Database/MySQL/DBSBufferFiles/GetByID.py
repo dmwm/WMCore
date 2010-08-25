@@ -5,14 +5,14 @@ _GetByID_
 MySQL implementation of DBSBufferFiles.GetByID
 """
 
-__revision__ = "$Id: GetByID.py,v 1.3 2009/07/14 19:18:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetByID.py,v 1.4 2009/12/02 20:13:00 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetByID(DBFormatter):
     sql = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
-                    files.events AS events, files.cksum AS cksum,
+                    files.events AS events, 
                     files.status AS status,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,

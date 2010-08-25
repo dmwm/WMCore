@@ -5,8 +5,8 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class Add(DBFormatter):
 
-    sql = """insert into dbsbuffer_file(lfn, filesize, events, cksum, dataset_algo, status) 
-                values (:lfn, :filesize, :events, :cksum, :dataset_algo, :status)"""
+    sql = """insert into dbsbuffer_file(lfn, filesize, events, dataset_algo, status) 
+                values (:lfn, :filesize, :events, :dataset_algo, :status)"""
                 
     def getBinds(self, files = None, size = 0, events = 0, cksum = 0,
                  dataset_algo = 0, status = "NOTUPLOADED"):
@@ -16,7 +16,6 @@ class Add(DBFormatter):
             binds = {'lfn': files, 
                      'filesize': size, 
                      'events': events,
-		     'cksum' : cksum,
                      'dataset_algo': dataset_algo,
                      'status' : status}
         elif type(files) == type([]):
@@ -26,7 +25,6 @@ class Add(DBFormatter):
                 binds.append({'lfn': f[0], 
                               'filesize': f[1], 
                               'events': f[2],
-				'cksum' : f[3],
 				'dataset_algo': dataset_algo,
 				'status' : status})
         return binds

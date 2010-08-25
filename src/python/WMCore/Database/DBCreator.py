@@ -7,8 +7,8 @@ Base class for formatters that create tables.
 
 """
 
-__revision__ = "$Id: DBCreator.py,v 1.8 2009/09/08 14:34:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBCreator.py,v 1.9 2010/02/03 18:49:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -58,7 +58,6 @@ class DBCreator(DBFormatter):
         tableKeys.sort()
         
         for i in tableKeys:
-            self.logger.debug( i )
             try:
                 self.dbi.processData(self.create[i], 
                                      conn = conn, 
@@ -71,7 +70,6 @@ class DBCreator(DBFormatter):
                 raise WMException(msg,'WMCore-2')
             
             keys = self.constraints.keys()
-            self.logger.debug( keys )
             
         # delete tables
         tableKeys = self.delete.keys()
@@ -80,7 +78,6 @@ class DBCreator(DBFormatter):
         didFail = False
         exceptionList = []
         for i in tableKeys:
-            self.logger.debug( i )
             try:
                 self.dbi.processData(self.delete[i], 
                                      conn = conn, 
@@ -98,7 +95,6 @@ class DBCreator(DBFormatter):
             raise WMException(msg,'WMCore-2')
 
         for i in self.indexes.keys():
-            self.logger.debug( i )
             try:
                 self.dbi.processData(self.indexes[i], 
                                      conn = conn, 
@@ -108,7 +104,6 @@ class DBCreator(DBFormatter):
                 raise e
 
         for i in self.constraints.keys():
-            self.logger.debug( i )
             try:
                 self.dbi.processData(self.constraints[i], 
                                  conn = conn, 
@@ -118,7 +113,6 @@ class DBCreator(DBFormatter):
                 raise e
                 
         for i in self.inserts.keys():
-            self.logger.debug( i )
             try:
                 self.dbi.processData(self.inserts[i], 
                                      conn = conn, 

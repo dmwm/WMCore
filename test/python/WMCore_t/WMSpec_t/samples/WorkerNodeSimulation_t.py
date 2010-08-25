@@ -5,8 +5,8 @@ WorkerNode unittest for WMRuntime/WMSpec
 
 """
 
-__revision__ = "$Id: WorkerNodeSimulation_t.py,v 1.1 2010/03/16 20:34:45 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkerNodeSimulation_t.py,v 1.2 2010/03/17 15:04:08 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 # Basic libraries
 import unittest
@@ -154,7 +154,7 @@ class basicWNTest(unittest.TestCase):
 
         # Create a new workload using StdSpecs.ReReco
         arguments = {
-            "OutputTiers" : ['RECO', 'ALCA', 'AOD'],
+            "OutputTiers" : ['RECO', 'ALCARECO', 'AOD'],
             "AcquisitionEra" : "Teatime09",
             "GlobalTag" :"GR09_P_V7::All",
             "LFNCategory" : "/store/data",
@@ -249,8 +249,10 @@ class basicWNTest(unittest.TestCase):
 
         # This is sort of awkward
         type    = task.name().split('Merge')[1]
+        print "Have type"
+        print type
         helper  = rereco.getStep('cmsRun1').getTypeHelper()
-        output  = helper.getOutputModule("output%s" %(type.upper()))
+        output  = helper.getOutputModule("output%sRECO" %(type.upper()))
         lfnBase = output.lfnBase
 
         fileset = Fileset(name = 'Merge%s' %(type))
@@ -477,11 +479,11 @@ class basicWNTest(unittest.TestCase):
         listOfWorkloadDirFiles = ['SITECONF', 'Tier1ReReco',
                                   'ReReco-Sandbox.tar.bz2',
                                   'MergeReco-Sandbox.tar.bz2',
-                                  'MergeAlca-Sandbox.tar.bz2',
+                                  'MergeAlcaReco-Sandbox.tar.bz2',
                                   'MergeAod-Sandbox.tar.bz2',
                                   'ReRecoJobPackage.pkl',
                                   'MergeRecoJobPackage.pkl',
-                                  'MergeAlcaJobPackage.pkl',
+                                  'MergeAlcaRecoJobPackage.pkl',
                                   'MergeAodJobPackage.pkl']
 
         # Check setup
@@ -500,7 +502,7 @@ class basicWNTest(unittest.TestCase):
                            'WMTweak.py', '__init__.py', 'PSetTweak.pyc']
 
         self.assertEqual(os.listdir(self.unpackDir),
-                         ['ReReco', 'MergeReco', 'MergeAlca', 'MergeAod'])
+                         ['ReReco', 'MergeReco', 'MergeAlcaReco', 'MergeAod'])
         for dir in os.listdir(self.unpackDir):
             taskPath = os.path.join(self.unpackDir, dir, 'job')
             self.assertEqual(os.listdir(taskPath), ['WMSandbox', 'WMCore', 'PSetTweaks'])

@@ -413,7 +413,8 @@ def getLastTimeBackUp():
         logWarning("Missing sensors back up folder. Creating one.")
         os.system("mkdir -p %s" % sensorsBackUpPath)
         
-    lastBackUp = os.popen("ls -1 %s | grep '^%s-[0-9]\{4\}.bz2$' | sort -r" % (sensorsBackUpPath, target)).readline()
+    # FIXME: Now contains timestamp (DONE)
+    lastBackUp = os.popen("ls -1 %s | grep '^%s-[0-9]\{10\}.bz2$' | sort -r" % (sensorsBackUpPath, target)).readline()
     logDebug("lastBackUp=%s" % lastBackUp[:-1])
     
     if len(lastBackUp) == 0:
@@ -760,8 +761,7 @@ except ImportError, ex:
     error("Can no load configuration file! Please, check configuration file (" + os.path.abspath(configFile) + ")")
 
 # Checking for 'HWMon' section in configuration file
-
-if "HWMon" not in config.listComponents_():
+if "HWMon" not in dir(config):
     error("No 'HWMon' section found in WMCore configuration file! Please, check your configuration file.")
     
 # Checking for 'sensors' directory

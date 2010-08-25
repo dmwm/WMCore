@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.48 2010/06/23 13:54:19 meloam Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: Service.py,v 1.49 2010/06/23 13:56:17 meloam Exp $"
+__version__ = "$Revision: 1.49 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -236,8 +236,8 @@ class Service(dict):
             except HTTPException, he:
                 if not os.path.exists(cachefile):
                     msg = 'The cachefile %s does not exist and the service at %s is'
-                    msg += ' unavailable - error is raised below'
-                    msg = msg % (cachefile, url)
+                    msg += ' unavailable - status: %s reason: %s'
+                    msg = msg % (cachefile, url, status, reason)
                     self['logger'].warning(msg)
                     raise he
                 else:
@@ -259,12 +259,12 @@ class Service(dict):
                             msg = 'The cachefile %s is dead (5 times older than cache '
                             msg += 'duration), and the service at %s is unavailable - '
                             msg += 'it returned %s because %s'
-                            msg = msg % (cachefile, he.url, he.status, he.reason)
+                            msg = msg % (cachefile, url, status, reason)
                             self['logger'].warning(msg)
                         elif self.get('usestalecache', False) == False:
                             msg = 'The cachefile %s is stale and the service at %s is'
-                            msg += ' unavailable - it returned %s because %s'
-                            msg = msg % (cachefile, he.url, he.status, he.reason)
+                            msg += ' unavailable '
+                            msg = msg % (cachefile, url, status, reason)
                             self['logger'].warning(msg)
                         raise he
                     

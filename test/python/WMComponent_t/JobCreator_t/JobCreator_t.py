@@ -26,6 +26,9 @@ from WMCore.Agent.Configuration import loadConfigurationFile
 
 from WMComponent.JobCreator.JobCreator import JobCreator
 
+from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
+from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
+
 class JobCreatorTest(unittest.TestCase):
     """
     Test case for the JobCreator
@@ -154,7 +157,7 @@ class JobCreatorTest(unittest.TestCase):
             myThread.transaction.begin()
 
             testWorkflow = Workflow(spec = "TestHugeWorkload%s/TestHugeTask" %(nameStr), owner = "mnorman",
-                                    name = "wf001"+nameStr, task="Test")
+                                    name = "wf001"+nameStr, task="Merge")
             testWorkflow.create()
         
             testFileset = Fileset(name = "TestFileset"+nameStr)
@@ -214,7 +217,7 @@ class JobCreatorTest(unittest.TestCase):
             myThread.transaction.begin()
 
             testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                    name = "wf001"+nameStr, task="Test"+nameStr)
+                                    name = "wf001"+nameStr, task="Merge")
             testWorkflow.create()
         
             testFileset = Fileset(name = "TestFileset"+nameStr)
@@ -262,7 +265,7 @@ class JobCreatorTest(unittest.TestCase):
             myThread.transaction.begin()
 
             testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                    name = "wf001"+nameStr, task="Test"+nameStr)
+                                    name = "wf001"+nameStr, task="Merge")
             testWorkflow.create()
         
             testFileset = Fileset(name = "TestFileset"+nameStr)
@@ -438,12 +441,34 @@ class JobCreatorTest(unittest.TestCase):
             print "Aborting!"
             raise Exception
 
+        if os.path.exists("basicWorkloadUpdated.pcl"):
+            os.remove("basicWorkloadUpdated.pcl")
+
+
+        wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
+        wmWorkload.load("basicWorkload.pcl")
+        wmTask     = wmWorkload.getTask("Merge")
+        #print wmTask.data
+
+        wmTask.data.section_("seeders")
+        wmTask.data.seeders.section_("RandomSeeder")
+        wmTask.data.seeders.section_("RunAndLumiSeeder")
+        wmTask.data.seeders.RandomSeeder.simMuonRPCDigis            = None
+        wmTask.data.seeders.RandomSeeder.simEcalUnsuppressedDigis   = None
+        wmTask.data.seeders.RandomSeeder.simCastorDigis             = None
+        wmTask.data.seeders.RandomSeeder.generator                  = None 
+        wmTask.data.seeders.RandomSeeder.simSiStripDigis            = None
+        wmTask.data.seeders.RandomSeeder.LHCTransport               = None
+
+        wmWorkload.save("basicWorkloadUpdated.pcl")
+        
+
 
         myThread = threading.currentThread()
 
         nSubs = 5
 
-        self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
+        self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkloadUpdated.pcl")
 
         config = self.getConfig()
 

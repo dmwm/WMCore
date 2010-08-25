@@ -102,7 +102,7 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(task2c.getStep("step1"), None)
 
 
-        print task1.data
+        #print task1.data
 
     def testD(self):
         """

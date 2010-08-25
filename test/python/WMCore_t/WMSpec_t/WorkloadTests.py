@@ -44,7 +44,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue( isinstance( step3, WMCore.WMSpec.WMStep.WMStepHelper ) )
         step4= task.getStep(steps[3])
         self.assertTrue( isinstance( step4, WMCore.WMSpec.WMStep.WMStepHelper ) )
-        print step4
+        #print step4
         self.assertEqual( id(getTaskFromStep(step)), id(getTaskFromStep(step2)) )
  
     def testTwoTaskTree(self):
@@ -58,7 +58,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue( isinstance( parenttask, WMCore.WMSpec.WMTask.WMTaskHelper ) )
         
         task = workload.getTask("SecondTask")
-        print task.data
+        #print task.data
         self.assertTrue( isinstance( task, WMCore.WMSpec.WMTask.WMTaskHelper ) )
         steps = task.listAllStepNames()
         

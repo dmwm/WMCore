@@ -14,9 +14,9 @@ class PlotFormatter(RESTFormatter):
         matplotlib.use('Agg')
         RESTFormatter.__init__(self, config)
  
-        self.supporttypes.update({'image/png': self.png,
-                                  '*/*': self.png,
-                                  'application/pdf': self.pdf})
+        self.supporttypes = {'image/png': self.png,
+                             '*/*': self.png,
+                             'application/pdf': self.pdf}
     
     def pdf(self, data):
         return self.plot(figure, 'pdf')

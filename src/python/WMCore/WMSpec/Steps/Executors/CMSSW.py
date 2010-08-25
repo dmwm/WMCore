@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.11 2009/12/04 20:15:22 evansde Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: CMSSW.py,v 1.12 2009/12/14 14:32:03 evansde Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -80,6 +80,7 @@ class CMSSW(Executor):
         scramSetup     = self.step.application.setup.softwareEnvironment
         scramCommand   = self.step.application.setup.scramCommand
         scramProject   = self.step.application.setup.scramProject
+        scramArch      = self.step.application.setup.scramArch
         cmsswVersion   = self.step.application.setup.cmsswVersion
         jobReportXML   = self.step.output.jobReport
         cmsswCommand   = self.step.application.command.executable
@@ -93,8 +94,10 @@ class CMSSW(Executor):
             command = scramCommand,
             version = cmsswVersion,
             initialise = self.step.application.setup.softwareEnvironment,
-            directory = self.step.builder.workingDir
+            directory = self.step.builder.workingDir,
+            architecture = scramArch,
             )
+        
         projectOutcome = scram.project()
         if projectOutcome > 0:
             msg = scram.diagnostic()
@@ -166,6 +169,7 @@ class CMSSW(Executor):
         stderrHandle = open( self.step.output.stderr , 'w')
 
         args = ['/bin/bash', configPath, scramSetup,
+                                         scramArch,
                                          scramCommand,
                                          scramProject,
                                          cmsswVersion,
@@ -240,7 +244,7 @@ configBlob = """#!/bin/bash
 REQUIRED_ARGUMENT_COUNT=5
 if [ $# -lt $REQUIRED_ARGUMENT_COUNT ]
 then
-    echo "Usage: `basename $0` <SCRAM_SETUP> <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION>\
+    echo "Usage: `basename $0` <SCRAM_SETUP>  <SCRAM_ARCH> <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION>\
                  <JOB_REPORT> <EXECUTABLE> <CONFIG> [Arguments for cmsRun]"
     exit 70
 fi
@@ -248,18 +252,21 @@ fi
 # Extract the required arguments out, leaving an unknown number of
 #  cmsRun arguments
 SCRAM_SETUP=$1
-SCRAM_COMMAND=$2
-SCRAM_PROJECT=$3
-CMSSW_VERSION=$4
-JOB_REPORT=$5
-EXECUTABLE=$6
-CONFIGURATION=$7
+SCRAM_ARCHIT=$2
+SCRAM_COMMAND=$3
+SCRAM_PROJECT=$4
+CMSSW_VERSION=$5
+JOB_REPORT=$6
+EXECUTABLE=$7
+CONFIGURATION=$8
 shift;shift;shift
-shift;shift;shift;shift;
+shift;shift;shift;shift;shift;
 
-echo "$SCRAM_SETUP $SCRAM_COMMAND $SCRAM_PROJECT"
+echo "$SCRAM_SETUP $SCRAM_ARCHIT $SCRAM_COMMAND $SCRAM_PROJECT"
 
 $SCRAM_SETUP
+
+export SCRAM_ARCH=$SCRAM_ARCHIT
 
 # do the actual executing
 $SCRAM_COMMAND project $SCRAM_PROJECT $CMSSW_VERSION

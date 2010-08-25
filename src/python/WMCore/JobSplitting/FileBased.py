@@ -6,13 +6,14 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: FileBased.py,v 1.17 2009/09/01 16:17:31 sfoulkes Exp $"
-__version__  = "$Revision: 1.17 $"
+__revision__ = "$Id: FileBased.py,v 1.18 2009/09/10 18:58:17 mnorman Exp $"
+__version__  = "$Revision: 1.18 $"
 
 from sets import Set
 from sets import ImmutableSet
 import logging
 import threading
+import time
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
@@ -24,6 +25,11 @@ class FileBased(JobFactory):
     """
     Split jobs by number of files.
     """
+
+    def getJobName(self, baseName, length):
+        return '%s-%s' %(baseName, str(length))
+        #return baseName+str(length+1)
+    
     def algorithm(self, groupInstance = None, jobInstance = None, *args,
                   **kwargs):
         """
@@ -54,10 +60,12 @@ class FileBased(JobFactory):
             jobs       = []
             if len(fileList) == 0:
                 continue
+
             for file in fileList:
                 if filesInJob == 0 or filesInJob == filesPerJob:
-                    job = jobInstance(name = "%s-%s" % (baseName, totalJobs))
+                    job = jobInstance(name = self.getJobName(baseName, totalJobs))
                     totalJobs += 1
+
                     jobs.append(job)
                     filesInJob = 0
                     
@@ -67,11 +75,13 @@ class FileBased(JobFactory):
 
             logging.info('I have %i jobs for location %s' %(len(jobs), location))
 
-            for job in jobs:
-                jobGroup = groupInstance(subscription = self.subscription)
-                jobGroup.add(job)
-                jobGroup.commit()
-                jobGroupList.append(jobGroup)
+            jobGroup = groupInstance(subscription = self.subscription)
+            jobGroup.add(jobs)
+            jobGroup.commitBulk()
+            jobGroupList.append(jobGroup)
+
+            logging.debug('I have committed a jobGroup with id %i' %(jobGroup.id))
+
 
         #We need here to acquire all the files we have assigned to jobs
         self.subscription.acquireFiles(files = listOfFiles)

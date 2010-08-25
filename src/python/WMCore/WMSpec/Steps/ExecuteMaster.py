@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.9 2010/04/26 21:08:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.10 2010/04/29 14:32:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 
@@ -56,6 +56,7 @@ class ExecuteMaster:
                 self.doExecution(executor, step, wmbsJob)
                 myThread.watchdogMonitor.notifyStepEnd(step)
             except Exception, ex:
+                self.toTaskDirectory()
                 break
 
         myThread.watchdogMonitor.notifyJobEnd(task)

@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.3 2010/05/05 14:51:48 spigafi Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.4 2010/05/09 15:04:05 spigafi Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 from copy import deepcopy
 import threading
@@ -753,19 +753,19 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         if type(obj) == Task :
             action = self.engine.daofactory(classname = 'Task.New')
-        
+            
         elif type(obj) == Job :
             action = self.engine.daofactory(classname = "Job.New")
-        
+            
         elif type(obj) == RunningJob :
             action = self.engine.daofactory(classname = "RunningJob.New")
-        
+            
         else :
             raise NotImplementedError 
         
         action.execute(binds = obj.data,
-               conn = self.engine.getDBConn(),
-               transaction = self.existingTransaction)
+                       conn = self.engine.getDBConn(),
+                       transaction = self.existingTransaction)
         
     ##########################################################################
     
@@ -806,25 +806,23 @@ class BossLiteDBWM(BossLiteDBInterface):
         elif type(obj) == Job :
             
             if obj.data['id'] > 0:
-                value = obj.data['id']
-                column = 'id'
-    
-            elif obj.data['jobId'] > 0:
-                value = obj.data['jobId']
-                column = 'job_id'
-    
+                binds = { 'id' : obj.data['id'] }
+            
+            elif obj.data['jobId'] > 0 and obj.data['taskId'] > 0:
+                binds = { 'job_id' : obj.data['jobId'],
+                          'task_id' : obj.data['taskId'] }
+                
             elif obj.data['name']:
-                value = obj.data['name']
-                column = 'name'
-    
+                binds = { 'name' : obj.data['name'] }
+                
             else:
                 # We have no identifiers.  We're screwed
                 # this branch doesn't exist
                 return []
             
+            # action = self.engine.daofactory(classname = "Job.Load")
             action = self.engine.daofactory(classname = "Job.SelectJob")
-            result = action.execute(value = value,
-                                    column = column,
+            result = action.execute(binds = binds, 
                                     conn = self.engine.getDBConn(),
                                     transaction = self.existingTransaction)
             

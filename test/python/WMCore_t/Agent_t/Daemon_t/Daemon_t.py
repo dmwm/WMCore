@@ -87,7 +87,7 @@ class DaemonTest(unittest.TestCase):
             if self.pid == 0:
                 os._exit(-1)
             else:
-                os.system(['kill', '-9', self.pid])
+                os.system('kill -9 %s' % self.pid)
 
 if __name__ == "__main__":
     unittest.main()

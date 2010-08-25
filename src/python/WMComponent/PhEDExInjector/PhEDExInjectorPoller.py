@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.8 2009/09/24 20:29:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.9 2009/10/15 20:02:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import logging
@@ -62,19 +62,12 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                 dbinterface = myThread.dbi)   
         self.setStatus = daofactory(classname = "DBSBufferFiles.SetStatus")
 
-        (protocol, blank, host, path) = self.config.PhEDExInjector.phedexurl.split("/", 3)
-        if protocol == "https:":
-            cmswebReq = SSLJSONRequests(url = host)
-        else:
-            cmswebReq = JSONRequest(url = host)
-
-        cmswebResp = cmswebReq.get(uri = "/" + path + "nodes")[0]
-
-        for node in cmswebResp["phedex"]["node"]:
+        nodeMappings = self.phedex.getNodeMap()
+        for node in nodeMappings["phedex"]["node"]:
             if not self.seMap.has_key(node["kind"]):
                 self.seMap[node["kind"]] = {}
 
-            logging.debug("Adding mapping %s -> %s" % (node["se"], node["name"]))
+            logging.info("Adding mapping %s -> %s" % (node["se"], node["name"]))
             self.seMap[node["kind"]][node["se"]] = node["name"]
             self.nodeNames.append(node["name"])
 

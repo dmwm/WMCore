@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.13 2010/05/25 12:26:15 spigafi Exp $"
-__revision__ = "$Revision: 1.13 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.14 2010/05/30 14:41:21 spigafi Exp $"
+__revision__ = "$Revision: 1.14 $"
 
 import threading
 
@@ -155,18 +155,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         if type(obj) == Task :
             
-            if classname == 'Task.GetJobs' :
-                # load all the Jobs associated to the Task
-                binds = {'taskId' : obj.data['id'] }
-                
-                action = self.engine.daofactory( classname = classname )
-                result = action.execute(binds = binds,
-                                        conn = self.engine.getDBConn(),
-                                        transaction = self.existingTransaction)
-                
-                return result
-            
-            elif obj.data['id'] > 0:
+            if obj.data['id'] > 0:
                 binds = {'id' : obj.data['id'] }
                 
             elif obj.data['name']:
@@ -321,6 +310,20 @@ class BossLiteDBWM(BossLiteDBInterface):
         action = self.engine.daofactory(classname = "Job.LoadByRunningJobAttr")
         result = action.execute(binds = binds,
                                 limit = limit,
+                                conn = self.engine.getDBConn(),
+                                transaction = self.existingTransaction)
+        
+        return result
+    
+    @dbTransaction
+    def jobLoadJobs(self, id, jobRange = None):
+        """
+        Load all (or a subset of) Jobs associated to a specific Task 
+        """
+        
+        action = self.engine.daofactory( classname = 'Task.GetJobs' )
+        result = action.execute(id = id,
+                                range = jobRange,
                                 conn = self.engine.getDBConn(),
                                 transaction = self.existingTransaction)
         

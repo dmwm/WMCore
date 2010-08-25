@@ -50,7 +50,7 @@ class CMSSWExecutor_t(unittest.TestCase):
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
         
-        self.sandboxDir = "%s/UnitTests/CMSSWExecutor" % self.testDir
+        self.sandboxDir = "%s/UnitTests" % self.testDir
         
         self.task.build(self.testDir)
         sys.path.append(self.testDir)

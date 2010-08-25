@@ -135,8 +135,8 @@ class TestChangeState(unittest.TestCase):
                "Error: First run in mask is incorrect."
         assert testJobADoc["mask"]["lastevent"] == testJobA["mask"]["LastRun"], \
                "Error: First event in mask is incorrect."        
-                
-        assert testJobADoc["inputfiles"] == testJobA["input_files"], \
+
+        assert len(testJobADoc["inputfiles"]) == 1, \
                "Error: Input files parameter is incorrect."
         
         testJobBDoc = change.database.document(testJobB["couch_record"])
@@ -161,7 +161,7 @@ class TestChangeState(unittest.TestCase):
         assert testJobBDoc["mask"]["lastevent"] == testJobB["mask"]["LastRun"], \
                "Error: First event in mask is incorrect."
         
-        assert testJobBDoc["inputfiles"] == testJobB["input_files"], \
+        assert len(testJobBDoc["inputfiles"]) == 1, \
                "Error: Input files parameter is incorrect."
 
         changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")

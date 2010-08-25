@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.8 2009/07/02 23:31:55 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: ChangeState.py,v 1.9 2009/07/13 20:08:36 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -107,11 +107,11 @@ class ChangeState(WMObject):
             doc['job'] = job
 
             self.couchdb.queue(doc, True)
-        goodresult, badresult = self.couchdb.commitQueued()
+        goodresult = self.couchdb.commit()
         
         assert len(jobs) == len(goodresult), \
-                    "Got less than I was expecting from CouchDB: \n %s %s" %\
-                        (goodresult,badresult)
+                    "Got less than I was expecting from CouchDB: \n %s" %\
+                        (goodresult,)
         if oldstate == 'none':
             def function(item1, item2):
                 item1['couch_record'] = item2['id']

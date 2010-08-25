@@ -32,7 +32,15 @@ workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
-workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
+workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
+                            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
 
 # take queueParams from WorkQueueManager - specify here to override
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
+
+workqueuemonitor = active.section_('workqueuemonitor')
+# The class to load for this view/page
+workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
+workqueuemonitor.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
+workqueuemonitor.javascript = path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/WMCore/WebTools/')
+workqueuemonitor.html = path.join(WMCore.WMInit.getWMBASE(), 'src/html/WMCore/WebTools/WorkQueue')

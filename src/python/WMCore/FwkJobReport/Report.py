@@ -716,12 +716,13 @@ class Report:
         Determine wether or not a step was successful.
         """
         stepReport = self.retrieveStep(step = stepName)
+        status = getattr(stepReport, 'status', 1)
+        # We have too many possibilities
+        if status not in [0, '0', 'success', 'Success']:
+            return False
 
-        if int(getattr(stepReport, "status", 1)) == 0:
-            return True
-
-        return False
-
+        return True
+        
 
     def taskSuccessful(self):
         """
@@ -731,12 +732,17 @@ class Report:
         """
         value = True
 
+        if len(self.data.steps) == 0:
+            # Mark jobs as failed if they have no steps
+            msg = "Could not find any steps"
+            logging.error(msg)
+            return False
+
         for stepName in self.data.steps:
-            stepReport = self.retrieveStep(step = stepName)
-            if int(getattr(stepReport, "status", 1)) == 1:
+            if not self.stepSuccessful(stepName = stepName):
                 value = False
 
-        return True
+        return value
         
 
     def getAllFileRefsFromStep(self, step):

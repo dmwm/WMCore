@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.12 2010/05/20 16:14:42 swakef Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.13 2010/05/21 20:19:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import os
 import WMCore.WMInit
@@ -26,8 +26,9 @@ config.section_("General")
 config.General.workDir = "/storage/local/data1/wmagent/work"
 
 config.section_("JobStateMachine")
-config.JobStateMachine.couchurl = "cmssrv52.fnal.gov:5984"
+config.JobStateMachine.couchurl = "http://cmssrv52.fnal.gov:5984"
 config.JobStateMachine.couchDBName = "wmagent_commissioning"
+config.JobStateMachine.configCacheDBName = "wmagent_config_cache"
 config.JobStateMachine.default_retries = 5
 
 config.section_("CoreDatabase")
@@ -39,11 +40,11 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'INFO'
-config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:8570'
+config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:9996'
 config.WorkQueueManager.pollInterval = 10
 config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
                                        "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
-                                       }
+                                        "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
@@ -143,7 +144,7 @@ config.TaskArchiver.timeOut      = 0
 config.TaskArchiver.WorkQueueParams = {"PopulateFilesets": True,
                                        "ParentQueue": "http://%s/workqueue/" % 'cmssrv52.fnal.gov:9996',
                                        "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
-config.TaskArchiver.useWorkQueue = False
+config.TaskArchiver.useWorkQueue = True
 
 config.webapp_('WorkQueueService')
 config.WorkQueueService.componentDir = config.General.workDir + "/WorkQueueService"
@@ -156,20 +157,22 @@ config.WorkQueueService.description = 'Provide WorkQueue related service call'
 config.WorkQueueService.section_('views')
 config.WorkQueueService.views.section_('active')
 config.WorkQueueService.views.active.section_('workqueue')
-workqueue = active.section_('workqueue')
-workqueue.object = 'WMCore.WebTools.RESTApi'
-workqueue.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
-workqueue.section_('model')
-workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
-workqueue.section_('formatter')
-workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
-workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
-workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-workqueue.queueParams.setdefault('CacheDir', config.General.workDir + 'WorkQueueManager/wf')
-workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (config.Agent.hostName,
-                                                                  config.WorkQueueService.server.port,
-                                                                  'workqueue')
-
+config.WorkQueueService.views.active.workqueue.object = 'WMCore.WebTools.RESTApi'
+config.WorkQueueService.views.active.workqueue.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
+config.WorkQueueService.views.active.workqueue.section_('model')
+config.WorkQueueService.views.active.workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
+config.WorkQueueService.views.active.workqueue.section_('formatter')
+config.WorkQueueService.views.active.workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
+config.WorkQueueService.views.active.workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
+                                                                 'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
+config.WorkQueueService.views.active.workqueue.queueParams = {"PopulateFilesets": True,
+                                                              "ParentQueue": "http://%s/workqueue/" % 'cmssrv52.fnal.gov:9996',
+                                                              "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
+workqueuemonitor = config.WorkQueueService.views.active.section_('workqueuemonitor')
+workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
+workqueuemonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+workqueuemonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/WMCore/WebTools')
+workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/WorkQueue')
 
 config.webapp_("WMBSMonitoring")
 config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"

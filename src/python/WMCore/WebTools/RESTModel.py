@@ -5,11 +5,12 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.15 2009/08/31 18:04:23 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: RESTModel.py,v 1.16 2009/08/31 18:08:40 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
+
 class RESTModel(WebAPI):
     """
     Rest model class interface. Subclass this method and add methods to 
@@ -75,7 +76,12 @@ class RESTModel(WebAPI):
         """
         Pull out the necesary input from kwargs (by name) and, failing that, 
         pulls out the number required args from args, which assumes the 
-        arguments are positional. Return a dictionary.
+        arguments are positional. 
+        
+        In all but the most basic cases you'll likely want to over-ride this, or
+        at least treat its outcome with deep suspicion.
+        
+        Returns a dictionary.
         """
         input = {}
         args = list(args)

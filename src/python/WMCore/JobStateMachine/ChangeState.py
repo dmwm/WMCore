@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.12 2009/07/21 19:08:12 meloam Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: ChangeState.py,v 1.13 2009/07/21 19:31:18 meloam Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -62,7 +62,9 @@ class ChangeState(WMObject):
         # completing step 3.
 
     def getCouchByParentID(self, id):
-        return self.database.loadView('jobs','get_parent_by_couch_id',{},[id])
+        return self.database.loadView('jobs','get_by_parent_couch_id',{},[id])
+    def getCouchByJobID(self, id):
+        return self.database.loadView('jobs','get_by_job_id',{},[id])
 
     def check(self, newstate, oldstate):
         """
@@ -108,14 +110,20 @@ class ChangeState(WMObject):
         hashViewDoc['views'] = {'get_by_parent_couch_id': {"map": \
                               """function(doc) {
                                     if (doc.parent) {
-                                      log(doc.parent);
                                       emit(doc.parent, doc);
                                     } else {
-                                      log(doc._id);
                                       emit(doc._id, doc);
                                     }
                                  } 
-                     """ }}
+                     """ },
+                             'get_by_job_id': {"map": \
+                              """function(doc) {
+                                    if (doc.job) {
+                                      if (doc.job.id) {
+                                        emit(doc.job.id, doc);
+                                      }
+                                    }
+                                  }""" }}
      
         database.queue( hashViewDoc )
         database.commit()

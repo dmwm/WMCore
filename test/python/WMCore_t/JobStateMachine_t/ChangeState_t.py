@@ -190,26 +190,30 @@ class TestChangeState(unittest.TestCase):
         """
         	This is the test class for function RecordInCouch from module ChangeState
         	"""
-        jsm = self.change.recordInCouch( [{ "dumb_value": "is_dumb" }], "new", "none")
-        print jsm
+        jsm = self.change.recordInCouch( [{ "dumb_value": "is_dumb", "id":1 }], "new", "none")
         jsm = self.change.recordInCouch( jsm , "created", "new")
-        print jsm
         jsm = self.change.recordInCouch( jsm , "executing", "created")
-        print jsm
         jsm = self.change.recordInCouch( jsm , "complete", "executing")
-        print jsm
         jsm = self.change.recordInCouch( jsm , "success", "complete")
-        print jsm
         jsm = self.change.recordInCouch( jsm , "closeout", "success")
-        print jsm
-        jsm = self.change.recordInCouch( jsm , "cleanout", "closeout")
+        jsm1 = self.change.recordInCouch( jsm , "cleanout", "closeout")
         
-        # now, walk up the chain of couch_records to follow the path the
-        #  job took through the state machine
+        jsm = self.change.recordInCouch( [{ "dumb_value": "is_dumb", "id":2 }], "new", "none")
+        jsm = self.change.recordInCouch( jsm , "created", "new")
+        jsm = self.change.recordInCouch( jsm , "executing", "created")
+        jsm = self.change.recordInCouch( jsm , "complete", "executing")
+        jsm = self.change.recordInCouch( jsm , "success", "complete")
+        jsm = self.change.recordInCouch( jsm , "closeout", "success")
+        jsm2 = self.change.recordInCouch( jsm , "cleanout", "closeout")
         
-        print jsm
-        
-            
+        our_records1 = self.change.getCouchByParentID(jsm1[0]['couch_record'])
+        self.assertEquals(len(our_records1['rows']), 7)
+        our_records2 = self.change.getCouchByParentID(jsm2[0]['couch_record'])
+        self.assertEquals(len(our_records2['rows']), 7)
+        our_records3 = self.change.getCouchByJobID(1)
+        self.assertEquals(len(our_records3['rows']), 7)
+        our_records4 = self.change.getCouchByJobID(2)
+        self.assertEquals(len(our_records4['rows']), 7)
         return
 
 

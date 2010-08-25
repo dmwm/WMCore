@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.39 2010/07/21 13:54:57 sfoulkes Exp $"
-__revision__ = "$Revision: 1.39 $"
+__version__ = "$Id: WMTask.py,v 1.40 2010/08/06 20:34:25 mnorman Exp $"
+__revision__ = "$Revision: 1.40 $"
 
 import os
 import os.path
@@ -739,6 +739,27 @@ class WMTaskHelper(TreeHelper):
 
 
         return
+
+
+    def taskLogLFN(self):
+        """
+        _taskLogLFN_
+
+        Get task log path, with default
+        """
+
+
+        return getattr(self.data, 'logLFN', '/store/temp/WMAgent/unmerged')
+
+
+    def setTaskLogLFN(self, logLFN):
+        """
+        _setTaskLogLFN_
+        
+        Set the task log path
+        """
+
+        self.data.logLFN = logLFN
 
 
 

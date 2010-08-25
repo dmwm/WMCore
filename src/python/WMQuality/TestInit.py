@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.37 2010/02/08 20:02:28 meloam Exp $"
+    "$Id: TestInit.py,v 1.38 2010/02/08 20:06:22 meloam Exp $"
 __version__ = \
-    "$Revision: 1.37 $"
+    "$Revision: 1.38 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -117,26 +117,31 @@ class TestInit:
             print "wiping dialect: %s " % dialect
             if (dialect == 'MySQL'):
                 print "wiping mysql"
-                result = formatter.execute("SHOW TABLES")
+                formatter.sql = "SHOW TABLES"
+                result = formatter.execute()
                 
-                formatter.execute("SET foreign_key_checks = 0")
+                formatter.sql = "SET foreign_key_checks = 0"
+                formatter.execute()
                 tableNames = []
                 for oneTable in result:
                     tableNames.append( oneTable(0) )
                 tableList = ",".join( tableNames )
                 query = "DROP TABLE IF EXISTS %s" % tableList
                 print query
-                formatter.execute(query)
-                formatter.execute("SET foreign_key_checks = 1")
+                formatter.sql = query
+                formatter.execute()
+                formatter.sql = "SET foreign_key_checks = 1"
+                formatter.execute()
                 
             elif (dialect == 'SQLite'):
-                result = formatter.execute("SHOW TABLES")
-                tableNames = []
-                for oneTable in result:
-                    tableNames.append( oneTable(0) )
-                tableList = ",".join( tableNames )
-                query = "DROP TABLE IF EXISTS %s" % tableList
-                formatter.execute(query)
+                pass
+#                result = formatter.execute("SHOW TABLES")
+#                tableNames = []
+#                for oneTable in result:
+#                    tableNames.append( oneTable(0) )
+#                tableList = ",".join( tableNames )
+#                query = "DROP TABLE IF EXISTS %s" % tableList
+#                formatter.execute(query)
             elif (dialect == 'Oracle'):
                 pass
             else:

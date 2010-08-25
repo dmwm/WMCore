@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.30 2010/07/08 15:43:23 mnorman Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.31 2010/07/08 19:51:50 mnorman Exp $"
+__version__ = "$Revision: 1.31 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -104,7 +104,10 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         configDict = {"submitDir": self.config.JobSubmitter.submitDir,
                       "submitNode": self.config.JobSubmitter.submitNode,
-                      "agentName": self.config.Agent.agentName}
+                      "agentName": self.config.Agent.agentName,
+                      'couchURL': self.config.JobStateMachine.couchurl, 
+                      'defaultRetries': self.config.JobStateMachine.default_retries,
+                      'couchDBName': self.config.JobStateMachine.couchDBName}
         
         if hasattr(self.config.JobSubmitter, "submitScript"):
             configDict["submitScript"] = self.config.JobSubmitter.submitScript
@@ -170,7 +173,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             return
         jobList = self.getJobs()
         jobList = self.grabTask(jobList)
-        self.submitJobs(jobList)
+        #self.submitJobs(jobList)
 
 
         idList = []
@@ -239,13 +242,13 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
 
         # Find types, we'll need them later
-        logging.error("About to go find Subscription types in JobSubmitter.pollJobs()")
+        logging.info("About to go find Subscription types in JobSubmitter.pollJobs()")
         typeFinder = self.daoFactory(classname = "Subscriptions.GetSubTypes")
         self.types = typeFinder.execute()
-        logging.error("Found types in JobSubmitter.pollJobs()")
+        logging.info("Found types in JobSubmitter.pollJobs()")
 
         self.sites = self.resourceControl.listThresholdsForSubmit()
-        logging.error(self.sites)
+        logging.info(self.sites)
 
         return
 
@@ -369,113 +372,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         return tmpSite
 
 
-    def submitJobs(self, jobList):
-        """
-        _submitJobs_
-        
-        This runs over the list of jobs and submits them all
-        """
-
-        myThread = threading.currentThread()
-
-
-        sortedJobList = sortListOfDictsByKey(jobList, 'sandbox')
-
-
-
-        logging.error("In submitJobs")
-        logging.error(len(jobList))
-
-        count = 0
-        successList = []
-        failList    = []
-        for sandbox in sortedJobList.keys():
-            if not sandbox or not os.path.isfile(sandbox):
-                #Sandbox does not exist!  Dump jobs!
-                for job in sortedJobList[sandbox]:
-                    failList.append(job)
-            listOfJobs = sortedJobList[sandbox][:]
-            packagePath = os.path.join(os.path.dirname(sandbox),
-                                       'batch_%i' %(listOfJobs[0]['id']))
-            if not os.path.exists(packagePath):
-                os.makedirs(packagePath)
-            package = JobPackage()
-            for job in listOfJobs:
-                package.append(job.getDataStructsJob())
-            #package.extend(listOfJobs)
-            package.save(os.path.join(packagePath, 'JobPackage.pkl'))
-
-            logging.error('About to send jobs to Plugin')
-            logging.error(len(listOfJobs))
-
-            # Now repack the jobs into a second list with only
-            # Essential components
-            finalList = []
-            for job in listOfJobs:
-                tmpJob = Job(id = job['id'])
-                tmpJob['custom']      = job['custom']
-                #tmpJob['sandbox']     = job['sandbox']
-                tmpJob['name']        = job['name']
-                tmpJob['cache_dir']   = job['cache_dir']
-                tmpJob['retry_count'] = job['retry_count']
-                finalList.append(tmpJob)
-
-
-            # We need to increment an index so we know what
-            # number job we're submitting
-            index = 0
-
-
-
-
-
-            while len(finalList) > self.config.JobSubmitter.jobsPerWorker:
-                listForSub = finalList[:self.config.JobSubmitter.jobsPerWorker]
-                finalList = finalList[self.config.JobSubmitter.jobsPerWorker:]
-                self.processPool.enqueue([{'jobs': listForSub,
-                                           'packageDir': packagePath,
-                                           'index': index,
-                                           'sandbox': sandbox,
-                                           'agentName': self.config.Agent.agentName}])
-                count += 1
-                index += len(listForSub)
-                
-            if len(finalList) > 0:
-                self.processPool.enqueue([{'jobs': finalList,
-                                           'packageDir': packagePath,
-                                           'index': index,
-                                           'sandbox': sandbox,
-                                           'agentName': self.config.Agent.agentName}])
-                count += 1
-
-
-        #result = self.processPool.dequeue(len(jobList))
-        result = []
-        #for i in range(0, count):
-        result = self.processPool.dequeue(count)
-
-        #This will return a list of dictionaries of job ids
-             
-        successCompilation = []
-        for entry in result:
-            if 'Success' in entry.keys():
-                successCompilation.extend(entry['Success'])
-
-        for job in jobList:
-            if job['id'] in successCompilation:
-                successList.append(job)
-            else:
-                failList.append(job)
-
-        #Pass the successful jobs, and fail the bad ones
-        myThread.transaction.begin()
-        self.changeState.propagate(successList, 'executing',    'created')
-        self.changeState.propagate(failList,    'submitfailed', 'created')
-
-        myThread.transaction.commit()
-
-        return
-
 
     def grabTask(self, jobList):
         """
@@ -491,6 +387,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         skippedJobs = 0
         noSiteJobs  = 0
 
+        sortedJobList = {}
+        submitIndex   = {}
+        lenWork       = 0
+
         for job in jobList:
             if job['type'] in fullList:
                 # Then the sites are all full for that type
@@ -501,12 +401,14 @@ class JobSubmitterPoller(BaseWorkerThread):
             if not os.path.isdir(job['cache_dir']):
                 # Well, then we're in trouble, because we need that info
                 # Kill this job
+                logging.error("Job %i has no cache directory." % (job['id']))
                 killList.append(job)
                 continue
             jobPickle  = os.path.join(job['cache_dir'], 'job.pkl')
             if not os.path.isfile(jobPickle):
                 # Then we don't have a pickle file, and we're screwed
                 # Kill this job
+                logging.error("Job %i has no pickled job file." % (job['id']))
                 killList.append(job)
                 continue
             fileHandle = open(jobPickle, "r")
@@ -550,15 +452,64 @@ class JobSubmitterPoller(BaseWorkerThread):
                 failList.append(loadedJob)
                 continue
 
+            # Sort jobs by sandbox
+            sandbox = loadedJob['sandbox']
+            if not sandbox in sortedJobList.keys():
+                sortedJobList[sandbox] = []
+            sortedJobList[sandbox].append(loadedJob)
+
+
+
+            # Enqueue jobs
+            if len(sortedJobList[sandbox]) >= self.config.JobSubmitter.jobsPerWorker:
+                # First get them ready to run
+                jobList = sortedJobList[sandbox]
+                index = submitIndex.get(sandbox, 0)
+                packagePath = os.path.join(os.path.dirname(sandbox),
+                                           'batch_%i' %(jobList[0]['id']))
+                jobsReady = self.prepForSubmit(jobList = jobList,
+                                               sandbox = sandbox,
+                                               packagePath = packagePath)
+                self.processPool.enqueue([{'jobs': jobsReady,
+                                           'packageDir': packagePath,
+                                           'index': index,
+                                           'sandbox': sandbox,
+                                           'agentName': self.config.Agent.agentName}])
+
+
+                # Increment our counters
+                lenWork += 1
+                if not sandbox in submitIndex.keys():
+                    submitIndex[sandbox] = 0
+                submitIndex[sandbox] += len(jobList)
+
+                # We've submitted them, let's dump them
+                sortedJobList[sandbox] = []
+                
+
             jList2.append(loadedJob)
 
+        # What happens we get to the end of the road?
+        # Submit all unsubmitted jobs
+        for sandbox in sortedJobList.keys():
+            if len(sortedJobList[sandbox]) > 0:
+                # Then we have to submit them.
+                jobList = sortedJobList[sandbox]
+                index = submitIndex.get(sandbox, 0)
+                packagePath = os.path.join(os.path.dirname(sandbox),
+                                           'batch_%i' %(jobList[0]['id']))
+                jobsReady = self.prepForSubmit(jobList = jobList,
+                                               sandbox = sandbox,
+                                               packagePath = packagePath)
+                self.processPool.enqueue([{'jobs': jobsReady,
+                                           'packageDir': packagePath,
+                                           'index': index,
+                                           'sandbox': sandbox,
+                                           'agentName': self.config.Agent.agentName}])
+                lenWork += 1
 
-            
 
 
-        for job in failList:
-            if job in jList2:
-                jList2.remove(job)
 
         if skippedJobs > 0:
             logging.error("Skipped %i jobs because all sites were full." % (skippedJobs) )
@@ -566,12 +517,69 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.error("Skipped %i jobs because we couldn't find a site for them" % (noSiteJobs) )
 
 
+        # And then, at the end of the day, we have to dequeue them.
+        result = []
+        result = self.processPool.dequeue(lenWork)
+
+
+
+
+        for job in failList:
+            if job in jList2:
+                jList2.remove(job)
+
+        
+
+
 
         # Now dump the killed jobs
         # These are the jobs where it's impossible to run
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
         self.changeState.propagate(killList, 'submitfailed', 'created')
+        myThread.transaction.commit()
 
+
+        
         return jList2
+
+
+    def prepForSubmit(self, jobList, sandbox, packagePath):
+        """
+        _prepForSubmit_
+
+        Prep a group of jobs for submission.  Get everything ready for ProcessPool
+        """
+
+
+        
+
+        if not os.path.exists(packagePath):
+            os.makedirs(packagePath)
+        package = JobPackage()
+        for job in jobList:
+            package.append(job.getDataStructsJob())
+            
+        package.save(os.path.join(packagePath, 'JobPackage.pkl'))
+
+        logging.info('About to repack jobs for Plugin')
+        logging.info(len(jobList))
+
+
+        # Now repack the jobs into a second list with only
+        # Essential components
+        finalList = []
+        for job in jobList:
+            tmpJob = Job(id = job['id'])
+            tmpJob['custom']      = job['custom']
+            #tmpJob['sandbox']     = job['sandbox']
+            tmpJob['name']        = job['name']
+            tmpJob['cache_dir']   = job['cache_dir']
+            tmpJob['retry_count'] = job['retry_count']
+            finalList.append(tmpJob)
+
+
+        return finalList
 
     def terminate(self, params):
         """

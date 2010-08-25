@@ -42,7 +42,7 @@ else:
 commandLine = sys.argv[3:]
 
 # actually run
-sys.execvp( commandLine[0], commandLine[1:] )
+os.execvp( commandLine[0], commandLine[0:] )
 
         
 

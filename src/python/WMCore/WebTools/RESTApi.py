@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.37 2010/04/26 19:45:27 sryu Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: RESTApi.py,v 1.38 2010/05/05 20:25:06 sryu Exp $"
+__version__ = "$Revision: 1.38 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WMFactory import WMFactory
@@ -94,9 +94,9 @@ class RESTApi(WebAPI):
                                  title = self.config.title,
                                  description = self.config.description)
         try:
-            data, expires = self.methods['handler']['call'](request.method, \
+            data, expires = self.methods['handler']['call'](request.method,
                                                             args, kwargs)
-            return self.formatResponse(data, expires, \
+            return self.formatResponse(data, expires,
                                        kwargs.get('return_type', None))
             
         except HTTPError, h:
@@ -104,16 +104,16 @@ class RESTApi(WebAPI):
             
             return self.formatResponse({'exception': h[0],
                                         'type': 'HTTPError',
-                                        'message': h[1]},
+                                        'message': h[1]}, expires=0,
                                         format=kwargs.get('return_type', None))
         except Exception, e:
             response.status = 500
             return self.formatResponse({'exception': 500,
                                         'type': e.__class__.__name__, 
-                                        'message': str(e)},
+                                        'message': str(e)}, expires=0, 
                                         format=kwargs.get('return_type', None))
     
-    def formatResponse(self, data, expires=0, format=None):
+    def formatResponse(self, data, expires, format=None):
         """
         
         data format can be anything API provides, but it will make sense 

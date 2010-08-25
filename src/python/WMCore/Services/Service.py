@@ -5,10 +5,13 @@ _Service_
 A Service talks to some http accessible service that provides information. It
 has a cache (though this may not be used), an endpoint (the url the service
 exists on) a logger and a type (json, xml etc).
+
+Has a default timeout of 30 seconds. Over ride this by passing in a timeout via
+the configuration dict, set to None if you want to turn off the timeout.
 """
 
-__revision__ = "$Id: Service.py,v 1.8 2009/03/25 15:41:39 ewv Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Service.py,v 1.9 2009/06/23 10:44:45 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import datetime
 import os
@@ -18,7 +21,7 @@ import socket
 
 class Service:
     def __init__(self, dict={}):
-        #The following should (also) read the configuration class
+        #The following should read the configuration class
         for a in ['logger', 'endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
 
@@ -39,11 +42,11 @@ class Service:
             self.type = 'text/xml'
 
         #Set a timeout for the socket
-        timeout = 30
+        self.timeout = 30
         if 'timeout' in dict.keys() and int(dict['timeout']) > timeout:
-            timeout = int(dict['timeout'])
-        socket.setdefaulttimeout(timeout)
-
+            self.timeout = int(dict['timeout'])
+        elif 'timeout' in dict.keys() and dict['timeout'] == None:
+            self.timeout = None
 
         self.logger.debug("""Service initialised (%s):
 \t endpoint: %s (%s)\n\t cache: %s (duration %s hours)""" %
@@ -58,13 +61,7 @@ class Service:
         t = datetime.datetime.now() - datetime.timedelta(hours=self.cacheduration)
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self.logger.debug("%s expired, refreshing cache" % cachefile)
-            u = urllib.URLopener()
-            u.addheader('Accept', self.type)
-            try:
-                u.retrieve(url, cachefile)
-            except Exception, e:
-                self.logger.exception(e)
-                raise e
+            getData(cachefile, url)
         return open(cachefile, 'r')
 
     def forceRefresh(self, cachefile, url):
@@ -73,13 +70,7 @@ class Service:
         url = self.endpoint + url
 
         self.logger.debug("Forcing cache refresh of %s" % cachefile)
-        u = urllib.URLopener()
-        u.addheader('Accept', self.type)
-        try:
-            u.retrieve(url, cachefile)
-        except Exception, e:
-            self.logger.exception(e)
-            raise e
+        getData(cachefile, url)
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile):
@@ -88,3 +79,17 @@ class Service:
             os.remove(cachefile)
         except OSError: # File doesn't exist
             return
+
+    def getData(self, cachefile, url):
+        # Set the timeout
+        socket.setdefaulttimeout(self.timeout)
+        # Get the dat
+        u = urllib.URLopener()
+        u.addheader('Accept', self.type)
+        try:
+            u.retrieve(url, cachefile)
+        except Exception, e:
+            self.logger.exception(e)
+            raise e
+        # Reset the timeout to 30s
+        socket.setdefaulttimeout(30)

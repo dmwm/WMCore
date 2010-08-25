@@ -7,7 +7,7 @@ class AddToFilesetByIDs(DBFormatter):
     sql = """
             insert wmbs_fileset_files (file, fileset) 
                 select :file_id, wmbs_fileset.id 
-                from wmbs_fileset where wmbs_fileset.name = :fileset"""
+                from wmbs_fileset where wmbs_fileset.id = :fileset"""
         
     def getBinds(self, file = None, fileset = None):
         return self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset',

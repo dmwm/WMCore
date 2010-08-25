@@ -6,8 +6,7 @@ from WMCore.WMBS.MySQL.Files.AddToFilesetByIDs import AddToFilesetByIDs as AddFi
 class AddToFilesetByIDs(AddFileToFilesetByIDsMySQL):
     sql = """insert into wmbs_fileset_files 
             (file, fileset, insert_time) 
-            values (:file_id,
-            (select id from wmbs_fileset where name = :fileset), :timestamp)"""
+            values (:file_id, :fileset, :timestamp)"""
                     
     def getBinds(self, file = None, fileset = None):
         binds = self.dbi.buildbinds(self.dbi.makelist(fileset), 'fileset',

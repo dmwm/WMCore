@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.37 2009/12/18 17:54:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: File_t.py,v 1.38 2009/12/21 20:46:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import unittest
 import logging
@@ -22,6 +22,7 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
@@ -926,5 +927,344 @@ class FileTest(unittest.TestCase):
 
         return
 
+    def testRedneckGetParentInfo(self):
+        """
+        _testRedneckGetParentInfo_
+
+        Verify that the GetParentInfo DAO works with redneck workflows.  This
+        test will create a redneck processing workflow that has two outputs.
+        Each of the outputs are then set to a merge workflow.  Straight to merge
+        as well as unmerged files are added to WMBS for both the child and
+        parent output module.
+        """
+        inputFileset = Fileset(name = "inputFileset")
+        outputFilesetA = Fileset(name = "outputFilesetA")
+        outputFilesetB = Fileset(name = "outputFilesetB")
+        mergedFilesetA = Fileset(name = "mergedFilesetA")
+        mergedFilesetB = Fileset(name = "mergedFilesetB")
+
+        inputFileset.create()
+        outputFilesetA.create()
+        outputFilesetB.create()
+        mergedFilesetA.create()
+        mergedFilesetB.create()
+
+        procWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
+                                name = "ProcWF", task = "ProcTask")
+        procWorkflow.create()
+        procWorkflow.addOutput("outputA", outputFilesetA)
+        procWorkflow.addOutput("outputB", outputFilesetB, "outputA")
+
+        mergeAWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
+                                  name = "MergeWFA", task = "MergeTask")
+        mergeAWorkflow.create()
+        mergeAWorkflow.addOutput("merged", mergedFilesetA)
+        mergeBWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
+                                  name = "MergeWFB", task = "MergeTask")
+        mergeBWorkflow.create()
+        mergeBWorkflow.addOutput("merged", mergedFilesetB)
+
+        procSub = Subscription(fileset = inputFileset, workflow = procWorkflow,
+                               type = "Processing")
+        procSub.create()
+
+        mergeASub = Subscription(fileset = outputFilesetA,
+                                 workflow = mergeAWorkflow, type = "Merge")
+        mergeASub.create()
+        mergeBSub = Subscription(fileset = outputFilesetB,
+                                 workflow = mergeBWorkflow, type = "Merge")
+        mergeBSub.create()
+
+        inputFileA = File(lfn = "/path/to/some/input/lfn/A", merged = True)
+        inputFileA.create()
+        inputFileset.addFile(inputFileA)
+        inputFileset.commit()
+
+        inputFileB = File(lfn = "/path/to/some/input/lfn/B", merged = True)
+        inputFileB.create()
+        inputFileset.addFile(inputFileB)
+        inputFileset.commit()        
+
+        straightMergeParent = File(lfn = "/some/straight/merged/file/A", merged = True)
+        straightMergeParent.create()
+        straightMergeParent.addParent(inputFileA["lfn"])
+        mergedFilesetA.addFile(straightMergeParent)
+        mergedFilesetA.commit()
+
+        straightMergeChild = File(lfn = "/some/straight/merged/file/B", merged = True)
+        straightMergeChild.create()
+        straightMergeChild.addParent(inputFileB["lfn"])
+        mergedFilesetB.addFile(straightMergeChild)
+        mergedFilesetB.commit()        
+
+        unmergedChildFileA = File(lfn = "/some/unmerged/file/A", merged = False)
+        unmergedChildFileA.create()
+        unmergedChildFileA.addParent(inputFileA["lfn"])
+        outputFilesetB.addFile(unmergedChildFileA)
+        outputFilesetB.commit()
+
+        unmergedChildFileB = File(lfn = "/some/unmerged/file/B", merged = False)
+        unmergedChildFileB.create()
+        unmergedChildFileB.addParent(inputFileB["lfn"])
+        outputFilesetB.addFile(unmergedChildFileB)
+        outputFilesetB.commit()        
+
+        unmergedParentFileA = File(lfn = "/some/unmerged/parent/file/A", merged = False)
+        unmergedParentFileA.create()
+        unmergedParentFileA.addParent(inputFileA["lfn"])
+        outputFilesetA.addFile(unmergedParentFileA)
+        outputFilesetA.commit()
+
+        unmergedParentFileB = File(lfn = "/some/unmerged/parent/file/B", merged = False)
+        unmergedParentFileB.create()
+        unmergedParentFileB.addParent(inputFileB["lfn"])
+        outputFilesetA.addFile(unmergedParentFileB)
+        outputFilesetA.commit()        
+
+        mergedFileA = File(lfn = "/some/merged/file/A", merged = True)
+        mergedFileA.create()
+        mergedFileA.addParent(unmergedChildFileA["lfn"])
+        mergedFileA.addParent(unmergedChildFileB["lfn"])        
+        mergedFilesetB.addFile(mergedFileA)
+        mergedFilesetB.commit()
+
+        mergedFileB = File(lfn = "/some/merged/file/B", merged = True)
+        mergedFileB.create()
+        mergedFileB.addParent(unmergedParentFileA["lfn"])
+        mergedFileB.addParent(unmergedParentFileB["lfn"])        
+        mergedFilesetA.addFile(mergedFileB)
+        mergedFilesetA.commit()        
+
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)        
+        parentInfoAction = daofactory(classname = "Files.GetParentInfo")
+
+        result = parentInfoAction.execute(childLFNs = [straightMergeParent["lfn"]])
+
+        assert len(result) == 1, \
+               "Error: Wrong number of files returned."
+        assert result[0]["id"] == inputFileA["id"], \
+               "Error: Wrong parent ID."
+        assert result[0]["lfn"] == inputFileA["lfn"], \
+               "Error: Wrong parent LFN."
+        assert int(result[0]["merged"]) == 1, \
+               "Error: Parent file should me merged."
+        assert result[0]["gplfn"] == None, \
+               "Error: Grand parent should not exist."
+        assert result[0]["gpmerged"] == None, \
+               "Error: Grand parent should not have a merged status."
+        assert result[0]["redneck_parent_fileset"] == None, \
+               "Error: Redneck parent should have it's own fileset"
+        assert result[0]["redneck_child_fileset"] == outputFilesetB.id, \
+               "Error: Wrong redneck child fileset returned."
+
+        result = parentInfoAction.execute(childLFNs = [straightMergeChild["lfn"]])
+
+        assert len(result) == 1, \
+               "Error: Wrong number of files returned."
+        assert result[0]["id"] == inputFileB["id"], \
+               "Error: Wrong parent ID."
+        assert result[0]["lfn"] == inputFileB["lfn"], \
+               "Error: Wrong parent LFN."
+        assert int(result[0]["merged"]) == 1, \
+               "Error: Parent file should me merged."
+        assert result[0]["gplfn"] == None, \
+               "Error: Grand parent should not exist."
+        assert result[0]["gpmerged"] == None, \
+               "Error: Grand parent should not have a merged status."
+        assert result[0]["redneck_parent_fileset"] == outputFilesetA.id, \
+               "Error: Redneck parent should have it's own fileset"
+        assert result[0]["redneck_child_fileset"] == None, \
+               "Error: Wrong redneck child fileset returned."
+
+        results = parentInfoAction.execute(childLFNs = [mergedFileA["lfn"]])
+
+        goldenParents = [unmergedChildFileA["id"], unmergedChildFileB["id"]]
+        for result in results:
+            assert result["id"] in goldenParents, \
+                   "Error: Unknown parent."
+            goldenParents.remove(result["id"])
+            
+            if result["id"] == unmergedChildFileA["id"]:
+                assert result["lfn"] == unmergedChildFileA["lfn"], \
+                       "Error: Wrong parent LFN."
+                assert result["gplfn"] == inputFileA["lfn"], \
+                       "Error: Grand parent lfn is incorrect."
+            elif result["id"] == unmergedChildFileB["id"]:
+                assert result["lfn"] == unmergedChildFileB["lfn"], \
+                       "Error: Wrong parent LFN."
+                assert result["gplfn"] == inputFileB["lfn"], \
+                       "Error: Grand parent lfn is incorrect."
+
+            assert int(result["merged"]) == 0, \
+                   "Error: Parent file should me unmerged."
+            assert int(result["gpmerged"]) == 1, \
+                   "Error: Grand parent should be merged."
+            assert result["redneck_parent_fileset"] == outputFilesetA.id, \
+                   "Error: Redneck parent should have it's own fileset"
+            assert result["redneck_child_fileset"] == None, \
+                   "Error: Wrong redneck child fileset returned."                
+
+        assert len(goldenParents) == 0, \
+               "Error: Missing parents."
+
+        results = parentInfoAction.execute(childLFNs = [mergedFileB["lfn"]])
+
+        goldenParents = [unmergedParentFileA["id"], unmergedParentFileB["id"]]
+        for result in results:
+            assert result["id"] in goldenParents, \
+                   "Error: Unknown parent."
+            goldenParents.remove(result["id"])
+            
+            if result["id"] == unmergedParentFileA["id"]:
+                assert result["lfn"] == unmergedParentFileA["lfn"], \
+                       "Error: Wrong parent LFN."
+                assert result["gplfn"] == inputFileA["lfn"], \
+                       "Error: Grand parent lfn is incorrect."
+            elif result["id"] == unmergedParentFileB["id"]:
+                assert result["lfn"] == unmergedParentFileB["lfn"], \
+                       "Error: Wrong parent LFN."
+                assert result["gplfn"] == inputFileB["lfn"], \
+                       "Error: Grand parent lfn is incorrect."
+
+            assert int(result["merged"]) == 0, \
+                   "Error: Parent file should me unmerged."
+            assert int(result["gpmerged"]) == 1, \
+                   "Error: Grand parent should be merged."
+            assert result["redneck_parent_fileset"] == None, \
+                   "Error: There should be no redneck parent."
+            assert result["redneck_child_fileset"] == outputFilesetB.id, \
+                   "Error: Wrong redneck child fileset returned."                
+
+        assert len(goldenParents) == 0, \
+               "Error: Missing parents."        
+
+        return
+
+    def testGetParentInfo(self):
+        """
+        _testGetParentInfo_
+
+        Verify that the GetParentInfo DAO works correctly with non redneck
+        workflows.  This will verify proper operation with straight to merge
+        and well as unmerged files.
+        """
+        inputFileset = Fileset(name = "inputFileset")
+        outputFileset = Fileset(name = "outputFileset")
+        mergedFileset = Fileset(name = "mergedFileset")
+
+        inputFileset.create()
+        outputFileset.create()
+        mergedFileset.create()
+
+        procWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
+                                name = "ProcWF", task = "ProcTask")
+        procWorkflow.create()
+        procWorkflow.addOutput("output", outputFileset)
+
+        mergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
+                                 name = "MergeWF", task = "MergeTask")
+        mergeWorkflow.create()
+        mergeWorkflow.addOutput("merged", mergedFileset)
+
+        procSub = Subscription(fileset = inputFileset, workflow = procWorkflow,
+                               type = "Processing")
+        procSub.create()
+        mergeSub = Subscription(fileset = outputFileset,
+                                workflow = mergeWorkflow, type = "Merge")
+        mergeSub.create()
+
+        inputFileA = File(lfn = "/path/to/some/input/lfn/A", merged = True)
+        inputFileA.create()
+        inputFileB = File(lfn = "/path/to/some/input/lfn/B", merged = True)
+        inputFileB.create()
+        inputFileset.addFile(inputFileA)
+        inputFileset.addFile(inputFileB)
+        inputFileset.commit()
+
+        straightMergeFile = File(lfn = "/some/straight/merged/file/A", merged = True)
+        straightMergeFile.create()
+        straightMergeFile.addParent(inputFileA["lfn"])
+        mergedFileset.addFile(straightMergeFile)
+        mergedFileset.commit()
+
+        unmergedFileA = File(lfn = "/some/unmerged/file/A", merged = False)
+        unmergedFileA.create()
+        unmergedFileA.addParent(inputFileA["lfn"])
+        outputFileset.addFile(unmergedFileA)
+        outputFileset.commit()
+
+        unmergedFileB = File(lfn = "/some/unmerged/file/B", merged = False)
+        unmergedFileB.create()
+        unmergedFileB.addParent(inputFileB["lfn"])
+        outputFileset.addFile(unmergedFileB)
+        outputFileset.commit()
+
+        mergedFile = File(lfn = "/some/merged/file/A", merged = True)
+        mergedFile.create()
+        mergedFile.addParent(unmergedFileA["lfn"])        
+        mergedFile.addParent(unmergedFileB["lfn"])
+        mergedFileset.addFile(mergedFile)
+        mergedFileset.commit()
+
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        parentInfoAction = daofactory(classname = "Files.GetParentInfo")
+
+        result = parentInfoAction.execute(childLFNs = [straightMergeFile["lfn"]])
+
+        assert len(result) == 1, \
+               "Error: Wrong number of files returned."
+        assert result[0]["id"] == inputFileA["id"], \
+               "Error: Wrong parent ID."
+        assert result[0]["lfn"] == inputFileA["lfn"], \
+               "Error: Wrong parent LFN."
+        assert int(result[0]["merged"]) == 1, \
+               "Error: Parent file should me merged."
+        assert result[0]["gplfn"] == None, \
+               "Error: Grand parent should not exist."
+        assert result[0]["gpmerged"] == None, \
+               "Error: Grand parent should not have a merged status."
+        assert result[0]["redneck_parent_fileset"] == None, \
+               "Error: There should be no redneck parent."
+        assert result[0]["redneck_child_fileset"] == None, \
+               "Error: There should be no redneck child."
+
+        results = parentInfoAction.execute(childLFNs = [mergedFile["lfn"]])
+
+        goldenParents = [unmergedFileA["id"], unmergedFileB["id"]]
+        for result in results:
+            assert result["id"] in goldenParents, \
+                   "Error: Unknown parent."
+            goldenParents.remove(result["id"])
+            
+            if result["id"] == unmergedFileA["id"]:
+                assert result["lfn"] == unmergedFileA["lfn"], \
+                       "Error: Wrong parent LFN."
+                assert result["gplfn"] == inputFileA["lfn"], \
+                       "Error: Grand parent lfn is incorrect."
+            elif result["id"] == unmergedFileB["id"]:
+                assert result["lfn"] == unmergedFileB["lfn"], \
+                       "Error: Wrong parent LFN."
+                assert result["gplfn"] == inputFileB["lfn"], \
+                       "Error: Grand parent lfn is incorrect."
+
+            assert int(result["merged"]) == 0, \
+                   "Error: Parent file should me unmerged."
+            assert int(result["gpmerged"]) == 1, \
+                   "Error: Grand parent should be merged."
+            assert result["redneck_parent_fileset"] == None, \
+                   "Error: There should be no redneck parent."
+            assert result["redneck_child_fileset"] == None, \
+                   "Error: There should be no redneck children."
+
+        assert len(goldenParents) == 0, \
+               "Error: Missing parents."        
+        return
+        
 if __name__ == "__main__":
     unittest.main() 

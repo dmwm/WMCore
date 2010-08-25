@@ -11,6 +11,7 @@ import os
 import os.path
 import logging
 import threading
+import sys
 from logging.handlers import RotatingFileHandler
 
 from WMCore.WMException        import WMException
@@ -67,6 +68,10 @@ def locateWMSandbox():
         raise BootstrapException(msg)
 
     wmsandboxLoc = inspect.getsourcefile(WMSandbox)
+    print "Have sourcefile location"
+    print WMSandbox
+    print wmsandboxLoc
+    print inspect.getmoduleinfo(wmsandboxLoc)
     wmsandboxLoc = wmsandboxLoc.replace("__init__.py", "")
     return wmsandboxLoc
 
@@ -100,7 +105,7 @@ def loadJobDefinition():
     try:
         job = package[index]
     except Exception, ex:
-        msg = "Failed to extract Job\n"
+        msg = "Failed to extract Job %i\n" %(index)
         msg += str(ex)
         raise BootstrapException, msg
     diagnostic = """
@@ -184,7 +189,6 @@ def setupLogging(logDir):
 def setupMonitoring():
     try:
         monitor = Watchdog()
-        monitor.setInterval(20.0)
         myThread = threading.currentThread
         myThread.watchdogMonitor = monitor
         return monitor

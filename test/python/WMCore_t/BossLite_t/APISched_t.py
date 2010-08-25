@@ -4,8 +4,8 @@ _APISched_t_
 
 """
 
-__revision__ = "$Id: APISched_t.py,v 1.3 2010/06/03 11:15:36 spigafi Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: APISched_t.py,v 1.4 2010/06/28 18:27:44 spigafi Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 
@@ -90,7 +90,12 @@ class APISched(unittest.TestCase):
                                        schedulerConfig = 
                                             { 'name' : 'SchedulerFake' } )
         
-        taskLoaded = mySchedAPI.submit( 1 )
+        # pass to APISched a valid Task object, not an ID
+        myTask = myBossLiteAPI.loadTask( taskId = 1, jobRange='all' )
+        taskLoaded = mySchedAPI.submit( taskObj = myTask )
+        
+        # pass to APISched an ID, not a Task object
+        #taskLoaded = mySchedAPI.submit( taskId = 1 )
         
         for job in taskLoaded.jobs :
             self.assertEqual(job.runningJob['status'], 'S')
@@ -109,6 +114,11 @@ class APISched(unittest.TestCase):
                                        schedulerConfig = 
                                             { 'name' : 'SchedulerFake' } )
         
+        # pass to APISched a valid Task object, not an ID
+        #myTask = myBossLiteAPI.loadTask( taskId = 1, jobRange='all' )
+        #taskLoaded = mySchedAPI.query( taskObj = myTask )
+        
+        # pass to APISched an ID, not a Task object
         taskLoaded = mySchedAPI.query( taskId = 1 )
         
         for job in taskLoaded.jobs :
@@ -128,7 +138,12 @@ class APISched(unittest.TestCase):
                                        schedulerConfig = 
                                             { 'name' : 'SchedulerFake' } )
         
-        taskLoaded = mySchedAPI.getOutput( taskId = 1, outdir = './test' )
+        # pass to APISched a valid Task object, not an ID
+        myTask = myBossLiteAPI.loadTask( taskId = 1, jobRange='all' )
+        taskLoaded = mySchedAPI.getOutput( taskObj = myTask, outdir = './test' )
+        
+        # pass to APISched an ID, not a Task object
+        # taskLoaded = mySchedAPI.getOutput( taskId = 1, outdir = './test' )
         
         for job in taskLoaded.jobs :
             self.assertEqual(job.runningJob['status'], 'E')

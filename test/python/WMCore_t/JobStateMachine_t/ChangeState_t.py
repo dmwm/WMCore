@@ -24,9 +24,16 @@ class TestChangeState(unittest.TestCase):
         _setUp_
         """
         if self._setup:
+            self.change = ChangeState(DefaultConfig.config)
             return
         self.transitions = Transitions()
         # TODO: write a config here
+        
+        # We need to set up the proper thread state for our test to run. Try it.
+        self.testInit = TestInit( self.__class__ )
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema()
         self.change = ChangeState(DefaultConfig.config)
         self._setup = True
 
@@ -92,4 +99,10 @@ class TestChangeState(unittest.TestCase):
 
 
 if __name__ == "__main__":
+#export DATABASE="mysql://sfoulkes:@localhost/ProdAgentDB_sfoulkes"
+#export DIALECT="MySQL"
+#export DBSOCK="/var/lib/mysql/mysql.sock"
+    os.putenv("DATABASE", "sqlite://home/meloam/test.db")
+    os.putenv("DBSOCK", "0")
+    os.putenv("DIALECT", "sqlite")
     unittest.main()

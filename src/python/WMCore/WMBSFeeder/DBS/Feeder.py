@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.9 2009/12/15 23:07:28 riahi Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Feeder.py,v 1.10 2009/12/18 00:03:18 riahi Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
@@ -21,6 +21,7 @@ from WMCore.WMInit import WMInit
 
 from DBSAPI.dbsApiException import DbsConnectionError 
 from DBSAPI.dbsApi import DbsApi
+LOCK = threading.Lock()
 
 #from DBSAPI.dbsException import *
 #from DBSAPI.dbsApiException import *
@@ -127,9 +128,10 @@ class Feeder(FeederImpl):
                     fileBlock, )
                 raise DBSReaderError(msg)
 
-            if int(startRun) > int(\
-          files[0]['RunsList'][0]['RunNumber']) :                  
-                continue
+            if files[0]['RunsList']: 
+                if int(startRun) > int(\
+              files[0]['RunsList'][0]['RunNumber']) :                  
+                    continue
 
             # get fileBlockId SE information
             seList = blocks[fileBlock]['StorageElements']
@@ -141,22 +143,25 @@ class Feeder(FeederImpl):
                 continue
 
             else:
- 
+
+                LOCK.acquire() 
                 for loc in seList:
                     self.locationNew.execute(siteName = loc)
- 
+                LOCK.release()
+
+            LOCK.acquire() 
             for files in blocks[fileBlock]['Files']:
 
                 # Assume parents and LumiSection aren't asked 
-                newfile = File(files['LogicalFileName'], size=files['FileSize'],
-                                 events=files['NumberOfEvents'])
-                               #lumi=files['LumiList']), locations=seList)
+                newfile = File(files['LogicalFileName'], \
+                 size=files['FileSize'], events=files['NumberOfEvents']) 
+                       #lumi=files['LumiList']), locations=seList)
  
                 if newfile.exists() == False :
                     newfile.create()
 
                 fileLoc = self.getFileLoc.execute(\
-                file = files['LogicalFileName'])
+                  file = files['LogicalFileName'])
 
                 if fileLoc:
 
@@ -174,6 +179,7 @@ class Feeder(FeederImpl):
 
                     newfile.setLocation(seList) 
 
+                LOCK.release()
                 filesetToProcess.addFile(newfile)
 
         # Close fileset

@@ -4,45 +4,43 @@ _Job_
 
 Data object that describes a job
 
-Jobs know their status (active, failed, complete) and know the files they run on
-but don't know the subscription or workflow. They are kept together by a
-JobGroup which knows the subscription and corresponding workflow. A Job is not a
-job in a batch system, it's more abstract - it's the piece of
-work that needs to get done.
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.21 2009/05/08 15:04:18 ewv Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Job.py,v 1.22 2009/05/11 11:13:04 sfoulkes Exp $"
+__version__ = "$Revision: 1.22 $"
 
-from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
 from WMCore.DataStructs.Mask import Mask
+from WMCore.DataStructs.WMObject import WMObject
 
 from sets import Set
-import datetime
+import time
 
-class Job(Pickleable):
+class Job(WMObject, dict):
     def __init__(self, name = None, files = None):
         """
         A job has a jobgroup which gives it its subscription and workflow.
         inputFiles is a list containing files associated to a job
         last_update is the time the job last changed
         """
+        dict.__init__(self)
         if files == None:
-            self.inputFiles = []
+            self["input_files"] = []
         else:
-            self.inputFiles = files
+            self["input_files"] = files
 
-        self.last_update = datetime.datetime.now()
-        self.job_group = -1
-        self.status = 'QUEUED'
-        self.name = name
+        self["jobgroup"] = None
+        self["name"] = name
+        self["state"] = 'new'
+        self["state_time"] = time.time()
+        self["outcome"] = 'fail'
+        self["retry_count"] = 0
+        self["location"] = None
+        self["mask"] = Mask()
 
-        self.output = Fileset(name = 'output')
-        self.report = None
-        self.mask = Mask()
+        return
 
     def getFiles(self, type = "list"):
         """
@@ -56,76 +54,51 @@ class Job(Pickleable):
           id - A list if File IDs will be returned
         """
         if type == "list":
-            return self.inputFiles
+            return self["input_files"]
         elif type == "set":
-            return self.makeset(self.inputFiles)
+            return self.makeset(self["input_files"])
         elif type == "lfn":
             def getLFN(file):
                 return file["lfn"]
 
-            lfns = map(getLFN, self.inputFiles)
+            lfns = map(getLFN, self["input_files"])
             return lfns
         elif type == "id":
             def getID(file):
                 return file["id"]
 
-            ids = map(getID, self.inputFiles)
+            ids = map(getID, self["input_files"])
             return ids
 
     def addFile(self, file):
         """
         _addFile_
 
-        Add a to the job's input.
+        Add a file or list of files to the job's input.
         """
         if type(file) == list:
-            self.inputFiles.extend(file)
+            self["input_files"].extend(file)
         else:
-            self.inputFiles.append(file)
+            self["input_files"].append(file)
+
         return
 
-    def addOutput(self, file):
+    def changeState(self, newState):
         """
-        add files to self.output
-        """
-        self.output.addFile(file)
-        self.output.commit()
+        _changeState_
 
-    def changeStatus(self, status):
-        self.last_update = datetime.datetime.now()
-        self.status = status
+        Change the state of the job.
+        """
+        self["state"] = newState
+        self["state_time"] = time.time()
+        
+        return
 
-    def submit(self, name = None):
+    def changeOutcome(self, jobOutcome):
         """
-        Once submitted to a batch queue set status to active and set the job's
-        name to some id from the batch system. Calling this method means the job
-        has been submitted to the batch queue.
-        """
-        if name != self.name and name != None:
-            self.name = name
-        self.changeStatus('ACTIVE')
+        _changeOutcome_
 
-    def resubmit(self, name = None):
+        Change the final outcome of the job, can be either success or fail.
         """
-        Reset the file status to acquired for files associated to this job
-        """
-        self.submit(name)
-
-    def fail(self, report = None):
-        """
-        Job has failed, mark all files associated with it as failed, and store
-        the job report
-        """
-        self.changeStatus('FAILED')
-        self.report = report
-
-    def complete(self, report = None):
-        """
-        Job has completed successfully, mark all files associated
-        with it as complete, and store the job report
-        """
-        self.changeStatus('COMPLETE')
-        self.report = report
-
-    def getStatus(self):
-        return self.status
+        self["outcome"] = jobOutcome
+        return

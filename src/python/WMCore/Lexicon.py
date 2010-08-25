@@ -7,8 +7,8 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True. 
 """
 
-__revision__ = "$Id: Lexicon.py,v 1.5 2009/11/18 16:51:49 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Lexicon.py,v 1.6 2009/11/23 21:10:03 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import re
 
@@ -30,6 +30,21 @@ def cmsname(candidate):
 def countrycode(candidate):
     #TODO: do properly with a look up table
     return check("^[A-Z]{2}$", candidate)
+
+def block(candidate):
+    pass
+
+def dataset(candidate):
+    pass
+
+def procdataset(candidate):
+    pass
+
+def primdataset(candidate):
+    pass
+
+def lfn(candidate):
+    pass
 
 def check(regexp, candidate):
     assert re.compile(regexp).match(candidate) != None , \

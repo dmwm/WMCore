@@ -4,8 +4,8 @@
 The documentation for the framework
 """
     
-__revision__ = "$Id: AgentMonitorPage.py,v 1.1 2010/06/29 20:47:37 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: AgentMonitorPage.py,v 1.2 2010/08/11 19:49:32 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage
@@ -58,7 +58,7 @@ class AgentMonitorPage(TemplatedPage):
             index = "<h1>Agent Monitor Examples</h1>\n<ol>"
             for t in examples:
                 index = """%s\n<li>
-                           <a href='%s'>%s</a>
+                           <a href='./examples/%s'>%s</a>
                            </li>""" % (index, t, t)
             return index
         

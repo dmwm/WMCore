@@ -3,8 +3,12 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueueProfile_t.py,v 1.1 2010/04/07 15:55:55 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueProfile_t.py,v 1.2 2010/04/13 18:49:02 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
+
+#setup emulator for test, this needs to be at top of the file
+from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
+ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=True)
 
 import unittest
 import cProfile
@@ -63,3 +67,4 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         
 if __name__ == "__main__":
     unittest.main()
+    deleteConfig(ConfigFile)

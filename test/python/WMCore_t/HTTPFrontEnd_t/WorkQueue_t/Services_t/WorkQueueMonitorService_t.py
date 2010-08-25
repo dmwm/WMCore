@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.7 2010/04/12 20:54:14 maxa Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.8 2010/04/13 18:47:47 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 
 
@@ -34,12 +34,11 @@ from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 
-from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 
 
-class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):    
+class WorkQueueMonitorServiceTest(RESTBaseUnitTest):    
     def initialize(self):
         print "initialize()"
         
@@ -63,7 +62,6 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
 
     def setUp(self):
         print "setUp()"
-        EmulatorUnitTestBase.setUp(self)
         RESTBaseUnitTest.setUp(self) # calls self.initialize()         
         # TestInit stuff happens in RESTBaseUnitTest if self.schemaModules are set
       
@@ -125,7 +123,6 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         RESTBaseUnitTest.tearDown(self)
         # happens in RESTBaseUnitTest if self.schemaModules is set
         # self.testInit.clearDatabase()
-        EmulatorUnitTestBase.tearDown(self)
         self.specGenerator.removeSpecs()
         
         """
@@ -390,3 +387,4 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         
 if __name__ == "__main__":
     unittest.main()
+    deleteConfig(ConfigFile)

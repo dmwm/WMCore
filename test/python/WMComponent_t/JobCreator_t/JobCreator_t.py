@@ -1,7 +1,11 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.17 2010/04/08 19:54:12 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.18 2010/04/13 18:48:31 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
+
+#setup emulator for test, this needs to be at top of the file
+from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
+ConfigFile = emulatorSetup(dbs=True)
 
 import unittest
 import random
@@ -38,9 +42,8 @@ from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
 
-class JobCreatorTest(EmulatorUnitTestBase):
+class JobCreatorTest(unittest.TestCase):
     """
     Test case for the JobCreator
 
@@ -65,8 +68,6 @@ class JobCreatorTest(EmulatorUnitTestBase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also, create some dummy locations.
         """
-        #Stolen from Subscription_t.py
-        EmulatorUnitTestBase.setUp(self)
         
         myThread = threading.currentThread()
         
@@ -108,7 +109,6 @@ class JobCreatorTest(EmulatorUnitTestBase):
 
         self.testDir = self.testInit.generateWorkDir()
         self.cwd = os.getcwd()
-        EmulatorUnitTestBase.tearDown(self)
 
         return
 
@@ -793,3 +793,4 @@ class JobCreatorTest(EmulatorUnitTestBase):
 if __name__ == "__main__":
 
     unittest.main() 
+    deleteConfig(ConfigFile)

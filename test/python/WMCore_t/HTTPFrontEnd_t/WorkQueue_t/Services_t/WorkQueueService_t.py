@@ -4,8 +4,12 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.4 $"
+__version__ = "$Revision: 1.5 $"
 
+
+#setup emulator for test, this needs to be at top of the file
+from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
+ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=True)
 
 import os
 import inspect
@@ -26,16 +30,12 @@ from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 from WMQuality.WebTools.RESTClientAPI import methodTest
-from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 from WMCore.Wrappers import JsonWrapper
 
 
-
-
-
-class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
+class WorkQueueServiceTest(RESTBaseUnitTest):
     """
     Test WorkQueue Service client
     It will start WorkQueue RESTService
@@ -62,7 +62,6 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         """
         setUP global values
         """
-        EmulatorUnitTestBase.setUp(self)
         RESTBaseUnitTest.setUp(self)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
@@ -77,7 +76,6 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         
     def tearDown(self):
         RESTBaseUnitTest.tearDown(self)
-        EmulatorUnitTestBase.tearDown(self)
         self.specGenerator.removeSpecs()
      
     def _tester(self, testName, verb, code, partUrl, inpt = {}, contentType = "application/json"):
@@ -164,3 +162,4 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
 
 if __name__ == '__main__':
     unittest.main()
+    deleteConfig(ConfigFile)

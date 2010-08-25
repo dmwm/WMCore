@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+#setup emulator for test, this needs to be at top of the file
+from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
+ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=True)
+
 import unittest
 try:
     # Python 2.6
@@ -15,11 +19,10 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 
-class WorkQueueTest(RESTBaseUnitTest, EmulatorUnitTestBase):
+class WorkQueueTest(RESTBaseUnitTest):
     """
     Test WorkQueue Service client
     It will start WorkQueue RESTService
@@ -44,7 +47,6 @@ class WorkQueueTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         setUP global values
         """
         RESTBaseUnitTest.setUp(self)
-        EmulatorUnitTestBase.setUp(self)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
         
@@ -58,7 +60,6 @@ class WorkQueueTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         
     def tearDown(self):
         RESTBaseUnitTest.tearDown(self)
-        EmulatorUnitTestBase.tearDown(self)
         self.specGenerator.removeSpecs()
         
     def testGetWork(self):
@@ -100,3 +101,5 @@ class WorkQueueTest(RESTBaseUnitTest, EmulatorUnitTestBase):
 if __name__ == '__main__':
 
     unittest.main()
+    deleteConfig(ConfigFile)
+    

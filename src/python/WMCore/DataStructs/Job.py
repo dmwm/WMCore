@@ -7,8 +7,8 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.25 2009/08/10 19:00:00 evansde Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Job.py,v 1.26 2009/08/26 16:34:18 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
@@ -36,7 +36,7 @@ class Job(WMObject, dict):
         else:
             self["input_files"] = files
 
-        self["id"] = makeUUID()
+        self["id"] = None
         self["jobgroup"] = None
         self["name"] = name
         self["state"] = 'new'

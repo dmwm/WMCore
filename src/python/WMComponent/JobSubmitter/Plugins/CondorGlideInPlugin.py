@@ -14,8 +14,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.13 2010/07/08 21:03:21 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.14 2010/07/29 18:44:13 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import os
 import os.path
@@ -198,7 +198,7 @@ class CondorGlideInPlugin(PluginBase):
                        % (self.sandbox, self.packageDir,
                           'JobPackage.pkl', self.unpacker))
             argString = "arguments = %s %i\n" \
-                        % (os.path.basename(self.sandbox), index)
+                        % (os.path.basename(self.sandbox), job['id'])
             jdl.append(argString)
 
             jobCE = self.getCEName(jobSite = job['location'])
@@ -213,7 +213,7 @@ class CondorGlideInPlugin(PluginBase):
             jdl.append("transfer_output_remaps = \"Report.pkl = Report.%i.pkl\"\n" \
                        % (job["retry_count"]))
 
-            jdl.append("+WMAgent_JobName = \"%s\"\n" % job['name'])
+#            jdl.append("+WMAgent_JobName = \"%s\"\n" % job['name'])
             jdl.append("+WMAgent_JobID = %s\n" % job['id'])
         
             jdl.append("Queue 1\n")

@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.11 2010/07/08 19:50:03 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.12 2010/07/29 18:44:13 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import os.path
@@ -239,7 +239,7 @@ class CondorGlobusPlugin(PluginBase):
                        % (self.sandbox, self.packageDir,
                           'JobPackage.pkl', self.unpacker))
             argString = "arguments = %s %i\n" \
-                        % (os.path.basename(self.sandbox), index)
+                        % (os.path.basename(self.sandbox), job['id'])
             jdl.append(argString)
 
             jobCE = self.getCEName(jobSite = job['location'])
@@ -250,7 +250,7 @@ class CondorGlobusPlugin(PluginBase):
                 continue
             jdl.append("globusscheduler = %s\n" % (jobCE))
 
-            jdl.append("+WMAgent_JobName = \"%s\"\n" % job['name'])
+            #jdl.append("+WMAgent_JobName = \"%s\"\n" % job['name'])
             jdl.append("+WMAgent_JobID = %s\n" % job['id'])
         
             jdl.append("Queue 1\n")

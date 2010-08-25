@@ -8,8 +8,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-__revision__ = "$Id: Requests.py,v 1.39 2010/07/29 19:44:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Requests.py,v 1.40 2010/08/03 12:06:06 metson Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import urllib
 from urlparse import urlunparse
@@ -26,7 +26,8 @@ from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 def check_server_url(srvurl):
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
     if not good_name:
-        raise ValueError('You must include http(s):// in your servers address')
+        msg = "You must include http(s):// in your servers address, %s doesn't" % srvurl
+        raise ValueError(msg)
     
 class Requests(dict):
     """

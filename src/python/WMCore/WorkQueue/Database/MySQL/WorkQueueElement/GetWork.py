@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.3 2009/09/03 15:44:20 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetWork.py,v 1.4 2009/09/17 15:37:53 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import random
 import time
@@ -18,14 +18,17 @@ from WMCore.WorkQueue.Database import States
 
 class GetWork(DBFormatter):
     # get elements that match each site resource ordered by priority
-    # elements which do not process any data have their block_id set to NULL
+    # elements which do not process any data have their input_id set to NULL
     sql = """SELECT we.subscription_id, wsite.name site_name,
                     we.num_jobs, we.input_id, we.parent_flag
             FROM wq_element we
-            LEFT OUTER JOIN wq_data_site_assoc wbmap ON
+            LEFT JOIN wq_data_site_assoc wbmap ON
                                             wbmap.data_id = we.input_id
-            LEFT OUTER JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
-            WHERE we.status = :available AND we.num_jobs <= :jobs AND (wsite.name = :site OR wsite.name IS NULL)
+            LEFT JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
+            WHERE we.status = :available AND
+                  we.num_jobs <= :jobs AND
+                  (wsite.name = :site OR
+                                  (wsite.name IS NULL AND we.input_id is NULL))
             ORDER BY (we.priority +
                     :weight * (:current_time - we.insert_time)) DESC
             """
@@ -43,9 +46,16 @@ class GetWork(DBFormatter):
         # (in priority order) and limit to the job slots at each site.
         # Strip out duplicate elements (which can run at multiple sites.)
         for result in results:
+            # Work which requires input data must be assigned to a particular
+            # site. If this fails something has gone wrong with the sql call
+            assert (result['site_name'] is None) == \
+                   (result['input_id'] is None), \
+                   'Input data required but not released to a specific site'
+
+            # Production jobs (can run anywhere) are assigned to a random site
             site = result['site_name'] or random.choice(resources.keys())
             if  result['subscription_id'] not in acquired_ids and \
-                                        result['num_jobs'] <= resources[site]:
+                                    result['num_jobs'] <= resources[site]:
                 acquired.append(result)
                 acquired_ids.append(result['subscription_id'])
                 resources[site] = resources[site] - result['num_jobs']

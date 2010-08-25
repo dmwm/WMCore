@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.11 2009/09/07 14:41:12 swakef Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.12 2009/09/17 15:37:54 swakef Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import pickle
@@ -205,7 +205,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testProcessing(self):
         """
-        Enqueue and get work for a production WMSpec.
+        Enqueue and get work for a processing WMSpec.
         """
         specfile = self.processingSpecFile
         njobs = [5, 10] # array of jobs per block
@@ -214,8 +214,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
         self.assertEqual(len(njobs), len(self.queue))
-        self.queue.updateLocationInfo()
 
+        self.queue.updateLocationInfo()
         # Not quite enough resources
         work = self.queue.getWork({'SiteA' : njobs[0] - 1,
                                    'SiteB' : njobs[1] - 1})
@@ -245,9 +245,10 @@ class WorkQueueTest(WorkQueueTestCase):
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
         self.assertEqual(numBlocks, len(self.queue))
+        self.queue.updateLocationInfo()
 
-        #In blacklist
-        work = self.queue.getWork({'SiteA' : total})
+        #In blacklist (SiteA) or not at location (SiteB)
+        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
         self.assertEqual(len(work), 0) # Fail here till blacklist works
 
         fakeDBS = self.queue.dbsHelpers['http://example.com']
@@ -282,14 +283,18 @@ class WorkQueueTest(WorkQueueTestCase):
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpecFile)
         self.assertEqual(1, len(self.globalQueue))
+        self.globalQueue.updateLocationInfo()
+
         # pull work down to the lowest queue
-        work = self.localQueue.getWork({'SiteA' : 1000})
         # check work passed down to lower queue where it was acquired
         # work should have expanded and parent element marked as acquired
+        work = self.localQueue.getWork({'SiteA' : 1000})
+        self.assertEqual(0, len(self.localQueue))
         self.assertEqual(2, len(work))
+
         # mark work done & check this passes upto the top level
-        self.localQueue.setStatus('Done', *work)
-        # TODO: Check status of element in gloal queue
+        self.localQueue.setStatus('Done', *([str(x['id']) for x in work]))
+        # TODO: Check status of element in global queue
 
     def runTest(self):
         """run all tests"""

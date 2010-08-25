@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.28 2009/09/07 14:51:00 swakef Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: WorkQueue.py,v 1.29 2009/09/17 15:37:53 swakef Exp $"
+__version__ = "$Revision: 1.29 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -31,7 +31,7 @@ from WMCore.WMBS.File import File as WMBSFile
 #TODO: Black/White list not taken into account
 #TODO: Scale test
 #TODO: Handle multiple dbs instances
-
+#TODO: Warning dataset level global queues don't take account of location
 
 class WorkQueue(WorkQueueBase):
     """
@@ -138,7 +138,7 @@ class WorkQueue(WorkQueueBase):
         """
         _setStatus_, throws an exception if no elements are updated
         """
-        subscriptions = [str(x['id']) for x in subscriptions]
+        #subscriptions = [str(x['id']) for x in subscriptions]
         updateAction = self.daofactory(classname =
                                        "WorkQueueElement.UpdateStatus")
         affected = updateAction.execute(status, subscriptions,
@@ -148,7 +148,13 @@ class WorkQueue(WorkQueueBase):
             raise RuntimeError, "Status not changed: No matching elements"
 
         if self.params['ParentQueue'] and status in ('Done', 'Failed'):
-            self.params['ParentQueue'].setStatus(status, *subscriptions)
+            # get parent id's
+            parentAction = self.daofactory(classname =
+                                       "WorkQueueElement.GetParentId")
+            affected = parentAction.execute(subscriptions,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+            self.params['ParentQueue'].setStatus(status, *([x['parent_queue_id'] for x in affected]))
 
 
     def setPriority(self, newpriority, *workflowNames):
@@ -173,6 +179,8 @@ class WorkQueue(WorkQueueBase):
         mappingAct = self.daofactory(classname = "Site.UpdateDataSiteMapping")
         blocks = blocksAction.execute(conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
+        if not blocks:
+            return
         result = {}
         dbs = self.dbsHelpers.values()[0] #FIXME!!!
         uniqueLocations = set()
@@ -182,8 +190,9 @@ class WorkQueue(WorkQueueBase):
             for location in locations:
                 uniqueLocations.add(location)
 
-        siteAction = self.daofactory(classname = "Site.New")
-        siteAction.execute(tuple(uniqueLocations), conn = self.getDBConn(),
+        if uniqueLocations:
+            siteAction = self.daofactory(classname = "Site.New")
+            siteAction.execute(tuple(uniqueLocations), conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
         # map blocks to locations (in one call?)
@@ -218,6 +227,7 @@ class WorkQueue(WorkQueueBase):
 
         # Probably should move somewhere that doesn't block the client
         self.pullWork(siteJobs)
+        self.updateLocationInfo()
 
         results = []
         blockLoader = self.daofactory(classname = "Data.LoadByID")
@@ -254,7 +264,7 @@ class WorkQueue(WorkQueueBase):
                 fileset.commit()
             results.append(sub)
         if results:
-            self.setStatus('Acquired', *results)
+            self.setStatus('Acquired', *([str(x['id']) for x in results]))
         return results
 
 
@@ -317,3 +327,4 @@ class WorkQueue(WorkQueueBase):
         for element in work:
             self.queueWork(element['workflow'].spec,
                            parentQueueId = element['id'])
+        self.params['ParentQueue'].setStatus('Acquired', *([x['id'] for x in work]))

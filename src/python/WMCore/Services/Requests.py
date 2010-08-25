@@ -493,17 +493,24 @@ class SecureRequests(Requests):
             cert = os.environ['X509_USER_CERT']
             key = os.environ['X509_USER_KEY']
         
-        #TODO: only in linux, unix case, add other os case
-        # Worst case, look for proxy at default location /tmp/x509up_u$uid
-        else :
-            uid = os.getuid()
-            cert = '/tmp/x509up_u'+str(uid)
+        # TODO: only in linux, unix case, add other os case
+        # look for proxy at default location /tmp/x509up_u$uid
+        elif os.path.exists('/tmp/x509up_u'+str(os.getuid())):
+            cert = '/tmp/x509up_u'+str(os.getuid())
             key = cert
+            
+        # Worst case, hope the user has a cert in ~/.globus
+        else :
+            cert = os.environ['HOME'] + '/.globus/usercert.pem'
+            if os.path.exists(os.environ['HOME'] + '/.globus/userkey.pem'):
+                key = os.environ['HOME'] + '/.globus/userkey.pem'
+            else:
+                key = cert
     
         #Set but not found
         if not os.path.exists(cert) or not os.path.exists(key):
             raise WMException('Request requires a host certificate and key', 
                               "WMCORE-11")
-            
-        # All looks OK, still doesn't gurantee proxy's validity etc.
+  
+        # All looks OK, still doesn't guarantee proxy's validity etc.
         return key, cert

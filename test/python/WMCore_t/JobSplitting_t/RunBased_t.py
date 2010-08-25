@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-_EventBased_t_
+_RunBased_t_
 
-Event based splitting test.
+RunBased splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.2 2009/12/16 17:45:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RunBased_t.py,v 1.3 2010/06/28 15:27:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 
@@ -20,14 +20,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 
-class EventBasedTest(unittest.TestCase):
-    """
-    _EventBasedTest_
-
-    Test event based job splitting.
-    """
-
-    
+class RunBasedTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
@@ -37,25 +30,25 @@ class EventBasedTest(unittest.TestCase):
         """
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(i, *[45+i]))
             self.multipleFileFileset.addFile(newFile)
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
-        newFile = File("/some/file/name", size = 1000, events = 100)
+        newFile = File("/some/file/name", size = 1000, events = 100, locations = set(["somese.cern.ch"]))
         newFile.addRun(Run(1, *[45]))
         self.singleFileFileset.addFile(newFile)
 
 
         self.multipleFileRunset = Fileset(name = "TestFileset3")
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(i/3, *[45]))
             self.multipleFileRunset.addFile(newFile)
 
         self.singleRunFileset = Fileset(name = "TestFileset4")
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(1, *[45]))
             self.singleRunFileset.addFile(newFile)
 
@@ -81,11 +74,6 @@ class EventBasedTest(unittest.TestCase):
         return
 
     def tearDown(self):
-        """
-        _tearDown_
-
-        Nothing to do...
-        """
         pass
 
     def testExactRuns(self):

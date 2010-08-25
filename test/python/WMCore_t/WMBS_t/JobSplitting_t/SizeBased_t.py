@@ -5,8 +5,8 @@ _SizeBased_t_
 Size based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.6 2010/03/31 21:33:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.7 2010/06/28 15:27:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import threading
@@ -50,8 +50,8 @@ class SizeBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "somese.cern.ch")
-        locationAction.execute(siteName = "otherse.cern.ch")
+        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
+        locationAction.execute(siteName = "site2", seName = "otherse.cern.ch")
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()

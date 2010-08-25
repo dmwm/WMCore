@@ -5,8 +5,8 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-__revision__ = "$Id: Periodic_t.py,v 1.7 2010/03/31 20:06:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Periodic_t.py,v 1.8 2010/06/28 15:27:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import os
@@ -26,13 +26,6 @@ from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
 class PeriodicTest(unittest.TestCase):
-    """
-    _PeriodicTest_
-
-    Test file periodic splitting.
-    """
-
-    
     def setUp(self):
         """
         _setUp_
@@ -51,8 +44,8 @@ class PeriodicTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("somese.cern.ch")
-        locationAction.execute("otherse.cern.ch")
+        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
+        locationAction.execute(siteName = "site2", seName = "otherse.cern.ch")
         
         self.testFileset = Fileset(name = "TestFileset1")
         self.testFileset.create()

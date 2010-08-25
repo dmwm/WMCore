@@ -5,8 +5,8 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-__revision__ = "$Id: SplitFileBased_t.py,v 1.7 2010/03/31 21:33:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: SplitFileBased_t.py,v 1.8 2010/06/28 15:27:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import os
@@ -72,7 +72,27 @@ class SplitFileBasedTest(unittest.TestCase):
         also injected.  Also files are added to the "Mergeable" subscription as
         well as to the output fileset for their jobgroups.
         """
+        locationAction = self.daoFactory(classname = "Locations.New")
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+
+        locationAction.execute("site1", seName = "somese.cern.ch")
+
+        self.mergeFileset = Fileset(name = "mergeFileset")
+        self.mergeFileset.create()
+        self.bogusFileset = Fileset(name = "bogusFileset")
+        self.bogusFileset.create()        
+
+        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
+                                 owner = "Steve", task="Test")
+        mergeWorkflow.create()
+        
+        self.mergeSubscription = Subscription(fileset = self.mergeFileset,
+                                              workflow = mergeWorkflow,
+                                              split_algo = "SplitFileBased")
+        self.mergeSubscription.create()
+        self.bogusSubscription = Subscription(fileset = self.bogusFileset,
+                                              workflow = mergeWorkflow,
+                                              split_algo = "SplitFileBased")
 
         inputFileset = Fileset(name = "inputFileset")
         inputFileset.create()
@@ -80,6 +100,8 @@ class SplitFileBasedTest(unittest.TestCase):
         inputWorkflow = Workflow(name = "inputWorkflow", spec = "input",
                                 owner = "Steve", task = "Test")
         inputWorkflow.create()
+        inputWorkflow.addOutput("someOutput", self.mergeFileset)
+        inputWorkflow.addOutput("someOutput2", self.bogusFileset)
         
         inputSubscription = Subscription(fileset = inputFileset,
                                         workflow = inputWorkflow)
@@ -170,67 +192,67 @@ class SplitFileBasedTest(unittest.TestCase):
         testJob6.save()        
         changeStateDAO.execute([testJob6])                
 
-        badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024, first_event = 0)
+        badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024, first_event = 0, locations = set(["somese.cern.ch"]))
         badFile1.addRun(Run(1, *[45]))
         badFile1.create()
         badFile1.addParent(parentFile5["lfn"])
 
-        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0)
+        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0, locations = set(["somese.cern.ch"]))
         file1.addRun(Run(1, *[45]))
         file1.create()
         file1.addParent(parentFile1["lfn"])
-        file2 = File(lfn = "file2", size = 1024, events = 1024, first_event = 1024)
+        file2 = File(lfn = "file2", size = 1024, events = 1024, first_event = 1024, locations = set(["somese.cern.ch"]))
         file2.addRun(Run(1, *[45]))
         file2.create()
         file2.addParent(parentFile1["lfn"])
-        file3 = File(lfn = "file3", size = 1024, events = 1024, first_event = 2048)
+        file3 = File(lfn = "file3", size = 1024, events = 1024, first_event = 2048, locations = set(["somese.cern.ch"]))
         file3.addRun(Run(1, *[45]))
         file3.create()
         file3.addParent(parentFile1["lfn"])
-        file4 = File(lfn = "file4", size = 1024, events = 1024, first_event = 3072)        
+        file4 = File(lfn = "file4", size = 1024, events = 1024, first_event = 3072, locations = set(["somese.cern.ch"]))
         file4.addRun(Run(1, *[45]))
         file4.create()
         file4.addParent(parentFile1["lfn"]) 
 
-        fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0)
+        fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0, locations = set(["somese.cern.ch"]))
         fileA.addRun(Run(1, *[46]))
         fileA.create()
         fileA.addParent(parentFile2["lfn"])
-        fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 1024)
+        fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 1024, locations = set(["somese.cern.ch"]))
         fileB.addRun(Run(1, *[46]))
         fileB.create()
         fileB.addParent(parentFile2["lfn"])
-        fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 2048)
+        fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 2048, locations = set(["somese.cern.ch"]))
         fileC.addRun(Run(1, *[46]))
         fileC.create()
         fileC.addParent(parentFile2["lfn"])
         
-        fileI = File(lfn = "fileI", size = 1024, events = 1024, first_event = 0)
+        fileI = File(lfn = "fileI", size = 1024, events = 1024, first_event = 0, locations = set(["somese.cern.ch"]))
         fileI.addRun(Run(2, *[46]))
         fileI.create()
         fileI.addParent(parentFile3["lfn"])
-        fileII = File(lfn = "fileII", size = 1024, events = 1024, first_event = 1024)
+        fileII = File(lfn = "fileII", size = 1024, events = 1024, first_event = 1024, locations = set(["somese.cern.ch"]))
         fileII.addRun(Run(2, *[46]))
         fileII.create()
         fileII.addParent(parentFile3["lfn"])
-        fileIII = File(lfn = "fileIII", size = 1024, events = 1024, first_event = 2048)
+        fileIII = File(lfn = "fileIII", size = 1024, events = 1024, first_event = 2048, locations = set(["somese.cern.ch"]))
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
         fileIII.addParent(parentFile3["lfn"])        
-        fileIV = File(lfn = "fileIV", size = 1024, events = 1024, first_event = 3072)        
+        fileIV = File(lfn = "fileIV", size = 1024, events = 1024, first_event = 3072, locations = set(["somese.cern.ch"]))
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
         fileIV.addParent(parentFile3["lfn"])
 
-        fileX = File(lfn = "badFileA", size = 1024, events = 1024, first_event = 0)
+        fileX = File(lfn = "badFileA", size = 1024, events = 1024, first_event = 0, locations = set(["somese.cern.ch"]))
         fileX.addRun(Run(1, *[47]))
         fileX.create()
         fileX.addParent(parentFile4["lfn"])
-        fileY = File(lfn = "badFileB", size = 1024, events = 1024, first_event = 1024)
+        fileY = File(lfn = "badFileB", size = 1024, events = 1024, first_event = 1024, locations = set(["somese.cern.ch"]))
         fileY.addRun(Run(1, *[47]))
         fileY.create()
         fileY.addParent(parentFile4["lfn"])        
-        fileZ = File(lfn = "badFileC", size = 1024, events = 1024, first_event = 2048)
+        fileZ = File(lfn = "badFileC", size = 1024, events = 1024, first_event = 2048, locations = set(["somese.cern.ch"]))
         fileZ.addRun(Run(1, *[47]))
         fileZ.create()
         fileZ.addParent(parentFile4["lfn"])
@@ -253,23 +275,6 @@ class SplitFileBasedTest(unittest.TestCase):
         jobGroup2.output.addFile(fileZ)
         jobGroup2.output.addFile(badFile1)
         jobGroup2.output.commit()
-
-        self.mergeFileset = Fileset(name = "mergeFileset")
-        self.mergeFileset.create()
-        self.bogusFileset = Fileset(name = "bogusFileset")
-        self.bogusFileset.create()        
-
-        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
-                                 owner = "Steve", task="Test")
-        mergeWorkflow.create()
-        
-        self.mergeSubscription = Subscription(fileset = self.mergeFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "SplitFileBased")
-        self.mergeSubscription.create()
-        self.bogusSubscription = Subscription(fileset = self.bogusFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "SplitFileBased")
 
         for file in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
                      fileII, fileIII, fileIV, fileX, fileY, fileZ, badFile1]:

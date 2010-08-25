@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.18 2010/03/30 20:04:46 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.19 2010/03/30 20:56:08 sryu Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import logging
 from WMCore.WMBS.File import File
@@ -155,5 +155,5 @@ class WMBSHelper:
                         locations = set(storageElements))
         
         logging.info("WMBS File: %s\n on Location: %s" 
-                     % (wmbsFile['lfn'], wmbsFile['locations']))
+                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
         return wmbsFile

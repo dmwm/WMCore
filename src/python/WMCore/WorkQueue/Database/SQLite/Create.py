@@ -5,8 +5,8 @@ Implementation of CreateWorkQueue for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.13 2010/07/26 13:10:10 swakef Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Create.py,v 1.14 2010/08/10 17:51:15 swakef Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -50,23 +50,23 @@ class Create(CreateWorkQueueBase):
 
         self.create["06wq_data_parentage"] = \
           """CREATE TABLE wq_data_parentage (
-             child        INTEGER    NOT NULL REFERENCES wq_data(id),
-             parent       INTEGER    NOT NULL REFERENCES wq_data(id),
+             child        INTEGER    NOT NULL REFERENCES wq_data(id) ON DELETE CASCADE,
+             parent       INTEGER    NOT NULL REFERENCES wq_data(id) ON DELETE CASCADE,
              PRIMARY KEY (child, parent)
              )"""
 
         self.create["08wq_data_site_assoc"] = \
           """CREATE TABLE wq_data_site_assoc (
-             data_id     INTEGER    NOT NULL REFERENCES wq_data(id),
-             site_id      INTEGER    NOT NULL REFERENCES wq_site(id),
+             data_id     INTEGER    NOT NULL REFERENCES wq_data(id) ON DELETE CASCADE,
+             site_id      INTEGER    NOT NULL REFERENCES wq_site(id) ON DELETE CASCADE,
              -- online BOOL DEFAULT FALSE, -- for when we track staging
              PRIMARY KEY (data_id, site_id)
              )""" #-- PRIMARY KEY (block_id, site_id) #-- online BOOL DEFAULT FALSE, -- for when we track staging
 
         self.create["09wq_element_site_validation"] = \
           """CREATE TABLE wq_element_site_validation (
-             element_id   INTEGER    NOT NULL REFERENCES wq_element(id),
-             site_id      INTEGER    NOT NULL REFERENCES wq_site(id),
+             element_id   INTEGER    NOT NULL REFERENCES wq_element(id) ON DELETE CASCADE,
+             site_id      INTEGER    NOT NULL REFERENCES wq_site(id) ON DELETE CASCADE,
              valid    CHAR(1) CHECK(valid IN (0, 1)),
              PRIMARY KEY (element_id, site_id)
              )"""

@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.27 2010/07/26 13:10:10 swakef Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.28 2010/08/10 17:51:15 swakef Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import threading
 
@@ -143,19 +143,23 @@ class CreateWorkQueueBase(DBCreator):
                   
         self.constraints["FK_wq_data_assoc"] = \
               """ALTER TABLE wq_data_site_assoc ADD CONSTRAINT FK_wq_data_assoc
-                 FOREIGN KEY(data_id) REFERENCES wq_data(id)"""
+                 FOREIGN KEY(data_id) REFERENCES wq_data(id)
+                 ON DELETE CASCADE"""
 
         self.constraints["FK_wq_site_assoc"] = \
               """ALTER TABLE wq_data_site_assoc ADD CONSTRAINT FK_wq_site_assoc
-                 FOREIGN KEY(site_id) REFERENCES wq_site(id)"""
+                 FOREIGN KEY(site_id) REFERENCES wq_site(id)
+                 ON DELETE CASCADE"""
 
         self.constraints["FK_wq_data_child"] = \
               """ALTER TABLE wq_data_parentage ADD CONSTRAINT FK_wq_data_child
-                 FOREIGN KEY(child) REFERENCES wq_data(id)"""
+                 FOREIGN KEY(child) REFERENCES wq_data(id)
+                 ON DELETE CASCADE"""
 
         self.constraints["FK_wq_data_parent"] = \
               """ALTER TABLE wq_data_parentage ADD CONSTRAINT FK_wq_data_parent
-                 FOREIGN KEY(parent) REFERENCES wq_data(id)"""
+                 FOREIGN KEY(parent) REFERENCES wq_data(id)
+                 ON DELETE CASCADE"""
 
         self.constraints["FK_wq_wmtask_element"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_wmtask_element
@@ -163,11 +167,13 @@ class CreateWorkQueueBase(DBCreator):
 
         self.constraints["FK_wq_wmtask_wmspec"] = \
               """ALTER TABLE wq_wmtask ADD CONSTRAINT FK_wq_wq_wmtask_wmspec
-                 FOREIGN KEY(wmspec_id) REFERENCES wq_wmspec(id)"""
+                 FOREIGN KEY(wmspec_id) REFERENCES wq_wmspec(id)
+                 ON DELETE CASCADE"""
 
         self.constraints["FK_wq_site_valid"] = \
               """ALTER TABLE wq_element_site_validation ADD CONSTRAINT FK_wq_site_valid
-                 FOREIGN KEY(site_id) REFERENCES wq_site(id)"""
+                 FOREIGN KEY(site_id) REFERENCES wq_site(id)
+                 ON DELETE CASCADE"""
         
         self.constraints["FK_wq_element_child"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_child

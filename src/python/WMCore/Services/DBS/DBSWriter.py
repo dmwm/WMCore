@@ -249,7 +249,7 @@ class DBSWriter:
     #   
     #   return
         
-    def insertFilesForDBSBuffer(self, files, procDataset, algos, jobType = "NotMerge", insertDetectorData = False):
+    def insertFilesForDBSBuffer(self, files, procDataset, algos, jobType = "NotMerge", insertDetectorData = False, maxFiles = 100, maxSize = 99999999):
         """
         _insertFiles_
 
@@ -336,68 +336,149 @@ class DBSWriter:
         # // Insert the lists of sorted files into the appropriate
         #//  fileblocks
 
-        try:
-            fileBlock = DBSWriterObjects.getDBSFileBlock(
+
+        sumSize   = 0
+        sumFiles  = 0
+        tmpFiles  = []
+        blockList = []
+        for file in insertFiles:
+            #Here we loop through all the files, creating sets of insertFiles
+            #This is done to allow us to limit the block size, but still insert into each block in bulk.
+            sumSize  += file['FileSize']
+            sumFiles += 1
+            tmpFiles.append(file)
+
+            if sumSize >= maxSize or sumFiles >= maxFiles:
+                #Then we better insert this block and call a new one
+                blockList.append(tmpFiles)
+                tmpFiles = []
+                sumSize  = 0
+                sumFiles = 0
+        if len(tmpFiles) > 0:
+            blockList.append(tmpFiles)
+
+        for fileList in blockList:
+            try:
+                fileBlock = DBSWriterObjects.getDBSFileBlock(
                     self.dbs,
                     procDataset,
                     seName)
-        except DbsException, ex:
+                if not fileBlock in affectedBlocks:
+                    affectedBlocks.append(fileBlock)
+            except DbsException, ex:
                 msg = "Error in DBSWriter.insertFilesForDBSBuffer\n"
                 msg += "Cannot retrieve FileBlock for dataset:\n"
                 msg += " %s\n" % procDataset['Path']
                 #msg += "In Storage Element:\n %s\n" % insertFiles.seName
                 msg += "%s\n" % formatEx(ex)
                 raise DBSWriterError(msg)
-
-        #TODO: Handle Merge Files Differently ??
-        if jobType == "Merge":
-        #if fwkJobRep.jobType == "Merge":
-                #  //
-                # // Merge files
-                #//
-            for mergedFile in insertFiles:
-                mergedFile['Block'] = fileBlock
-                if not fileBlock in affectedBlocks:
-                    affectedBlocks.append(fileBlock)
-                msg="calling: self.dbs.insertMergedFile(%s, %s)" % (str(mergedFile['ParentList']),str(mergedFile))
-                logging.debug(msg)
-                try:
-                    
-                    #
-                    #
-                    # NOTE To Anzar From Anzar (File cloning as in DBS API can be done here and then I can use Bulk insert on Merged files as well)
-                    self.dbs.insertMergedFile(mergedFile['ParentList'],
+            
+            #At this point, we should commit the block as is
+            if jobType == "Merge":
+                for mergedFile in fileList:
+                    mergedFile['Block'] = fileBlock
+                    msg="calling: self.dbs.insertMergedFile(%s, %s)" % (str(mergedFile['ParentList']),str(mergedFile))
+                    logging.debug(msg)
+                    try:
+                        #
+                        #
+                        # NOTE To Anzar From Anzar (File cloning as in DBS API can be done here and then I can use Bulk insert on Merged files as well)
+                        self.dbs.insertMergedFile(mergedFile['ParentList'],
                                                   mergedFile)
                         
-                except DbsException, ex:
-                    msg = "Error in DBSWriter.insertFiles\n"
-                    msg += "Cannot insert merged file:\n"
-                    msg += "  %s\n" % mergedFile['LogicalFileName']
-                    msg += "%s\n" % formatEx(ex)
-                    raise DBSWriterError(msg)
-                logging.debug("Inserted merged file: %s to FileBlock: %s"%(mergedFile['LogicalFileName'],fileBlock['Name']))
-        else:
-                #  //
-                # // Processing files
-                #//
-                if not fileBlock in affectedBlocks:
-                    affectedBlocks.append(fileBlock)
-                msg="calling: self.dbs.insertFiles(%s, %s, %s)" % (str(procDataset['Path']),str(insertFiles),str(fileBlock))
-                logging.debug(msg)
-
+                    except DbsException, ex:
+                        msg = "Error in DBSWriter.insertFiles\n"
+                        msg += "Cannot insert merged file:\n"
+                        msg += "  %s\n" % mergedFile['LogicalFileName']
+                        msg += "%s\n" % formatEx(ex)
+                        raise DBSWriterError(msg)
+                    logging.debug("Inserted merged file: %s to FileBlock: %s"%(mergedFile['LogicalFileName'],fileBlock['Name']))
+            else:
                 try:
-                    self.dbs.insertFiles(procDataset, insertFiles,
-                                         fileBlock)
+                    self.dbs.insertFiles(procDataset, fileList, fileBlock)
+                    
                 except DbsException, ex:
                     msg = "Error in DBSWriter.insertFiles\n"
                     msg += "Cannot insert processed files:\n"
-                    msg += " %s\n" % (
-                        [ x['LogicalFileName'] for x in insertFiles ],
-                        )
-                    
+                    msg += " %s\n" % ([ x['LogicalFileName'] for x in insertFiles ],)
                     msg += "%s\n" % formatEx(ex)
                     raise DBSWriterError(msg)
                 logging.debug("Inserted files: %s to FileBlock: %s"%( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
+                    
+            #Try and close the box
+            #First by using manageFileBlock
+            #If that doesn't work, nuke it personally
+            if not self.manageFileBlock(fileblockName = fileBlock['Name'], maxFiles = maxFiles, maxSize = maxSize):
+                #Closing block by hand
+                self.dbs.closeBlock(DBSWriterObjects.createDBSFileBlock(fileBlock['Name']))
+                logging.debug('Forced to close block %s manually' %(fileBlock['Name']))
+
+
+        return list(affectedBlocks)
+                
+
+#        try:
+#            fileBlock = DBSWriterObjects.getDBSFileBlock(
+#                    self.dbs,
+#                    procDataset,
+#                    seName)
+#        except DbsException, ex:
+#                msg = "Error in DBSWriter.insertFilesForDBSBuffer\n"
+#                msg += "Cannot retrieve FileBlock for dataset:\n"
+#                msg += " %s\n" % procDataset['Path']
+#                #msg += "In Storage Element:\n %s\n" % insertFiles.seName
+#                msg += "%s\n" % formatEx(ex)
+#                raise DBSWriterError(msg)
+#
+#        #TODO: Handle Merge Files Differently ??
+#        if jobType == "Merge":
+#        #if fwkJobRep.jobType == "Merge":
+#                #  //
+#                # // Merge files
+#                #//
+#            for mergedFile in insertFiles:
+#                mergedFile['Block'] = fileBlock
+#                if not fileBlock in affectedBlocks:
+#                    affectedBlocks.append(fileBlock)
+#                msg="calling: self.dbs.insertMergedFile(%s, %s)" % (str(mergedFile['ParentList']),str(mergedFile))
+#                logging.debug(msg)
+#                try:
+#                    
+#                    #
+#                    #
+#                    # NOTE To Anzar From Anzar (File cloning as in DBS API can be done here and then I can use Bulk insert on Merged files as well)
+#                    self.dbs.insertMergedFile(mergedFile['ParentList'],
+#                                                  mergedFile)
+#                        
+#                except DbsException, ex:
+#                    msg = "Error in DBSWriter.insertFiles\n"
+#                    msg += "Cannot insert merged file:\n"
+#                    msg += "  %s\n" % mergedFile['LogicalFileName']
+#                    msg += "%s\n" % formatEx(ex)
+#                    raise DBSWriterError(msg)
+#                logging.debug("Inserted merged file: %s to FileBlock: %s"%(mergedFile['LogicalFileName'],fileBlock['Name']))
+#        else:
+#                #  //
+#                # // Processing files
+#                #//
+#                if not fileBlock in affectedBlocks:
+#                    affectedBlocks.append(fileBlock)
+#                msg="calling: self.dbs.insertFiles(%s, %s, %s)" % (str(procDataset['Path']),str(insertFiles),str(fileBlock))
+#                logging.debug(msg)
+#
+#                try:
+#                    self.dbs.insertFiles(procDataset, insertFiles,
+#                                         fileBlock)
+#                except DbsException, ex:
+#                    msg = "Error in DBSWriter.insertFiles\n"
+#                    msg += "Cannot insert processed files:\n"
+#                    msg += " %s\n" % (
+#                        [ x['LogicalFileName'] for x in insertFiles ],
+#                        )
+#                    
+#                    msg += "%s\n" % formatEx(ex)
+#                    raise DBSWriterError(msg)
+#                logging.debug("Inserted files: %s to FileBlock: %s"%( ([ x['LogicalFileName'] for x in insertFiles ]),fileBlock['Name']))
 
         return list(affectedBlocks)
 

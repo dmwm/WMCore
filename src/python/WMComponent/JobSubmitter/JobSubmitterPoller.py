@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.37 2010/07/28 15:47:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.38 2010/07/29 14:21:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -101,7 +101,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.processPool = ProcessPool(workerName,
                                        totalSlaves = self.config.JobSubmitter.workerThreads,
                                        componentDir = self.config.JobSubmitter.componentDir,
-                                       config = self.config, slaveInit = configDict)
+                                       config = self.config, slaveInit = configDict,
+                                       namespace = getattr(self.config.JobSubmitter, "pluginNamespace", None))
 
 
         self.changeState = ChangeState(self.config)
@@ -129,12 +130,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         flushJobsPackages() method must be called after all jobs have been added
         to the cache and before they are actually submitted to make sure all the
         job packages have been written to disk.
-
-        Path to the batch file:
-          firstLevelHash = int(batchid.split("-", 1)[0]) % 1000000
-          secondLevelHash = int(batchid.split("-", 1)[0]) % 1000
-          batchPath = os.path.join(self.packageDir, str(firstLevelHash),
-                                   str(secondLevelHash), "batch-%s.pkl" % batchid)
         """
         if not self.jobsToPackage.has_key(loadedJob["workflow"]):
             batchid = "%s-%s" % (loadedJob["id"], loadedJob["retry_count"])
@@ -147,15 +142,13 @@ class JobSubmitterPoller(BaseWorkerThread):
         batchID = self.jobsToPackage[loadedJob["workflow"]]["batchid"]
         
         if len(jobPackage.keys()) == 100:
-            firstLevelHash = int(batchID.split("-", 1)[0]) % 1000000
-            secondLevelHash = int(batchID.split("-", 1)[0]) % 1000
-            batchDir = os.path.join(self.packageDir, str(firstLevelHash),
-                                     str(secondLevelHash))
+            sandboxDir = os.path.dirname(jobPackage[jobPackage.keys()[0]]["sandbox"])
+            batchDir = os.path.join(sandboxDir, "batch_%s" % batchID)
 
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
                 
-            batchPath = os.path.join(batchDir, "batch-%s.pkl" % batchID)
+            batchPath = os.path.join(batchDir, "JobPackage.pkl")
             jobPackage.save(batchPath)
             del self.jobsToPackage[loadedJob["workflow"]]
 
@@ -172,15 +165,13 @@ class JobSubmitterPoller(BaseWorkerThread):
             batchID = self.jobsToPackage[workflowName]["batchid"]
             jobPackage = self.jobsToPackage[workflowName]["package"]
 
-            firstLevelHash = int(batchID.split("-", 1)[0]) % 1000000
-            secondLevelHash = int(batchID.split("-", 1)[0]) % 1000
-            batchDir = os.path.join(self.packageDir, str(firstLevelHash),
-                                     str(secondLevelHash))
+            sandboxDir = os.path.dirname(jobPackage[jobPackage.keys()[0]]["sandbox"])
+            batchDir = os.path.join(sandboxDir, "batch_%s" % batchID)
 
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
                 
-            batchPath = os.path.join(batchDir, "batch-%s.pkl" % batchID)
+            batchPath = os.path.join(batchDir, "JobPackage.pkl")
             jobPackage.save(batchPath)
             del self.jobsToPackage[workflowName]
 

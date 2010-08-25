@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613
+#pylint: disable-msg=W0613, W6501
+# W6501: It doesn't like string formatting in logging messages
 """
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.6 2010/02/11 20:31:04 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ErrorHandlerPoller.py,v 1.7 2010/04/29 14:49:54 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -88,6 +89,10 @@ class ErrorHandlerPoller(BaseWorkerThread):
                                    '%sfailed' %(jobType))
         self.changeState.propagate(cooloffJobs, '%scooloff' %(jobType), \
                                    '%sfailed' %(jobType))
+
+        # Remove all the files in the exhausted jobs.
+        for job in exhaustJobs:
+            job.failInputFiles()
 
     def handleErrors(self):
         """

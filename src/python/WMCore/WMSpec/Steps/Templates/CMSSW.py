@@ -119,7 +119,14 @@ class CMSSWStepHelper(CoreHelper):
             setattr(self.data.application.setup, k, v)
         return
 
+    def getCMSSWVersion(self):
+        """
+        _getCMSSWVersion_
 
+        Retrieve the version of the framework used for this step.
+        """
+        return self.data.application.setup.cmsswVersion
+    
 class CMSSW(Template):
     """
     _CMSSW_

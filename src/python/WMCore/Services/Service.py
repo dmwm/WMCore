@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.45 2010/05/27 16:21:11 farinafa Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: Service.py,v 1.46 2010/06/02 12:30:24 spiga Exp $"
+__version__ = "$Revision: 1.46 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -211,61 +211,63 @@ class Service(dict):
         deftimeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self['timeout'])
 
+        # Nested form for version < 2.5 
         try:
-            # Get the data
-            if not inputdata:
-                inputdata = self["inputdata"]
-            #prepend the basepath
-            url = self["basepath"] + str(url)
-            self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
-                                 (url, inputdata))
-            data, status, reason = self["requests"].makeRequest(uri = url,
-                                                    verb = verb,
-                                                    data = inputdata,
-                                                    encoder = encoder,
-                                                    decoder = decoder,
-                                                    contentType = contentType)
-            
-            # Don't need to prepend the cachepath, the methods calling 
-            # getData have done that for us 
-            f = open(cachefile, 'w')
-            f.write(str(data))
-            f.close()
-        except HTTPException, he:
-            if not os.path.exists(cachefile):
-                msg = 'The cachefile %s does not exist and the service at %s is'
-                msg += ' unavailable - it returned %s because %s'
-                msg = msg % (cachefile, he.url, he.status, he.reason)
-                self['logger'].warning(msg)
-                raise he
-            else:
-                cache_age = os.path.getmtime(cachefile)
-                t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
-                cache_dead = cache_age < time.mktime(t.timetuple())
-                if self.get('usestalecache', False) and not cache_dead:
-                    # If usestalecache is set the previous version of the cache file 
-                    # should be returned, with a suitable message in the log
-                    self['logger'].warning('Returning stale cache data')
-                    self['logger'].info('%s returned %s because %s' % (he.url, 
-                                                                       he.status,
-                                                                       he.reason))
-                    self['logger'].info('cache file (%s) was created on %s' % (
-                                                                        cachefile,
-                                                                        cache_age))
-                else:
-                    if cache_dead:
-                        msg = 'The cachefile %s is dead (5 times older than cache '
-                        msg += 'duration), and the service at %s is unavailable - '
-                        msg += 'it returned %s because %s'
-                        msg = msg % (cachefile, he.url, he.status, he.reason)
-                        self['logger'].warning(msg)
-                    elif self.get('usestalecache', False) == False:
-                        msg = 'The cachefile %s is stale and the service at %s is'
-                        msg += ' unavailable - it returned %s because %s'
-                        msg = msg % (cachefile, he.url, he.status, he.reason)
-                        self['logger'].warning(msg)
-                    raise he
+            try:
+                # Get the data
+                if not inputdata:
+                    inputdata = self["inputdata"]
+                #prepend the basepath
+                url = self["basepath"] + str(url)
+                self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
+                                     (url, inputdata))
+                data, status, reason = self["requests"].makeRequest(uri = url,
+                                                        verb = verb,
+                                                        data = inputdata,
+                                                        encoder = encoder,
+                                                        decoder = decoder,
+                                                        contentType = contentType)
                 
+                # Don't need to prepend the cachepath, the methods calling 
+                # getData have done that for us 
+                f = open(cachefile, 'w')
+                f.write(str(data))
+                f.close()
+            except HTTPException, he:
+                if not os.path.exists(cachefile):
+                    msg = 'The cachefile %s does not exist and the service at %s is'
+                    msg += ' unavailable - it returned %s because %s'
+                    msg = msg % (cachefile, he.url, he.status, he.reason)
+                    self['logger'].warning(msg)
+                    raise he
+                else:
+                    cache_age = os.path.getmtime(cachefile)
+                    t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
+                    cache_dead = cache_age < time.mktime(t.timetuple())
+                    if self.get('usestalecache', False) and not cache_dead:
+                        # If usestalecache is set the previous version of the cache file 
+                        # should be returned, with a suitable message in the log
+                        self['logger'].warning('Returning stale cache data')
+                        self['logger'].info('%s returned %s because %s' % (he.url, 
+                                                                           he.status,
+                                                                           he.reason))
+                        self['logger'].info('cache file (%s) was created on %s' % (
+                                                                            cachefile,
+                                                                            cache_age))
+                    else:
+                        if cache_dead:
+                            msg = 'The cachefile %s is dead (5 times older than cache '
+                            msg += 'duration), and the service at %s is unavailable - '
+                            msg += 'it returned %s because %s'
+                            msg = msg % (cachefile, he.url, he.status, he.reason)
+                            self['logger'].warning(msg)
+                        elif self.get('usestalecache', False) == False:
+                            msg = 'The cachefile %s is stale and the service at %s is'
+                            msg += ' unavailable - it returned %s because %s'
+                            msg = msg % (cachefile, he.url, he.status, he.reason)
+                            self['logger'].warning(msg)
+                        raise he
+                    
         finally:
             # Reset the timeout to it's original value
             socket.setdefaulttimeout(deftimeout)

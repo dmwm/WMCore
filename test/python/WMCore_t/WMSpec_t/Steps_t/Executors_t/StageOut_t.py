@@ -233,73 +233,7 @@ class otherStageOutTest(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
     
-    def testCPBackendStageOutAgainstManualFileXFerNew(self):
-        myReport = Report('cmsRun1')
-        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        myReport.data.cmsRun1.status = 0
-        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
-        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")
-        executor = StageOutExecutor.StageOut()
-        executor.initialise( self.stepdata, self.job)
-        self.setLocalOverride(self.stepdata)
-        self.stepdata.override.newStageOut = True
-        executor.step = self.stepdata
-        executor.execute( )
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
-        
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
-    
-    def testCPBackendStageOutAgainstManualFileXFerFailedStepNew(self):
-        myReport = Report('cmsRun1')
-        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        myReport.data.cmsRun1.status = 0
-        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
-        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")       
-        executor = StageOutExecutor.StageOut()
-        executor.initialise( self.stepdata, self.job)
-        self.setLocalOverride(self.stepdata)
-        self.stepdata.override.newStageOut = True
-        executor.step = self.stepdata
-        executor.execute( )
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
-        
-    def testCPBackendStageOutAgainstManualFileXFerOld(self):
-        myReport = Report('cmsRun1')
-        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        myReport.data.cmsRun1.status = 0
-        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
-        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")
-        executor = StageOutExecutor.StageOut()
-        executor.initialise( self.stepdata, self.job)
-        self.setLocalOverride(self.stepdata)
-        executor.step = self.stepdata
-        executor.execute( )
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
-        
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'hosts' )))
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
-    
-    def testCPBackendStageOutAgainstManualFileXFerFailedStepOld(self):
-        myReport = Report('cmsRun1')
-        myReport.unpersist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        myReport.data.cmsRun1.status = 0
-        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        self.stephelp.addFile("/etc/hosts", "NEWOUTPUTFILE")
-        self.stephelp.addFile("/etc/hosts", "/DUMMYDIR/NEWOUTPUTFILE2")       
-        executor = StageOutExecutor.StageOut()
-        executor.initialise( self.stepdata, self.job)
-        self.setLocalOverride(self.stepdata)
-        executor.step = self.stepdata
-        executor.execute( )
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'NEWOUTPUTFILE' )))
-        self.assertTrue( os.path.exists( os.path.join( self.testDir, 'DUMMYDIR', 'NEWOUTPUTFILE2')))
+
 #        
     def setLocalOverride(self, step):
         step.section_('override')

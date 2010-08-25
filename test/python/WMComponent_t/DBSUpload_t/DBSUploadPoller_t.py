@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.13 $"
+__version__ = "$Revision: 1.14 $"
 
 
 import os
@@ -116,13 +116,13 @@ class DBSUploadTest(unittest.TestCase):
         testFileParentB.setDatasetPath("/%s/%s/RECO" %(name, name))        
         testFileParentB.addRun(Run(1, *[45]))
         
-        testFileParentC = DBSBufferFile(lfn = makeUUID(), size = 1024,
+        testFileParentC = DBSBufferFile(lfn = makeUUID()+'hello', size = 1024,
                                         events = 20, cksum = 3, locations = "malpaquet")
         testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
         testFileParentC.setDatasetPath("/%s/%s/RECO" %(name, name))        
-        testFileParentC.addRun(Run( 1, *[45]))
+        testFileParentC.addRun(Run( 1, *[46]))
         
         testFileParentA.create()
         testFileParentB.create()
@@ -133,12 +133,13 @@ class DBSUploadTest(unittest.TestCase):
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        testFile.setDatasetPath("/%s/%s/RECO" %(name, name))
+        testFile.setDatasetPath("/%s/%s_2/RECO" %(name, name))
         testFile.addRun(Run( 1, *[45]))
         testFile.create()
 
-        testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"]])
-        #testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"], testFileParentC["lfn"]] )
+        #testFile.addParents([testFileParentA["lfn"]])
+        #testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"]])
+        testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"], testFileParentC["lfn"]] )
 
         return
 
@@ -429,6 +430,9 @@ class DBSUploadTest(unittest.TestCase):
         Run the poller several times and make sure it doesn't unnecessarily
         create blocks.
         """
+
+        #return
+        
         countDAO = self.bufferFactory(classname = "CountBlocks")
         randomDataset = makeUUID()
 
@@ -437,10 +441,9 @@ class DBSUploadTest(unittest.TestCase):
                "Error: Blocks in buffer before test started."
 
         config = self.createConfig()
+        config.DBSUpload.DBSMaxFiles     = 2
         
         poller = DBSUploadPoller(config)
-        poller.DBSMaxFiles = 2
-        poller.DBSMaxSize = 1000000000000
         poller.setup(parameters = None)
 
         for i in range(10):
@@ -464,7 +467,60 @@ class DBSUploadTest(unittest.TestCase):
         #self.assertEqual(processed not None, True)
         #print dbsReader.getDatasetInfo(randomDataset)
         datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
-        self.assertEqual(len(datasetFiles), 38)
+        self.assertEqual(len(datasetFiles), 28)
+        
+
+        return
+
+
+    def testBlockTimeout(self):
+        """
+        _testBlockTimeout_
+        
+        Test closing blocks via timeout
+        """
+
+
+        countDAO = self.bufferFactory(classname = "CountBlocks")
+        randomDataset = makeUUID()
+
+        blockCount = countDAO.execute()
+        assert blockCount == 0, \
+               "Error: Blocks in buffer before test started."
+
+        config = self.createConfig()
+        config.DBSUpload.DBSBlockTimeout = 20
+        config.DBSUpload.DBSMaxFiles     = 40
+        
+        poller = DBSUploadPoller(config)
+        poller.setup(parameters = None)
+
+        for i in range(5):
+            self.addToBuffer(randomDataset)
+            poller.algorithm(parameters = None)
+            blockCount = countDAO.execute()
+
+        time.sleep(30)
+        for i in range(5):
+            self.addToBuffer(randomDataset)
+            poller.algorithm(parameters = None)
+            blockCount = countDAO.execute()
+
+            #assert blockCount == 1, \
+            #       "Error: Wrong number of blocks in buffer: %s" % blockCount
+
+
+        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
+        dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
+
+        primaries = dbsReader.listPrimaryDatasets()
+        self.assertEqual(randomDataset in primaries, True, 'Could not find dataset %s' %(randomDataset))
+        processed = dbsReader.listProcessedDatasets(primary = randomDataset)
+        self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
+        #self.assertEqual(processed not None, True)
+        #print dbsReader.getDatasetInfo(randomDataset)
+        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
+        self.assertEqual(len(datasetFiles), 15)
         
 
         return

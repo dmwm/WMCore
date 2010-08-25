@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.20 2010/05/07 21:39:10 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.21 2010/05/20 16:45:14 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -374,6 +374,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             loadedJob  = cPickle.load(fileHandle)
             loadedJob['custom'] = job['custom']
             loadedJob['location'] = job['location']
+            loadedJob['retry_count'] = job['retry_count']
             jList2.append(loadedJob)
             if not 'sandbox' in loadedJob.keys() or not 'task' in loadedJob.keys():
                 # You know what?  Just fail the job

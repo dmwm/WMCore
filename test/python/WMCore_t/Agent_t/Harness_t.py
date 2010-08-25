@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.13 2010/02/03 14:55:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Harness_t.py,v 1.14 2010/02/04 19:26:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -48,7 +48,7 @@ class HarnessTest(unittest.TestCase):
         self.testInit.clearDatabase()
 
     def testB(self):
-
+        assert False
         config = self.testInit.getConfiguration()
         self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
@@ -91,6 +91,7 @@ class HarnessTest(unittest.TestCase):
         assert errorMsg.startswith('Message NonExistingMessageType with payload')
 
     def testC(self):
+        assert False
         config = self.testInit.getConfiguration()
         self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
@@ -115,6 +116,7 @@ class HarnessTest(unittest.TestCase):
 
 
     def testD(self):
+        assert False
         config = self.testInit.getConfiguration()
         config.component_("TestComponent")
         config.TestComponent.logLevel = 'INFO'

@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.25 $"
-__revision__ = "$Id: Report.py,v 1.25 2010/05/12 19:42:36 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Report.py,v 1.26 2010/06/11 21:44:35 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -134,7 +134,7 @@ class Report:
                 
             print msg
             print crashMessage
-            self.addError("UnknownStep", 50115, "MissingJobReport", msg)
+            self.addError("cmsRun1", 50115, "BadFWJRXML", msg)
 
     def __to_json__(self, thunker):
         """

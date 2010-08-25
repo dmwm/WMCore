@@ -39,7 +39,7 @@ class Sparkline(Plot):
                 miny=maxy=0
                 maxlen=0
                 for i,d in enumerate(data):
-                    axes.plot(d['values'],color='#%s' % d['colour'])
+                    axes.plot(d['values'],color=d['colour'])
                     miny=min(miny,min(d['values']))
                     maxy=max(maxy,max(d['values']))
                     maxlen=max(maxlen,len(d['values']))
@@ -49,7 +49,7 @@ class Sparkline(Plot):
                         cy = miny + (maxy-miny)*((float(i)/len(data))+(0.5/len(data)))
                         axes.text(-1,cy,d['label'],horizontalalignment='right',
                                   verticalalignment='center',fontsize=10,
-                                  color='#%s' % d['colour'])
+                                  color=d['colour'])
                     axes.set_xlim(xmin=-0.2*maxlen)
                 axes.set_axis_off()
         
@@ -57,13 +57,13 @@ class Sparkline(Plot):
             else:
                 for i,d in enumerate(data):
                     axes = fig.add_subplot(len(data),1,i+1)
-                    axes.plot(d['values'],color='#%s' % d['colour'])
+                    axes.plot(d['values'],color=d['colour'])
                     cy = 0.5*(max(d['values'])-min(d['values']))+min(d['values'])
                     axes.set_axis_off()    
                     if labelled:
                         axes.text(-1,cy,d['label'],horizontalalignment='right',
                                   verticalalignment='center',fontsize=10,
-                                  color='#%s' % d['colour'])
+                                  color=d['colour'])
                         axes.set_xlim(xmin=-0.2*len(d['values']))
         
         return fig

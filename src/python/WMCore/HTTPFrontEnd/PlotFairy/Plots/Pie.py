@@ -29,7 +29,7 @@ class Pie(Plot):
         for s in input['series']:
             labels.append(s['label'])
             fracs.append(s['value'])
-            colours.append('#%s' % ['colour'])
+            colours.append(['colour'])
             explode = [0] * len(fracs)
         if 'explode' in input:
             ind = input['explode'] - 1

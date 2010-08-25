@@ -77,7 +77,7 @@ class Bar(Plot):
                 assert s['label'] in names
                 seennames.append(s['label'])
                 values[s['label']]=s['value']
-                colours[s['label']]='#%s' % s['colour']
+                colours[s['label']]=s['colour']
             axes.set_xticklabels(labels)
             axes.set_xticks([i+0.5 for i in range(len(labels))])
             left = [names[n] for n in seennames]
@@ -98,7 +98,7 @@ class Bar(Plot):
             for s in series:
                 height = s['values']
                 assert len(height)==x_bins
-                colour = '#%s' % s['colour']
+                colour = s['colour']
                 axes.bar(left,height,width,bottom,label=s['label'],facecolor=colour)
                 bottom = [b+h for b,h in zip(bottom,height)]
             

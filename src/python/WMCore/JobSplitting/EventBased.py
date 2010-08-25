@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: EventBased.py,v 1.11 2009/07/30 18:37:07 sfoulkes Exp $"
-__version__  = "$Revision: 1.11 $"
+__revision__ = "$Id: EventBased.py,v 1.12 2009/08/06 16:49:03 mnorman Exp $"
+__version__  = "$Revision: 1.12 $"
 
 from sets import Set
 
@@ -30,36 +30,62 @@ class EventBased(JobFactory):
         #  //
         # // Resulting job set (shouldnt this be a JobGroup??)
         #//
-        #jobs = Set()
-        jobs = []
+        jobs         = []
+        jobGroupList = []
 
-        #  //
-        # // get the fileset
-        #//
-        fileset = self.subscription.availableFiles()
+        #Get a dictionary of sites, files
+        locationDict = self.sortByLocation()
+
+
 
         #  //
         # // get the event total
         #//
-        eventsPerJob = int(kwargs['events_per_job'])
+        eventsPerJob = int(kwargs.get("events_per_job", 100))
         carryOver = 0
 
         baseName = makeUUID()
 
-        for f in fileset:
-            eventsInFile = f['events']
-            self.subscription.acquireFiles(f)
-
+        for location in locationDict:
+            fileList     = locationDict[location]
+            jobs         = []
             currentEvent = 0
-            while currentEvent < eventsInFile:
-                currentJob = jobInstance(name = '%s-%s' % (baseName, len(jobs) + 1))
-                currentJob.addFile(f)
-                currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
+            currentJob   = jobInstance(name = '%s-%s' % (baseName, len(jobs) + 1))
+
+            for f in fileList:
+                eventsInFile = f['events']
+                self.subscription.acquireFiles(f)
+
+                if eventsInFile >= eventsPerJob:
+                    currentEvent   = 0
+                    while currentEvent < eventsInFile:
+                        currentJob = jobInstance(name = '%s-%s' % (baseName, len(jobs) + 1))
+                        currentJob.addFile(f)
+                        currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
+                        jobs.append(currentJob)
+                        currentEvent += eventsPerJob
+                    currentEvent = 0
+                else:
+                    if currentEvent + eventsInFile > eventsPerJob:
+                        #Create new jobs, because we is out of room
+                        currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)
+                        jobs.append(currentJob)
+                        currentJob   = jobInstance(name = '%s-%s' % (baseName, len(jobs) + 1))
+                        currentEvent = 0
+
+                    if currentEvent + eventsInFile <= eventsPerJob:
+                        #Add if it will be smaller
+                        currentJob.addFile(f)
+                        currentEvent += eventsInFile
+
+            if currentEvent > 0:
+                currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)
                 jobs.append(currentJob)
-                currentEvent += eventsPerJob
 
-        jobGroup = groupInstance(subscription = self.subscription)
-        jobGroup.add(jobs)
-        jobGroup.commit()
 
-        return [jobGroup]
+            jobGroup = groupInstance(subscription = self.subscription)
+            jobGroup.add(jobs)
+            jobGroup.commit()
+            jobGroupList.append(jobGroup)
+
+        return jobGroupList

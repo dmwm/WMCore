@@ -6,13 +6,6 @@ import pwd
 from WMCore.Wrappers import jsonwrapper
 from WMCore.Services.Service import Service
 
-try:
-    # Python 2.6
-    import json
-except ImportError:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
-
 class WorkQueue(Service):
 
     """

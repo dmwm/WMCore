@@ -6,6 +6,7 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 """
 
 import types
+import os
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 
@@ -229,6 +230,13 @@ class SetupCMSSWPset(ScriptInterface):
             print "Found a TFC override: %s" % step.application.overrideCatalog
             self.process.source.overrideCatalog = \
                 cms.untracked.string(step.application.overrideCatalog)
+
+        # If we're running on a FNAL worker node override the TFC so we can
+        # test lustre.
+        hostname = os.environ.get("HOSTNAME", "NOTFNAL")
+        if hostname.startswith("cmswn") and hostname.endswith("fnal.gov"):
+            self.process.source.overrideCatalog = \
+                cms.untracked.string("trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage-test.xml?protocol=dcap")            
         
         self.process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
         self.process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")

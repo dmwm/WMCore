@@ -7,8 +7,8 @@ each state. Default to one retry.
 Create the CouchDB and associated views if needed.
 """
 
-__revision__ = "$Id: ConfigureState.py,v 1.2 2009/05/11 11:58:57 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ConfigureState.py,v 1.3 2009/05/26 21:01:01 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
@@ -17,5 +17,5 @@ class ConfigureState(WMObject):
     def configure(self):
         server = CouchServer(self.config.JobStateMachine.couchurl)
         dbname = 'JSM/JobHistory'
-        if dbname in server.listDatabases():
+        if dbname not in server.listDatabases():
             server.createDatabase(dbname)

@@ -35,7 +35,7 @@ import inspect
 import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 from WMCore.FwkJobReport.Report             import Report
 from WMCore.FwkJobReport.ReportEmu          import ReportEmu
-
+from nose.plugins.attrib import attr
 
 #
 class StageOutTest():
@@ -233,8 +233,95 @@ class otherStageOutTest(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
     
+    @attr('workerNodeTest')
+    def testOnWorkerNodes(self):
+        # Stage a file out, stage it back in, check it, delete it
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 1
+        del myReport.data.cmsRun1.output
+        myReport.data.cmsRun1.section_('output')
+        myReport.data.cmsRun1.output.section_('stagingTestOutput')
+        myReport.data.cmsRun1.output.stagingTestOutput.section_('files')
+        myReport.data.cmsRun1.output.stagingTestOutput.fileCount = 0
+        targetFiles = [ '/store/temp/WMAgent/storetest-%s' % time.time(),
+                        '/store/unmerged/WMAgent/storetest-%s' % time.time()]
+        
+        for file in targetFiles:
+            print "Adding file for StageOut %s" % file
+            self.addStageOutFile(myReport, file )
+        
+        myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        executor = StageOutExecutor.StageOut()
 
-#        
+        executor.initialise( self.stepdata, self.job)
+        executor.step = self.stepdata
+        print "beginning stageout"
+        executor.execute( )
+        print "stageout done"
+        
+        # pull in the report with the stage out info
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        print "Got the stage out data back"
+        print myReport.data
+
+        
+        # now, transfer them back
+        # TODO make a stagein step in the task - Melo
+        import WMCore.Storage.FileManager as FileManagerModule
+        fileManager = FileManagerModule.FileManager( numberOfRetries = 10, retryPauseTime = 1)
+        for file in targetFiles:
+            print "Staging in %s" % file
+            
+            fileManager.stageOut( fileToStage = { 'LFN' : file,
+                                    'PFN' : '%s/%s' % (self.testDir, file) },
+                                    stageOut = False)
+            self.assertTrue( os.path.exists( '%s/%s' % (self.testDir, file)))
+            self.assertEqual( os.path.getsize('/etc/hosts', '%s/%s' % (self.testDir, file)))
+        
+        # now, should delete the files we made
+        for file in targetFiles:
+            print "deleting %s" % file
+            fileManager.deleteLFN(file)
+        
+        # try staging in again to make sure teh files are gone        
+        for file in targetFiles:
+            print "Staging in (should fail) %s" % file
+            self.assertRaises( StageOutError, \
+                               FileManagerModule.FileManager.stageOut, \
+                               fileManager,fileToStage = { 'LFN' : file,
+                                    'PFN' : '%s/%s' % (self.testDir, file) },
+                                    stageOut = False )            
+
+        
+        
+        # need to make sure files didn't show up
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
+        self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
+        
+    def addStageOutFile(self, myReport, lfn):
+        myId = myReport.data.cmsRun1.output.stagingTestOutput.fileCount
+        mySection = myReport.data.cmsRun1.output.stagingTestOutput.section_('file%s' % myId)
+        mySection.section_('runs')
+        setattr(mySection.runs,'114475', [33])
+        mySection.section_('branches')
+        mySection.lfn = lfn
+        mySection.dataset = {'applicationName': 'cmsRun', 'primaryDataset': 'Calo', 'processedDataset': 'Commissioning09-PromptReco-v8', 'dataTier': 'ALCARECO', 'applicationVersion': 'CMSSW_3_2_7'}
+        mySection.module_label = 'ALCARECOStreamCombined'
+        mySection.parents = []
+        mySection.location = 'srm-cms.cern.ch'
+        mySection.checksums = {'adler32': 'bbcf2215', 'cksum': '2297542074'}
+        mySection.pfn = '/etc/hosts'
+        mySection.events = 20000
+        mySection.merged = False
+        mySection.size = 37556367
+        myReport.data.cmsRun1.output.stagingTestOutput.fileCount = myId + 1
+
+        
+        
+        
+            
     def setLocalOverride(self, step):
         step.section_('override')
         step.override.command    = 'cp'

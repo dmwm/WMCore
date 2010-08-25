@@ -4,7 +4,7 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.6 $"
+__version__ = "$Revision: 1.7 $"
 
 
 import os
@@ -46,7 +46,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         self.config = DefaultConfig('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
         # set up database
         dbUrl = "sqlite:////tmp/resttest.db"
-        
+        self.config.setDBUrl(dbUrl)
         # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
         self.urlbase = self.config.getServerUrl()
@@ -62,7 +62,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         """
         setUP global values
         """
-        EmulatorUnitTestBase.setUp(self)
+        #EmulatorUnitTestBase.setUp(self)
         RESTBaseUnitTest.setUp(self)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
@@ -77,9 +77,9 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         
     def tearDown(self):
         RESTBaseUnitTest.tearDown(self)
-        EmulatorUnitTestBase.tearDown(self)
+        #EmulatorUnitTestBase.tearDown(self)
         self.specGenerator.removeSpecs()
-        
+     
     def _tester(self, testName, verb, code, partUrl, inpt = {}):
         print 80 * '#'
         print "test: %s" % testName

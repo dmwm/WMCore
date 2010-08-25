@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.11 2010/03/25 16:36:44 maxa Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.12 2010/03/26 14:05:50 maxa Exp $"
 __version__ = "$Revision"
 
 
@@ -72,9 +72,12 @@ class WorkQueueMonitorService(ServiceInterface):
         self.model.addDAO("POST", "elementsbyid", "Monitor.ElementsById",
                            args = ["id"], validation = [self.validateId])
         
-        # overview of wm workload status (e.g. wmspec - getting data from wq_wmspec table)
+        # overview of wm workload status (that is wmspec - getting data from wq_wmspec table)
         self.model.addDAO("GET", "workloads", "Monitor.Workloads")
-        
+        self.model.addDAO("POST", "workloadsbyid", "Monitor.WorkloadsById",
+                          args = ["id"], validation = [self.validateId])
+        self.model.addDAO("POST", "workloadsbyname", "Monitor.WorkloadsByName",
+                          args = ["name"])
         
         logging.info("%s initialised." % self._myClass)        
         

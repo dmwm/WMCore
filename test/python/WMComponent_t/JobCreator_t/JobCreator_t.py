@@ -1,7 +1,7 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.16 2010/03/22 17:41:48 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.17 2010/04/08 19:54:12 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import random
@@ -56,7 +56,8 @@ class JobCreatorTest(EmulatorUnitTestBase):
         self.phedexFlag = True
         self.dbsFlag = True
         self.requestMgrFlag = True
-
+        self.siteDBFlag = True
+		
     def setUp(self):
         """
         _setUp_
@@ -363,7 +364,7 @@ class JobCreatorTest(EmulatorUnitTestBase):
         config.JobCreator.workerThreads             = 2
         config.JobCreator.componentDir              = self.testDir
         config.JobCreator.useWorkQueue              = True
-        config.JobCreator.WorkQueueParam            = {'emulateDBSReader': True}
+        config.JobCreator.WorkQueueParams           = {'emulateDBSReader': True}
         
         # We now call the JobMaker from here
         config.component_('JobMaker')
@@ -788,7 +789,6 @@ class JobCreatorTest(EmulatorUnitTestBase):
         
 
         return
-
 
 if __name__ == "__main__":
 

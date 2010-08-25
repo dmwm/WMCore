@@ -7,9 +7,9 @@ To use this you need to use the ThreadSlave class
 """
 
 
-__revision__ = "$Id: ThreadPool.py,v 1.5 2009/06/10 16:44:48 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
-__author__ = "fvlingen@caltech.edu"
+__revision__ = "$Id: ThreadPool.py,v 1.6 2009/06/16 14:36:07 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
+__author__ = "mnorman@fnal.gov"
 
 import base64
 import cPickle
@@ -37,6 +37,7 @@ class ThreadPool(Queue):
         Initializes pool, and resets lost threads (e.g. lost during crash).
  
         """
+
         #Queue.__init__(self, slaves)
         Queue.__init__(self, [])
         self.component = component
@@ -56,7 +57,7 @@ class ThreadPool(Queue):
         self.nrOfSlaves = nrOfSlaves
 
         self.slaveName = slaveModule.split(".")[-1]
- 
+
         self.slaveFactory = WMFactory("slaveFactory", \
             slaveModule[0:slaveModule.rfind(slaveModule.split(".")[-1])-1])
         myThread = threading.currentThread()
@@ -80,7 +81,7 @@ class ThreadPool(Queue):
             self.query.insertThreadPoolTables(self.poolTable)
             self.query.insertThreadPoolTables(self.poolTableBufferIn)
             self.query.insertThreadPoolTables(self.poolTableBufferOut)
-            
+
         # restore any threads that might have been lost during a crash
         # de register thread in database so we do not need to restore it.
         msg = "THREADPOOL: Resetting lost threads to queue status if any"
@@ -95,6 +96,7 @@ class ThreadPool(Queue):
         # we do commit as initalization falls outside the while loop
         # of the component.
         myThread.transaction.commit()
+
 
     def prepareSlave(self, slave):
         """
@@ -172,7 +174,7 @@ class ThreadPool(Queue):
                 args=(slave,) )
             thread.start()
         # check if we can instantiate more slaves.
-        else:       
+        else:
             if self.activeCount < self.nrOfSlaves:
                 # we can still create slaves.
                 slave  = \
@@ -184,6 +186,8 @@ class ThreadPool(Queue):
                 thread.start()
     
         self.lock.release()
+
+        thread.join()
 
     def slaveThread( self, slaveServer ):
         """
@@ -205,13 +209,13 @@ class ThreadPool(Queue):
                 self.callQueue -= 1
                 exceptCount = 0
             except Exception, ex:
-                #logging.error("Problem with retrieving work : "+str(ex))
-                #logging.error("Trying to salvage it")
+                logging.error("Problem with retrieving work : "+str(ex))
+                logging.error("Trying to salvage it")
                 slaveServer.sane = False
                 exceptCount += 1
                 #TODO: Fix this exception; it's not a good exception
                 #It just dumps the problem if it's the last thread in the queue
-                if self.callQueue == 1 and exceptCount > 2:
+                if self.callQueue == 1 and exceptCount > 5:
                     self.callQueue -= 1
                     logging.error("If we got here, we screwed up badly enough I'm dumping it")
             self.lock.release()

@@ -6,8 +6,8 @@ If a subscription's fileset is closed, make a job that will run over any availab
 files
 """
 
-__revision__ = "$Id: EndOfRun.py,v 1.8 2010/05/24 15:48:06 sfoulkes Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: EndOfRun.py,v 1.9 2010/06/28 15:36:03 sfoulkes Exp $"
+__version__  = "$Revision: 1.9 $"
 
 import logging
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -43,7 +43,6 @@ class EndOfRun(JobFactory):
 
         # Return if you have the fileset still open
         if fileset.open:
-            logging.error("Fileset was open")
             return
 
         # Get a dictionary of sites, files

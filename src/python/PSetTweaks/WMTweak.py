@@ -246,7 +246,9 @@ class TweakMaker:
           for param in processParams if hasParameter(process, param) ]
 
         # output modules
+        tweak.addParameter('process.outputModules_', [])
         for outMod in process.outputModules_():
+            tweak.getParameter('process.outputModules_').append(outMod)
             outModRef = getattr(process, outMod)
             for param in self.outModLevel:
                 fullParam = "process.%s.%s" % (outMod, param)

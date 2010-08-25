@@ -8,8 +8,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.12 2010/01/26 17:45:52 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.13 2010/02/10 19:01:24 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import os
 import threading
@@ -19,6 +19,7 @@ from WMCore.Agent.Configuration import Configuration
 
 from WMCore.FwkJobReport.ReportParser import readJobReport
 from WMCore.FwkJobReport.FwkJobReport import FwkJobReport
+from WMCore.FwkJobReport.Report       import Report
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -30,6 +31,7 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+
 
 class AccountantWorker:
     """
@@ -69,8 +71,8 @@ class AccountantWorker:
         config.JobStateMachine.couchurl = kwargs["couchURL"]
         config.JobStateMachine.couchDBName = kwargs["couchDBName"]
 
-        self.stateChanger = ChangeState(config,
-                                        config.JobStateMachine.couchDBName)
+        self.stateChanger = ChangeState(config)
+                                        #config.JobStateMachine.couchDBName)
         return
 
     def loadJobReport(self, parameters):
@@ -84,6 +86,9 @@ class AccountantWorker:
         # The jobReportPath may be prefixed with "file://" which needs to be
         # removed so it doesn't confuse the FwkJobReport() parser.
 
+        logging.error("In loadJobReport")
+        logging.error(parameters)
+
         jobReportPath = parameters['fwjr_path']
         jobReportPath = jobReportPath.replace("file://","")
 
@@ -95,20 +100,36 @@ class AccountantWorker:
             logging.error("Empty FwkJobReport: %s" % jobReportPath)
             return self.createMissingFWKJR(parameters, 99998, 'jobReport of size 0')
 
+        jobReport = Report()
+
         try:
-            jobReports = readJobReport(jobReportPath)
+            jobReport.load(jobReportPath)
+            #jobReports = readJobReport(jobReportPath)
         except Exception, msg:
             logging.error("Cannot load %s: %s" % (jobReportPath, msg))
             return self.createMissingFWKJR(parameters, 99997, 'Cannot load jobReport')
 
-        # The readJobReport() function will return a list of job reports,
-        # but the accountant currently only supports jobs that return a single
-        # job report.
-        if len(jobReports) == 0:
-            logging.error("Bad FWJR: %s" % jobReportPath)
-            return self.createMissingFWKJR(parameters, 99996, 'JobReport empty')
+        logging.error("Have jobReport from finished job")
+        logging.error(jobReport.data)
 
-        return jobReports[0]
+        return jobReport
+
+
+    def didJobSucceed(self, jobReport):
+        """
+        _getJobReportStatus_
+        
+        Get the status of the jobReport.  This will loop through all the steps and make sure the status is 'Success'.
+        If a step does not return 'Success', the job will fail
+        This returns True 
+        """
+
+        for step in jobReport.data.steps:
+            report = getattr(jobReport.data, step)
+            if report.status != 'Success' and report.status != 0:
+                return False
+
+        return True
    
     def __call__(self, parameters):
         """
@@ -124,7 +145,7 @@ class AccountantWorker:
         fwkJobReport = self.loadJobReport(parameters)
         jobSuccess = None
 
-        if fwkJobReport.status != "Success":
+        if not self.didJobSucceed(fwkJobReport):
             logging.error("I have a bad jobReport for %i" %(parameters['id']))
             self.handleFailed(jobID = parameters["id"],
                               fwkJobReport = fwkJobReport)
@@ -172,10 +193,10 @@ class AccountantWorker:
         """
         datasetInfo = jobReportFile.dataset[0]
 
-        dbsFile = DBSBufferFile(lfn = jobReportFile["LFN"],
-                                size = jobReportFile["Size"],
-                                events = jobReportFile["TotalEvents"],
-                                checksums = jobReportFile.checksums,
+        dbsFile = DBSBufferFile(lfn = jobReportFile["lfn"],
+                                size = jobReportFile["size"],
+                                events = jobReportFile["events"],
+                                checksums = jobReportFile['checksums'],
                                 status = "NOTUPLOADED")
         dbsFile.setAlgorithm(appName = datasetInfo["ApplicationName"],
                              appVer = datasetInfo["ApplicationVersion"],
@@ -358,42 +379,60 @@ class AccountantWorker:
         firstEvent = jobMask["FirstEvent"]
         lastEvent = jobMask["LastEvent"]
 
+        logging.error("In addFileToWMBS")
+        logging.error(jobType)
+        logging.error(fwjrFile)
+
         if firstEvent == None:
             firstEvent = 0
         if lastEvent == None:
-            lastEvent = int(fwjrFile["TotalEvents"])            
+            lastEvent = int(fwjrFile["events"])            
 
-        if fwjrFile["MergedBySize"] == "True" or jobType == "Merge":
+        if fwjrFile["merged"] == "True" or jobType == "Merge":
             merged = True
         else:
             merged = False
 
-        self.newLocationAction.execute(siteName = fwjrFile["SEName"],
+        if type(fwjrFile["locations"]) == set:
+            s = fwjrFile["locations"].copy()
+            seName = s.pop()
+        elif type(fwjrFile["locations"]) == list:
+            seName = fwjrFile["locations"][0]
+        else:
+            seName = fwjrFile["locations"]
+
+        self.newLocationAction.execute(siteName = seName,
                                        conn = self.transaction.conn,
                                        transaction = True)
-                                
-        wmbsFile = File(lfn = fwjrFile["LFN"],
-                        size = fwjrFile["Size"],
-                        events = fwjrFile["TotalEvents"],
-                        checksums = fwjrFile.checksums,
-                        locations = fwjrFile["SEName"],
-                        first_event = firstEvent,
-                        last_event = lastEvent,
-                        merged = merged)
 
-        for run in fwjrFile.runs.keys():
-            newRun = Run(runNumber = run)
-            newRun.extend(fwjrFile.runs[run])
-            wmbsFile.addRun(newRun)
+        logging.error("About to create wmbsFile")
 
-        wmbsFile.create()
+        wmbsFile = File()
+        wmbsFile.loadFromDataStructsFile(file = fwjrFile)
+
+        logging.error(wmbsFile)
+        logging.error(inputFiles)
 
         for inputFile in inputFiles:
             if inputFile["lfn"] not in wmbsFile.getParentLFNs():
-                wmbsFile.addParent(inputFile["lfn"])
+                logging.error("About to add parent")
+                logging.error(wmbsFile.getParentLFNs())
+                logging.error(inputFile)
+                try:
+                    wmbsFile.addParent(inputFile["lfn"])
+                except Exception, ex:
+                    msg = str(ex)
+                    logging.error("Exception in adding parents\n%s" %(msg))
+                    return None, None, None
+                logging.error(wmbsFile)
+
+        logging.error("Shouldn't be merged")
 
         if merged:
             self.addFileToDBS(fwjrFile)
+
+        logging.error("About to go home")
+        logging.error(fwjrFile["ModuleLabel"])
             
         return (wmbsFile, fwjrFile["ModuleLabel"], merged)
 
@@ -404,6 +443,9 @@ class AccountantWorker:
         Handle a successful job, parsing the job report and updating the job in
         WMBS.
         """
+
+        logging.error("In handleSuccessful")
+        
         wmbsJob = Job(id = jobID)
         wmbsJob.loadData()
         jobFiles = wmbsJob.getFiles()
@@ -427,9 +469,26 @@ class AccountantWorker:
         filesetAssoc = []
         outputFiles = {}
         mergedOutputFiles = []
-        for fwjrFile in fwkJobReport.files:
+        fileList = fwkJobReport.getAllFiles()
+        if not fileList:
+            # Well, then we failed somewhere in getting the files
+            # Ergo: the job should fail
+            self.transaction.rollback()
+            self.transaction.begin()
+            self.handleFailed(jobID = jobID, fwkJobReport = fwkJobReport)
+            return
+
+        logging.error("Have file list")
+
+        for fwjrFile in fileList:
             (wmbsFile, moduleLabel, merged) = \
                      self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"], jobFiles)
+            if not wmbsFile and not moduleLabel:
+                # Something got screwed up in addFileToWMBS.  Send job to FAIL
+                self.transaction.rollback()
+                self.transaction.begin()
+                self.handleFailed(jobID = jobID, fwkJobReport = fwkJobReport)
+                return
             outputFiles[moduleLabel] = wmbsFile
 
             if merged:
@@ -440,13 +499,19 @@ class AccountantWorker:
             if outputFileset != None:
                 filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputFileset})
 
+
+        logging.error("Went through files")
+
         if len(filesetAssoc) > 0:
             self.bulkAddToFilesetAction.execute(binds = filesetAssoc,
                                                 conn = self.transaction.conn,
                                                 transaction = True)
 
-        wmbsJob.completeInputFiles()        
+        wmbsJob.completeInputFiles()
+        logging.error("About to propagate job")
+        logging.error(wmbsJob)
         self.stateChanger.propagate([wmbsJob], "success", "complete")
+        logging.error("Propagation done")
 
         for mergedOutputFile in mergedOutputFiles:
             self.setupDBSFileParentage(mergedOutputFile)

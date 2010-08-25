@@ -6,8 +6,8 @@ MySQL implementation of Fileset.ListClosable
 """
 
 __all__ = []
-__revision__ = "$Id: ListClosable.py,v 1.4 2010/06/17 19:39:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ListClosable.py,v 1.5 2010/06/24 16:32:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -24,10 +24,10 @@ class ListClosable(DBFormatter):
                   INNER JOIN (SELECT fileset, COUNT(file) AS total_files
                                FROM wmbs_fileset_files GROUP BY fileset) fileset_size ON
                     wmbs_parent_subscription.fileset = fileset_size.fileset
-                  LEFT OUTER JOIN (SELECT subscription, COUNT(file) AS total_files
+                  LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
                               FROM wmbs_sub_files_complete GROUP BY subscription) files_complete ON
                     wmbs_parent_subscription.id = files_complete.subscription
-                  LEFT OUTER JOIN (SELECT subscription, COUNT(file) AS total_files
+                  LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT file) AS total_files
                               FROM wmbs_sub_files_failed GROUP BY subscription) files_failed ON
                     wmbs_parent_subscription.id = files_failed.subscription
                   LEFT OUTER JOIN (SELECT subscription, COUNT(wmbs_job.id) AS running_count

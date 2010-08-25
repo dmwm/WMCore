@@ -1,29 +1,22 @@
 #!/usr/bin/env python
 from cherrypy import expose
 import cherrypy
+import urllib
 
 DEFAULT_SESSION_NAME = 'CernOpenIdTool'
+DEFAULT_OID_SERVER = 'https://cmsweb.cern.ch/security/'
 
 class CernOidDefaultHandler:
     def __init__(self, config):
-        print '>>>>>> CernOidDefaultHandler: %s' % config
         self.config = config
-        self.session_name = self.config.session_name
+        self.session_name = getattr(self.config, 'session_name', DEFAULT_SESSION_NAME)
+        self.oidserver = getattr(self.config, 'oid_server', DEFAULT_OID_SERVER)
 
     @expose
     def login(self, url='/'):
-        return """\
-<html>
-  <head />
-  <body>
-    <p>Enter your OpenID:</p>
-    <form method="get" action="%s">
-      <input type="text" name="openid_url" value="" />
-      <input type="submit" />
-    </form>
-  </body>
-</html>
-""" % (url)
+        redirect_url = "%s?%s" % (url, 
+                              urllib.urlencode({'openid_url':self.oidserver}))
+        raise cherrypy.HTTPRedirect(redirect_url)
 
     @expose
     def logout(self):

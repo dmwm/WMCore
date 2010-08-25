@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.28 2010/05/20 21:46:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.29 2010/05/25 21:26:25 sryu Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import logging
 
@@ -16,6 +16,7 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
+from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 class WMBSHelper:
 
@@ -125,8 +126,66 @@ class WMBSHelper:
         self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
         
-
+        #add to DBSBuffer
+        
+    def _addToDBSBuffer(self, dbsFile, checksums, locations):
+        """
+        This step is just for increase the performance for 
+        Accountant doesn't neccessary to check the parentage
+        """
+        dbsBuffer = DBSBufferFile(lfn = dbsFile["LogicalFileName"], 
+                                  size = dbsFile["FileSize"],
+                                  events = dbsFile["NumberOfEvents"], 
+                                  checksums = checksums,
+                                  locations = locations, 
+                                  status = "AlreadyInDBS")
+        dbsBuffer.setDatasetPath('bogus')
+        dbsBuffer.setAlgorithm(appName = "cmsRun", appVer = "Unknown", 
+                             appFam = "Unknown", psetHash = "Unknown", 
+                             configContent = "Unknown")
+        dbsBuffer.create()
+    
     def _convertDBSFileToWMBSFile(self, dbsFile, storageElements):
+        """
+        There are two assumptions made to make this method behave properly,
+        1. DBS returns only one level of ParentList.
+           If DBS returns multiple level of parentage, it will be still get handled.
+           However that might not be what we wanted. In that case, restrict to one level.
+        2. Assumes parents files are in the same location as child files.
+           This is not True in general case, but workquue should only select work only
+           where child and parent files are in the same location  
+        """
+        wmbsParents = []
+        
+        for parent in dbsFile["ParentList"]:
+            wmbsParents.append(self._convertDBSFileToWMBSFile(parent, storageElements))
+        
+        checksums = {}
+        if dbsFile.get('Checksum'):
+            checksums['cksum'] = dbsFile['Checksum']
+        if dbsFile.get('Adler32'):
+            checksums['adler32'] = dbsFile['Adler32']
+            
+        wmbsFile = File(lfn = dbsFile["LogicalFileName"],
+                        size = dbsFile["FileSize"],
+                        events = dbsFile["NumberOfEvents"],
+                        checksums = checksums,
+                        #TODO: need to get list of parent lfn
+                        parents = wmbsParents,
+                        locations = set(storageElements))
+        
+        for lumi in dbsFile['LumiList']:
+            run = Run(lumi['RunNumber'], lumi['LumiSectionNumber']) 
+            wmbsFile.addRun(run)
+        
+        self._addToDBSBuffer(dbsFile, checksums, storageElements)
+            
+        logging.info("WMBS File: %s\n on Location: %s" 
+                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
+        return wmbsFile
+        
+        
+    def _convertDBSFileToDBSBufferFile(self, dbsFile):
         """
         There are two assumptions made to make this method behave properly,
         1. DBS returns only one level of ParentList.
@@ -163,3 +222,4 @@ class WMBSHelper:
                      % (wmbsFile['lfn'], wmbsFile['newlocations']))
         return wmbsFile
         
+

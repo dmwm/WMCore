@@ -18,8 +18,8 @@ class JobStatusLite_t(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-#        self.testInit.setSchema(customModules = ["WMCore.BossLite"], \
-#                                useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.BossLite"], \
+                                useDefault = False)
 
     def tearDown(self):
         """
@@ -88,8 +88,6 @@ class JobStatusLite_t(unittest.TestCase):
         return config
 
     def testA_Polling(self):
-        pass
-        """
         config = self.createConfig()
         tot_added = self.popolateDatabase(3,50)
         print "Calling JobStatusPoller"
@@ -108,7 +106,6 @@ class JobStatusLite_t(unittest.TestCase):
         ## check if done jobs have been processed
 
         ## check if jobs have been polled
-        """
 
     def testB_GroupAssignment(self):
         pass
@@ -140,6 +137,7 @@ class JobStatusLite_t(unittest.TestCase):
         ## check if job status has been updated 
         ## No check to do till BossLiteAPI are not available
         """
+
 if __name__ == '__main__':
     unittest.main()
 

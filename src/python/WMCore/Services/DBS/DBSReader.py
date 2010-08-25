@@ -179,12 +179,13 @@ class DBSReader:
             #    summary['NumberOfBlocks'] = v    
         return summary
 
-    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = False):
+    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = False,
+                          blockName = '*'):
         """
         """
         self.checkDatasetPath(dataset)
         try:
-             blocks = self.dbs.listBlocks(dataset)
+             blocks = self.dbs.listBlocks(dataset, blockName)
         except DbsException, ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)
@@ -195,7 +196,8 @@ class DBSReader:
 
         return blocks
 
-    def listFileBlocks(self, dataset, onlyClosedBlocks = False):
+    def listFileBlocks(self, dataset, onlyClosedBlocks = False,
+                       blockName = '*'):
         """
         _listFileBlocks_
 
@@ -204,7 +206,7 @@ class DBSReader:
         """
         self.checkDatasetPath(dataset)
         try:
-             blocks = self.dbs.listBlocks(dataset)
+             blocks = self.dbs.listBlocks(dataset, blockName)
         except DbsException, ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx(ex)

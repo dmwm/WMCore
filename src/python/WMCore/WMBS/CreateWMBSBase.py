@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.33 2009/08/21 10:03:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.34 2009/08/24 11:25:35 sryu Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import threading
 
@@ -119,7 +119,8 @@ class CreateWMBSBase(DBCreator):
              spec         VARCHAR(255) NOT NULL,
              name         VARCHAR(255) NOT NULL,
              task         VARCHAR(255) NOT NULL,
-             owner        VARCHAR(255))"""
+             owner        VARCHAR(255),
+             UNIQUE(name, task))"""
 
         self.create["09wmbs_workflow_output"] = \
           """CREATE TABLE wmbs_workflow_output (

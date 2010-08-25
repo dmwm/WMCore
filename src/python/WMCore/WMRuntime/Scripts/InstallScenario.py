@@ -24,16 +24,6 @@ class InstallScenario(ScriptInterface):
 
 
     def __call__(self):
-
-        try:
-            from Configuration.DataProcessing.GetScenario import getScenario
-        except ImportError, ex:
-            msg = "Failed to load Configuration.DataProcessing Modules"
-            print msg
-            return 50200
-        
-
-        
         configSect = self.step.data.application.configuration
         scenario = getattr(configSect, "scenario", None)
         funcName = getattr(configSect, "function", None)
@@ -50,37 +40,33 @@ class InstallScenario(ScriptInterface):
                 self.step.name(),)
             print msg
             return 50201
-                
-        try:
-            scenarioInst = getScenario(scenario)
-        except Exception, ex:
-            msg = "Failed to retrieve the Scenario named "
-            msg += str(scenario)
-            msg += "\nWith Error:"
-            msg += str(ex)
-            print msg
-            return 50202
 
         funcMap = {
             "promptReco": applyPromptReco,
             "skimming"  : applySkimming,
             }
-        
-        print "InstallScenario for %s: %s.%s" % (self.step.name(), scenario, funcName)
-        applicationFunc = funcMap[funcName]
 
-        try:
-            process = applicationFunc(scenarioInst,  funcArgs.dictionary_())
-        except Exception, ex:
-            msg = "Failed to invoke %s.%s with args %s\n" % (scenario, funcName, funcArgs.dictionary_())
-            msg += str(ex)
-            print msg
-            crashMessage = ""
-            stackTrace = traceback.format_tb(sys.exc_info()[2], None)
-            for stackFrame in stackTrace:
-                crashMessage += stackFrame
-            print crashMessage
-            return 50203
+        if funcName == "merge":
+            try:
+                from Configuration.DataProcessing.Merge import mergeProcess
+                process = mergeProcess([])
+            except Exception, ex:
+                msg = "Filaed to create a merge process."
+                print msg
+                return 50202
+        else:
+            try:
+                from Configuration.DataProcessing.GetScenario import getScenario            
+                scenarioInst = getScenario(scenario)
+                applicationFunc = funcMap[funcName]
+                process = applicationFunc(scenarioInst,  funcArgs.dictionary_())            
+            except Exception, ex:
+                msg = "Failed to retrieve the Scenario named "
+                msg += str(scenario)
+                msg += "\nWith Error:"
+                msg += str(ex)
+                print msg
+                return 50202
 
         # apply task PSet Tweaks
         # TODO: Implement this
@@ -104,8 +90,9 @@ class InstallScenario(ScriptInterface):
             applyTweak(process, outTweak)
 
         # revlimiter for testing
-        process.maxEvents.input = 2
-        
+        if hasattr(process, "maxEvents"):
+            if hasattr(process.maxEvents, "input"):
+                process.maxEvents.input = 2
         
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location

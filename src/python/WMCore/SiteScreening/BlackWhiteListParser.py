@@ -8,11 +8,10 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.11 2009/06/03 15:19:56 ewv Exp $"
-__version__  = "$Revision: 1.11 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.12 2009/12/15 14:07:57 spiga Exp $"
+__version__  = "$Revision: 1.12 $"
 __author__   = "ewv@fnal.gov"
 
-import sets
 import types
 import fnmatch
 import re
@@ -54,8 +53,8 @@ class BlackWhiteListParser(object):
 
         logger.debug('Input whitelist: %s' % ', '.join(whiteList))
         logger.debug('Input blacklist: %s' % ', '.join(blackList))
-        self.blacklist = sets.Set(self.expandList(blackList))
-        self.whitelist = sets.Set(self.expandList(whiteList))
+        self.blacklist = set(self.expandList(blackList))
+        self.whitelist = set(self.expandList(whiteList))
         logger.debug('Converted whitelist: %s' % ', '.join(self.whitelist))
         logger.debug('Converted blacklist: %s' % ', '.join(self.blacklist))
 
@@ -103,10 +102,10 @@ class BlackWhiteListParser(object):
            debug message.
         @returns: The input sites minus the blacklist.
         """
-        siteSet = sets.Set(sites)
+        siteSet = set(sites)
         #print "Sites:",Sites
         blacklist = self.blacklist
-        blacklist = sets.Set(self.matchList(siteSet, self.blacklist))
+        blacklist = set(self.matchList(siteSet, self.blacklist))
         #print "Black list:",blacklist
         goodSites = siteSet.difference(blacklist)
         #print "Good Sites:",goodSites,"\n"
@@ -137,7 +136,7 @@ class BlackWhiteListParser(object):
             return sites
         whitelist = self.whitelist
         whitelist = self.matchList(sites, self.whitelist)
-        siteSet = sets.Set(sites)
+        siteSet = set(sites)
         goodSites = siteSet.intersection(whitelist)
         goodSites = list(goodSites)
         if not goodSites and fileblocks:

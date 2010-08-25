@@ -5,8 +5,8 @@ _GetOutputMap_
 MySQL implementation of Jobs.GetOutputMap
 """
 
-__revision__ = "$Id: GetOutputMap.py,v 1.1 2009/10/14 16:47:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetOutputMap.py,v 1.2 2009/12/17 21:54:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -17,6 +17,7 @@ class GetOutputMap(DBFormatter):
     """
     sql = """SELECT wmbs_workflow_output.output_identifier AS wf_output_id,
                     wmbs_workflow_output.output_fileset AS wf_output_fset,
+                    wmbs_workflow_output.output_parent AS wf_output_parent,
                     output_subs.sub_type AS child_sub_type,
                     child_sub_output.output_identifier AS child_sub_output_id,
                     child_sub_output.output_fileset AS child_sub_output_fset
@@ -45,11 +46,23 @@ class GetOutputMap(DBFormatter):
         """
         _format_
 
-        wf_output_id,
-        wf_output_fset,
-        child_sub_type,
-        child_sub_output_id,
-        child_sub_output_fset
+        Format the result of query into something useful.  Results are returned
+        in the form of a dictionary keyed by the workflow's output identifier
+        (output module label).  Each value will be a dictionary with the
+        following keys:
+          fileset - The ID of the fileset for the output module
+          parent - The parent of the output module.  This will be the name of
+            another output module (for redneck parentage).  Most of the time it
+            will be null and the input files for the job will be set as parents.
+          children - A list of dictionaries with infomration on any
+            subscriptions that run over the output fileset.  Each value will be
+            a dictionary with the following keys:
+              child_sub_type - Child subscription type
+              child_sub_output_id - Child subscription output identifier
+              child_sub_output_fset - Child susbcription output fileset
+
+        Note that the child subscription information is included to facilitate
+        files that go straight to merged.
         """
         results = self.formatDict(results)
 
@@ -57,6 +70,7 @@ class GetOutputMap(DBFormatter):
         for result in results:
             if not outputMap.has_key(result["wf_output_id"]):
                 outputMap[result["wf_output_id"]] = {"fileset": None,
+                                                     "parent": result["wf_output_parent"],
                                                      "children": []}
 
             labelMap = outputMap[result["wf_output_id"]]

@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.22 2010/02/25 23:08:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.23 2010/03/05 18:59:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import logging
 import os.path
@@ -68,7 +68,8 @@ class JobAccountantTest(unittest.TestCase):
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "cmssrm.fnal.gov")
         locationAction.execute(siteName = "srm.cern.ch")        
-
+        locationAction.execute(siteName = "srm-cms.cern.ch")
+        
         self.stateChangeAction = self.daofactory(classname = "Jobs.ChangeState")
         self.setFWJRAction = self.daofactory(classname = "Jobs.SetFWJRPath")
         self.getJobTypeAction = self.daofactory(classname = "Jobs.GetType")
@@ -184,60 +185,60 @@ class JobAccountantTest(unittest.TestCase):
                len(self.testSubscription.filesOfStatus("Failed"))
         return
  
-#     def testFailedJob(self):
-#         """
-#         _testFailedJob_
+    def testFailedJob(self):
+        """
+        _testFailedJob_
 
-#         Run a failed job that has a vaid job report through the accountant.
-#         Verify that it functions correctly.
-#         """
-#         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
-#                                   fwjrName = "SkimFailure.pkl")
-#         config = self.createConfig(workerThreads = 1)
+        Run a failed job that has a vaid job report through the accountant.
+        Verify that it functions correctly.
+        """
+        self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
+                                  fwjrName = "SkimFailure.pkl")
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         self.verifyJobFailure("T0Skim-Run2-Skim2-Jet-631")
-#         return
+        self.verifyJobFailure("T0Skim-Run2-Skim2-Jet-631")
+        return
 
-#     def testEmptyFWJR(self):
-#         """
-#         _testEmptyFWJR_
+    def testEmptyFWJR(self):
+        """
+        _testEmptyFWJR_
 
-#         Run an empty framework job report through the accountant.  Verify that
-#         it functions correctly.
-#         """
+        Run an empty framework job report through the accountant.  Verify that
+        it functions correctly.
+        """
 
-#         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
-#                                   fwjrName = "EmptyJobReport.pkl")
-#         config = self.createConfig(workerThreads = 1)
+        self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
+                                  fwjrName = "EmptyJobReport.pkl")
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         self.verifyJobFailure("T0Skim-Run2-Skim2-Jet-631")
-#         return
+        self.verifyJobFailure("T0Skim-Run2-Skim2-Jet-631")
+        return
 
-#     def testBadFWJR(self):
-#         """
-#         _testBadFWJR_
+    def testBadFWJR(self):
+        """
+        _testBadFWJR_
         
-#         Run a framework job report that has invalid XML through the accountant.
-#         Verify that it functions correctly.
-#         """
-#         self.setupDBForJobFailure(jobName = "T0Merge-Run1-Mu-AOD-722",
-#                                   fwjrName = "MergeSuccessBadPKL.pkl")
-#         config = self.createConfig(workerThreads = 1)
+        Run a framework job report that has invalid XML through the accountant.
+        Verify that it functions correctly.
+        """
+        self.setupDBForJobFailure(jobName = "T0Merge-Run1-Mu-AOD-722",
+                                  fwjrName = "MergeSuccessBadPKL.pkl")
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         self.verifyJobFailure("T0Merge-Run1-Mu-AOD-722")
-#         return
+        self.verifyJobFailure("T0Merge-Run1-Mu-AOD-722")
+        return
 
     def setupDBForSplitJobSuccess(self):
         """
@@ -392,7 +393,7 @@ class JobAccountantTest(unittest.TestCase):
                        (outputFile["merged"], fwkJobReportFile["merged"])            
 
             assert len(outputFile["locations"]) == 1, \
-                   "Error: outputfile should have one location"
+                   "Error: outputfile should have one location: %s" % outputFile["locations"]
             assert list(outputFile["locations"])[0] == list(fwkJobReportFile["locations"])[0], \
                    "Error: wrong location for file."
 
@@ -546,93 +547,93 @@ class JobAccountantTest(unittest.TestCase):
             
         return
         
-#     def testSplitJobs(self):
-#         """
-#         _testSplitJobs_
+    def testSplitJobs(self):
+        """
+        _testSplitJobs_
 
-#         Verify that split processing jobs are accounted correctly.  This is
-#         mainly to verify that the input for a series of split jobs is not marked
-#         as complete until all the split jobs are complete.
-#         """
-#         self.setupDBForSplitJobSuccess()
-#         config = self.createConfig(workerThreads = 1)
+        Verify that split processing jobs are accounted correctly.  This is
+        mainly to verify that the input for a series of split jobs is not marked
+        as complete until all the split jobs are complete.
+        """
+        self.setupDBForSplitJobSuccess()
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         fwjrBasePath = WMCore.WMInit.getWMBASE() + "/test/python/WMComponent_t/JobAccountant_t/fwjrs/"
-#         jobReport = Report()
-#         jobReport.unpersist(fwjrBasePath + "SplitSuccessA.pkl")
-#         self.verifyFileMetaData(self.testJobA["id"], jobReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.testJobA["id"])
+        fwjrBasePath = WMCore.WMInit.getWMBASE() + "/test/python/WMComponent_t/JobAccountant_t/fwjrs/"
+        jobReport = Report()
+        jobReport.unpersist(fwjrBasePath + "SplitSuccessA.pkl")
+        self.verifyFileMetaData(self.testJobA["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.testJobA["id"])
 
-#         self.recoOutputFileset.loadData()
-#         self.alcaOutputFileset.loadData()
+        self.recoOutputFileset.loadData()
+        self.alcaOutputFileset.loadData()
 
-#         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
-#             if fwjrFile["dataset"]["dataTier"] == "RECO":
-#                 assert fwjrFile["lfn"] in self.recoOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from reco output fileset."
-#             else:
-#                 assert fwjrFile["lfn"] in self.alcaOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from alca output fileset."
+        for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
+            if fwjrFile["dataset"]["dataTier"] == "RECO":
+                assert fwjrFile["lfn"] in self.recoOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from reco output fileset."
+            else:
+                assert fwjrFile["lfn"] in self.alcaOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from alca output fileset."
 
-#         assert len(self.recoOutputFileset.getFiles(type = "list")) == 1, \
-#                "Error: Wrong number of files in reco output fileset."
-#         assert len(self.alcaOutputFileset.getFiles(type = "list")) == 1, \
-#                "Error: Wrong number of files in alca output fileset."
+        assert len(self.recoOutputFileset.getFiles(type = "list")) == 1, \
+               "Error: Wrong number of files in reco output fileset."
+        assert len(self.alcaOutputFileset.getFiles(type = "list")) == 1, \
+               "Error: Wrong number of files in alca output fileset."
         
-#         assert len(self.testSubscription.filesOfStatus("Acquired")) == 1, \
-#                "Error: The input file should be acquired."
+        assert len(self.testSubscription.filesOfStatus("Acquired")) == 1, \
+               "Error: The input file should be acquired."
 
-#         self.testJobB["state"] = "complete"
-#         self.testJobC["state"] = "complete"
-#         self.stateChangeAction.execute(jobs = [self.testJobB, self.testJobC])
+        self.testJobB["state"] = "complete"
+        self.testJobC["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.testJobB, self.testJobC])
 
-#         accountant.algorithm()
+        accountant.algorithm()
 
-#         jobReport = Report()
-#         jobReport.unpersist(fwjrBasePath + "SplitSuccessB.pkl")
-#         self.verifyFileMetaData(self.testJobB["id"], jobReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.testJobB["id"])
+        jobReport = Report()
+        jobReport.unpersist(fwjrBasePath + "SplitSuccessB.pkl")
+        self.verifyFileMetaData(self.testJobB["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.testJobB["id"])
 
-#         self.recoOutputFileset.loadData()
-#         self.alcaOutputFileset.loadData()
+        self.recoOutputFileset.loadData()
+        self.alcaOutputFileset.loadData()
 
-#         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
-#             if fwjrFile["dataset"]["dataTier"] == "RECO":
-#                 assert fwjrFile["lfn"] in self.recoOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from reco output fileset."
-#             else:
-#                 assert fwjrFile["lfn"] in self.alcaOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from alca output fileset."
+        for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
+            if fwjrFile["dataset"]["dataTier"] == "RECO":
+                assert fwjrFile["lfn"] in self.recoOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from reco output fileset."
+            else:
+                assert fwjrFile["lfn"] in self.alcaOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from alca output fileset."
 
-#         jobReport = Report()
-#         jobReport.unpersist(fwjrBasePath + "SplitSuccessC.pkl")
-#         self.verifyFileMetaData(self.testJobC["id"], jobReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.testJobC["id"])
+        jobReport = Report()
+        jobReport.unpersist(fwjrBasePath + "SplitSuccessC.pkl")
+        self.verifyFileMetaData(self.testJobC["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.testJobC["id"])
 
-#         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
-#             if fwjrFile["dataset"]["dataTier"] == "RECO":
-#                 assert fwjrFile["lfn"] in self.recoOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from reco output fileset."
-#             else:
-#                 assert fwjrFile["lfn"] in self.alcaOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from alca output fileset."
+        for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
+            if fwjrFile["dataset"]["dataTier"] == "RECO":
+                assert fwjrFile["lfn"] in self.recoOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from reco output fileset."
+            else:
+                assert fwjrFile["lfn"] in self.alcaOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from alca output fileset."
 
-#         assert len(self.testSubscription.filesOfStatus("Completed")) == 1, \
-#                "Error: The input file should be complete."
+        assert len(self.testSubscription.filesOfStatus("Completed")) == 1, \
+               "Error: The input file should be complete."
 
-#         assert self.countDBSFilesAction.execute() == 0, \
-#                "Error: there shouldn't be any files in DBSBuffer."
+        assert self.countDBSFilesAction.execute() == 0, \
+               "Error: there shouldn't be any files in DBSBuffer."
 
-#         assert len(self.recoOutputFileset.getFiles(type = "list")) == 3, \
-#                "Error: Wrong number of files in reco output fileset."
-#         assert len(self.alcaOutputFileset.getFiles(type = "list")) == 3, \
-#                "Error: Wrong number of files in alca output fileset."
+        assert len(self.recoOutputFileset.getFiles(type = "list")) == 3, \
+               "Error: Wrong number of files in reco output fileset."
+        assert len(self.alcaOutputFileset.getFiles(type = "list")) == 3, \
+               "Error: Wrong number of files in alca output fileset."
 
-#         return
+        return
 
     def setupDBForMergedSkimSuccess(self):
         """
@@ -710,53 +711,53 @@ class JobAccountantTest(unittest.TestCase):
                                                 "MergedSkimSuccess.pkl"))
         return
 
-#     def testMergedSkim(self):
-#         """
-#         _testMergedSkim_
+    def testMergedSkim(self):
+        """
+        _testMergedSkim_
 
-#         Test how the accounant handles a skim that produces merged out.  Verify
-#         that merged files are inserted into the correct output filesets.
-#         """
-#         self.setupDBForMergedSkimSuccess()
-#         config = self.createConfig(workerThreads = 1)
+        Test how the accounant handles a skim that produces merged out.  Verify
+        that merged files are inserted into the correct output filesets.
+        """
+        self.setupDBForMergedSkimSuccess()
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         jobReport = Report()
-#         jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                          "MergedSkimSuccess.pkl"))
-#         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.testJob["id"])
+        jobReport = Report()
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                         "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                         "MergedSkimSuccess.pkl"))
+        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.testJob["id"])
 
-#         self.recoOutputFileset.loadData()
-#         self.mergedRecoOutputFileset.loadData()
-#         self.alcaOutputFileset.loadData()
-#         self.mergedAlcaOutputFileset.loadData()
+        self.recoOutputFileset.loadData()
+        self.mergedRecoOutputFileset.loadData()
+        self.alcaOutputFileset.loadData()
+        self.mergedAlcaOutputFileset.loadData()
 
-#         assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
-#                "Error: files should go straight to the merged reco fileset."
-#         assert len(self.alcaOutputFileset.getFiles(type = "list")) == 0, \
-#                "Error: files should go straight to the merged alca fileset."
+        assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: files should go straight to the merged reco fileset."
+        assert len(self.alcaOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: files should go straight to the merged alca fileset."
 
-#         assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 1, \
-#                "Error: Should be only one file in the merged reco fileset."
-#         assert len(self.mergedAlcaOutputFileset.getFiles(type = "list")) == 1, \
-#                "Error: Should be only one file in the merged alca fileset."        
+        assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 1, \
+               "Error: Should be only one file in the merged reco fileset."
+        assert len(self.mergedAlcaOutputFileset.getFiles(type = "list")) == 1, \
+               "Error: Should be only one file in the merged alca fileset."        
 
-#         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
-#             if fwjrFile["dataset"]["dataTier"] == "RECO":
-#                 assert fwjrFile["lfn"] in self.mergedRecoOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from reco output fileset."
-#             else:
-#                 assert fwjrFile["lfn"] in self.mergedAlcaOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from alca output fileset."
+        for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
+            if fwjrFile["dataset"]["dataTier"] == "RECO":
+                assert fwjrFile["lfn"] in self.mergedRecoOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from reco output fileset."
+            else:
+                assert fwjrFile["lfn"] in self.mergedAlcaOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from alca output fileset."
 
-#         self.verifyDBSBufferContents("Processing", ["/path/to/some/lfn"],
-#                                      jobReport.getAllFilesFromStep("cmsRun1"))
-#         return
+        self.verifyDBSBufferContents("Processing", ["/path/to/some/lfn"],
+                                     jobReport.getAllFilesFromStep("cmsRun1"))
+        return
 
     def setupDBForMergeSuccess(self):
         """
@@ -863,50 +864,50 @@ class JobAccountantTest(unittest.TestCase):
                                                 "MergeSuccess.pkl"))
         return
 
-#     def testMergeSuccess(self):
-#         """
-#         _testMergeSuccess_
+    def testMergeSuccess(self):
+        """
+        _testMergeSuccess_
 
-#         Test the accountant's handling of a merge job.
-#         """
-#         self.setupDBForMergeSuccess()
-#         config = self.createConfig(workerThreads = 1)
+        Test the accountant's handling of a merge job.
+        """
+        self.setupDBForMergeSuccess()
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         jobReport = Report()
-#         jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                          "MergeSuccess.pkl"))
-#         self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.testJob["id"])
+        jobReport = Report()
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                         "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                         "MergeSuccess.pkl"))
+        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.testJob["id"])
 
-#         dbsParents = ["/path/to/some/lfnA", "/path/to/some/lfnB",
-#                       "/path/to/some/lfnC"]
-#         self.verifyDBSBufferContents("Merge", dbsParents, jobReport.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/path/to/some/lfnA", "/path/to/some/lfnB",
+                      "/path/to/some/lfnC"]
+        self.verifyDBSBufferContents("Merge", dbsParents, jobReport.getAllFilesFromStep("cmsRun1"))
 
-#         self.recoOutputFileset.loadData()
-#         self.mergedRecoOutputFileset.loadData()
-#         self.aodOutputFileset.loadData()
-#         self.mergedAodOutputFileset.loadData()
+        self.recoOutputFileset.loadData()
+        self.mergedRecoOutputFileset.loadData()
+        self.aodOutputFileset.loadData()
+        self.mergedAodOutputFileset.loadData()
 
-#         assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 0, \
-#                "Error: No files should be in the merged reco fileset."
-#         assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
-#                "Error: No files should be in the reco fileset."
+        assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the merged reco fileset."
+        assert len(self.recoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the reco fileset."
 
-#         assert len(self.mergedAodOutputFileset.getFiles(type = "list")) == 1, \
-#                "Error: One file should be in the merged aod fileset."
-#         assert len(self.aodOutputFileset.getFiles(type = "list")) == 3, \
-#                "Error: Three files should be in the aod fileset."
+        assert len(self.mergedAodOutputFileset.getFiles(type = "list")) == 1, \
+               "Error: One file should be in the merged aod fileset."
+        assert len(self.aodOutputFileset.getFiles(type = "list")) == 3, \
+               "Error: Three files should be in the aod fileset."
 
-#         fwjrFile = jobReport.getAllFilesFromStep("cmsRun1")[0]
-#         assert fwjrFile["lfn"] in self.mergedAodOutputFileset.getFiles(type = "lfn"), \
-#                        "Error: file is missing from merged aod output fileset."
+        fwjrFile = jobReport.getAllFilesFromStep("cmsRun1")[0]
+        assert fwjrFile["lfn"] in self.mergedAodOutputFileset.getFiles(type = "lfn"), \
+                       "Error: file is missing from merged aod output fileset."
 
-#         return
+        return
 
     def setupDBForUnmergedRedneckReco(self):
         """
@@ -1174,231 +1175,231 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
-#     def testUnmergedRedneckReco(self):
-#         """
-#         _testUnmergedRedneckReco_
+    def testUnmergedRedneckReco(self):
+        """
+        _testUnmergedRedneckReco_
 
-#         Run the unmerged redneck reco test.  This will verify that accounting of
-#         all the processing jobs and then run the merge jobs through the
-#         accountant one at a time so that file status and parentage in WMBS and
-#         DBSBuffer can be verified as redneck parents arrive.
-#         """
-#         self.setupDBForUnmergedRedneckReco()
-#         config = self.createConfig(workerThreads = 1)
+        Run the unmerged redneck reco test.  This will verify that accounting of
+        all the processing jobs and then run the merge jobs through the
+        accountant one at a time so that file status and parentage in WMBS and
+        DBSBuffer can be verified as redneck parents arrive.
+        """
+        self.setupDBForUnmergedRedneckReco()
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         jobReport1 = Report()
-#         jobReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "UnmergedRedneckReco1.pkl"))
-#         jobReport2 = Report()
-#         jobReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "UnmergedRedneckReco2.pkl"))
-#         jobReport3 = Report()
-#         jobReport3.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "UnmergedRedneckReco3.pkl"))
-#         jobReport4 = Report()
-#         jobReport4.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "UnmergedRedneckReco4.pkl"))
-#         jobReport5 = Report()
-#         jobReport5.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "UnmergedRedneckReco5.pkl"))
+        jobReport1 = Report()
+        jobReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "UnmergedRedneckReco1.pkl"))
+        jobReport2 = Report()
+        jobReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "UnmergedRedneckReco2.pkl"))
+        jobReport3 = Report()
+        jobReport3.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "UnmergedRedneckReco3.pkl"))
+        jobReport4 = Report()
+        jobReport4.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "UnmergedRedneckReco4.pkl"))
+        jobReport5 = Report()
+        jobReport5.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "UnmergedRedneckReco5.pkl"))
 
-#         self.verifyFileMetaData(self.testJobA["id"], jobReport1.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobB["id"], jobReport2.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobC["id"], jobReport3.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobD["id"], jobReport4.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobE["id"], jobReport5.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobA["id"], jobReport1.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobB["id"], jobReport2.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobC["id"], jobReport3.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobD["id"], jobReport4.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobE["id"], jobReport5.getAllFilesFromStep("cmsRun1"))
 
-#         self.verifyJobSuccess(self.testJobA["id"])
-#         self.verifyJobSuccess(self.testJobB["id"])
-#         self.verifyJobSuccess(self.testJobC["id"])
-#         self.verifyJobSuccess(self.testJobD["id"])
-#         self.verifyJobSuccess(self.testJobE["id"])        
+        self.verifyJobSuccess(self.testJobA["id"])
+        self.verifyJobSuccess(self.testJobB["id"])
+        self.verifyJobSuccess(self.testJobC["id"])
+        self.verifyJobSuccess(self.testJobD["id"])
+        self.verifyJobSuccess(self.testJobE["id"])        
 
-#         self.recoOutputFileset.loadData()
-#         self.mergedRecoOutputFileset.loadData()
-#         self.aodOutputFileset.loadData()
-#         self.mergedAodOutputFileset.loadData()
-#         self.skimOutputFileset.loadData()
-#         self.mergedSkimOutputFileset.loadData()
+        self.recoOutputFileset.loadData()
+        self.mergedRecoOutputFileset.loadData()
+        self.aodOutputFileset.loadData()
+        self.mergedAodOutputFileset.loadData()
+        self.skimOutputFileset.loadData()
+        self.mergedSkimOutputFileset.loadData()
 
-#         assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 0, \
-#                "Error: No files should be in the merged reco fileset."
-#         assert len(self.recoOutputFileset.getFiles(type = "list")) == 5, \
-#                "Error: There should be 5 files in the reco output fileset."
+        assert len(self.mergedRecoOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the merged reco fileset."
+        assert len(self.recoOutputFileset.getFiles(type = "list")) == 5, \
+               "Error: There should be 5 files in the reco output fileset."
 
-#         assert len(self.mergedAodOutputFileset.getFiles(type = "list")) == 0, \
-#                "Error: No files should be in the merged aod fileset."
-#         assert len(self.aodOutputFileset.getFiles(type = "list")) == 5, \
-#                "Error: There should be 5 files in the aod output fileset."
+        assert len(self.mergedAodOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the merged aod fileset."
+        assert len(self.aodOutputFileset.getFiles(type = "list")) == 5, \
+               "Error: There should be 5 files in the aod output fileset."
 
-#         assert len(self.mergedSkimOutputFileset.getFiles(type = "list")) == 0, \
-#                "Error: No files should be in the merged skim output fileset."
-#         assert len(self.skimOutputFileset.getFiles(type = "list")) == 5, \
-#                "Error: There should be 5 files in the skim output fileset."
+        assert len(self.mergedSkimOutputFileset.getFiles(type = "list")) == 0, \
+               "Error: No files should be in the merged skim output fileset."
+        assert len(self.skimOutputFileset.getFiles(type = "list")) == 5, \
+               "Error: There should be 5 files in the skim output fileset."
 
-#         self.setupDBForUnmergedRedneckRecoMerge()
+        self.setupDBForUnmergedRedneckRecoMerge()
 
-#         self.skimMergeJob["state"] = "complete"
-#         self.stateChangeAction.execute(jobs = [self.skimMergeJob])
-#         accountant.algorithm()
+        self.skimMergeJob["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.skimMergeJob])
+        accountant.algorithm()
 
-#         skimReport = Report()
-#         skimReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "RedneckRecoMergeSkim.pkl"))        
+        skimReport = Report()
+        skimReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "RedneckRecoMergeSkim.pkl"))        
 
-#         self.verifyFileMetaData(self.skimMergeJob["id"], skimReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.skimMergeJob["id"])
+        self.verifyFileMetaData(self.skimMergeJob["id"], skimReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.skimMergeJob["id"])
 
-#         skimDBSFile = DBSBufferFile(lfn = "/some/path/to/a/merged/skim/file/1.root")
-#         skimDBSFile.load(parentage = 1)
+        skimDBSFile = DBSBufferFile(lfn = "/some/path/to/a/merged/skim/file/1.root")
+        skimDBSFile.load(parentage = 1)
 
-#         assert skimDBSFile["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert len(skimDBSFile["parents"]) == 0, \
-#                "Error: File should have no parents in DBSBuffer."
+        assert skimDBSFile["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert len(skimDBSFile["parents"]) == 0, \
+               "Error: File should have no parents in DBSBuffer."
 
-#         self.aodMergeJob1["state"] = "complete"
-#         self.stateChangeAction.execute(jobs = [self.aodMergeJob1])
-#         accountant.algorithm()
+        self.aodMergeJob1["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.aodMergeJob1])
+        accountant.algorithm()
 
-#         aodReport1 = Report()
-#         aodReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "RedneckRecoMergeAod1.pkl"))        
-#         self.verifyFileMetaData(self.aodMergeJob1["id"], aodReport1.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.aodMergeJob1["id"])
+        aodReport1 = Report()
+        aodReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "RedneckRecoMergeAod1.pkl"))        
+        self.verifyFileMetaData(self.aodMergeJob1["id"], aodReport1.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.aodMergeJob1["id"])
 
-#         aodDBSFile1 = DBSBufferFile(lfn = "/some/path/to/a/merged/aod/file/1.root")
-#         aodDBSFile1.load(parentage = 1)
-#         skimDBSFile.load(parentage = 1)
+        aodDBSFile1 = DBSBufferFile(lfn = "/some/path/to/a/merged/aod/file/1.root")
+        aodDBSFile1.load(parentage = 1)
+        skimDBSFile.load(parentage = 1)
 
-#         assert aodDBSFile1["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert skimDBSFile["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert len(aodDBSFile1["parents"]) == 0, \
-#                "Error: File should have no parents in DBSBuffer."
-#         assert len(skimDBSFile["parents"]) == 1, \
-#                "Error: File should have 1 parent in DBSBuffer."        
-#         assert list(skimDBSFile["parents"])[0]["lfn"] == aodDBSFile1["lfn"], \
-#                "Error: Skim file should be the child of the aod file."
+        assert aodDBSFile1["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert skimDBSFile["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert len(aodDBSFile1["parents"]) == 0, \
+               "Error: File should have no parents in DBSBuffer."
+        assert len(skimDBSFile["parents"]) == 1, \
+               "Error: File should have 1 parent in DBSBuffer."        
+        assert list(skimDBSFile["parents"])[0]["lfn"] == aodDBSFile1["lfn"], \
+               "Error: Skim file should be the child of the aod file."
 
-#         self.recoMergeJob2["state"] = "complete"
-#         self.stateChangeAction.execute(jobs = [self.recoMergeJob2])
-#         accountant.algorithm()
+        self.recoMergeJob2["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.recoMergeJob2])
+        accountant.algorithm()
 
-#         recoReport2 = Report()
-#         recoReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                            "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                            "RedneckRecoMergeReco2.pkl"))
-#         self.verifyFileMetaData(self.recoMergeJob2["id"], recoReport2.getAllFilesFromStep("cmsRun1"))        
-#         self.verifyJobSuccess(self.recoMergeJob2["id"])
-#         dbsParents = ["/path/to/some/lfnC", "/path/to/some/lfnD",
-#                       "/path/to/some/lfnE"]
-#         self.verifyDBSBufferContents("Merge", dbsParents, recoReport2.getAllFilesFromStep("cmsRun1"))
+        recoReport2 = Report()
+        recoReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                           "RedneckRecoMergeReco2.pkl"))
+        self.verifyFileMetaData(self.recoMergeJob2["id"], recoReport2.getAllFilesFromStep("cmsRun1"))        
+        self.verifyJobSuccess(self.recoMergeJob2["id"])
+        dbsParents = ["/path/to/some/lfnC", "/path/to/some/lfnD",
+                      "/path/to/some/lfnE"]
+        self.verifyDBSBufferContents("Merge", dbsParents, recoReport2.getAllFilesFromStep("cmsRun1"))
 
-#         recoDBSFile2 = DBSBufferFile(lfn = "/some/path/to/a/merged/reco/file/2.root")
-#         recoDBSFile2.load(parentage = 1)
-#         aodDBSFile1.load(parentage = 1)
-#         skimDBSFile.load(parentage = 1)
+        recoDBSFile2 = DBSBufferFile(lfn = "/some/path/to/a/merged/reco/file/2.root")
+        recoDBSFile2.load(parentage = 1)
+        aodDBSFile1.load(parentage = 1)
+        skimDBSFile.load(parentage = 1)
 
-#         assert recoDBSFile2["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert aodDBSFile1["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert skimDBSFile["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert len(aodDBSFile1["parents"]) == 1, \
-#                "Error: File should have 1 parent in DBSBuffer."
-#         assert list(aodDBSFile1["parents"])[0]["lfn"] == recoDBSFile2["lfn"], \
-#                "Error: Aod file should be the child of the reco file."            
-#         assert len(skimDBSFile["parents"]) == 1, \
-#                "Error: File should have 1 parent in DBSBuffer."        
-#         assert list(skimDBSFile["parents"])[0]["lfn"] == aodDBSFile1["lfn"], \
-#                "Error: Skim file should be the child of the aod file."        
+        assert recoDBSFile2["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert aodDBSFile1["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert skimDBSFile["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert len(aodDBSFile1["parents"]) == 1, \
+               "Error: File should have 1 parent in DBSBuffer."
+        assert list(aodDBSFile1["parents"])[0]["lfn"] == recoDBSFile2["lfn"], \
+               "Error: Aod file should be the child of the reco file."            
+        assert len(skimDBSFile["parents"]) == 1, \
+               "Error: File should have 1 parent in DBSBuffer."        
+        assert list(skimDBSFile["parents"])[0]["lfn"] == aodDBSFile1["lfn"], \
+               "Error: Skim file should be the child of the aod file."        
 
-#         self.aodMergeJob2["state"] = "complete"        
-#         self.stateChangeAction.execute(jobs = [self.aodMergeJob2])
-#         accountant.algorithm()
+        self.aodMergeJob2["state"] = "complete"        
+        self.stateChangeAction.execute(jobs = [self.aodMergeJob2])
+        accountant.algorithm()
 
-#         aodReport2 = Report()
-#         aodReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "RedneckRecoMergeAod2.pkl"))
+        aodReport2 = Report()
+        aodReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "RedneckRecoMergeAod2.pkl"))
 
-#         self.verifyFileMetaData(self.aodMergeJob2["id"], aodReport2.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.aodMergeJob2["id"])
+        self.verifyFileMetaData(self.aodMergeJob2["id"], aodReport2.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.aodMergeJob2["id"])
 
-#         dbsParents = ["/some/path/to/a/merged/reco/file/2.root"]        
-#         self.verifyDBSBufferContents("Merge", dbsParents, aodReport2.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/some/path/to/a/merged/reco/file/2.root"]        
+        self.verifyDBSBufferContents("Merge", dbsParents, aodReport2.getAllFilesFromStep("cmsRun1"))
 
-#         aodDBSFile2 = DBSBufferFile(lfn = "/some/path/to/a/merged/aod/file/2.root")
-#         aodDBSFile2.load(parentage = 1)
-#         aodDBSFile1.load(parentage = 1)
-#         skimDBSFile.load(parentage = 1)
+        aodDBSFile2 = DBSBufferFile(lfn = "/some/path/to/a/merged/aod/file/2.root")
+        aodDBSFile2.load(parentage = 1)
+        aodDBSFile1.load(parentage = 1)
+        skimDBSFile.load(parentage = 1)
 
-#         assert aodDBSFile2["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert aodDBSFile1["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert skimDBSFile["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert len(aodDBSFile1["parents"]) == 1, \
-#                "Error: File should have 1 parent in DBSBuffer."
-#         assert len(aodDBSFile1["parents"]) == 1, \
-#                "Error: File should have 1 parent in DBSBuffer."        
-#         assert list(aodDBSFile2["parents"])[0]["lfn"] == recoDBSFile2["lfn"], \
-#                "Error: Aod file should be the child of the reco file."
-#         assert list(aodDBSFile1["parents"])[0]["lfn"] == recoDBSFile2["lfn"], \
-#                "Error: Aod file should be the child of the reco file."
+        assert aodDBSFile2["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert aodDBSFile1["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert skimDBSFile["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert len(aodDBSFile1["parents"]) == 1, \
+               "Error: File should have 1 parent in DBSBuffer."
+        assert len(aodDBSFile1["parents"]) == 1, \
+               "Error: File should have 1 parent in DBSBuffer."        
+        assert list(aodDBSFile2["parents"])[0]["lfn"] == recoDBSFile2["lfn"], \
+               "Error: Aod file should be the child of the reco file."
+        assert list(aodDBSFile1["parents"])[0]["lfn"] == recoDBSFile2["lfn"], \
+               "Error: Aod file should be the child of the reco file."
 
-#         dbsParents = ["/some/path/to/a/merged/aod/file/1.root", 
-#                       "/some/path/to/a/merged/aod/file/2.root"]
-#         self.verifyDBSBufferContents("Merge", dbsParents, skimReport.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/some/path/to/a/merged/aod/file/1.root", 
+                      "/some/path/to/a/merged/aod/file/2.root"]
+        self.verifyDBSBufferContents("Merge", dbsParents, skimReport.getAllFilesFromStep("cmsRun1"))
 
-#         self.recoMergeJob1["state"] = "complete"
-#         self.stateChangeAction.execute(jobs = [self.recoMergeJob1])        
-#         accountant.algorithm()
+        self.recoMergeJob1["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.recoMergeJob1])        
+        accountant.algorithm()
 
-#         recoReport1 = Report()
-#         recoReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                            "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                            "RedneckRecoMergeReco1.pkl"))
-#         self.verifyFileMetaData(self.recoMergeJob1["id"], recoReport1.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.recoMergeJob1["id"])
+        recoReport1 = Report()
+        recoReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                           "RedneckRecoMergeReco1.pkl"))
+        self.verifyFileMetaData(self.recoMergeJob1["id"], recoReport1.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.recoMergeJob1["id"])
 
-#         dbsParents = ["/path/to/some/lfnA", "/path/to/some/lfnB"]
-#         self.verifyDBSBufferContents("Merge", dbsParents, recoReport1.getAllFilesFromStep("cmsRun1"))
-#         dbsParents = ["/some/path/to/a/merged/reco/file/1.root",
-#                       "/some/path/to/a/merged/reco/file/2.root"]
-#         self.verifyDBSBufferContents("Merge", dbsParents, aodReport1.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/path/to/some/lfnA", "/path/to/some/lfnB"]
+        self.verifyDBSBufferContents("Merge", dbsParents, recoReport1.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/some/path/to/a/merged/reco/file/1.root",
+                      "/some/path/to/a/merged/reco/file/2.root"]
+        self.verifyDBSBufferContents("Merge", dbsParents, aodReport1.getAllFilesFromStep("cmsRun1"))
 
-#         recoDBSFile1 = DBSBufferFile(lfn = "/some/path/to/a/merged/reco/file/1.root")
-#         recoDBSFile1.load()
-#         aodDBSFile2.load()
-#         aodDBSFile1.load()
-#         skimDBSFile.load()
+        recoDBSFile1 = DBSBufferFile(lfn = "/some/path/to/a/merged/reco/file/1.root")
+        recoDBSFile1.load()
+        aodDBSFile2.load()
+        aodDBSFile1.load()
+        skimDBSFile.load()
 
-#         assert recoDBSFile1["status"] == "NOTUPLOADED", \
-#                "Error: File status is not correct."
-#         assert aodDBSFile1["status"] == "NOTUPLOADED", \
-#                "Error: File status is not correct."
-#         assert aodDBSFile2["status"] == "NOTUPLOADED", \
-#                "Error: File status is not correct."                
-#         assert skimDBSFile["status"] == "NOTUPLOADED", \
-#                "Error: File status is not correct."        
+        assert recoDBSFile1["status"] == "NOTUPLOADED", \
+               "Error: File status is not correct."
+        assert aodDBSFile1["status"] == "NOTUPLOADED", \
+               "Error: File status is not correct."
+        assert aodDBSFile2["status"] == "NOTUPLOADED", \
+               "Error: File status is not correct."                
+        assert skimDBSFile["status"] == "NOTUPLOADED", \
+               "Error: File status is not correct."        
         
-#         return
+        return
 
     def setupDBForMergedRedneckReco(self):
         """
@@ -1583,168 +1584,167 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
-#     def testMergedRedneckReco(self):
-#         """
-#         _testMergedRedneckReco_
+    def testMergedRedneckReco(self):
+        """
+        _testMergedRedneckReco_
 
-#         Verify the behavior of the accountwant with a redneck workflow that has
-#         straight to merged files.  This will run the processing jobs and the
-#         merge jobs in the worst case way and verify that file parentage and
-#         file status in DBS is correct.
-#         """
-#         self.setupDBForMergedRedneckReco()
-#         config = self.createConfig(workerThreads = 1)
+        Verify the behavior of the accountwant with a redneck workflow that has
+        straight to merged files.  This will run the processing jobs and the
+        merge jobs in the worst case way and verify that file parentage and
+        file status in DBS is correct.
+        """
+        self.setupDBForMergedRedneckReco()
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         jobReport1 = Report()
-#         jobReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "MergedRedneckReco1.pkl"))
-#         jobReport2 = Report()
-#         jobReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "MergedRedneckReco2.pkl"))
-#         jobReport3 = Report()
-#         jobReport3.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "MergedRedneckReco3.pkl"))
-#         jobReport4 = Report()
-#         jobReport4.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "MergedRedneckReco4.pkl"))
-#         jobReport5 = Report()
-#         jobReport5.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "MergedRedneckReco5.pkl"))
+        jobReport1 = Report()
+        jobReport1.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "MergedRedneckReco1.pkl"))
+        jobReport2 = Report()
+        jobReport2.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "MergedRedneckReco2.pkl"))
+        jobReport3 = Report()
+        jobReport3.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "MergedRedneckReco3.pkl"))
+        jobReport4 = Report()
+        jobReport4.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "MergedRedneckReco4.pkl"))
+        jobReport5 = Report()
+        jobReport5.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "MergedRedneckReco5.pkl"))
 
-#         self.verifyFileMetaData(self.testJobA["id"], jobReport1.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobB["id"], jobReport2.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobC["id"], jobReport3.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobD["id"], jobReport4.getAllFilesFromStep("cmsRun1"))
-#         self.verifyFileMetaData(self.testJobE["id"], jobReport5.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobA["id"], jobReport1.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobB["id"], jobReport2.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobC["id"], jobReport3.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobD["id"], jobReport4.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobE["id"], jobReport5.getAllFilesFromStep("cmsRun1"))
 
-#         self.verifyJobSuccess(self.testJobA["id"])
-#         self.verifyJobSuccess(self.testJobB["id"])
-#         self.verifyJobSuccess(self.testJobC["id"])
-#         self.verifyJobSuccess(self.testJobD["id"])
-#         self.verifyJobSuccess(self.testJobE["id"])
+        self.verifyJobSuccess(self.testJobA["id"])
+        self.verifyJobSuccess(self.testJobB["id"])
+        self.verifyJobSuccess(self.testJobC["id"])
+        self.verifyJobSuccess(self.testJobD["id"])
+        self.verifyJobSuccess(self.testJobE["id"])
 
-#         dbsParents = {"/path/to/some/merged/reco/file/1.root":
-#                         ["/path/to/some/lfnA"],
-#                       "/path/to/some/merged/aod/file/1.root":
-#                         ["/path/to/some/merged/reco/file/1.root"]}
-#         self.verifyDBSBufferContents("Processing", dbsParents, jobReport1.getAllFilesFromStep("cmsRun1"))
+        dbsParents = {"/path/to/some/merged/reco/file/1.root":
+                        ["/path/to/some/lfnA"],
+                      "/path/to/some/merged/aod/file/1.root":
+                        ["/path/to/some/merged/reco/file/1.root"]}
+        self.verifyDBSBufferContents("Processing", dbsParents, jobReport1.getAllFilesFromStep("cmsRun1"))
 
-#         dbsParents = {"/path/to/some/merged/reco/file/2.root":
-#                         ["/path/to/some/lfnB"],
-#                       "/path/to/some/merged/aod/file/2.root":
-#                         ["/path/to/some/merged/reco/file/2.root"]}
-#         self.verifyDBSBufferContents("Processing", dbsParents, jobReport2.getAllFilesFromStep("cmsRun1"))
+        dbsParents = {"/path/to/some/merged/reco/file/2.root":
+                        ["/path/to/some/lfnB"],
+                      "/path/to/some/merged/aod/file/2.root":
+                        ["/path/to/some/merged/reco/file/2.root"]}
+        self.verifyDBSBufferContents("Processing", dbsParents, jobReport2.getAllFilesFromStep("cmsRun1"))
 
-#         dbsParents = ["/path/to/some/lfnD"]
-#         self.verifyDBSBufferContents("Processing", dbsParents, jobReport4.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/path/to/some/lfnD"]
+        self.verifyDBSBufferContents("Processing", dbsParents, jobReport4.getAllFilesFromStep("cmsRun1"))
 
-#         aodDBSFile1 = DBSBufferFile(lfn = "/path/to/some/merged/aod/file/1.root")
-#         aodDBSFile1.load(parentage = 1)
-#         aodDBSFile2 = DBSBufferFile(lfn = "/path/to/some/merged/aod/file/2.root")
-#         aodDBSFile2.load(parentage = 1)        
-#         aodDBSFile5 = DBSBufferFile(lfn = "/path/to/some/merged/aod/file/5.root")
-#         aodDBSFile5.load(parentage = 1)
+        aodDBSFile1 = DBSBufferFile(lfn = "/path/to/some/merged/aod/file/1.root")
+        aodDBSFile1.load(parentage = 1)
+        aodDBSFile2 = DBSBufferFile(lfn = "/path/to/some/merged/aod/file/2.root")
+        aodDBSFile2.load(parentage = 1)        
+        aodDBSFile5 = DBSBufferFile(lfn = "/path/to/some/merged/aod/file/5.root")
+        aodDBSFile5.load(parentage = 1)
 
-#         recoDBSFile1 = DBSBufferFile(lfn = "/path/to/some/merged/reco/file/1.root")
-#         recoDBSFile1.load(parentage = 1)
-#         recoDBSFile2 = DBSBufferFile(lfn = "/path/to/some/merged/reco/file/2.root")
-#         recoDBSFile2.load(parentage = 1)
-#         recoDBSFile4 = DBSBufferFile(lfn = "/path/to/some/merged/reco/file/4.root")
-#         recoDBSFile4.load(parentage = 1)                
+        recoDBSFile1 = DBSBufferFile(lfn = "/path/to/some/merged/reco/file/1.root")
+        recoDBSFile1.load(parentage = 1)
+        recoDBSFile2 = DBSBufferFile(lfn = "/path/to/some/merged/reco/file/2.root")
+        recoDBSFile2.load(parentage = 1)
+        recoDBSFile4 = DBSBufferFile(lfn = "/path/to/some/merged/reco/file/4.root")
+        recoDBSFile4.load(parentage = 1)                
 
-#         assert aodDBSFile1["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert aodDBSFile2["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."        
-#         assert aodDBSFile5["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert recoDBSFile1["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert recoDBSFile2["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert recoDBSFile4["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."        
+        assert aodDBSFile1["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert aodDBSFile2["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."        
+        assert aodDBSFile5["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert recoDBSFile1["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert recoDBSFile2["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert recoDBSFile4["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."        
 
-#         self.setupDBForMergedRedneckRecoMerge()
+        self.setupDBForMergedRedneckRecoMerge()
 
-#         self.aodMergeJob["state"] = "complete"
-#         self.stateChangeAction.execute(jobs = [self.aodMergeJob])        
-#         accountant.algorithm()        
+        self.aodMergeJob["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.aodMergeJob])        
+        accountant.algorithm()        
 
-#         aodReport = Report()
-#         aodReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                          "RedneckRecoMergeAod1.pkl"))
-#         self.verifyFileMetaData(self.aodMergeJob["id"], aodReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.aodMergeJob["id"])
+        aodReport = Report()
+        aodReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                         "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                         "RedneckRecoMergeAod1.pkl"))
+        self.verifyFileMetaData(self.aodMergeJob["id"], aodReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.aodMergeJob["id"])
 
-#         aodMergedDBSFile = DBSBufferFile(lfn = "/some/path/to/a/merged/aod/file/1.root")
-#         aodMergedDBSFile.load(parentage = 1)
-#         aodDBSFile5.load(parentage = 1)
+        aodMergedDBSFile = DBSBufferFile(lfn = "/some/path/to/a/merged/aod/file/1.root")
+        aodMergedDBSFile.load(parentage = 1)
+        aodDBSFile5.load(parentage = 1)
 
-#         assert aodMergedDBSFile["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert aodDBSFile5["status"] == "WaitingForParents", \
-#                "Error: Status for file in DBSBuffer is wrong."
+        assert aodMergedDBSFile["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert aodDBSFile5["status"] == "WaitingForParents", \
+               "Error: Status for file in DBSBuffer is wrong."
 
-#         self.recoMergeJob["state"] = "complete"
-#         self.stateChangeAction.execute(jobs = [self.recoMergeJob])
-#         accountant.algorithm()        
+        self.recoMergeJob["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.recoMergeJob])
+        accountant.algorithm()        
 
-#         recoReport = Report()
-#         recoReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                           "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                           "RedneckRecoMergeReco1.pkl"))
-#         self.verifyFileMetaData(self.recoMergeJob["id"], recoReport.getAllFilesFromStep("cmsRun1"))
-#         self.verifyJobSuccess(self.recoMergeJob["id"])
+        recoReport = Report()
+        recoReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                          "RedneckRecoMergeReco1.pkl"))
+        self.verifyFileMetaData(self.recoMergeJob["id"], recoReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyJobSuccess(self.recoMergeJob["id"])
 
-#         dbsParents = ["/path/to/some/lfnC", "/path/to/some/lfnE"]
-#         self.verifyDBSBufferContents("Merge", dbsParents, recoReport.getAllFilesFromStep("cmsRun1"))
-#         dbsParents = ["/some/path/to/a/merged/reco/file/1.root",
-#                       "/path/to/some/merged/reco/file/4.root"]
-#         self.verifyDBSBufferContents("Merge", dbsParents, aodReport.getAllFilesFromStep("cmsRun1"))
-#         dbsParents = ["/some/path/to/a/merged/reco/file/1.root"]
-#         self.verifyDBSBufferContents("Processing", dbsParents, jobReport5.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/path/to/some/lfnC", "/path/to/some/lfnE"]
+        self.verifyDBSBufferContents("Merge", dbsParents, recoReport.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/some/path/to/a/merged/reco/file/1.root",
+                      "/path/to/some/merged/reco/file/4.root"]
+        self.verifyDBSBufferContents("Merge", dbsParents, aodReport.getAllFilesFromStep("cmsRun1"))
+        dbsParents = ["/some/path/to/a/merged/reco/file/1.root"]
+        self.verifyDBSBufferContents("Processing", dbsParents, jobReport5.getAllFilesFromStep("cmsRun1"))
 
-#         aodMergedDBSFile.load(parentage = 1)
-#         aodDBSFile5.load(parentage = 1)
+        aodMergedDBSFile.load(parentage = 1)
+        aodDBSFile5.load(parentage = 1)
 
-#         assert aodMergedDBSFile["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."
-#         assert aodDBSFile5["status"] == "NOTUPLOADED", \
-#                "Error: Status for file in DBSBuffer is wrong."
+        assert aodMergedDBSFile["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."
+        assert aodDBSFile5["status"] == "NOTUPLOADED", \
+               "Error: Status for file in DBSBuffer is wrong."
 
-#         return
+        return
 
-#     def testNoFileReport(self):
-#         """
-#         _testNoFileReport_
+    def testNoFileReport(self):
+        """
+        _testNoFileReport_
         
-#         See that the Accountant does not crash if there are no files.
-#         """
-#         self.setupDBForMergeSuccess()
-#         config = self.createConfig(workerThreads = 1)
+        See that the Accountant does not crash if there are no files.
+        """
+        self.setupDBForMergeSuccess()
+        config = self.createConfig(workerThreads = 1)
 
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-#         accountant.algorithm()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
 
-#         jobReport = Report()
-#         jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
-#                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
-#                                          "MergeSuccessNoFiles.pkl"))
-#         self.verifyJobSuccess(self.testJob["id"])
-#         return
-
+        jobReport = Report()
+        jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
+                                         "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                         "MergeSuccessNoFiles.pkl"))
+        self.verifyJobSuccess(self.testJob["id"])
+        return
     def setupDBForLoadTest(self):
         """
         _setupDBForLoadTest_
@@ -1851,39 +1851,39 @@ class JobAccountantTest(unittest.TestCase):
 
 #         return
 
-    def testTwoProcessLoadTest(self):
-        """
-        _testTwoProcessLoadTest_
+#     def testTwoProcessLoadTest(self):
+#         """
+#         _testTwoProcessLoadTest_
 
-        Run the load test using two worker processes.
-        """
-        print("  Filling DB...")
+#         Run the load test using two worker processes.
+#         """
+#         print("  Filling DB...")
 
-        self.setupDBForLoadTest()
-        config = self.createConfig(workerThreads = 8)
+#         self.setupDBForLoadTest()
+#         config = self.createConfig(workerThreads = 2)
 
-        accountant = JobAccountantPoller(config)
-        accountant.setup()
+#         accountant = JobAccountantPoller(config)
+#         accountant.setup()
 
-        print("  Running accountant...")
+#         print("  Running accountant...")
 
-        startTime = time.time()
-        accountant.algorithm()
-        endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+#         startTime = time.time()
+#         accountant.algorithm()
+#         endTime = time.time()
+#         print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
-        for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
-            jobReport = Report()
-            jobReport.unpersist(fwjrPath)
+#         for (jobID, fwjrPath) in self.jobs:
+#             print("  Validating %s, %s" % (jobID, fwjrPath))
+#             jobReport = Report()
+#             jobReport.unpersist(fwjrPath)
 
-            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
-            self.verifyJobSuccess(jobID)
-            self.verifyDBSBufferContents("Processing",
-                                         ["/some/lfn/for/job/%s" % jobID],
-                                         jobReport.getAllFilesFromStep("cmsRun1"))
+#             self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
+#             self.verifyJobSuccess(jobID)
+#             self.verifyDBSBufferContents("Processing",
+#                                          ["/some/lfn/for/job/%s" % jobID],
+#                                          jobReport.getAllFilesFromStep("cmsRun1"))
 
-        return    
+#         return    
 
 #     def testFourProcessLoadTest(self):
 #         """
@@ -2008,13 +2008,5 @@ class JobAccountantTest(unittest.TestCase):
 #         return
 
 if __name__ == '__main__':
-    myTest = JobAccountantTest()
-    myTest.setUp()
-    myTest.setupDBForLoadTest()
-    myWorker = AccountantWorker(couchURL = "cmssrv52.fnal.gov:5984", couchDBName = "accountanttest")
-    startTime = time.time()
-    for (jobID, fwjrPath) in myTest.jobs:
-        myWorker.__call__({"fwjr_path": fwjrPath, "id": jobID})
-    endTime = time.time()
-    print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))            
-    myTest.tearDown()
+    unittest.main()
+

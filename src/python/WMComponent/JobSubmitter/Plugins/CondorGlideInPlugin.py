@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0102, W6501, E1103
+#pylint: disable-msg=W0102, W6501, E1103, C0301
 # W0102: We want to pass blank lists by default
 # for the whitelist and the blacklist
 # W6501: pass information to logging using string arguments
 # E1103: The thread will have a logger and a dbi before it gets here
+# C0301: There are too many long string arguments to cut them down
+#   without making things unreadable.
 
 """
 _CondorGlideInPlugin_
@@ -12,8 +14,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.10 2010/06/07 18:28:18 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.11 2010/06/07 19:59:32 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import os.path
@@ -147,7 +149,7 @@ class CondorGlideInPlugin(PluginBase):
         jdl.append("Error = condor.$(Cluster).$(Process).err\n")
         jdl.append("Log = condor.$(Cluster).$(Process).log\n")
         # Things that are necessary for the glide-in
-        jdl.append('+DESIRED_Sites = \"FNAL\"\n')
+
         jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         jdl.append("+WMAgent_AgentName = \"%s\"\n" %(self.agent))
         
@@ -189,6 +191,14 @@ class CondorGlideInPlugin(PluginBase):
                         % (os.path.basename(self.sandbox), index)
             jdl.append(argString)
 
+            jobCE = self.getCEName(jobSite = job['location'])
+            if not jobCE:
+                # Then we ended up with a site that doesn't exist?
+                logging.error("Job for non-existant site %s" \
+                              % (job['location']))
+                continue
+            jdl.append('+DESIRED_Sites = \"%s\"\n' %(jobCE))
+
             # Transfer the output files into new names
             jdl.append("transfer_output_remaps = \"Report.pkl = Report.%i.pkl\"\n" \
                        % (job["retry_count"]))
@@ -203,18 +213,17 @@ class CondorGlideInPlugin(PluginBase):
         return jdl
 
 
-    #def getCEName(self, jobSite):
-    #    """
-    #    _getCEName_
-    #
-    #    This is how you get the name of a CE for a job
-    #    """
-    #
-    #    if not jobSite in self.locationDict.keys():
-    #        siteInfo = self.locationAction.execute(siteName = jobSite)
-    #        self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
-    #        logging.error("About to get jobSite info")
-    #        logging.error(jobSite)
-    #        logging.error(siteInfo)
-    #        logging.error(self.locationDict)
-    #    return self.locationDict[jobSite]
+
+
+    def getCEName(self, jobSite):
+        """
+        _getCEName_
+
+        This is how you get the name of a CE for a job
+        """
+
+        if not jobSite in self.locationDict.keys():
+            siteInfo = self.locationAction.execute(siteName = jobSite)
+            self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
+        return self.locationDict[jobSite]
+

@@ -1,10 +1,14 @@
 #!/usr/bin/env python
-""" requestDBAdmin """
+"""
+_requestDbAdmin_
+
+"""
+
 import sys
 import getopt
 import os
 import urllib
-#from ReqMgr.RequestManager.CheckIn import CheckIn
+
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement as UserAdmin
@@ -17,11 +21,11 @@ from WMCore.WMInit import WMInit
 from WMCore.Configuration import loadConfigurationFile
 import logging
 
-valid = 'g:u:v:t:'
+valid = 'g:u:v:t:c:'
 
 usage = \
 """
-requestDBAdmin (add|list|delete) [-g <group|all>] [-u <user|all>] [-v <cmssw version|all>] [-t <prod team|all>]
+requestDBAdmin [-c config] (add|list|delete) [-g <group|all>] [-u <user|all>] [-v <cmssw version|all>] [-t <prod team|all>]
 """
 
 user = None
@@ -41,14 +45,20 @@ except getopt.GetoptError, ex:
     sys.exit(1)
 
 # load the configuration
-path = __file__.rsplit('/',1)[0]
-print "THIS " + __file__
-print "PATH " + path
-defaultConfig = path+'/../src/python/WMCore/HTTPFrontEnd/RequestManager/DefaultConfig.py'
-if not os.path.exists(defaultConfig):
-    print "Cannot find " + defaultConfig
+configPath = None
+for (opt, arg) in opts:
+    if opt == "-c":
+        configPath = arg
+
+if not configPath:
+    configPath = os.environ.get("WMAGENT_CONFIG", None)
+
+if not configPath:
+    print "Please specify a config by either setting the WMAGENT_CONFIG"
+    print "environment variable or with the -c command line option."
     sys.exit(1)
-config = loadConfigurationFile(defaultConfig)
+
+config = loadConfigurationFile(configPath)
         
 if not hasattr(config, "CoreDatabase"):
     print "Your config is missing the CoreDatabase section."

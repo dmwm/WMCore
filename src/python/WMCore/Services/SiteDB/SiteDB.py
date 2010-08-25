@@ -6,10 +6,10 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.11 2009/08/07 18:31:12 ewv Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: SiteDB.py,v 1.12 2009/08/18 14:23:44 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
-from WMCore.Services.Service import Service
+from WMCore.Services.SSLService import SSLService
 import urllib
 import logging
 import os
@@ -24,7 +24,7 @@ from WMCore.Services.JSONParser.JSONParser import JSONParser
     # Prior to 2.6 requires simplejson
     #import simplejson as json
 
-class SiteDBJSON(Service):
+class SiteDBJSON(SSLService):
 
     """
     API for dealing with retrieving information from SiteDB
@@ -40,8 +40,10 @@ class SiteDBJSON(Service):
             dict['cachepath'] = os.getenv('HOME') + '/.cms_sitedbcache'
         else:
             dict['cachepath'] = '/tmp/sitedbjson_' + pwd.getpwuid(os.getuid())[0]
+            
         if not os.path.isdir(dict['cachepath']):
             os.mkdir(dict['cachepath'])
+            
         if 'logger' not in dict.keys():
             logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
@@ -49,8 +51,8 @@ class SiteDBJSON(Service):
                     filename=dict['cachepath'] + '/sitedbjsonparser.log',
                     filemode='w')
             dict['logger'] = logging.getLogger('SiteDBParser')
-        Service.__init__(self, dict)
-
+            
+        SSLService.__init__(self, dict)
 
     def getJSON(self, callname, file='result.json', clearCache=False, **args):
         """

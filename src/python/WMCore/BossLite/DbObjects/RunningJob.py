@@ -5,16 +5,16 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.9 2010/05/10 12:45:55 spigafi Exp $"
-__revision__ = "$Revision: 1.9 $"
+__version__ = "$Id: RunningJob.py,v 1.10 2010/05/11 10:47:55 spigafi Exp $"
+__revision__ = "$Revision: 1.10 $"
 
 # imports
-import logging
+# import logging
 
 from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 
 from WMCore.BossLite.Common.Exceptions import JobError
-from WMCore.BossLite.Common.System import strToList, listToStr
+from WMCore.BossLite.Common.System import strToList, listToStr, strToTimestamp
 
 class RunningJob(DbObject):
     """
@@ -235,6 +235,9 @@ class RunningJob(DbObject):
 
 
 class RunningJobDBFormatter(DbObjectDBFormatter):
+    """
+    RunningJobDBFormatter
+    """
 
     def preFormat(self, res):
         """
@@ -259,15 +262,18 @@ class RunningJobDBFormatter(DbObjectDBFormatter):
         result['status']                = res['status']
         result['statusReason']          = res['statusReason']
         result['destination']           = res['destination']
-        result['lbTimestamp']           = res['lbTimestamp']
-        result['submissionTime']        = res['submissionTime']
-        result['scheduledAtSite']       = res['scheduledAtSite']
-        result['startTime']             = res['startTime']
-        result['stopTime']              = res['stopTime']
-        result['stageOutTime']          = res['stageOutTime']
-        result['getOutputTime']         = res['getOutputTime']
-        result['outputRequestTime']     = res['outputRequestTime']
-        result['outputEnqueueTime']     = res['outputEnqueueTime']
+        result['lbTimestamp']           = strToTimestamp(res['lbTimestamp'])
+        result['submissionTime']        = strToTimestamp(res['submissionTime'])
+        result['scheduledAtSite']       = \
+                                    strToTimestamp(res['scheduledAtSite'])
+        result['startTime']             = strToTimestamp(res['startTime'])
+        result['stopTime']              = strToTimestamp(res['stopTime'])
+        result['stageOutTime']          = strToTimestamp(res['stageOutTime'])
+        result['getOutputTime']         = strToTimestamp(res['getOutputTime'])
+        result['outputRequestTime']     = \
+                                    strToTimestamp(res['outputRequestTime'])
+        result['outputEnqueueTime']     = \
+                                    strToTimestamp(res['outputEnqueueTime'])
         result['getOutputRetry']        = res['getOutputRetry']
         result['outputDirectory']       = res['outputDirectory']
         result['storage']               = listToStr(res['storage'])
@@ -276,7 +282,7 @@ class RunningJobDBFormatter(DbObjectDBFormatter):
         result['wrapperReturnCode']     = res['wrapperReturnCode']
         result['processStatus']         = res['processStatus']
         result['closed']                = res['closed']
-            
+        
         return result
     
     def postFormat(self, res):

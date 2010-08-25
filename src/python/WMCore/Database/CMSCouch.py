@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.31 2009/07/02 16:56:26 meloam Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: CMSCouch.py,v 1.32 2009/07/02 20:11:01 valya Exp $"
+__version__ = "$Revision: 1.32 $"
 
 try:
     # Python 2.6
@@ -32,9 +32,8 @@ def httpRequest(url, path, data, method='POST', viewlist=[]):
     request will determine the action take by the server (be careful with
     DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
     """
-    headers = {"Content-type": 'application/x-www-form-urlencoded', 
-               "Accept": 'text/plain',
-               'Connection':'Keep-Alive'}
+    headers = {'Content-type': 'application/x-www-form-urlencoded',
+                'Accept': 'text/plain'}
     encoded_data = ''
     if method != 'GET' and data:
         if  type(data) is types.StringType:
@@ -48,26 +47,20 @@ def httpRequest(url, path, data, method='POST', viewlist=[]):
             data = {}
         path = "%s?%s" % (path, urllib.urlencode(data, doseq=True))
     conn = HTTPConnection(url)
-#    httplib.HTTPConnecion.debuglevel = 1
+#    httplib.HTTPConnection.debuglevel = 1
     conn.request(method, path, encoded_data, headers)
     response = conn.getresponse()
-    if  method == 'POST':
-        data = {} # I don't need to read data on POST request
-    else:
-        data = response.read()
+    status = response.status
+    data = response.read()
     conn.close()
     for view in viewlist:
         conn = HTTPConnection(url)
         conn.request('GET', "%s?limit=1" % view)
         res  = conn.getresponse()
-#        view_data = res.read()
         conn.close()
-    return response.status, data
+    return status, data
 
 class HttpRequestThread(threading.Thread):
-    """
-    TODO: Replace with a thread pool
-    """
     def __init__(self, url, path, data, method):
         threading.Thread.__init__(self)
         self.url = url
@@ -151,36 +144,15 @@ class Requests:
         """
         return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
 
-    def makeRequest(self, uri=None, data=None, type='GET',
+    def makeRequest(self, uri=None, data=None, request='GET',
                      encode=None, decode=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
         DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
-        headers = {"Content-type": 
-                    'application/x-www-form-urlencoded', #self.accept_type,
-                    "Accept": self.accept_type}
-        encoded_data = ''
-            
-        if type != 'GET' and data:
-            if (encode == False):
-                encoded_data = data
-            else:
-                encoded_data = self.encode(data)
-            headers["Content-length"] = len(encoded_data)
-        else:
-            #encode the data as a get string
-            if  not data:
-                data = {}
-            uri = "%s?%s" % (uri, urllib.urlencode(data))
-        self.conn.connect()
-        self.conn.request(type, uri, encoded_data, headers)
-        response = self.conn.getresponse()
-
-        data = response.read()
-        self.conn.close()
-        if (decode == False):
+        status, data = httpRequest(self.url, uri, data, request)
+        if  (decode == False):
             return data
         else:
             return self.decode(data)
@@ -244,7 +216,7 @@ class Database(CouchDBRequests):
     TODO: remove leading whitespace when committing a view
     """
     def __init__(self, dbname = 'database', 
-                  url = 'localhost:5984', size = 1000):
+                  url = 'localhost:5984/', size = 1000):
         self._queue = []
         self.name = urllib.quote_plus(dbname)
         JSONRequests.__init__(self, url)
@@ -422,6 +394,10 @@ class CouchServer(CouchDBRequests):
 
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
+    
+    def __init__(self, dbname, dburl='localhost:5984'):
+        CouchDBRequests.__init__(self, dburl)
+
     def listDatabases(self):
         return self.get('/_all_dbs')
 
@@ -443,6 +419,3 @@ class CouchServer(CouchDBRequests):
 
     def __str__(self):
         return self.listDatabases().__str__()
-    
-    def __init__(self, dbname, dburl='localhost:5984'):
-        CouchDBRequests.__init__(self, dburl)

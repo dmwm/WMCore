@@ -6,8 +6,8 @@ MySQL implementation of Subscription.ListIncomplete
 """
 
 __all__ = []
-__revision__ = "$Id: ListIncomplete.py,v 1.1 2009/07/07 18:27:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ListIncomplete.py,v 1.2 2009/09/03 20:01:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -19,8 +19,10 @@ class ListIncomplete(DBFormatter):
                LEFT OUTER JOIN (SELECT subscription, COUNT(file) AS complete_files
                            FROM wmbs_sub_files_complete GROUP BY subscription) wmbs_files_complete
                  ON wmbs_subscription.id = wmbs_files_complete.subscription
-             WHERE (total_files != complete_files) OR
-                   (complete_files IS Null AND total_files != 0)"""
+               LEFT OUTER JOIN (SELECT subscription, COUNT(file) AS failed_files
+                           FROM wmbs_sub_files_failed GROUP BY subscription) wmbs_files_failed
+                 ON wmbs_subscription.id = wmbs_files_failed.subscription
+             WHERE (total_files != COALESCE(complete_files, 0) + COALESCE(failed_files, 0))"""
     
     def format(self, result):
         results = DBFormatter.format(self, result)

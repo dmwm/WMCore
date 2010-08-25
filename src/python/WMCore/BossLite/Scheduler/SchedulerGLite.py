@@ -3,8 +3,8 @@
 gLite CLI interaction class through JSON formatted output
 """
 
-__revision__ = "$Id: SchedulerGLite.py,v 1.4 2010/06/25 13:34:26 spigafi Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SchedulerGLite.py,v 1.5 2010/07/25 19:10:20 mcinquil Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "filippo.spiga@cern.ch"
 
 import os
@@ -223,7 +223,7 @@ class SchedulerGLite(SchedulerInterface) :
         os.unlink( fname )
         
         if ret != 0 :
-            raise SchedulerError('error executing glite-wms-job-submit', out)
+            raise SchedulerError('error executing glite-wms-job-submit: "%s"'%str(out), str(jdl))
         
         try:
             

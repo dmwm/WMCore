@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.7 2009/07/17 15:57:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.8 2009/08/31 20:59:06 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import threading
@@ -16,6 +16,7 @@ import time
 import os
 
 from WMCore.ThreadPool.ThreadPool import ThreadPool
+from WMCore.WMFactory             import WMFactory
 
 from WMQuality.TestInit import TestInit
 
@@ -47,7 +48,9 @@ class ThreadPoolTest(unittest.TestCase):
             self.testInit = TestInit(__file__, os.getenv("DIALECT"))
             self.testInit.setLogging()
             self.testInit.setDatabaseConnection()
+            #self.tearDown()
             self.testInit.setSchema()
+
 
             ThreadPoolTest._setup = True
 
@@ -57,9 +60,32 @@ class ThreadPoolTest(unittest.TestCase):
         """
         # FIXME: this might not work if your not using socket.
         myThread = threading.currentThread()
-        if ThreadPoolTest._teardown and myThread.dialect == 'MySQL':
-            # call the script we use for cleaning:
-            self.testInit.clearDatabase()
+
+        factory = WMFactory("WMBS", "WMCore.ThreadPool")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete ThreadPool tear down.")
+        myThread.transaction.commit()
+        
+        
+        factory = WMFactory("WMBS", "WMCore.MsgService")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete MsgService tear down.")
+        myThread.transaction.commit()
+        
+        factory = WMFactory("Trigger", "WMCore.Trigger")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete Trigger tear down.")
+        myThread.transaction.commit()
+
         ThreadPoolTest._teardown = False
                
     def testA(self):

@@ -29,14 +29,14 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.5 2010/01/22 17:44:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: wmcoreD,v 1.6 2010/01/22 19:28:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
 import logging
 import os
-import popen2
+import subprocess
 import sys
 import time
 
@@ -261,13 +261,8 @@ def shutdown(configFile):
             #  //
             # // Cleanout everything in ComponentDir
             #//  for this component
-            msg = "Removing %s/*\n" % compDir
-            print msg
-            pop = popen2.Popen4("/bin/rm -rf %s/*" % compDir)
-            exitCode = pop.poll()
-            while pop.poll() == -1:
-                exitCode = pop.poll()
-            output = pop.fromchild.read()
+            print "Removing %s" % compDir
+            exitCode = subprocess.call(["rm", "-rf", "%s" % compDir])
             if exitCode:
                 msg = "Failed to clean up dir: %s\n" % compDir
                 msg += output

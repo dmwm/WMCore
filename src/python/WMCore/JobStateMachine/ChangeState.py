@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.22 2009/08/10 12:48:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: ChangeState.py,v 1.23 2009/08/10 15:12:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -52,7 +52,7 @@ class ChangeState(WMObject):
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
         # 2. Document the state transition
-        #jobs = self.recordInCouch(jobs, newstate, oldstate)
+        jobs = self.recordInCouch(jobs, newstate, oldstate)
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
 

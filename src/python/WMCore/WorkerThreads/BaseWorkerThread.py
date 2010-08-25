@@ -9,9 +9,6 @@ to perform thread-specific setup and clean-up operations
 """
 
 
-        "$Id: BaseWorkerThread.py,v 1.24 2010/08/18 15:39:51 meloam Exp $"
-
-
 
 import threading
 import logging

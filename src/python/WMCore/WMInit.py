@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.25 2010/06/11 16:55:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: WMInit.py,v 1.26 2010/06/15 13:29:56 meloam Exp $"
+__version__ = "$Revision: 1.26 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -19,7 +19,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.Configuration import loadConfigurationFile
 
 import os.path
-
+import sys
 def getWMBASE():
     """ returns the root of WMCore install """
     return os.path.normpath( os.path.join(os.path.dirname(__file__), '..', '..','..' ) )

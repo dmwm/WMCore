@@ -5,8 +5,8 @@ Implementation of CreateAgent for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2010/06/21 21:18:53 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2010/06/22 16:46:34 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Agent.Database.CreateAgentBase import CreateAgentBase
 
@@ -33,4 +33,10 @@ class Create(CreateAgentBase):
              UNIQUE (component_id, name))"""
          
         # constraints added in table definition
-        self.constraints.clear()    
+        self.constraints.clear() 
+    
+    def execute(self, conn = None, transaction = None):
+        for i in self.create.keys():
+            self.create[i] = self.create[i].replace('AUTO_INCREMENT', 'AUTOINCREMENT')
+            
+        return CreateAgentBase.execute(self, conn, transaction)   

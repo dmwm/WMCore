@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateAgentBase.py,v 1.1 2010/06/21 21:19:26 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CreateAgentBase.py,v 1.2 2010/06/22 16:46:34 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -40,7 +40,6 @@ class CreateAgentBase(DBCreator):
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
         DBCreator.__init__(self, logger, dbi)
-
 
         self.create["01wm_components"] = \
           """CREATE TABLE wm_components (

@@ -7,8 +7,8 @@ Inherit from CreateAgent, and add Oracle specific substitutions (e.g.
 use trigger and sequence to mimic auto increment in MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2010/06/21 21:18:22 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2010/06/22 16:46:35 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Agent.Database.CreateAgentBase import CreateAgentBase
 
@@ -16,7 +16,7 @@ class Create(CreateAgentBase):
     """
     Class to set up the WMBS schema in a MySQL database
     """
-    sequenceTables = ["wm_components", "wm_workers"]
+    sequenceTables = ["wm_components"]
     seqStartNum = 40
     
     def __init__(self, logger = None, dbi = None, params = None):
@@ -27,7 +27,17 @@ class Create(CreateAgentBase):
         constraints and inserts.
         """
         CreateAgentBase.__init__(self, logger, dbi, params)
-
+        
+        self.create["01wm_components"] = \
+          """CREATE TABLE wm_components (
+             id               INTEGER      NOT NULL,
+             name             VARCHAR(255) NOT NULL,
+             pid              INTEGER      NOT NULL,
+             update_threshold INTEGER      NOT NULL,
+             PRIMARY KEY (id),
+             UNIQUE (name))"""
+             
+             
         for tableName in self.sequenceTables:
             seqname = '%s_SEQ' % tableName
             self.create["%s%s" % (self.seqStartNum, seqname)] = """

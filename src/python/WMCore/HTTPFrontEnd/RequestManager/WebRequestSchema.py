@@ -5,7 +5,7 @@ from WMCore.RequestManager.RequestDB.Settings.RequestTypes import TypesList
 from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.RequestManager.CmsDriverWebRequest import CmsDriverWebRequest
-import simplejson as json
+import WMCore.Wrappers.JsonWrapper as JsonWrapper
 import cherrypy
 import os
 import time
@@ -26,11 +26,11 @@ class WebRequestSchema(TemplatedPage):
         self.cmsDriver = CmsDriverWebRequest(config)
         self.couchUrl = config.configCacheUrl
         self.couchDBName = config.configCacheDBName
-        cherrypy.config.update({'tools.sessions.on': True})
+        cherrypy.config.update({'tools.sessions.on': True, 'tools.encode.on':True, 'tools.decode.on':True})
 
         # download all the sites from siteDB
         url = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name'
-        data = json.loads(urllib.urlopen(url).read().replace("'", '"'))
+        data = JsonWrapper.loads(urllib.urlopen(url).read().replace("'", '"'))
         # kill duplicates, then put in alphabetical order
         siteset = set([d['name'] for d in data.values()])
         # warning: alliteration
@@ -64,7 +64,7 @@ class WebRequestSchema(TemplatedPage):
             group=None, requestor=None, filein=None, inputMode=None, couchDBConfig = None,
             skimInput=None, dbs=None, lfnCategory=None,
             processingConfig=None,
-            skimConfig=None,
+            skimConfig=None, mergedLFNBase = None, unmergedLFNBase = None,
             splitAlgo=None, filesPerJob=None, lumisPerJob=None, eventsPerJob=None, splitFilesBetweenJob=False,
             skimSplitAlgo=None, skimFilesPerJob=None, skimTwoFilesPerJob=None,
             runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None,
@@ -92,7 +92,8 @@ class WebRequestSchema(TemplatedPage):
         schema["DbsUrl"] = dbs
         # FIXME duplicate
         schema["LFNCategory"] = lfnCategory
-        schema["UnmergedLFNBase"] = lfnCategory
+        schema["UnmergedLFNBase"] = mergedLFNBase
+        schema["UnmergedLFNBase"] = unmergedLFNBase
         schema["RunWhitelist"] = eval("[%s]"%runWhitelist)
         schema["RunBlacklist"] = eval("[%s]"%runBlacklist)
         schema["BlockWhitelist"] = eval("[%s]"%blockWhitelist)
@@ -151,6 +152,7 @@ class WebRequestSchema(TemplatedPage):
             # No idea what I'm doing here
             schema['CmsGenParameters'] = {'generator' : 'madgraph'}
             schema['CmsGenConfiguration'] = """madgraph\nttjets\ntarballnamehere"""
+        print "WEBREQUEST " + str(schema)
         cherrypy.session['schema'] = schema
 
         schema["Scenario"] = ""

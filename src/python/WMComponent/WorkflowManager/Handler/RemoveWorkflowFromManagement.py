@@ -4,8 +4,8 @@
 Handler for remove workflow
 """
 __all__ = []
-__revision__ = "$Id: RemoveWorkflowFromManagement.py,v 1.2 2009/02/05 23:21:44 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RemoveWorkflowFromManagement.py,v 1.3 2009/11/28 00:54:16 riahi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -30,4 +30,5 @@ class RemoveWorkflowFromManagement(BaseHandler):
         Handles the event with payload, by sending it to the threadpool.
         """
         # Add item to the thread pool and return
-        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload})
+        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload['payload']})
+

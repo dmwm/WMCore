@@ -9,6 +9,7 @@ import tempfile
 import os
 import md5
 from WMCore.Database.CMSCouch import *
+
 testDocument1 = \
 """#!/usr/bin/env python
 # TESTDOCUMENT1
@@ -38,108 +39,158 @@ def _Locator():
     pass
 args = {}
 """
+
 class Test(unittest.TestCase):
     def setUp(self):
-        # make the cache object
-        #cachedelete = ConfigCache.WMConfigCache('testdb2')
-        #cachedelete.deleteDatabase()
-        if (os.getenv('COUCHURL') != None):
-            couchurl = os.getenv('COUCHURL')
-        else:
-            couchurl = 'localhost:5984'
-            
-        self.cache = ConfigCache.WMConfigCache('testdb2', couchurl)
+        """
+        _setUp_
+
+        Initialize the config cache database and create some test configs.
+        """
+        couchurl = os.getenv("COUCHURL")
+        self.cache = ConfigCache.WMConfigCache("testdb2", couchurl)
         
         # make some temp config files to test with
         (self.fileobj1, self.filename1) = tempfile.mkstemp()
-        self.firstmd5 = md5.new( testDocument1 ).hexdigest()
-        os.write( self.fileobj1, testDocument1 )
-        os.close( self.fileobj1 )
+        self.firstmd5 = md5.new(testDocument1).hexdigest()
+        os.write(self.fileobj1, testDocument1)
+        os.close(self.fileobj1)
         
         # second config
         self.fileobj2, self.filename2 = tempfile.mkstemp()
-        self.secondmd5 = md5.new( testDocument2 ).hexdigest()
-        os.write(self.fileobj2, testDocument2 )
-        os.close( self.fileobj2 )
+        self.secondmd5 = md5.new(testDocument2).hexdigest()
+        os.write(self.fileobj2, testDocument2)
+        os.close(self.fileobj2)
+        return
+
+    def tearDown(self):
+        """
+        _tearDown_
+
+        Remove the test files and the couch database.
+        """
+        os.remove(self.filename1)
+        os.remove(self.filename2)
+        self.cache.deleteDatabase()
+        return
         
     def testSerialize(self):
         """
-        makes sure the serialization works okay. will throw an exception
-        otherwise
-        """
-        newid1, newrev1   = self.cache.addConfig( self.filename1 )
-        testString1 = self.cache.getConfigByDocID(newid1)
+        _testSerialize_
         
+        Verifies that serialization works okay. Will throw an exception
+        otherwise.
+        """
+        newid1, newrev1 = self.cache.addConfig(self.filename1)
+        testString1 = self.cache.getConfigByDocID(newid1)
+        return
     
     def testDuplicate(self):
-        """ 
-        Adding duplicate configs. the class should just add it once to the DB
-        and pass the old value keys/revs back
         """
-        newid1, newrev1   = self.cache.addConfig( self.filename1 )
-        newid2, newrev2   = self.cache.addConfig( self.filename1 )
-        otherid,otherrev  = self.cache.addConfig( self.filename2 )
-        self.assertEqual( newid1, newid2 )
-        self.assertEqual( newrev1, newrev2 )
+        _testDuplicate_
+        
+        Adding duplicate configs. The class should just add it once to the DB
+        and pass the old value keys/revs back.
+        """
+        newid1, newrev1 = self.cache.addConfig(self.filename1)
+        newid2, newrev2 = self.cache.addConfig(self.filename1)
+        otherid,otherrev = self.cache.addConfig(self.filename2)
+        self.assertEqual(newid1, newid2)
+        self.assertEqual(newrev1, newrev2)
+        return
     
     def testOriginal(self):
-        newid1, newrev1 = self.cache.addConfig( self.filename1 )
+        """
+        _testOriginal_
+
+        Test the ability to add unpickled configs to the config cache.
+        """
+        newid1, newrev1 = self.cache.addConfig(self.filename1)
         newid1, newrev1 = self.cache.addOriginalConfig(newid1, newrev1,
-                                                        self.filename2)
+                                                       self.filename2)
         testString1 = self.cache.getConfigByDocID(newid1)
         testString2 = self.cache.getOriginalConfigByDocID(newid1)
 
-        self.assertEqual( testString1, testDocument1 )
-        self.assertEqual( testString2, testDocument2 )
+        self.assertEqual(testString1, testDocument1)
+        self.assertEqual(testString2, testDocument2)
+        return
 
     def testNonExistant(self):
-        self.assertRaises(IndexError, self.cache.getConfigByMD5, "nonexistantid" )
-        self.assertRaises(CouchNotFoundError, self.cache.getConfigByDocID, "nonexistantid" )
+        """
+        _testNonExistant_
+
+        Verify that the getConfigByMD5() and getConfigByDocID() method raise the
+        correct exceptions when they are passed bad IDs.
+        """
+        self.assertRaises(IndexError, self.cache.getConfigByMD5, "nonexistantid")
+        self.assertRaises(CouchNotFoundError, self.cache.getConfigByDocID, "nonexistantid")
+        return
         
     def testTweakFile(self):
-        newid1, newrev1 = self.cache.addConfig( self.filename1 )
+        """
+        _testTweakFile_
+
+        Verify that we can correctly add tweak files to the cache.
+        """
+        newid1, newrev1 = self.cache.addConfig(self.filename1)
         newid1, newrev1 = self.cache.addTweakFile(newid1, newrev1,
-                                                        self.filename2)
+                                                  self.filename2)
         testString1 = self.cache.getConfigByDocID(newid1)
         testString2 = self.cache.getTweakFileByDocID(newid1)
 
-        self.assertEqual( testString1, testDocument1 )
-        self.assertEqual( testString2, testDocument2 )
+        self.assertEqual(testString1, testDocument1)
+        self.assertEqual(testString2, testDocument2)
+        return
         
     def testAllFiles(self):
-        newid1, newrev1 = self.cache.addConfig( self.filename1 )
+        """
+        _testAllFiles_
+
+        Verify that we can add a pickled condig, tweak file and an original
+        config.
+        """
+        newid1, newrev1 = self.cache.addConfig(self.filename1)
         newid1, newrev1 = self.cache.addTweakFile(newid1, newrev1,
-                                                        self.filename2)
+                                                  self.filename2)
         newid1, newrev1 = self.cache.addOriginalConfig(newid1, newrev1,
-                                                        self.filename2)
+                                                       self.filename2)
+
         testString1 = self.cache.getConfigByDocID(newid1)
         testString2 = self.cache.getTweakFileByDocID(newid1)
         testString3 = self.cache.getOriginalConfigByDocID(newid1)
 
-        self.assertEqual( testString1, testDocument1 )
-        self.assertEqual( testString2, testDocument2 )
-        self.assertEqual( testString3, testDocument2 )
+        self.assertEqual(testString1, testDocument1)
+        self.assertEqual(testString2, testDocument2)
+        self.assertEqual(testString3, testDocument2)
+        return
     
     def testAdd(self):
         """
-        simple test to make sure we can roundtrip data properly
+        _testAdd_
+        
+        Simple test to make sure we can roundtrip data properly.
         """
-        self.cache.addConfig( self.filename2 )
-        testString = self.cache.getConfigByMD5( self.secondmd5 )
-        self.assertEqual( testString, testDocument2 )
+        self.cache.addConfig(self.filename2)
+        testString = self.cache.getConfigByMD5(self.secondmd5)
+        self.assertEqual(testString, testDocument2)
         
     def testChangeHash(self):
         """
-        make sure that we can set and retrieve data by their pset_hashes
+        _testChangeHash_
+        
+        Make sure that we can set and retrieve data by their pset_hashes.
         """
-        newid1, newrev1 = self.cache.addConfig( self.filename1 )
-        self.cache.modifyHash(newid1, 'demohash')
-        testString = self.cache.getConfigByHash('demohash')
-        self.assertEqual( testString, testDocument1 )
+        newid1, newrev1 = self.cache.addConfig(self.filename1)
+        self.cache.modifyHash(newid1, "demohash")
+        testString = self.cache.getConfigByHash("demohash")
+        self.assertEqual(testString, testDocument1)
+        return
         
     def testAddDelBarrage(self):
         """
-        add and delete files repeatedly
+        _testAddDelBarrage_
+        
+        Ddd and delete files repeatedly.
         """
         filehandle = open('test-pset1.py', 'rb')
         sampletext = filehandle.read()
@@ -169,11 +220,5 @@ class Test(unittest.TestCase):
             
             os.remove( tmpname )
         
-    
-    def tearDown(self):
-        os.remove( self.filename1 )
-        os.remove( self.filename2 )
-        self.cache.deleteDatabase()
-
 if __name__ == "__main__":
     unittest.main()

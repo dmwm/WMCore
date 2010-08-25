@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-'''
-    _WMConfigCache_
+"""
+_WMConfigCache_
 
-    A simple API for adding/retrieving configurations
-
-'''
-
+A simple API for adding/retrieving configurations
+"""
 
 import WMCore.Database.CMSCouch as CMSCouch
 import urllib
@@ -17,8 +15,8 @@ except:
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.14 2009/09/21 14:47:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: ConfigCache.py,v 1.15 2010/05/08 00:07:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 class WMConfigCache:
     '''
@@ -56,62 +54,57 @@ class WMConfigCache:
         self.database.queueDelete(document)
         self.database.commit()
 
-    def addConfig(self, newConfig ):
-        '''
-            injects a configuration into the cache, returning a tuple with the
-            docid and the current revision, in that order. This
-            function should also test for already existing documents in the DB
-            and if it's there, just return the existing DBID instead of
-            duplicating the rows
-        '''
+    def addConfig(self, newConfig):
+        """
+        _addConfig_
+        
+        Injects a configuration into the cache, returning a tuple with the
+        docid and the current revision, in that order. This function should also
+        test for already existing documents in the DB and if it's there, just
+        return the existing DBID instead of duplicating the rows.
+        """
+        # The newConfig parameter is a URL suitable for passing to urlopen.
+        configString = urllib.urlopen(newConfig).read(-1)
+        configMD5 = hashlib.md5(configString).hexdigest()
 
-        # new_config is a URL suitable for passing to urlopen
-        configString = urllib.urlopen( newConfig ).read(-1)
-        configMD5    = hashlib.md5(configString).hexdigest()
-        # check and see if this file is already in the DB
-        viewresult = self.searchByMD5( configMD5 )
-
-        if (len(viewresult[u'rows']) == 0):
-            # the config we want doesn't exist in the database, create it
-
-            document    = CMSCouch.Document(None,{ "md5_hash": configMD5 })
-            commitInfo = self.database.commitOne( document )
-            if (commitInfo[u'ok'] != True):
+        viewresult = self.searchByMD5(configMD5)
+        if (len(viewresult["rows"]) == 0):
+            # The config we want doesn't exist in the database, create it
+            document = CMSCouch.Document(None, {"md5_hash": configMD5})
+            docsCommitted = self.database.commitOne(document)
+            if len(docsCommitted) != 1:
                 raise RuntimeError
 
-            retval2 = self.database.addAttachment( commitInfo[u'id'],
-                                         commitInfo[u'rev'],
-                                         configString,
-                                         'pickled_script')
-            return ( retval2['id'],
-                     retval2['rev'])
-
-        elif (len(viewresult[u'rows']) == 1):
-            # the config we want is here
-            return (viewresult[u'rows'][0][u'value'][u'_id'],
-                    viewresult[u'rows'][0][u'value'][u'_rev'])
+            retval2 = self.database.addAttachment(docsCommitted[0]["id"],
+                                                  docsCommitted[0]["rev"],
+                                                  configString,
+                                                  "pickled_script")
+            return (retval2["id"], retval2["rev"])
+        elif (len(viewresult["rows"]) == 1):
+            return (viewresult["rows"][0]["value"]["_id"],
+                    viewresult["rows"][0]["value"]["_rev"])
         else:
             raise IndexError, "More than one record has the same MD5"
 
     def addOriginalConfig(self, docid, rev, configPath):
-        ''' Adds the human-readable script to the given id
-            Makes it easy to see what you're doing since
-            the pickled version isn't legible
-        '''
-        configString = urllib.urlopen( configPath ).read(-1)
-        retval = self.database.addAttachment( docid,
-                                         rev,
-                                         configString,
-                                         'original_script')
-        return ( retval['id'],
-                 retval['rev'])
-
+        """
+        _addOriginalConfig_
+        
+        Adds the human-readable script to the given id.  Makes it easy to see
+        what you're doing since the pickled version isn't legible.
+        """
+        configString = urllib.urlopen(configPath).read(-1)
+        retval = self.database.addAttachment(docid, rev, configString,
+                                             "original_script")
+        return (retval["id"], retval["rev"])
 
     def getOriginalConfigByDocID(self, docid):
-        '''retrieves a configuration by the docid'''
-        return self.database.getAttachment( docid, 'original_script' )
+        """
+        _getOriginalConfigByDocID_
 
-
+        Retrieve the human readable form of a config by the doc ID.
+        """
+        return self.database.getAttachment(docid, "original_script")
 
     def getOriginalConfigByHash(self, dochash):
         '''retrieves a configuration by the pset_hash'''
@@ -125,51 +118,49 @@ class WMConfigCache:
                                 ( len(searchResult), dochash) )
 
     def addTweakFile(self, docid, rev, configPath, tweakDict = {"process":{}}):
-        ''' Adds the human-readable script to the given id
-            Makes it easy to see what you're doing since
-            the pickled version isn't legible
-        '''
-        configString = urllib.urlopen( configPath ).read(-1)
-        retval = self.database.addAttachment( docid,
-                                         rev,
-                                         configString,
-                                         'tweak_file')
+        """
+        _addTweakFile_
+        
+        Add a tweak file to the given document/config.
+        """
+        configString = urllib.urlopen(configPath).read(-1)
+        self.database.addAttachment(docid, rev, configString, "tweak_file")
         d = self.getDocumentByDocID(docid)
         d.update({"pset_tweak_details" : tweakDict})
-        commitInfo = self.database.commitOne( d )
-
-        return ( retval['id'],
-                 retval['rev'])
+        retval = self.database.commitOne(d)[0]
+        return (retval["id"], retval["rev"])
 
     def getTweak(self, docid):
         """
         _getTweak_
 
-        retrieve the tweak JSON structure and return it as a PSetTweak
-        instance
-
+        Retrieve the tweak JSON structure and return it as a PSetTweak
+        instance.
         """
         d = self.getDocumentByDocID(docid)
-        return TweakAPI.makeTweakFromJSON(d['pset_tweak_details'])
-
-
+        return TweakAPI.makeTweakFromJSON(d["pset_tweak_details"])
 
     def getTweakFileByDocID(self, docid):
-        '''retrieves a configuration by the docid'''
-        return self.database.getAttachment( docid, 'tweak_file' )
+        """
+        _getTweakFileByDocID_
 
-
+        Retrieves a tweak files for the given document ID.
+        """
+        return self.database.getAttachment(docid, "tweak_file")
 
     def getTweakFileByHash(self, dochash):
-        '''retrieves a configuration by the pset_hash'''
-        searchResult = self.searchByHash(dochash)[u'rows']
-        if (len(searchResult) == 1):
-            # found the configuration
-            return self.getConfigByDocID(searchResult[0]['id'],
-                                         'tweak_file')
-        else:
+        """
+        _getTweakFileByHash_
+
+        Retrieve a tweak file given a pset hash.
+        """
+        searchResult = self.searchByHash(dochash)["rows"]
+        if (len(searchResult) != 1):
             raise IndexError("Too many/few search results (%s) for hash %s" %
-                                ( len(searchResult), dochash) )
+                                (len(searchResult), dochash))
+
+        return self.getConfigByDocID(searchResult[0]["id"],
+                                     "tweak_file")
 
     def getDocumentByDocID(self, docid, revid=None):
         '''retrieves a document by its id'''
@@ -177,19 +168,27 @@ class WMConfigCache:
 
 
     def getConfigByDocID(self, docid):
-        '''retrieves a configuration by the docid'''
-        return self.database.getAttachment( docid,'pickled_script' )
+        """
+        _getConfigByDocID_
 
+        Retrieve a pickled configuration using the document ID.
+        """
+        return self.database.getAttachment(docid, "pickled_script")
 
     def getConfigByHash(self, dochash):
-        '''retrieves a configuration by the pset_hash'''
-        searchResult = self.searchByHash(dochash)[u'rows']
+        """
+        _getConfigByHash_
+
+        Retrieve a pickled configuration using the pset hash.
+        """
+        searchResult = self.searchByHash(dochash)["rows"]
+        
         if (len(searchResult) == 1):
-            # found the configuration
             return self.getConfigByDocID(searchResult[0]['id'])
         else:
             raise IndexError("Too many/few search results (%s) for hash %s" %
-                                ( len(searchResult), dochash) )
+                             (len(searchResult), dochash))
+        return
 
     def getConfigByMD5(self, md5hash):
         '''retrieves a configuration by the md5_hash'''

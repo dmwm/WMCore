@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.44 2010/05/24 17:35:30 metson Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: Service.py,v 1.45 2010/05/27 16:21:11 farinafa Exp $"
+__version__ = "$Revision: 1.45 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -76,6 +76,7 @@ class Service(dict):
         self.setdefault("inputdata", {})
         self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
+        self.setdefault("maxcachereuse", 24.0)
         self.supportVerbList = ('GET', 'POST', 'PUT', 'DELETE')
         # this value should be only set when whole service class uses
         # the same verb ('GET', 'POST', 'PUT', 'DELETE')
@@ -108,10 +109,10 @@ class Service(dict):
             raise WMException(msg)
         
         self['logger'].debug("""Service initialised (%s):
-\t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours)""" %
+\t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours, max reuse %s hours)""" %
                   (self, self["requests"]["host"], self["basepath"],
                    self["requests"]["accept_type"], self["cachepath"],
-                   self["cacheduration"]))
+                   self["cacheduration"], self["maxcachereuse"]))
     
     def _makeHash(self, inputdata, hash):
         """
@@ -239,7 +240,7 @@ class Service(dict):
                 raise he
             else:
                 cache_age = os.path.getmtime(cachefile)
-                t = datetime.datetime.now() - datetime.timedelta(hours = 5 * self.get('cacheduration', 1))
+                t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
                 cache_dead = cache_age < time.mktime(t.timetuple())
                 if self.get('usestalecache', False) and not cache_dead:
                     # If usestalecache is set the previous version of the cache file 

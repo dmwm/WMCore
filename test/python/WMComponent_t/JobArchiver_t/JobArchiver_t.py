@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.10 2010/05/10 18:13:10 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.11 2010/07/01 19:15:38 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import logging
@@ -162,46 +162,12 @@ class JobArchiverTest(unittest.TestCase):
 
         return testJobGroup
 
-    def testA_ComponentTest(self):
+
+
+    def testA_BasicFunctionTest(self):
         """
-        Tests the components, as in sees if they load.
-        Otherwise does nothing.
-        """
-
-        myThread = threading.currentThread()
-
-        config = self.getConfig()
-
-        testJobGroup = self.createTestJobGroup()
-
-        changer = ChangeState(config)
-
-        for job in testJobGroup.jobs:
-            job["outcome"] = "success"
-            job.save()
-
-        changer.propagate(testJobGroup.jobs, 'created', 'new')
-        changer.propagate(testJobGroup.jobs, 'executing', 'created')
-        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
-        changer.propagate(testJobGroup.jobs, 'success', 'complete')
-
-
-
-
-        testJobArchiver = JobArchiver(config)
-        testJobArchiver.prepareToStart()
-
-        logging.debug("Killing")
-        myThread.workerThreadManager.terminateWorkers()
-
-        return
-
-
-    
-
-
-    def testB_BasicFunctionTest(self):
-        """
+        _BasicFunctionTest_
+        
         Tests the components, by seeing if they can process a simple set of closeouts
         """
 
@@ -238,12 +204,9 @@ class JobArchiverTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'success', 'complete')
 
-        testJobArchiver = JobArchiver(config)
-        testJobArchiver.prepareToStart()
+        testJobArchiver = JobArchiverPoller(config = config)
+        testJobArchiver.algorithm()
 
-        logging.debug("Killing")
-        myThread.workerThreadManager.terminateWorkers()
-        
         
         result = myThread.dbi.processData("SELECT wmbs_job_state.name FROM wmbs_job_state INNER JOIN wmbs_job ON wmbs_job.state = wmbs_job_state.id")[0].fetchall()
         
@@ -275,8 +238,10 @@ class JobArchiverTest(unittest.TestCase):
         return
 
 
-    def testC_SpeedTest(self):
+    def testB_SpeedTest(self):
         """
+        _SpeedTest_
+        
         Tests the components, as in sees if they load.
         Otherwise does nothing.
         """
@@ -313,9 +278,6 @@ class JobArchiverTest(unittest.TestCase):
 
         testJobArchiver = JobArchiverPoller(config = config)
         cProfile.runctx("testJobArchiver.algorithm()", globals(), locals(), filename = "testStats.stat") 
-
-        logging.debug("Killing")
-        myThread.workerThreadManager.terminateWorkers()
 
 
         p = pstats.Stats('testStats.stat')

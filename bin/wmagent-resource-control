@@ -2,6 +2,7 @@
 """
 wmagent-resource-control
 
+Utility script for manipulating resource control.
 """
 
 import sys
@@ -17,6 +18,7 @@ def connectToDB():
     """
     _connectToDB_
 
+    Connect to the database specified in the WMAgent config.
     """
     if not os.environ.has_key("WMAGENT_CONFIG"):
         print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
@@ -40,9 +42,12 @@ def createOptionParser():
     """
     _createOptionParser_
 
+    Create an option parser that knows about all the options for manipulating
+    and accessing resource control.
     """
     myOptParser = OptionParser()
-    myOptParser.add_option("-p", "--print-thresholds", dest = "printThresholds",
+    myOptParser.add_option("-p", "--thresholds", dest = "printThresholds",
+                           default = False, action = "store_true",
                            help = "Print out all known thresholds and site information.")
     myOptParser.add_option("--site-name", dest = "siteName",
                            help = "Specify the name of the site")
@@ -65,6 +70,7 @@ def updateResourceControl(resourceControl, optParser, opts):
     """
     _updateResourceControl_
 
+    Manipulate resource control.
     """
     if opts.taskType == None and opts.siteName == None:
         print "You must specify a site name to add a site or a site name and a task type to add a task threshold.\n"
@@ -109,4 +115,24 @@ myOptParser = createOptionParser()
 (options, args) = myOptParser.parse_args()
 connectToDB()
 myResourceControl = ResourceControl()
-updateResourceControl(myResourceControl, myOptParser, options)
+
+if options.printThresholds == True:
+    print "Thresholds and current status for all sites:\n"
+
+    thresholds = myResourceControl.listThresholdsForSubmit()
+
+    for siteName in thresholds.keys():
+        siteThresholds = thresholds[siteName]
+
+        siteSlots = siteThresholds[siteThresholds.keys()[0]]["total_slots"]
+        siteJobs = siteThresholds[siteThresholds.keys()[0]]["total_running_jobs"]        
+        print "%s - %d running, %d slots total:" % (siteName, siteJobs, siteSlots)
+
+        for taskType in siteThresholds.keys():
+            print "  %s - %d running, %d max, %d min" % \
+                  (taskType, siteThresholds[taskType]["task_running_jobs"],
+                   siteThresholds[taskType]["max_slots"],
+                   siteThresholds[taskType]["min_slots"])
+        print ""
+else:
+    updateResourceControl(myResourceControl, myOptParser, options)

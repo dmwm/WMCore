@@ -8,7 +8,7 @@ import os
 import sys
 import threading
 
-from WMCore.WMInit import WMInit
+from WMCore.WMInit import connectToDB
 from WMCore.Configuration import loadConfigurationFile
 
 from WMCore.WMBS.File import File
@@ -24,16 +24,13 @@ from DBSAPI.dbsApi import DbsApi
 
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
-
-    
-
+# The default arguments are set in:
+#   WMCORE/src/python/WMCore/WMSpec/StdSpecs/ReReco.py
 arguments = getTestArguments()
-
-
-
-if not os.environ.has_key("WMAGENT_CONFIG"):
-    print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
-    sys.exit(1)
+arguments["StdJobSplitAlgo"] = "EventBased"
+arguments["StdJobSplitArgs"] = {"events_per_job": 20000}
+arguments["SkimJobSplitAlgo"] = "TwoFileBased"
+arguments["SkimJobSplitArgs"] = {"files_per_job": 1}
 
 if len(sys.argv) != 2:
     print "Usage:"
@@ -42,18 +39,7 @@ if len(sys.argv) != 2:
 else:
     arguments["ProcessingVersion"] = sys.argv[1]
 
-wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
-
-if not hasattr(wmAgentConfig, "CoreDatabase"):
-    print "Your config is missing the CoreDatabase section."
-
-socketLoc = getattr(wmAgentConfig.CoreDatabase, "socket", None)
-connectUrl = getattr(wmAgentConfig.CoreDatabase, "connectUrl", None)
-(dialect, junk) = connectUrl.split(":", 1)
-
-myWMInit = WMInit()
-myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
-                               socketLoc = socketLoc)
+connectToDB()
 
 workloadName = "ReReco-%s" % arguments["ProcessingVersion"]
 workloadFile = "reReco-%s.pkl" % arguments["ProcessingVersion"]

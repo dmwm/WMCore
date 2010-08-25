@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.16 2010/07/15 11:23:06 swakef Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.17 2010/07/20 13:42:34 swakef Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import re
 import os
@@ -26,29 +26,22 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         self.reqMgr = reqMgr
         self.wq = queue
         self.config = config
-        # on restart send updates for last day
-        self.lastReport = int(time.time()) - 24*60*60
 
     def algorithm(self, parameters):
         """
         retrive workload (workspec) from RequestManager
 	    """
-        
-        self.wq.logger.info("Contacting Request manager for more work %s" % self.reqMgr.__class__)
-        if self.retrieveCondition():
-            try:
-                workLoads = self.retrieveWorkLoadFromReqMgr()
-            except Exception, ex:
-                msg = "Error contacting RequestManager: %s" % str(ex)
-                self.wq.logger.warning(msg)
-                return
-            if not workLoads:
-                self.wq.logger.info("No work retrieved")
-                return
-            self.wq.logger.debug("work load url list %s" % workLoads.__class__.__name__)
+        self.wq.logger.info("Contacting Request manager for more work")
+        work = 0
+        try:
+            workLoads = self.retrieveWorkLoadFromReqMgr()
+        except Exception, ex:
+            workLoads = {}
+            msg = "Error contacting RequestManager: %s" % str(ex)
+            self.wq.logger.warning(msg)
+        if workLoads:
             self.wq.logger.debug(workLoads)
             #TODO: Same functionality as WorkQueue.pullWork() - combine
-            work = 0
             for reqName, workLoadUrl in workLoads.items():
                 try:
                     self.wq.logger.info("Processing request %s" % reqName)
@@ -56,8 +49,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     wmspec.load(workLoadUrl)
                     units = self.wq._splitWork(wmspec)
 
-                    # Process each request in a new transaction - performance hit?
-                    # Done as reporting back to ReqMgr is done per request not bulk
+                    # Process each request in a transaction - isolate bad req's
                     with self.wq.transactionContext():
                         for unit in units:
                             self.wq._insertWorkQueueElement(unit, requestName = reqName)
@@ -65,10 +57,6 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                             self.reqMgr.putWorkQueue(reqName, 
                                             self.config.get('monitorURL', 'NoMonitor'))
                         except Exception, ex:
-                            # added for debuging but should be removed since remote call 
-                            # doesn't make send to trace the stack.
-                            #import traceback
-                            #self.wq.logger.error("Something Wrong %s" % traceback.format_exc())
                             self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
                             self.wq.logger.error('Request "%s" not queued' % reqName)
                             raise
@@ -76,16 +64,13 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     work += len(units)
                 except Exception, ex:
                     self.wq.logger.exception("Error processing request %s" % reqName)
-                
-            self.logger.info("%s element(s) obtained from RequestManager" % work)
 
-#TODO uncomment this and add proper error handling when RequestMgr support this function            
-#            try:
-#                self.reportToReqMgr()
-#            except:
-#                # TODO: needs proper error handling
-#                self.logger.info("""Couldn't Report back to requestManager 
-#                                    - Need proper Error Handling""")
+        self.logger.info("%s element(s) obtained from RequestManager" % work)
+
+        try:
+            self.reportToReqMgr()
+        except:
+            pass # error message already logged
         return
 
 
@@ -119,22 +104,42 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
     def reportToReqMgr(self):
         """Report request status to ReqMgr"""
         now = int(time.time())
-        try:
-            elements = self.wq.status(after = self.lastReport)
-            for ele in elements:
-                args = {'percent_complete' : ele['PercentComplete'],
-                        'percent_success' : ele['PercentSuccess']}
-                self.reqMgr.reportRequestProgress(ele['RequestName'], **args)
+        updated = []
 
-                status = None
-                if ele.isComplete():
-                    status = 'completed'
-                elif ele.isFailed():
-                    status = 'failed'
-                elif ele.isRunning():
-                    status = 'running'
-                self.reqMgr.reportRequestStatus(ele['RequestName'], status)
-        except RuntimeError, ex:
-            self.wq.logger.warning('Error reporting to ReqMgr: %s' % str(ex))
-        else:
-            self.lastReport = now
+        elements = self.wq.status(reqMgrUpdateNeeded = True)
+        if not elements:
+            return
+
+        for ele in elements:
+            try:
+                status = self.reqMgrStatus(ele)
+                if status:
+                    self.reqMgr.reportRequestStatus(ele['RequestName'],
+                                                    status)
+                if ele['PercentComplete'] or ele['PercentSuccess']:
+                    args = {'percent_complete' : ele['PercentComplete'],
+                            'percent_success' : ele['PercentSuccess']}
+                    self.reqMgr.reportRequestProgress(ele['RequestName'],
+                                                      **args)
+
+                updated.append(ele['Id'])
+
+            except RuntimeError, ex:
+                msg = "Error updating ReqMgr about element %s: %s"
+                self.wq.logger.warning(msg % (ele['Id'], str(ex)))
+        try:
+            self.wq.setReqMgrUpdate(now, updated)
+        except StandardError:
+            msg = "Error saving reqMgr status update to db"
+            self.wq.logger.exception(msg)
+
+    def reqMgrStatus(self, ele):
+        """Map WorkQueue Status to that reported to ReqMgr"""
+        status = None
+        if ele.isComplete():
+            status = 'completed'
+        elif ele.isFailed():
+            status = 'failed'
+        elif ele.isRunning():
+            status = 'running'
+        return status

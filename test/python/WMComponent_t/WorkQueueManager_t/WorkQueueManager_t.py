@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: WorkQueueManager_t.py,v 1.3 2010/02/13 14:23:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueManager_t.py,v 1.4 2010/07/20 13:42:36 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import logging
@@ -23,7 +23,11 @@ from WMCore.Agent.Configuration import loadConfigurationFile
 from WMQuality.TestInit   import TestInit
 
 from WMComponent.WorkQueueManager.WorkQueueManager import WorkQueueManager
-
+from WMComponent.WorkQueueManager.WorkQueueManagerReqMgrPoller import WorkQueueManagerReqMgrPoller
+from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
+from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
+from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
+from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
 
 class WorkQueueManagerTest(unittest.TestCase):
     """
@@ -47,6 +51,7 @@ class WorkQueueManagerTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database", "WMCore.WMBS", 
                                                  "WMCore.MsgService", "WMCore.ThreadPool"],
                                 useDefault = False)
+        self.workDir = self.testInit.generateWorkDir()
 
     def tearDown(self):
         """
@@ -100,6 +105,81 @@ class WorkQueueManagerTest(unittest.TestCase):
         myThread.workerThreadManager.terminateWorkers()
 
         return
+
+    def setupGlobalWorkqueue(self, spec):
+        """Return a workqueue instance"""
+        dataset = spec.taskIterator().next().getInputDatasetPath()
+        inputDataset = spec.taskIterator().next().inputDataset()
+        mockDBS = MockDBSReader('http://example.com', dataset)
+        dbsHelpers = {'http://example.com' : mockDBS,
+                      'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet' : mockDBS,
+                      inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset),
+                      }
+
+        globalQ = globalQueue(CacheDir = self.workDir,
+                           NegotiationTimeout = 0,
+                           QueueURL = 'global.example.com',
+                           DBSReaders = dbsHelpers)
+        globalQ.phedexService = MockPhedexService(dataset)
+        return globalQ
+
+    def createProcessingSpec(self):
+        """Return a processing spec"""
+        wf = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
+        wf.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
+        wf.save(wf.specUrl())
+        return wf
+
+    def testReqMgrPollerAlgorithm(self):
+        """ReqMgr reporting"""
+        # don't actually talk to ReqMgr - mock it.
+
+        class fakeReqMgr():
+            """Fake ReqMgr stuff"""
+            def __init__(self, spec):
+                self.spec = spec
+                self.count = 0
+                self.status= {}
+
+            def getAssignment(self, team):
+                if not self.count:
+                    self.count += 1
+                    return {str(self.count) : self.spec.specUrl()}
+                else:
+                    return {}
+
+            def putWorkQueue(self, reqName, url):
+                self.status[reqName] = 'assigned-prodmgr'
+
+            def reportRequestStatus(self, name, status):
+                self.status[name] = status
+
+            def reportRequestProgress(self, name, args):
+                pass
+
+        spec = self.createProcessingSpec()
+        globalQ = self.setupGlobalWorkqueue(spec)
+        reqMgr = fakeReqMgr(spec)
+        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
+
+        # 1st run should pull a request
+        reqPoller.algorithm({})
+        self.assertEqual(len(globalQ), 1)
+        # local queue acquires and runs
+        work = globalQ.getWork({'SiteA' : 10000, 'SiteB' : 10000})
+        globalQ.setStatus('Acquired', 1)
+        self.assertEqual(len(globalQ), 0)
+        reqPoller.algorithm({})
+        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'running')
+
+        # finish work
+        globalQ.setStatus('Done', 1)
+        reqPoller.algorithm({})
+        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
+
+        # reqMgr problems should not crash client
+        reqPoller = WorkQueueManagerReqMgrPoller(None, globalQ, {})
+        reqPoller.algorithm({})
 
 if __name__ == '__main__':
     unittest.main()

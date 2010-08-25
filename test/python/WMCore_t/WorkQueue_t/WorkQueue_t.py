@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.38 2010/06/18 15:12:53 swakef Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.39 2010/07/20 13:42:36 swakef Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import unittest
 import os
@@ -444,6 +444,7 @@ class WorkQueueTest(WorkQueueTestCase):
             os.unlink(specfile)
         except OSError:
             pass
+
 
 if __name__ == "__main__":
     unittest.main()

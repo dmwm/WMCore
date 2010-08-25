@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.121 2010/07/19 12:23:00 swakef Exp $"
-__version__ = "$Revision: 1.121 $"
+__revision__ = "$Id: WorkQueue.py,v 1.122 2010/07/20 13:42:36 swakef Exp $"
+__version__ = "$Revision: 1.122 $"
 
 
 import time
@@ -226,6 +226,15 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction())
         if not affected:
             raise RuntimeError, "Priority not changed: No matching elements"
+
+    def setReqMgrUpdate(self, when, *ids):
+        """Set ReqMgr update time to when for ids"""
+        updateAction = self.daofactory(classname = "WorkQueueElement.UpdateReqMgr")
+        affected = updateAction.execute(when, ids,
+                             conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+        if not affected:
+            raise RuntimeError, "ReqMgr status not changed: No matching elements"
 
     def getWork(self, siteJobs, pullingQueueUrl = None):
         """ 
@@ -451,7 +460,7 @@ class WorkQueue(WorkQueueBase):
 
 
     def status(self, status = None, before = None, after = None, elementIDs = None,
-               dictKey = None, syncWithWMBS = False):
+               dictKey = None, syncWithWMBS = False, reqMgrUpdateNeeded = False):
         """Return status of elements
            if given only return elements updated since the given time
         """
@@ -460,6 +469,7 @@ class WorkQueue(WorkQueueBase):
                               before = before,
                               status = status,
                               elementIDs = elementIDs,
+                              reqMgrUpdateNeeded = reqMgrUpdateNeeded,
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 

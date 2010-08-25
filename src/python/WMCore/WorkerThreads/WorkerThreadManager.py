@@ -5,8 +5,8 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.8 2009/02/05 22:40:39 jacksonj Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.9 2009/08/13 00:05:16 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -30,16 +30,23 @@ class WorkerThreadManager:
         self.lock = threading.Lock()
         self.lock.acquire()
         self.activeThreadCount = 0
+        self.slavecounter = 0
+        self.slavelist = []
         self.lock.release()
         logging.info("Started")
         return
     
-    def slaveTerminateCallback(self):
+    def slaveTerminateCallback(self, slaveid):
         """
         Callback function invoked by terminated slave threads
         """
         self.lock.acquire()
-        self.activeThreadCount -= 1
+        try:
+            self.slavelist.remove("threadmanager-slave%s" % slaveid)
+        except:
+            pass  
+        else:
+            self.activeThreadCount -= 1
         self.lock.release()
     
     def prepareWorker(self, worker, idleTime):
@@ -49,6 +56,11 @@ class WorkerThreadManager:
         # Work timing
         worker.idleTime = idleTime
         worker.component = self.component
+        self.lock.acquire()
+        self.slavecounter += 1
+        worker.slaveid = self.slavecounter
+        self.lock.release()
+        
         
         # Thread synchronisation
         worker.notifyTerminate = self.terminateSlaves
@@ -80,6 +92,8 @@ class WorkerThreadManager:
         # startup failure
         self.lock.acquire()
         self.activeThreadCount += 1
+        workerThread.name = "threadmanager-slave%s" % worker.slaveid
+        self.slavelist.append(workerThread.name)
         self.lock.release()
         
         # Actually start the thread
@@ -100,10 +114,41 @@ class WorkerThreadManager:
         while not finished:
             self.lock.acquire()
             msg = "Waiting for %s worker threads to terminate"
-            msg = msg % self.activeThreadCount
-            logging.info(msg)
+            logging.info(msg % self.activeThreadCount)
+            logging.debug("\n slavelist is %s" % self.slavelist)
+            logging.debug("\n threadlist is %s" % threading.enumerate())
+            
             if self.activeThreadCount == 0:
                 finished = True
+            else:
+                # check to make sure we aren't waiting on dead threads
+                threadlist  = threading.enumerate()
+                # we want to look for all the slavenames
+                #  that correspond to nonexistant or dead threads
+                # also, I realize this is O(N^2), but my brain hurts too hard
+                #  to do it nicer
+                
+                # this (should be) race-proof. my thoughts:
+                #  this is in a lock, the only other places that modify
+                #  activeThreadCount are within locks
+                # everywhere else that tries to modify active thread count
+                # also does it with a try-except-else around removing from
+                # slavelist. Slavelist becomes our synchronization
+                toRemove = []
+                for slavename in self.slavelist:
+                    found = False
+                    for threadobj in threadlist:
+                        if ((hasattr(threadobj, 'name')) and (slavename == threadobj.name) and (threadobj.isAlive())):
+                            found = True
+                    if found == False:
+                        # the slave we wanted wasn't running
+                        try: 
+                            self.slavelist.remove(slavename)
+                        except Exception, ex:
+                            print "couldn't remove thread.. %s " % ex
+                            pass
+                        else:
+                            self.activeThreadCount -= 1
             self.lock.release()
             time.sleep(5)
         logging.info("All worker threads terminated")

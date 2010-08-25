@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.23 2010/07/22 15:41:33 mnorman Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.24 2010/07/23 13:58:25 mnorman Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import unittest
 import threading
@@ -58,6 +58,7 @@ from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
 
 
 def parseJDL(jdlLocation):
@@ -381,9 +382,10 @@ class JobSubmitterTest(unittest.TestCase):
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        arguments = getTestArguments()
+        #arguments = getTestArguments()
 
-        workload = rerecoWorkload("Tier1ReReco", arguments)
+        #workload = rerecoWorkload("Tier1ReReco", arguments)
+        workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
 
         
@@ -423,14 +425,14 @@ class JobSubmitterTest(unittest.TestCase):
                 batch    = index - 1
                 argValue = 0
             
-            inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'Tier1ReReco-Sandbox.tar.bz2'),
-                                              os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'batch_%i_0/JobPackage.pkl' % (batch)),
+            inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/TestWorkload', 'TestWorkload-Sandbox.tar.bz2'),
+                                              os.path.join(self.testDir, 'workloadTest/TestWorkload', 'batch_%i_0/JobPackage.pkl' % (batch)),
                                               os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
             self.assertEqual(job.get('transfer_input_files', None),
                              inputFileString)
             # Arguments use a list starting from 0
             self.assertEqual(job.get('arguments', None),
-                             'Tier1ReReco-Sandbox.tar.bz2 %i' % (argValue))
+                             'TestWorkload-Sandbox.tar.bz2 %i' % (argValue))
 
             if site:
                 self.assertEqual(job.get('globusscheduler', None), site)

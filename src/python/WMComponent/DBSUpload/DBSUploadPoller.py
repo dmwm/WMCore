@@ -24,8 +24,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.21 2010/05/14 16:40:31 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.22 2010/05/14 18:56:55 mnorman Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import threading
 import logging
@@ -258,12 +258,11 @@ class DBSUploadPoller(BaseWorkerThread):
                 files = []
                 algo    = createAlgoFromInfo(info = fileList[datasetAlgo][0])
                 dataset = createDatasetFromInfo(info = fileList[datasetAlgo][0])
+
+                files = addToBuffer.loadDBSBufferFilesBulk(fileObjs = fileList[datasetAlgo])
                 
-                for f in fileList[datasetAlgo]:
-                    dbsfile = DBSBufferFile(id=f['ID'])
-                    dbsfile.load(parentage=1)
-                    fileLFNs.append(dbsfile["lfn"])
-                    files.append(dbsfile)
+                for f in files:
+                    fileLFNs.append(f["lfn"])
 
 
 

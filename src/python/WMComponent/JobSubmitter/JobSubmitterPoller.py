@@ -7,8 +7,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.6 2010/01/22 17:44:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.7 2010/01/22 22:09:19 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -31,7 +31,7 @@ from WMCore.WMSpec.WMWorkload                 import WMWorkload, WMWorkloadHelpe
 from WMCore.JobStateMachine.ChangeState       import ChangeState
 from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool           import ProcessPool
-
+from WMCore.ResourceControl.ResourceControl   import ResourceControl
 
 
 
@@ -67,6 +67,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.session = None
         self.schedulerConfig = {}
         self.config = config
+        self.types = []
+
+        #Libraries
+        self.resourceControl = ResourceControl()
 
         BaseWorkerThread.__init__(self)
 
@@ -101,6 +105,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             #myThread.transaction.rollback()
             raise
 
+
     def runSubmitter(self):
         """
         _runSubmitter_
@@ -112,7 +117,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.setLocations()
         self.pollJobs()
         jobList = self.getJobs()
-        jobList = self.setJobLocations(jobList)
+        #jobList = self.setJobLocations(jobList)
         jobList = self.grabTask(jobList)
         self.submitJobs(jobList)
 
@@ -131,15 +136,28 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         #Then get all locations
         locationList            = self.daoFactory(classname = "Locations.List")
-        locationSlots           = self.daoFactory(classname = "Locations.GetJobSlots")
+        #locationSlots           = self.daoFactory(classname = "Locations.GetJobSlots")
+
+        #Find types
+        typeFinder = self.daoFactory(classname = "Subscriptions.GetSubTypes")
+        self.types = typeFinder.execute()
 
         locations = locationList.execute()
 
         for loc in locations:
-            location = loc[1]  #We need this because locations are returned as a list
-            value = locationSlots.execute(siteName = location)
-            self.slots[location] = value
-
+            location = loc[1] #It's just a format issue
+            self.slots[location] = {}
+            slotList = self.resourceControl.getThresholds(siteNames = location)
+            slots = 0
+            for type in self.types:
+                #Blank the slots
+                if not type in self.slots[location].keys():
+                    self.slots[location][type] = 0
+            for entry in slotList:
+                entryName = entry.get('threshold_name', None)
+                if entryName.endswith('Threshold'):
+                    threshType = entryName.split('Threshold')[0]  #Grab the first part
+                    self.slots[location][threshType] = entry.get('threshold_value', 0)
         return
 
     def getJobs(self):
@@ -148,50 +166,42 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         This uses WMBS to extract a list of jobs in the 'Created' state
         """
-
-        getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
-        jobList = getJobs.execute(state = "Created")
-
-        return jobList
-
-    def setJobLocations(self, jobList, whiteList = [], blackList = []):
-        """
-        _setJobLocations
-
-        Set the locations for each job based on current knowledge
-        """
-
         newList = []
 
-        for jid in jobList:
-            job = Job(id = jid)
-            location = self.findSiteForJob(job)
-            job["location"] = location
-            newList.append(job)
+        getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+        for type in self.types:
+            jobList   = getJobs.execute(state = 'Created', jobType = type)
+            for jobID in jobList:
+                job = Job(id = jobID)
+                job.load()
+                job["location"] = self.findSiteForJob(job, type)
+                self.sites[job["location"]][type] += 1
+                newList.append(job)
 
         return newList
 
-    def findSiteForJob(self, job):
+    def findSiteForJob(self, job, type):
         """
         _findSiteForJob_
 
         This searches all known sites and finds the best match for this job
         """
 
-        #myThread = threading.currentThread()
+        myThread = threading.currentThread()
 
         #Assume that jobSplitting has worked, and that every file has the same set of locations
-        sites = list(job.getFiles()[0]['locations'])
+        sites = list(job.getFileLocations())
 
         tmpSite  = ''
-        tmpSlots = -1
+        tmpSlots = -999999
         for loc in sites:
             if not loc in self.slots.keys() or not loc in self.sites.keys():
                 logging.error('Found job for unknown site %s' %(loc))
-                #logging.error('ABORT: Am not processing jobGroup %i' %(wmbsJobGroup.id))
+                logging.error(self.slots)
+                logging.error(self.sites)
                 return
-            if self.slots[loc] - self.sites[loc] > tmpSlots:
-                tmpSlots = self.slots[loc] - self.sites[loc]
+            if self.slots[loc][type] - self.sites[loc][type] > tmpSlots:
+                tmpSlots = self.slots[loc][type] - self.sites[loc][type]
                 tmpSite  = loc
 
         return tmpSite
@@ -215,9 +225,11 @@ class JobSubmitterPoller(BaseWorkerThread):
         #Get all jobs object
         jobFinder  = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerSite")
         for location in locations:
-            value = int(jobFinder.execute(location = location, states = jobStates).values()[0])
-            self.sites[location] = value
-            logging.info("There are now %i jobs for site %s" %(self.sites[location], location))
+            self.sites[location] = {}
+            for type in self.types:
+                value = int(jobFinder.execute(location = location, states = jobStates, type = type).values()[0])
+                self.sites[location][type] = value
+                logging.info("There are now %s jobs for site %s" %(self.sites[location], location))
             
         #You should now have a count of all jobs in self.sites
 

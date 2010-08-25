@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.33 2009/11/19 12:35:59 metson Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Root.py,v 1.34 2009/11/30 12:43:12 diego Exp $"
+__version__ = "$Revision: 1.34 $"
 
 # CherryPy
 import cherrypy
@@ -95,7 +95,8 @@ class Root(WMObject):
 
         # SecurityModule config
         if hasattr(self.secconfig, 'enabled'):
-            cpconfig.update({'tools.sessions.on': True})
+            cpconfig.update({'tools.sessions.on': True,
+                             'tools.sessions.name': 'oidconsumer_sid'})
             tools.cernoid = OidConsumer(self.secconfig)
             if not self.secconfig.use_decorators:
                 # do not enable it if you intend to use auth decorators

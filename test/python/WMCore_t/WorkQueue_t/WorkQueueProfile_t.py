@@ -25,10 +25,16 @@ class WorkQueueProfileTest(WorkQueueTestCase):
     _WorkQueueTest_
     
     """
-    __integration__ = "These tests only work at FNAL."
+
+    
     def setUp(self):
         """
         If we dont have a wmspec file create one
+        
+        Warning: For the real profiling test including 
+        spec generation. need to use real spec instead of 
+        using emulator generated spec which doesn't include
+        couchDB access and cmssw access  
         """
         WorkQueueTestCase.setUp(self)
         self.specGenerator = WMSpecGenerator()

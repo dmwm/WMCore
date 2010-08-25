@@ -287,7 +287,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(2, len(self.globalQueue))
 
         # check work isn't passed down to site without subscription
         self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}), 0)
@@ -335,7 +335,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(2, len(self.globalQueue))
         self.globalQueue.updateLocationInfo()
         # pull to local queue
         self.globalQueue.updateLocationInfo()
@@ -377,7 +377,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Add work to top most queue
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(1, len(self.globalQueue))
+        self.assertEqual(2, len(self.globalQueue))
         self.globalQueue.updateLocationInfo()
 
         # pull to local queue

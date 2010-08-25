@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.11 2010/01/14 05:44:41 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.12 2010/02/03 21:46:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import threading
@@ -57,6 +57,8 @@ class ThreadPoolTest(unittest.TestCase):
 
         Test subscription of a component.
         """
+        assert False
+
         myThread = threading.currentThread()
         # create a 'fake' component that contains a arg dictionary.
         component = Dummy()

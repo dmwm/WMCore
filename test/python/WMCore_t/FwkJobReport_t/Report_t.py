@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.1 2010/03/23 21:26:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Report_t.py,v 1.2 2010/03/31 20:36:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import os
@@ -44,7 +44,7 @@ class ReportTest(unittest.TestCase):
         Figure out the location of the XML report produced by CMSSW.
         """
         self.xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWReport.xml")
+                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         return
 
     # json/dejson

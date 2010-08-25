@@ -20,8 +20,8 @@ https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest
 
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.3 2010/02/03 17:20:49 maxa Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.4 2010/02/04 17:50:12 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 
@@ -29,7 +29,7 @@ import os
 import time
 import logging # import WMCore.WMLogging
 from WMCore.Wrappers import JsonWrapper
-from WMCore.WorkQueue.WorkQueue import globalQueue
+from WMCore.WorkQueue.WorkQueue import WorkQueue
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from WMCore.DAOFactory import DAOFactory
 
@@ -45,8 +45,7 @@ class WorkQueueMonitorService(ServiceInterface):
         self.model.addMethod("GET", "test", self.testMethod)
         self.model.addMethod("GET", "testDb", self.testDb)
 
-        # from Seangchan (WorkQueueService)
-        self.wq = globalQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
+        self.wq = WorkQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
         self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after", 
                                         "elementIDs", "subs", "dictKey"])
         

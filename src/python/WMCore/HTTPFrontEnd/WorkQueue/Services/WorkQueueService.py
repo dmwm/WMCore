@@ -8,7 +8,7 @@ from WMCore.Wrappers import JsonWrapper
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 
 #TODO: needs to point to the global workqueue if it can make it for the both
-from WMCore.WorkQueue.WorkQueue import globalQueue
+from WMCore.WorkQueue.WorkQueue import WorkQueue
 
 class WorkQueueService(ServiceInterface):
     """

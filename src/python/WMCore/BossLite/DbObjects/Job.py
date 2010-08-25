@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.6 2010/04/21 11:03:00 spigafi Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: Job.py,v 1.7 2010/04/22 14:32:05 spigafi Exp $"
+__revision__ = "$Revision: 1.7 $"
 
 
 # imports
@@ -15,11 +15,11 @@ import logging
 from WMCore.Services.UUID import makeUUID
 
 
-from WMCore.BossLite.Common.Exceptions    import JobError, DbError
+from WMCore.BossLite.Common.Exceptions    import JobError # , DbError
 from WMCore.BossLite.DbObjects.DbObject   import DbObject, dbTransaction
 from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 
-from WMCore.DAOFactory   import DAOFactory
+# from WMCore.DAOFactory   import DAOFactory
 
 class Job(DbObject):
     """
@@ -169,7 +169,7 @@ class Job(DbObject):
     ######################################################################
 
     @dbTransaction
-    def load(self):
+    def load(self, deep = True):
         """
         Load the job info from the database
         """
@@ -225,7 +225,8 @@ class Job(DbObject):
         runJob = RunningJob(parameters = parameters)
         runJob.load()
 
-        if not runJob.exists():  # Not happy with this call because it's slow.  Maybe use ID?
+        # Not happy with this call because it's slow.  Maybe use ID?
+        if not runJob.exists():  
             self.runningJob = None
         else:
             self.runningJob = runJob
@@ -337,14 +338,14 @@ class Job(DbObject):
         elif self.valid(['name']):
             value  = self.data['name']
             column = 'name'
-
-        # TODO: Find some way to do job_id:task_id
+            
+            # TODO: Find some way to do job_id:task_id
         elif self.valid(['jobId']):
             value  = self.data['jobId']
             column = 'job_id'
 
         else:
-           raise JobError("The following job instance cannot be removed," + \
+            raise JobError("The following job instance cannot be removed," + \
                      " since it is not completely specified: %s" % self) 
 
         action.execute(value = value,
@@ -356,166 +357,9 @@ class Job(DbObject):
         self.existsInDataBase = False
 
         # return number of entries removed
+        # I don't like this (NdFilippo)
         return 1
 
-
-
-
-
-
-
-###############################################################################
-    # ACHTUNG!
-    # This is where I stopped doing anything
-###############################################################################
-
-#    def save(self, db):
-#        """
-#        save complete job object in database
-#        """
-#
-#        # verify data is complete
-#        if not self.valid(['jobId', 'taskId', 'name']):
-#            raise JobError("The following job instance cannot be saved," + \
-#                     " since it is not completely specified: %s" % self)
-#
-#        # insert job
-#        try:
-#
-#            # create entry in database
-#            status = db.insert(self)
-#            if status != 1:
-#                raise JobError("Cannot insert job %s" % self)
-#
-#            # create entry for runningJob
-#            if self.runningJob is not None:
-#                self.runningJob['jobId'] = self.data['jobId']
-#                self.runningJob['taskId'] = self.data['taskId']
-#                self.runningJob['submission'] = self.data['submissionNumber']
-#                self.runningJob.save( db )
-#
-#        # database error
-#        except DbError, msg:
-#            raise JobError(str(msg))
-#
-#        # update status
-#        self.existsInDataBase = True
-#
-#        return status
-
-    ##########################################################################
-
-    #def remove(self, db):
-    #    """
-    #    remove job object from database
-    #    """
-    #
-    #    # verify data is complete
-    #    if not self.valid(['jobId', 'taskId']):
-    #        raise JobError("The following job instance cannot be removed," + \
-    #                 " since it is not completely specified: %s" % self)
-    #
-    #    # remove from database
-    #    try:
-    #        status = db.delete(self)
-    #        if status < 1:
-    #            raise JobError("Cannot remove job %s" % self)
-    #
-    #    # database error
-    #    except DbError, msg:
-    #        raise JobError(str(msg))
-    #
-    #    # update status
-    #    self.existsInDataBase = False
-    #
-    #    # return number of entries removed
-    #    return status
-
-    ##########################################################################
-
-    #def update(self, db, deep = True):
-    #    """
-    #    update job information in database
-    #    """
-    #
-    #    # verify if the object exists in database
-    #    if not self.existsInDataBase:
-    #
-    #        # no, use save instead of update
-    #        return self.save(db)
-    #
-    #    # verify data is complete
-    #    if not self.valid(['jobId', 'taskId']):
-    #        raise JobError("The following job instance cannot be updated," + \
-    #                 " since it is not completely specified: %s" % self)
-    #
-    #    # update it on database
-    #    try:
-    #        status = db.update(self)
-    #
-    #        # update running job if associated
-    #        if deep and self.runningJob is not None:
-    #            if self.data['submissionNumber'] != \
-    #                   self.runningJob['submission']:
-    #                raise JobError(
-    #                    "Running instance of job %s.%s with invalid " \
-    #                    + " submission number: %s instead of %s " \
-    #                    % ( self.data['jobId'], self.data['taskId'], \
-    #                        self.runningJob['submission'], \
-    #                        self.data['submissionNumber'] ) )
-    #            status += self.runningJob.update(db)
-    #
-    #    # database error
-    #    except DbError, msg:
-    #        raise JobError(str(msg))
-    #
-    #    # return number of entries updated.
-    #    return status
-
-
-
-
-
-   ##########################################################################
-
-#    def load(self, db, deep = True):
-#        """
-#        load information from database
-#        """
-#
-#        # verify data is complete
-#        if not self.valid(['id']) and not self.valid(['name']) and \
-#           not self.valid(['jobId']):
-#            raise JobError("The following job instance cannot be loaded" + \
-#                     " since it is not completely specified: %s" % self)
-#
-#        # get information from database based on template object
-#        try:
-#            objects = db.select(self)
-#
-#        # database error
-#        except DbError, msg:
-#            raise JobError(str(msg))
-#
-#        # since required data is a key, it should be a single object list
-#        if len(objects) == 0:
-#            raise JobError("No job instances corresponds to the," + \
-#                     " template specified: %s" % self)
-#
-#        if len(objects) > 1:
-#            raise JobError("Multiple job instances corresponds to the" + \
-#                     " template specified: %s" % self)
-#
-#        # copy fields
-#        for key in self.fields:
-#            self.data[key] = objects[0][key]
-#
-#        # get associated running job if it exists
-#        if deep:
-#            self.getRunningInstance(db)
-#
-#        # update status
-#        self.existsInDataBase = True
 
     ##########################################################################
 
@@ -544,106 +388,4 @@ class Job(DbObject):
         
         # store instance
         self.runningJob = runningJob
-
-    ##########################################################################
-
-#    def newRunningInstance(self, runningJob, db):
-#        """
-#        set currently running job
-#        """
-#
-#        # close previous running instance (if any)
-#        self.closeRunningInstance(db)
-#
-#        # update job id and submission counter
-#        runningJob['jobId'] = self.data['jobId']
-#        runningJob['taskId'] = self.data['taskId']
-#        self.data['submissionNumber'] += 1
-#        runningJob['submission'] = self.data['submissionNumber']
-#        runningJob.existsInDataBase = False
-#        
-#        # store instance
-#        self.runningJob = runningJob
-
-    ##########################################################################
-#
-#    def getRunningInstance(self, db):
-#        """
-#        get running job information
-#        """
-#
-#        # create template
-#        template = RunningJob()
-#        template['jobId'] = self['jobId']
-#        template['taskId'] = self['taskId']
-#        template['submission'] = self['submissionNumber']
-#        # template['closed'] = "N"
-#
-#        # get running job
-#        runningJobs = db.select(template)
-#
-#        # no running instance
-#        if runningJobs == []:
-#            self.runningJob = None
-#
-#        # one running instance
-#        elif len(runningJobs) == 1:
-#            self.runningJob = runningJobs[0]
-#
-#        # oops, more than one!
-#        else:
-#            raise JobError("Multiple running instances of job %s : %s" % \
-#                           (self['jobId'], len(runningJobs)))
-#
-    ##########################################################################
-#
-#    def updateRunningInstance(self, db, notSkipClosed = True):
-#        """
-#        update current running job
-#        """
-#
-#        # check consistency
-#        if self.runningJob['taskId'] != self.data['taskId'] or \
-#               self.runningJob['jobId'] != self.data['jobId'] or \
-#               self.runningJob['submission'] != self.data['submissionNumber'] :
-#            raise JobError( "Running instance of job %s.%s with invalid " \
-#                            + " submission number: %s instead of %s " \
-#                            % ( self.data['jobId'], self.data['taskId'], \
-#                                self.runningJob['submission'], \
-#                                self.data['submissionNumber'] ) )
-#
-#        # update
-#        self.runningJob.update(db, notSkipClosed)
-        
-    ##########################################################################
-
-#    def closeRunningInstance(self, db):
-#        """
-#        close the running instance.
-#        it should be only one but ignore if there are more than one...
-#        """
-#
-#        # do not do anything if the job is not completely defined
-#        if not self.valid(['jobId', 'taskId']):
-#            return
-#
-#        # create template
-#        template = RunningJob()
-#        template['jobId'] = self['jobId']
-#        template['taskId'] = self['taskId']
-#        template['closed'] = "N"
-#
-#        # get running job
-#        runningJobs = db.select(template)
-#
-#        # do for all of them (should be one...)
-#        for job in runningJobs:
-#
-#            job["closed"] = "Y"
-#            job.update(db)
-
-
-
-
-
 

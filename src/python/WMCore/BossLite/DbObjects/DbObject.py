@@ -5,8 +5,8 @@ _DbObject_
 Base class for all objects in the database
 """
 
-__version__ = "$Id: DbObject.py,v 1.2 2010/03/30 15:18:43 mnorman Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: DbObject.py,v 1.3 2010/04/22 14:32:05 spigafi Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 import logging
 import traceback
@@ -18,7 +18,12 @@ def dbTransaction(func):
     """
     Basic transaction decorator function
     """
+    
     def wrapper(self, *args, **kwargs):
+        """
+        Decorator for db transaction
+        """
+        
         self.existingTransaction = self.beginTransaction()
         try:
             res = func(self, *args, **kwargs)
@@ -183,7 +188,7 @@ class DbObject(WMConnectionBase):
 
     ##########################################################################
 
-    def save(self, db):
+    def save(self):
         """
         save object into database
         """
@@ -191,7 +196,7 @@ class DbObject(WMConnectionBase):
 
     ##########################################################################
 
-    def load(self, db, deep = True):
+    def load(self, deep = True):
         """
         load object from database
         """
@@ -199,7 +204,7 @@ class DbObject(WMConnectionBase):
 
     ##########################################################################
 
-    def remove(self, db):
+    def remove(self):
         """
         remove object from database
         """
@@ -207,7 +212,7 @@ class DbObject(WMConnectionBase):
 
     ##########################################################################
 
-    def update(self, db, deep = True):
+    def update(self, deep = True):
         """
         update object in database
         """

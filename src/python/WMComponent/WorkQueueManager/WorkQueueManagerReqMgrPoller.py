@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.11 2010/06/25 16:14:57 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.12 2010/06/25 18:47:55 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import re
 import os
@@ -63,7 +63,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                             self.wq._insertWorkQueueElement(unit, requestName = reqName)
                         try:
                             self.reqMgr.putWorkQueue(reqName, 
-                                            self.wq.params.get('monitorURL', ''))
+                                            self.config.get('monitorURL', 'NoMonitor'))
                         except Exception, ex:
                             # added for debuging but should be removed since remote call 
                             # doesn't make send to trace the stack.

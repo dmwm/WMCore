@@ -3,11 +3,10 @@
 _Step.Executor.LogArchive_
 
 Implementation of an Executor for a LogArchive step
-
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.17 2010/06/18 21:02:44 mnorman Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: LogArchive.py,v 1.18 2010/06/29 19:06:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import os
 import os.path
@@ -17,6 +16,8 @@ import tarfile
 import time
 import signal
 import traceback
+
+from WMCore.WMException import WMException
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -128,15 +129,20 @@ class LogArchive(Executor):
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)
+        except WMException, ex:
+            self.report.addError(self.stepName, 1, "LogArchiveFailure", str(ex))
+            self.report.setStepStatus(self.stepName, 0)
+            self.report.persist("Report.pkl")
+            raise ex
         except Exception, ex:
             self.report.addError(self.stepName, 1, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
-            msg = "Failure in transferring logArchive tarball"
-            msg += str(ex)
+            msg = "Failure in transferring logArchive tarball\n"
+            msg += str(ex) + "\n"
             msg += traceback.format_exc()
             logging.error(msg)
-            raise Exception(msg)
+            raise WMException("LogArchiveFailure", message = str(ex))
         
         signal.alarm(0)
         return
@@ -196,8 +202,7 @@ class LogArchive(Executor):
 
         year, month, day = reqTime[:3]
 
-
-        LFN = "/store/temp/WMAgent/unmerged/logs/prod/%s/%s/%s/%s/%s/%s-%i-%s" % \
+        LFN = "/store/temp/WMAgent/unmerged/logs/prod/%s/%s/%s%s/%s/%s-%i-%s" % \
               (year, month, day, self.task.getPathName(),
                lfnGroup(self.job), self.job["name"],
                self.job.get('retry_count', 0),

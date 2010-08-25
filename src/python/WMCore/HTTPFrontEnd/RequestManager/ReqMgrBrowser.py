@@ -8,6 +8,7 @@ import cherrypy
 import logging
 import os.path
 import pickle
+import urllib
 from WMCore.WebTools.Page import TemplatedPage
 
 class ReqMgrBrowser(TemplatedPage):

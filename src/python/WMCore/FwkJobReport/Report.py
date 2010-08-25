@@ -7,13 +7,14 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.32 $"
-__revision__ = "$Id: Report.py,v 1.32 2010/07/30 14:15:44 mnorman Exp $"
+__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Report.py,v 1.33 2010/08/11 16:57:01 mnorman Exp $"
 
 import cPickle
 import logging
 import sys
 import traceback
+import time
 
 from WMCore.Configuration import ConfigSection
 
@@ -813,6 +814,42 @@ class Report:
 
 
         return
+
+
+    def setStepStartTime(self, stepName):
+        """
+        _setStepStatus_
+
+        Set the startTime for a step.
+        """
+        reportStep = self.retrieveStep(stepName)        
+        reportStep.startTime = time.time()
+        return
+
+
+    def setStepStopTime(self, stepName):
+        """
+        _setStepStatus_
+
+        Set the stopTime for a step.
+        """
+        reportStep = self.retrieveStep(stepName)        
+        reportStep.stopTime = time.time()
+        return
+
+    def getTimes(self, stepName):
+        """
+        _getTimes_
+
+        Return a dictionary with the start and stop times
+        """
+
+        reportStep = self.retrieveStep(stepName)
+
+        startTime = getattr(reportStep, 'startTime', None)
+        stopTime  = getattr(reportStep, 'stopTime', None)
+
+        return {'startTime': startTime, 'stopTime': stopTime}
                 
 if __name__ == "__main__":
     myReport = Report("cmsRun1")

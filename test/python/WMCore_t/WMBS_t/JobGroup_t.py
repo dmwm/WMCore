@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.20 2009/07/01 18:03:05 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.21 2009/09/15 16:04:03 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import unittest
 import logging
@@ -14,6 +14,7 @@ import os
 import commands
 import threading
 import random
+import time
 from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
@@ -52,11 +53,23 @@ class JobGroupTest(unittest.TestCase):
         if self._setup:
             return
 
+        myThread = threading.currentThread()
+
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+
+        #We need to set sites in the locations table
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        
+        locationAction = daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "goodse.cern.ch")
+        locationAction.execute(siteName = "malpaquet")
+        locationAction.execute(siteName = "badse.cern.ch")
         
         self._setup = True
         return
@@ -103,9 +116,14 @@ class JobGroupTest(unittest.TestCase):
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
         testFileA.addRun(Run(10, *[12312]))
+        testFileA.setLocation("goodse.cern.ch")
+        testFileA.setLocation("malpaquet")
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileB.addRun(Run(10, *[12312]))
+        testFileB.setLocation("goodse.cern.ch")
+        testFileB.setLocation("malpaquet")
+
         testFileA.create()
         testFileB.create()
 
@@ -117,6 +135,58 @@ class JobGroupTest(unittest.TestCase):
         
         testJobGroup.add(testJobA)
         testJobGroup.add(testJobB)
+
+        if commitFlag:
+            testJobGroup.commit()
+        
+        return testJobGroup
+
+
+    def createLargerTestJobGroup(self, commitFlag = True):
+        """
+        _createTestJobGroup_
+        
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task="Test")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run(10, *[12312]))
+        testFileA.setLocation("goodse.cern.ch")
+        testFileA.setLocation("malpaquet")
+
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run(10, *[12312]))
+        testFileB.setLocation("goodse.cern.ch")
+        testFileB.setLocation("malpaquet")
+
+        testFileA.create()
+        testFileB.create()
+
+        testJobA = Job(name = "TestJobA1")
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB1")
+        testJobB.addFile(testFileB)
+
+        testJobGroup.add(testJobA)
+        testJobGroup.add(testJobB)
+
+        for i in range(0,100):
+            testJob = Job(name = "TestJob%i" %(i))
+            testJob.addFile(testFileA)
+            testJobGroup.add(testJob)
 
         if commitFlag:
             testJobGroup.commit()
@@ -322,8 +392,10 @@ class JobGroupTest(unittest.TestCase):
                testJobGroupA.subscription["id"], \
                "ERROR: Job group did not load subscription correctly"
 
-        goldenJobs = testJobGroupA.getJobs(type = "list")
 
+
+        goldenJobs = testJobGroupA.getJobs(type = "list")
+        
         for job in testJobGroupB.getJobs(type = "list"):
             assert job in goldenJobs, \
                    "ERROR: JobGroup loaded an unknown job"
@@ -430,20 +502,80 @@ class JobGroupTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup()
 
 
-        #We need to set sites in the locations table
-        daofactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        
-        locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "goodse.cern.ch")
-        locationAction.execute(siteName = "badse.cern.ch")
-
-
         testJobGroup.setSite("goodse.cern.ch")
         result = testJobGroup.getSite()
 
         self.assertEqual(result, "goodse.cern.ch")
+
+        return
+
+
+
+    def testCommitBulk(self):
+        """
+        _testCommitBulk_
+
+        Exactly the same as testCommit, but using commitBulk() instead of commit()
+        """
+
+        myThread = threading.currentThread()
+        
+        testJobGroupA = self.createLargerTestJobGroup(commitFlag = False)
+
+        testJobGroupB = JobGroup(id = testJobGroupA.id)
+        testJobGroupB.loadData()
+
+        assert len(testJobGroupA.getJobs()) == 0, \
+               "ERROR: Original object commited too early"
+        assert len(testJobGroupB.getJobs()) == 0, \
+               "ERROR: Loaded JobGroup has too many jobs"
+
+        testJobGroupA.commitBulk()
+        testJobGroupA.loadData()
+
+        self.assertEqual(len(testJobGroupA.getJobs()), 102)
+
+        testJobGroupC = JobGroup(id = testJobGroupA.id)
+        testJobGroupC.loadData()
+
+        self.assertEqual(len(testJobGroupC.getJobs()), 102)
+
+        self.assertEqual(testJobGroupC.jobs[0].getFiles()[0]['lfn'], '/this/is/a/lfnA')
+        self.assertEqual(testJobGroupC.jobs[1].getFiles()[0]['lfn'], '/this/is/a/lfnB')
+
+        return
+
+
+    def testGetLocationsForJobs(self):
+        """
+        _testGetLocationsForJobs
+
+        Tests the functionality of grabbing locations for a single job
+
+        """
+
+        myThread = threading.currentThread()
+
+        testJobGroup = self.createTestJobGroup()
+
+        result = testJobGroup.getLocationsForJobs()
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual('goodse.cern.ch' in result, True)
+        self.assertEqual('malpaquet' in result, True)
+
+
+
+
+        testJobGroupA = self.createLargerTestJobGroup(commitFlag = True)
+
+        result = testJobGroupA.getLocationsForJobs()
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual('goodse.cern.ch' in result, True)
+        self.assertEqual('malpaquet' in result, True)
+
+        return
 
 if __name__ == "__main__":
     unittest.main() 

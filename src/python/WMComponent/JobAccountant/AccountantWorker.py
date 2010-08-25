@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.5 2009/10/28 21:42:01 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.6 2009/11/02 20:11:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import time
@@ -250,7 +250,6 @@ class AccountantWorker:
         wmbsJob.save()
         wmbsJob.getMask()
 
-
         wmbsJob["fwjr"] = fwkJobReport
 
         dbsParentLFNs = self.getOutputDBSParentAction.execute(jobID = jobID,
@@ -284,7 +283,7 @@ class AccountantWorker:
                                             transaction = True)
         wmbsJob.completeInputFiles()
         
-        self.stateChanger.propagate([wmbsJob], "closeout", "success")
+        self.stateChanger.propagate([wmbsJob], "success", "complete")
 
         return
         
@@ -308,6 +307,5 @@ class AccountantWorker:
         # WMAgent job submission framework is not yet complete.
         wmbsJob["fwjr"] = fwkJobReport
         self.stateChanger.propagate([wmbsJob], "jobfailed", "complete")
-        #logging.error("Handled failed job %i" %(jobID))
         return
 

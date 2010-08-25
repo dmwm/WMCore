@@ -15,6 +15,10 @@ import new
 
 #Some of this code is pinched from Overview/DQMGui plotting
 
+def elem(what,inner='',**kwargs):
+    argstr = ' '.join([what]+["%s='%s'"%(k,v) for k,v in kwargs.items()])
+    return '<%s>%s</%s>'%(argstr,inner,what)
+
 def text_size(string,fontsize,dpi=96):
     return 0.6*len(string)*(dpi/72.)*fontsize,1.4*(dpi/72.)*fontsize
 

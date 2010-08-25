@@ -27,7 +27,13 @@ class PlotFormatter(RESTFormatter):
         return self.plot(data, 'pdf')
 
     def png(self, data, *args, **kwargs):
-        return self.plot(data, 'png')
+        if 'figure' in data:
+            return self.plot(data, 'png')
+        elif 'doc' in data:
+            return data['doc']
+        else:
+            return None
+            
 
     def plot(self, data, format):
         if hasattr(self.config, "cache"):

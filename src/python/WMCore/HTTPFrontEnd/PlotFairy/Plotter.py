@@ -31,7 +31,11 @@ class Plotter(RESTModel):
         self.methods['GET'] = {'plot': {'version':1,
                                          'call':self.plot,
                                          'args': ['type', 'data', 'url'],
-                                         'expires': 300}}
+                                         'expires': 300},
+                               'doc':  {'version':1,
+                                         'call':self.doc,
+                                         'args': ['type'],
+                                         'expires':300}}
         self.factory = WMFactory('plot_fairy',
                                  'WMCore.HTTPFrontEnd.PlotFairy.Plots')
         
@@ -45,7 +49,18 @@ class Plotter(RESTModel):
         
         return {'figure': plot(input['data'])}
             
+    def doc(self, *args, **kwargs):
+        input = self.sanitise_input(args, kwargs, 'doc')
+        plot = self.factory.loadObject(input['type'])
+        return {'doc': plot.doc()}
+            
     def validate_input(self, input, verb, method):
+        assert 'type' in input.keys(), \
+                "no type provided - what kind of plot do you want? " +\
+                "Choose one of %s" % self.plot_types.keys()
+        if method=='doc':
+            return input
+        
         if not 'data' in input.keys():
             input['data'] = {}
             assert 'url' in input.keys()
@@ -55,8 +70,5 @@ class Plotter(RESTModel):
         else:
             input['data'] = json.loads(urllib.unquote(input['data']))
                  
-        assert 'type' in input.keys(), \
-                "no type provided - what kind of plot do you want? " +\
-                "Choose one of %s" % self.plot_types.keys()
          
         return input

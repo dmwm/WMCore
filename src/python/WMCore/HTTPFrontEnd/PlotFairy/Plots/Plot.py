@@ -9,7 +9,7 @@ new plots should override the plot(self, data) method. Plots should be
 instantiated via a factory, and be stateless.
 '''
 import matplotlib.pyplot 
-from Utils import Props
+from Utils import Props,elem
 
 class null(object):
     def null(self):
@@ -96,6 +96,20 @@ class Plot(type):
         _validate_calls = []
         _extract_calls = []
         _build_calls = []
+        
+        def doc(self):
+            head = elem('head',elem('title','Plotfairy::Documentation::%s'%self.__class__.__name__))
+            header = elem('div',elem('h1','Documentation for Plotfairy::%s'%self.__class__.__name__))
+            docstr = elem('div',elem('h2','Synopsis')) \
+                    +elem('div',elem('pre',self.__doc__))
+            validators = elem('div',elem('h2','Options')) \
+                    +elem('div',elem('ul','\n'.join([v.doc() for v in self.validators])))
+            mixins = elem('div',elem('h2','Mixins')) \
+                    +elem('div','Uses'+elem('ul','\n'.join([elem('li',k.__name__) for k in self.__class__.__bases__]))) \
+                    +elem('div','Method order'+elem('ul','\n'.join([elem('li','%s::%s'%(f.im_class.__name__ if hasattr(f,'im_class') else self.__class__.__name__,f.__name__)) for f in self._validate_calls+self._extract_calls+self._build_calls])))
+            return elem('html',head+elem('body',header+docstr+validators+mixins))        
+            
+        attrs['doc']=doc
         
         for klass in bases:
             if hasattr(klass,'validate'):

@@ -7,10 +7,11 @@ Template for a CMSSW Step
 """
 
 from WMCore.WMSpec.Steps.Template import Template
-from WMCore.WMSpec.WMStep import WMStepHelper
+from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
-class CMSSWStepHelper(WMStepHelper):
+
+class CMSSWStepHelper(CoreHelper):
     """
     _CMSSWStepHelper_
 
@@ -88,7 +89,7 @@ class CMSSW(Template):
 
         step.section_("monitoring")
 
-        print step
+
 
 
     def helper(self, step):

@@ -7,10 +7,10 @@ Template for a StageOut Step
 """
 
 from WMCore.WMSpec.Steps.Template import Template
-from WMCore.WMSpec.WMStep import WMStepHelper
+from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
-class StageOutStepHelper(WMStepHelper):
+class StageOutStepHelper(CoreHelper):
     """
     _StageOutStepHelper_
 
@@ -35,7 +35,7 @@ class StageOut(Template):
         stepname = nodeName(step)
         step.stepType = "StageOut"
 
-        print step
+
 
     def helper(self, step):
         """

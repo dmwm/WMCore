@@ -5,42 +5,14 @@ _DbObject_
 Base class for all objects in the database
 """
 
-__version__ = "$Id: DbObject.py,v 1.4 2010/04/27 14:37:52 spigafi Exp $"
-__revision__ = "$Revision: 1.4 $"
+__version__ = "$Id: DbObject.py,v 1.5 2010/05/03 08:38:06 spigafi Exp $"
+__revision__ = "$Revision: 1.5 $"
 
 import logging
 import traceback
 import threading
 
-from WMCore.WMConnectionBase import WMConnectionBase
-
-def dbTransaction(func):
-    """
-    Basic transaction decorator function
-    """
-    
-    def wrapper(self, *args, **kwargs):
-        """
-        Decorator for db transaction
-        """
-        
-        self.existingTransaction = self.beginTransaction()
-        try:
-            res = func(self, *args, **kwargs)
-            self.commitTransaction(self.existingTransaction)
-        except Exception, ex:
-            msg = "Failure in DbObject method"
-            msg += str(ex)
-            msg += str(traceback.format_exc())
-            # temporary comment # logging.error(msg)
-            #TODO: Add this to WMConnectionBase?
-            myThread = threading.currentThread()
-            myThread.transaction.rollback()
-            raise Exception(msg)        
-        return res
-    return wrapper
-
-class DbObject(WMConnectionBase):
+class DbObject(object):
     """
     Superclass of all objects that can be stored in the database.
     """
@@ -68,7 +40,7 @@ class DbObject(WMConnectionBase):
         initialize a DbObject instance
         """
 
-        WMConnectionBase.__init__(self, daoPackage = "WMCore.BossLite")
+        # WMConnectionBase.__init__(self, daoPackage = "WMCore.BossLite")
 
         # dictionary used to store information about the job
         self.data = {}
@@ -145,27 +117,6 @@ class DbObject(WMConnectionBase):
         # not there
         raise self.exception("Unknown field %s in %s object" % \
                              (field, self.className))
-
-    ##########################################################################
-
-    #def update(self, parameters):
-    #    """
-    #    updates the fields with new values
-    #    """
-
-    #    # assign parameters
-    #    for key in parameters.keys():
-
-    #        # check if it is a valid parameter
-    #        if key in self.data.keys():
-
-    #            # store it using the mapped parameter
-    #            self.data[key] = parameters[key]
-
-    #        # no, signal error
-    #        else:
-    #            raise self.exception("Unknown field %s in %s update" % \
-    #                                 (key, self.className))
 
     ##########################################################################
 

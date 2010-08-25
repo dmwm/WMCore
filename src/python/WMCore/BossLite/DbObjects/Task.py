@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.12 2010/04/27 14:35:56 spigafi Exp $"
-__revision__ = "$Revision: 1.12 $"
+__version__ = "$Id: Task.py,v 1.13 2010/05/03 08:38:06 spigafi Exp $"
+__revision__ = "$Revision: 1.13 $"
 
 import os.path
 # import threading # seems unused
@@ -13,8 +13,8 @@ import os.path
 
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.BossLite.DbObjects.DbObject import DbObject, dbTransaction
-from WMCore.BossLite.DbObjects.Job      import Job
+from WMCore.BossLite.DbObjects.DbObject import DbObject
+# from WMCore.BossLite.DbObjects.Job      import Job
 from WMCore.BossLite.Common.Exceptions  import TaskError
 # from WMCore.BossLite.Common.Exceptions import JobError, DbError # seem unused
 
@@ -93,18 +93,23 @@ class Task(DbObject):
 
     ##########################################################################
 
-    @dbTransaction
-    def exists(self, noDB = False):
+    def exists(self, db, noDB = False):
         """
         If the task exists, return ID
         
         """
         
         if not noDB:
-            action = self.daofactory(classname = 'Task.Exists')
+            
+            """
+            action = db.daofactory(classname = 'Task.Exists')
             tmpId = action.execute(name = self.data['name'],
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
+                                   conn = db.getDBConn(),
+                                   transaction = db.existingTransaction)
+            """
+            
+            tmpId = db.objExists(self)
+            
             if tmpId:
                 self.data['id'] = tmpId
         else:
@@ -118,8 +123,7 @@ class Task(DbObject):
 
     ####################################################################
 
-    @dbTransaction
-    def save(self, deep = True):
+    def save(self, db, deep = True):
         """
         Save the task if there is new information in it.  
         """
@@ -127,12 +131,16 @@ class Task(DbObject):
         status = 0
         
         if self.existsInDataBase : 
+            """
             action = self.daofactory(classname = "Task.Save")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
+            """
+            db.objSave(self)
+            
         else:
-            self.create()
+            self.create(db)
         
         if deep :
             for job in self.jobs:
@@ -145,29 +153,31 @@ class Task(DbObject):
 
     #########################################################################
 
-    @dbTransaction
-    def create(self):
+    def create(self, db):
         """
         Create a new task in the database      
         """
         
-        action = self.daofactory(classname = "Task.New")
+        """
+        action = engine.daofactory(classname = "Task.New")
         action.execute(binds = self.data,
-                       conn = self.getDBConn(),
-                       transaction = self.existingTransaction)
-
+                       conn = engine.getDBConn(),
+                       transaction = engine.existingTransaction)
+        """
+        db.objCreate(self)
+        
         # update ID & check... necessary call!
-        if self.exists() : 
+        if self.exists(db) : 
             self.existsInDataBase = True
         
     ###########################################################################
 
-    @dbTransaction
-    def load(self, deep = True):
+    def load(self, db, deep = True):
         """
         Load a task     
         """
         
+        """
         if self.data['id'] > 0:
             action = self.daofactory(classname = "Task.SelectTask")
             result = action.execute(value = self.data['id'],
@@ -183,7 +193,9 @@ class Task(DbObject):
         else:
             # Then you're screwed
             return
-                
+        """
+        result = db.objLoad(self)
+        
         if result == []:
             raise TaskError("No task instances corresponds to the," + \
                      " template specified: %s" % self)
@@ -199,7 +211,7 @@ class Task(DbObject):
         self.data.update(result[0])
         
         if deep :
-            self.loadJobs()
+            self.loadJobs(db)
 
         # is this method necessary?
         self.updateInternalData()
@@ -210,19 +222,22 @@ class Task(DbObject):
 
     ###################################################################
 
-    @dbTransaction
-    def loadJobs(self):
+    def loadJobs(self, db):
         """
         Load jobs from the database
         """
         
         if self.data['id'] < 0:
-            self.exists()
+            self.exists(db)
         
+        """
         action = self.daofactory(classname = 'Task.GetJobs')
         jobList = action.execute(id = self.data['id'],
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction)
+        """
+        jobList = db.objLoad(self, classname = 'Task.GetJobs') 
+        
         
         # update the jobs information
         for job in jobList:
@@ -242,7 +257,7 @@ class Task(DbObject):
 
     ###################################################################
 
-    def update(self, deep = True):
+    def update(self, db, deep = True):
         """
         update task object from database (with all jobs)       
         """
@@ -252,16 +267,16 @@ class Task(DbObject):
 
     ##########################################################################
 
-    @dbTransaction
-    def remove(self):
+    def remove(self, db):
         """
         remove task object from database (with all jobs)
         """
         
-        if not self.exists():
+        if not self.exists(db):
             raise TaskError("The following task instance cannot be removed" + \
                       " since it is not in the database: %s" % self)
         
+        """
         action = self.daofactory(classname = 'Task.Delete')
         
         # verify data is complete
@@ -276,6 +291,8 @@ class Task(DbObject):
                            value = self.data['id'],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
+        """
+        db.objRemove(self) 
                 
         # update status
         self.existsInDataBase = False

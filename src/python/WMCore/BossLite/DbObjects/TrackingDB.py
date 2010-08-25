@@ -4,8 +4,8 @@ _TrackingDB_
 
 """
 
-__version__ = "$Id: TrackingDB.py,v 1.2 2010/05/03 07:28:50 spigafi Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: TrackingDB.py,v 1.3 2010/05/03 08:38:06 spigafi Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 from copy import deepcopy
 
@@ -13,8 +13,8 @@ from WMCore.BossLite.Common.Exceptions  import DbError
 from WMCore.BossLite.Common.System      import evalCustomList
 
 from WMCore.BossLite.DbObjects.Task         import Task
-from WMCore.BossLite.DbObjects.Job          import Job
-from WMCore.BossLite.DbObjects.RunningJob   import RunningJob
+#from WMCore.BossLite.DbObjects.Job          import Job
+#from WMCore.BossLite.DbObjects.RunningJob   import RunningJob
 
 from WMCore.WMConnectionBase import WMConnectionBase
 
@@ -736,13 +736,18 @@ class TrackingDB(WMConnectionBase):
     ##########################################################################
     
     @dbTransaction
-    def objExists(self, obj, classname, name):
+    def objExists(self, obj, classname = None):
         """
         put your description here
         """
 
         if type(obj) == Task :
-            raise NotImplementedError
+            # Task DAO
+            action = self.daofactory(classname = 'Task.Exists')
+            tmpId = action.execute(name = obj.data['name'],
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
+            return tmpId
         
         elif type(obj) == Job :
             raise NotImplementedError
@@ -756,13 +761,16 @@ class TrackingDB(WMConnectionBase):
     ##########################################################################
     
     @dbTransaction
-    def objSave(self):
+    def objSave(self, obj, classname = None):
         """
         put your description here
         """
 
         if type(obj) == Task :
-            raise NotImplementedError
+            action = self.daofactory(classname = 'Task.Save')
+            action.execute(binds = obj.data,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
         
         elif type(obj) == Job :
             raise NotImplementedError
@@ -776,7 +784,75 @@ class TrackingDB(WMConnectionBase):
     ##########################################################################
     
     @dbTransaction
-    def objCreate(self):
+    def objCreate(self, obj, classname = None):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            action = self.daofactory(classname = 'Task.New')
+            action.execute(binds = obj.data,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
+        
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError        
+        
+    ##########################################################################
+    
+    @dbTransaction
+    def objLoad(self, obj, classname = None):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            
+            if classname == 'Task.GetJobs' :
+                action = self.daofactory(classname)
+                result = action.execute(id = obj.data['id'],
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction)
+                
+            elif obj.data['id'] > 0:
+                action = self.daofactory(classname = "Task.SelectTask")
+                result = action.execute(value = obj.data['id'],
+                                        column = 'id',
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction)
+                
+            elif obj.data['name']:
+                action = self.daofactory(classname = "Task.SelectTask")
+                result = action.execute(value = obj.data['name'],
+                                        column = 'name',
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction)
+                
+            else:
+                # Then you're screwed
+                return []
+            
+            return result
+        
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError        
+        
+    ##########################################################################
+    
+    @dbTransaction
+    def objUpdate(self, obj, classname = None):
         """
         put your description here
         """
@@ -796,53 +872,26 @@ class TrackingDB(WMConnectionBase):
     ##########################################################################
     
     @dbTransaction
-    def objLoad(self):
+    def objRemove(self, obj, classname = None):
         """
         put your description here
         """
 
         if type(obj) == Task :
-            raise NotImplementedError
-        
-        elif type(obj) == Job :
-            raise NotImplementedError
-        
-        elif type(obj) == RunningJob :
-            raise NotImplementedError
-        
-        else :
-            raise NotImplementedError        
-        
-    ##########################################################################
-    
-    @dbTransaction
-    def objUpdate(self):
-        """
-        put your description here
-        """
-
-        if type(obj) == Task :
-            raise NotImplementedError
-        
-        elif type(obj) == Job :
-            raise NotImplementedError
-        
-        elif type(obj) == RunningJob :
-            raise NotImplementedError
-        
-        else :
-            raise NotImplementedError        
-        
-    ##########################################################################
-    
-    @dbTransaction
-    def objRemove(self):
-        """
-        put your description here
-        """
-
-        if type(obj) == Task :
-            raise NotImplementedError
+            action = self.daofactory(classname = 'Task.Delete')
+            
+            # verify data is complete
+            if not obj.valid(['id']):
+                # We can delete by name without an ID
+                action.execute(column = 'name',
+                               value = obj.data['name'],
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction)
+            else:
+                action.execute(column = 'id',
+                               value = obj.data['id'],
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction)
         
         elif type(obj) == Job :
             raise NotImplementedError

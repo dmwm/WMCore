@@ -103,6 +103,25 @@ class WorkQueue(Service):
         callname = 'getwork'
         return self._getResult(callname, args = args, verb="POST")
     
+    def status(self, status = None, before = None, after = None, elementIDs=None, 
+               dictKey = None):
+        
+        args = {}
+        if status != None:
+            args['status'] = status
+        if before != None:
+            args['before'] = before
+        if after != None:
+            args['after'] = after
+        if dictKey != None:
+            args['dictKey'] = dictKey
+        if elementIDs != None:
+            encodedElementIDs = jsonwrapper.loads(elementIDs)
+            args['elementIDs'] = encodedElementIDs
+        
+        callname = 'status'
+        return self._getResult(callname, args = args, verb="POST")
+    
     def synchronize(self, child_url, child_report):
         """
         _synchronize_

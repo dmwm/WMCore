@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.7 2009/06/12 16:53:20 evansde Exp $"
-__revision__ = "$Revision: 1.7 $"
+__version__ = "$Id: WMTask.py,v 1.8 2009/06/12 21:42:07 mnorman Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -225,6 +225,7 @@ class WMTask(ConfigSectionTree):
         self.constraints.section_("sites")
         self.constraints.sites.whitelist = []
         self.constraints.sites.blacklist = []
+        self.input.section_("WMBS")
 
 
 def makeWMTask(taskName):

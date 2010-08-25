@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.20 2009/02/25 17:49:45 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.21 2009/04/01 18:44:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import threading
 
@@ -38,6 +38,7 @@ class CreateWMBSBase(DBCreator):
                                "06wmbs_location",
                                "07wmbs_file_location",
                                "08wmbs_workflow",
+                               "09wmbs_workflow_output",
                                "09wmbs_subscription",
                                "09wmbs_subscription_location",
                                "10wmbs_sub_files_acquired",
@@ -117,6 +118,17 @@ class CreateWMBSBase(DBCreator):
              spec         VARCHAR(255) NOT NULL,
              name         VARCHAR(255) NOT NULL,
              owner        VARCHAR(255))"""
+
+        self.create["09wmbs_workflow_output"] = \
+          """CREATE TABLE wmbs_workflow_output (
+             workflow_id       INTEGER NOT NULL,
+             output_identifier VARCHAR(255) NOT NULL,
+             output_fileset    INTEGER NOT NULL,
+             FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)
+               ON DELETE CASCADE)
+             """
 
         self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (

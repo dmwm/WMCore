@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.4 2009/10/26 16:54:58 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.5 2009/10/28 21:42:01 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import time
@@ -109,18 +109,22 @@ class AccountantWorker:
         ID and the path to the framework job report.
         """
         self.transaction.begin()
-        
+
         fwkJobReport = self.loadJobReport(parameters["fwjr_path"])
+        jobSuccess = None
 
         if fwkJobReport == None or fwkJobReport.status != "Success":
+            logging.error("I have a bad jobReport for %i" %(parameters['id']))
             self.handleFailed(jobID = parameters["id"],
                               fwkJobReport = fwkJobReport)
+            jobSuccess = False
         else:
             self.handleSuccessful(jobID = parameters["id"],
                                   fwkJobReport = fwkJobReport)
+            jobSuccess = True
 
         self.transaction.commit()
-        return parameters["id"]
+        return {'id': parameters["id"], 'jobSuccess': jobSuccess}
 
     def outputFilesetsForJob(self, outputMap, merged, moduleLabel):
         """
@@ -159,16 +163,16 @@ class AccountantWorker:
                                 size = jobReportFile["Size"],
                                 events = jobReportFile["TotalEvents"],
                                 cksum = jobReportFile["Checksum"])
-
+        logging.error("About to set algo")
         dbsFile.setAlgorithm(appName = datasetInfo["ApplicationName"],
                              appVer = datasetInfo["ApplicationVersion"],
                              appFam = datasetInfo["OutputModuleName"],
                              psetHash = "GIBBERISH", configContent = "MOREGIBBERISH")
+        logging.error("Set algo")
         
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["PrimaryDataset"],
                                               datasetInfo["ProcessedDataset"],
                                               datasetInfo["DataTier"]))
-
         for run in jobReportFile.runs.keys():
             newRun = Run(runNumber = run)
             newRun.extend(jobReportFile.runs[run])
@@ -177,6 +181,7 @@ class AccountantWorker:
         dbsFile.create()
         dbsFile.setLocation(se = jobReportFile["SEName"])
         dbsFile.addParents(fileParentLFNs)
+
         return
 
     def addFileToWMBS(self, jobType, fwjrFile, jobMask, inputFiles,
@@ -222,7 +227,8 @@ class AccountantWorker:
         wmbsFile.create()
 
         for inputFile in inputFiles:
-            wmbsFile.addParent(inputFile["lfn"])
+            if inputFile["lfn"] not in wmbsFile.getParentLFNs():
+                wmbsFile.addParent(inputFile["lfn"])
 
         if merged:
             self.addFileToDBS(fwjrFile, dbsParentLFNs)
@@ -244,8 +250,8 @@ class AccountantWorker:
         wmbsJob.save()
         wmbsJob.getMask()
 
+
         wmbsJob["fwjr"] = fwkJobReport
-        self.stateChanger.propagate([wmbsJob], "success", "complete")
 
         dbsParentLFNs = self.getOutputDBSParentAction.execute(jobID = jobID,
                                                               conn = self.transaction.conn,
@@ -279,6 +285,7 @@ class AccountantWorker:
         wmbsJob.completeInputFiles()
         
         self.stateChanger.propagate([wmbsJob], "closeout", "success")
+
         return
         
     def handleFailed(self, jobID, fwkJobReport):
@@ -286,7 +293,7 @@ class AccountantWorker:
         _handleFailed_
 
         Handle a failed job.  Update the job's metadata marking the outcome as
-        "failure" and incrementing the retry count.  Mark all the files used as
+        'failure' and incrementing the retry count.  Mark all the files used as
         input for the job as failed.  Finally, update the job's state.
         """
         wmbsJob = Job(id = jobID)
@@ -301,8 +308,6 @@ class AccountantWorker:
         # WMAgent job submission framework is not yet complete.
         wmbsJob["fwjr"] = fwkJobReport
         self.stateChanger.propagate([wmbsJob], "jobfailed", "complete")
-        self.stateChanger.propagate([wmbsJob], "jobcooloff", "jobfailed")
-        self.stateChanger.propagate([wmbsJob], "created", "jobcooloff")
-        self.stateChanger.propagate([wmbsJob], "executing", "created")
+        #logging.error("Handled failed job %i" %(jobID))
         return
 

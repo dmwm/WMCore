@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.39 2010/01/21 14:47:28 valya Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Root.py,v 1.40 2010/01/21 15:41:11 metson Exp $"
+__version__ = "$Revision: 1.40 $"
 
 # CherryPy
 import cherrypy
@@ -39,17 +39,18 @@ class Root(WMObject):
         self.config = config.section_("Webtools")
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
+        self.homepage = None
+        self.secconfig = config.section_("SecurityModule")
+    
+    def validateConfig(self):
+        # Check that the configuration has the required sections
         config_dict = self.appconfig.dictionary_()
         must_have_keys = ['admin', 'description', 'title', 'templates']
         for key in must_have_keys:
-            if  not config_dict.has_key(key):
-                msg  = "Application configuration "
-                msg += "'%s' does not contain '%s' key"\
-                        % (self.app, key)
-                raise Exception(msg)
-        self.homepage = None
-        self.secconfig = config.section_("SecurityModule")
-        
+            msg  = "Application configuration '%s' does not contain '%s' key"\
+                    % (self.app, key)
+            assert config_dict.has_key(key), msg
+            
     def configureCherryPy(self):
         #Configure CherryPy
         try:
@@ -202,6 +203,7 @@ class Root(WMObject):
             tree.mount(Welcome(namesAndDocstrings), "/")
     
     def start(self, blocking=True):
+        self.validateConfig()
         # Configure and start the server 
         self.configureCherryPy()
         self.loadPages()        

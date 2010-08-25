@@ -25,7 +25,7 @@ config.Webtools.application = 'WebtoolsDocs'
 # This is the config for the application
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
-config.WebtoolsDocs.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
+config.WebtoolsDocs.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools'
 config.WebtoolsDocs.admin = 'your@email.com'
 config.WebtoolsDocs.title = 'CMS WMCore/WebTools Documentation'
 config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
@@ -47,7 +47,7 @@ config.SecurityModule.enabled = True
 config.SecurityModule.use_decorators = True
 config.SecurityModule.mount_point = 'auth'
 config.SecurityModule.store = 'filestore'
-config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
+config.SecurityModule.store_path = environ['WMCORE_ROOT'] + '/src/security-store'
 #config.CernOpenID.store.database = 'sqlite://'
 config.SecurityModule.session_name = 'SecurityModule'
 config.SecurityModule.oid_server = 'http://localhost:8400/'
@@ -81,22 +81,22 @@ active.section_('controllers')
 active.controllers.object = 'WMCore.WebTools.Controllers'
 # The configuration for this object - the location of css and js
 active.controllers.css = {'reset.css': environ['YUI_ROOT'] + '/build/reset/reset.css', 
-        'cms_reset.css': environ['WTBASE'] + '/css/WMCore/WebTools/cms_reset.css', 
-        'style.css': environ['WTBASE'] + '/css/WMCore/WebTools/style.css'}
+        'cms_reset.css': environ['WMCORE_ROOT'] + '/src/css/WMCore/WebTools/cms_reset.css', 
+        'style.css': environ['WMCORE_ROOT'] + '/src/css/WMCore/WebTools/style.css'}
 active.controllers.js = {}
 # These are pages in "maintenance mode" - to be completed
 maint = config.WebtoolsDocs.views.section_('maintenance')
 
 active.section_('masthead')
 active.masthead.object = 'WMCore.WebTools.Masthead'
-active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Masthead'
+active.masthead.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/Masthead'
 
 # This is how you would configure a RESTful service
 # You need to install py2-sqlalchemy to be able to use it. Put it on the
 # spec file of your webtools package
 #active.section_('rest')
 #active.rest.object = 'WMCore.WebTools.RESTApi'
-#active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+#active.rest.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/'
 # Dummy in memory SQLite DB
 #active.rest.database = 'sqlite://'
 #active.rest.section_('model')
@@ -104,4 +104,4 @@ active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Mast
 #active.rest.section_('formatter')
 #active.rest.formatter.object = 'RESTFormatter'
 # You could override the templates/database here, for instance:
-#active.rest.formatter.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+#active.rest.formatter.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/'

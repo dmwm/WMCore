@@ -11,8 +11,8 @@ _ReReco_
 Standard ReReco workflow.
 """
 
-__version__ = "$Id: ReReco.py,v 1.50 2010/08/18 13:32:51 sfoulkes Exp $"
-__revision__ = "$Revision: 1.50 $"
+__version__ = "$Id: ReReco.py,v 1.51 2010/08/18 13:46:43 sfoulkes Exp $"
+__revision__ = "$Revision: 1.51 $"
 
 import os
 
@@ -51,7 +51,7 @@ def getTestArguments():
         "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
         "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
         
-        "CouchUrl": os.environ.get("COUCHURL", None)
+        "CouchUrl": os.environ.get("COUCHURL", None),
         "CouchDBName": "wmagent_config_cache",
         "Scenario": ""
         

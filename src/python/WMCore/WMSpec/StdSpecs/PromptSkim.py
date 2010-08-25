@@ -12,9 +12,11 @@ from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.Services.Requests import JSONRequests
 
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+
 from WMCore.Cache.ConfigCache import WMConfigCache
 
-class PromptSkimWorkloadFactory():
+class PromptSkimWorkloadFactory(StdBase):
     """
     _PromptSkimWorkloadFactory_
 

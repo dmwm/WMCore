@@ -5,8 +5,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.8 2010/04/26 20:37:44 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.9 2010/04/27 17:42:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import logging
@@ -148,7 +148,7 @@ class JobCreatorWorker:
                     job['spec']    = workflow.spec
                     job['sandbox'] = wmTask.data.input.sandbox
                     job['task']    = wmTask.getPathName()
-                job['number']  = jobNumber
+                job['counter']  = jobNumber
                 cacheDir = job.getCache()
                 job['cache_dir'] = cacheDir
                 output = open(os.path.join(cacheDir, 'job.pkl'),'w')

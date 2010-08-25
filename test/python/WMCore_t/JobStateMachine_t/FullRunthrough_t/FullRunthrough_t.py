@@ -36,6 +36,11 @@ from WMComponent.ErrorHandler.ErrorHandler   import ErrorHandler
 from WMComponent.RetryManager.RetryManager   import RetryManager
 from WMComponent.JobArchiver.JobArchiver     import JobArchiver
 
+#Workload stuff
+from WMCore.WMSpec.WMWorkload import newWorkload
+from WMCore.WMSpec.WMStep import makeWMStep
+from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
+
 
 
 class FullRunthroughTest(unittest.TestCase):
@@ -55,16 +60,11 @@ class FullRunthroughTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService', \
+                                                 'WMCore.ThreadPool','WMCore.ResourceControl',\
+                                                 "WMComponent.DBSBuffer.Database"], \
                                 useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.MsgService"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.ThreadPool"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.ResourceControl"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
-                                useDefault = False)
+
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS", logger = myThread.logger, dbinterface = myThread.dbi)
@@ -95,48 +95,9 @@ class FullRunthroughTest(unittest.TestCase):
         """
         
         myThread = threading.currentThread()
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
 
-        factory = WMFactory("MsgService", "WMCore.MsgService")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("Threadpool", "WMCore.ThreadPool")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ThreadPool tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("Threadpool", "WMCore.ResourceControl")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ResourceControl tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-        myThread.transaction.commit()
-
-
+        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl', \
+                                               'WMCore.ThreadPool', "WMComponent.DBSBuffer.Database"])
         os.popen3('rm -r test/Test*')
         os.popen3('rm -r test/Basic*')
 
@@ -144,6 +105,57 @@ class FullRunthroughTest(unittest.TestCase):
             myThread.workerThreadManager.terminateWorkers()
         
         return
+
+
+    def createTestWorkload(self):
+        """
+        _createTestWorkload_
+
+        Creates a test workload for us to run on, hold the basic necessities.
+        """
+
+        #Basic workload definition
+        workload = newWorkload("BasicProduction")
+        workload.setStartPolicy('MonteCarlo')
+        workload.setEndPolicy('SingleShot')
+
+        #Basic production step
+        production = workload.newTask("Production")
+        production.addProduction(totalevents = 1000)
+        prodCmssw = production.makeStep("cmsRun1")
+        prodCmssw.setStepType("CMSSW")
+        prodStageOut = prodCmssw.addStep("stageOut1")
+        prodStageOut.setStepType("StageOut")
+        production.applyTemplates()
+        production.setSplittingAlgorithm("FileBased", files_per_job = 10)
+
+        #Basic Merge step
+        merge = workload.newTask("Merge")
+        mergeCmssw = merge.makeStep("cmsRun1")
+        mergeCmssw.setStepType("CMSSW")
+        mergeStageOut = mergeCmssw.addStep("stageOut1")
+        mergeStageOut.setStepType("StageOut")
+        merge.applyTemplates()
+        merge.setSplittingAlgorithm("FileBased", files_per_job = 10)
+
+
+        prodCmsswHelper = prodCmssw.getTypeHelper()
+        prodCmsswHelper.data.application.setup.cmsswVersion = "CMSSW_X_Y_Z"
+        prodCmsswHelper.data.application.setup.softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
+        prodCmsswHelper.data.application.configuration.configCacheUrl = "http://whatever"
+        prodCmsswHelper.addOutputModule("writeData", primaryDataset = "Primary",
+                                        processedDataset = "Processed",
+                                        dataTier = "TIER")
+
+
+        prodStageOutHelper = prodStageOut.getTypeHelper()
+        merge.setInputReference(prodCmssw, outputModule = "writeData")
+
+        workload.save('basicWorkload.pcl')
+
+        return workload
+
+
 
     def getConfig(self):
         """
@@ -192,23 +204,16 @@ class FullRunthroughTest(unittest.TestCase):
 
         #First the JobCreator
         config.component_("JobCreator")
-        config.JobCreator.namespace        = 'WMComponent.JobCreator.JobCreator'
-        config.JobCreator.logLevel         = self.logLevel
-        config.JobCreator.maxThreads       = 1
-        config.JobCreator.UpdateFromSiteDB = True
-        config.JobCreator.pollInterval     = 10
-        config.JobCreator.jobCacheDir      = os.path.join(self.cwd, 'test')
-        config.JobCreator.defaultJobType   = 'processing' #Type of jobs that we run, used for resource control
-        config.JobCreator.workerThreads    = 2
-        config.JobCreator.componentDir     = os.path.join(os.getcwd(), 'Components/JobCreator')
-
-        #JobMaker
-        config.component_('JobMaker')
-        config.JobMaker.logLevel        = self.logLevel
-        config.JobMaker.namespace       = 'WMCore.WMSpec.Makers.JobMaker'
-        config.JobMaker.maxThreads      = 1
-        config.JobMaker.makeJobsHandler = 'WMCore.WMSpec.Makers.Handlers.MakeJobs'
-
+        config.JobCreator.namespace                 = 'WMComponent.JobCreator.JobCreator'
+        config.JobCreator.logLevel                  = self.logLevel
+        config.JobCreator.maxThreads                = 1
+        config.JobCreator.UpdateFromResourceControl = True
+        config.JobCreator.pollInterval              = 10
+        config.JobCreator.jobCacheDir               = os.path.join(self.cwd, 'test')
+        config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
+        config.JobCreator.workerThreads             = 2
+        config.JobCreator.componentDir              = os.path.join(os.getcwd(), 'Components/JobCreator')
+        config.JobCreator.useWorkQueue              = False
 
         #JobStateMachine
         config.component_('JobStateMachine')
@@ -222,12 +227,13 @@ class FullRunthroughTest(unittest.TestCase):
         config.JobSubmitter.logLevel      = self.logLevel
         config.JobSubmitter.maxThreads    = 1
         config.JobSubmitter.pollInterval  = 10
-        config.JobSubmitter.pluginName    = 'TestPlugin'
+        config.JobSubmitter.pluginName    = 'ShadowPoolPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
         config.JobSubmitter.submitDir     = os.path.join(os.getcwd(), 'submit')
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
         config.JobSubmitter.submitScript  = os.path.join(os.getcwd(), 'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components/JobSubmitter')
+        config.JobSubmitter.inputFile     = os.path.join(os.getcwd(), 'FrameworkJobReport-4540.xml')
         config.JobSubmitter.workerThreads = 1
         config.JobSubmitter.jobsPerWorker = 100
 
@@ -248,7 +254,6 @@ class FullRunthroughTest(unittest.TestCase):
         config.component_("ErrorHandler")
         config.ErrorHandler.logLevel     = self.logLevel
         config.ErrorHandler.namespace    = 'WMComponent.ErrorHandler.ErrorHandler'
-        config.ErrorHandler.maxThreads   = 30
         config.ErrorHandler.maxRetries   = 10
         config.ErrorHandler.pollInterval = 10
         
@@ -257,7 +262,6 @@ class FullRunthroughTest(unittest.TestCase):
         config.component_("RetryManager")
         config.RetryManager.logLevel     = self.logLevel
         config.RetryManager.namespace    = 'WMComponent.RetryManager.RetryManager'
-        config.RetryManager.maxRetries   = 10
         config.RetryManager.pollInterval = 10
         config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
@@ -268,7 +272,6 @@ class FullRunthroughTest(unittest.TestCase):
         #JobAccountant
         config.component_("JobAccountant")
         config.JobAccountant.logLevel      = self.logLevel
-        #config.JobAccountant.logLevel      = 'SQLDEBUG'
         config.JobAccountant.pollInterval  = 10
         config.JobAccountant.workerThreads = 1
         config.JobAccountant.componentDir  = os.path.join(os.getcwd(), 'Components/JobAccountant')
@@ -278,16 +281,8 @@ class FullRunthroughTest(unittest.TestCase):
         config.component_("JobArchiver")
         config.JobArchiver.pollInterval  = 10
         config.JobArchiver.logLevel      = self.logLevel
-        #config.JobArchiver.logLevel      = 'SQLDEBUG'
         config.JobArchiver.logDir        = os.path.join(os.getcwd(), 'logs')
 
-        #DBSBuffer
-        #Part of the JobAccountant
-        config.component_("DBSBuffer")
-        config.DBSBuffer.logLevel          = self.logLevel
-        config.DBSBuffer.namespace         = 'WMComponent.DBSBuffer.DBSBuffer'
-        config.DBSBuffer.maxThreads        = 1
-        config.DBSBuffer.jobSuccessHandler = 'WMComponent.DBSBuffer.Handler.JobSuccess'
 
 
 
@@ -444,9 +439,11 @@ class FullRunthroughTest(unittest.TestCase):
         It's been left here because it's useful to run before everything else.
         """
 
-        #return
+        return
         
         myThread = threading.currentThread()
+
+        self.createTestWorkload()
 
         config = self.getConfig()
 
@@ -500,6 +497,8 @@ class FullRunthroughTest(unittest.TestCase):
 
         config = self.getConfig()
 
+        self.createTestWorkload()
+
         self.createSimpleFiles()
 
         
@@ -531,6 +530,13 @@ class FullRunthroughTest(unittest.TestCase):
         files     = myThread.dbi.processData("SELECT * FROM wmbs_file_details")[0].fetchall()
         state     = myThread.dbi.processData("SELECT name FROM wmbs_job_state WHERE id IN (SELECT state FROM wmbs_job)")[0].fetchall()
 
+        print "First state printing"
+        print jobs
+        print jobgroups
+        print subs
+        print files
+        print state
+
         self.assertEqual(len(jobs), 1)
         self.assertEqual(len(jobgroups), 1)
         self.assertEqual(len(files), 2)
@@ -542,16 +548,12 @@ class FullRunthroughTest(unittest.TestCase):
         
         self.assertEqual(state[0].values()[0], 'executing')
 
-        passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(os.getenv('WMCOREBASE')),
-                                          fractionPassed = 0.0)
-
-        os.popen3('condor_rm %s' %(os.getenv('USER')))
+        #passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(os.getenv('WMCOREBASE')),
+        #                                  fractionPassed = 0.0)
 
 
+        time.sleep(420)
 
-        time.sleep(30)
-        testJobAccountant.pollForJobs()
-        time.sleep(40)
 
         jobs      = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
         jobgroups = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
@@ -562,7 +564,9 @@ class FullRunthroughTest(unittest.TestCase):
 
         #This checks the RetryManager
         #Under the defaults, after waiting this long, jobs should have re-entered the executing phase
-        self.assertEqual(state[0].values()[0], 'executing')
+        print "These are the states"
+        print state
+        self.assertEqual(state[0].values()[0], 'cleanout')
 
         time.sleep(2)
 
@@ -571,6 +575,8 @@ class FullRunthroughTest(unittest.TestCase):
 
         myThread.workerThreadManager.terminateWorkers()
 
+        time.sleep(10)
+
 
         #At the end, wait if threads are still active
         while (threading.activeCount() > 1):
@@ -578,7 +584,7 @@ class FullRunthroughTest(unittest.TestCase):
             time.sleep(1)
 
 
-        os.popen3('condor_rm %s' %(os.getenv('USER')))
+        #os.popen3('condor_rm %s' %(os.getenv('USER')))
 
 
         return
@@ -592,11 +598,13 @@ class FullRunthroughTest(unittest.TestCase):
         Hopefully we will see some exhaustions as I fine tune this.
         """
 
-        #return
+        return
 
         myThread = threading.currentThread()
 
         config = self.getConfig()
+        self.createTestWorkload()
+        config.JobSubmitter.pluginName    = 'TestPlugin'
 
         self.createFileset()
 
@@ -660,7 +668,7 @@ class FullRunthroughTest(unittest.TestCase):
 
         
         #Once tracker has triggered, poll
-        testJobAccountant.pollForJobs()
+        #testJobAccountant.pollForJobs()
 
         time.sleep(0.1)
 
@@ -691,7 +699,7 @@ class FullRunthroughTest(unittest.TestCase):
         time.sleep(20)
 
         #Trigger poll
-        testJobAccountant.pollForJobs()
+        #testJobAccountant.pollForJobs()
 
         time.sleep(0.1)
 
@@ -760,9 +768,12 @@ class FullRunthroughTest(unittest.TestCase):
 
         config = self.getConfig()
 
+        self.createTestWorkload()
+
         print "About to start creating the fileset"
 
-        self.createFileset(nFiles = 300)
+        self.createFileset(nFiles = 50)
+        #self.createSimpleFiles()
 
         print "Finished creating the fileset"
 
@@ -775,7 +786,7 @@ class FullRunthroughTest(unittest.TestCase):
         testJobTracker    = JobTracker(config)
         testJobArchiver   = JobArchiver(config)
 
-        startTime = time.clock()
+        startTime = time.time()
 
         #Start components
         testJobCreator.prepareToStart()
@@ -797,21 +808,18 @@ class FullRunthroughTest(unittest.TestCase):
         while not finishedJobs:
             #Wait, and then see if all jobs are in closeout state
             time.sleep(10)
-            passed, failed = self.jobEmulator(goodFJR = "/home/mnorman/WMCORE/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/", 
-                                              fractionPassed = 1.0)
-            print "About to check state"
+            #passed, failed = self.jobEmulator(goodFJR = "/home/mnorman/WMCORE/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/", 
+            #                                  fractionPassed = 1.0)
+            #print "About to check state"
             state     = myThread.dbi.processData("SELECT name FROM wmbs_job_state WHERE id IN (SELECT state FROM wmbs_job)")[0].fetchall()
-            print "About to check jobstate"
+            #print "About to check jobstate"
             jobstate  = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
-
-            os.popen3('condor_rm %s' %(os.getenv('USER')))
-            testJobAccountant.pollForJobs()
 
             if jobstate == []:
                 continue
 
-            print state
-            print jobstate
+            #print state
+            #print jobstate
             
             finishedJobs = True
             #print "About to check to see if jobs are not done"
@@ -842,7 +850,7 @@ class FullRunthroughTest(unittest.TestCase):
 
 
 
-        totalTime = time.clock() - startTime
+        totalTime = time.time() - startTime
 
         print "Completed Long test"
         print "This took me %f seconds" %(totalTime)

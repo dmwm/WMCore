@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.5 2009/05/09 12:05:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Locations_t.py,v 1.6 2009/07/01 18:01:24 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import unittest
@@ -75,6 +75,9 @@ class LocationsTest(unittest.TestCase):
 
         Test the creation, listing and deletion of locations in WMBS.
         """
+
+        print "testCreateDeleteList"
+        
         goldenLocations = ["goodse.cern.ch", "goodse.fnal.gov"]
         
         myThread = threading.currentThread()        
@@ -120,6 +123,35 @@ class LocationsTest(unittest.TestCase):
             "ERROR: The wrong sites were deleted."
 
         return
+
+
+    def testListSites(self):
+        """
+
+        _testListSites
+
+        Test the ability to list all sites in the database.
+
+        """
+
+        print "testListSites"
+
+        myThread = threading.currentThread()        
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        locationNew = daoFactory(classname = "Locations.New")
+
+        locationNew.execute("Satsuma")
+        locationNew.execute("Choshu")
+        locationNew.execute("Tosa")
+
+        listSites = daoFactory(classname = "Locations.ListSites")
+        sites     = listSites.execute()
+
+        self.assertEqual("Satsuma" in sites, True)
+        self.assertEqual("Choshu" in sites, True)
+        self.assertEqual("Tosa" in sites, True)
         
 if __name__ == "__main__":
         unittest.main()

@@ -5,9 +5,9 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.13 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.13 2009/09/03 15:18:15 sfoulkes Exp $"
-__author__ = "anzar@fnal.gov"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.14 2009/09/03 19:31:31 mnorman Exp $"
+
 
 import logging
 import os
@@ -106,18 +106,17 @@ class AddToBuffer:
         return
 
 
-    def updateAlgo(self, algo):
-        # Add the algo to the buffer (API Call)
-        # dataset object contains the algo information
+    def updateAlgo(self, algo, inDBS = 0):
+        #Update the algo with inDBS information
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
-        factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
-                        myThread.dialect)
-        newDS = factory.loadObject("UpdateAlgo")
-        newDS.execute(appName = algo["ApplicationName"], appVer = algo["ApplicationVersion"], appFam = algo["ApplicationName"], \
-                      psetHash = algo["PSetHash"], configContent = algo["PSetContent"], \
-                      conn = myThread.transaction.conn, transaction=myThread.transaction)
+
+        factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+        newDS = factory(classname = "UpdateAlgo")
+        newDS.execute(inDBS = inDBS, appName = algo["ApplicationName"], appVer = algo["ApplicationVersion"], appFam = algo["ApplicationFamily"], \
+                      psetHash = algo["PSetHash"], conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
     

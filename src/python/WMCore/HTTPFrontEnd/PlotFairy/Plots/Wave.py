@@ -10,7 +10,7 @@ class Wave(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixi
                            IntBase('truncate_text',default=None),
                            ElementBase('labelled',bool,default=True),
                            FloatBase('text_span_bins',default=8.)]
-        super(Wave,self).__init__()
+        super(Wave,self).__init__(BinnedNumericAxis_allowdefault=True)
     def data(self):
         
         axes = self.figure.gca()

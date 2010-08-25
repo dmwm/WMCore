@@ -196,13 +196,17 @@ def axis_format(axis,data):
              axis.set_major_formatter(TimeFormatter(data['timeformat']))
          else:
              axis.set_major_formatter(TimeFormatter())
-             axis.set_major_locator(TimeLocator())
+             #axis.set_major_locator(TimeLocator()) not yet written...
     elif format=='binary':
         axis.set_major_formatter(BinFormatter())
         axis.set_major_locator(BinaryMaxNLocator())
     elif format=='hex':
         axis.set_major_formatter(HexFormatter())
         axis.set_major_locator(BinaryMaxNLocator())
+    elif format=='num':
+        pass
+    else:
+        raise ValueError, "unknown axis format '%s'"%format
 
 def numeric_bins(data):
     min = data.get('min',None)
@@ -213,32 +217,42 @@ def numeric_bins(data):
     logbase = float(data.get('logbase',10))
     
     if width!=None and width<=0:
-        return None,None
+        raise ValueError, "axis 'width' defined and <=0"
     if bins!=None and bins<=0:
-        return None,None
+        raise ValueError, "axis 'bins' defined and <=0"
+    if log and min!=None and min<=0:
+        raise ValueError, "log axis has 'min'<=0"
+    if log and max!=None and max<=0:
+        raise ValueError, "log axis has 'max'<=0"
+    if min!=None and max!=None and min>max:
+        raise ValueError, "axis 'min'>'max'"
+    
     if min!=None and max!=None and width!=None:
         if log:
-            if min<=0 or max<=0 or width<=0:
-                return None, None
-            else:
-                bins = int(abs(math.log(min,logbase)-math.log(max,logbase))/width)
-                edges = [logbase**(math.log(min,logbase)+i*width) for i in range(bins+1)]
-                return bins,edges    
+            bins = int(abs(math.log(min,logbase)-math.log(max,logbase))/width)
         else:
             bins = int(float(max-min)/width)
-            edges = [min+width*i for i in range(bins+1)]
-            return bins,edges
     elif min!=None and width!=None and bins!=None:
+        pass
+    elif min!=None and max!=None and bins!=None:
         if log:
-            if min<=0 or width<=0 or bins<=0:
-                return None,None
-            else:
-                edges = [logbase**(math.log(min,logbase)+i*width) for i in range(bins+1)]
-                return bins,edges
+            width = math.log(max,logbase)-math.log(min,logbase)
         else:
-            edges = [min+width*i for i in range(bins+1)]
-            return bins,edges
-    return None,None
+            width = max-min
+    elif max!=None and bins!=None and width!=None:
+        if log:
+            min = logbase**(math.log(max,logbase)-bins*width)
+        else:
+            min = max - bins*width
+    else:
+        raise ValueError, "axis requires at least 3 of 'min','max','width','bins'"
+    
+    if log:
+        return bins, [logbase**(math.log(min,logbase)+i*width) for i in range(bins+1)]
+    else:
+        return bins, [min+width*i for i in range(bins+1)]
+    
+    
                 
 class NumericAxisMixin(Mixin):  
     def __init__(self,*args,**kwargs):
@@ -270,8 +284,7 @@ class NumericAxisMixin(Mixin):
             setattr(self.props,'log_%s'%self.__axis[0].lower(),True)
         else:
             setattr(self.props,'log_%s'%self.__axis[0].lower(),False)
-        #super(NumericAxisMixin,self).predata(*args,**kwargs)
-    
+        
     def postdata(self,*args,**kwargs):
         axes = self.figure.gca()
         axis = getattr(axes,self.__axis)
@@ -280,27 +293,82 @@ class NumericAxisMixin(Mixin):
         if data['min'] or data['max']:
             axis.set_view_interval(data['min'],data['max'])
         
-        #super(NumericAxisMixin,self).postdata(*args,**kwargs)
-
+        
 XNumericAxisMixin = UniqueAxis(NumericAxisMixin,'xaxis')
 YNumericAxisMixin = UniqueAxis(NumericAxisMixin,'yaxis')
         
         
-class BinnedNumericAxisMixin(NumericAxisMixin):
+class BinnedNumericAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
-        self.validators += [DictElementBase(self.__axis,False,[FloatBase('min',default=0),
-                                                     FloatBase('max',default=1),
-                                                     FloatBase('width',min=0,default=1)])]
+        self.__binsrc = kwargs.get('BinnedNumericAxis_defaultbinsrc','series')
+        self.__allowdefault = kwargs.get('BinnedNumericAxis_allowdefault',False)
+        subvalidators = [
+                         FloatBase('min',default=None),
+                         FloatBase('max',default=None),
+                         FloatBase('width',default=None),
+                         IntBase('bins',default=None),
+                         StringBase('label',default=''),
+                         ElementBase('log',bool,default=False),
+                         StringBase('timeformat',default=None),
+                         StringBase('format',('num','time','binary','si','hex'),default='num')
+                         ]
+        self.validators += [DictElementBase(self.__axis,True,subvalidators)]
         super(BinnedNumericAxisMixin,self).__init__(*args,**kwargs)
+    def validate(self,input):
+        if not self.__allowdefault:
+            if not self.__axis in input:
+                return "'%s' not found in input, required"%self.__axis
+            else:
+                count = sum([1 if s in input[self.__axis] else 0 for s in ('min','max','width','bins')])
+                if count < 3:
+                    return "%s requires at least 3 of (min, max, width, bins)"%self.__axis
+        return True
+    
     def predata(self,*args,**kwargs):
         data = self.props.get(self.__axis)
-        
-        bins,edges = numeric_bins(data)
+        bins = 0
+        edges = []
+        if self.__allowdefault:  
+            try:
+                bins,edges = numeric_bins(data)
+            except:
+                binsrc = self.props.get(self.__binsrc,[])
+                bins = max([len(s['values']) for s in binsrc])
+                edges = range(bins+1)
+                
+        else:
+            bins,edges = numeric_bins(data)
         data['bins']=bins
         data['edges']=edges
         
-        #super(BinnedNumericAxisMixin,self).predata(*args,**kwargs)
-
+        axes = self.figure.gca()
+        axis = getattr(axes,self.__axis)
+        data = self.props.get(self.__axis)
+        
+        axis_format(axis,data)
+        
+        if self.__axis=='xaxis':
+            axes.set_xlabel(data['label'])
+        elif self.__axis=='yaxis':
+            axes.set_ylabel(data['label'])
+        
+        if data['log']:
+            if self.__axis=='xaxis':
+                axes.set_xscale('log',basex=data['logbase'])
+            elif self.__axis=='yaxis':
+                axes.set_yscale('log',basey=data['logbase'])
+            setattr(self.props,'log_%s'%self.__axis[0].lower(),True)
+        else:
+            setattr(self.props,'log_%s'%self.__axis[0].lower(),False)
+        
+    def postdata(self,*args,**kwargs):
+        axes = self.figure.gca()
+        axis = getattr(axes,self.__axis)
+        data = self.props.get(self.__axis)
+        
+        if data['min'] or data['max']:
+            axis.set_view_interval(data['min'],data['max'])
+                
 XBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'xaxis')
 YBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'yaxis')
 
@@ -310,6 +378,7 @@ class AnyBinnedAxisMixin(Mixin):
                                                                FloatBase('min',default=None),
                                                                FloatBase('max',default=None),
                                                                FloatBase('width',min=0,default=None),
+                                                               IntBase('bins',min=0,default=None),
                                                                StringBase('timeformat',None,default=None),
                                                                StringBase('format',('num','time','binary','si','hex'),default='num'),
                                                                ListElementBase('labels',(str,unicode),default=None)])]
@@ -373,18 +442,13 @@ class AutoLabelledAxisMixin(Mixin):
         data = self.props.get(self.__axis)
         if self.__axis=='xaxis':
             axes.set_xlabel(data['label'])
-            axis_format(axes.xaxis,data)
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
-            axis_format(axes.yaxis,data)
-        #super(AutoLabelledAxisMixin,self).predata(*args,**kwargs)
+        data['bins']=0
+        data['edges']=[]
 
-#print 'AutoLabelledAxisMixin',AutoLabelledAxisMixin.predata.func_code.co_names
-#print AutoLabelledAxisMixin.predata,id(AutoLabelledAxisMixin.predata)
 XAutoLabelledAxisMixin = UniqueAxis(AutoLabelledAxisMixin,'xaxis')
 YAutoLabelledAxisMixin = UniqueAxis(AutoLabelledAxisMixin,'yaxis')
-#print 'XAutoLabelledAxisMixin',XAutoLabelledAxisMixin.predata.func_code.co_names            
-#print XAutoLabelledAxisMixin.predata,id(XAutoLabelledAxisMixin.predata)
 
 class BinnedNumericSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -400,8 +464,7 @@ class BinnedNumericSeriesMixin(Mixin):
         if self.__binsrc!=None:
             xbins = self.props.get(self.__binsrc,{}).get('bins',0)
             if xbins==None:
-                super(BinnedNumericSeriesMixin,self).data(*args,**kwargs)
-                return
+                raise Exception, 'xbins==None in BinnedNumericSeriesMixin'
         else:
             xbins = None
         if self.__datamode == 'edge':
@@ -436,8 +499,6 @@ class BinnedNumericSeriesMixin(Mixin):
             series['min'] = min(series['values'])
             series['max'] = max(series['values'])
             
-        #super(BinnedNumericSeriesMixin,self).data(*args,**kwargs)
-    
 class LabelledSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),FloatBase('value',allow_missing=False),ColourBase('colour',default=None),ElementBase('explode',(int,float),default=0)]),allow_missing=False)]
@@ -463,7 +524,6 @@ class LabelledSeries2DMixin(Mixin):
                     series['y'] += [0.]*(len(series['x'])-len(series['y']))
                 else:
                     series['x'] += [0.]*(len(series['y'])-len(series['x']))    
-        #super(LabelledSeries2DMixin,self).data(*args,**kwargs)
                 
         
 class ArrayMixin(Mixin):
@@ -476,9 +536,9 @@ class ArrayMixin(Mixin):
     def validate(self,input):
         lengths = set([len(line) for line in input['data']])
         if not len(lengths)==1:
-            return False
+            return "Different row lengths in 'data'"
         if self.__rowlen!=None and not list(lengths)[0]==self.__rowlen:
-            return False
+            return "Rowlength != %s in 'data'"%self.__rowlen
         return True
         #return super(ArrayMixin,self).validate(input)
     def predata(self,*args,**kwargs):
@@ -489,8 +549,7 @@ class ArrayMixin(Mixin):
                         row[i]=self.__min
                     if self.__max!=None and item>self.__max:
                         row[i]=self.__max
-        #super(ArrayMixin,self).predata(*args,**kwargs)
-
+        
 class WatermarkMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.__watermarks = {'cms':'cmslogo.png'}
@@ -527,4 +586,3 @@ class WatermarkMixin(Mixin):
             except:
                 pass
                 
-        #super(WatermarkMixin,self).finalise(*args,**kwargs)

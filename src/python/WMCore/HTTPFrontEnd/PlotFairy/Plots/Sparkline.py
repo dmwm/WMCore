@@ -7,8 +7,8 @@ class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeri
     def __init__(self):
         self.validators = [ElementBase('labelled',bool,default=True),
                            ElementBase('overlay',bool,default=True),
-                           StringBase('linestyle',None,default='-'),
-                           StringBase('marker',None,'None'),
+                           StringBase('linestyle',default='-'),
+                           MarkerBase('marker',default='None'),
                            FloatBase('linewidth',min=0,default=1),
                            FloatBase('text_fraction',min=0,max=1,default=0.2)]
         self.props = Props()
@@ -20,10 +20,10 @@ class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeri
             return
         
         left = float(self.props.padding_left)/self.props.width + self.props.text_fraction
-        left_nolabels = float(self.props.padding_left)/self.props.width
+        left_nolabel = float(self.props.padding_left)/self.props.width
         bottom = float(self.props.padding_bottom)/self.props.width
         width = (1 - float(self.props.padding_right)/self.props.width - left)
-        width_nolabels = float(self.props.avail_width)/self.props.width
+        width_nolabel = float(self.props.avail_width)/self.props.width
         height = float(1 - (self.props.height-self.props.topbound) - self.props.padding_bottom)
         
         

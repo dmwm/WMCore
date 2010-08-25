@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import re
 import matplotlib
+import sys
+import traceback
 '''
 The Plot class is a base class for PlotFairy plots to inherit from. Authors of
 new plots should override the plot(self, data) method. Plots should be 
@@ -57,6 +59,7 @@ class Plot(type):
                 return self.figure
             except Exception as e:
                 return self._error(str(e))
+                #return self._error(traceback.format_exc())
         attrs['__call__']=__call__
         
         def __init__(self,*args,**kwargs):

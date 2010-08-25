@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.43 2010/08/09 16:04:48 sfoulkes Exp $"
-__revision__ = "$Revision: 1.43 $"
+__version__ = "$Id: ReReco.py,v 1.44 2010/08/09 21:34:52 sfoulkes Exp $"
+__revision__ = "$Revision: 1.44 $"
 
 import subprocess
 
@@ -24,6 +24,7 @@ from WMCore.Services.Requests import JSONRequests
 
 from WMCore.Cache.ConfigCache import WMConfigCache
 from WMCore.WMSpec.StdSpecs import SplitAlgoStartPolicyMap
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 def getTestArguments():
     """
@@ -63,40 +64,16 @@ def getTestArguments():
 
     return arguments
 
-class ReRecoWorkloadFactory(object):
+class ReRecoWorkloadFactory(StdBase):
     """
     _ReRecoWorkloadFactory_
 
     Stamp out ReReco workfloads.
     """
-    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
-                            scenarioArgs):
-        """
-        _getOutputModuleInfo_
+    def __init__(self):
+        StdBase.__init__(self)
+        return
 
-        Use the outputmodules-from-config utility to retrieve output module
-        metadata.
-        """
-        self.encoder = JSONRequests()
-        config = {"cmsPath": self.cmsPath, "scramArch": self.scramArch,
-                  "frameworkVersion": self.frameworkVersion,
-                  "configUrl": configUrl, "scenarioName": scenarioName,
-                  "scenarioFunc": scenarioFunc, "scenarioArgs": scenarioArgs}
-
-        outmodProcess = subprocess.Popen(["outputmodules-from-config"],
-                                         stdin = subprocess.PIPE,
-                                         stdout = subprocess.PIPE)
-        outmodProcess.stdin.write("%s\n" % self.encoder.encode(config))
-        outmodProcess.stdin.flush()
-
-        returnCode = outmodProcess.wait()
-        if returnCode != 0:
-            msg = "Failed to get output module config: %s"
-            raise Exception(msg % outmodProcess.stdout.read())
-        
-        output = outmodProcess.stdout.readline()
-        return self.encoder.decode(output)
-    
     def addDashboardMonitoring(self, task):
         """
         _addDashboardMonitoring_

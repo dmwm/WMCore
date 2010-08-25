@@ -11,48 +11,7 @@ import os
 import urllib
 import imp
 
-from WMCore.Services.Requests import JSONRequests
-
-def setupCMSSWEnv(cmsPath, scramArch, frameworkVersion):
-    """
-    _setupCMSSWEnv_
-
-    Setup the CMSSW python environment for the given cmsPath, scramArch and
-    frameworkVersion.
-    """
-    patchRelease = False
-    cmsswDir = "cmssw"
-    if frameworkVersion.find("patch") > -1:
-        patchRelease = True
-        cmsswDir = "cmssw-patch"
-        
-    releaseBase = os.path.join(cmsPath, scramArch, "cms", cmsswDir,
-                               frameworkVersion)
-    pythonLib = "%s/python" % releaseBase
-    envFile = "%s/cmsswPaths.py" % pythonLib
-    
-    if not os.path.exists(pythonLib):
-        print "Unable to locate python libs for release: %s" % pythonLib
-        sys.exit(1)
-
-    sys.path.append(pythonLib)
-    
-    if not patchRelease:
-        return
-
-    if not os.path.exists(envFile):
-        print "Unable to locate env file for patch release: %s" % envFile
-        sys.exit(1)
-        
-    fp, pathname, description = imp.find_module(
-        os.path.basename(envFile).replace(".py", ""),
-        [os.path.dirname(envFile)])
-    modRef = imp.load_module("AutoLoadCMSSWPathDefinition", fp, pathname, description)
-    pythonPaths = getattr(modRef, "cmsswPythonPaths", None)
-    if pythonPaths != None:
-        sys.path.extend(pythonPaths)
-        
-    return
+from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 
 def loadConfig(configPath):
     """
@@ -80,20 +39,28 @@ def outputModulesFromConfig(configHandle):
         outputModule = getattr(configHandle, outputModuleName)
         outputModules[outputModuleName] = {}
         if hasattr(outputModule, "dataset"):
-            outputModules[outputModuleName] = {"dataTier": str(getattr(outputModule.dataset, "dataTier", None).value()),
-                                               "filterName": str(getattr(outputModule.dataset, "filterName", None).value())}
+            dataTierAttr = getattr(outputModule.dataset, "dataTier", None)
+            filterNameAttr = getattr(outputModule.dataset, "filterName", None)
+
+            dataTier = None
+            filterName = None
+            if dataTierAttr:
+                dataTier = dataTierAttr.value()
+            if filterNameAttr:
+                filterName = filterNameAttr.value()
+                
+            outputModules[outputModuleName] = {"dataTier": dataTier,
+                                               "filterName": filterName}
             
     return outputModules
 
 if __name__ == "__main__":
     try:
-        jsonHandler = JSONRequests()
+        jsonDecoder = JSONDecoder()
+        jsonEncoder = JSONEncoder()
 
         encodedConfig = sys.stdin.readline()
-        config = jsonHandler.decode(encodedConfig)
-
-        setupCMSSWEnv(config["cmsPath"], config["scramArch"],
-                      config["frameworkVersion"])
+        config = jsonDecoder.decode(encodedConfig)
 
         if config.get("configUrl", None):
             tempDir = tempfile.mkdtemp()
@@ -115,10 +82,13 @@ if __name__ == "__main__":
             process = mySetup.process
 
         outputModules = outputModulesFromConfig(process)
-        outputModulesJSON = jsonHandler.encode(outputModules)
+        outputModulesJSON = jsonEncoder.encode(outputModules)
 
-        sys.stdout.write("%s\n" % outputModulesJSON)
-        sys.stdout.flush()
+        outputHandle = open("outputModules.json", "w")
+        outputHandle.write("%s\n" % outputModulesJSON)
+        outputHandle.close()
+        
         sys.exit(0)
     except Exception, ex:
+        print ex
         sys.exit(1)

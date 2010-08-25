@@ -100,7 +100,7 @@ class WMBSRESTModel(RESTModel):
     implementing the GET verb.
     """
     def __init__(self, config = {}):
-        self.version = "$Revision: 1.11 $"        
+        self.version = "$Revision: 1.12 $"        
         RESTModel.__init__(self, config)
 
         self.daos = {}
@@ -204,8 +204,8 @@ class WMBSRESTModel(RESTModel):
             base = '/tier1_skimming/_design/jobdump/_view/stateChangesByTime?' 
             url = "%s&%s&%s&%s" % (base, order, endKey, startKey)            
         elif jobState == "running":
-            # query wmbs
-            url = "yourmom"
+            runningJobsDAO = self.getDAO(className = "Monitoring.ListRunningJobs")
+            return runningJobsDAO.execute()
         else:
             endKey = 'endkey=["%s",%d]' % (jobState, startTime)
             startKey = 'startkey=["%s",%d]' % (jobState, endTime)

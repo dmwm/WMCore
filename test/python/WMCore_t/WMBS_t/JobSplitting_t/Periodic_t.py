@@ -5,10 +5,9 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-__revision__ = "$Id: Periodic_t.py,v 1.5 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Periodic_t.py,v 1.6 2009/12/16 18:40:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
-from sets import Set
 import unittest
 import os
 import threading
@@ -74,21 +73,7 @@ class PeriodicTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
+        self.testInit.clearDatabase()
         return            
 
     def injectFile(self):
@@ -98,7 +83,7 @@ class PeriodicTest(unittest.TestCase):
         Inject a file into the periodic splitting input fileset.
         """
         testFile = File(lfn = "/this/is/a/lfn%s" % time.time(), size = 1000,
-                        events = 100, locations = Set(["somese.cern.ch"]))
+                        events = 100, locations = set(["somese.cern.ch"]))
         testFile.create()
         self.testFileset.addFile(testFile)    
         self.testFileset.commit()
@@ -160,7 +145,7 @@ class PeriodicTest(unittest.TestCase):
 
         # Complete the job so that the splitting algorithm will generate
         # another job.
-        wmbsJob["state"] = "closeout"
+        wmbsJob["state"] = "cleanout"
         wmbsJob["oldstate"] = "new"
         wmbsJob["couch_record"] = "somejive"
         wmbsJob["retry_count"] = 0
@@ -199,7 +184,7 @@ class PeriodicTest(unittest.TestCase):
                "ERROR: Wrong number of job groups returned: %s" % len(jobGroups)
 
         # Complete the outstanding job.
-        wmbsJob["state"] = "closeout"
+        wmbsJob["state"] = "cleanout"
         wmbsJob["oldstate"] = "new"
         wmbsJob["couch_record"] = "somejive"
         wmbsJob["retry_count"] = 0
@@ -220,7 +205,7 @@ class PeriodicTest(unittest.TestCase):
         self.verifyFiles(jobGroups[0].jobs.pop())
 
         # Verify that after the final job is complete no more jobs are generated.
-        wmbsJob["state"] = "closeout"
+        wmbsJob["state"] = "cleanout"
         wmbsJob["oldstate"] = "new"
         wmbsJob["couch_record"] = "somejive"
         wmbsJob["retry_count"] = 0

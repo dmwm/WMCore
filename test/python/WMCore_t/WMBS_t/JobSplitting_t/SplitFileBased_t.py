@@ -5,8 +5,8 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-__revision__ = "$Id: SplitFileBased_t.py,v 1.5 2009/12/16 18:39:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SplitFileBased_t.py,v 1.6 2009/12/16 18:40:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -59,6 +59,7 @@ class SplitFileBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
+        self.testInit.clearDatabase()        
         return
 
 

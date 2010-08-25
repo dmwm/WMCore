@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateAgentBase.py,v 1.2 2010/06/22 16:46:34 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: CreateAgentBase.py,v 1.3 2010/06/23 18:07:09 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -56,6 +56,8 @@ class CreateAgentBase(DBCreator):
              last_updated  INTEGER      NOT NULL,
              state         VARCHAR(255),
              pid           INTEGER,
+             last_error    INTEGER,
+             error_message VARCHAR(1000),
              UNIQUE (component_id, name))"""
         
         self.constraints["FK_wm_component_worker"] = \

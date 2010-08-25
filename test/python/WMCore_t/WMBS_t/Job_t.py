@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.20 2009/05/18 16:51:32 sfoulkes Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Job_t.py,v 1.21 2009/07/10 19:59:47 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import unittest
 import logging
@@ -536,6 +536,24 @@ class JobTest(unittest.TestCase):
                "ERROR: Job mask did not load properly"        
         
         return
+
+
+    def testJobState(self):
+        """
+        _testJobState_
+
+        Unittest to see if we can figure out what the jobState actually is and set it
+        """
+
+        testJobA = self.createTestJob()
+
+        value = testJobA.getState()
+
+        self.assertEqual(value, 'new')
+
+        return
+
+        
     
 if __name__ == "__main__":
     unittest.main() 

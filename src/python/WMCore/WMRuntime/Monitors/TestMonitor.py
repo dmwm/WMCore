@@ -6,8 +6,8 @@ _TestMonitor_
 This is the test class for monitors
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: TestMonitor.py,v 1.2 2009/12/21 17:18:40 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TestMonitor.py,v 1.3 2010/02/10 17:35:15 mnorman Exp $"
 
 import threading
 import time
@@ -190,12 +190,19 @@ class TestMonitor(WMRuntimeMonitor):
         
             #Now kill it!
             msg = ""
+            msg += "Start Time: %s\n" % self.startTime
+            msg += "Time Now: %s\n" % time.time()
+            msg += "Timeout: %s\n" % self.softTimeOut
+            msg += "Killing Job...\n"
+            msg += "Process ID is: %s\n" % stepPID
             if time.time() - self.startTime < self.hardTimeOut or not self.killFlag:
-                os.kill(stepPID, signal.SIGUSR2)
                 msg += "WARNING: Soft Kill Timeout has Expired:"
+                logging.error(msg)
+                os.kill(stepPID, signal.SIGUSR2)
                 self.killFlag = True
             elif self.killFlag:
                 msg += "WARNING: Hard Kill Timeout has Expired:"
+                logging.error(msg)
                 os.kill(stepPID, signal.SIGTERM)
                 killedpid, stat = os.waitpid(pid, os.WNOHANG)
                 if killedpid == 0:
@@ -206,11 +213,7 @@ class TestMonitor(WMRuntimeMonitor):
                         #Panic!  It's unkillable!
                         pass
 
-            msg += "Start Time: %s\n" % self.startTime
-            msg += "Time Now: %s\n" % time.time()
-            msg += "Timeout: %s\n" % self.softTimeOut
-            msg += "Killing Job...\n"
-            msg += "Process ID is: %s\n" % stepPID
-            logging.error(msg)
+
+            #logging.error(msg)
         
         

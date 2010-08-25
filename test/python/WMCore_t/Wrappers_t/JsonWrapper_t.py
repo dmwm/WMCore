@@ -11,7 +11,7 @@ try:
     import cjson
     __test = True
 except:
-
+    pass
 
 import unittest
 try:

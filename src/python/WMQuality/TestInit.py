@@ -19,6 +19,7 @@ import threading
 import tempfile
 import shutil
 import time
+import nose
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -50,7 +51,7 @@ def requiresPython26(testMethod, *args, **kwargs):
     """
     def skipTest(*args, **kwargs):
         print "SKIPPING"
-        #raise nose.SkipTest
+        raise nose.SkipTest
         
     import sys
 
@@ -70,7 +71,7 @@ class TestInit:
     minimize code duplication.
     """ 
 
-    def __init__(self, testClassName):
+    def __init__(self, testClassName = "Unknown Class"):
         self.testClassName = testClassName
         self.testDir = None
         self.currModules = []

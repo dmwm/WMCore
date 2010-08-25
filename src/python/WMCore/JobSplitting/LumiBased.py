@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.9 2009/10/29 13:43:28 sfoulkes Exp $"
-__version__  = "$Revision: 1.9 $"
+__revision__ = "$Id: LumiBased.py,v 1.10 2009/11/19 20:59:20 mnorman Exp $"
+__version__  = "$Revision: 1.10 $"
 
 from sets import Set
 
@@ -30,11 +30,6 @@ class LumiBased(JobFactory):
         Implement lumi based splitting algorithm.  By default splits into JobGroups by lumi
         section, and then each job has one file.
         """
-
-        #  //
-        # // get the fileset
-        #//
-        fileset = self.subscription.availableFiles()
 
         #lumisPerJob = kwargs['lumis_per_job']
         filesPerJob  = kwargs.get('files_per_job', 1)
@@ -81,11 +76,14 @@ class LumiBased(JobFactory):
             
 
     def FileBasedJobSplitting(self, lumiDict, filesPerJob, location):
+        """
+        Split jobs based on files
+
+        """
         assignedFiles = []
         
         for lumi in lumiDict.keys():
             self.newGroup()
-            joblist = []
             baseName = makeUUID()
             jobFiles = Fileset()
             
@@ -114,6 +112,10 @@ class LumiBased(JobFactory):
                 jobFiles = Fileset()
 
     def LumiBasedJobSplitting(self, lumiDict, lumisPerJob, location):
+        """
+        Split simply, based on lumis
+
+        """
 
         currentLumis  = 0
         jobFiles      = Fileset()
@@ -141,7 +143,8 @@ class LumiBased(JobFactory):
 
             #If we now have enough lumis, we end.
             if currentLumis >= lumisPerJob:
-                self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
+                self.newJob(name = '%s-%s' % (baseName, \
+                                              len(self.currentGroup.jobs) + 1),
                                   files = jobFiles)
                 self.currentJob["mask"].setMaxAndSkipLumis(currentLumis, lumi)
                 #Wipe clean
@@ -150,12 +153,17 @@ class LumiBased(JobFactory):
 
         if not len(jobFiles.getFiles()) == 0:
             #Then we have files we need to check in because we ran out of lumis before filling the last job
-            self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
+            self.newJob(name = '%s-%s' % (baseName, \
+                                          len(self.currentGroup.jobs) + 1),
                               files = jobFiles)
             self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, lumi)
             
 
     def EventBasedJobSplitting(self, lumiDict, eventsPerJob, location):
+        """
+        Split jobs in lumi based on event
+
+        """
         
         currentEvents = 0
         baseName = makeUUID()
@@ -173,7 +181,7 @@ class LumiBased(JobFactory):
 
                 if eventsInFile > eventsPerJob:
                     #Push the panic button
-                    print "File %s is too big to be processed.  Skipping" %(file['lfn'])
+                    print "File %s is too big to be processed.  Skipping" % (file['lfn'])
                     continue
                 #If we don't have enough events, add the file to the job
                 if eventsPerJob - currentEvents >= eventsInFile:
@@ -181,7 +189,8 @@ class LumiBased(JobFactory):
                     jobFiles.addFile(file)
                 #If you have enough events, end the job and start a new one
                 else:
-                    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
+                    self.newJob(name = '%s-%s' % (baseName, \
+                                                  len(self.currentGroup.jobs) + 1),
                                       files = jobFiles)
                     self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
                     
@@ -194,7 +203,8 @@ class LumiBased(JobFactory):
                     
             #If we have excess events, make a final job
             if not currentEvents == 0:
-                self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
+                self.newJob(name = '%s-%s' % (baseName, \
+                                              len(self.currentGroup.jobs) + 1),
                                   files = jobFiles)
                 self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
                 jobFiles = Fileset()

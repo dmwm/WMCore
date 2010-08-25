@@ -1,25 +1,18 @@
 #!/usr/bin/env python
 """
-_EventBased_
+_FileBased_
 
-Event based splitting algorithm that will chop a fileset into
-a set of jobs based on event counts
+File based splitting algorithm that will chop a fileset into
+a set of jobs based on file boundaries
 """
 
-__revision__ = "$Id: FileBased.py,v 1.22 2009/10/29 13:43:28 sfoulkes Exp $"
-__version__  = "$Revision: 1.22 $"
+__revision__ = "$Id: FileBased.py,v 1.23 2009/11/19 20:55:26 mnorman Exp $"
+__version__  = "$Revision: 1.23 $"
 
-from sets import Set
-from sets import ImmutableSet
-import logging
 import threading
-import time
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
-
-from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.File    import File
 
 class FileBased(JobFactory):
     """
@@ -27,10 +20,13 @@ class FileBased(JobFactory):
     """
 
     def getJobName(self, baseName = None, length=None):
+        """
+        Create standard job name
+
+        """
         if not baseName:
             baseName = makeUUID()
-        return '%s-%s' %(baseName, str(length))
-        #return baseName+str(length+1)
+        return '%s-%s' % (baseName, str(length))
     
     def algorithm(self, *args, **kwargs):
         """
@@ -63,7 +59,8 @@ class FileBased(JobFactory):
                 continue
             for file in fileList:
                 if filesInJob == 0 or filesInJob == filesPerJob:
-                    self.newJob(name = self.getJobName(baseName = baseName, length=totalJobs))
+                    self.newJob(name = self.getJobName(baseName = baseName, \
+                                                       length=totalJobs))
                     filesInJob = 0
                     totalJobs += 1
                     

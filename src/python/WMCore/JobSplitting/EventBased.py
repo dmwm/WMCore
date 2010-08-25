@@ -6,10 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: EventBased.py,v 1.15 2009/10/29 13:43:28 sfoulkes Exp $"
-__version__  = "$Revision: 1.15 $"
-
-from sets import Set
+__revision__ = "$Id: EventBased.py,v 1.16 2009/11/19 20:55:26 mnorman Exp $"
+__version__  = "$Revision: 1.16 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
@@ -26,12 +24,6 @@ class EventBased(JobFactory):
         set number of events per job.  
         """
        
-        #  //
-        # // Resulting job set (shouldnt this be a JobGroup??)
-        #//
-        jobs         = []
-        jobGroupList = []
-
         #Get a dictionary of sites, files
         locationDict = self.sortByLocation()
         #baseName = makeUUID()
@@ -41,8 +33,6 @@ class EventBased(JobFactory):
         # // get the event total
         #//
         eventsPerJob = int(kwargs.get("events_per_job", 100))
-        carryOver = 0
-
         
 
         for location in locationDict:

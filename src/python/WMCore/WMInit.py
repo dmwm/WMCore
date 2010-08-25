@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.22 2010/04/20 20:56:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: WMInit.py,v 1.23 2010/05/28 16:49:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -137,7 +137,7 @@ class WMInit:
                 " could not be created, already exists?")
         myThread.transaction.commit()
 
-    def initializeSchema(self, modules = []):
+    def initializeSchema(self, nameSpace, modules = []):
         """
         Sometimes you need to initialize the schema before 
         starting the program. This methods lets you pass
@@ -150,12 +150,14 @@ class WMInit:
 
         myThread.transaction.begin()
 
-        factory = WMFactory("schema")
+        factory = WMFactory(nameSpace, nameSpace + "." + myThread.dialect)
 
         for factoryName in modules:
             # need to create these tables for testing.
             # notice the default structure: <dialect>/Create
             create = factory.loadObject(factoryName)
+            create.logger = logging
+            create.dbi = myThread.dbi
             createworked = create.execute(conn = myThread.transaction.conn)
             if createworked:
                 logging.debug("SQL for "+ factoryName + " executed")

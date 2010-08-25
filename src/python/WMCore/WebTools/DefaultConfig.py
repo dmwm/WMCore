@@ -74,14 +74,17 @@ active.section_('masthead')
 active.masthead.object = 'WMCore.WebTools.Masthead'
 active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Masthead'
 
-active.section_('rest')
-active.rest.object = 'WMCore.WebTools.RESTApi'
-active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
-active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
-active.rest.section_('model')
-active.rest.model.object = 'RESTModel'
-active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
-active.rest.model.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
-active.rest.section_('formatter')
-active.rest.formatter.object = 'RESTFormatter'
-active.rest.formatter.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+# This is how you would configure a RESTful service, commented out because 
+# you'll need an active database for it to make sense - we just want to show the
+# documentation 
+#active.section_('rest')
+#active.rest.object = 'WMCore.WebTools.RESTApi'
+#active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+##active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+#active.rest.section_('model')
+#active.rest.model.object = 'RESTModel'
+#active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
+#active.rest.model.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+#active.rest.section_('formatter')
+#active.rest.formatter.object = 'RESTFormatter'
+#active.rest.formatter.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'

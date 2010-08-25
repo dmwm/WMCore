@@ -4,8 +4,8 @@
 The actual retry algorithm(s)
 """
 __all__ = []
-__revision__ = "$Id: RetryManagerPoller.py,v 1.5 2010/02/12 14:58:48 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: RetryManagerPoller.py,v 1.6 2010/04/02 13:03:15 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
@@ -18,6 +18,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
+from WMCore.WMFactory         import WMFactory
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine.Transitions import Transitions
@@ -51,6 +52,11 @@ class RetryManagerPoller(BaseWorkerThread):
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+
+        # Create a factory to load plugins
+        self.pluginFactory = WMFactory("plugins",
+                                       self.config.RetryManager.pluginPath)
+        
         self.changeState = ChangeState(self.config)
 
         
@@ -144,19 +150,28 @@ class RetryManagerPoller(BaseWorkerThread):
             pluginName = 'RetryAlgo'
         plugin = '%s%s' % (jobType.capitalize(), pluginName)
         name = '%s.%s' % (self.config.RetryManager.pluginPath, plugin)
-        path = os.path.join(self.config.RetryManager.WMCoreBase, 'src/python', name.replace('.','/')) + '.py'
+        path = os.path.join(self.config.RetryManager.WMCoreBase,
+                            'src/python',
+                            name.replace('.','/')) + '.py'
 
-        if os.path.isfile(path):
-            module = __import__(name, globals(), locals(), ['RetryAlgo'])
-            instance = getattr(module, 'RetryAlgo')
-            loadedClass = instance(self.config)
-            for job in jobList:
-                if loadedClass.isReady(job):
-                    result.append(job)
+        if not os.path.isfile(path):
+            # Then we don't have the plugin
+            msg = "WARNING!  RetryManager is set to use Non-Existant Plugin %s!" \
+                  % (pluginName)
+            logging.error(msg)
+            raise Exception (msg)
+            
+
+
+        loadedClass = self.pluginFactory.loadObject(classname = plugin)
+        loadedClass.setup(config = self.config)
+        for job in jobList:
+            if loadedClass.isReady(job):
+                result.append(job)
 
 
         else:
-            logging.error('Could find no module.  Am using default to determine whether cooldown has expired')
+            logging.error('Could find no module.  Am using default RetryAlgo')
             for job in jobList:
                 if self.defaultRetryAlgo(job, jobType):
                     result.append(job)

@@ -32,7 +32,7 @@ class PhEDEx(AuthorisedService):
         self.responseType = responseType.lower()
         
         if not dict.has_key('endpoint'):
-            dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
+            dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/test/" % \
                                 self.responseType
         
         #PhEDEx Service default is using POST 

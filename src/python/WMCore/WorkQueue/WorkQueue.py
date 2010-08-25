@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.57 2010/01/27 12:57:31 swakef Exp $"
-__version__ = "$Revision: 1.57 $"
+__revision__ = "$Id: WorkQueue.py,v 1.58 2010/01/27 17:28:35 sryu Exp $"
+__version__ = "$Revision: 1.58 $"
 
 
 import uuid
@@ -125,7 +125,12 @@ class WorkQueue(WorkQueueBase):
             raise RuntimeError, "ParentQueue defined but not QueueURL"
         if self.params['ParentQueue'] is not None:
             self.parent_queue = self._get_remote_queue(self.params['ParentQueue'])
-
+        
+        if logger:
+            self.logger = logger
+        else:
+            import logging
+            self.logger = logging
 
     #  //
     # // External API
@@ -199,6 +204,7 @@ class WorkQueue(WorkQueueBase):
         """
         results = []
         subResults = []
+        #self.updateLocationInfo()
         matches, unmatched = self._match(siteJobs)
 
         # if talking to a child and have resources left get work from parent
@@ -207,6 +213,7 @@ class WorkQueue(WorkQueueBase):
             try:
                 #TODO: Add a timeout thats shorter than normal
                 if self.pullWork(unmatched):
+                    #self.updateLocationInfo()
                     matches, _ = self._match(siteJobs)
             except RuntimeError, ex:
                 msg = "Error contacting parent queue %s: %s"

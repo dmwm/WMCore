@@ -24,3 +24,12 @@ class AgentRESTModel(RESTModel):
 
         self.addDAO('GET', "heartbeatInfo", "GetHeartbeatInfo")
         self.addDAO('GET', "heartbeatInfoDetail", "GetAllHeartbeatInfo")
+        self.addMethod('GET', "heartbeat", self.getHeartBeatWarning)
+        
+    
+    def getHeartBeatWarning(self):
+        results = self.methods["GET"]["heartbeatInfo"]["call"]()
+        for result in results:
+            result['ago'] = int(time.time()) - result['last_updated']
+            result['alarm'] =  result['update_threshold'] - result['ago']
+        return results

@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.6 2009/10/22 15:24:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.7 2009/11/17 20:58:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from sets import Set
 import time
@@ -312,6 +312,10 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         binds = []
         for location in self["newlocations"]:
+            if not nameMap or not nameMap.has_key(location):
+                nameMap = insertAction.execute(siteName = self["newlocations"],
+                                               conn = self.getDBConn(),
+                                               transaction = self.existingTransaction())
             binds.append({"fileid": self["id"],
                           "locationid": nameMap[location]})
 

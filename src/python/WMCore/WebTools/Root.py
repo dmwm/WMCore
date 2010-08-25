@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.35 2009/12/22 13:08:25 metson Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Root.py,v 1.36 2009/12/22 18:05:53 akhukhun Exp $"
+__version__ = "$Revision: 1.36 $"
 
 # CherryPy
 import cherrypy
@@ -69,7 +69,7 @@ class Root(WMObject):
         except:
             cpconfig.update ({'log.access_file': None})
         try:
-            cpconfig.update ({'log.error_file': int(self.config.error_log_file)})
+            cpconfig.update ({'log.error_file': self.config.error_log_file})
         except:
             cpconfig.update ({'log.error_file': None})
         try:

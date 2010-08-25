@@ -6,11 +6,11 @@ MySQL implementation of Subscription.GetJobGroups
 """
 
 __all__ = []
-__revision__ = "$Id: GetJobGroups.py,v 1.2 2009/07/15 21:54:20 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetJobGroups.py,v 1.3 2009/07/17 20:21:35 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
-
+from WMCore.WMBS.JobGroup import JobGroup
 class GetJobGroups(DBFormatter):
     
     def execute(self, subscription = None, conn = None, transaction = False):
@@ -22,14 +22,10 @@ class GetJobGroups(DBFormatter):
                         FROM  wmbs_jobgroup jobgroup
                         WHERE jobgroup.subscription = :subscription
                             AND (SELECT COUNT(*) 
-                                FROM wmbs_job job,
-                                     wmbs_job_state jobstate
-                                WHERE   job.state = jobstate.id
-                                    AND job.jobgroup = jobgroup.id
-                                    AND jobstate.name = "New")
-                                <> (SELECT COUNT(*)
-                                            FROM wmbs_job job2
-                                            WHERE job2.jobgroup=jobgroup.id)
+                                FROM wmbs_job job
+                                WHERE   job.state = (select id from wmbs_job_state where name = "new")
+                                    AND job.jobgroup = jobgroup.id)
+                                <> 0
         """                                                 
         allJobs = self.formatFlat(self.dbi.processData(newstep, 
                            {"subscription": subscription},
@@ -39,16 +35,19 @@ class GetJobGroups(DBFormatter):
                                      
                           
         return allJobs
+
     def formatFlat(self, result):
         """
-        Some standard formatting, put all records into a list
+        Some standard formatting, put all records into a list.
         """
         out = []
         for r in result:
             for i in r.fetchall():
                 for j in i:
-                    out.append(j)    
+                    newJobGroup = JobGroup(id = j)
+                    newJobGroup.loadData()
+                    out.append(newJobGroup)    
             r.close()
         return out
-                
+
   

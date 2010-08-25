@@ -1,5 +1,7 @@
 #!/bin/bash
 
+touch Report.pkl
+
 # should be a bit nicer than before
 echo "WMAgent bootstrap starting..."
 # validate arguments

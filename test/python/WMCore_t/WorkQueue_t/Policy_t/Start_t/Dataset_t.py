@@ -3,14 +3,15 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-__revision__ = "$Id: Dataset_t.py,v 1.3 2010/01/04 16:15:14 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Dataset_t.py,v 1.4 2010/01/05 18:19:39 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import shutil
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
 from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workload as Tier1ReRecoWorkload
 from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workingDir
+from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 shutil.rmtree(workingDir, ignore_errors = True)
 
@@ -33,6 +34,29 @@ class DatasetTestCase(unittest.TestCase):
                 spec = unit['WMSpec']
                 initialTask = spec.taskIterator().next()
                 self.assertEqual(unit['Data'], dataset)
+
+
+    def testMultiTaskProcessingWorkload(self):
+        """Multi Task Processing Workflow"""
+        datasets = []
+        tasks, count = 0, 0
+        for task in MultiTaskProcessingWorkload.taskIterator():
+            tasks += 1
+            inputDataset = task.inputDataset()
+            datasets.append("/%s/%s/%s" % (inputDataset.primary,
+                                           inputDataset.processed,
+                                           inputDataset.tier))
+        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, *datasets)}
+        for task in MultiTaskProcessingWorkload.taskIterator():
+            units = Dataset(**self.splitArgs)(MultiTaskProcessingWorkload, task, dbs)
+            self.assertEqual(1, len(units))
+            for unit in units:
+                self.assertEqual(2, unit['Jobs'])
+                spec = unit['WMSpec']
+                initialTask = spec.taskIterator().next()
+                self.assertEqual(unit['Data'], datasets[count])
+            count += 1
+        self.assertEqual(tasks, count)
 
 
 if __name__ == '__main__':

@@ -4,11 +4,13 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-__revision__ = "$Id: StartPolicyInterface.py,v 1.3 2009/12/15 17:16:36 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: StartPolicyInterface.py,v 1.4 2010/01/05 18:19:39 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
+
+from copy import deepcopy
 
 class StartPolicyInterface(PolicyInterface):
     """Interface for start policies"""
@@ -33,11 +35,21 @@ class StartPolicyInterface(PolicyInterface):
 
     def __call__(self, wmspec, task, dbs_pool = None):
         self.wmspec = wmspec
-        self.initialTask = task
         self.splitParams = self.wmspec.data.policies.start
+
+        # Separate each top level task into its own spec and split
+        # only need to copy spec if spec has multiple tasks
+        if sum(1 for _ in wmspec.taskIterator()) > 1:
+            self.wmspec = deepcopy(wmspec)
+            # just want current top level task
+            for othertask in self.wmspec.taskIterator():
+                if othertask.name() != task.name():
+                    self.wmspec.removeTask(othertask.name())
+        self.initialTask = task
         if dbs_pool:
             self.dbs_pool.update(dbs_pool)
         self.split()
+
         return self.workQueueElements
 
     def dbs(self):

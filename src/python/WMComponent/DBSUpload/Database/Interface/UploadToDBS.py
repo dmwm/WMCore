@@ -5,8 +5,8 @@ _UploadToDBS_
 APIs related to adding file to DBS
 
 """
-__version__ = "$Revision: 1.8 $"
-__revision__ = "$Id: UploadToDBS.py,v 1.8 2009/08/12 23:11:48 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: UploadToDBS.py,v 1.9 2009/09/23 16:39:54 mnorman Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -71,16 +71,20 @@ class UploadToDBS:
         myThread.transaction.commit()
         return
     
-    def setBlockStatus(self, blockname, locations):
+    def setBlockStatus(self, block, locations, openStatus = 0):
+        """
+        _setBlockStatus_
+
+        Adds information about the block from DBSWriter to the database
+        """
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
         factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("SetBlockStatus")
-        newDS.execute(block=blockname, locations=locations, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        newDS.execute(block = block, locations = locations, open_status = openStatus, conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
 
-
-
+        

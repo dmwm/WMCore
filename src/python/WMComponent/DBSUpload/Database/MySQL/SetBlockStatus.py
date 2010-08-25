@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 
                                                                                                                                                                                                                                                                                                                                                                                                           """
-__revision__ = "$Id: SetBlockStatus.py,v 1.6 2009/09/22 19:49:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.7 2009/09/23 16:39:19 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -20,8 +20,8 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class SetBlockStatus(DBFormatter):
 
-    sql = """INSERT INTO dbsbuffer_block (blockname, location)
-               SELECT :block, (SELECT id FROM dbsbuffer_location WHERE se_name = :location) FROM DUAL
+    sql = """INSERT INTO dbsbuffer_block (blockname, location, open_status)
+               SELECT :block, (SELECT id FROM dbsbuffer_location WHERE se_name = :location), :open_status FROM DUAL
                WHERE NOT EXISTS (SELECT blockname FROM dbsbuffer_block WHERE blockname = :block
                and location = (SELECT id FROM dbsbuffer_location WHERE se_name = :location))
     """
@@ -32,7 +32,7 @@ class SetBlockStatus(DBFormatter):
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
 
 
-    def execute(self, block, locations = None, conn = None, transaction = False):
+    def execute(self, block, locations = None, open_status = 0, conn = None, transaction = False):
         """
         _execute_
 
@@ -44,7 +44,7 @@ class SetBlockStatus(DBFormatter):
         locations = list(Set(locations))
 
         for location in locations:
-            bindVars.append({"block": block, "location": location})
+            bindVars.append({"block": block, "location": location, "open_status": open_status})
 
         self.dbi.processData(self.sql, bindVars, conn = conn,
                              transaction = transaction)

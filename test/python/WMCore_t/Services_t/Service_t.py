@@ -24,7 +24,8 @@ class ServiceTest(unittest.TestCase):
     
     def runTest(self):
         self.testClear()
-     
+        self.testCachePath()
+        
     def testClear(self):
         """
         Populate the cache, and then check that it's deleted
@@ -36,6 +37,12 @@ class ServiceTest(unittest.TestCase):
         self.myService.clearCache('testClear')
         assert not os.path.exists(f.name)
         
+    def testCachePath(self):
+        dict = {'logger': logging.getLogger('JSONParser'), 
+                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cachepath': '/my/path'}
+        service = Service(dict)
+        assert service.path == dict['cachepath']
 
 if __name__ == '__main__':
     unittest.main()

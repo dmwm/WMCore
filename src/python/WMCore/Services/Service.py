@@ -7,8 +7,8 @@ has a cache (though this may not be used), an endpoint (the url the service
 exists on) a logger and a type (json, xml etc).
 """
 
-__revision__ = "$Id: Service.py,v 1.6 2009/03/25 14:20:48 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Service.py,v 1.7 2009/03/25 15:21:23 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import datetime
 import os
@@ -25,15 +25,15 @@ class Service:
         self.logger = dict['logger']
         self.endpoint = dict['endpoint']
         
-        if hasattr(dict, 'cachepath'):
+        if 'cachepath' in dict.keys():
             self.path = dict['cachepath']
         else:
             self.path = '/tmp'
-        if hasattr(dict, 'cacheduration'):
+        if 'cacheduration' in dict.keys():
             self.cacheduration = dict['cacheduration']
         else:
             self.cacheduration = 0.5
-        if hasattr(dict, 'type'):
+        if 'type' in dict.keys():
             self.type = dict['type']
         else:
             self.type = 'text/xml'

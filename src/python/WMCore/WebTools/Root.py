@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.42 2010/02/01 11:13:14 metson Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Root.py,v 1.43 2010/02/08 12:21:02 metson Exp $"
+__version__ = "$Revision: 1.43 $"
 
 # CherryPy
 import cherrypy
@@ -38,9 +38,7 @@ class Root(WMObject):
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
         self.homepage = None
-        self.secconfig = getattr(config, "SecurityModule", None)
-        if self.secconfig:
-            from WMCore.WebTools.OidConsumer import OidConsumer 
+        self.secconfig = getattr(config, "SecurityModule", None)     
     
     def validateConfig(self):
         # Check that the configuration has the required sections
@@ -104,6 +102,8 @@ class Root(WMObject):
 
         # SecurityModule config
         if self.secconfig:
+            from WMCore.WebTools.OidConsumer import OidConsumer
+            
             cpconfig.update({'tools.sessions.on': True,
                              'tools.sessions.name': 'oidconsumer_sid'})
             tools.cernoid = OidConsumer(self.secconfig)

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.108 2010/05/12 20:06:08 sryu Exp $"
-__version__ = "$Revision: 1.108 $"
+__revision__ = "$Id: WorkQueue.py,v 1.109 2010/05/12 21:07:31 sryu Exp $"
+__version__ = "$Revision: 1.109 $"
 
 
 import time
@@ -680,27 +680,27 @@ class WorkQueue(WorkQueueBase):
         task = unit["Task"]
         parentQueueId = unit['ParentQueueId']
 
-        with self.transactionContext():
-            self._insertWMSpec(wmspec)
-            self._insertWMTask(wmspec.name(), task)
+        self._insertWMSpec(wmspec)
+        self._insertWMTask(wmspec.name(), task)
 
-            if primaryInput:
-                self._insertInputs(primaryInput, parentInputs)
+        if primaryInput:
+            self._insertInputs(primaryInput, parentInputs)
 
-            wqAction = self.daofactory(classname = "WorkQueueElement.New")
-            parentFlag = parentInputs and 1 or 0
-            priority = wmspec.priority() or 1
+        wqAction = self.daofactory(classname = "WorkQueueElement.New")
+        parentFlag = parentInputs and 1 or 0
+        priority = wmspec.priority() or 1
 
-            elementID = wqAction.execute(wmspec.name(), task.name(), primaryInput, nJobs,
-                             priority, parentFlag, parentQueueId, conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
+        elementID = wqAction.execute(wmspec.name(), task.name(), primaryInput, nJobs,
+                         priority, parentFlag, parentQueueId, conn = self.getDBConn(),
+                         transaction = self.existingTransaction())
 
-            whitelist = task.siteWhitelist()
-            if whitelist:
-                self._insertWhiteList(elementID, whitelist)
-            blacklist = task.siteBlacklist()
-            if blacklist:
-                self._insertBlackList(elementID, blacklist)
+        whitelist = task.siteWhitelist()
+        if whitelist:
+            self._insertWhiteList(elementID, whitelist)
+        blacklist = task.siteBlacklist()
+        if blacklist:
+            self._insertBlackList(elementID, blacklist)
+            
         return elementID
 
     def _insertWMSpec(self, wmSpec):

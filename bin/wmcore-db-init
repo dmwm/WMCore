@@ -4,8 +4,8 @@ Commands for initializing the proper database tables
 or cleaning the database.
 """
 
-__revision__ = "$Id: wmcore-db-init,v 1.7 2010/02/01 19:22:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: wmcore-db-init,v 1.8 2010/02/24 15:16:35 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -17,6 +17,7 @@ import time
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
+from sqlalchemy.engine.url import make_url
 
 def usage():
 
@@ -134,19 +135,24 @@ def executeCommand(command):
     
 
 def clear(config):
-    if config.CoreDatabase.dialect.lower() == 'mysql':
-        if config.CoreDatabase.socket !='':
-            command1 = 'mysql -u '+config.CoreDatabase.masterUser+' --password='+config.CoreDatabase.masterPasswd+' --socket='+config.CoreDatabase.socket+" --exec "
-        else:
-            command1 = 'mysql -u '+config.CoreDatabase.masterUser+' --password='+config.CoreDatabase.masterPasswd+' -h '+config.CoreDatabase.hostname+" --exec "
-        command = command1+' "drop database if exists '+config.CoreDatabase.name+'"'
+    dbUrl = make_url(config.CoreDatabase.connectUrl)
+    
+    if dbUrl.drivername.lower() == 'mysql':
+        #TODO: if it is necessary for only master user perform this task,
+        #use master user account and grant permission to the user. 
+        #(currently commented out)    
+        if dbUrl.password == None:
+            dbUrl.password = ''
+        command1 = 'mysql -u '+ dbUrl.username + ' --password='+dbUrl.password+' -h '+ dbUrl.host + ' -P ' + str(dbUrl.port) + " --exec "
+        print command1
+        command = command1+' "drop database if exists '+ dbUrl.database +'"'
         executeCommand(command)
-        command = command1+' "create database '+config.CoreDatabase.name+'"'
+        command = command1+' "create database '+ dbUrl.database +'"'
         executeCommand(command)
-        command = command1+' "GRANT ALL PRIVILEGES ON '+config.CoreDatabase.name+\
-            ".* TO '"+config.CoreDatabase.user+"'@'"+config.CoreDatabase.hostname+\
-            "' IDENTIFIED BY '"+config.CoreDatabase.passwd+"' WITH GRANT OPTION"+'"'
-        executeCommand(command)
+        #command = command1+' "GRANT ALL PRIVILEGES ON '+ dbUrl.database +\
+        #    ".* TO '"+ dbUrl.username +"'@'"+ dbUrl.host +\
+        #    "' IDENTIFIED BY '"+ dbUrl.password+"' WITH GRANT OPTION"+'"'
+        #executeCommand(command)
 
 if command == "create":
     connectionTest(cfgObject)

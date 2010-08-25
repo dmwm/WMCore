@@ -35,9 +35,6 @@ class SubscriptionTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also, create some dummy locations.
         """
-        if self._setup:
-            return
-        
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -53,7 +50,6 @@ class SubscriptionTest(unittest.TestCase):
         locationAction.execute(siteName = "goodse.cern.ch")
         locationAction.execute(siteName = "badse.cern.ch")
         
-        self._setup = True
         return
 
     def tearDown(self):
@@ -64,9 +60,6 @@ class SubscriptionTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         
-        if self._teardown:
-            return
-        
         factory = WMFactory("WMBS", "WMCore.WMBS")
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
@@ -75,7 +68,6 @@ class SubscriptionTest(unittest.TestCase):
             raise Exception("Could not complete WMBS tear down.")
         myThread.transaction.commit()
         
-        self._teardown = True
         
     def createSubscriptionWithFileABC(self):
         """

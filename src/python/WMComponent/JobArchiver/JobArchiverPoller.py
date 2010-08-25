@@ -1,18 +1,19 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W6501
+# W6501: pass information to logging using string arguments
 """
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.8 2010/03/31 18:33:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.9 2010/04/15 14:50:56 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import logging
 import os
 import os.path
 import shutil
-
-from subprocess import Popen, PIPE
+import tarfile
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -47,7 +48,8 @@ class JobArchiverPoller(BaseWorkerThread):
             if os.path.exists(config.JobArchiver.logDir):
                 # Then we have some weird file in the way
                 # FAIL
-                raise Exception("Pre-existing file at %s" % (config.JobArchiver.logDir))
+                raise Exception("Pre-existing file at %s" \
+                                % (config.JobArchiver.logDir))
             else:
                 # Create the directory
                 os.makedirs(config.JobArchiver.logDir) 
@@ -168,7 +170,8 @@ class JobArchiverPoller(BaseWorkerThread):
         """
         _cleanJobCache_
 
-        Clears out any files still sticking around in the jobCache, tars up the contents and sends them off
+        Clears out any files still sticking around in the jobCache,
+        tars up the contents and sends them off
         """
 
         cacheDir = job.getCache()
@@ -182,29 +185,27 @@ class JobArchiverPoller(BaseWorkerThread):
             return
 
         # Now we need to set up a final destination
-        jobFolder = 'JobCluster_%i' %(int(job['id'] / self.numberOfJobsToCluster))
+        jobFolder = 'JobCluster_%i' \
+                    % (int(job['id']/self.numberOfJobsToCluster))
         logDir = os.path.join(self.config.JobArchiver.logDir, jobFolder)
         if not os.path.exists(logDir):
             os.makedirs(logDir)
 
-        #Otherwise we have something in there
+        # Otherwise we have something in there
         tarName = 'Job_%i.tar' % (job['id'])
-        tarString = ["tar"]
-        tarString.append("-cvf")
-        tarString.append(os.path.join(cacheDir, tarName))
-        for fileName in os.listdir(cacheDir):
-            tarString.append('%s' % (os.path.join(cacheDir, fileName)))
 
-        #Now we should have all the files together.  Tar them up
-        pipe = Popen(tarString, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.wait()
+        tarball = tarfile.open(name = os.path.join(cacheDir, tarName),
+                               mode = 'w')
+        for fileName in os.listdir(cacheDir):
+            tarball.add(name = os.path.join(cacheDir, fileName),
+                        arcname = fileName)
+        tarball.close()
+
 
         shutil.move('%s/%s' % (cacheDir, tarName), \
                     '%s/%s' % (logDir, tarName))
 
         shutil.rmtree('%s' % (cacheDir))
-
-        #print "Job %i cleaned" % (job['id'])
 
         return
 

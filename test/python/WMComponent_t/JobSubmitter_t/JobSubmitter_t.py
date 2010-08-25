@@ -189,7 +189,7 @@ class JobSubmitterTest(unittest.TestCase):
         jobGroupList = self.createJobGroup(5, 'first')
 
 
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/JobStateMachine/DefaultConfig.py'))
+        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
 
         # some general settings that would come from the general default 
         # config file

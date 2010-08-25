@@ -420,7 +420,7 @@ class JobCreatorTest(unittest.TestCase):
         self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
 
 
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/JobStateMachine/DefaultConfig.py'))
+        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
 
         # some general settings that would come from the general default 
         # config file

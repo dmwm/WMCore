@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.15 2010/05/09 15:05:07 spigafi Exp $"
-__revision__ = "$Revision: 1.15 $"
+__version__ = "$Id: Job.py,v 1.16 2010/05/10 12:45:34 spigafi Exp $"
+__revision__ = "$Revision: 1.16 $"
 
 
 # imports
@@ -14,10 +14,11 @@ import logging
 # WMCore objects
 from WMCore.Services.UUID import makeUUID
 
+from WMCore.BossLite.DbObjects.DbObject   import DbObject, DbObjectDBFormatter
+from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 
 from WMCore.BossLite.Common.Exceptions    import JobError
-from WMCore.BossLite.DbObjects.DbObject   import DbObject
-from WMCore.BossLite.DbObjects.RunningJob import RunningJob
+from WMCore.BossLite.Common.System import strToList, listToStr
 
 # from WMCore.DAOFactory   import DAOFactory
 
@@ -80,7 +81,7 @@ class Job(DbObject):
 
     ##########################################################################
 
-    def __init__(self, parameters = {}):
+    def __init__(self, parameters = None):
         """
         initialize a Job instance
         """
@@ -353,3 +354,61 @@ class Job(DbObject):
         
         # store instance
         self.runningJob = runningJob
+        
+class JobDBFormatter(DbObjectDBFormatter):
+
+    def preFormat(self, res):
+        """
+        It maps database fields with object dictionary and it translate python 
+        List and timestamps in well formatted string. This is useful for any 
+        kind of database engine!
+        """
+        
+        result = {}
+        
+        # result['id']               = entry['id']
+        result['jobId']            = res['jobId']
+        result['taskId']           = res['taskId']
+        result['name']             = res['name']
+        result['executable']       = res['executable']
+        result['events']           = res['events']
+        result['arguments']        = res['arguments']
+        result['standardInput']    = res['standardInput']
+        result['standardOutput']   = res['standardOutput']
+        result['standardError']    = res['standardError']
+        result['inputFiles']       = listToStr(res['inputFiles'])
+        result['outputFiles']      = listToStr(res['outputFiles'])
+        result['dlsDestination']   = listToStr(res['dlsDestination'])
+        result['submissionNumber'] = res['submissionNumber']
+        result['closed']           = res['closed']
+            
+        return result
+    
+    def postFormat(self, res):
+        """
+        Format the results into the right output. This is useful for any 
+        kind of database engine!
+        """
+        
+        final = []
+        for entry in res:
+            result = {}
+            result['id']               = entry['id']
+            result['jobId']            = entry['jobid']
+            result['taskId']           = entry['taskid']
+            result['name']             = entry['name']
+            result['executable']       = entry['executable']
+            result['events']           = entry['events']
+            result['arguments']        = entry['arguments']
+            result['standardInput']    = entry['standardinput']
+            result['standardOutput']   = entry['standardoutput']
+            result['standardError']    = entry['standarderror']
+            result['inputFiles']       = strToList(entry['inputfiles'])
+            result['outputFiles']      = strToList(entry['outputfiles'])
+            result['dlsDestination']   = strToList(entry['dlsdestination'])
+            result['submissionNumber'] = entry['submissionnumber']
+            result['closed']           = entry['closed']
+
+            final.append(result)
+
+        return final

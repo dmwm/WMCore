@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.11 2009/08/16 09:04:27 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: RESTModel.py,v 1.12 2009/08/31 17:49:11 metson Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response
@@ -55,7 +55,7 @@ class RESTModel(WebAPI):
         if verb in self.methods.keys():
             method = args[0]
             if method in self.methods[verb].keys():
-                data = self.methods[verb][method]['call'](verb, args, kwargs)
+                data = self.methods[verb][method]['call'](args[1:], kwargs)
                 return data 
             else:
                 data = {"message": "Unsupported method for %s: %s" % (verb, args[0]),

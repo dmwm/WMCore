@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.6 2010/06/02 01:34:16 riahi Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Feeder.py,v 1.7 2010/06/04 09:08:56 riahi Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import logging
 import threading
@@ -111,10 +111,9 @@ class Feeder(FeederImpl):
 
         # process all files
         if len(newFilesList['files']):  
-
      
             try:
-                locationNew.execute(siteName = "caf.cern.ch")
+                locationNew.execute(siteName = "caf.cern.ch", seName = "caf.cern.ch")
             except Exception,e:
                 logging.debug("Error when adding new location...")
                 logging.debug(e)
@@ -146,10 +145,10 @@ class Feeder(FeederImpl):
                     fileLoc = getFileLoc.execute(file = files['lfn'])
 
                     if 'caf.cern.ch' not in fileLoc:
-                        newfile.setLocation(["caf.cern.ch"])
+                        newfile.setLocation("caf.cern.ch")
 
-                    else:
-                        logging.debug("File already associated to %s" %fileLoc)
+#                    else:
+#                        logging.debug("File already associated to %s" %fileLoc)
 
 
                     LOCK.release()
@@ -173,11 +172,11 @@ class Feeder(FeederImpl):
                                 filesetToProcess.setLastUpdate\
                               (int(newFilesList['end_time']) + 1)
                                 filesetToProcess.commit()
-                                logging.debug("new file added...")
+                                logging.debug("new file created/loaded added by T0AST...")
 
 
                 except Exception,e:
-                    logging.debug("Error when adding new files...")
+                    logging.debug("Error when adding new files in T0AST...")
                     logging.debug(e)
                     logging.debug( format_exc() )
                     LOCK.release()

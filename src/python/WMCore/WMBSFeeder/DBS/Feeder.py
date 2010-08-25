@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.15 2010/06/02 01:28:16 riahi Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Feeder.py,v 1.16 2010/06/04 09:12:06 riahi Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
@@ -131,7 +131,7 @@ class Feeder(FeederImpl):
             else:
 
                 for loc in seList:
-                    locationNew.execute(siteName = loc)
+                    locationNew.execute(siteName = loc, seName = loc)
 
             for files in blocks[fileBlock]['Files']:
  
@@ -199,9 +199,6 @@ class Feeder(FeederImpl):
                                         if loc not in fileLoc:
                                             newfile.setLocation(\
                                                 loc)
-                                        else:
-                                            logging.debug(\
-                            "File already associated to %s" %loc)
                                 else:
 
                                     newfile.setLocation(seList)
@@ -219,6 +216,7 @@ class Feeder(FeederImpl):
 
                         # Update fileset last update parameter
                         filesetToProcess.addFile(newfile)
+                        logging.debug("new file created and added by DBS")
                         filesetToProcess.setLastUpdate(int(time.time()))
                         filesetToProcess.commit()
 
@@ -231,6 +229,7 @@ class Feeder(FeederImpl):
                         if {'fileid': newfile['id']} not in listFile:
 
                             filesetToProcess.addFile(newfile)
+                            logging.debug("new file loaded and added by DBS") 
                             filesetToProcess.setLastUpdate(int(time.time()))
                             filesetToProcess.commit()
 
@@ -241,9 +240,6 @@ class Feeder(FeederImpl):
                         for loc in seList:
                             if loc not in fileLoc:
                                 newfile.setLocation(loc)
-                            else:
-                                logging.debug(\
-                   "File already associated to %s" %loc)
                     else:
                         newfile.setLocation(seList)
                     LOCK.release()

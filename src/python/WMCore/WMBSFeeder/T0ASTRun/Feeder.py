@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.2 2010/06/02 01:39:09 riahi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Feeder.py,v 1.3 2010/06/04 09:15:45 riahi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -21,6 +21,8 @@ import os
 
 import time
 from WMCore.Services.Requests import JSONRequests
+
+LOCK = threading.Lock()
 
 class Feeder(FeederImpl):
     """
@@ -44,6 +46,8 @@ class Feeder(FeederImpl):
         """
         The algorithm itself
         """
+        global LOCK
+
 
         # Get configuration
         initObj = WMInit()
@@ -108,12 +112,15 @@ class Feeder(FeederImpl):
 
             break
 
+
+
         # process all files
         if len(newFilesList['files']):  
 
-     
+            LOCK.acquire()
+
             try:
-                locationNew.execute(siteName = "caf.cern.ch")
+                locationNew.execute(siteName = "caf.cern.ch", seName = "caf.cern.ch")
             except Exception,e:
                 logging.debug("Error when adding new location...")
                 logging.debug(e)
@@ -168,26 +175,26 @@ class Feeder(FeederImpl):
                             fileLoc = getFileLoc.execute(file = files['lfn'])
 
                             if 'caf.cern.ch' not in fileLoc:
-                                newfile.setLocation(["caf.cern.ch"])
+                                newfile.setLocation("caf.cern.ch")
 
-                            else:
-                                logging.debug(\
-              "File already associated to %s" %fileLoc)
 
                             filesetRun.addFile(newfile)
-                            logging.debug("new file added...")
+                            logging.debug("new file created/loaded added by T0ASTRun...")
                             filesetRun.commit()
 
                 except Exception,e:
 
-                    logging.debug("Error when adding new files...")
+                    logging.debug("Error when adding new files in T0ASTRun...")
                     logging.debug(e)
                     logging.debug( format_exc() )
+
+
 
                 filesetToProcess.setLastUpdate\
               (int(newFilesList['end_time']) + 1)
                 filesetToProcess.commit()
 
+            LOCK.release()
 
         else:
 
@@ -234,7 +241,7 @@ class Feeder(FeederImpl):
 
 
         # Commit the fileset
-        logging.debug("Test purge in T0AST ...")
+        logging.debug("Test purge in T0ASTRun ...")
         filesetToProcess.load()
         LASTIME = filesetToProcess.lastUpdate
 

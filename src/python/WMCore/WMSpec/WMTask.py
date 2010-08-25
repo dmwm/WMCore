@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.13 2009/09/23 16:13:35 sryu Exp $"
-__revision__ = "$Revision: 1.13 $"
+__version__ = "$Id: WMTask.py,v 1.14 2009/09/24 14:50:00 sryu Exp $"
+__revision__ = "$Revision: 1.14 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -317,6 +317,7 @@ class WMTaskHelper(TreeHelper):
         - dbsurl - dbs url if not global
         - block_whitelist - list of whitelisted fileblocks
         - block_blacklist - list of blacklisted fileblocks
+        - totalevents - total events in dataset
 
         """
         self.data.input.section_("dataset")
@@ -350,6 +351,9 @@ class WMTaskHelper(TreeHelper):
             if opt == 'dbsurl':
                 self.data.input.dataset.dbsurl = arg
             # all other options
+            if opt == 'totalevents':
+                self.data.input.dataset.totalEvents = arg
+                
             setattr(self.data.input.dataset, opt, arg)
 
         return

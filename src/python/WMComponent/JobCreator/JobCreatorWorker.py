@@ -5,8 +5,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.5 2010/02/26 18:32:00 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.6 2010/03/03 16:33:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
@@ -82,6 +82,8 @@ class JobCreatorWorker:
 
         """
 
+        logging.info("In JobCreatorWorker.__call__")
+
         myThread = threading.currentThread()
 
         subscriptionID = parameters.get('subscription')
@@ -93,28 +95,36 @@ class JobCreatorWorker:
 
         myThread.transaction.begin()
 
+        logging.info("About to call subscription %i" %subscriptionID)
+
         wmbsSubscription = Subscription(id = subscriptionID)
         wmbsSubscription.load()
         wmbsSubscription["workflow"].load()
         workflow         = wmbsSubscription["workflow"]
         wmWorkload       = self.retrieveWMSpec(wmbsSubscription)
 
+        logging.info("Retrieved WMBS info")
+
         if not workflow.task or not wmWorkload:
             wmTask = None
             seederList = []
         else:
-            wmTask = wmWorkload.getTask(workflow.task)
+            wmTask = wmWorkload.getTaskByPath(workflow.task)
             if hasattr(wmTask.data, 'seeders'):
                 manager    = SeederManager(wmTask)
                 seederList = manager.getSeederList()
             else:
                 seederList = []
 
+        logging.info("About to enter JobFactory")
+
         #My hope is that the job factory is smart enough only to split un-split jobs
         wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", \
                                               subscription = wmbsSubscription, generators=seederList)
         splitParams = self.retrieveJobSplitParams(wmWorkload, workflow.task)
         wmbsJobGroups = wmbsJobFactory(**splitParams)
+
+        logging.info("Have jobGroups")
 
         myThread.transaction.commit()
 
@@ -169,7 +179,7 @@ class JobCreatorWorker:
 
         if not wmWorkload:
             return {"files_per_job": 5}
-        task = wmWorkload.getTask(task)
+        task = wmWorkload.getTaskByPath(task)
         if not task:
             return {"files_per_job": 5}
         else:

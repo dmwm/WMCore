@@ -59,7 +59,7 @@ class WMWorkloadTest(unittest.TestCase):
         workload.addTask(task1)
         workload.addTask(task2)
 
-        self.assertEqual(workload.listAllTaskNames(), ["task1", "task2"])
+        self.assertEqual(workload.listAllTaskNodes(), ["task1", "task2"])
 
         # using factory method to create new task when added
         task3 = workload.newTask("task3")
@@ -69,14 +69,14 @@ class WMWorkloadTest(unittest.TestCase):
         workload.newTask("task5")
         workload.removeTask("task5")
 
-        self.assertEqual(workload.listAllTaskNames(),
+        self.assertEqual(workload.listAllTaskNodes(),
                          ["task1", "task2", "task3", "task4"])
 
         # prevent adding duplicate tasks
         self.assertRaises(RuntimeError, workload.addTask, task1)
         self.assertRaises(RuntimeError, workload.newTask, "task4")
 
-        self.assertEqual(workload.listAllTaskNames(),
+        self.assertEqual(workload.listAllTaskNodes(),
                          ["task1", "task2", "task3", "task4"])
 
 

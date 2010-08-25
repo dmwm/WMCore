@@ -1273,10 +1273,15 @@ class SubscriptionTest(unittest.TestCase):
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
                          locations = Set(["goodse.cern.ch"]))
         testFileC.addRun(Run(2, *[48]))
+
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileD.addRun(Run(2, *[48]))
          
         testFileA.create()
         testFileB.create()
         testFileC.create()
+        testFileD.create()
         
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -1287,7 +1292,11 @@ class SubscriptionTest(unittest.TestCase):
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)
+        testFileset.addFile(testFileD)
         testFileset.commit()
+
+        testFileset2.addFile(testFileD)
+        testFileset2.commit()
 
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
@@ -1307,6 +1316,11 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(len(result), 0)
         result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
         self.assertEqual(len(result), 0)
+        self.assertEqual(testFileA.exists(), False)
+        self.assertEqual(testFileB.exists(), False)
+        self.assertEqual(testFileC.exists(), False)
+        self.assertEqual(testFileD.exists(), 4)
+        
 
     
 

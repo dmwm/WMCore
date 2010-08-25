@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.4 2010/04/14 19:23:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Report_t.py,v 1.5 2010/06/11 21:46:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import os
@@ -15,6 +15,7 @@ import xml.dom.minidom
 import WMCore.WMInit
 
 from WMCore.FwkJobReport.Report import Report
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 def requiresPython26(testMethod, *args, **kwargs):
     def skipTest(*args, **kwargs):
@@ -45,6 +46,8 @@ class ReportTest(unittest.TestCase):
         """
         self.xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                     "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
+        self.badxmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
         return
 
     # json/dejson
@@ -56,38 +59,6 @@ class ReportTest(unittest.TestCase):
     # getOutputFile
     # getAllFilesFromStep
     # getAllFiles
-
-    def getBranchesForOutputModule(self, outputModuleName):
-        """
-        _getBranchesForOutputModule_
-
-        Parse the CMSSW report to determine the branches in the output files.
-        """
-        def getText(nodelist):
-            rc = ""
-            for node in nodelist:
-                if node.nodeType == node.TEXT_NODE:
-                    rc = rc + node.data
-            return rc
-                            
-        fwjrDOM = xml.dom.minidom.parse(self.xmlPath)
-        reportDOM = fwjrDOM.getElementsByTagName("FrameworkJobReport")[0]
-        filesDOM = reportDOM.getElementsByTagName("File")
-
-        branches = []
-        for fileDOM in filesDOM:
-            moduleLabelNode = fileDOM.getElementsByTagName("ModuleLabel")[0]
-            moduleLabel = getText(moduleLabelNode.childNodes)
-
-            if moduleLabel != outputModuleName:
-                continue
-            
-            branchesDOM = fileDOM.getElementsByTagName("Branches")[0]
-            branchNodes = branchesDOM.getElementsByTagName("Branch")
-            for branchNode in branchNodes:
-                branches.append(getText(branchNode.childNodes))
-
-        return branches
 
     def verifyInputData(self, report):
         """
@@ -119,20 +90,6 @@ class ReportTest(unittest.TestCase):
                "Error: Wrong number of events in input file."
         assert inputFiles[0]["size"] == 0, \
                "Error: Wrong size in input file."
-
-        goldenBranches = ["FEDRawDataCollection_source__HLT.",
-                          "L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT.",
-                          "edmTriggerResults_TriggerResults__HLT.",
-                          "triggerTriggerEvent_hltTriggerSummaryAOD__HLT."]
-        assert len(inputFiles[0]["branches"]) == len(goldenBranches), \
-               "Error: Wrong number of branches in input file."
-        for branch in inputFiles[0]["branches"]:
-            assert branch in goldenBranches, \
-                   "Error: Branch missing from input file."
-            goldenBranches.remove(branch)
-
-        assert len(goldenBranches) == 0, \
-               "Error: Branches missing from input file."
 
         assert inputFiles[0]["catalog"] == "trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap", \
                "Error: Catalog on input file is wrong."
@@ -170,17 +127,6 @@ class ReportTest(unittest.TestCase):
                "Error: Wrong number of events in output file."
         assert outputFiles[0]["size"] == 0, \
                "Error: Wrong size in output file."
-
-        goldenBranches = self.getBranchesForOutputModule("outputRECORECO")
-        assert len(outputFiles[0]["branches"]) == len(goldenBranches), \
-               "Error: Wrong number of branches in output file."
-        for branch in outputFiles[0]["branches"]:
-            assert branch in goldenBranches, \
-                   "Error: Branch missing from output file."
-            goldenBranches.remove(branch)
-
-        assert len(goldenBranches) == 0, \
-               "Error: Branches missing from output file."
 
         assert len(outputFiles[0]["input"]) == 1, \
                "Error: Wrong number of input files."
@@ -230,17 +176,6 @@ class ReportTest(unittest.TestCase):
         assert outputFiles[0]["size"] == 0, \
                "Error: Wrong size in output file."
 
-        goldenBranches = self.getBranchesForOutputModule("outputALCARECORECO")
-        assert len(outputFiles[0]["branches"]) == len(goldenBranches), \
-               "Error: Wrong number of branches in output file."
-        for branch in outputFiles[0]["branches"]:
-            assert branch in goldenBranches, \
-                   "Error: Branch missing from output file."
-            goldenBranches.remove(branch)
-
-        assert len(goldenBranches) == 0, \
-               "Error: Branches missing from output file."
-
         assert len(outputFiles[0]["input"]) == 1, \
                "Error: Wrong number of input files."
         assert outputFiles[0]["input"][0] == "/store/data/BeamCommissioning09/MinimumBias/RAW/v1/000/122/023/142F3F42-C5D6-DE11-945D-000423D94494.root", \
@@ -274,6 +209,18 @@ class ReportTest(unittest.TestCase):
         self.verifyAlcaOutput(myReport)
 
         return
+
+    @requiresPython26
+    def testBadXMLParsing(self):
+        """
+        _testBadXMLParsing_
+
+        Verify that the parsing of a CMSSW XML report works correctly even if
+        the XML is malformed.
+        """
+        myReport = Report("cmsRun1")
+        myReport.parse(self.badxmlPath)
+        return    
 
     @requiresPython26
     def testErrorReporting(self):
@@ -343,12 +290,6 @@ cms::Exception caught in EventProcessor and rethrown
                "Error: Wrong number of input files."
 
         for inputFile in inputFiles:
-            assert len(inputFile["branches"]) == 2, \
-                   "Error: Wrong number of branches."
-            assert "branch1" in inputFile["branches"], \
-                   "Error: Branch missing from input."
-            assert "branch2" in inputFile["branches"], \
-                   "Error: Branch missing from input."            
             assert inputFile["input_type"] == "primaryFiles", \
                    "Error: Wrong input type."
             assert inputFile["module_label"] == "source", \

@@ -1,0 +1,821 @@
+<FrameworkJobReport>
+
+<InputFile>
+<State  Value="closed"/>
+<LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+<PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+<Catalog>trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap</Catalog>
+<ModuleLabel>source</ModuleLabel>
+<GUID>D470C00D-6934-DF11-8FC1-000423D99F3E</GUID>
+<Branches>
+  <Branch>FEDRawDataCollection_source__HLT.</Branch>
+  <Branch>L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>triggerTriggerEvent_hltTriggerSummaryAOD__HLT.</Branch>
+</Branches>
+<InputType>primaryFiles</InputType>
+<InputSourceClass>PoolSource</InputSourceClass>
+<EventsRead>0</EventsRead>
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+</InputFile>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/RECO/WMAgentCommissioning10-v39scf/0000/output.root</LFN>
+<PFN>output.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>output</ModuleLabel>
+<GUID>4C43747E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>L1GlobalTriggerObjectMapRecord_hltL1GtObjectMap__HLT.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>triggerTriggerEvent_hltTriggerSummaryAOD__HLT.</Branch>
+  <Branch>EBDigiCollection_selectDigi_selectedEcalEBDigiCollection_RECO.</Branch>
+  <Branch>EEDigiCollection_selectDigi_selectedEcalEEDigiCollection_RECO.</Branch>
+  <Branch>HcalNoiseSummary_hcalnoise__RECO.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>L1MuGMTReadoutCollection_gtDigis__RECO.</Branch>
+  <Branch>double_ak5CaloJets__RECO.</Branch>
+  <Branch>double_ak5PFJets__RECO.</Branch>
+  <Branch>double_ak5TrackJets__RECO.</Branch>
+  <Branch>double_ak7CaloJets__RECO.</Branch>
+  <Branch>double_ak7PFJets__RECO.</Branch>
+  <Branch>double_iterativeCone5CaloJets__RECO.</Branch>
+  <Branch>double_iterativeCone5PFJets__RECO.</Branch>
+  <Branch>double_kt4CaloJets__RECO.</Branch>
+  <Branch>double_kt4PFJets__RECO.</Branch>
+  <Branch>double_kt4TrackJets__RECO.</Branch>
+  <Branch>double_kt6CaloJets__RECO.</Branch>
+  <Branch>double_kt6PFJets__RECO.</Branch>
+  <Branch>double_sisCone5CaloJets__RECO.</Branch>
+  <Branch>double_sisCone5PFJets__RECO.</Branch>
+  <Branch>double_sisCone7CaloJets__RECO.</Branch>
+  <Branch>double_sisCone7PFJets__RECO.</Branch>
+  <Branch>recoCaloClustersToOnerecoClusterShapesAssociation_hybridSuperClusters_hybridShapeAssoc_RECO.</Branch>
+  <Branch>recoCaloClustersToOnerecoClusterShapesAssociation_multi5x5BasicClusters_multi5x5BarrelShapeAssoc_RECO.</Branch>
+  <Branch>recoCaloClustersToOnerecoClusterShapesAssociation_multi5x5BasicClusters_multi5x5EndcapShapeAssoc_RECO.</Branch>
+  <Branch>recoSuperClustersToOnerecoHFEMClusterShapesAssociation_hfEMClusters__RECO.</Branch>
+  <Branch>recoTracksToOnerecoTracksAssociation_tevMuons_default_RECO.</Branch>
+  <Branch>recoTracksToOnerecoTracksAssociation_tevMuons_firstHit_RECO.</Branch>
+  <Branch>recoTracksToOnerecoTracksAssociation_tevMuons_picky_RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_ak5JetTracksAssociatorAtCaloFace__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_ak5JetTracksAssociatorAtVertex__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_ak7JetTracksAssociatorAtCaloFace__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_ak7JetTracksAssociatorAtVertex__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_ic5JetTracksAssociatorAtVertex__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_iterativeCone5JetTracksAssociatorAtCaloFace__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_iterativeCone5JetTracksAssociatorAtVertex__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_kt4JetTracksAssociatorAtCaloFace__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_kt4JetTracksAssociatorAtVertex__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_sisCone5JetTracksAssociatorAtCaloFace__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdrecoTracksrecoTrackrecoTracksTorecoTrackedmrefhelperFindUsingAdvanceedmRefVectorsAssociationVector_sisCone5JetTracksAssociatorAtVertex__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_combinedSecondaryVertexBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_combinedSecondaryVertexMVABJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_jetBProbabilityBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_jetProbabilityBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_simpleSecondaryVertexBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_softElectronByIP3dBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_softElectronByPtBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_softMuonBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_softMuonByIP3dBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_softMuonByPtBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_trackCountingHighEffBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTofloatsAssociationVector_trackCountingHighPurBJetTags__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTorecoJetExtendedAssociationJetExtendedDatasAssociationVector_ak5JetExtender__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTorecoJetExtendedAssociationJetExtendedDatasAssociationVector_ak7JetExtender__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTorecoJetExtendedAssociationJetExtendedDatasAssociationVector_iterativeCone5JetExtender__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTorecoJetExtendedAssociationJetExtendedDatasAssociationVector_kt4JetExtender__RECO.</Branch>
+  <Branch>recoJetedmRefToBaseProdTorecoJetExtendedAssociationJetExtendedDatasAssociationVector_sisCone5JetExtender__RECO.</Branch>
+  <Branch>DetIdedmEDCollection_siStripDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ckfInOutTracksFromConversions__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ckfOutInTracksFromConversions__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmicMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_cosmicMuons1Leg__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_electronGsfTracks__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_generalTracks__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalCosmicMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalCosmicMuons1Leg__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_globalSETMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_pixelTracks__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_standAloneMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_standAloneSETMuons__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_tevMuons_default_RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_tevMuons_firstHit_RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_tevMuons_picky_RECO.</Branch>
+  <Branch>CSCDetIdCSCRecHit2DsOwnedRangeMap_csc2DRecHits__RECO.</Branch>
+  <Branch>CSCDetIdCSCSegmentsOwnedRangeMap_cscSegments__RECO.</Branch>
+  <Branch>DTChamberIdDTRecSegment4DsOwnedRangeMap_dt4DSegments__RECO.</Branch>
+  <Branch>DTLayerIdDTRecHit1DPairsOwnedRangeMap_dt1DRecHits__RECO.</Branch>
+  <Branch>RPCDetIdRPCRecHitsOwnedRangeMap_rpcRecHits__RECO.</Branch>
+  <Branch>CaloTowersSorted_towerMaker__RECO.</Branch>
+  <Branch>CastorRecHitsSorted_castorreco__RECO.</Branch>
+  <Branch>EBSrFlagsSorted_ecalDigis__RECO.</Branch>
+  <Branch>EESrFlagsSorted_ecalDigis__RECO.</Branch>
+  <Branch>EcalRecHitsSorted_reducedEcalRecHitsEB__RECO.</Branch>
+  <Branch>EcalRecHitsSorted_reducedEcalRecHitsEE__RECO.</Branch>
+  <Branch>EcalRecHitsSorted_ecalRecHit_EcalRecHitsEB_RECO.</Branch>
+  <Branch>EcalRecHitsSorted_ecalRecHit_EcalRecHitsEE_RECO.</Branch>
+  <Branch>EcalRecHitsSorted_ecalPreshowerRecHit_EcalRecHitsES_RECO.</Branch>
+  <Branch>HBHERecHitsSorted_hbhereco__RECO.</Branch>
+  <Branch>HFRecHitsSorted_hfreco__RECO.</Branch>
+  <Branch>HORecHitsSorted_horeco__RECO.</Branch>
+  <Branch>ZDCDataFramesSorted_hcalDigis__RECO.</Branch>
+  <Branch>ZDCRecHitsSorted_zdcreco__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>booledmValueMap_muidAllArbitrated__RECO.</Branch>
+  <Branch>booledmValueMap_muidGMStaChiCompatibility__RECO.</Branch>
+  <Branch>booledmValueMap_muidGMTkChiCompatibility__RECO.</Branch>
+  <Branch>booledmValueMap_muidGMTkKinkTight__RECO.</Branch>
+  <Branch>booledmValueMap_muidGlobalMuonPromptTight__RECO.</Branch>
+  <Branch>booledmValueMap_muidTM2DCompatibilityLoose__RECO.</Branch>
+  <Branch>booledmValueMap_muidTM2DCompatibilityTight__RECO.</Branch>
+  <Branch>booledmValueMap_muidTMLastStationLoose__RECO.</Branch>
+  <Branch>booledmValueMap_muidTMLastStationOptimizedLowPtLoose__RECO.</Branch>
+  <Branch>booledmValueMap_muidTMLastStationOptimizedLowPtTight__RECO.</Branch>
+  <Branch>booledmValueMap_muidTMLastStationTight__RECO.</Branch>
+  <Branch>booledmValueMap_muidTMOneStationLoose__RECO.</Branch>
+  <Branch>booledmValueMap_muidTMOneStationTight__RECO.</Branch>
+  <Branch>booledmValueMap_muidTrackerMuonArbitrated__RECO.</Branch>
+  <Branch>booledmValueMap_PhotonIDProd_PhotonCutBasedIDLoose_RECO.</Branch>
+  <Branch>booledmValueMap_PhotonIDProd_PhotonCutBasedIDLooseEM_RECO.</Branch>
+  <Branch>booledmValueMap_PhotonIDProd_PhotonCutBasedIDTight_RECO.</Branch>
+  <Branch>recoPreIdsrecoPreIdrecoPreIdsrecoPreIdedmrefhelperFindUsingAdvanceedmRefedmValueMap_trackerDrivenElectronSeeds_preid_RECO.</Branch>
+  <Branch>recoSuperClustersrecoSuperClusterrecoSuperClustersrecoSuperClusteredmrefhelperFindUsingAdvanceedmRefedmValueMap_pfElectronTranslator_pf_RECO.</Branch>
+  <Branch>floatedmValueMap_eidLoose__RECO.</Branch>
+  <Branch>floatedmValueMap_eidRobustHighEnergy__RECO.</Branch>
+  <Branch>floatedmValueMap_eidRobustLoose__RECO.</Branch>
+  <Branch>floatedmValueMap_eidRobustTight__RECO.</Branch>
+  <Branch>floatedmValueMap_eidTight__RECO.</Branch>
+  <Branch>floatedmValueMap_pfElectronTranslator_pf_RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxHarmonic2__RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxMedian__RECO.</Branch>
+  <Branch>recoDeDxDataedmValueMap_dedxTruncated40__RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositJets__RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositTk__RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositCalByAssociatorTowers_ecal_RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositCalByAssociatorTowers_hcal_RECO.</Branch>
+  <Branch>recoIsoDepositedmValueMap_muIsoDepositCalByAssociatorTowers_ho_RECO.</Branch>
+  <Branch>recoJetIDedmValueMap_ak5JetID__RECO.</Branch>
+  <Branch>recoJetIDedmValueMap_ak7JetID__RECO.</Branch>
+  <Branch>recoJetIDedmValueMap_ic5JetID__RECO.</Branch>
+  <Branch>recoJetIDedmValueMap_kt4JetID__RECO.</Branch>
+  <Branch>recoJetIDedmValueMap_kt6JetID__RECO.</Branch>
+  <Branch>recoJetIDedmValueMap_sc5JetID__RECO.</Branch>
+  <Branch>recoJetIDedmValueMap_sc7JetID__RECO.</Branch>
+  <Branch>recoMuonMETCorrectionDataedmValueMap_muonMETValueMapProducer_muCorrData_RECO.</Branch>
+  <Branch>recoMuonMETCorrectionDataedmValueMap_muonTCMETValueMapProducer_muCorrData_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons_combined_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons_csc_RECO.</Branch>
+  <Branch>recoMuonTimeExtraedmValueMap_muons_dt_RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_siPixelClusters__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_siStripClusters__RECO.</Branch>
+  <Branch>recoBeamHaloSummary_BeamHaloSummary__RECO.</Branch>
+  <Branch>recoBeamSpot_offlineBeamSpot__RECO.</Branch>
+  <Branch>recoCSCHaloData_CSCHaloData__RECO.</Branch>
+  <Branch>recoCaloTauDiscriminator_caloRecoTauDiscriminationAgainstElectron__RECO.</Branch>
+  <Branch>recoCaloTauDiscriminator_caloRecoTauDiscriminationByIsolation__RECO.</Branch>
+  <Branch>recoCaloTauDiscriminator_caloRecoTauDiscriminationByLeadingTrackFinding__RECO.</Branch>
+  <Branch>recoCaloTauDiscriminator_caloRecoTauDiscriminationByLeadingTrackPtCut__RECO.</Branch>
+  <Branch>recoEcalHaloData_EcalHaloData__RECO.</Branch>
+  <Branch>recoGlobalHaloData_GlobalHaloData__RECO.</Branch>
+  <Branch>recoHcalHaloData_HcalHaloData__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationAgainstElectron__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationAgainstMuon__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByECALIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByECALIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByLeadingPionPtCut__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByLeadingTrackFinding__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByLeadingTrackPtCut__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByTrackIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConeHighEffPFTauDiscriminationByTrackIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationAgainstElectron__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationAgainstMuon__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByECALIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByECALIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByLeadingPionPtCut__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByLeadingTrackFinding__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByLeadingTrackPtCut__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByTrackIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_fixedConePFTauDiscriminationByTrackIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDecayModeIndexProducer__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationAgainstElectron__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationAgainstMuon__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByECALIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByECALIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByLeadingPionPtCut__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByLeadingTrackFinding__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByLeadingTrackPtCut__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByTaNC__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByTaNCfrHalfPercent__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByTaNCfrOnePercent__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByTaNCfrQuarterPercent__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByTaNCfrTenthPercent__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByTrackIsolation__RECO.</Branch>
+  <Branch>recoPFTauDiscriminator_shrinkingConePFTauDiscriminationByTrackIsolationUsingLeadingPion__RECO.</Branch>
+  <Branch>BeamSpotOnlines_scalersRawToDigi__RECO.</Branch>
+  <Branch>DcsStatuss_scalersRawToDigi__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>L1GctEmCands_gctDigis_isoEm_RECO.</Branch>
+  <Branch>L1GctEmCands_gctDigis_nonIsoEm_RECO.</Branch>
+  <Branch>L1GctEtHads_gctDigis__RECO.</Branch>
+  <Branch>L1GctEtMisss_gctDigis__RECO.</Branch>
+  <Branch>L1GctEtTotals_gctDigis__RECO.</Branch>
+  <Branch>L1GctHFBitCountss_gctDigis__RECO.</Branch>
+  <Branch>L1GctHFRingEtSumss_gctDigis__RECO.</Branch>
+  <Branch>L1GctHtMisss_gctDigis__RECO.</Branch>
+  <Branch>L1GctJetCands_gctDigis_cenJets_RECO.</Branch>
+  <Branch>L1GctJetCands_gctDigis_forJets_RECO.</Branch>
+  <Branch>L1GctJetCands_gctDigis_tauJets_RECO.</Branch>
+  <Branch>L1GctJetCountss_gctDigis__RECO.</Branch>
+  <Branch>L1TriggerScalerss_scalersRawToDigi__RECO.</Branch>
+  <Branch>Level1TriggerScalerss_scalersRawToDigi__RECO.</Branch>
+  <Branch>LumiScalerss_scalersRawToDigi__RECO.</Branch>
+  <Branch>TrajectorySeeds_CosmicMuonSeed__RECO.</Branch>
+  <Branch>TrajectorySeeds_SETMuonSeed__RECO.</Branch>
+  <Branch>TrajectorySeeds_ancientMuonSeed__RECO.</Branch>
+  <Branch>edmErrorSummaryEntrys_logErrorHarvester__RECO.</Branch>
+  <Branch>l1extraL1EmParticles_l1extraParticles_Isolated_RECO.</Branch>
+  <Branch>l1extraL1EmParticles_l1extraParticles_NonIsolated_RECO.</Branch>
+  <Branch>l1extraL1EtMissParticles_l1extraParticles_MET_RECO.</Branch>
+  <Branch>l1extraL1EtMissParticles_l1extraParticles_MHT_RECO.</Branch>
+  <Branch>l1extraL1HFRingss_l1extraParticles__RECO.</Branch>
+  <Branch>l1extraL1JetParticles_l1extraParticles_Central_RECO.</Branch>
+  <Branch>l1extraL1JetParticles_l1extraParticles_Forward_RECO.</Branch>
+  <Branch>l1extraL1JetParticles_l1extraParticles_Tau_RECO.</Branch>
+  <Branch>l1extraL1MuonParticles_l1extraParticles__RECO.</Branch>
+  <Branch>recoCaloClusters_hfEMClusters__RECO.</Branch>
+  <Branch>recoCaloClusters_hybridSuperClusters_hybridBarrelBasicClusters_RECO.</Branch>
+  <Branch>recoCaloClusters_multi5x5BasicClusters_multi5x5BarrelBasicClusters_RECO.</Branch>
+  <Branch>recoCaloClusters_multi5x5BasicClusters_multi5x5EndcapBasicClusters_RECO.</Branch>
+  <Branch>recoCaloClusters_pfElectronTranslator_pf_RECO.</Branch>
+  <Branch>recoCaloJets_ak5CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_ak7CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_iterativeCone5CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_kt4CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_kt6CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_sisCone5CaloJets__RECO.</Branch>
+  <Branch>recoCaloJets_sisCone7CaloJets__RECO.</Branch>
+  <Branch>recoCaloMETs_corMetGlobalMuons__RECO.</Branch>
+  <Branch>recoCaloMETs_met__RECO.</Branch>
+  <Branch>recoCaloMETs_metHO__RECO.</Branch>
+  <Branch>recoCaloMETs_metNoHF__RECO.</Branch>
+  <Branch>recoCaloMETs_metNoHFHO__RECO.</Branch>
+  <Branch>recoCaloMETs_metOpt__RECO.</Branch>
+  <Branch>recoCaloMETs_metOptHO__RECO.</Branch>
+  <Branch>recoCaloMETs_metOptNoHF__RECO.</Branch>
+  <Branch>recoCaloMETs_metOptNoHFHO__RECO.</Branch>
+  <Branch>recoCaloMuons_calomuons__RECO.</Branch>
+  <Branch>recoCaloTaus_caloRecoTauProducer__RECO.</Branch>
+  <Branch>recoCaloTauTagInfos_caloRecoTauTagInfoProducer__RECO.</Branch>
+  <Branch>recoCastorClusters_CastorClusterRecoAntiKt07__RECO.</Branch>
+  <Branch>recoCastorEgammas_CastorJetEgammaRecoAntiKt07__RECO.</Branch>
+  <Branch>recoCastorJets_CastorJetEgammaRecoAntiKt07__RECO.</Branch>
+  <Branch>recoCastorTowers_CastorTowerReco__RECO.</Branch>
+  <Branch>recoConversions_conversions__RECO.</Branch>
+  <Branch>recoConversions_trackerOnlyConversions__RECO.</Branch>
+  <Branch>recoElectronSeeds_electronMergedSeeds__RECO.</Branch>
+  <Branch>recoGsfElectrons_gsfElectrons__RECO.</Branch>
+  <Branch>recoGsfElectrons_softPFElectrons__RECO.</Branch>
+  <Branch>recoGsfElectronCores_gsfElectronCores__RECO.</Branch>
+  <Branch>recoGsfTracks_electronGsfTracks__RECO.</Branch>
+  <Branch>recoGsfTrackExtras_electronGsfTracks__RECO.</Branch>
+  <Branch>recoHFEMClusterShapes_hfEMClusters__RECO.</Branch>
+  <Branch>recoHcalNoiseRBXs_hcalnoise__RECO.</Branch>
+  <Branch>recoMETs_htMetAK5__RECO.</Branch>
+  <Branch>recoMETs_htMetAK7__RECO.</Branch>
+  <Branch>recoMETs_htMetIC5__RECO.</Branch>
+  <Branch>recoMETs_htMetKT4__RECO.</Branch>
+  <Branch>recoMETs_htMetKT6__RECO.</Branch>
+  <Branch>recoMETs_htMetSC5__RECO.</Branch>
+  <Branch>recoMETs_htMetSC7__RECO.</Branch>
+  <Branch>recoMETs_tcMet__RECO.</Branch>
+  <Branch>recoMuons_muons__RECO.</Branch>
+  <Branch>recoMuons_muonsFromCosmics__RECO.</Branch>
+  <Branch>recoMuons_muonsFromCosmics1Leg__RECO.</Branch>
+  <Branch>recoPFBlocks_particleFlowBlock__RECO.</Branch>
+  <Branch>recoPFCandidates_particleFlow__RECO.</Branch>
+  <Branch>recoPFCandidates_particleFlow_electrons_RECO.</Branch>
+  <Branch>recoPFClusters_particleFlowClusterECAL__RECO.</Branch>
+  <Branch>recoPFClusters_particleFlowClusterHCAL__RECO.</Branch>
+  <Branch>recoPFClusters_particleFlowClusterHFEM__RECO.</Branch>
+  <Branch>recoPFClusters_particleFlowClusterHFHAD__RECO.</Branch>
+  <Branch>recoPFClusters_particleFlowClusterPS__RECO.</Branch>
+  <Branch>recoPFJets_ak5PFJets__RECO.</Branch>
+  <Branch>recoPFJets_ak7PFJets__RECO.</Branch>
+  <Branch>recoPFJets_iterativeCone5PFJets__RECO.</Branch>
+  <Branch>recoPFJets_kt4PFJets__RECO.</Branch>
+  <Branch>recoPFJets_kt6PFJets__RECO.</Branch>
+  <Branch>recoPFJets_sisCone5PFJets__RECO.</Branch>
+  <Branch>recoPFJets_sisCone7PFJets__RECO.</Branch>
+  <Branch>recoPFMETs_pfMet__RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowClusterECAL_Cleaned_RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowClusterHCAL_Cleaned_RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowClusterHFEM_Cleaned_RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowClusterHFHAD_Cleaned_RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowClusterPS_Cleaned_RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowRecHitECAL_Cleaned_RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowRecHitHCAL_Cleaned_RECO.</Branch>
+  <Branch>recoPFRecHits_particleFlowRecHitPS_Cleaned_RECO.</Branch>
+  <Branch>recoPFTaus_fixedConeHighEffPFTauProducer__RECO.</Branch>
+  <Branch>recoPFTaus_fixedConePFTauProducer__RECO.</Branch>
+  <Branch>recoPFTaus_shrinkingConePFTauProducer__RECO.</Branch>
+  <Branch>recoPFTauTagInfos_pfRecoTauTagInfoProducer__RECO.</Branch>
+  <Branch>recoPhotons_photons__RECO.</Branch>
+  <Branch>recoPhotonCores_photonCore__RECO.</Branch>
+  <Branch>recoPreIds_trackerDrivenElectronSeeds_preid_RECO.</Branch>
+  <Branch>recoPreshowerClusters_pfElectronTranslator_pf_RECO.</Branch>
+  <Branch>recoPreshowerClusters_multi5x5SuperClustersWithPreshower_preshowerXClusters_RECO.</Branch>
+  <Branch>recoPreshowerClusters_multi5x5SuperClustersWithPreshower_preshowerYClusters_RECO.</Branch>
+  <Branch>recoPreshowerClusterShapes_multi5x5PreshowerClusterShape_multi5x5PreshowerXClustersShape_RECO.</Branch>
+  <Branch>recoPreshowerClusterShapes_multi5x5PreshowerClusterShape_multi5x5PreshowerYClustersShape_RECO.</Branch>
+  <Branch>recoRecoChargedRefCandidates_trackRefsForJets__RECO.</Branch>
+  <Branch>recoRecoEcalCandidates_hfRecoEcalCandidate__RECO.</Branch>
+  <Branch>recoSecondaryVertexTagInfos_secondaryVertexTagInfos__RECO.</Branch>
+  <Branch>recoSoftLeptonTagInfos_softElectronTagInfos__RECO.</Branch>
+  <Branch>recoSoftLeptonTagInfos_softMuonTagInfos__RECO.</Branch>
+  <Branch>recoSuperClusters_correctedHybridSuperClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_correctedMulti5x5SuperClustersWithPreshower__RECO.</Branch>
+  <Branch>recoSuperClusters_hfEMClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_hybridSuperClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_multi5x5SuperClustersWithPreshower__RECO.</Branch>
+  <Branch>recoSuperClusters_multi5x5SuperClusters_multi5x5EndcapSuperClusters_RECO.</Branch>
+  <Branch>recoSuperClusters_pfElectronTranslator_pf_RECO.</Branch>
+  <Branch>recoTracks_ckfInOutTracksFromConversions__RECO.</Branch>
+  <Branch>recoTracks_ckfOutInTracksFromConversions__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuons__RECO.</Branch>
+  <Branch>recoTracks_cosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTracks_generalTracks__RECO.</Branch>
+  <Branch>recoTracks_globalCosmicMuons__RECO.</Branch>
+  <Branch>recoTracks_globalCosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTracks_globalMuons__RECO.</Branch>
+  <Branch>recoTracks_globalSETMuons__RECO.</Branch>
+  <Branch>recoTracks_pixelTracks__RECO.</Branch>
+  <Branch>recoTracks_standAloneMuons__RECO.</Branch>
+  <Branch>recoTracks_standAloneSETMuons__RECO.</Branch>
+  <Branch>recoTracks_standAloneMuons_UpdatedAtVtx_RECO.</Branch>
+  <Branch>recoTracks_standAloneSETMuons_UpdatedAtVtx_RECO.</Branch>
+  <Branch>recoTracks_tevMuons_default_RECO.</Branch>
+  <Branch>recoTracks_tevMuons_firstHit_RECO.</Branch>
+  <Branch>recoTracks_impactParameterTagInfos_ghostTracks_RECO.</Branch>
+  <Branch>recoTracks_tevMuons_picky_RECO.</Branch>
+  <Branch>recoTrackExtras_ckfInOutTracksFromConversions__RECO.</Branch>
+  <Branch>recoTrackExtras_ckfOutInTracksFromConversions__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmicMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_cosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTrackExtras_electronGsfTracks__RECO.</Branch>
+  <Branch>recoTrackExtras_generalTracks__RECO.</Branch>
+  <Branch>recoTrackExtras_globalCosmicMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_globalCosmicMuons1Leg__RECO.</Branch>
+  <Branch>recoTrackExtras_globalMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_globalSETMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_pixelTracks__RECO.</Branch>
+  <Branch>recoTrackExtras_standAloneMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_standAloneSETMuons__RECO.</Branch>
+  <Branch>recoTrackExtras_tevMuons_default_RECO.</Branch>
+  <Branch>recoTrackExtras_tevMuons_firstHit_RECO.</Branch>
+  <Branch>recoTrackExtras_tevMuons_picky_RECO.</Branch>
+  <Branch>recoTrackIPTagInfos_impactParameterTagInfos__RECO.</Branch>
+  <Branch>recoTrackJets_ak5TrackJets__RECO.</Branch>
+  <Branch>recoTrackJets_kt4TrackJets__RECO.</Branch>
+  <Branch>recoVertexs_offlinePrimaryVertices__RECO.</Branch>
+  <Branch>recoVertexs_offlinePrimaryVerticesWithBS__RECO.</Branch>
+  <Branch>recoVertexs_pixelVertices__RECO.</Branch>
+  <Branch>recoVertexCompositeCandidates_generalV0Candidates_Kshort_RECO.</Branch>
+  <Branch>recoVertexCompositeCandidates_generalV0Candidates_Lambda_RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>d5c224141f19d828c8ab13dba9de09f7</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-TkAlMinBias-v39scf/0000/ALCARECOStreamTkAlMinBias.root</LFN>
+<PFN>ALCARECOStreamTkAlMinBias.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamTkAlMinBias</ModuleLabel>
+<GUID>4C08787E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOTkAlMinBias__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOTkAlMinBias__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOTkAlMinBias__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>recoTracks_ALCARECOTkAlMinBias__RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOTkAlMinBias__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>56fdfffaa16a8e850f76cfa4821abf8e</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-SiStripCalZeroBias-v39scf/0000/ALCARECOStreamSiStripCalZeroBias.root</LFN>
+<PFN>ALCARECOStreamSiStripCalZeroBias.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamSiStripCalZeroBias</ModuleLabel>
+<GUID>1E71797E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_calZeroBiasClusters__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>1cbabd75c551618119f3c67e54fc9168</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-TkAlMuonIsolated-v39scf/0000/ALCARECOStreamTkAlMuonIsolated.root</LFN>
+<PFN>ALCARECOStreamTkAlMuonIsolated.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamTkAlMuonIsolated</ModuleLabel>
+<GUID>1E157B7E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOTkAlMuonIsolated__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOTkAlMuonIsolated__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOTkAlMuonIsolated__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>recoTracks_ALCARECOTkAlMuonIsolated__RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOTkAlMuonIsolated__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>663efccce1add872d123cf99eecaf41d</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-MuAlCalIsolatedMu-v39scf/0000/ALCARECOStreamMuAlCalIsolatedMu.root</LFN>
+<PFN>ALCARECOStreamMuAlCalIsolatedMu.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamMuAlCalIsolatedMu</ModuleLabel>
+<GUID>B4E6907E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>CSCDetIdCSCALCTDigiMuonDigiCollection_muonCSCDigis_MuonCSCALCTDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCCLCTDigiMuonDigiCollection_muonCSCDigis_MuonCSCCLCTDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCComparatorDigiMuonDigiCollection_muonCSCDigis_MuonCSCComparatorDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCCorrelatedLCTDigiMuonDigiCollection_muonCSCDigis_MuonCSCCorrelatedLCTDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCDCCFormatStatusDigiMuonDigiCollection_muonCSCDigis_MuonCSCDCCFormatStatusDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCRPCDigiMuonDigiCollection_muonCSCDigis_MuonCSCRPCDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCStripDigiMuonDigiCollection_muonCSCDigis_MuonCSCStripDigi_RECO.</Branch>
+  <Branch>CSCDetIdCSCWireDigiMuonDigiCollection_muonCSCDigis_MuonCSCWireDigi_RECO.</Branch>
+  <Branch>DTChamberIdDTLocalTriggerMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>DTLayerIdDTDigiMuonDigiCollection_muonDTDigis__RECO.</Branch>
+  <Branch>RPCDetIdRPCDigiMuonDigiCollection_muonRPCDigis__RECO.</Branch>
+  <Branch>RPCRawDataCounts_muonRPCDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOMuAlCalIsolatedMu_GlobalMuon_RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOMuAlCalIsolatedMu_StandAlone_RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOMuAlCalIsolatedMu_TrackerOnly_RECO.</Branch>
+  <Branch>CSCDetIdCSCRecHit2DsOwnedRangeMap_csc2DRecHits__RECO.</Branch>
+  <Branch>CSCDetIdCSCSegmentsOwnedRangeMap_cscSegments__RECO.</Branch>
+  <Branch>DTChamberIdDTRecSegment4DsOwnedRangeMap_dt4DSegments__RECO.</Branch>
+  <Branch>DTLayerIdDTRecHit1DPairsOwnedRangeMap_dt1DRecHits__RECO.</Branch>
+  <Branch>RPCDetIdRPCRecHitsOwnedRangeMap_rpcRecHits__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOMuAlCalIsolatedMu__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOMuAlCalIsolatedMu__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>recoMuons_ALCARECOMuAlCalIsolatedMu_SelectedMuons_RECO.</Branch>
+  <Branch>recoTracks_ALCARECOMuAlCalIsolatedMu_GlobalMuon_RECO.</Branch>
+  <Branch>recoTracks_ALCARECOMuAlCalIsolatedMu_StandAlone_RECO.</Branch>
+  <Branch>recoTracks_ALCARECOMuAlCalIsolatedMu_TrackerOnly_RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOMuAlCalIsolatedMu_GlobalMuon_RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOMuAlCalIsolatedMu_StandAlone_RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOMuAlCalIsolatedMu_TrackerOnly_RECO.</Branch>
+  <Branch>LinkBoardElectronicIndexintstdpairs_muonRPCDigis__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>90003ca702e38bf7edb5add54159eaf7</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-SiStripCalMinBias-v39scf/0000/ALCARECOStreamSiStripCalMinBias.root</LFN>
+<PFN>ALCARECOStreamSiStripCalMinBias.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamSiStripCalMinBias</ModuleLabel>
+<GUID>48B1917E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>DetIdedmEDCollection_siStripDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOSiStripCalMinBias__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOSiStripCalMinBias__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_siPixelClusters__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOSiStripCalMinBias__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_siStripClusters__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>recoTracks_ALCARECOSiStripCalMinBias__RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOSiStripCalMinBias__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>5f7f199995be6a21e10a1061be6d4f9a</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-HcalCalIsoTrk-v39scf/0000/ALCARECOStreamHcalCalIsoTrk.root</LFN>
+<PFN>ALCARECOStreamHcalCalIsoTrk.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamHcalCalIsoTrk</ModuleLabel>
+<GUID>642D957E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>triggerTriggerEvent_hltTriggerSummaryAOD__HLT.</Branch>
+  <Branch>EcalRecHitsSorted_IsoProd_IsoTrackEcalRecHitCollection_RECO.</Branch>
+  <Branch>EcalRecHitsSorted_IsoProd_IsoTrackPSEcalRecHitCollection_RECO.</Branch>
+  <Branch>HBHERecHitsSorted_IsoProd_IsoTrackHBHERecHitCollection_RECO.</Branch>
+  <Branch>HORecHitsSorted_IsoProd_IsoTrackHORecHitCollection_RECO.</Branch>
+  <Branch>recoIsolatedPixelTrackCandidates_IsoProd_HcalIsolatedTrackCollection_RECO.</Branch>
+  <Branch>recoTracks_IsoProd_IsoTrackTracksCollection_RECO.</Branch>
+  <Branch>recoTrackExtras_IsoProd_IsoTrackExtraTracksCollection_RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>d8c5e17177c2c0f9e2dc951ea21e22bf</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-HcalCalDijets-v39scf/0000/ALCARECOStreamHcalCalDijets.root</LFN>
+<PFN>ALCARECOStreamHcalCalDijets.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamHcalCalDijets</ModuleLabel>
+<GUID>DCC2967E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>triggerTriggerEvent_hltTriggerSummaryAOD__HLT.</Branch>
+  <Branch>EcalRecHitsSorted_DiJProd_DiJetsEcalRecHitCollection_RECO.</Branch>
+  <Branch>HBHERecHitsSorted_DiJProd_DiJetsHBHERecHitCollection_RECO.</Branch>
+  <Branch>HFRecHitsSorted_DiJProd_DiJetsHFRecHitCollection_RECO.</Branch>
+  <Branch>HORecHitsSorted_DiJProd_DiJetsHORecHitCollection_RECO.</Branch>
+  <Branch>recoCaloJets_DiJProd_DiJetsBackToBackCollection_RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>d55a98398fffb020258282b227ae5e1d</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-EcalCalElectron-v39scf/0000/ALCARECOStreamEcalCalElectron.root</LFN>
+<PFN>ALCARECOStreamEcalCalElectron.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamEcalCalElectron</ModuleLabel>
+<GUID>A0CB9C7E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>double_alCaIsolatedElectrons_weight_RECO.</Branch>
+  <Branch>TrajectorysToOnerecoGsfTracksAssociation_electronGsfTracks__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_electronGsfTracks__RECO.</Branch>
+  <Branch>EcalRecHitsSorted_alCaIsolatedElectrons_alcaBarrelHits_RECO.</Branch>
+  <Branch>EcalRecHitsSorted_alCaIsolatedElectrons_alcaEndcapHits_RECO.</Branch>
+  <Branch>EcalRecHitsSorted_alCaIsolatedElectrons_alcaPreshowerHits_RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>recoCaloMETs_met__RECO.</Branch>
+  <Branch>recoGsfElectrons_gsfElectrons__RECO.</Branch>
+  <Branch>recoGsfElectronCores_gsfElectronCores__RECO.</Branch>
+  <Branch>recoGsfTracks_electronGsfTracks__RECO.</Branch>
+  <Branch>recoGsfTrackExtras_electronGsfTracks__RECO.</Branch>
+  <Branch>recoSuperClusters_correctedHybridSuperClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_correctedMulti5x5SuperClustersWithPreshower__RECO.</Branch>
+  <Branch>recoSuperClusters_hfEMClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_hybridSuperClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_mergedSuperClusters__RECO.</Branch>
+  <Branch>recoSuperClusters_multi5x5SuperClustersWithPreshower__RECO.</Branch>
+  <Branch>recoSuperClusters_superClusterMerger__RECO.</Branch>
+  <Branch>recoSuperClusters_multi5x5SuperClusters_multi5x5BarrelSuperClusters_RECO.</Branch>
+  <Branch>recoSuperClusters_multi5x5SuperClusters_multi5x5EndcapSuperClusters_RECO.</Branch>
+  <Branch>recoSuperClusters_pfElectronTranslator_pf_RECO.</Branch>
+  <Branch>recoTrackExtras_electronGsfTracks__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>13a9a3acbdb28908818d7e1cb0e9fff0</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+
+<File>
+<State  Value="closed"/>
+<LFN>/store/temp/WMAgent/unmerged/ALCARECO/WMAgentCommissioning10-MuAlOverlaps-v39scf/0000/ALCARECOStreamMuAlOverlaps.root</LFN>
+<PFN>ALCARECOStreamMuAlOverlaps.root</PFN>
+<Catalog></Catalog>
+<ModuleLabel>ALCARECOStreamMuAlOverlaps</ModuleLabel>
+<GUID>307B9E7E-9A75-DF11-8C03-001BFC661A36</GUID>
+<Branches>
+  <Branch>edmTriggerResults_TriggerResults__HLT.</Branch>
+  <Branch>L1GlobalTriggerReadoutRecord_gtDigis__RECO.</Branch>
+  <Branch>TrackingRecHitsOwned_ALCARECOMuAlOverlaps__RECO.</Branch>
+  <Branch>edmTriggerResults_TriggerResults__RECO.</Branch>
+  <Branch>SiPixelClusteredmNewDetSetVector_ALCARECOMuAlOverlaps__RECO.</Branch>
+  <Branch>SiStripClusteredmNewDetSetVector_ALCARECOMuAlOverlaps__RECO.</Branch>
+  <Branch>L1AcceptBunchCrossings_scalersRawToDigi__RECO.</Branch>
+  <Branch>recoTracks_ALCARECOMuAlOverlaps__RECO.</Branch>
+  <Branch>recoTrackExtras_ALCARECOMuAlOverlaps__RECO.</Branch>
+</Branches>
+<OutputModuleClass>PoolOutputModule</OutputModuleClass>
+<TotalEvents>0</TotalEvents>
+
+<DataType></DataType>
+
+<BranchHash>e743f9e152c3eed185c47c655520f718</BranchHash>
+
+<Runs>
+<Run ID="131511">
+</Run>
+
+</Runs>
+
+<Inputs>
+<Input>
+  <LFN>/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</LFN>
+  <PFN>dcap://cmsdca3.fnal.gov:24145/pnfs/fnal.gov/usr/cms/WAX/11/store/data/Commissioning10/MinimumBias/RAW/v4/000/131/511/D470C00D-6934-DF11-8FC1-000423D99F3E.root</PFN>
+</Input>
+</Inputs>
+</File>
+<FrameworkError ExitStatus="8001" Type="CMSException" >
+<![CDATA[
+cms::Exception caught in cmsRun
+---- EventProcessorFailure BEGIN
+EventProcessingStopped
+---- ScheduleExecutionFailure BEGIN
+ProcessingStopped
+---- NoRecord BEGIN
+No "SiStripFedCablingRcd" record found in the EventSetup.
+ Please add an ESSource or ESProducer that delivers such a record.
+cms::Exception going through module SiStripRawToDigiModule/siStripDigis run: 131511
+---- NoRecord END
+Exception going through path raw2digi_step
+---- ScheduleExecutionFailure END
+an exception occurred during current event processing
+cms::Exception caught in EventProcessor and rethrown
+---- EventProcessorFailure END
+
+]]>
+</FrameworkError>

@@ -50,6 +50,7 @@ config.SecurityModule.store = 'filestore'
 config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
 #config.CernOpenID.store.database = 'sqlite://'
 config.SecurityModule.session_name = 'SecurityModule'
+config.SecurityModule.oid_server = 'http://localhost:8000/'
 config.SecurityModule.handler = 'WMCore.WebTools.CernOidDefaultHandler'
 
 # The section name is also the location the class will be located
@@ -79,8 +80,8 @@ active.section_('controllers')
 active.controllers.object = 'WMCore.WebTools.Controllers'
 # The configuration for this object - the location of css and js
 active.controllers.css = {'reset.css': environ['YUI_ROOT'] + '/reset/reset.css', 
-        'cms_reset.css': environ['WTBASE'] + '/src/css/WMCore/WebTools/cms_reset.css', 
-        'style.css': environ['WTBASE'] + '/src/css/WMCore/WebTools/style.css'}
+        'cms_reset.css': environ['WTBASE'] + '/css/WMCore/WebTools/cms_reset.css', 
+        'style.css': environ['WTBASE'] + '/css/WMCore/WebTools/style.css'}
 active.controllers.js = {}
 # These are pages in "maintenance mode" - to be completed
 maint = config.WebtoolsDocs.views.section_('maintenance')

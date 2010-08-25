@@ -7,8 +7,8 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.1 2009/04/03 15:23:38 sfoulkes Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.2 2009/07/22 16:24:54 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from sets import Set
 
@@ -39,6 +39,7 @@ class TwoFileBased(JobFactory):
                 filesInJob = 0
 
             filesInJob += 1
+            self.subscription.acquireFiles(availableFile)
             job.addFile(availableFile)
 
         if len(jobs) == 0:
@@ -47,6 +48,5 @@ class TwoFileBased(JobFactory):
         jobGroup = groupInstance(subscription = self.subscription)
         jobGroup.add(jobs)
         jobGroup.commit()
-        jobGroup.recordAcquire(list(jobs))
 
         return [jobGroup]

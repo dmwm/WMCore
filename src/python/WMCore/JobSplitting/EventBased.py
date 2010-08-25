@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: EventBased.py,v 1.9 2009/06/05 16:44:40 mnorman Exp $"
-__version__  = "$Revision: 1.9 $"
+__revision__ = "$Id: EventBased.py,v 1.10 2009/07/22 16:24:54 sfoulkes Exp $"
+__version__  = "$Revision: 1.10 $"
 
 from sets import Set
 
@@ -48,6 +48,7 @@ class EventBased(JobFactory):
 
         for f in fileset:
             eventsInFile = f['events']
+            self.subscription.acquireFiles(f)
 
             currentEvent = 0
             while currentEvent < eventsInFile:
@@ -60,6 +61,5 @@ class EventBased(JobFactory):
         jobGroup = groupInstance(subscription = self.subscription)
         jobGroup.add(jobs)
         jobGroup.commit()
-        #jobGroup.recordAcquire(list(jobs))
 
         return [jobGroup]

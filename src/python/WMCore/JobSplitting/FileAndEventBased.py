@@ -7,8 +7,8 @@ a set of jobs based on event counts.  Each jobgroup returned will only
 contain jobs for a single file.
 """
 
-__revision__ = "$Id: FileAndEventBased.py,v 1.8 2009/07/13 16:24:56 mnorman Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: FileAndEventBased.py,v 1.9 2009/07/22 16:24:54 sfoulkes Exp $"
+__version__  = "$Revision: 1.9 $"
 
 from sets import Set
 
@@ -51,11 +51,11 @@ class FileAndEventBased(JobFactory):
 
             if eventsInFile == 0:
                 currentJob = jobInstance(name = makeUUID())
+                self.subscription.acquireFiles(f)
                 currentJob.addFile(f)
                 currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)                
                 jobGroup.add(currentJob)
                 jobGroup.commit()
-                #jobGroup.recordAcquire()                
                 continue
 
             currentEvent = 0
@@ -65,8 +65,8 @@ class FileAndEventBased(JobFactory):
                 currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                 jobGroup.add(currentJob)
                 currentEvent += eventsPerJob
-
+                
+            self.subscriptions.acquireFiles(f)
             jobGroup.commit()
-            #jobGroup.recordAcquire()
 
         return jobGroups

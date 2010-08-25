@@ -4,8 +4,8 @@ _TwoFileAndEventBased_
 
 """
 
-__revision__ = "$Id: TwoFileAndEventBased.py,v 1.1 2009/04/09 16:40:20 sfoulkes Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: TwoFileAndEventBased.py,v 1.2 2009/07/22 16:24:54 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from sets import Set
 
@@ -50,6 +50,7 @@ class TwoFileAndEventBased(JobFactory):
             if eventsInFile == 0:
                 currentJob = jobInstance(name = makeUUID())
                 currentJob.addFile(f)
+                self.subscription.acquireFiles(f)
                 jobGroup.add(currentJob)
                 jobGroup.commit()
                 jobGroup.recordAcquire()                
@@ -63,7 +64,7 @@ class TwoFileAndEventBased(JobFactory):
                 jobGroup.add(currentJob)
                 currentEvent += eventsPerJob
 
+            self.subscription.acquireFiles(f)
             jobGroup.commit()
-            jobGroup.recordAcquire()
 
         return jobGroups

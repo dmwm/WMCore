@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.9 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Locations_t.py,v 1.10 2009/10/27 09:02:33 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 import unittest
@@ -26,15 +26,12 @@ class LocationsTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
-
-        
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
-
+        return
                                                                 
     def tearDown(self):
         """
@@ -42,7 +39,8 @@ class LocationsTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()                                                                    
+        self.testInit.clearDatabase()
+        return
 
     def testCreateDeleteList(self):
         """

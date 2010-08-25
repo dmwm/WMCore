@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.7 2009/10/26 16:25:30 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: EventBased_t.py,v 1.8 2009/10/27 09:02:33 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from sets import Set
 import unittest
@@ -31,8 +31,6 @@ class EventBasedTest(unittest.TestCase):
 
     Test event based job splitting.
     """
-
-    
     def setUp(self):
         """
         _setUp_
@@ -113,22 +111,8 @@ class EventBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
-        return    
+        self.testInit.clearDatabase()
+        return        
 
     def testExactEvents(self):
         """

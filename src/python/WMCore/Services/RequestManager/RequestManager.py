@@ -100,11 +100,11 @@ class RequestManager(Service):
         callname = 'assignment'
         return self._getResult(callname, args = args, verb = "GET")
 
-    def postAssignment(self, requestName, prodAgentUrl = None):
+    def putWorkQueue(self, requestName, prodAgentUrl = None):
         args = {}
 
         callname = 'workqueue/%s/%s' % (requestName, str(prodAgentUrl))
-        return self._getResult(callname, args = args, verb = "POST")
+        return self._getResult(callname, args = args, verb = "PUT")
 
     def putTeam(self, team):
         args = {}

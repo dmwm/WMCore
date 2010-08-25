@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.11 2010/05/25 12:25:24 spigafi Exp $"
-__revision__ = "$Revision: 1.11 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.12 2010/05/30 14:43:48 spigafi Exp $"
+__revision__ = "$Revision: 1.12 $"
 
 #import logging
 import copy
@@ -103,7 +103,7 @@ class BossLiteAPI(object):
         Retrieve task information from db using task 'taskId' and
         - jobRange = None  : no jobs are loaded
         - jobRange = 'all' : all jobs are loaded
-        - jobRange = range : only selected jobs are loaded - NOT IMPLEMENTED
+        - jobRange = range : only selected jobs are loaded 
         """
         
         # create template for task
@@ -115,7 +115,7 @@ class BossLiteAPI(object):
         elif  jobRange is None :
             task.load(self.db, deep = False)
         else :
-            raise NotImplementedError
+            task.load(self.db, jobRange = parseRange(jobRange))
         
         return task
     
@@ -125,7 +125,7 @@ class BossLiteAPI(object):
         Retrieve task information from db using task 'name' and
         - jobRange = None  : no jobs are loaded
         - jobRange = 'all' : all jobs are loaded
-        - jobRange = range : only selected jobs are loaded - NOT IMPLEMENTED
+        - jobRange = range : only selected jobs are loaded 
         """
 
         # create template for task and load
@@ -137,7 +137,7 @@ class BossLiteAPI(object):
         elif  jobRange is None :
             task.load(self.db, deep = False)
         else :
-            raise NotImplementedError
+            task.load(self.db, jobRange = parseRange(jobRange))
         
         return task
 
@@ -342,8 +342,9 @@ class BossLiteAPI(object):
         for entry in results:
             job = Job()
             job.data.update(entry)
+            self.getRunningInstance(job = job )
             jobList.append(job)
-        
+                       
         return jobList
     
     

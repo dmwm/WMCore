@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.17 2010/04/27 16:19:56 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.18 2010/04/27 16:25:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import threading
 import logging
@@ -201,7 +201,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 continue
 
             xmlData = self.createInjectionSpec(migratedBlocks[siteName])
-            injectRes = self.phedex.injectBlocks(location, xmlData, 1, 0)
+            injectRes = self.phedex.injectBlocks(location, xmlData, 0, 0)
 
             if not injectRes.has_key("error"):
                 for datasetName in migratedBlocks[siteName]:

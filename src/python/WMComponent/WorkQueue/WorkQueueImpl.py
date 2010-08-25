@@ -1,3 +1,5 @@
+from WMCore.DataStructs.WMObject import WMObject
+import time
 
 class WQElement(WMObject):
     """

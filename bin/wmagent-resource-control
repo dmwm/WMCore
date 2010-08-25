@@ -36,7 +36,9 @@ def createOptionParser():
     myOptParser.add_option("--task-type", dest = "taskType",
                            help = "Specify the name of the task to add/modify")
     myOptParser.add_option("--max-slots", dest = "maxSlots",
-                       help = "Specify the maximum number of slots for the task type")
+                           help = "Specify the maximum number of slots for the task type")
+    myOptParser.add_option("--plugin", dest = "plugin",
+                           help = "Specify submit plugin to use for specific site")
 
     return myOptParser
 
@@ -71,7 +73,7 @@ def printThresholds(resourceControl, desiredSiteName):
         print ""    
 
 def updateSiteInfo(resourceControl, siteName, jobSlots = None,
-                   ceName = None, seName = None):
+                   ceName = None, seName = None, plugin = None):
     """
     _updateSiteInfo_
 
@@ -88,7 +90,8 @@ def updateSiteInfo(resourceControl, siteName, jobSlots = None,
 
         print "Adding %s to the resource control db..." % siteName
         resourceControl.insertSite(siteName = siteName, jobSlots = int(jobSlots),
-                                   seName = seName, ceName = ceName)
+                                   seName = seName, ceName = ceName,
+                                   plugin = plugin)
         return
 
     if jobSlots != None:
@@ -145,7 +148,7 @@ else:
         sys.exit(1)
     if options.taskType == None:
         updateSiteInfo(myResourceControl, options.siteName, options.jobSlots,
-                       options.ceName, options.seName)
+                       options.ceName, options.seName, options.plugin)
         sys.exit(0)
     else:
         updateThresholdInfo(myResourceControl, options.siteName,

@@ -1,3 +1,4 @@
+import os
 import cherrypy
 import logging 
 from WMCore.Configuration import Configuration
@@ -26,7 +27,7 @@ class DefaultConfig(Configuration):
         active.rest.object = 'WMCore.WebTools.RESTApi'
         active.rest.templates = '/tmp'
         active.rest.database = 'sqlite://'
-        active.rest.dbsocket = None
+        active.rest.dbsocket = os.environ['DBSOCK']
         #active.rest.database = 'sqlite:////tmp/resttest.db'
         active.rest.section_('model')
         active.rest.model.object = model or 'WMCore.WebTools.RESTModel'

@@ -16,13 +16,15 @@ class DefaultConfig(Configuration):
         self.Webtools.error_file = '/tmp/webtools/log_error'
         self.Webtools.port = 8888
         self.Webtools.host = "localhost"
+        self.Webtools.expires = 300
+        
         self.component_('UnitTests')
         self.UnitTests.title = 'CMS WMCore/WebTools Unit Tests'
         self.UnitTests.description = 'Dummy server for the running of unit tests' 
         self.UnitTests.admin ="UnitTestAdmin"
         self.UnitTests.templates = "/tmp"
         self.UnitTests.section_('views')
-        
+
         active = self.UnitTests.views.section_('active')
         active.section_('rest')
         active.rest.application = 'UnitTestRESTApp'
@@ -37,7 +39,10 @@ class DefaultConfig(Configuration):
         active.rest.section_('formatter')
         active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
         active.rest.formatter.templates = '/tmp'
-    
+        #WARNING: need is not actual config - if cherrypy is started by Root.py
+        #This will handled automatically - added here just for DummyModel test.
+        active.rest.default_expires = self.Webtools.expires
+        
     def getServerUrl(self):
         return "http://%s:%s/rest/" % (self.Webtools.host, self.Webtools.port)
                                      

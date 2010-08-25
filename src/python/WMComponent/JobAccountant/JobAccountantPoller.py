@@ -5,8 +5,8 @@ _JobAccountantPoller_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountantPoller.py,v 1.5 2009/11/10 15:31:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobAccountantPoller.py,v 1.6 2009/11/10 17:04:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import time
 import threading
@@ -56,6 +56,13 @@ class JobAccountantPoller(BaseWorkerThread):
         jobs have been processed.
         """
         completeJobs = self.getJobsAction.execute(state = "complete")
+        logging.info("Jobs: %s" % completeJobs)
+        while len(completeJobs) > 50:
+            completeJobsSlice = completeJobs[0:50]
+            completeJobs = completeJobs[51:]
+            self.processPool.enqueue(completeJobsSlice)
+            self.processPool.dequeue(len(completeJobsSlice))
+            
         self.processPool.enqueue(completeJobs)
         self.processPool.dequeue(len(completeJobs))
         return

@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.25 2010/05/12 19:56:51 sryu Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.26 2010/05/20 21:28:16 sryu Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import logging
 
@@ -61,7 +61,9 @@ class WMBSHelper:
         else:
             logging.info("Child subscription created: %s" % subs['id'])
         
-        outputModules =  task.getOutputModulesForStep(task.getTopStepName())
+        # To do: check this is the right change
+        #outputModules =  task.getOutputModulesForStep(task.getTopStepName())
+        outputModules = task.getOutputModulesForTask()
         
         for outputModuleName in outputModules.listSections_():
             if task.taskType() == "Merge":

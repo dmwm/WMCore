@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.34 2010/05/20 20:58:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Create.py,v 1.35 2010/06/28 19:01:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -287,33 +287,6 @@ class Create(CreateWMBSBase):
 
         self.constraints["03_idx_wmbs_subscription"] = \
           """CREATE INDEX idx_wmbs_subscription_workflow ON wmbs_subscription(workflow) %s""" % tablespaceIndex
-
-        self.create["09wmbs_subscription_location"] = \
-          """CREATE TABLE wmbs_subscription_location (
-               subscription INTEGER NOT NULL,
-               location     INTEGER NOT NULL,
-               valid        CHAR(1) NOT NULL
-               ) %s""" % tablespaceTable
-
-        self.constraints["01_fk_wmbs_subscription_location"] = \
-          """ALTER TABLE wmbs_subscription_location ADD
-               (CONSTRAINT ck_valid CHECK (valid IN ( '0', '1' )))"""
-
-        self.constraints["02_fk_wmbs_subscription_location"] = \
-          """ALTER TABLE wmbs_subscription_location ADD
-               (CONSTRAINT fk_subs_loc_subscription FOREIGN KEY(subscription)
-                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
-
-        self.constraints["01_idx_wmbs_subscription_location"] = \
-          """CREATE INDEX idx_wmbs_subscription_loc_sub ON wmbs_subscription_location(subscription) %s""" % tablespaceIndex
-
-        self.constraints["03_fk_wmbs_subscription_location"] = \
-          """ALTER TABLE wmbs_subscription_location ADD
-               (CONSTRAINT fk_subs_loc_location FOREIGN KEY(location)
-                  REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
-
-        self.constraints["02_idx_wmbs_subscription_location"] = \
-          """CREATE INDEX idx_wmbs_subscription_loc_loc ON wmbs_subscription_location(location) %s""" % tablespaceIndex
 
         self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (

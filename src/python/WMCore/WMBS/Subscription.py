@@ -16,8 +16,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.68 2010/05/25 15:39:31 mnorman Exp $"
-__version__ = "$Revision: 1.68 $"
+__revision__ = "$Id: Subscription.py,v 1.69 2010/06/28 19:01:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.69 $"
 
 import logging
 
@@ -38,8 +38,7 @@ class Subscription(WMBSBase, WMSubscription):
     WMBS object for executing a task or similar chunk of work
     """
     def __init__(self, fileset = None, workflow = None, id = -1,
-                 whitelist = None, blacklist = None, split_algo = "FileBased",
-                 type = "Processing"):
+                 split_algo = "FileBased", type = "Processing"):
         WMBSBase.__init__(self)
 
         # If a fileset or workflow isn't passed in the base class will create
@@ -51,7 +50,6 @@ class Subscription(WMBSBase, WMSubscription):
             workflow = Workflow()
             
         WMSubscription.__init__(self, fileset = fileset, workflow = workflow,
-                                whitelist = whitelist, blacklist = blacklist,
                                 split_algo = split_algo, type = type)
 
         self.setdefault("id", id)
@@ -73,15 +71,6 @@ class Subscription(WMBSBase, WMSubscription):
                        workflow = self["workflow"].id,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-        
-        # Reload so we pick up the ID for location entries
-        self.load()
-        
-        # Add white / blacklist entries
-        for whiteEntry in self['whitelist']:
-            self.markLocation(whiteEntry, True)
-        for blackEntry in self['blacklist']:
-            self.markLocation(blackEntry, False)
         
         self.load()
         self.commitTransaction(existingTransaction)
@@ -124,8 +113,6 @@ class Subscription(WMBSBase, WMSubscription):
         self["id"] = result["id"]
         self["split_algo"] = result["split_algo"]
 
-
-
         # Only load the fileset and workflow if they haven't been loaded
         # already.  
         if self["fileset"].id < 0:
@@ -156,31 +143,12 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return
     
-    def markLocation(self, location, whitelist = True):
-        """
-        Add a location to the subscriptions white or black list
-        """
-        existingTransaction = self.beginTransaction()
-
-        locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(location, conn = self.getDBConn(),
-                               transaction = self.existingTransaction())
-        
-        # Mark the location as appropriate
-        action = self.daofactory(classname = "Subscriptions.MarkLocation")
-        action.execute(self["id"], location, whitelist, conn = self.getDBConn(),
-                       transaction = self.existingTransaction())
-
-        self.commitTransaction(existingTransaction)
-        return
-          
     def filesOfStatus(self, status, limit=0):
         """
         _filesOfStatus_
         
         Return a Set of File objects that have the given status with respect
-        to this subscription.
-        
+        to this subscription.        
         """
         existingTransaction = self.beginTransaction()
         
@@ -210,10 +178,7 @@ class Subscription(WMBSBase, WMSubscription):
             files.add(fl)
             
         self.commitTransaction(existingTransaction)
-        
-        
         return files
-    
     
     def acquireFiles(self, files = None):
         """
@@ -369,15 +334,12 @@ class Subscription(WMBSBase, WMSubscription):
         _getNumberOfJobsPerSite_
         
         Access the number of jobs at a site in a given status for a given subscription
-
         """
-
         jobLocate = self.daofactory(classname = "Subscriptions.GetNumberOfJobsPerSite")
 
         result = jobLocate.execute(location = location,
                                    subscription = self['id'],
                                    state = state).values()[0]
-
         return result
  
     def getJobGroups(self):

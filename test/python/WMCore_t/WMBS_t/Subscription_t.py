@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-__revision__ = "$Id: Subscription_t.py,v 1.58 2010/06/01 21:26:32 riahi Exp $"
-__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: Subscription_t.py,v 1.59 2010/06/28 19:01:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.59 $"
 
 
 import unittest
@@ -22,15 +22,8 @@ from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Job      import Job
 from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.JobStateMachine import DefaultConfig
 
 class SubscriptionTest(unittest.TestCase):
-    """
-    The unittest for the Subscription object
-
-    """
-    
     def setUp(self):
         """
         _setUp_
@@ -41,7 +34,6 @@ class SubscriptionTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -224,7 +216,6 @@ class SubscriptionTest(unittest.TestCase):
         Create a subscription and fail a couple of files in it's fileset.  Test
         to make sure that only the failed files are marked as failed.
         """
-        
         (testSubscription, testFileset, testWorkflow, 
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
                   
@@ -523,7 +514,11 @@ class SubscriptionTest(unittest.TestCase):
         goldenFiles = [testFileD, testFileE, testFileF]
         for availableFile in availableFiles:
             assert availableFile in goldenFiles, \
-                   "ERROR: Unknown available file"
+                   "Error: Unknown available file"
+            assert len(availableFile["locations"]) == 1, \
+                   "Error: Wrong number of available files."
+            assert "goodse.cern.ch" in availableFile["locations"], \
+                   "Error: Wrong SE name in file location."
             goldenFiles.remove(availableFile)
 
         assert len(goldenFiles) == 0, \
@@ -719,143 +714,6 @@ class SubscriptionTest(unittest.TestCase):
         testFileF.delete()        
         return    
     
-    def testAvailableFilesWhiteList(self):
-        """
-        _testAvailableFilesWhiteList_
-        
-        Testcase for the availableFiles method of the Subscription Class when a 
-        white list is present in the subscription.
-        """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test')
-        testWorkflow.create()
-
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-        
-        count = 0
-        for i in range(0, 100):
-            lfn = "/store/data/%s/%s/file.root" % (random.randint(1000, 9999),
-                                                   random.randint(1000, 9999))
-            size = random.randint(1000, 2000)
-            events = 1000
-            run = random.randint(0, 2000)
-            lumi = random.randint(0, 8)
-    
-            testFile = File(lfn=lfn, size=size, events=events)
-            testFile.addRun(Run(run, *[lumi]))
-            testFile.create()
-            
-            if random.randint(1, 2) > 1:
-                testFile.setLocation("goodse.cern.ch")
-                count += 1
-            else:
-                testFile.setLocation("badse.cern.ch")
-
-            testFileset.addFile(testFile)
-            
-        testFileset.commit()
-        testSubscription.markLocation("site1")
-        
-        assert count == len(testSubscription.availableFiles()), \
-        "Subscription has %s files available, should have %s" % \
-        (len(testSubscription.availableFiles()), count)
-        
-    def testAvailableFilesBlackList(self):
-        """
-        _testAvailableFilesBlackList_
-        
-        Testcase for the availableFiles method of the Subscription Class
-        """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test')
-        testWorkflow.create()
-
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-        
-        count = 0
-        for i in range(0, 100):
-            lfn = "/blacklist/%s/%s/file.root" % (random.randint(1000, 9999),
-                                                  random.randint(1000, 9999))
-            size = random.randint(1000, 2000)
-            events = 1000
-            run = random.randint(0, 2000)
-            lumi = random.randint(0, 8)
-    
-            testFile = File(lfn=lfn, size=size, events=events)
-            testFile.addRun(Run(run, *[lumi]))
-            testFile.create()
-            
-            if random.randint(1, 2) > 1:
-                testFile.setLocation("goodse.cern.ch")
-            else:
-                testFile.setLocation("badse.cern.ch")
-                count += 1
-                
-            testFileset.addFile(testFile)
-        testFileset.commit()
-        
-        testSubscription.markLocation("site3", whitelist = False)
-        assert 100 - count == len(testSubscription.availableFiles()), \
-        "Subscription has %s files available, should have %s" %\
-        (len(testSubscription.availableFiles()), 100 - count) 
-               
-    def testAvailableFilesBlackWhiteList(self):
-        """
-        _testAvailableFilesBlackWhiteList_
-        
-        Testcase for the availableFiles method of the Subscription Class when 
-        both a white and black list are provided
-        """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task='Test')
-        testWorkflow.create()
-
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
-        
-        count = 0
-        for i in range(0, 10):
-            lfn = "/store/data/%s/%s/file.root" % (random.randint(1000, 9999),
-                                                   random.randint(1000, 9999))
-            size = random.randint(1000, 2000)
-            events = 1000
-            run = random.randint(0, 2000)
-            lumi = random.randint(0, 8)
-    
-            testFile = File(lfn=lfn, size=size, events=events)
-            testFile.addRun(Run(run, *[lumi]))
-            testFile.create()
-            
-            if random.randint(1, 2) > 1:
-                testFile.setLocation("goodse.cern.ch")
-                count += 1
-            else:
-                testFile.setLocation("badse.cern.ch")
-
-            testFileset.addFile(testFile)
-           
-        testFileset.commit()   
-        testSubscription.markLocation("site3", whitelist = False)
-        testSubscription.markLocation("site1")
-        
-        assert count == len(testSubscription.availableFiles()), \
-        "Subscription has %s files available, should have %s" %\
-        (len(testSubscription.availableFiles()), count)   
-
     def testLoad(self):
         """
         _testLoad_
@@ -1140,11 +998,7 @@ class SubscriptionTest(unittest.TestCase):
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
         testSubscription.create()
 
-        myThread = threading.currentThread()        
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-
-        subIncomplete = daoFactory(classname = "Subscriptions.ListIncomplete")
+        subIncomplete = self.daofactory(classname = "Subscriptions.ListIncomplete")
 
         incompleteSubs = subIncomplete.execute()
 
@@ -1185,7 +1039,7 @@ class SubscriptionTest(unittest.TestCase):
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
         testSubscription.create()
 
-        stateChanger = ChangeState(DefaultConfig.config)
+        changeJobState = self.daofactory(classname = "Jobs.ChangeState")
 
         testJobGroupA = JobGroup(subscription = testSubscription)
         testJobGroupA.create()
@@ -1225,8 +1079,10 @@ class SubscriptionTest(unittest.TestCase):
 
         assert len(firstResult) == 0, \
                "Error: Too monay job groups in result."
-        
-        stateChanger.propagate([testJobA], "created", "new")
+
+        testJobA["state"] = "created"
+        changeJobState.execute([testJobA])
+
         secondResult = testSubscription.getJobGroups()
         for jobGroup in [testJobGroupA.id, testJobGroupB.id]:
             assert jobGroup in secondResult, \
@@ -1235,8 +1091,10 @@ class SubscriptionTest(unittest.TestCase):
 
         assert len(secondResult) == 0, \
                "Error: Too monay job groups in result."
-        
-        stateChanger.propagate([testJobB], "created", "new")
+
+        testJobB["state"] = "created"
+        changeJobState.execute([testJobB])
+
         thirdResult = testSubscription.getJobGroups()
         for jobGroup in [testJobGroupB.id]:
             assert jobGroup in thirdResult, \
@@ -1403,11 +1261,7 @@ class SubscriptionTest(unittest.TestCase):
         
         Test the getSubTypes function
         """
-        myThread   = threading.currentThread()
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        
-        getSubTypes = daoFactory(classname = "Subscriptions.GetSubTypes")
+        getSubTypes = self.daofactory(classname = "Subscriptions.GetSubTypes")
 
         result = getSubTypes.execute()
 
@@ -1634,11 +1488,8 @@ class SubscriptionTest(unittest.TestCase):
         testJobGroupA.add(testJobB)
         testJobGroupA.commit()
 
-        myThread   = threading.currentThread()
-        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-        getAllJobs = daoFactory(classname = "Subscriptions.Jobs")
-        result = getAllJobs.execute(subscription=testSubscription["id"])
+        getAllJobs = self.daofactory(classname = "Subscriptions.Jobs")
+        result = getAllJobs.execute(subscription = testSubscription["id"])
 
         assert len(result) == 2, \
                "Error: Wrong number of jobs."
@@ -1647,7 +1498,7 @@ class SubscriptionTest(unittest.TestCase):
         testJobGroupA.add(testJobC)
         testJobGroupA.commit()
 
-        result = getAllJobs.execute(subscription=testSubscription["id"])
+        result = getAllJobs.execute(subscription = testSubscription["id"])
 
         assert len(result) == 3, \
                "Error: Wrong number of jobs."
@@ -1663,12 +1514,8 @@ class SubscriptionTest(unittest.TestCase):
         Test the Subscriptions.SucceededJobs DAO turns the correct
         number of succeeded job
         """
-        myThread   = threading.currentThread()
-        daoFactory = DAOFactory(package = "WMCore.WMBS", \
-                                     logger = myThread.logger, \
-                                     dbinterface = myThread.dbi)
-        changeJobState = daoFactory(classname = "Jobs.ChangeState")
-        getSucceededJobs = daoFactory(classname = "Subscriptions.SucceededJobs")
+        changeJobState = self.daofactory(classname = "Jobs.ChangeState")
+        getSucceededJobs = self.daofactory(classname = "Subscriptions.SucceededJobs")
 
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()

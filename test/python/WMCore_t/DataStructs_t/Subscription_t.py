@@ -3,10 +3,7 @@
 _Subscription_t_
 
 Testcase for the Subscription class
-
 """ 
-
-
 
 import unittest, os, logging, commands, random
 
@@ -32,15 +29,6 @@ class SubscriptionTest(unittest.TestCase):
         and a dummy workflow using the default constructor of the Workflow class
 
         """        
-        #Logger setup for subscription Fileset
-        logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=__file__.replace('.py','.log'),
-                    filemode='w')
-        self.logger = logging.getLogger('SubscriptionClassTest')
-
-        #Initial testcase environment
         self.dummyFile = File('/tmp/dummyfile',9999,0,0,0)
         self.dummySet = set() 
         self.dummySet.add(self.dummyFile)
@@ -49,20 +37,10 @@ class SubscriptionTest(unittest.TestCase):
         self.dummyWorkFlow = Workflow()
         self.dummySubscription = Subscription(fileset = self.dummyFileSet, 
                                               workflow = self.dummyWorkFlow)
-
+        return
     
     def tearDown(self):
-        """
-        No tearDown method for this Testcase
-
-        """
-        self.dummyFile = None
-        self.dummySet = None 
-    
-        self.dummyFileSet = None
-        self.dummyWorkFlow = None
-        self.dummySubscription = None
-
+        pass
 
     def testGetWorkflow(self):
         """
@@ -378,71 +356,6 @@ class SubscriptionTest(unittest.TestCase):
         self.dummySubscription.available.getFiles(type='set'), \
         'Method availableFiles does not return available files Set'
 
-    def testAvailableFilesWhiteList(self):
-        """
-        Testcase for the availableFiles method of the Subscription Class when a 
-        white list is present in the subscription.
-        """
-        count = 0
-        dummyFileList = set()
-        for i in range(1, 100):
-            lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999),
-                                              random.randint(1000, 9999))
-            size = random.randint(1000, 2000)
-            events = 1000
-            run = random.randint(0, 2000)
-            lumi = random.randint(0, 8)
-
-            file = File(lfn = lfn, size = size, events = events,
-                        checksums = {"cksum": "1"})
-            file.addRun(Run(run, *[lumi]))
-            if random.randint(1, 2) > 1:
-                file.setLocation('goodse.cern.ch')
-                count += 1
-            else:
-                file.setLocation('badse.cern.ch')
-            #Add the new file
-            self.dummySubscription.available.addFile(file)
-            
-        self.dummySubscription.markLocation('goodse.cern.ch')
-        assert count == len(self.dummySubscription.availableFiles()), \
-        "Subscription has %s files available, should have %s" %\
-        (len(self.dummySubscription.availableFiles()), count)
-        
-    def testAvailableFilesBlackList(self):
-    	
-        """
-        Testcase for the availableFiles method of the Subscription Class
-        """
-        count = 0
-        dummyFileList = set()
-        for i in range(1, 100):
-            lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999),
-                                              random.randint(1000, 9999))
-            size = random.randint(1000, 2000)
-            events = 1000
-            run = random.randint(0, 2000)
-            lumi = random.randint(0, 8)
-
-            file = File(lfn = lfn, size = size, events = events,
-                        checksums = {"cksum": "1"})
-            file.addRun(Run(run, *[lumi]))
-            if random.randint(1, 2) > 1:
-                file.setLocation('goodse.cern.ch')
-            else:
-                file.setLocation('badse.cern.ch')
-                count += 1
-            #Add the new file
-            self.dummySubscription.available.addFile(file)
-        #Add the new files
-        self.dummySubscription.available.addFile(dummyFileList)
-        self.dummySubscription.markLocation('badse.cern.ch', whitelist=False)
-        
-        # added 99 files, plus the original file.
-        assert count == 100 - len(self.dummySubscription.availableFiles()), \
-        "Subscription has %s files available, should have %s" %\
-        (len(self.dummySubscription.availableFiles()), 100 - count)   
-         
     def testAcquiredFiles(self):            
         """
         Testcase for the acquiredFiles method of the Subscription Class
@@ -467,7 +380,5 @@ class SubscriptionTest(unittest.TestCase):
             self.dummySubscription.failed.getFiles(type='set'), \
             'Method failedFiles does not return failed files Set'
 
-
 if __name__ == "__main__":
-            unittest.main()
-
+    unittest.main()

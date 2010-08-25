@@ -96,7 +96,6 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
                                   split_algo = task.jobSplittingAlgorithm(),
                                   type = task.taskType())
     mySubscription.create()
-    mySubscription.markLocation("T1_US_FNAL")
 
     outputModules =  task.getOutputModulesForStep(task.getTopStepName())
     for outputModuleName in outputModules.listSections_():

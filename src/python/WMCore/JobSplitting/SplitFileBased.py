@@ -8,12 +8,13 @@ but instead of combining multiple merge units together this will create a
 single job for each merge unit.
 """
 
-__revision__ = "$Id: SplitFileBased.py,v 1.3 2009/09/30 12:30:54 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SplitFileBased.py,v 1.4 2010/03/31 21:35:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 
 from WMCore.WMBS.File import File
+from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -65,7 +66,9 @@ def sortedFilesFromMergeUnits(mergeUnits):
         mergeUnit["files"].sort(fileCompare)
 
         for file in mergeUnit["files"]:
-            newFile = File(id = file["file_id"], lfn = file["file_lfn"])
+            newFile = File(id = file["file_id"], lfn = file["file_lfn"],
+                           events = file["file_events"])
+            newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             sortedFiles.append(newFile)
 
     return sortedFiles
@@ -81,55 +84,47 @@ class SplitFileBased(JobFactory):
         """
         _defineMergeUnits_
 
-        Split all the of files into merge units.  A merge unit is a group
+        Split all the mergeable files into merge units.  A merge unit is a group
         of files that must be merged together.  For example, the files that
-        result from event based splitting jobs need to be processed together and
-        in the correct order.  This method will return a list of merge units.
-        A merge unit is a dictionary with the following keys: group_id,
-        total_events, total_size, run, lumi, and files.  The files in the merge
-        group are stored in a list under the files key.
+        result from event based splitting jobs need to be merged back together.
+        This method will return a list of merge units.  A merge unit is a
+        dictionary with the following keys: file_parent, total_events, total_size,
+        run, lumi, and files.  The files in the merge group are stored in a list
+        under the files key.
         """
-        mergeUnits = []
+        mergeUnits = {}
 
         for mergeableFile in mergeableFiles:
             newMergeFile = {}
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 
-            if mergeableFile["group_id"] != None:
-                for mergeUnit in mergeUnits:
-                    if mergeUnit["group_id"] == mergeableFile["group_id"]:
-                        mergeUnit["files"].append(newMergeFile)
-                        mergeUnit["total_size"] += newMergeFile["file_size"]
-                        mergeUnit["total_events"] += newMergeFile["file_events"]
+            if not mergeUnits.has_key(newMergeFile["file_run"]):
+                mergeUnits[newMergeFile["file_run"]] = []
+                
+            for mergeUnit in mergeUnits[newMergeFile["file_run"]]:
+                if mergeUnit["file_parent"] == mergeableFile["file_parent"]:
+                    mergeUnit["files"].append(newMergeFile)
+                    mergeUnit["total_size"] += newMergeFile["file_size"]
+                    mergeUnit["total_events"] += newMergeFile["file_events"]
 
-                        if mergeableFile["file_run"] < mergeUnit["run"] or \
+                    if mergeableFile["file_run"] < mergeUnit["run"] or \
                            (mergeableFile["file_run"] == mergeUnit["run"] and \
                             mergeableFile["file_lumi"] < mergeUnit["lumi"]):
-                            newMergeUnit["run"] = newMergeFile["file_run"]
-                            newMergeUnit["lumi"] = newMergeFile["file_lumi"]
+                        newMergeUnit["run"] = newMergeFile["file_run"]
+                        newMergeUnit["lumi"] = newMergeFile["file_lumi"]
                             
-                        break
-                else:
-                    newMergeUnit = {}
-                    newMergeUnit["group_id"] = newMergeFile["group_id"]
-                    newMergeUnit["total_events"] = newMergeFile["file_events"]
-                    newMergeUnit["total_size"] = newMergeFile["file_size"]
-                    newMergeUnit["run"] = newMergeFile["file_run"]
-                    newMergeUnit["lumi"] = newMergeFile["file_lumi"]
-                    newMergeUnit["files"] = []
-                    newMergeUnit["files"].append(newMergeFile)
-                    mergeUnits.append(newMergeUnit)
+                    break
             else:
                 newMergeUnit = {}
-                newMergeUnit["group_id"] = -1
+                newMergeUnit["file_parent"] = newMergeFile["file_parent"]
                 newMergeUnit["total_events"] = newMergeFile["file_events"]
                 newMergeUnit["total_size"] = newMergeFile["file_size"]
                 newMergeUnit["run"] = newMergeFile["file_run"]
-                newMergeUnit["lumi"] = newMergeFile["file_lumi"]                
+                newMergeUnit["lumi"] = newMergeFile["file_lumi"]
                 newMergeUnit["files"] = []
                 newMergeUnit["files"].append(newMergeFile)
-                mergeUnits.append(newMergeUnit)
+                mergeUnits[newMergeFile["file_run"]].append(newMergeUnit)
 
         return mergeUnits
 
@@ -157,7 +152,6 @@ class SplitFileBased(JobFactory):
         Use the generic WMBS merging DAO to get a list of files in our fileset
         that correspond to completed job groups.  Create jobs for these files.
         """
-
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
@@ -167,7 +161,8 @@ class SplitFileBased(JobFactory):
         mergeableFiles = mergeDAO.execute(self.subscription["id"])
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
-        mergeUnits.sort(mergeUnitCompare)
-        self.createProcJobs(mergeUnits)
+        for runNumber in mergeUnits.keys():
+            mergeUnits[runNumber].sort(mergeUnitCompare)
+            self.createProcJobs(mergeUnits[runNumber])
 
         return self.jobGroups

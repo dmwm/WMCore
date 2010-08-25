@@ -5,8 +5,8 @@ WorkerNode unittest for WMRuntime/WMSpec
 
 """
 
-__revision__ = "$Id: Runtime_t.py,v 1.1 2010/06/23 15:00:53 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Runtime_t.py,v 1.2 2010/07/01 15:04:34 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 # Basic libraries
 import unittest
@@ -19,6 +19,7 @@ import re
 import random
 import inspect
 import sys
+import socket
 
 # Init junk
 from WMQuality.TestInit import TestInit
@@ -84,13 +85,19 @@ def miniStartup(dir = os.getcwd()):
 
     job = Bootstrap.loadJobDefinition()
     task = Bootstrap.loadTask(job)
+    Bootstrap.createInitialReport(job = job,
+                                  task = task,
+                                  logLocation = "Report.pkl")
     monitor = Bootstrap.setupMonitoring()
 
     Bootstrap.setupLogging(dir)
+    
 
     task.build(dir)
-
     task.execute(job)
+
+    task.completeTask(jobLocation = os.path.join(dir, 'WMTaskSpace'),
+                      logLocation = "Report.pkl")
 
     if monitor.isAlive():
         monitor.shutdown()
@@ -481,7 +488,12 @@ class RuntimeTest(unittest.TestCase):
         cmsReport = report.data.cmsRun1
 
 
+
         # Now validate the report
+        self.assertEqual(report.data.ceName, socket.gethostname())
+        self.assertEqual(report.data.seName, 'cmssrm.fnal.gov')
+        self.assertEqual(report.data.siteName, 'T1_US_FNAL')
+        self.assertEqual(report.data.hostName, socket.gethostname())
 
         # Should have status 0 (emulator job)
         self.assertEqual(cmsReport.status, 0)

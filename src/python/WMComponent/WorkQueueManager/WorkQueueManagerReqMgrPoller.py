@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.10 2010/06/23 16:15:33 sryu Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.11 2010/06/25 16:14:57 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import re
 import os
@@ -62,7 +62,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                         for unit in units:
                             self.wq._insertWorkQueueElement(unit, requestName = reqName)
                         try:
-                            self.reqMgr.postAssignment(reqName, 
+                            self.reqMgr.putWorkQueue(reqName, 
                                             self.wq.params.get('monitorURL', ''))
                         except Exception, ex:
                             # added for debuging but should be removed since remote call 

@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.2 2010/08/05 01:41:31 rpw Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2010/08/09 21:43:18 rpw Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 
@@ -100,6 +100,8 @@ active.reqMgr.section_('model')
 active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
 active.reqMgr.model.workloadCache = active.download.dir
 active.reqMgr.model.reqMgrHost = reqMgrHost
+# no caching
+active.reqMgr.default_expires = 0
 active.reqMgr.section_('formatter') 
 active.reqMgr.formatter.object = 'WMCore.WebTools.RESTFormatter'
 active.reqMgr.formatter.templates = config.ReqMgr.templates

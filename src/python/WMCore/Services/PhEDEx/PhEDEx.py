@@ -311,6 +311,10 @@ class PhEDEx(Service):
                 return node['se']
         return None
 
+    def getNodeTFC(self, node):
+        data = self._getResult('tfc', args = {'node':node}, verb="GET")
+        print data
+
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 
 from WMQuality.Emulators import emulatorSwitch

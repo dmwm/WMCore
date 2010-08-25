@@ -8,8 +8,8 @@ Class for destroying Oracle specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.2 2009/06/16 14:46:17 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Destroy.py,v 1.3 2009/08/12 17:22:40 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -42,5 +42,5 @@ class Destroy(MySQLDestroy):
         j = 50
         for i in Create.sequence_tables:
             seqname = i
-            self.create["%s%s" % (j, seqname)] = \
+            self.delete["%s%s" % (j, seqname)] = \
                            "DROP SEQUENCE %s"  % seqname

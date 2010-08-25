@@ -28,8 +28,8 @@ StatusList = [
 NextStatus = {
  "new" : ["testing-approved", "assignment-approved", "rejected", "failed"],
  "testing-approved" : ["testing", "test-failed"],
- "testing" : ["testing", "test-failed"],
- "tested" : ["assigned","failed"],
+ "testing" : ["tested", "test-failed"],
+ "tested" : ["assignment-approved","failed", "rejected"],
  "test-failed" : ["testing-approved", "rejected"],
  "assignment-approved" : ["assigned", "rejected"],
  "assigned" : ["assigned-prodmgr", "rejected", "failed"],

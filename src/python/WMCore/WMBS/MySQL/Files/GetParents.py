@@ -24,6 +24,7 @@ class GetParents(DBFormatter):
         for r in result:
             for f in r.fetchall():
                 out.append(f[0])
+            r.close()
         return out 
         
     def execute(self, files=None, conn = None, transaction = False):

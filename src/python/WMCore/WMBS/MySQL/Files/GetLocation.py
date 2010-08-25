@@ -23,6 +23,7 @@ class GetLocation(DBFormatter):
         for r in result:
             for i in r.fetchall():
                 out.add(i[0])
+            r.close()
         return out
     
     def execute(self, file=None, conn = None, transaction = False):

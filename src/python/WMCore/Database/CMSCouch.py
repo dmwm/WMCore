@@ -7,8 +7,8 @@ A simple API to CouchDB that sends HTTP requests to the REST interface.
 http://wiki.apache.org/couchdb/API_Cheatsheet
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.72 2010/08/03 10:16:26 swakef Exp $"
-__version__ = "$Revision: 1.72 $"
+__revision__ = "$Id: CMSCouch.py,v 1.73 2010/08/03 11:49:12 metson Exp $"
+__version__ = "$Revision: 1.73 $"
 
 import urllib
 import datetime
@@ -497,6 +497,13 @@ class CouchServer(CouchDBRequests):
                      document in the source database.  
             query_params = dictionary of parameters to pass into the filter 
                      function
+                     
+        Source and destination need to be appropriately urlquoted after the port
+        number. E.g. if you have a database with /'s in the name you need to 
+        convert them into %2F's. 
+        
+        TODO: Improve source/destination handling - can't simply URL quote, 
+        though, would need to decompose the URL and rebuild it.
         """
         check_server_url(source)
         check_server_url(destination)

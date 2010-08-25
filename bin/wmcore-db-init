@@ -4,8 +4,8 @@ Commands for initializing the proper database tables
 or cleaning the database.
 """
 
-__revision__ = "$Id: wmcore-db-init,v 1.5 2010/01/22 17:44:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: wmcore-db-init,v 1.6 2010/01/22 19:35:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -21,7 +21,10 @@ from WMCore.WMInit import WMInit
 def usage():
 
     msg = """
-Usage: wmcore-db-init --config (--create | --clear )<options>
+Usage: wmcore-db-init [--config] (--create | --clear )<options>
+
+You must either set the WMAGENT_CONFIG environment variable or specify the config file with
+--config 
 
 options
 --modules= comma separated list of modules whose tables
@@ -68,13 +71,16 @@ if command == None:
     print(msg)
     usage()
     sys.exit(0)
- 
+
 if config == None:            
-    msg = "No Config file provided\n"
-    msg += "provide one with the --config option"
-    print(msg)
-    usage()
-    sys.exit(0)
+    config = os.environ.get("WMAGENT_CONFIG", None)
+
+    if config == None:
+        msg = "No Config file provided\n"
+        msg += "provide one with the --config option"
+        print(msg)
+        usage()
+        sys.exit(0) 
 
 # load the config file here.
 cfgObject = loadConfigurationFile(config)

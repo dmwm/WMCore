@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.7 2010/01/22 19:29:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: wmcoreD,v 1.8 2010/01/22 19:35:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -53,7 +53,7 @@ Usage: wmcoreD <--start|--shutdown|--status> --config <opts>
 
 You must provide either --start OR --shutdown OR --status
 
-You must specify the config file with
+You must either set the WMAGENT_CONFIG environment variable or specify the config file with
 --config 
 
 --start starts up the components
@@ -136,11 +136,14 @@ if command == None:
     sys.exit(0)
  
 if config == None:            
-    msg = "No Config file provided\n"
-    msg += "provide one with the --config option"
-    print(msg)
-    usage()
-    sys.exit(0)
+    config = os.environ.get("WMAGENT_CONFIG", None)
+
+    if config == None:
+        msg = "No Config file provided\n"
+        msg += "provide one with the --config option"
+        print(msg)
+        usage()
+        sys.exit(0)
 
 # load the config file here.
 cfgObject = loadConfigurationFile(config)

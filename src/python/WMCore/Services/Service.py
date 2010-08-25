@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.22 2009/07/16 22:03:39 metson Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Service.py,v 1.23 2009/08/03 15:57:03 meloam Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import datetime
 import os
@@ -149,7 +149,7 @@ class Service(Requests):
             url = urljoin(self["basepath"], str(url))
 
             data, status, reason = self.makeRequest(uri=url, 
-                                                    type=self["method"],
+                                                    verb=self["method"],
                                                     data=inputdata)
             # Don't need to prepend the cachepath, the methods calling getData
             # have done that for us 

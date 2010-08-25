@@ -4,8 +4,8 @@
 Rest Model abstract implementation
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.35 2009/12/22 17:16:25 metson Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: RESTModel.py,v 1.36 2009/12/22 19:46:12 metson Exp $"
+__version__ = "$Revision: 1.36 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -24,7 +24,7 @@ class RESTModel(WebAPI):
                                         'call':self.ping,
                                         'version': 1,
                                         'args': [],
-                                        #'expires': 3600,
+                                        'expires': 3600,
                                         'validation': []}
                                },
                         'POST':{
@@ -62,22 +62,22 @@ class RESTModel(WebAPI):
             if method in self.methods[verb].keys():
                 data = self.methods[verb][method]['call'](args[1:], kwargs)
                 if 'expires' in self.methods[verb][method].keys():
-                    data['expire'] = self.methods[verb][method]['expires']
-                return data
+                    return data, self.methods[verb][method]['expires']
+                else:
+                    return data, False
             else:
                 data = {"message": "Unsupported method for %s: %s" % (verb, method),
                     "args": args,
                     "kwargs": kwargs}
                 self.debug(str(data))
-                response.status = 405
-                return {'exception': data}
+                raise HTTPError(405, data)
         else:
             data = {"message": "Unsupported VERB: %s" % verb,
                     "args": args,
                     "kwargs": kwargs}
             self.debug(str(data))
             response.status = 501
-            return {'exception': data}
+            raise HTTPError(501, data)
         
     def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1):
         """

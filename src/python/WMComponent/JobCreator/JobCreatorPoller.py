@@ -4,17 +4,20 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.2 2009/08/10 14:35:24 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.3 2009/09/10 20:27:57 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
 import logging
 import re
 import os
+import os.path
 import time
 import random
 import inspect
+
+import pickle
 
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
@@ -31,12 +34,16 @@ from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
 from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
                                             
                                             
-from WMComponent.JobCreator.JobCreatorSiteDBInterface import JobCreatorSiteDBInterface as JCSDBInterface
+from WMComponent.JobCreator.JobCreatorSiteDBInterface   import JobCreatorSiteDBInterface as JCSDBInterface
 
-from WMComponent.JobSubmitter.JobSubmitter    import JobSubmitter
+from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
+
+from WMCore.JobStateMachine.ChangeState                 import ChangeState
+
+from WMCore.WMSpec.Makers.JobMaker                      import JobMaker
+from WMCore.WMSpec.Makers.Interface.CreateWorkArea      import CreateWorkArea
 
 #from WMCore.WorkQueue.WorkQueue             import WorkQueue
-
 
 
 
@@ -75,10 +82,21 @@ init jobCreator
 
 
         #Variables
-        self.jobCacheDir    = os.getcwd() + '/tmp'
+        self.jobCacheDir    = config.JobCreator.jobCacheDir
         self.topOffFactor   = 1.0
+
+        self.seederDict     = {}
         
         BaseWorkerThread.__init__(self)
+
+        self.jobMaker = JobMaker(self.config)
+        self.createWorkArea = CreateWorkArea()
+        
+
+
+        #Testing
+        self.timing = {'pollSites': 0, 'pollSubscriptions': 0, 'pollJobs': 0, 'askWorkQueue': 0, 'pollSubList': 0, 'pollSubJG': 0, \
+                       'pollSubSplit': 0, 'baggage': 0, 'createWorkArea': 0}
 
 
         return
@@ -94,7 +112,21 @@ init jobCreator
         self.workflows     = {}
         self.subscriptions = {}
 
+        self.seederDict    = {}
+        self.manager       = None
+
         return
+
+
+    def check(self):
+        """
+        Initial sanity checks on necessary environment factors
+
+        """
+
+        if not os.path.isdir(self.jobCacheDir):
+            msg = "Assigned a non-existant cache directory %s.  Failing!" %(self.jobCacheDir)
+            raise Exception (msg)
 
 
     def algorithm(self, parameters):
@@ -102,13 +134,16 @@ init jobCreator
         Actually runs the code
         """
         logging.debug("Running JSM.JobCreator")
+        self.jobMaker.prepareToStart()
         myThread = threading.currentThread()
         try:
             self.runJobCreator()
-        except:
+        except Exception, ex:
             myThread.transaction.rollback()
-            raise
+            msg = "Failed to execute JobCreator \n%s" %(ex)
+            raise Exception(msg)
 
+        
 
     def runJobCreator(self):
         """
@@ -124,20 +159,19 @@ init jobCreator
         #Poll current jobs and match with sites
         #Ask for new work for sites if necessary
 
-
-
-
+        #print "Starting jobCreator"
 
 
         self.blank()
+        self.check()
 
-        #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
-
-        #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
+        #print "pollJobs"
         self.pollJobs()
+        #print "pollSites"
         self.pollSites()
+        #print "pollSubs"
         self.pollSubscriptions()
-        #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
+        #print "askWorkQueue"
         self.askWorkQueue()
 
 
@@ -151,7 +185,6 @@ init jobCreator
         Poller for looking in all active subscriptions for jobs that need to be made.
 
         """
-
         myThread = threading.currentThread()
 
         #First, get list of Subscriptions
@@ -166,26 +199,39 @@ init jobCreator
             myThread.transaction.begin()
 
             wmbsSubscription = Subscription(id = subscription)
-            wmbsSubscription.loadData()
+            wmbsSubscription.load()
+            #I need this later
+            wmbsSubscription["workflow"].load()
 
             #My hope is that the job factory is smart enough only to split un-split jobs
             wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = wmbsSubscription)
 
-            splitParams = self.retrieveJobSplitParams(wmbsSubscription)
+            wmWorkload  = self.retrieveWMSpec(wmbsSubscription)
+            splitParams = self.retrieveJobSplitParams(wmWorkload)
 
             wmbsJobGroups = wmbsJobFactory(**splitParams)
-            
-            myThread.transaction.commit()
 
-           # logging.info('The jobs groups should be created')
-            #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
+            myThread.transaction.commit()
 
             jobGroupConfig = {}
 
             for wmbsJobGroup in wmbsJobGroups:
-                self.createJobGroup(wmbsJobGroup, jobGroupConfig, wmbsSubscription)
+                self.createJobGroup(wmbsJobGroup, jobGroupConfig, wmbsSubscription, wmWorkload)
+                #Create a directory
+                self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(), startDir = self.jobCacheDir)
 
-
+            for wmbsJobGroup in wmbsJobGroups:
+                logging.error(wmbsJobGroup.jobs)
+                for job in wmbsJobGroup.jobs:
+                    #Now, if we had the seeder do something, we save it
+                    baggage = job.getBaggage()
+                    #If there's something there, do something with it.
+                    if baggage:
+                        cacheDir = job.getCache()
+                        #print "About to dump baggage"
+                        output = open(os.path.join(cacheDir, 'baggage.pcl'),'w')
+                        pickle.dump(baggage, output)
+                        output.close()
 
         return
 
@@ -202,8 +248,6 @@ init jobCreator
         myThread = threading.currentThread()
 
         #First, get all subscriptions
-        subscriptionList = self.daoFactory(classname = "Subscriptions.List")
-        subscriptions    = subscriptionList.execute()
 
         #Then get all locations
         locationList  = self.daoFactory(classname = "Locations.ListSites")
@@ -212,32 +256,14 @@ init jobCreator
         logging.info(locations)
 
         #Prepare to get all jobs
-        jobsList   = self.daoFactory(classname = "Subscriptions.Jobs")
         jobStates  = ['Created', 'Executing', 'SubmitFailed', 'JobFailed', 'SubmitCooloff', 'JobCooloff']
 
-        #logging.info('Created factories')
-
+        #Get all jobs object
+        jobFinder  = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerSite")
         for location in locations:
-            #logging.info(location)
-            self.sites[location] = 0
-
-        count = 0
-        for sub in subscriptions:
-            subscription = Subscription(id = sub)
-            subscription.loadData()
-            #logging.info("I am processing subscription %i" %(subscription))
-            for location in locations:
-                count += 1
-                #logging.info("I have done this %s times" %(count))
-                for state in jobStates:
-                    #logging.info('I should be doing something for state %s' %(state))
-                    value = subscription.getNumberOfJobsPerSite(location = location, state = state)
-                    #value = jobLocate.execute(location = location, subscription = subscription, state = state).values()[0]
-                    self.sites[location] = self.sites[location] + value
-                logging.info("There are now %i jobs for site %s with value %i" %(self.sites[location], location, value))
-
-        #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
-
+            value = int(jobFinder.execute(location = location, states = jobStates).values()[0])
+            self.sites[location] = value
+            logging.info("There are now %i jobs for site %s" %(self.sites[location], location))
             
         #You should now have a count of all jobs in self.sites
 
@@ -254,13 +280,15 @@ init jobCreator
 
         """
 
+        if not self.config.JobCreator.UpdateFromSiteDB:
+            return
+
+        startTime = time.clock()
 
         #I think this is supposed to be done using siteDB
         #We're getting this from WMCore.Services
 
         myThread = threading.currentThread()
-
-        logging.info('Started pollSites')
 
         siteDBconfig = {}
 
@@ -269,11 +297,14 @@ init jobCreator
 
         siteDB = JCSDBInterface(siteDBconfig)
 
+        locationAction = self.daoFactory(classname = "Locations.SetJobSlots")
 
         for location in self.sites.keys():
             slots = siteDB.getPledgedSlots(location)
+            locationAction.execute(location, slots)
             self.slots[location] = slots
 
+        self.timing['pollSites'] += (time.clock() - startTime)
         return
 
 
@@ -283,24 +314,27 @@ init jobCreator
 
         """
 
-        logging.info('Off to see the work queue')
+        #logging.info('Off to see the work queue')
+        
+        startTime = time.clock()
 
         workQueueDict = {}
 
         for location in self.sites.keys():
             #This is the number of free slots - the number of Created but not Exectuing jobs
-            freeSlots = self.slots[location] - self.sites[location]
-            freeSlots *= self.topOffFactor
+            freeSlots = (self.slots[location] * self.topOffFactor) - self.sites[location]
 
             #I need freeSlots jobs on site location
             logging.info('I need %s jobs on site%s' %(freeSlots, location))
 
+            if freeSlots < 0:
+                freeSlots = 0
             workQueueDict[location] = freeSlots
 
 
         #workQueue.askWork(workQueueDict)
 
-
+        self.timing['askWorkQueue'] += (time.clock() - startTime)
         return
 
         
@@ -310,8 +344,26 @@ init jobCreator
     #Assistance functions
 
 
+    def retrieveWMSpec(self, subscription):
+        """
+        _retrieveWMSpec_
 
-    def retrieveJobSplitParams(self, subscription):
+        Given a subscription, this function loads the WMSpec associated with that workload
+        """
+        workflow = subscription['workflow']
+        wmWorkloadURL = workflow.spec
+
+        if not os.path.isfile(wmWorkloadURL):
+            return None
+
+        wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
+        wmWorkload.load(wmWorkloadURL)  
+
+        return wmWorkload
+
+
+
+    def retrieveJobSplitParams(self, wmWorkload):
         """
         _retrieveJobSplitParams_
 
@@ -331,36 +383,21 @@ init jobCreator
 
         #logging.info("Looking for Split Params")
 
+        foundParams = True
 
-        workflow = subscription['workflow']
-        workflow.load()
-        wmWorkloadURL = workflow.spec
-
-        if not os.path.isfile(wmWorkloadURL):
-            return {"files_per_job" : 5}
-
-        wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-        wmWorkload.load(wmWorkloadURL)
-
-        splitDict = wmWorkload.data.split.splitParams
-
-        jobSplitParams = {}
-
-        if splitDict.has_key("files_per_job"):
-            jobSplitParams["files_per_job"] = splitDict["files_per_job"]
-        if splitDict.has_key("min_merge_size"):
-            jobSplitParams["min_merge_size"] = splitDict["min_merge_size"]
-        if splitDict.has_key("max_merge_size"):
-            jobSplitParams["max_merge_size"] = splitDict["max_merge_size"]
-        if splitDict.has_key("max_merge_events"):
-            jobSplitParams["max_merge_events"] = splitDict["max_merge_events"]            
-
-        return jobSplitParams
+        if not wmWorkload:
+            foundParams = False
+        elif not type(wmWorkload.data.split.splitParams) == dict:
+            foundParams = False
 
 
+        if not foundParams:
+            return {"files_per_job": 5}
+        else:
+            return wmWorkload.data.split.splitParams
 
 
-    def createJobGroup(self, wmbsJobGroup, jobGroupConfig, wmbsSubscription):
+    def createJobGroup(self, wmbsJobGroup, jobGroupConfig, wmbsSubscription, wmWorkload):
         """
         Pass this on to the jobCreator, which actually does the work
         
@@ -368,38 +405,42 @@ init jobCreator
 
         myThread = threading.currentThread()
 
-
-
         myThread.transaction.begin()
 
-        logging.info('I am in createJobGroup for jobGroup %i' %(wmbsJobGroup.id))
+        #logging.info('I am in createJobGroup for jobGroup %i' %(wmbsJobGroup.id))
+
+        changeState = ChangeState(self.config)
 
         #Here things get interesting.
         #We assume that this follows the basic scheme for the jobGroups, that each jobGroup contains
         #files with only one set of sites.
         #Using this we can determine the number of free slots for each job.
 
+        workflow = wmbsSubscription["workflow"]
+        if not workflow.task or not wmWorkload:
+            wmTask = None
+        else:
+            wmTask = wmWorkload.getTask(workflow.task)
+            if hasattr(wmTask.data, 'seeders'):
+                manager = SeederManager(wmTask)
+                manager(wmbsJobGroup)
+            else:
+                wmTask = None
+
+        taskDir = False
+
 
         for job in wmbsJobGroup.jobs:
-            logging.info('Saving jobs for %i in jobGroup %i' %(wmbsSubscription['id'], wmbsJobGroup.id))
+            #logging.info('Saving jobs for %i in jobGroup %i' %(wmbsSubscription['id'], wmbsJobGroup.id))
             job["location"] = self.findSiteForJob(job)
             self.sites[job["location"]] += 1
-            job.save()
-
-        print self.sites
-        print self.slots
 
         myThread.transaction.commit()
 
-        cfg_params = {}
+        #Create the job
+        changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
 
-        #This does nothing
-        logging.info("Submitting jobs")
-        jobSubmitter = JobSubmitter(self.config)
-        jobSubmitter.configure(cfg_params)
-        jobSubmitter.submitJobs(jobGroup = wmbsJobGroup, jobGroupConfig = jobGroupConfig)
-
-        logging.info("JobCreator has submitted jobs and is ending")
+        logging.info("JobCreator has changed jobs to Created for jobGroup %i and is ending" %(wmbsJobGroup.id))
 
 
         return
@@ -413,12 +454,13 @@ init jobCreator
 
         myThread = threading.currentThread()
 
+        #Assume that jobSplitting has worked, and that every file has the same set of locations
         sites = list(job.getFiles()[0]['locations'])
 
         tmpSite  = ''
         tmpSlots = 0
         for loc in sites:
-            if not loc in self.slots.keys() and not loc in self.sites.keys():
+            if not loc in self.slots.keys() or not loc in self.sites.keys():
                 logging.error('Found job for unknown site %s' %(loc))
                 logging.error('ABORT: Am not processing jobGroup %i' %(wmbsJobGroup.id))
                 return
@@ -429,5 +471,8 @@ init jobCreator
         return tmpSite
 
 
-            
+    def terminate(self,params):
+        logging.debug("terminating. doing one more pass before we die")
+        self.algorithm(params)
+
 

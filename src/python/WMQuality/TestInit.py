@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.60 2010/06/16 18:21:55 sfoulkes Exp $"
+    "$Id: TestInit.py,v 1.61 2010/07/15 15:56:39 swakef Exp $"
 __version__ = \
-    "$Revision: 1.60 $"
+    "$Revision: 1.61 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -231,8 +231,11 @@ class TestInit:
         try:
             self.init.setSchema(modules.keys(), params = params)
         except Exception, ex:
-            self.clearDatabase(modules = modules.keys())
-            raise
+            try:
+                self.clearDatabase(modules = modules.keys())
+            except:
+                pass
+            raise ex
             
         # store the list of modules we've added to the DB
         modules = {}

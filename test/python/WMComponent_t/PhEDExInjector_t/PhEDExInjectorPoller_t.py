@@ -7,8 +7,8 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.5 2009/10/15 20:01:58 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.6 2009/12/02 17:52:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import time
@@ -179,7 +179,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         config = self.testInit.getConfiguration()
         config.component_("DBSUpload")
-        config.DBSUpload.dbsurl = self.dbsURL
+        config.DBSUpload.globalDBSUrl = self.dbsURL
 
         config.component_("PhEDExInjector")
         config.PhEDExInjector.phedexurl = self.phedexURL
@@ -249,7 +249,23 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         assert len(goldenLFNs) == 0, \
                "Error: Files missing from PhEDEx replica: %s" % goldenLFNs        
-        
+
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        setBlock = daofactory(classname = "SetBlockStatus")
+        setBlock.execute(self.blockAName, locations = None,
+                         open_status = "InGlobalDBS")
+
+        poller.algorithm(parameters = None)
+        replicaInfo = self.retrieveReplicaInfoForBlock(self.blockAName)
+        assert replicaInfo["is_open"] == "n", \
+               "Error: block should be closed."
+
+        replicaInfo = self.retrieveReplicaInfoForBlock(self.blockBName)
+        assert replicaInfo["is_open"] == "y", \
+               "Error: block should be open."        
         return
 
 if __name__ == '__main__':

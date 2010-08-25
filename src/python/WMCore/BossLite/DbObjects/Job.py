@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.11 2010/05/03 09:13:39 spigafi Exp $"
-__revision__ = "$Revision: 1.11 $"
+__version__ = "$Id: Job.py,v 1.12 2010/05/03 09:55:53 spigafi Exp $"
+__revision__ = "$Revision: 1.12 $"
 
 
 # imports
@@ -15,7 +15,7 @@ import logging
 from WMCore.Services.UUID import makeUUID
 
 
-from WMCore.BossLite.Common.Exceptions    import JobError # , DbError
+from WMCore.BossLite.Common.Exceptions    import JobError
 from WMCore.BossLite.DbObjects.DbObject   import DbObject
 from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 
@@ -234,7 +234,7 @@ class Job(DbObject):
         self.data.update(result[0])
         
         if deep :
-            self.getRunningInstance()
+            self.getRunningInstance(db)
         
         self.existsInDataBase = True
         
@@ -242,7 +242,7 @@ class Job(DbObject):
 
     ########################################################################
 
-    def getRunningInstance(self):
+    def getRunningInstance(self, db):
         """
         get running job information
         """
@@ -251,11 +251,11 @@ class Job(DbObject):
                       'taskId': self.data['taskId'],
                       'submission': self.data['submissionNumber']}
         runJob = RunningJob(parameters = parameters)
-        runJob.load()
+        runJob.load(db)
         
         # Not happy with this call because it's slow.  Maybe use ID?
         # keep track with a boolean variable could be a valid solution (NdFilip)
-        if not runJob.exists():  
+        if not runJob.exists(db):  
             self.runningJob = None
         else:
             self.runningJob = runJob
@@ -263,7 +263,7 @@ class Job(DbObject):
 
     ########################################################################
 
-    def closeRunningInstance(self):
+    def closeRunningInstance(self, db):
         """
         close the running instance.
         it should be only one but ignore if there are more than one...
@@ -273,25 +273,25 @@ class Job(DbObject):
             return
 
         if not self.runningJob:
-            self.getRunningInstance()
+            self.getRunningInstance(db)
             if not self.runningJob:
                 # Then we didn't have one and we couldn't load one
                 return
             
         self.runningJob.data['closed'] = 'Y'
-        self.runningJob.save()
+        self.runningJob.save(db)
 
         return
 
     ###################################################################
 
-    def updateRunningInstance(self):
+    def updateRunningInstance(self, db):
         """
         update current running job
         """
 
         if not self.runningJob:
-            self.getRunningInstance()
+            self.getRunningInstance(db)
             
         if not self.runningJob:
             # Then we couldn't load it either
@@ -309,19 +309,19 @@ class Job(DbObject):
                                 self.data['submissionNumber'] ) )
 
         # update
-        self.runningJob.save()
+        self.runningJob.save(db)
 
         return
 
     ###########################################################################
 
-    def newRunningInstance(self):
+    def newRunningInstance(self, db):
         """
         set currently running job
         """
 
         # close previous running instance (if any)
-        self.closeRunningInstance()
+        self.closeRunningInstance(db)
 
         # WTF!!!!
         # We update the submission number when getting a new runningJob?

@@ -5,14 +5,14 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.4 2010/04/26 12:20:14 spigafi Exp $"
-__revision__ = "$Revision: 1.4 $"
+__version__ = "$Id: RunningJob.py,v 1.5 2010/05/03 09:55:53 spigafi Exp $"
+__revision__ = "$Revision: 1.5 $"
 
 # imports
 import time
 import logging
 
-from WMCore.BossLite.DbObjects.DbObject import DbObject, dbTransaction
+from WMCore.BossLite.DbObjects.DbObject import DbObject
 from WMCore.BossLite.Common.Exceptions import JobError, DbError
 
 
@@ -120,8 +120,7 @@ class RunningJob(DbObject):
 
     ##########################################################################
 
-    @dbTransaction
-    def exists(self, noDB = False):
+    def exists(self, db, noDB = False):
         """
         Am I in the database?
         """
@@ -132,13 +131,16 @@ class RunningJob(DbObject):
             else:
                 return False
         else:
+            """
             action = self.daofactory(classname = "RunningJob.Exists")
             id = action.execute(submission = self.data['submission'],
                                 jobID = self.data['jobId'], 
                                 taskID = self.data['taskId'],
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction )
-                           
+            """
+            id = db.objExists(self)
+                        
             if id:
                 self.data['id'] = id
             self.existsInDataBase = True
@@ -146,46 +148,48 @@ class RunningJob(DbObject):
 
     ##########################################################################
 
-    @dbTransaction
-    def create(self):
+    def create(self, db):
         """
         Create a new Running Job
         """
 
+        """
         action = self.daofactory(classname = "RunningJob.New")
         action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-
-        return
+        """
+        db.objCreate(self)
 
     ##########################################################################
 
-    @dbTransaction
-    def save(self):
+    def save(self, db):
         """
         Save the job
         """
 
-        if not self.exists():
-            self.create()
+        if not self.exists(db):
+            self.create(db)
         else:
+            """
             action = self.daofactory(classname = "RunningJob.Save")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-                           
+            """
+            db.objSave(self)               
 
         self.existsInDataBase = True
         return
 
     ##########################################################################
 
-    @dbTransaction
-    def load(self, deep = True):
+    def load(self, db, deep = True):
         """
         Load from the database
 
+        """
+        
         """
         if self.data['id'] > 0:
             action = self.daofactory(classname = "RunningJob.LoadByID")
@@ -204,12 +208,17 @@ class RunningJob(DbObject):
         else:
             # We have nothing
             return
+        """
+        result = db.objLoad(self)
 
         if result == []:
             # Then the job did not exist
-            logging.error(
-                "Attempted to load non-existant runningJob with parameters:\n %s" 
-                        % (self.data) )
+            # no exception will raise?
+            
+            # is this message useful?
+            #logging.error(
+            #    "Attempted to load non-existant runningJob with parameters:\n %s" 
+            #            % (self.data) )
             return
 
         self.data.update(result[0])
@@ -219,23 +228,24 @@ class RunningJob(DbObject):
 
     ##########################################################################
 
-    @dbTransaction
-    def remove(self):
+    def remove(self, db):
         """
         remove job object from database
         """
-        if not self.exists():
+        if not self.exists(db):
             logging.error("Cannot remove non-existant runningJob %s" 
                           % (self.data) )
             return 0
 
+        """
         action = self.daofactory(classname = "RunningJob.Delete")
         result = action.execute(value = self.data['id'],
                                 column = 'id',
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction)
-
-
+        """
+        db.objRemove(self) 
+        
         # update status
         self.existsInDataBase = False
 

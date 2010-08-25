@@ -4,8 +4,8 @@ _TrackingDB_
 
 """
 
-__version__ = "$Id: TrackingDB.py,v 1.4 2010/05/03 09:13:38 spigafi Exp $"
-__revision__ = "$Revision: 1.4 $"
+__version__ = "$Id: TrackingDB.py,v 1.5 2010/05/03 09:55:53 spigafi Exp $"
+__revision__ = "$Revision: 1.5 $"
 
 from copy import deepcopy
 
@@ -14,7 +14,7 @@ from WMCore.BossLite.Common.System      import evalCustomList
 
 from WMCore.BossLite.DbObjects.Task         import Task
 from WMCore.BossLite.DbObjects.Job          import Job
-#from WMCore.BossLite.DbObjects.RunningJob   import RunningJob
+from WMCore.BossLite.DbObjects.RunningJob   import RunningJob
 
 from WMCore.WMConnectionBase import WMConnectionBase
 
@@ -755,7 +755,12 @@ class TrackingDB(WMConnectionBase):
                                    transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
-            raise NotImplementedError
+            action = self.daofactory(classname = "RunningJob.Exists")
+            tmpId = action.execute(submission = obj.data['submission'],
+                                jobID = obj.data['jobId'], 
+                                taskID = obj.data['taskId'],
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction )
         
         else :
             raise NotImplementedError
@@ -772,21 +777,20 @@ class TrackingDB(WMConnectionBase):
 
         if type(obj) == Task :
             action = self.daofactory(classname = 'Task.Save')
-            action.execute(binds = obj.data,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
         
         elif type(obj) == Job :
             action = self.daofactory(classname = "Job.Save")
-            action.execute(binds = obj.data,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
-            raise NotImplementedError
+            action = self.daofactory(classname = "RunningJob.Save")
+            
         
         else :
             raise NotImplementedError    
+        
+        action.execute(binds = obj.data,
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction)
         
     ##########################################################################
     
@@ -809,7 +813,10 @@ class TrackingDB(WMConnectionBase):
                            transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
-            raise NotImplementedError
+            action = self.daofactory(classname = "RunningJob.New")
+            action.execute(binds = obj.data,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
         
         else :
             raise NotImplementedError        
@@ -878,7 +885,27 @@ class TrackingDB(WMConnectionBase):
             return result
         
         elif type(obj) == RunningJob :
-            raise NotImplementedError
+            
+            if obj.data['id'] > 0:
+                action = self.daofactory(classname = "RunningJob.LoadByID")
+                result = action.execute(id = obj.data['id'], 
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction)
+            
+            elif (obj.data['jobId'] and obj.data['taskId'] and \
+                                                obj.data['submission']) :
+                action = self.daofactory(classname = "RunningJob.LoadByParameters")
+                result = action.execute(jobID = obj.data['jobId'], 
+                                        taskID = obj.data['taskId'],
+                                        submission = obj.data['submission'],
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction)
+                
+            else:
+                # We have nothing
+                return []
+
+            return result
         
         else :
             raise NotImplementedError        
@@ -922,11 +949,6 @@ class TrackingDB(WMConnectionBase):
             else :
                 column = 'id'
                 value = obj.data['id']
-            
-            action.execute(value = value,
-                           column = column,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
         
         elif type(obj) == Job :
             
@@ -939,16 +961,20 @@ class TrackingDB(WMConnectionBase):
             else :
                 column = 'id'
                 value = obj.data['id']
-            
-            action.execute(value = value,
-                           column = column,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
-            raise NotImplementedError
+            
+            action = self.daofactory(classname = "RunningJob.Delete")
+            
+            value = obj.data['id']
+            column = 'id'
         
         else :
-            raise NotImplementedError        
+            raise NotImplementedError      
+        
+        action.execute(value = value,
+                       column = column,
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction)  
         
     ##########################################################################

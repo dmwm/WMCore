@@ -162,7 +162,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
                                 locations = "cmssrm.fnal.gov", status = "AlreadyInDBS")
         dbsFile.setDatasetPath(datasetPath)
         dbsFile.setAlgorithm(appName = "cmsRun", appVer = "Unknown", appFam = "Unknown",
-                             psetHash = "Unknown", configConfig = "Unknown")
+                             psetHash = "Unknown", configContent = "Unknown")
         dbsFile.create()
         
     inputFileset.commit()

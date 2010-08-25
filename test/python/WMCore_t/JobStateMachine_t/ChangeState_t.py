@@ -165,6 +165,20 @@ class TestChangeState(unittest.TestCase):
 
         assert len(goldenNewStates) == 0, \
                "Error: Missing state transitions."
+
+        options = {"startkey": testJobA["id"], "endkey": testJobA["id"],
+                   "include_docs": True}
+        results = changeStateDB.loadView("JobDump", "jobsByJobID", options)
+
+        assert len(results["rows"]) == 1, \
+               "Error: More than one job returned."
+
+        couchJobDoc = results["rows"][0]["doc"]
+
+        assert couchJobDoc["name"] == testJobA["name"], \
+               "Error: Name is wrong"
+        assert len(couchJobDoc["input_files"]) == 1, \
+               "Error: Wrong number of input files."
                     
         return
 
@@ -243,7 +257,28 @@ class TestChangeState(unittest.TestCase):
         myReport.unpersist("Report.pkl")
         testJobA["fwjr"] = myReport
 
-        change.propagate([testJobA], 'executing', 'created')        
+        change.propagate([testJobA], 'executing', 'created')
+
+        options = {"startkey": testJobA["id"], "endkey": testJobA["id"],
+                   "include_docs": True}
+        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")        
+        results = changeStateDB.loadView("JobDump", "fwjrsByJobID", options)
+
+        assert len(results["rows"]) == 1, \
+               "Error: Wrong number of FWJRs returned."
+
+        fwjrDoc = results["rows"][0]["doc"]
+
+        assert fwjrDoc["retrycount"] == 0, \
+               "Error: Retry count is wrong."
+
+        assert len(fwjrDoc["fwjr"].keys()) == 2, \
+               "Error: Wrong number of steps in FWJR."
+        assert "cmsRun1" in fwjrDoc["fwjr"].keys(), \
+               "Error: cmsRun1 step is missing from FWJR."
+        assert "stageOut1" in fwjrDoc["fwjr"].keys(), \
+               "Error: stageOut1 step is missing from FWJR."        
+
         return
 
 if __name__ == "__main__":

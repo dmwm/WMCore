@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.42 2010/06/10 16:05:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: ChangeState.py,v 1.43 2010/06/10 18:41:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.43 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -29,6 +29,24 @@ function(doc) {
     }
   }
 """}
+
+fwjrsByJobID = {"map": \
+"""
+function(doc) {
+  if (doc['type'] == 'fwjr') {
+    emit(doc['jobid'], {'_id': doc['_id']});
+    }
+  }
+"""}  
+
+jobsByJobID = {"map": \
+"""
+function(doc) {
+  if (doc['type'] == 'job') {
+    emit(doc['jobid'], {'_id': doc['_id']});
+    }
+  }
+"""}  
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -153,6 +171,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobDocument["jobgroup"] = job["jobgroup"]
                 jobDocument["mask"] = job["mask"]
                 jobDocument["name"] = job["name"]
+                jobDocument["type"] = "job"
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
                                              "couchid": jobDocument["_id"]})                
@@ -181,7 +200,9 @@ class ChangeState(WMObject, WMConnectionBase):
         database = self.couchdb.createDatabase(self.dbname)
         
         hashViewDoc = database.createDesignDoc("JobDump")
-        hashViewDoc["views"] = {"stateTransitionsByJobID": stateTransitionsByJobID}
+        hashViewDoc["views"] = {"stateTransitionsByJobID": stateTransitionsByJobID,
+                                "fwjrsByJobID": fwjrsByJobID,
+                                "jobsByJobID": jobsByJobID}
      
         database.queue(hashViewDoc)
         database.commit()

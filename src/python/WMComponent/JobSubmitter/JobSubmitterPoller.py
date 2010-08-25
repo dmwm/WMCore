@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.15 2010/03/03 19:24:15 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.16 2010/04/07 15:08:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -24,19 +24,17 @@ import os.path
 import cPickle
 import random
 import traceback
-#import common
 
 # WMBS objects
 from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
 
-#from WMCore.WMSpec.WMWorkload                 import WMWorkload, WMWorkloadHelper
 from WMCore.JobStateMachine.ChangeState       import ChangeState
 from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
-
+from WMCore.WMBase import getWMBASE
 
 def sortListOfDictsByKey(inList, key):
     """
@@ -75,17 +73,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.sites     = {}
         self.locations = {}
 
-        #Set config objects
-        self.database = config.CoreDatabase.connectUrl
-
-        (connectDialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
-        if connectDialect.lower() == "mysql":
-            self.dialect = "MySQL"
-        elif connectDialect.lower() == "oracle":
-            self.dialect = "Oracle"
-        elif connectDialect.lower() == "sqlite":
-            self.dialect = "SQLite"
-        
         self.session = None
         self.schedulerConfig = {}
         self.config = config
@@ -96,9 +83,15 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         BaseWorkerThread.__init__(self)
 
-        configDict = {'submitDir': self.config.JobSubmitter.submitDir, \
-                      'submitNode': self.config.JobSubmitter.submitNode,
-                      'submitScript': self.config.JobSubmitter.submitScript}
+        configDict = {"submitDir": self.config.JobSubmitter.submitDir,
+                      "submitNode": self.config.JobSubmitter.submitNode}
+        
+        if hasattr(self.config.JobSubmitter, "submitScript"):
+            configDict["submitScript"] = self.config.JobSubmitter.submitScript
+        else:
+            configDict["submitScript"] = os.path.join(getWMBASE(),
+                                                      "src/python/WMComponent/JobSubmitter/submit.sh")
+
         if hasattr(self.config.JobSubmitter, 'inputFile'):
             configDict['inputFile'] = self.config.JobSubmitter.inputFile
 

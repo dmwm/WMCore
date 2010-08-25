@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.10 2010/04/28 20:05:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.11 2010/08/16 14:00:55 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import copy
@@ -155,3 +155,9 @@ class WMConnectionBase:
         transactionContext = contextmanager(transactionContext)
     except NameError:
         pass
+
+
+    def rollbackTransaction(self, existingTransaction):
+        """Rollback transaction if we started it"""
+        if not existingTransaction:
+            threading.currentThread().transaction.rollback()

@@ -120,7 +120,7 @@ def printTransitionInfo():
             elif transition["newstate"] == "success":
                 successSeen = True
             elif transition["newstate"] == "exhausted":
-                failureSeen = True
+                exhaustedSeen = True
 
             if transition["location"] == "Agent":
                 print "  %s %s -> %s" % (timestampDate.isoformat(" "),

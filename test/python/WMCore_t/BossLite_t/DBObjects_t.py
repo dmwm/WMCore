@@ -13,6 +13,8 @@ from WMCore.BossLite.DbObjects.Job         import Job
 from WMCore.BossLite.DbObjects.Task        import Task
 from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
 
+from WMCore.BossLite.DbObjects.TrackingDB  import TrackingDB
+
 class DBObjectsTest(unittest.TestCase):
     
     def setUp(self):
@@ -45,17 +47,19 @@ class DBObjectsTest(unittest.TestCase):
         """
         Test creation and destruction of task objects.
         """
+        
         myThread = threading.currentThread()
-
+        db = TrackingDB()
+        
         parameters = {'serverName': 'Taginae', 'name': 'Narses'}
         task = Task(parameters = parameters)
         
-        self.assertFalse(task.exists())
+        self.assertFalse(task.exists(db))
         
-        task.create()
+        task.create(db)
         
-        self.assertTrue(task.exists())
-
+        self.assertTrue(task.exists(db))
+        
         # Now looks at what's actuallly there
         taskInfo = myThread.dbi.processData("SELECT * FROM bl_task")[0].fetchall()[0].values()
 
@@ -64,8 +68,9 @@ class DBObjectsTest(unittest.TestCase):
 
         task.data['startDirectory']  = 'Cannae'
         task.data['outputDirectory'] = 'Zama'
-        task.save()
-
+        task.save(db)
+        
+        
         #taskInfo = myThread.dbi.processData("SELECT * FROM bl_task")[0].fetchall()[0].values()
         #print taskInfo
         #self.assertTrue('Cannae' in taskInfo)
@@ -73,7 +78,7 @@ class DBObjectsTest(unittest.TestCase):
 
         # Load by ID, test save
         task2 = Task(parameters = {'id': 1})
-        task2.load()
+        task2.load(db)
 
         self.assertEqual(task2.data['name'], 'Narses')
         self.assertEqual(task2.data['serverName'], 'Taginae')
@@ -82,22 +87,21 @@ class DBObjectsTest(unittest.TestCase):
 
         # Load by name
         task3 = Task(parameters = {'name': 'Narses'})
-        task3.load()
+        task3.load(db)
 
         self.assertEqual(task3.data['name'], 'Narses')
         self.assertEqual(task3.data['serverName'], 'Taginae')
         self.assertEqual(task3.data['startDirectory'], 'Cannae')
         self.assertEqual(task3.data['outputDirectory'], 'Zama')
 
-
         task4 = Task(parameters = {'id': 1})
-        task4.load()
+        task4.load(db)
         
-        self.assertTrue(task4.exists())
+        self.assertTrue(task4.exists(db))
         
-        task3.remove()
+        task3.remove(db)
         
-        self.assertFalse(task4.exists())
+        self.assertFalse(task4.exists(db))
         
         return
 
@@ -108,36 +112,38 @@ class DBObjectsTest(unittest.TestCase):
 
         """
         
-        task = Task()
-        task.create()
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists()})
+        db = TrackingDB()
         
-        self.assertFalse(job.exists())
+        task = Task()
+        task.create(db)
+        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        
+        self.assertFalse(job.exists(db))
         
         job.data['standardOutput'] = 'MarcusAurelius'
         job.data['standardError']  = 'AntoniousPius'
-        job.save()
+        job.save(db)
         
-        self.assertTrue(job.exists())
+        self.assertTrue(job.exists(db))
 
         # Can we load by id?  Test our ability to save parameters as well
         # ATTENTION: taskID and jobID must be always present to consistency purposes
         #            'name' is a UUID by default if not specified
-        job2 = Job(parameters = {'id': 1, 'jobId': 101, 'taskId': task.exists()})
-        job2.load()
+        job2 = Job(parameters = {'id': 1, 'jobId': 101, 'taskId': task.exists(db)})
+        job2.load(db)
         for key in job2.data.keys():
             self.assertEqual(job2.data[key], job.data[key])
             
         # Test Delete
-        self.assertTrue(job2.exists())
+        self.assertTrue(job2.exists(db))
         
-        job2.remove()
+        job2.remove(db)
         
-        self.assertFalse(job2.exists())
+        self.assertFalse(job2.exists(db))
         
         job3 = Job(parameters = {'jobId': 101})
         
-        self.assertFalse(job3.exists())
+        self.assertFalse(job3.exists(db))
 
         return
     
@@ -147,33 +153,35 @@ class DBObjectsTest(unittest.TestCase):
         Test basic creation, deletion, etc. for RunningJobs
 
         """
+        
         myThread = threading.currentThread()
-
+        db = TrackingDB()
+        
         task = Task()
-        task.create()
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists()})
-        job.create()
-        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(), 'submission': 1})
+        task.create(db)
+        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job.create(db)
+        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
         
-        self.assertFalse(runJob.exists())
+        self.assertFalse(runJob.exists(db))
         
-        runJob.create()
+        runJob.create(db)
         
-        self.assertTrue(runJob.exists())
+        self.assertTrue(runJob.exists(db))
         
         runJob.data['state'] = 'Commodus'
-        runJob.save()
+        runJob.save(db)
 
         # Test save() and load() by loading file by ID
         runJob2 = RunningJob(parameters = {'id': 1})
-        runJob2.load()
+        runJob2.load(db)
         
         for key in ['submission', 'jobId', 'taskId', 'state']:
             self.assertEqual(runJob2.data[key], runJob.data[key])
 
         # Test load by parameters
-        runJob3 = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(), 'submission': 1})
-        runJob3.load()
+        runJob3 = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
+        runJob3.load(db)
         
         for key in ['submission', 'jobId', 'taskId', 'state']:
             self.assertEqual(runJob3.data[key], runJob.data[key])
@@ -184,8 +192,8 @@ class DBObjectsTest(unittest.TestCase):
         #runJob4 = RunningJob(parameters = {'jobId': 'retarded', 'taskId': task.exists(), 'submission': 1})
         #runJob4.load()
 
-        runJob3.remove()
-        self.assertFalse(runJob3.exists())
+        runJob3.remove(db)
+        self.assertFalse(runJob3.exists(db))
         
         return
 
@@ -196,55 +204,57 @@ class DBObjectsTest(unittest.TestCase):
 
         """
         
-        task = Task()
-        task.create()
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists()})
-        job.create()
-        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(), 'submission': 0})
-        runJob.create()
+        db = TrackingDB()
         
-        self.assertTrue(job.exists())
-        self.assertTrue(runJob.exists())
+        task = Task()
+        task.create(db)
+        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job.create(db)
+        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 0})
+        runJob.create(db)
+        
+        self.assertTrue(job.exists(db))
+        self.assertTrue(runJob.exists(db))
 
         # Everything should be there
         # Test loading runningJob from job
         self.assertEqual(job.runningJob, None)
         
-        job.getRunningInstance()   # Load from database
+        job.getRunningInstance(db)   # Load from database
         
         self.assertTrue(job.runningJob != None)
-        self.assertEqual(job.runningJob.data['id'], runJob.exists())
+        self.assertEqual(job.runningJob.data['id'], runJob.exists(db))
         
         job.runningJob.data['status'] = 'deceased'
-        job.updateRunningInstance()
-        runJob.load()
+        job.updateRunningInstance(db)
+        runJob.load(db)
         
         self.assertEqual(runJob.data['status'], 'deceased')
         
-        job.closeRunningInstance()
-        runJob.load()
+        job.closeRunningInstance(db)
+        runJob.load(db)
         
         self.assertEqual(runJob.data['closed'], 'Y')
 
         # Get jobs from task
         self.assertEqual(task.jobs, [])
         
-        task.loadJobs()
+        task.loadJobs(db)
         
         self.assertEqual(len(task.jobs), 1)
         self.assertEqual(task.jobs[0]['jobId'], 101)
-        self.assertEqual(task.jobs[0]['taskId'], task.exists())
+        self.assertEqual(task.jobs[0]['taskId'], task.exists(db))
 
         # Check if task.update works
         # This recursively tests if job.update works
-        task.jobs[0].newRunningInstance()
+        task.jobs[0].newRunningInstance(db)
         task.jobs[0].runningJob['service'] = 'Unserved'
         
-        task.update()
+        task.update(db)
 
-        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists()})
-        job2.load()
-        job2.getRunningInstance()
+        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job2.load(db)
+        job2.getRunningInstance(db)
         self.assertEqual(job2.runningJob['service'], task.jobs[0].runningJob['service'])
         
         return
@@ -256,13 +266,14 @@ class DBObjectsTest(unittest.TestCase):
 
         """
         
+        db = TrackingDB()
         nTestJobs = 7
         
         parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
         task = Task(parameters = parameters)
         
-        task.create()
-        taskId = task.exists()
+        task.create(db)
+        taskId = task.exists(db)
         
         task.data['startDirectory']  = 'Ilithyia'
         task.data['outputDirectory'] = 'Lucretia'
@@ -272,14 +283,14 @@ class DBObjectsTest(unittest.TestCase):
                                             'events' : jobId+1000 } )
             task.addJob(job)
 
-        task.save()
-        self.assertTrue(task.exists())
+        task.save(db)
+        self.assertTrue(task.exists(db))
         
         task2 = Task(parameters = {'id': taskId})  
-        task2.load()
+        task2.load(db)
         
-        self.assertTrue(task2.exists())
-        self.assertEqual(task.exists(), task2.exists())
+        self.assertTrue(task2.exists(db))
+        self.assertEqual(task.exists(db), task2.exists(db))
         self.assertEqual(task.data['name'], task2.data['name'])
 
         self.assertEqual(len(task2.jobs), nTestJobs)
@@ -298,13 +309,14 @@ class DBObjectsTest(unittest.TestCase):
         """
         
         myThread = threading.currentThread()
+        db = TrackingDB()
         nTestJobs = 13
         
         parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
         task = Task(parameters = parameters)
         
-        task.create()
-        taskId = task.exists()
+        task.create(db)
+        taskId = task.exists(db)
         
         task.data['startDirectory']  = 'Ilithyia'
         task.data['outputDirectory'] = 'Lucretia'
@@ -314,12 +326,12 @@ class DBObjectsTest(unittest.TestCase):
                                             'events' : jobId+1000 } )
             task.addJob(job)
 
-        task.save()
-        self.assertTrue(task.exists())
+        task.save(db)
+        self.assertTrue(task.exists(db))
         
         self.assertEqual(task.data['serverName'], 'Spartacus')
         task['serverName'] = 'Crixus'
-        task.update(deep=False)
+        task.update(db, deep=False)
         self.assertEqual(task.data['serverName'], 'Crixus')
         
         tmp = task.jobs[0].data['events']
@@ -328,12 +340,12 @@ class DBObjectsTest(unittest.TestCase):
             
         self.assertNotEqual(task.jobs[0].data['events'], tmp)
         
-        task.update(deep=False)
+        task.update(db, deep=False)
 
         jobInfo = myThread.dbi.processData("SELECT * FROM bl_job WHERE name = 'Doctore-0'")[0].fetchall()[0].values()       
         self.assertEqual(jobInfo[5], tmp)
         
-        task.update(deep=True)
+        task.update(db, deep=True)
         
         jobInfo = myThread.dbi.processData("SELECT * FROM bl_job WHERE name = 'Doctore-0'")[0].fetchall()[0].values()
         self.assertNotEqual(jobInfo[5], tmp)
@@ -347,29 +359,30 @@ class DBObjectsTest(unittest.TestCase):
 
         """ 
         
+        db = TrackingDB()
+        
         parameters = {'name': 'Bishop'}
         task = Task(parameters)
-        
         parameters = {'name': 'Walter', 'events' : 42 }
         job = Job( parameters )
-        job.newRunningInstance(  )
+        job.newRunningInstance(db)
         task.addJob(job)
         
         parameters = {'name': 'Peter', 'events' : 24 }
         job = Job( parameters )
-        job.newRunningInstance(  )
+        job.newRunningInstance(db)
         task.addJob(job)
         
-        self.assertEqual(task.exists(), False)
+        self.assertEqual(task.exists(db), False)
         self.assertEqual(task.existsInDataBase, False)
         
-        task.save()
+        task.save(db)
         
-        self.assertEqual(task.exists(), 1)
+        self.assertEqual(task.exists(db), 1)
         self.assertEqual(task.existsInDataBase, True)
         
         task2 = Task(parameters = {'id': 1})  
-        task2.load()
+        task2.load(db)
         
         self.assertEqual(task2.existsInDataBase, True)
         self.assertEqual(task.data['name'], task2.data['name'])
@@ -381,16 +394,16 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(loadedJob['events'], 24)
         
         loadedJob.runningJob['wrapperReturnCode'] = "60303"
-        loadedJob.updateRunningInstance()
-        loadedJob.closeRunningInstance()
-        loadedJob.newRunningInstance( )
+        loadedJob.updateRunningInstance(db)
+        loadedJob.closeRunningInstance(db)
+        loadedJob.newRunningInstance(db)
         
         self.assertNotEqual(loadedJob.runningJob['wrapperReturnCode'], "60303")
         self.assertNotEqual(loadedJob.runningJob['closed'], "Y")
         
         loadedJob.runningJob['wrapperReturnCode'] = "-1"
-        loadedJob.updateRunningInstance()
-        loadedJob.closeRunningInstance()
+        loadedJob.updateRunningInstance(db)
+        loadedJob.closeRunningInstance(db)
         
         self.assertEqual(loadedJob.runningJob['closed'], "Y")
         
@@ -412,10 +425,12 @@ class DBObjectsTest(unittest.TestCase):
 
         """ 
         
+        db = TrackingDB()
+        
         # invalid Task load, erroneous ID -> exception raised
         task = Task(parameters= {'id': 666})
         try:
-            task.load()
+            task.load(db)
         except Exception, ex:
             msg = str(ex)
             self.assertTrue( (string.find(msg, "task instances corresponds")) != -1 )
@@ -423,7 +438,7 @@ class DBObjectsTest(unittest.TestCase):
         # triggering Task removal before save -> exception raised
         task2 = Task(parameters= {'id': 5})
         try:
-            task2.remove()
+            task2.remove(db)
         except Exception, ex:
             msg = str(ex)
             self.assertTrue( (string.find(msg, "since it is not in the database")) != -1 )

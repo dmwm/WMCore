@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.14 2010/06/21 17:50:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.15 2010/06/24 16:15:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import os
@@ -65,6 +65,9 @@ class WMBSMergeBySize(unittest.TestCase):
         also injected.  Also files are added to the "Mergeable" subscription as
         well as to the output fileset for their jobgroups.
         """
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
+
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 
         self.mergeFileset = Fileset(name = "mergeFileset")
@@ -182,67 +185,82 @@ class WMBSMergeBySize(unittest.TestCase):
         testJob6.save()        
         changeStateDAO.execute([testJob6])                
 
-        badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024, first_event = 0)
+        badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024,
+                        first_event = 0)
         badFile1.addRun(Run(1, *[45]))
         badFile1.create()
         badFile1.addParent(parentFile5["lfn"])
 
-        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0)
+        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))
         file1.addRun(Run(1, *[45]))
         file1.create()
         file1.addParent(parentFile1["lfn"])
-        file2 = File(lfn = "file2", size = 1024, events = 1024, first_event = 1024)
+        file2 = File(lfn = "file2", size = 1024, events = 1024,
+                     first_event = 1024, locations = set(["somese.cern.ch"]))
         file2.addRun(Run(1, *[45]))
         file2.create()
         file2.addParent(parentFile1["lfn"])
-        file3 = File(lfn = "file3", size = 1024, events = 1024, first_event = 2048)
+        file3 = File(lfn = "file3", size = 1024, events = 1024,
+                     first_event = 2048, locations = set(["somese.cern.ch"]))
         file3.addRun(Run(1, *[45]))
         file3.create()
         file3.addParent(parentFile1["lfn"])
-        file4 = File(lfn = "file4", size = 1024, events = 1024, first_event = 3072)        
+        file4 = File(lfn = "file4", size = 1024, events = 1024,
+                     first_event = 3072, locations = set(["somese.cern.ch"]))
         file4.addRun(Run(1, *[45]))
         file4.create()
         file4.addParent(parentFile1["lfn"]) 
 
-        fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0)
+        fileA = File(lfn = "fileA", size = 1024, events = 1024,
+                     first_event = 0, locations = set(["somese.cern.ch"]))
         fileA.addRun(Run(1, *[46]))
         fileA.create()
         fileA.addParent(parentFile2["lfn"])
-        fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 1024)
+        fileB = File(lfn = "fileB", size = 1024, events = 1024,
+                     first_event = 1024, locations = set(["somese.cern.ch"]))
         fileB.addRun(Run(1, *[46]))
         fileB.create()
         fileB.addParent(parentFile2["lfn"])
-        fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 2048)
+        fileC = File(lfn = "fileC", size = 1024, events = 1024,
+                     first_event = 2048, locations = set(["somese.cern.ch"]))
         fileC.addRun(Run(1, *[46]))
         fileC.create()
         fileC.addParent(parentFile2["lfn"])
         
-        fileI = File(lfn = "fileI", size = 1024, events = 1024, first_event = 0)
+        fileI = File(lfn = "fileI", size = 1024, events = 1024,
+                     first_event = 0, locations = set(["somese.cern.ch"]))
         fileI.addRun(Run(2, *[46]))
         fileI.create()
         fileI.addParent(parentFile3["lfn"])
-        fileII = File(lfn = "fileII", size = 1024, events = 1024, first_event = 1024)
+        fileII = File(lfn = "fileII", size = 1024, events = 1024,
+                      first_event = 1024, locations = set(["somese.cern.ch"]))
         fileII.addRun(Run(2, *[46]))
         fileII.create()
         fileII.addParent(parentFile3["lfn"])
-        fileIII = File(lfn = "fileIII", size = 1024, events = 1024, first_event = 2048)
+        fileIII = File(lfn = "fileIII", size = 1024, events = 1024,
+                       first_event = 2048, locations = set(["somese.cern.ch"]))
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
         fileIII.addParent(parentFile3["lfn"])        
-        fileIV = File(lfn = "fileIV", size = 1024, events = 1024, first_event = 3072)        
+        fileIV = File(lfn = "fileIV", size = 1024, events = 1024,
+                      first_event = 3072, locations = set(["somese.cern.ch"]))
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
         fileIV.addParent(parentFile3["lfn"])
 
-        fileX = File(lfn = "badFileA", size = 1024, events = 1024, first_event = 0)
+        fileX = File(lfn = "badFileA", size = 1024, events = 1024,
+                     first_event = 0, locations = set(["somese.cern.ch"]))
         fileX.addRun(Run(1, *[47]))
         fileX.create()
         fileX.addParent(parentFile4["lfn"])
-        fileY = File(lfn = "badFileB", size = 1024, events = 1024, first_event = 1024)
+        fileY = File(lfn = "badFileB", size = 1024, events = 1024,
+                     first_event = 1024, locations = set(["somese.cern.ch"]))
         fileY.addRun(Run(1, *[47]))
         fileY.create()
         fileY.addParent(parentFile4["lfn"])        
-        fileZ = File(lfn = "badFileC", size = 1024, events = 1024, first_event = 2048)
+        fileZ = File(lfn = "badFileC", size = 1024, events = 1024,
+                     first_event = 2048, locations = set(["somese.cern.ch"]))
         fileZ.addRun(Run(1, *[47]))
         fileZ.create()
         fileZ.addParent(parentFile4["lfn"])
@@ -340,7 +358,9 @@ class WMBSMergeBySize(unittest.TestCase):
             for file in jobFiles:
                 file.loadData()
                 assert file["lfn"] in goldenFiles, \
-                       "ERROR: Unknown file: %s" % file["lfn"]
+                       "Error: Unknown file: %s" % file["lfn"]
+                assert file["locations"] == set(["somese.cern.ch"]), \
+                       "Error: File is missing a location."
                 goldenFiles.remove(file["lfn"])
 
                 fileRun = list(file["runs"])[0].run
@@ -399,7 +419,6 @@ class WMBSMergeBySize(unittest.TestCase):
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                        "fileC"]
 
-
         assert len(jobFiles) == len(goldenFiles), \
                "ERROR: Merge job should contain %d files." % len(goldenFiles)
 
@@ -407,9 +426,10 @@ class WMBSMergeBySize(unittest.TestCase):
         currentLumi = 0
         currentEvent = 0
         for file in jobFiles:
-            file.loadData()
             assert file["lfn"] in goldenFiles, \
-                   "ERROR: Unknown file: %s" % file["lfn"]
+                   "Error: Unknown file: %s" % file["lfn"]
+            assert file["locations"] == set(["somese.cern.ch"]), \
+                   "Error: File is missing a location."
             goldenFiles.remove(file["lfn"])
 
             fileRun = list(file["runs"])[0].run
@@ -480,9 +500,10 @@ class WMBSMergeBySize(unittest.TestCase):
             currentLumi = 0
             currentEvent = 0
             for file in jobFiles:
-                file.loadData()
                 assert file["lfn"] in goldenFiles, \
-                       "ERROR: Unknown file in merge jobs."
+                       "Error: Unknown file in merge jobs."
+                assert file["locations"] == set(["somese.cern.ch"]), \
+                       "Error: File is missing a location."
 
                 goldenFiles.remove(file["lfn"])
 
@@ -551,7 +572,9 @@ class WMBSMergeBySize(unittest.TestCase):
         currentLumi = 0
         currentEvent = 0
         for file in jobFiles:
-            file.loadData()
+            assert file["locations"] == set(["somese.cern.ch"]), \
+                   "Error: File is missing a location."
+
             if file["lfn"] in goldenFilesA:
                 goldenFilesA.remove(file["lfn"])
             elif file["lfn"] in goldenFilesB:
@@ -629,9 +652,10 @@ class WMBSMergeBySize(unittest.TestCase):
             currentLumi = 0
             currentEvent = 0
             for file in jobFiles:
-                file.loadData()
                 assert file["lfn"] in goldenFiles, \
-                       "ERROR: Unknown file in merge jobs."
+                       "Error: Unknown file in merge jobs."
+                assert file["locations"] == set(["somese.cern.ch"]), \
+                       "Error: File is missing a location: %s" % file["locations"]
 
                 goldenFiles.remove(file["lfn"])
 
@@ -700,7 +724,9 @@ class WMBSMergeBySize(unittest.TestCase):
         currentLumi = 0
         currentEvent = 0
         for file in jobFiles:
-            file.loadData()
+            assert file["locations"] == set(["somese.cern.ch"]), \
+                   "Error: File is missing a location."
+
             if file["lfn"] in goldenFilesA:
                 goldenFilesA.remove(file["lfn"])
             elif file["lfn"] in goldenFilesB:
@@ -748,6 +774,9 @@ class WMBSMergeBySize(unittest.TestCase):
         should ignore processing jobs that feed into different merge
         subscriptions.
         """
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
+        
         mergeFilesetA = Fileset(name = "mergeFilesetA")
         mergeFilesetB = Fileset(name = "mergeFilesetB")
         mergeFilesetA.create()
@@ -862,11 +891,13 @@ class WMBSMergeBySize(unittest.TestCase):
         changeStateDAO.execute([testJobA, testJobB, testJobC, testJobD,
                                 testJobE, testJobF])
 
-        fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0)
+        fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))
         fileA.addRun(Run(1, *[45]))
         fileA.create()
         fileA.addParent(inputFileA["lfn"])
-        fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 0)
+        fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))
         fileB.addRun(Run(1, *[45]))
         fileB.create()
         fileB.addParent(inputFileB["lfn"])
@@ -879,11 +910,13 @@ class WMBSMergeBySize(unittest.TestCase):
         mergeFilesetA.addFile(fileB)
         mergeFilesetA.commit()
 
-        fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 0)
+        fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))
         fileC.addRun(Run(1, *[45]))
         fileC.create()
         fileC.addParent(inputFileA["lfn"])        
-        fileD = File(lfn = "fileD", size = 1024, events = 1024, first_event = 0)
+        fileD = File(lfn = "fileD", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))
         fileD.addRun(Run(1, *[45]))
         fileD.create()
         fileD.addParent(inputFileB["lfn"])
@@ -905,11 +938,13 @@ class WMBSMergeBySize(unittest.TestCase):
         assert len(result) == 0, \
                "Error: No merge jobs should have been created."
 
-        fileE = File(lfn = "fileE", size = 1024, events = 1024, first_event = 0)
+        fileE = File(lfn = "fileE", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))                     
         fileE.addRun(Run(1, *[45]))
         fileE.create()
         fileE.addParent(inputFileA["lfn"])        
-        fileF = File(lfn = "fileF", size = 1024, events = 1024, first_event = 0)
+        fileF = File(lfn = "fileF", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["somese.cern.ch"]))                     
         fileF.addRun(Run(1, *[45]))
         fileF.create()
         fileF.addParent(inputFileB["lfn"])
@@ -932,7 +967,7 @@ class WMBSMergeBySize(unittest.TestCase):
                             max_merge_events = 7169)
 
         assert len(result) == 1, \
-               "Error: One merge job should have been created."
+               "Error: One merge job should have been created: %s" % len(result)
         
         return
     

@@ -5,8 +5,8 @@ _GetFilesForMerge_
 Oracle implementation of Subscription.GetFilesForMerge
 """
 
-__revision__ = "$Id: GetFilesForMerge.py,v 1.9 2010/06/21 17:50:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: GetFilesForMerge.py,v 1.10 2010/06/24 16:15:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFilesForMerge import GetFilesForMerge as GetFilesForMergeMySQL
 
@@ -25,7 +25,8 @@ class GetFilesForMerge(GetFilesForMergeMySQL):
                     wmbs_file_details.lfn AS file_lfn,
                     wmbs_file_details.first_event AS file_first_event,
                     MIN(wmbs_file_runlumi_map.run) AS file_run,
-                    MIN(wmbs_file_runlumi_map.lumi) AS file_lumi
+                    MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
+                    wmbs_location.se_name AS se_name       
              FROM (
                SELECT wmbs_fileset_files.fileid AS fileid,
                       MIN(wmbs_file_parent.parent) AS parent,
@@ -69,6 +70,11 @@ class GetFilesForMerge(GetFilesForMergeMySQL):
                wmbs_file_details.id = merge_files.fileid
              INNER JOIN wmbs_file_runlumi_map ON
                wmbs_file_runlumi_map.fileid = merge_files.fileid
+             INNER JOIN wmbs_file_location ON
+               wmbs_file_details.id = wmbs_file_location.fileid
+             INNER JOIN wmbs_location ON
+               wmbs_file_location.location = wmbs_location.id               
              GROUP BY merge_files.fileid, merge_files.parent,
                       wmbs_file_details.events, wmbs_file_details.filesize,
-                      wmbs_file_details.lfn, wmbs_file_details.first_event"""
+                      wmbs_file_details.lfn, wmbs_file_details.first_event,
+                      wmbs_location.se_name"""

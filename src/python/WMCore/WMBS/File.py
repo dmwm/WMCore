@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.59 2010/02/02 16:45:44 mnorman Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: File.py,v 1.60 2010/02/09 22:21:48 mnorman Exp $"
+__version__ = "$Revision: 1.60 $"
 
 import threading
 import time
@@ -499,6 +499,8 @@ class File(WMBSBase, WMFile):
 
         self.update(file)
         self.create()
+        #I don't know why I need this...
+        self["parents"] = set()
 
         for parent in file['parents']:
             self.addParent(parent)

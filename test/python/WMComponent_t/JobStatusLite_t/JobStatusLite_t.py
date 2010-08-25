@@ -108,8 +108,6 @@ class JobStatusLite_t(unittest.TestCase):
         ## check if jobs have been polled
 
     def testB_GroupAssignment(self):
-        pass
-        """
         config = self.createConfig()
         tot_added = self.popolateDatabase(3,50)
         print "Calling StatusScheduling"
@@ -136,7 +134,6 @@ class JobStatusLite_t(unittest.TestCase):
             self.assertNotEqual(group, 0)
         ## check if job status has been updated 
         ## No check to do till BossLiteAPI are not available
-        """
 
 if __name__ == '__main__':
     unittest.main()

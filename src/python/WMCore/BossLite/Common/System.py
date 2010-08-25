@@ -12,8 +12,8 @@ import os
 import logging
 import select, signal, fcntl
 
-__version__ = "$Id: System.py,v 1.5 2010/05/11 10:52:29 spigafi Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: System.py,v 1.6 2010/05/11 22:29:43 spigafi Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 
 def setPgid():
@@ -89,28 +89,42 @@ def executeCommand( command, timeout=None ):
     return ''.join(outc), returncode
 
 
-def timestampToStr( tmp ) :
+def decodeTimestamp( tmp ) :
     """
-    timestampToStr: not implemented
+    decodeTimestamp
     """
+
+    if not tmp :
+        return 0
+    if type(tmp) == str :
+        # SQLite case --> string
+        extractedTuple = time.strptime(tmp,'%Y-%m-%d %H:%M:%S')
+        
+    else :
+        # MySQL case --> datetime object
+        extractedTuple =  tmp.timetuple()
     
-    return tmp
+    # add/subtract the timezone ...
+    result = time.mktime(extractedTuple[0:6] + (0,0,0)) - time.timezone    
     
-def strToTimestamp( tmp ) :
+    # Rounding ...
+    return int(result)
+
+def encodeTimestamp( tmp ) :
     """
-    strToTimestamp: used to save on database timestamp correctly
+    encodeTimestamp
     """
     
     try:
         # if I can, I convert...
-        return time.strftime("%Y-%m-%d %H:%M:%S", \
-                    time.gmtime(int(tmp)))
+        return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(tmp)))
     except TypeError :
         pass
     except ValueError :
         pass
-
-    return tmp
+    
+    # 0 / invalid value -> 1970-01-01 00:00:00
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(0)))
 
 def strToList( tmp ) :
     """

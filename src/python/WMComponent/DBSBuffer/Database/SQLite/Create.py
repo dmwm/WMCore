@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for SQLite
 """
 
-__revision__ = "$Id: Create.py,v 1.9 2009/09/23 16:41:22 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Create.py,v 1.10 2009/09/25 13:27:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import logging
 import threading
@@ -108,20 +108,6 @@ class Create(DBCreator):
              id          INTEGER      PRIMARY KEY AUTOINCREMENT,
              blockname   VARCHAR(250) NOT NULL,
              location    INTEGER      NOT NULL,
-             open_status INTEGER      NOT NULL,
-             is_in_phedex INTEGER NOT NULL DEFAULT 0,
+             open_status INTEGER      NOT NULL DEFAULT 0,
              UNIQUE(blockname, location)
              )"""  
-
-
-        #self.constraints["FK_dbsbuffer_file_ds"]=\
-	#	      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_file_ds
-    	#		 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
-        #
-        #self.constraints["FK_dbsbuffer_file_ds"]=\
-        #              """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_dbsbuffile
-        #                 foreign key(WMBS_File_ID) references dbsbuffer_file(ID)"""
-        #
-        #self.constraints["FK_dbsbuffer_ds_algo"]=\
-        #      """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuffer_ds_algo
-        #         foreign key(Algo) references dbsbuffer_algo(ID)"""

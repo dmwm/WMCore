@@ -22,15 +22,6 @@ config.component_('Webtools')
 # This is the application
 config.Webtools.application = 'WebtoolsDocs'
 
-# This is the Security config the application will use
-config.component_('SecurityModule')
-config.SecurityModule.enabled = True
-config.SecurityModule.use_decorators = True
-config.SecurityModule.store = 'filestore'
-config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
-#config.CernOpenID.store.database = 'sqlite://'
-config.SecurityModule.session_name = 'SecurityModule'
-
 # This is the config for the application
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
@@ -50,6 +41,17 @@ config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
 config.WebtoolsDocs.section_('views')
 # These are all the active pages that Root.py should instantiate 
 active = config.WebtoolsDocs.views.section_('active')
+# This is the Security config the application will use
+config.component_('SecurityModule')
+config.SecurityModule.enabled = True
+config.SecurityModule.use_decorators = True
+config.SecurityModule.mount_point = 'auth'
+config.SecurityModule.store = 'filestore'
+config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
+#config.CernOpenID.store.database = 'sqlite://'
+config.SecurityModule.session_name = 'SecurityModule'
+config.SecurityModule.handler = 'WMCore.WebTools.CernOidDefaultHandler'
+
 # The section name is also the location the class will be located
 # e.g. http://localhost:8080/documentation
 active.section_('documentation')

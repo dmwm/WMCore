@@ -5,8 +5,8 @@ _PromptSkimPoller_
 Poll T0AST for complete blocks and launch skims.
 """
 
-__revision__ = "$Id: PromptSkimPoller.py,v 1.3 2010/06/06 14:34:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: PromptSkimPoller.py,v 1.4 2010/06/07 15:54:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import time
 import threading
@@ -18,6 +18,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Agent.Harness import Harness
 from WMCore.DAOFactory import DAOFactory
+from WMCore.Database.DBFactory import DBFactory
 
 from T0.State.Database.Reader import ListBlock
 from T0.State.Database.Reader import ListDatasets
@@ -32,18 +33,16 @@ from T0.RunConfigCache.CacheManager import getRunConfigCache
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.DataStructs.Run import Run
-from WMCore.DAOFactory import DAOFactory
-from WMCore.Database.DBFactory import DBFactory
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
 
 from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimWorkloadFactory
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+
+from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 class PromptSkimPoller(BaseWorkerThread):
     def __init__(self, config):
@@ -55,6 +54,7 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         _setup_
 
+        Setup all the parameters.
         """
         logging.info("PromptSkimScheduler Component Started")
 
@@ -115,9 +115,12 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         _getRunConfig_
 
+        Get a RunConfig instance for the given run number.
         """
         if not self.runConfigCache:
             self.runConfigCache = getRunConfigCache(self.t0astDBConn, None)
+            self.runConfigCache.configCache = os.path.join(self.config.PromptSkimScheduler.workloadCache,
+                                                           "RunConfig")
 
         return self.runConfigCache.getRunConfig(runNumber)
     
@@ -163,8 +166,6 @@ class PromptSkimPoller(BaseWorkerThread):
         the newly added files with the given fileset.  Also add run and lumi
         information for each file that was added.
         """
-        # Add files to DBSBuffer.
-
         inputFilesetName = self.inputFilesetName(blockInfo)
 
         locationNew = self.daoFactory(classname = "Locations.New")
@@ -176,10 +177,14 @@ class PromptSkimPoller(BaseWorkerThread):
         blockFiles = ListFiles.listBlockFilesForSkim(self.t0astDBConn,
                                                      blockInfo["BLOCK_ID"])
 
-        logging.debug("insertFilesIntoTier1WMBS(): block %s" % blockInfo["BLOCK_ID"])
-
         for file in blockFiles:
-            logging.debug("insertFilesIntoTier1WMBS(): file %s" % file["LFN"])
+            dbsFile = DBSBufferFile(lfn = file["LFN"], status = "AlreadyInDBS")
+            dbsFile.setDatasetPath("bogus")
+            dbsFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
+                                 appFam = "UNKNOWN", psetHash = "GIBBERISH",
+                                 configContent = "GIBBERISH")
+            dbsFile.create()
+            
             newFile = File(lfn = file["LFN"], size = file["SIZE"],
                            events = file["EVENTS"])
 
@@ -204,14 +209,15 @@ class PromptSkimPoller(BaseWorkerThread):
         """
         _createWorkloadsForBlock_
 
-
+        Check to see if we're already created skimming workloads for the
+        run/dataset that the block belongs to.  If no workload exists create one
+        and install it into WMBS.
         """
         if self.workloads.has_key(blockInfo["RUN_ID"]):
             if self.workloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
                 return
 
         runConfig = self.getRunConfig(blockInfo["RUN_ID"])
-        logging.debug("BLOCKINFO: %s" % blockInfo)
         (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         configFile = runConfig.retrieveConfigFromURL(skimConfig.ConfigURL)
 
@@ -249,7 +255,7 @@ class PromptSkimPoller(BaseWorkerThread):
 
         myHelper = WMBSHelper(workload, specPath, "CMSDataOps", "PromptSkim",
                               "Skim", None, None, None)
-        myHelper.createSubscription()
+        myHelper.createSubscription(self.inputFilesetName(blockInfo))
 
         if not self.workloads.has_key(blockInfo["RUN_ID"]):
             self.workloads[blockInfo["RUN_ID"]] = {}
@@ -306,7 +312,6 @@ class PromptSkimPoller(BaseWorkerThread):
                 if phedexNode["name"] == blockLocation:
                     blockSEName = str(phedexNode["se"])
 
-            logging.debug("LOCATION: %s, %s" % (blockLocation, blockSEName))
             self.insertFilesIntoTier1WMBS(skimmableBlock, blockSEName,
                                           insertParents)
 
@@ -326,6 +331,7 @@ class PromptSkimPoller(BaseWorkerThread):
                 self.t0astDBConn.commit()
                 myThread.transaction.commit()
 
+        self.t0astDBConn.commit()
         return
 
     def pollForRunComplete(self):
@@ -354,6 +360,7 @@ class PromptSkimPoller(BaseWorkerThread):
                     openRuns.append(run[3:])
 
         if len(openRuns) == 0:
+            myThread.transaction.commit()
             return
         
         runStatuses = ListRuns.listRunState(self.t0astDBConn, openRuns)

@@ -5,8 +5,8 @@ config = Configuration()
 
 config.component_('Webtools')
 config.Webtools.application = 'WorkQueueService'
-config.Webtools.port = 6660
-config.Webtools.host = "cmssrv18.fnal.gov"
+config.Webtools.port = 8080
+config.Webtools.host = "hostname.fnal.gov"
 config.component_('WorkQueueService')
 
 config.WorkQueueService.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
@@ -21,7 +21,7 @@ workqueue = active.section_('workqueue')
 # The class to load for this view/page
 workqueue.object = 'WMCore.WebTools.RESTApi'
 workqueue.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
-workqueue.database = 'mysql://sryu@cmssrv18.fnal.gov:3307/TestDB_sryu'
+workqueue.database = 'mysql://username@hostname.fnal.gov:3306/TestDB'
 #only needs to specify when mysql db is used
 #if it is not specified gets the value from environment variable. (DBSOCK)
 #workqueue.dbsocket = '/var//mysql.sock'
@@ -31,4 +31,5 @@ workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
 workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
 
-workqueue.queueParams = {}
+# if workqueue is a global queue this needs to be set True. for a local queue False
+workqueue.queueParams = {'PopulateFilesets' : True}

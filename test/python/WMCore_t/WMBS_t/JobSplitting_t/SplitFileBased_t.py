@@ -5,8 +5,8 @@ _SplitFileBased_t_
 Unit tests for the split file job splitting algorithm.
 """
 
-__revision__ = "$Id: SplitFileBased_t.py,v 1.8 2010/06/28 15:27:25 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: SplitFileBased_t.py,v 1.9 2010/07/14 19:27:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import os
@@ -329,7 +329,11 @@ class SplitFileBasedTest(unittest.TestCase):
             for file in jobFiles:
                 file.loadData()
                 assert file["lfn"] in goldenFiles, \
-                       "ERROR: Unknown file in merge jobs."
+                       "Error: Unknown file in merge jobs."
+                assert len(file["locations"]) == 1, \
+                       "Error: Wrong number of file locations."
+                assert "somese.cern.ch" in file["locations"], \
+                       "Error: File is missing a location."
 
                 goldenFiles.remove(file["lfn"])
 

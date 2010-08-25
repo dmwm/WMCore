@@ -8,8 +8,8 @@ but instead of combining multiple merge units together this will create a
 single job for each merge unit.
 """
 
-__revision__ = "$Id: SplitFileBased.py,v 1.4 2010/03/31 21:35:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SplitFileBased.py,v 1.5 2010/07/14 19:27:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 
@@ -69,7 +69,14 @@ def sortedFilesFromMergeUnits(mergeUnits):
             newFile = File(id = file["file_id"], lfn = file["file_lfn"],
                            events = file["file_events"])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
-            sortedFiles.append(newFile)
+
+            # The WMBS data structure puts locations that are passed in through
+            # the constructor in the "newlocations" attribute.  We want these to
+            # be in the "locations" attribute so that they get picked up by the
+            # job submitter.
+            newFile["locations"] = set([file["se_name"]])
+            newFile.addRun(Run(file["file_run"], file["file_lumi"]))
+            sortedFiles.append(newFile)            
 
     return sortedFiles
 

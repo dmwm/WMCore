@@ -6,13 +6,14 @@ SQLAlchemy result sets (aka cursors) can be closed. Make this class look as much
 like the SQLAlchemy class to minimise the impact of adding this class.
 """
 
-__revision__ = "$Id: ResultSet.py,v 1.3 2009/03/31 14:56:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ResultSet.py,v 1.4 2009/04/02 13:23:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 class ResultSet:
     def __init__(self):
         self.data = []
         self.keys = []
+        self.rowcount = 0
 
     def close(self):
         return
@@ -31,3 +32,6 @@ class ResultSet:
             if len(self.keys) == 0:
                 self.keys.extend(r.keys())
             self.data.append(r)
+
+        self.rowcount = len(self.data)
+        return

@@ -1,16 +1,17 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0102, W6501
+#pylint: disable-msg=W0102, W6501, C0301
 # W0102: We want to pass blank lists by default
 # for the whitelist and the blacklist
 # W6501: pass information to logging using string arguments
+# C0301: I'm ignoring this because breaking up error messages is painful
 
 """
 Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.28 2010/06/23 20:40:34 mnorman Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.29 2010/06/30 18:46:58 mnorman Exp $"
+__version__ = "$Revision: 1.29 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -19,10 +20,8 @@ __version__ = "$Revision: 1.28 $"
 
 import logging
 import threading
-import time
 import os.path
 import cPickle
-import random
 import traceback
 
 # WMBS objects
@@ -35,6 +34,14 @@ from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.WMBase        import getWMBASE
+
+class BadJobError(Exception):
+    """
+    Silly exception that doesn't do anything
+    except signal
+
+    """
+    pass
 
 def sortListOfDictsByKey(inList, key):
     """
@@ -103,6 +110,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                                        componentDir = self.config.JobSubmitter.componentDir,
                                        config = self.config, slaveInit = configDict)
 
+
+        self.changeState = ChangeState(self.config)
+
         return
 
     def algorithm(self, parameters = None):
@@ -114,23 +124,18 @@ class JobSubmitterPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         
         try:
-            #startTime = time.clock()
             self.runSubmitter()
-            #stopTime = time.clock()
-            #logging.debug("Running jobSubmitter took %f seconds" \
-            #              %(stopTime - startTime))
-            #print "Runtime for JobSubmitter %f" %(stopTime - startTime)
-            #print self.timing
         except Exception, ex:
             msg = "Caught exception in JobSubmitter\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
             msg += "\n\n"
+            logging.error(msg)
             if hasattr(myThread, 'transaction') and myThread.transaction != None \
                    and hasattr(myThread.transaction, 'transaction') \
                    and myThread.transaction.transaction != None:
                 myThread.transaction.rollback()
-            raise
+            raise Exception(msg)
 
 
     def runSubmitter(self):
@@ -248,7 +253,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         if len(job['input_files']) == 0:
             # Then it has no files
             # Can run anywhere?
-            availableSites = []
             for site in self.sites.keys():
                 if jobType in self.sites[site].keys():
                     availableSites.append(self.sites[site][jobType]['se_name'])
@@ -269,19 +273,25 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         if len(possibleSites) == 0:
             logging.error("Job %i has NO possible sites" % (job['id']))
-            return None
+            raise BadJobError
 
 
         # Now do the blacklist/whitelist magic
         # First we check the whitelist and if it has sites,
         # remove all sites now on whiteList
-        if len(job.get('siteWhiteList', [])) > 0:
+        whiteList = job.get('siteWhiteList', [])
+        if len(whiteList) > 0:
+            badList   = []
             for site in possibleSites:
-                if not site in job['siteWhiteList']:
+                if not site in whiteList:
+                    badList.append(site)
+            if len(badList) > 0:
+                for site in badList:
                     possibleSites.remove(site)
             if len(possibleSites) == 0:
                 logging.error("Job %i has NO sites possible in whitelist" % (job['id']))
-                return None
+                raise BadJobError
+
         
         else:
             # If we don't have a whiteList, check for a blackList
@@ -291,7 +301,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     possibleSites.remove(site)
             if len(possibleSites) == 0:
                 logging.error("Job %i eliminated all sites in blacklist" % (job['id']))
-                return None
+                raise BadJobError
 
 
 
@@ -347,7 +357,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         sortedJobList = sortListOfDictsByKey(jobList, 'sandbox')
 
-        changeState = ChangeState(self.config)
+
 
         logging.error("In submitJobs")
         logging.error(len(jobList))
@@ -435,8 +445,8 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         #Pass the successful jobs, and fail the bad ones
         myThread.transaction.begin()
-        changeState.propagate(successList, 'executing',    'created')
-        changeState.propagate(failList,    'submitfailed', 'created')
+        self.changeState.propagate(successList, 'executing',    'created')
+        self.changeState.propagate(failList,    'submitfailed', 'created')
 
         myThread.transaction.commit()
 
@@ -452,6 +462,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         failList = []
         jList2   = []
+        killList = []
 
         for job in jobList:
             if not os.path.isdir(job['cache_dir']):
@@ -465,7 +476,18 @@ class JobSubmitterPoller(BaseWorkerThread):
             fileHandle = open(jobPickle, "r")
             loadedJob  = cPickle.load(fileHandle)
             loadedJob['type'] = job['type']
-            loadedJob['location'] = self.findSiteForJob(loadedJob)
+            try:
+                loadedJob['location'] = self.findSiteForJob(loadedJob)
+            except BadJobError:
+                # Really fail this job!  This means that something's
+                # gone wrong in how sites were enabled.
+                msg = ''
+                msg += "Failing job %i: Encountered a job with no possible sites\n" % (job['id'])
+                msg += "Job should enter submitFailed"
+                logging.error(msg)
+                failList.append(job)
+                killList.append(job)
+                continue
             loadedJob['custom']['location'] = loadedJob['location']
             # If we didn't get a site, all sites are full
             if loadedJob['location'] == None:
@@ -480,9 +502,15 @@ class JobSubmitterPoller(BaseWorkerThread):
                 continue
 
 
-        for job in jList2:
-            if job in failList:
+        for job in failList:
+            if job in jList2:
                 jList2.remove(job)
+
+
+
+        # Now dump the killed jobs
+        # These are the jobs where it's impossible to run
+        self.changeState.propagate(killList, 'submitfailed', 'created')
 
         return jList2
 

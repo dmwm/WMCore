@@ -7,8 +7,8 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.6 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.6 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.7 2009/10/29 13:43:28 sfoulkes Exp $"
+__version__  = "$Revision: 1.7 $"
 
 import logging
 from sets import Set
@@ -40,5 +40,4 @@ class TwoFileBased(JobFactory):
                 filesInJob = 0
 
             filesInJob += 1
-            self.subscription.acquireFiles(availableFile)
             self.currentJob.addFile(availableFile)

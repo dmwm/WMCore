@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.8 2009/10/28 20:22:19 sryu Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: LumiBased.py,v 1.9 2009/10/29 13:43:28 sfoulkes Exp $"
+__version__  = "$Revision: 1.9 $"
 
 from sets import Set
 
@@ -79,8 +79,6 @@ class LumiBased(JobFactory):
             else:
                 self.FileBasedJobSplitting(lumiDict, filesPerJob, location)
             
-        self.subscription.acquireFiles(fileSet)
-                
 
     def FileBasedJobSplitting(self, lumiDict, filesPerJob, location):
         assignedFiles = []

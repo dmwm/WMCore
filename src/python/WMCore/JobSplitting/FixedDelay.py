@@ -6,8 +6,8 @@ If the current time is beyond trigger_time, add
 any unacquired jobs to 
 """
 
-__revision__ = "$Id: FixedDelay.py,v 1.2 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: FixedDelay.py,v 1.3 2009/10/29 13:43:28 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from sets import Set
 
@@ -35,7 +35,7 @@ class FixedDelay(JobFactory):
         fileset = self.subscription.getFileset()
         trigger_time = kwargs['trigger_time']
         if (trigger_time < time.gmtime()):
-            availFiles = self.subscription.availableFiles()
+            availFiles = self.subscription.fileset.getFiles()
             if (len(availFiles) == 0):
                 # no files to acquire
                 return []

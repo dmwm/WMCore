@@ -7,8 +7,8 @@ or a a set of files for each job.
 
 """
 
-__revision__ = "$Id: SizeBased.py,v 1.2 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: SizeBased.py,v 1.3 2009/10/29 13:43:28 sfoulkes Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from sets import Set
 import logging
@@ -44,7 +44,6 @@ class SizeBased(JobFactory):
                 if sizeOfFile > sizePerJob:
                     logging.error("File %s is too big for a job!" %(f['lfn']))
                     continue
-                self.subscription.acquireFiles(f)
                 
                 if currentSize + sizeOfFile > sizePerJob:
                     #Create new jobs, because we are out of room

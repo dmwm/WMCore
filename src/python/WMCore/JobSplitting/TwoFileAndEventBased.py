@@ -4,8 +4,8 @@ _TwoFileAndEventBased_
 
 """
 
-__revision__ = "$Id: TwoFileAndEventBased.py,v 1.4 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: TwoFileAndEventBased.py,v 1.5 2009/10/29 13:43:28 sfoulkes Exp $"
+__version__  = "$Revision: 1.5 $"
 
 from sets import Set
 
@@ -49,7 +49,6 @@ class TwoFileAndEventBased(JobFactory):
             if eventsInFile == 0:
                 self.newJob(name = makeUUID())
                 self.currentJob.addFile(f)
-                self.subscription.acquireFiles(f)
                 continue
 
             currentEvent = 0
@@ -58,5 +57,3 @@ class TwoFileAndEventBased(JobFactory):
                 currentJob.addFile(f)
                 currentJob.mask.setMaxAndSkipEvents(eventsPerJob, currentEvent)
                 currentEvent += eventsPerJob
-
-            self.subscription.acquireFiles(f)

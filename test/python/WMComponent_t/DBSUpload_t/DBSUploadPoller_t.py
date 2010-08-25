@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.2 $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -19,6 +19,7 @@ import unittest
 import random
 
 from WMComponent.DBSUpload.DBSUpload import DBSUpload
+import WMComponent.DBSUpload.DBSUpload
 from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
@@ -134,8 +135,8 @@ class DBSUploadTest(unittest.TestCase):
         return
 
 
-    def createConfig(self, configAddress = os.path.join(os.getenv('WMCOREBASE'), \
-                                                        'src/python/WMComponent/DBSUpload/DefaultConfig.py')):
+    def createConfig(self, configAddress = os.path.join(os.path.dirname(\
+                        WMComponent.DBSUpload.DBSUpload.__file__), 'DefaultConfig.py')):
         """
         _createConfig_
 

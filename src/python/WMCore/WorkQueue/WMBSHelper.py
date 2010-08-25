@@ -9,8 +9,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.37 2010/08/16 18:40:49 mnorman Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.38 2010/08/16 19:16:23 sryu Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import logging
 import threading
@@ -212,8 +212,10 @@ class WMBSHelper(WMConnectionBase):
         
         if dbsBlock != None:
             self.addFiles(dbsBlock)
-
-
+        #For MC case
+        #else:
+        #    self.addMCFakeFile()
+        
         self.commitTransaction(existingTransaction = False)
 
         return sub
@@ -231,14 +233,14 @@ class WMBSHelper(WMConnectionBase):
 
 
         # Add files to WMBS
-        self._addFilesToWMBSInBulk()
+        totalFiles = self._addFilesToWMBSInBulk()
         # Add files to DBSBuffer
         self._createFilesInDBSBuffer()
 
         #self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
 
-        return
+        return totalFiles
 
 
     def _addFilesToWMBSInBulk(self):
@@ -250,7 +252,7 @@ class WMBSHelper(WMConnectionBase):
 
         if len(self.wmbsFilesToCreate) == 0:
             # Nothing to do
-            return
+            return 0
 
 
         parentageBinds = []
@@ -310,7 +312,6 @@ class WMBSHelper(WMConnectionBase):
 
 
         if len(fileCreate) > 0:
-
             self.addFileAction.execute(files = fileCreate,
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
@@ -334,10 +335,8 @@ class WMBSHelper(WMConnectionBase):
             
 
         if len(fileLFNs) > 0:
-            logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
-                                                                   self.topLevelFileset.id))
             self.addToFileset.execute(file = fileLFNs,
-                                      fileset = self.topLevelFileset.id,
+                                      fileset = self.topLevelFileset.name,
                                       conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
 
@@ -349,7 +348,7 @@ class WMBSHelper(WMConnectionBase):
 
         
 
-        return
+        return len(fileCreate)
 
 
     def _createFilesInDBSBuffer(self):

@@ -103,15 +103,15 @@ def getStepTemplate(stepType):
     name of the step
 
     """
-    try:
-        return _TemplateFactory.loadObject(stepType)
-    except WMException, wmEx:
-        msg = "TemplateFactory Unable to load Object: %s" % stepType
-        raise StepFactoryException(msg)
-    except Exception, ex:
-        msg = "Error creating object %s in TemplateFactory:\n" % stepType
-        msg += str(ex)
-        raise StepFactoryException(msg)
+#    try:
+    return _TemplateFactory.loadObject(stepType)
+#    except WMException, wmEx:
+#        msg = "TemplateFactory Unable to load Object: %s" % stepType
+#        raise StepFactoryException(msg)
+#    except Exception, ex:
+#        msg = "Error creating object %s in TemplateFactory:\n" % stepType
+#        msg += str(ex)
+#        raise StepFactoryException(msg)
 
 def getStepTypeHelper(stepReference):
     """
@@ -137,15 +137,15 @@ def getStepBuilder(stepType):
     _getStepBuilder_
 
     """
-    try:
-        return _BuilderFactory.loadObject(stepType)
-    except WMException, wmEx:
-        msg = "BuilderFactory Unable to load Object: %s" % stepType
-        raise StepFactoryException(msg)
-    except Exception, ex:
-        msg = "Error creating object %s in BuilderFactory:\n" % stepType
-        msg += str(ex)
-        raise StepFactoryException(msg)
+    #try:
+    return _BuilderFactory.loadObject(stepType)
+#    except WMException, wmEx:
+#        msg = "BuilderFactory Unable to load Object: %s" % stepType
+#        raise StepFactoryException(msg)
+#    except Exception, ex:
+#        msg = "Error creating object %s in BuilderFactory:\n" % stepType
+#        msg += str(ex)
+#        raise StepFactoryException(msg)
 
 def getStepExecutor(stepType):
     """
@@ -154,15 +154,15 @@ def getStepExecutor(stepType):
     Get an Executor for the given step type
 
     """
-    try:
-        executor =_ExecutorFactory.loadObject(stepType)
-    except WMException, wmEx:
-        msg = "ExecutorFactory Unable to load Object: %s" % stepType
-        raise StepFactoryException(msg)
-    except Exception, ex:
-        msg = "Error creating object %s in ExecutorFactory:\n" % stepType
-        msg += str(ex)
-        raise StepFactoryException(msg)
+#    try:
+    executor =_ExecutorFactory.loadObject(stepType)
+#    except WMException, wmEx:
+#        msg = "ExecutorFactory Unable to load Object: %s" % stepType
+#        raise StepFactoryException(msg)
+#    except Exception, ex:
+#        msg = "Error creating object %s in ExecutorFactory:\n" % stepType
+#        msg += str(ex)
+#        raise StepFactoryException(msg)
 
     executor.diagnostic = getDiagnostic(stepType)
     return executor
@@ -176,15 +176,15 @@ def getStepEmulator(stepEmuName):
     ways to emulate a given step
 
     """
-    try:
-        return _EmulatorFactory.loadObject(stepEmuName)
-    except WMException, wmEx:
-        msg = "EmulatorFactory Unable to load Object: %s" % stepEmuName
-        raise StepFactoryException(msg)
-    except Exception, ex:
-        msg = "Error creating object %s in EmulatorFactory:\n" % stepEmuName
-        msg += str(ex)
-        raise StepFactoryException(msg)
+    #try:
+    return _EmulatorFactory.loadObject(stepEmuName)
+    #except WMException, wmEx:
+    #    msg = "EmulatorFactory Unable to load Object: %s" % stepEmuName
+    #    raise StepFactoryException(msg)
+    #except Exception, ex:
+    #    msg = "Error creating object %s in EmulatorFactory:\n" % stepEmuName
+    #    msg += str(ex)
+    #    raise StepFactoryException(msg)
 
 def getFetcher(fetcherName):
     """
@@ -193,16 +193,16 @@ def getFetcher(fetcherName):
     Get an instance of the named Fetcher implementation
 
     """
-    try:
-        return _FetcherFactory.loadObject(fetcherName)
+    #try:
+    return _FetcherFactory.loadObject(fetcherName)
 
-    except WMException, wmEx:
-        msg = "FetcherFactory Unable to load Object: %s" % fetcherName
-        raise StepFactoryException(msg)
-    except Exception, ex:
-        msg = "Error creating object %s in FetcherFactory:\n" % fetcherName
-        msg += str(ex)
-        raise StepFactoryException(msg)
+#    except WMException, wmEx:
+#        msg = "FetcherFactory Unable to load Object: %s" % fetcherName
+#        raise StepFactoryException(msg)
+#    except Exception, ex:
+#        msg = "Error creating object %s in FetcherFactory:\n" % fetcherName
+#        msg += str(ex)
+#        raise StepFactoryException(msg)
 
 def getDiagnostic(stepType):
     """
@@ -216,8 +216,8 @@ def getDiagnostic(stepType):
         return _DiagnosticFactory.loadObject(stepType)
     except WMException, wmEx:
         return _DiagnosticFactory.loadObject("Generic")
-    except Exception, ex:
-        msg = "Error creating object %s in DiagnosticFactory:\n" % stepType
-        msg += str(ex)
-        raise StepFactoryException(msg)
+#    except Exception, ex:
+#        msg = "Error creating object %s in DiagnosticFactory:\n" % stepType
+#        msg += str(ex)
+#        raise StepFactoryException(msg)
 

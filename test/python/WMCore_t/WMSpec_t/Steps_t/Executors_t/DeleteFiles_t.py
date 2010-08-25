@@ -62,7 +62,8 @@ class deleteFileTest(unittest.TestCase):
             
     def tearDown(self):
         self.testInit.delWorkDir()
-        pass
+        sys.path.remove(self.testDir)
+        sys.path.remove(self.sandboxDir)   
 
     def setLocalOverride(self, step):
         step.section_('override')

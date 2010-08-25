@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.36 2010/03/31 15:49:58 sfoulkes Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: ChangeState.py,v 1.37 2010/04/12 15:20:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -26,7 +26,7 @@ class ChangeState(WMObject, WMConnectionBase):
     """
     Propagate the state of a job through the JSM.
     """
-    def __init__(self, config={}, couchDbName = 'jsm_job_history'):
+    def __init__(self, config, couchDbName = None):
         WMObject.__init__(self, config)
         WMConnectionBase.__init__(self, "WMCore.WMBS")
 
@@ -35,6 +35,11 @@ class ChangeState(WMObject, WMConnectionBase):
         self.logger = self.myThread.logger
         self.dialect = self.myThread.dialect
         self.dbi = self.myThread.dbi
+
+        if couchDbName == None:
+            couchDbName = gettattr(self.config.JobStateMachine, "couchDBName",
+                                   "Unknown")
+            
         self.dbname = couchDbName
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self.logger,

@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.10 2009/07/24 15:36:51 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: RESTApi.py,v 1.11 2009/08/04 10:48:10 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
@@ -70,11 +70,11 @@ class RESTApi(WebAPI):
         self.formatter = factory.loadObject(config.formatter.object, config)
 
     @expose
-    def index(self, *args, **kwargs):
+    def index(self, **kwargs):
         """
         Return the auto-generated documentation for the API
         """
-        return self.buildResponse(args, kwargs)
+        return self.buildResponse([], kwargs)
     
     @expose
     def default(self, *args, **kwargs):

@@ -82,6 +82,17 @@ class Test(unittest.TestCase):
 
         self.assertEqual( testString1, testDocument1 )
         self.assertEqual( testString2, testDocument2 )
+
+    
+    def testTweakFile(self):
+        newid1, newrev1 = self.cache.addConfig( self.filename1 )
+        newid1, newrev1 = self.cache.addTweakFile(newid1, newrev1,
+                                                        self.filename2)
+        testString1 = self.cache.getConfigByDocID(newid1)
+        testString2 = self.cache.getTweakFileByDocID(newid1)
+
+        self.assertEqual( testString1, testDocument1 )
+        self.assertEqual( testString2, testDocument2 )
         
     def testAdd(self):
         """

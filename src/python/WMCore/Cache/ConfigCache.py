@@ -10,8 +10,8 @@
 import WMCore.Database.CMSCouch as CMSCouch
 import urllib
 import md5
-__revision__ = "$Id: ConfigCache.py,v 1.5 2009/07/02 21:57:28 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ConfigCache.py,v 1.6 2009/07/08 15:00:35 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 class WMConfigCache:
     ''' 
@@ -114,7 +114,38 @@ class WMConfigCache:
                                          'original_script')
         else:
             raise IndexError("Too many/few search results (%s) for hash %s" %
-                                ( len(searchResult), dochash) )      
+                                ( len(searchResult), dochash) ) 
+            
+    def addTweakFile(self, docid, rev, configPath):
+        ''' Adds the human-readable script to the given id
+            Makes it easy to see what you're doing since
+            the pickled version isn't legible
+        '''
+        configString = urllib.urlopen( configPath ).read(-1)
+        retval = self.database.addAttachment( docid,
+                                         rev, 
+                                         configString,
+                                         'tweak_file')
+        return ( retval['id'],
+                 retval['rev'])
+        
+    
+    def getTweakFileByDocID(self, docid):
+        '''retrieves a configuration by the docid'''
+        return self.database.getAttachment( docid, 'tweak_file' )
+
+        
+    
+    def getTweakFileByHash(self, dochash):
+        '''retrieves a configuration by the pset_hash'''
+        searchResult = self.searchByHash(dochash)[u'rows']
+        if (len(searchResult) == 1):
+            # found the configuration
+            return self.getConfigByDocID(searchResult[0]['id'],
+                                         'tweak_file')
+        else:
+            raise IndexError("Too many/few search results (%s) for hash %s" %
+                                ( len(searchResult), dochash) )           
     
     def getDocumentByDocID(self, docid, revid=None):
         '''retrieves a document by its id'''
@@ -148,7 +179,6 @@ class WMConfigCache:
     
     def wrapView(self, viewdata):
         '''converts the view return values into Document objects'''
-        print viewdata
         for row in viewdata[u'rows']:
             row = CMSCouch.makeDocument(row)
         return viewdata

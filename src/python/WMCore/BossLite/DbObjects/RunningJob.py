@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.3 2010/04/19 18:00:41 mnorman Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: RunningJob.py,v 1.4 2010/04/26 12:20:14 spigafi Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 # imports
 import time
@@ -134,17 +134,17 @@ class RunningJob(DbObject):
         else:
             action = self.daofactory(classname = "RunningJob.Exists")
             id = action.execute(submission = self.data['submission'],
-                                jobID = self.data['jobId'], taskID = self.data['taskId'],
+                                jobID = self.data['jobId'], 
+                                taskID = self.data['taskId'],
                                 conn = self.getDBConn(),
-                                transaction = self.existingTransaction)
+                                transaction = self.existingTransaction )
                            
             if id:
                 self.data['id'] = id
             self.existsInDataBase = True
             return id
 
-    #############################################################
-
+    ##########################################################################
 
     @dbTransaction
     def create(self):
@@ -156,11 +156,10 @@ class RunningJob(DbObject):
         action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-        
 
         return
 
-    ###############################################################
+    ##########################################################################
 
     @dbTransaction
     def save(self):
@@ -178,13 +177,12 @@ class RunningJob(DbObject):
                            
 
         self.existsInDataBase = True
-        return        
+        return
 
-
-    ##############################################################
+    ##########################################################################
 
     @dbTransaction
-    def load(self):
+    def load(self, deep = True):
         """
         Load from the database
 
@@ -195,29 +193,31 @@ class RunningJob(DbObject):
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction)
             
-        elif self.data['jobId'] and self.data['taskId'] and self.data['submission']:
+        elif (self.data['jobId'] and self.data['taskId'] and \
+                self.data['submission']) :
             action = self.daofactory(classname = "RunningJob.LoadByParameters")
-            result = action.execute(jobID = self.data['jobId'], taskID = self.data['taskId'],
+            result = action.execute(jobID = self.data['jobId'], 
+                                    taskID = self.data['taskId'],
                                     submission = self.data['submission'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction)
         else:
             # We have nothing
             return
-            
 
         if result == []:
             # Then the job did not exist
-            logging.error('Attempted to load non-existant runningJob with parameters:\n %s' %(self.data))
+            logging.error(
+                "Attempted to load non-existant runningJob with parameters:\n %s" 
+                        % (self.data) )
             return
 
         self.data.update(result[0])
         self.existsInDataBase = True
+        
         return
 
-
-
-    ##############################################################
+    ##########################################################################
 
     @dbTransaction
     def remove(self):
@@ -225,7 +225,8 @@ class RunningJob(DbObject):
         remove job object from database
         """
         if not self.exists():
-            logging.error("Cannot remove non-existant runningJob %s" %(self.data))
+            logging.error("Cannot remove non-existant runningJob %s" 
+                          % (self.data) )
             return 0
 
         action = self.daofactory(classname = "RunningJob.Delete")
@@ -241,12 +242,7 @@ class RunningJob(DbObject):
         # return number of entries removed
         return 1
 
-
-
-    ###################################################################
-    #  This is where I stopped doing work
-    ###################################################################
-
+    ##########################################################################
 
     def isError(self):
         """
@@ -255,70 +251,13 @@ class RunningJob(DbObject):
 
         return ( len( self.errors ) != 0 )
         
-
-    ##########################################################################
-
-#    def save(self, db):
-#        """
-#        save running job object in database. checking that static information
-#        is automatically performed due to database constraints
-#        """
-#
-#        # verify data is complete
-#        if not self.valid(['submission', 'jobId', 'taskId']):
-#            raise JobError("The following job instance cannot be saved," + \
-#                     " since it is not completely specified: %s" % self)
-#
-#        # insert running job
-#        try:
-#
-#            # create entry in database
-#            status = db.insert(self)
-#            if status != 1:
-#                raise JobError("Cannot insert running job %s" % str(self))
-#
-#        # database error
-#        except DbError, msg:
-#            raise JobError(str(msg))
-#
-#        # update status
-#        self.existsInDataBase = True
-#
-#        return status
-
-    ##########################################################################
-
-    #def remove(self, db):
-    #    """
-    #    remove job object from database
-    #    """
-    #
-    #    # verify data is complete
-    #    if not self.valid(['submission', 'jobId']):
-    #        raise JobError("The following job instance cannot be removed," + \
-    #                 " since it is not completely specified: %s" % self)
-    #
-    #    # remove from database
-    #    try:
-    #        status = db.delete(self)
-    #        if status < 1:
-    #            raise JobError("Cannot remove running job %s" % str(self))
-    #
-    #    # database error
-    #    except DbError, msg:
-    #        raise JobError(str(msg))
-    #
-    #    # update status
-    #    self.existsInDataBase = False
-    #
-    #    # return number of entries removed
-    #    return status
-
     ##########################################################################
 
     def update(self, db, deep = True):
         """
         update job information in database
+        -> NEED TO PORTED ??? from Job, update is triggered by save() using 
+            appropriate method 'updateRunningInstance' (NdFilippo)
         """
 
         # verify if the object exists in database
@@ -362,40 +301,3 @@ class RunningJob(DbObject):
         # return number of entries updated.
         # since (submission + jobId) is a key,it will be 0 or 1
         return status
-
-   ##########################################################################
-
-#    def load(self, db, deep = True):
-#        """
-#        load information from database
-#        """
-#
-#       # verify data is complete
-#        if not self.valid(['name']):
-#            raise JobError("The following running job instance cannot be" + \
-#                     " loaded since it is not completely specified: %s" % self)
-#
-#        # get information from database based on template object
-#        try:
-#            objects = db.select(self)
-#
-#        # database error
-#        except DbError, msg:
-#            raise JobError(str(msg))
-#
-#        # since required data is a key, it should be a single object list
-#        if len(objects) == 0:
-#            raise JobError("No running job instances corresponds to the," + \
-#                     " template specified: %s" % self)
-#
-#        if len(objects) > 1:
-#            raise JobError("Multiple running job instances corresponds to" + \
-#                     " the template specified: %s" % self)
-#
-#        # copy fields
-#        for key in self.fields:
-#            self.data[key] = objects[0][key]
-#
-#        # update status
-#        self.existsInDataBase = True
-

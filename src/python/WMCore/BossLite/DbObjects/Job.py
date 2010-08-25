@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.8 2010/04/26 10:13:12 spigafi Exp $"
-__revision__ = "$Revision: 1.8 $"
+__version__ = "$Id: Job.py,v 1.9 2010/04/26 12:20:14 spigafi Exp $"
+__revision__ = "$Revision: 1.9 $"
 
 
 # imports
@@ -131,15 +131,15 @@ class Job(DbObject):
 
         # Then use the database    
         action = self.daofactory(classname = "Job.Exists")
-        id = action.execute(name = self.data['name'],
+        tmpId = action.execute(name = self.data['name'],
                             conn = self.getDBConn(),
                             transaction = self.existingTransaction)
-        if id:
-            self.data['id'] = id
+        if tmpId:
+            self.data['id'] = tmpId
             
         self.existsInDataBase = True
         
-        return id
+        return tmpId
 
     ###############################################################
 
@@ -167,7 +167,7 @@ class Job(DbObject):
             
         return
 
-    ######################################################################
+    ########################################################################
 
     @dbTransaction
     def load(self, deep = True):
@@ -216,7 +216,7 @@ class Job(DbObject):
         
         return
 
-    #####################################################################
+    ########################################################################
 
     def getRunningInstance(self):
         """
@@ -230,6 +230,7 @@ class Job(DbObject):
         runJob.load()
         
         # Not happy with this call because it's slow.  Maybe use ID?
+        # keep track with a boolean variable could be a valid solution (NdFilip)
         if not runJob.exists():  
             self.runningJob = None
         else:
@@ -393,4 +394,3 @@ class Job(DbObject):
         
         # store instance
         self.runningJob = runningJob
-

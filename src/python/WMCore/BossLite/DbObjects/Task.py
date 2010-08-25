@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.10 2010/04/26 10:13:12 spigafi Exp $"
-__revision__ = "$Revision: 1.10 $"
+__version__ = "$Id: Task.py,v 1.11 2010/04/26 12:20:14 spigafi Exp $"
+__revision__ = "$Revision: 1.11 $"
 
 import os.path
 # import threading # seems unused
@@ -99,18 +99,18 @@ class Task(DbObject):
         
         if not noDB:
             action = self.daofactory(classname = 'Task.Exists')
-            id = action.execute(name = self.data['name'],
+            tmpId = action.execute(name = self.data['name'],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-            if id:
-                self.data['id'] = id
+            if tmpId:
+                self.data['id'] = tmpId
         else:
             if self.data['id'] < 0:
                 return False
             else:
-                id = self.data['id']
+                tmpId = self.data['id']
         
-        return id
+        return tmpId
 
 
     ####################################################################
@@ -184,7 +184,7 @@ class Task(DbObject):
             # Then we have nothing
             logging.error(
                 'Attempted to load non-existant task with parameters:\n %s' 
-                    % (self.data) )
+                    % (self.data) ) 
             return
         
         # If we're calling this internally, we only care about the first task
@@ -221,8 +221,12 @@ class Task(DbObject):
             tmp = Job()
             tmp.data.update(job)
             self.jobs.append(tmp)
-
-        return
+            
+            # fill structure to use 'getJob' method
+            self.jobIndex.append( job['jobId'] )
+            self.jobLoaded += 1
+            
+        return self.jobLoaded
 
 
     ###################################################################

@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Task.SelectTask
 """
 
 __all__ = []
-__revision__ = "$Id: SelectTask.py,v 1.1 2010/04/09 19:43:09 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SelectTask.py,v 1.2 2010/05/09 20:01:51 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,11 +16,10 @@ class SelectTask(DBFormatter):
                 global_sandbox as globalSandbox, cfg_name as cfgName, server_name as serverName, job_type as jobType,
                 user_proxy as user_proxy, outfile_basename as outfileBasename, common_requirements as commonRequirements
              FROM bl_task
-             WHERE
-                %s = :value
+             WHERE %s
                 """
 
-    def format(self, res):
+    def postFormat(self, res):
         """
         Format in human readable, bulk compatible form
         """
@@ -44,21 +43,24 @@ class SelectTask(DBFormatter):
 
         return final
 
-
-
-    def execute(self, column, value, conn = None, transaction = False):
+    def execute(self, binds, conn = None, transaction = False):
         """
         Load a task, or a list of tasks, as a function of a column 'column' with
         value 'value'
         """
 
-        if type(value) == list:
-            binds = value
-        else:
-            binds = {'value': value}
-
-        sql = self.sql % (column)  # Insert column in SQL statement
+        whereStatement = []
         
-        result = self.dbi.processData(sql, binds, conn = conn,
+        for x in binds:
+            if type(binds[x]) == str :
+                whereStatement.append( "%s = '%s'" % (x, binds[x]) )
+            else:
+                whereStatement.append( "%s = %s" % (x, binds[x]) )
+                
+        whereClause = ' AND '.join(whereStatement)
+
+        sqlFilled = self.sql % (whereClause)
+        
+        result = self.dbi.processData(sqlFilled, {}, conn = conn,
                                       transaction = transaction)
-        return self.format(result)
+        return self.postFormat(result)

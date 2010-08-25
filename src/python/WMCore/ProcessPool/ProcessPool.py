@@ -5,8 +5,8 @@ _ProcessPool_
 
 """
 
-__revision__ = "$Id: ProcessPool.py,v 1.13 2010/05/12 19:19:29 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: ProcessPool.py,v 1.14 2010/06/28 21:27:59 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import subprocess
 import sys
@@ -23,6 +23,7 @@ from WMCore           import WMLogging
 
 from WMCore.Services.Requests import JSONRequests
 
+from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 
 class WorkerProcess:
     """
@@ -115,8 +116,10 @@ class ProcessPool:
 
         #Use the Services.Requests JSONizer, which handles __to_json__ calls
         self.jsonHandler = JSONRequests()
-
-
+        
+        # heartbeat should be registered at this point
+        self.heartbeatAPI = HeartbeatAPI(config.Agent.componentName)
+        self.slaveClassName = slaveClassName
         #Grab the python version from the current version
         #Assume naming convention pythonA.B, i.e., python2.4 for v2.4.X
         majorVersion = sys.version_info[0]
@@ -128,7 +131,7 @@ class ProcessPool:
             versionString = "python2.4"
 
         self.workers = []
-        slaveArgs = [versionString, __file__, slaveClassName]
+        slaveArgs = [versionString, __file__, self.slaveClassName]
         if hasattr(config.CoreDatabase, "socket"):
             socket = config.CoreDatabase.socket
         else:
@@ -155,7 +158,8 @@ class ProcessPool:
             encodedSlaveInit = None
         else:
             encodedSlaveInit = self.jsonHandler.encode(slaveInit)
-            
+        
+        count = 0     
         while totalSlaves > 0:
             #For each worker you want create a slave process
             #That process calls this code (WMCore.ProcessPool) and opens
@@ -171,10 +175,20 @@ class ProcessPool:
                 
             slaveProcess.stdin.flush()
             self.workers.append(WorkerProcess(subproc = slaveProcess))
-            totalSlaves -= 1
+            workerName = self._subProcessName(self.slaveClassName, count)
             
+            self.heartbeatAPI.updateWorkerHeartbeat(workerName, pid = slaveProcess.pid)
+            totalSlaves -= 1
+            count += 1
+        
         return
-
+    
+    def _subProcessName(self, slaveClassName, sequence):
+        """ subProcessName for heartbeat 
+            could change to use process ID as a suffix
+        """
+        return "%s_%s" % (slaveClassName, sequence + 1)
+            
     def __del__(self):
         """
         __del__
@@ -213,8 +227,13 @@ class ProcessPool:
             encodedWork = self.jsonHandler.encode(workForWorker)
 
             worker = self.workers[self.enqueueIndex]
-            self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
             worker.enqueue(work = encodedWork, length = length)
+            
+            self.heartbeatAPI.updateWorkerHeartbeat(
+                            self._subProcessName(self.slaveClassName, 
+                                                 self.enqueueIndex),
+                            state = "Running")
+            self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
             self.runningWork += length
 
         if len(work) > workIndex:
@@ -245,8 +264,7 @@ class ProcessPool:
 
         while totalItems > 0:
             worker = self.workers[self.dequeueIndex]
-            self.dequeueIndex = (self.dequeueIndex + 1) % len(self.workers)
-
+            
             if not worker.runningWork() > 0:
                 # Then the worker we've picked has no running work
                 continue
@@ -255,6 +273,10 @@ class ProcessPool:
                 output = worker.dequeue()
                 self.runningWork -= 1
                 
+                self.heartbeatAPI.updateWorkerHeartbeat(
+                            self._subProcessName(self.slaveClassName, 
+                                                 self.dequeueIndex),
+                            state = "Done")
                 if output == None:
                     logging.info("No output from worker node line in ProcessPool")
                     continue
@@ -265,6 +287,8 @@ class ProcessPool:
             except Exception, e:
                 logging.error("Exception while getting slave output: %s" % e)
                 break
+            finally:
+                self.dequeueIndex = (self.dequeueIndex + 1) % len(self.workers)
 
         return completedWork
 

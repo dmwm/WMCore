@@ -7,10 +7,15 @@ Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 import inspect
 import pickle
+import os
+import logging
+import threading
+from logging.handlers import RotatingFileHandler
 
 from WMCore.WMException import WMException
 from WMCore.WMRuntime import TaskSpace
 from WMCore.WMRuntime import StepSpace
+from WMCore           import WMLogging
 
 from WMCore.DataStructs.JobPackage import JobPackage
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -135,4 +140,33 @@ def loadTask(job):
         msg += "Task name not matched"
         raise BootstrapException, msg
     return task
+
+
+
+def setupLogging(logDir):
+    """
+    _setupLogging_
+
+    Setup logging for the slave process.  Each slave process will have its own
+    log file.
+    """
+    try:
+        logFile = "%s/jobLog.%s.log" % (logDir, os.getpid())
+        
+        logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
+        logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
+        logHandler.setFormatter(logFormatter)
+        logging.getLogger().addHandler(logHandler)
+        logging.getLogger().setLevel(logging.INFO)
+        #This is left in as a reminder for debugging purposes
+        #SQLDEBUG turns your log files into horrible messes
+        #logging.getLogger().setLevel(logging.SQLDEBUG)
+
+        myThread = threading.currentThread()
+        myThread.logger = logging.getLogger()
+    except Exception, ex:
+        msg = "Error setting up logging in dir %s\n" % logDir
+        msg += str(ex)
+        raise BootstrapException, msg        
+    return
 

@@ -13,8 +13,8 @@ If you just want to retrieve the data without caching use the Requests class
 directly.
 """
 
-__revision__ = "$Id: Service.py,v 1.14 2009/07/11 08:38:56 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Service.py,v 1.15 2009/07/11 08:48:16 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import datetime
 import os
@@ -82,6 +82,7 @@ class Service(Requests):
         Takes the *full* path to the cachefile and the url of the resource.
         """
         # Set the timeout
+        deftimeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self['timeout'])
         try:
             # Get the data
@@ -96,4 +97,4 @@ class Service(Requests):
             self['logger'].exception(e)
             raise e
         # Reset the timeout to None
-        socket.setdefaulttimeout(None)
+        socket.setdefaulttimeout(deftimeout)

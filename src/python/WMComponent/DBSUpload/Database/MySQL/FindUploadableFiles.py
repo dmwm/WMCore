@@ -5,8 +5,8 @@ _DBSUpload.FindUploadableFiles_
 Find the files in a datasets that needs to be uploaded to DBS
 
 """
-__revision__ = "$Id: FindUploadableFiles.py,v 1.11 2010/02/24 21:38:45 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: FindUploadableFiles.py,v 1.12 2010/05/26 19:21:46 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -20,12 +20,12 @@ class FindUploadableFiles(DBFormatter):
                da.app_ver AS ApplicationVersion, 
                da.app_fam AS ApplicationFamily, 
                da.PSet_Hash as PSetHash,
-               da.Config_Content as PSetContent
+               da.Config_Content as PSetContent,
+               da.in_dbs AS algo_in_dbs
              FROM dbsbuffer_file dbsfile
              INNER JOIN dbsbuffer_algo_dataset_assoc das ON dbsfile.dataset_algo = das.id
              INNER JOIN dbsbuffer_dataset ds ON ds.id = das.dataset_id
              INNER JOIN dbsbuffer_algo da ON da.id = das.algo_id
-             WHERE das.in_dbs = 1
              AND dbsfile.status =:status
              """ 
 
@@ -48,6 +48,14 @@ class FindUploadableFiles(DBFormatter):
                 entry['Algo'] = int(r['algo'])
             else:
                 entry['Algo'] = None
+            if not r['algo_in_dbs'] == None:
+                entry['AlgoInDBS'] = int(r['algo_in_dbs'])
+            else:
+                entry['AlgoInDBS'] = None
+            if not r['in_dbs'] == None:
+                entry['DASInDBS'] = int(r['in_dbs'])
+            else:
+                entry['DASInDBS'] = None
             path = r['path']
             entry['PrimaryDataset']     = path.split('/')[1]
             entry['ProcessedDataset']   = path.split('/')[2]

@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-__revision__ = "$Id: Dataset_t.py,v 1.2 2009/12/14 13:56:40 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Dataset_t.py,v 1.3 2010/01/04 16:15:14 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import shutil
@@ -20,21 +20,19 @@ class DatasetTestCase(unittest.TestCase):
 
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
-        dbs_endpoint = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
-        dbs = MockDBSReader(dbs_endpoint,
-                            '/Cosmics/CRAFT09-PromptReco-v1/RECO')
-        dbs = {dbs_endpoint : dbs}
         inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
-        units = Dataset(**self.splitArgs)(Tier1ReRecoWorkload, dbs)
-        self.assertEqual(1, len(units))
-        for unit in units:
-            self.assertEqual(2, unit['Jobs'])
-            spec = unit['WMSpec']
-            initialTask = spec.taskIterator().next()
-            self.assertEqual(unit['Data'], dataset)
+        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            units = Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task, dbs)
+            self.assertEqual(1, len(units))
+            for unit in units:
+                self.assertEqual(2, unit['Jobs'])
+                spec = unit['WMSpec']
+                initialTask = spec.taskIterator().next()
+                self.assertEqual(unit['Data'], dataset)
 
 
 if __name__ == '__main__':

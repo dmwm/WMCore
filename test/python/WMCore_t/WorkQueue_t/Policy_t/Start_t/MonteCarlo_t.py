@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.MonteCarlo tests
 """
 
-__revision__ = "$Id: MonteCarlo_t.py,v 1.1 2009/12/10 16:30:44 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MonteCarlo_t.py,v 1.2 2010/01/04 16:15:14 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
@@ -18,30 +18,32 @@ class MonteCarloTestCase(unittest.TestCase):
 
     def testBasicProductionWorkload(self):
         """Basic Production Workload"""
-        units = MonteCarlo(**self.splitArgs)(BasicProductionWorkload)
+        for task in BasicProductionWorkload.taskIterator():
+            units = MonteCarlo(**self.splitArgs)(BasicProductionWorkload, task)
 
-        self.assertEqual(10, len(units))
-        for unit in units:
-            self.assertEqual(1, unit['Jobs'])
-            spec = unit['WMSpec']
-            # ensure new spec object created for each work unit
-            self.assertNotEqual(id(spec), id(BasicProductionWorkload))
-            initialTask = spec.taskIterator().next()
-            self.assertEqual(initialTask.totalEvents(), 100)
+            self.assertEqual(10, len(units))
+            for unit in units:
+                self.assertEqual(1, unit['Jobs'])
+                spec = unit['WMSpec']
+                # ensure new spec object created for each work unit
+                self.assertNotEqual(id(spec), id(BasicProductionWorkload))
+                initialTask = spec.taskIterator().next()
+                self.assertEqual(initialTask.totalEvents(), 100)
 
 
     def testMultiMergeProductionWorkload(self):
         """Multi merge production workload"""
-        units = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload)
+        for task in MultiMergeProductionWorkload.taskIterator():
+            units = MonteCarlo(**self.splitArgs)(MultiMergeProductionWorkload, task)
 
-        self.assertEqual(10.0, len(units))
-        for unit in units:
-            self.assertEqual(1, unit['Jobs'])
-            spec = unit['WMSpec']
-            # ensure new spec object created for each work unit
-            self.assertNotEqual(id(spec), id(BasicProductionWorkload))
-            initialTask = spec.taskIterator().next()
-            self.assertEqual(initialTask.totalEvents(), 100)
+            self.assertEqual(10.0, len(units))
+            for unit in units:
+                self.assertEqual(1, unit['Jobs'])
+                spec = unit['WMSpec']
+                # ensure new spec object created for each work unit
+                self.assertNotEqual(id(spec), id(BasicProductionWorkload))
+                initialTask = spec.taskIterator().next()
+                self.assertEqual(initialTask.totalEvents(), 100)
 
 if __name__ == '__main__':
     unittest.main()

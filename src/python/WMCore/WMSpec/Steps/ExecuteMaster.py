@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.12 2010/05/03 16:44:06 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.13 2010/05/06 16:25:47 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 
@@ -78,6 +78,7 @@ class ExecuteMaster:
         self.toStepDirectory(step)
         executor.initialise(step, job)
         executionObject = executor
+        error = False
         if executor.emulationMode:
             executionObject = executor.emulator
         
@@ -92,6 +93,7 @@ class ExecuteMaster:
             executionObject.execute()
         except WMExecutionFailure, ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
+            error = True
         #TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()
 
@@ -104,7 +106,9 @@ class ExecuteMaster:
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
-        executor.report.setStepStatus(stepName = executor.stepName, status = 0)
+        if not error:
+            executor.report.setStepStatus(stepName = executor.stepName,
+                                          status = 0)
         executor.saveReport()
 
     def toStepDirectory(self, step):

@@ -6,6 +6,8 @@ Basic Emulator for CMSSW Step
 
 """
 from WMCore.WMSpec.Steps.Emulator import Emulator
+from WMCore.FwkJobReport.ReportEmu import ReportEmu
+from WMCore.WMSpec.WMStep import WMStepHelper
 
 class CMSSW(Emulator):
     """
@@ -23,10 +25,15 @@ class CMSSW(Emulator):
         """
         self.step.section_("execution")
         self.step.execution.exitStatus = 0
-        self.step.section_("emulation")
-        self.step.emulation.emulatedBy = str(self.__class__.__name__)
-
-        print "Emulating CMSSW Step"
+        self.step.emulator.emulatedBy = str(self.__class__.__name__)
+        
+        helper = WMStepHelper(self.step)
+        cmsswStep = helper.getTypeHelper()
+        reportMaker = ReportEmu(Job = self.job, WMStep = cmsswStep)
+        self.executor.report = reportMaker()
+        
+        # TODO: touch physical file names to make it look like the files are actually
+        #       produced during emulation
     
     def pre(self):
         '''

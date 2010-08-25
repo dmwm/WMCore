@@ -289,7 +289,9 @@ class ReRecoWorkloadFactory():
         self.emulation = arguments.get("Emulation", False)
 
         # Derived parameters.
-        self.workloadName = "ReReco-%s" % self.processingVersion
+        #self.workloadName = workloadName or "ReReco-%s" % self.processingVersion
+        #DO do: it seems it doesn't break current code - but examin that.
+        self.workloadName = workloadName
         (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = \
                                    self.inputDataset[1:].split("/")
 

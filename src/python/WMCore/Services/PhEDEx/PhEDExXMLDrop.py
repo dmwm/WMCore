@@ -27,7 +27,7 @@ class XMLFileblock(list):
         self.fileblockName = fileblockName
         self.isOpen = isOpen
 
-    def addFile(self, lfn, checksum, size):
+    def addFile(self, lfn, checksums, size):
         """
         _addFile_
 
@@ -35,7 +35,7 @@ class XMLFileblock(list):
 
         """
         self.append(
-            ( lfn, checksum, size, )
+            ( lfn, checksums, size )
             )
         return
 
@@ -49,16 +49,22 @@ class XMLFileblock(list):
         result = IMProvNode("block")
         result.attrs['name'] = self.fileblockName
         result.attrs['is-open'] = self.isOpen
-        for entry in self:
-            #To do: check this appending is needed anymore
-            #I don't think it is; we remove automatic cksum typing, choose correct sum earlier in the chain
-            #checksum="cksum:%s"%entry[1] #add cksum:
-            file = IMProvNode("file")
-            file.attrs['name'] =  entry[0]
-            file.attrs['checksum'] = entry[1]
-            file.attrs['bytes'] =  entry[2]
-
-            result.addNode(file)
+        for lfn, checksums, size in self:
+            # checksums is a comma separated list of key:value pair
+            checksum = ",".join(["%s:%s" % (x, y) for x, y \
+                                 in checksums.items() \
+                                 if y not in (None, '')])
+        for lfn, checksums, size in self:
+            # checksums is a comma separated list of key:value pair
+            formattedChecksums = ",".join(["%s:%s" % (x.lower(), y) for x, y \
+                                           in checksums.items() \
+                                           if y not in (None, '')])
+            result.addNode(
+                IMProvNode("file", None,
+                           lfn = lfn,
+                           checksum = formattedChecksums,
+                           size = size)
+                )
         return result
     
 class XMLDataset(list):
@@ -222,10 +228,13 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
             xmlBlock = dataset.getFileblock(block, "n")
 
         #Any Checksum from DBS is type cksum
-
-        [ xmlBlock.addFile(
-            x['LogicalFileName'],'cksum:%s' % (x['Checksum']) ,x['FileSize']
-            ) for x in blockContent[block]['Files'] ]
+        for x in blockContent[block]['Files']:
+            checksums = {'cksum' : x['Checksum']}
+            if x.get('Adler32') not in (None, ''):
+                checksums['adler32'] = x['Adler32']
+            if x.get('Md5') not in (None, ''):
+            	checksums['md5'] = x['Md5'] 
+            xmlBlock.addFile(x['LogicalFileName'], checksums, x['FileSize'])
 
     improv = spec.save()
     xmlString = improv.makeDOMElement().toprettyxml()

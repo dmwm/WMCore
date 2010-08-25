@@ -70,9 +70,9 @@ class RequestManager(Service):
             argString = str(hash(str(args)))
         file = callname.replace("/", "_") + argString + '.cache'
         if clearCache:
-            self.clearCache(file, verb, args)
+            self.clearCache(file, args, verb)
 
-        f = self.refreshCache(file, verb, callname, args)
+        f = self.refreshCache(file, callname, args, verb = verb)
         result = f.read()
         f.close()
 

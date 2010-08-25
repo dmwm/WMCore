@@ -3,8 +3,8 @@
 Default handler for run failures.
 """
 __all__ = []
-__revision__ = "$Id: DefaultRun.py,v 1.2 2008/09/30 18:25:38 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultJob.py,v 1.1 2009/05/08 13:37:21 afaq Exp $"
+__version__ = "$Revision: 1.1 $"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler

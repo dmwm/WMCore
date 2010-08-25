@@ -5,8 +5,8 @@ Slave used for default run failure handler.
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultRunSlave.py,v 1.2 2008/09/30 18:25:38 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+    "$Id: DefaultJobSlave.py,v 1.1 2009/05/08 13:37:21 afaq Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import logging
 import threading

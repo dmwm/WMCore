@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.76 2010/02/25 21:44:19 swakef Exp $"
-__version__ = "$Revision: 1.76 $"
+__revision__ = "$Id: WorkQueue.py,v 1.77 2010/02/25 21:45:30 swakef Exp $"
+__version__ = "$Revision: 1.77 $"
 
 
 import time
@@ -219,24 +219,21 @@ class WorkQueue(WorkQueueBase):
                 self.logger.error(msg % (pullingQueueUrl, str(ex)))
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
 
-        for match in matches:
-            wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-            trans = self.beginTransaction()
-            if self.params['PopulateFilesets']:
+        with self.transactionContext():
+            for match in matches:
+                wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
 
-                sub = self._wmbsPreparation(match, wmSpecInfo)
+                if self.params['PopulateFilesets']:
+                    self._wmbsPreparation(match, wmSpecInfo)
+                    self.setStatus('Acquired', match['id'], 'id', pullingQueueUrl)
+                else:
+                    status = pullingQueueUrl and 'Negotiating' or 'Acquired'
+                    self.setStatus(status, match['id'], 'id', pullingQueueUrl)
 
-                self.setStatus('Acquired', match['id'], 'id', pullingQueueUrl)
-
-            else:
-                status = pullingQueueUrl and 'Negotiating' or 'Acquired'
-                self.setStatus(status, match['id'], 'id', pullingQueueUrl)
-            self.commitTransaction(trans)
-
-            wmSpecInfo['element_id'] = match['id']
-            results.append(wmSpecInfo)
+                wmSpecInfo['element_id'] = match['id']
+                results.append(wmSpecInfo)
 
         return results
 
@@ -355,10 +352,10 @@ class WorkQueue(WorkQueueBase):
         totalUnits = self._splitWork(wmspec, parentQueueId)
 
         # Do database stuff in one quick loop
-        trans = self.beginTransaction()
-        for unit in totalUnits:
-            self._insertWorkQueueElement(unit)
-        self.commitTransaction(trans)
+        with self.transactionContext():
+            for unit in totalUnits:
+                self._insertWorkQueueElement(unit)
+
         return len(totalUnits)
 
 
@@ -434,10 +431,9 @@ class WorkQueue(WorkQueueBase):
             to_update[item['Status']].add(my_item['Id'])
 
         self.logger.debug('Synchronise() updates: %s' % str(to_update))
-        trans = self.beginTransaction()
-        for status, items in to_update.items():
-            self.setStatus(status, items, source = child_url)
-        self.commitTransaction(trans)
+        with self.transactionContext():
+            for status, items in to_update.items():
+                self.setStatus(status, items, source = child_url)
 
         # return to the child queue the elements that it needs to update
         self.logger.debug('Updates to child queue: %s' % str(child_update))
@@ -490,14 +486,14 @@ class WorkQueue(WorkQueueBase):
 
         uniqueLocations = set(sum(mapping.values(), []))
 
-        trans = self.beginTransaction()
-        if uniqueLocations:
-            self._insertSite(list(uniqueLocations))
+        with self.transactionContext():
+            if uniqueLocations:
+                self._insertSite(list(uniqueLocations))
 
-        mappingAct = self.daofactory(classname = "Site.UpdateDataSiteMapping")
-        mappingAct.execute(mapping, fullResync, conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
-        self.commitTransaction(trans)
+            mappingAct = self.daofactory(classname = "Site.UpdateDataSiteMapping")
+            mappingAct.execute(mapping, fullResync, conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
+
 
     def pullWork(self, resources = None):
         """
@@ -529,10 +525,9 @@ class WorkQueue(WorkQueueBase):
                         totalUnits.extend(self._splitWork(wmspec,
                                                          element['element_id']))
 
-                    trans = self.beginTransaction()
-                    for unit in totalUnits:
-                        self._insertWorkQueueElement(unit)
-                    self.commitTransaction(trans)
+                    with self.transactionContext():
+                        for unit in totalUnits:
+                            self._insertWorkQueueElement(unit)
         return len(totalUnits)
 
     def updateParent(self, full = False):
@@ -578,11 +573,10 @@ class WorkQueue(WorkQueueBase):
             # e.g. if request is canceled at top level
             if result:
                 msg = "Parent queue status override to %s for %s"
-                trans = self.beginTransaction()
-                for status, items in result.items():
-                    self.logger.info(msg % (status, list(items)))
-                    self.setStatus(status, items, id_type = 'parent_queue_id')
-                self.commitTransaction(trans)
+                with self.transactionContext():
+                    for status, items in result.items():
+                        self.logger.info(msg % (status, list(items)))
+                        self.setStatus(status, items, id_type = 'parent_queue_id')
 
         if full:
             self.lastFullReportToParent = now
@@ -628,28 +622,29 @@ class WorkQueue(WorkQueueBase):
         nJobs = unit['Jobs']
         wmspec = unit['WMSpec']
         task = unit["Task"]
-
         parentQueueId = unit['ParentQueueId']
-        self._insertWMSpec(wmspec)
-        self._insertWMTask(wmspec.name(), task)
 
-        if primaryInput:
-            self._insertInputs(primaryInput, parentInputs)
+        with self.transactionContext():
+            self._insertWMSpec(wmspec)
+            self._insertWMTask(wmspec.name(), task)
 
-        wqAction = self.daofactory(classname = "WorkQueueElement.New")
-        parentFlag = parentInputs and 1 or 0
-        priority = wmspec.priority() or 1
+            if primaryInput:
+                self._insertInputs(primaryInput, parentInputs)
 
-        elementID = wqAction.execute(wmspec.name(), task.name(), primaryInput, nJobs,
-                         priority, parentFlag, parentQueueId, conn = self.getDBConn(),
-                         transaction = self.existingTransaction())
+            wqAction = self.daofactory(classname = "WorkQueueElement.New")
+            parentFlag = parentInputs and 1 or 0
+            priority = wmspec.priority() or 1
 
-        whitelist = task.siteWhitelist()
-        if len(whitelist) != 0:
-            self._insertWhiteList(elementID, whitelist)
-        blacklist = task.siteBlacklist()
-        if len(blacklist) != 0:
-            self._insertBlackList(elementID, blacklist)
+            elementID = wqAction.execute(wmspec.name(), task.name(), primaryInput, nJobs,
+                             priority, parentFlag, parentQueueId, conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+
+            whitelist = task.siteWhitelist()
+            if len(whitelist) != 0:
+                self._insertWhiteList(elementID, whitelist)
+            blacklist = task.siteBlacklist()
+            if len(blacklist) != 0:
+                self._insertBlackList(elementID, blacklist)
         return elementID
 
     def _insertWMSpec(self, wmSpec):

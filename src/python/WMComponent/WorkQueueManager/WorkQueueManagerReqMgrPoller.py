@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.2 2010/02/23 17:46:03 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.3 2010/02/25 21:45:30 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import re
@@ -30,8 +30,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
     def algorithm(self, parameters):
         """
         retrive workload (workspec) from RequestManager
-	"""
-        myThread = threading.currentThread()
+	    """
         self.wq.logger.info("Contacting Request manager for more work %s" % self.reqMgr.__class__)
         if self.retrieveCondition():
             try:
@@ -43,33 +42,30 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             if not workLoads:
                 self.wq.logger.info("No work retrieved")
                 return
-            self.wq.logger.info("work load url list %s" % workLoads.__class__.__name__)
-            self.wq.logger.info(workLoads)
+            self.wq.logger.debug("work load url list %s" % workLoads.__class__.__name__)
+            self.wq.logger.debug(workLoads)
             #TODO: Same functionality as WorkQueue.pullWork() - combine
-            work, units = [], []
-            for workLoadUrl in workLoads.values():
+            work = 0
+            for reqName, workLoadUrl in workLoads.items():
                 wmspec = WMWorkloadHelper()
                 wmspec.load(workLoadUrl)
-                work.extend(self.wq._splitWork(wmspec))
+                units = self.wq._splitWork(wmspec)
 
-            self.wq.logger.info("Converted to work: %s" % str(work))
-            myThread.transaction.begin()
-            for unit in work:
-                # shouldn't be calling this method, add similar public api
-                units.append(self.wq._insertWorkQueueElement(unit))
-            myThread.transaction.commit()
-                
-            try:
-                self.sendConfirmationToReqMgr(workLoads.keys())
-            except StandardError, ex:
-                self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
-                #TODO: Warning if this fails it is not retried - must fix
-                #Temporarilly fail obtained units
-                #FIXME: Another issue sendConfirmation is not atomic!!
-                self.wq.logger.error("Cancelling obtained work")
-                self.wq.cancelWork(units)
+                # Process each request in a new transaction - performance hit?
+                # Done as reporting back to ReqMgr is done per request not bulk
+                with self.wq.transactionContext():
+                    for unit in units:
+                        self.wq._insertWorkQueueElement(unit)
+                    try:
+                        self.reqMgr.postAssignment(reqName)
+                    except StandardError, ex:
+                        self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
+                        self.wq.logger.error('Request "%s" not queued' % reqName)
+                work += len(units)
 
+            self.logger.info("%s element(s) obtained from RequestManager" % work)
         return
+
 
     def retrieveCondition(self):
         """
@@ -78,7 +74,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         i.e. thredshod on workqueue 
         """
         return True
-    
+
     def retrieveWorkLoadFromReqMgr(self):
         """
         retrieveWorkLoad
@@ -89,12 +85,12 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         #wmAgentUrl = "ralleymonkey.com"
         result = self.reqMgr.getAssignment(self.config.get('teamName', ''))
         return result
-        
-        
-    def sendConfirmationToReqMgr(self, requestNames):
-        """
-        """
-        #TODO: allow bulk post
-        for requestName in requestNames:
-            result = self.reqMgr.postAssignment(requestName)
-        
+
+    # Reuse this when bulk updates supported
+#    def sendConfirmationToReqMgr(self, requestNames):
+#        """
+#        """
+#        #TODO: allow bulk post
+#        for requestName in requestNames:
+#            result = self.reqMgr.postAssignment(requestName)
+

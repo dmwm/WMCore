@@ -5,8 +5,8 @@ Defines default config values for JobAccountant specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.4 2010/01/28 14:21:42 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.5 2010/01/28 14:39:38 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 
@@ -32,5 +32,6 @@ config.WorkQueueManager.pollInterval = 10
 # add parameters for global or local queue if default param is not what you want
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams['CacheDir'] = os.path.join(config.WorkQueueManager.componentDir, 'wf')
+config.WorkQueueManager.queueParams['ParentQueue'] = config.WorkQueueManager.serviceUrl
 # used to identify (contact) this queue. May (or may not) be HTTPFrontend url
 config.WorkQueueManager.queueParams['QueueURL'] = 'http://%s' % os.uname()[1]

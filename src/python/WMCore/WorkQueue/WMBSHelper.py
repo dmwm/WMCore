@@ -9,8 +9,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.38 2010/08/16 19:16:23 sryu Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.39 2010/08/16 19:20:39 sryu Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import logging
 import threading
@@ -214,6 +214,8 @@ class WMBSHelper(WMConnectionBase):
             self.addFiles(dbsBlock)
         #For MC case
         #else:
+        # add MC fake files for each subscription.
+        # this is needed for JobCreator trigger: commented out for now.
         #    self.addMCFakeFile()
         
         self.commitTransaction(existingTransaction = False)

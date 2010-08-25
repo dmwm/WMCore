@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.20 2010/07/20 20:28:54 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.21 2010/07/21 15:40:27 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import unittest
 import threading
@@ -188,7 +188,7 @@ class JobSubmitterTest(unittest.TestCase):
         for site in self.sites:
             resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            minSlots = 1000, maxSlots = 10000)
+                                            maxSlots = 10000)
 
 
         self.testDir = self.testInit.generateWorkDir()
@@ -752,7 +752,7 @@ class JobSubmitterTest(unittest.TestCase):
         resourceControl = ResourceControl()
         resourceControl.insertSite(siteName = siteName, seName = siteName, ceName = ceName)
         resourceControl.insertThreshold(siteName = siteName, taskType = 'Processing', \
-                                        minSlots = 1000, maxSlots = 10000)
+                                        maxSlots = 10000)
         
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -1009,7 +1009,7 @@ class JobSubmitterTest(unittest.TestCase):
         resourceControl = ResourceControl()
         for site in self.sites:
             resourceControl.insertThreshold(siteName = site, taskType = 'Silly', \
-                                            minSlots = 1, maxSlots = 1)
+                                            maxSlots = 1)
 
 
 

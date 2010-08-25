@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.45 2010/02/11 22:04:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: Root.py,v 1.46 2010/02/15 21:15:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.46 $"
 
 # CherryPy
 import cherrypy
@@ -22,10 +22,6 @@ from WMCore.Configuration import loadConfigurationFile
 from optparse import OptionParser
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
-# Database access and DAO 
-#from WMCore.Database.DBCore import DBInterface
-#from WMCore.Database.DBFactory import DBFactory
-#from WMCore.DAOFactory import DAOFactory
 # Logging
 import WMCore.WMLogging
 import logging 
@@ -34,18 +30,32 @@ from WMCore.WebTools.Welcome import Welcome
 from WMCore.Agent.Harness import Harness
 
 class Root(WMObject, Harness):
-    def __init__(self, config):
-        Harness.__init__(self, config, compName = "Webtools")
-        self.appconfig = config.section_(self.config.Webtools.application)
-        self.app = self.config.Webtools.application
-        self.homepage = None
-        self.secconfig = getattr(config, "SecurityModule", None)     
+    def __init__(self, config, webApp = None):
+        self.homepage = None        
+        if webApp == None:
+            Harness.__init__(self, config, compName = "Webtools")
+            self.appconfig = config.section_(self.config.Webtools.application)
+            self.app = self.config.Webtools.application
+            self.secconfig = config.component_("SecurityModule")
+            self.serverConfig = config.section_("Webtools")
+        else:
+            Harness.__init__(self, config, compName = webApp)            
+            self.appconfig = config.section_(webApp)            
+            self.app = webApp
+            self.secconfig = getattr(self.appconfig, "security")
+            self.serverConfig = config.section_(webApp).section_("server")
+            self.coreDatabase = config.section_("CoreDatabase")
 
-    def initInThread(self):
         return
 
-    def preInitialization(self):
+    def startComponent(self):
+        """
+        _startComponent_
+
+        Called by the WMAgent harness code.  This will never return.
+        """
         self.start()
+        return
     
     def validateConfig(self):
         # Check that the configuration has the required sections
@@ -57,43 +67,23 @@ class Root(WMObject, Harness):
             assert config_dict.has_key(key), msg
 
     def configureCherryPy(self):
-        #Configure CherryPy
-        try:
-            cpconfig.update ({"server.environment": self.config.Webtools.environment})
-        except:
-            cpconfig.update ({"server.environment": 'production'})
-        try:
-            cpconfig.update ({"server.socket_port": int(self.config.Webtools.port)})
-        except:
-            cpconfig.update ({"server.socket_port": 8080})
-        try:
-            cpconfig.update ({"server.socket_host": self.config.Webtools.host})
-        except:
-            cpconfig.update ({"server.socket_host": 'localhost'})
-        try:
-            cpconfig.update ({'tools.expires.secs': int(self.config.Webtools.expires)})
-        except:
-            cpconfig.update ({'tools.expires.secs': 300})
-        try:
-            cpconfig.update ({'log.screen': bool(self.config.Webtools.log_screen)})
-        except:
-            cpconfig.update ({'log.screen': True})
-        try:
-            cpconfig.update ({'log.access_file': self.config.Webtools.access_log_file})
-        except:
-            cpconfig.update ({'log.access_file': None})
-        try:
-            cpconfig.update ({'log.error_file': self.config.Webtools.error_log_file})
-        except:
-            cpconfig.update ({'log.error_file': None})
-        try:
-            log.error_log.setLevel(self.config.Webtools.error_log_level)
-        except:     
-            log.error_log.setLevel(logging.DEBUG)
-        try:
-            log.access_log.setLevel(self.config.Webtools.access_log_level)
-        except:
-            log.access_log.setLevel(logging.DEBUG)
+        """
+        _configureCherryPy_
+
+        """
+        configDict = self.serverConfig.dictionary_()
+
+        cpconfig["server.environment"] = configDict.get("environment", "production")
+        cpconfig["server.socket_port"] = configDict.get("port", 8080)
+        cpconfig["server.socket_host"] = configDict.get("host", "localhost")
+        cpconfig["tools.expires.secs"] = configDict.get("expires", 300)
+        cpconfig["log.screen"] = bool(configDict.get("log_screen", True))
+        cpconfig["log.access_file"] = configDict.get("access_log_file", None)
+        cpconfig["log.error_file"] = configDict.get("error_log_file", None)
+        
+        log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
+        log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
+
         cpconfig.update ({
                           'tools.expires.on': True,
                           'tools.response_headers.on':True,
@@ -102,13 +92,12 @@ class Root(WMObject, Harness):
                           'tools.encode.on': True,
                           'tools.gzip.on': True
                           })
-        #cpconfig.update ({'request.show_tracebacks': False})
-        #cpconfig.update ({'request.error_response': self.handle_error})
-        #cpconfig.update ({'tools.proxy.on': True})
-        #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})
 
         # SecurityModule config
-        if self.secconfig:
+        if len(self.secconfig.listSections_()) > 0:
+            if self.secconfig.listSections_() == ["componentDir"]:
+                return
+            
             from WMCore.WebTools.OidConsumer import OidConsumer
             
             cpconfig.update({'tools.sessions.on': True,
@@ -133,6 +122,7 @@ class Root(WMObject, Harness):
                                    context=self.app, 
                                    severity=logging.DEBUG, 
                                    traceback=False)
+        return
 
     def loadPages(self):
         factory = WMFactory('webtools_factory')
@@ -155,9 +145,13 @@ class Root(WMObject, Harness):
                 pass
     
     def mountPage(self, view, mount_point, globalconf, factory):
+        """
+        _mountPage_
+
+        """
         config = Configuration()
         component = config.component_(view._internal_name)
-        component.application = self.config.Webtools.application
+        component.application = self.app
         for k in globalconf.keys():
             # Add the global config to the view
             component.__setattr__(k, globalconf[k])
@@ -165,6 +159,17 @@ class Root(WMObject, Harness):
         dict = view.dictionary_()
         for k in dict.keys():
             component.__setattr__(k, dict[k])
+
+        if not type(component.database) == str:
+            print component.database.listSections_()
+            if len(component.database.listSections_()) == 0:
+                if len(self.coreDatabase.listSections_()) > 0:
+                    component.database.connectUrl = self.coreDatabase.connectUrl
+                    if hasattr(self.coreDatabase, "socket"):
+                        component.database.socket = self.coreDatabase.socket
+
+        print component.database
+
         # component now contains the full configuration (global + view)  
         # use this throughout 
         log("loading %s" % component._internal_name, context=self.app, 

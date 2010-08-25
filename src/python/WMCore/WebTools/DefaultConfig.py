@@ -8,6 +8,8 @@
 # This includes committing configuration files to appropriate locations in CVS.
 #
 from WMCore.Configuration import Configuration
+import WMCore.WMInit
+import os.path
 from os import environ
 
 config = Configuration()
@@ -25,7 +27,7 @@ config.Webtools.application = 'WebtoolsDocs'
 # This is the config for the application
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
-config.WebtoolsDocs.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools'
+config.WebtoolsDocs.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools')
 config.WebtoolsDocs.admin = 'your@email.com'
 config.WebtoolsDocs.title = 'CMS WMCore/WebTools Documentation'
 config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
@@ -84,14 +86,14 @@ maint = config.WebtoolsDocs.views.section_('maintenance')
 
 active.section_('masthead')
 active.masthead.object = 'WMCore.WebTools.Masthead'
-active.masthead.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/Masthead'
+active.masthead.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/Masthead')
 
 # This is how you would configure a RESTful service
 # You need to install py2-sqlalchemy to be able to use it. Put it on the
 # spec file of your webtools package
 #active.section_('rest')
 #active.rest.object = 'WMCore.WebTools.RESTApi'
-#active.rest.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/'
+#active.rest.templates =os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/' )
 # Dummy in memory SQLite DB
 #active.rest.database = 'sqlite://'
 #active.rest.section_('model')
@@ -99,4 +101,4 @@ active.masthead.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebT
 #active.rest.section_('formatter')
 #active.rest.formatter.object = 'RESTFormatter'
 # You could override the templates/database here, for instance:
-#active.rest.formatter.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/'
+#active.rest.formatter.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/')

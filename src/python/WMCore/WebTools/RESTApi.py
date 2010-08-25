@@ -7,20 +7,20 @@ application to point at this class, with a model and formatter class configured:
 
 active.section_('rest')
 active.rest.object = 'WMCore.WebTools.RESTApi'
-active.rest.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/'
+active.rest.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/')
 active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
 active.rest.section_('model')
 active.rest.model.object = 'RESTModel'
 active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
-active.rest.model.templates = environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools/'
+active.rest.model.templates = os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/')
 active.rest.section_('formatter')
 active.rest.formatter.object = 'RESTFormatter'
 active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.34 2010/01/12 19:04:33 diego Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: RESTApi.py,v 1.35 2010/02/04 22:21:04 meloam Exp $"
+__version__ = "$Revision: 1.35 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml, make_rfc_timestamp

@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.7 2009/12/21 16:06:48 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.8 2010/01/11 21:03:59 evansde Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 
@@ -26,8 +26,8 @@ class ExecuteMaster:
     instead of the executor
 
     """
-    def __init__(self, emulator = None):
-        self.emulator = emulator
+    def __init__(self):
+        pass    
 
 
 
@@ -51,14 +51,8 @@ class ExecuteMaster:
             helper = WMStepHelper(step)
             stepType = helper.stepType()
             stepName = helper.name()
-            emu = None
-            if self.emulator != None:
-                emu = self.emulator.getEmulator(stepName)
-            if emu != None:
-                emu.emulate(step)
-            else:
-                executor = StepFactory.getStepExecutor(stepType)
-                self.doExecution(executor, step, wmbsJob)
+            executor = StepFactory.getStepExecutor(stepType)
+            self.doExecution(executor, step, wmbsJob)
             myThread.watchdogMonitor.notifyStepEnd(step)
 
         myThread.watchdogMonitor.notifyJobEnd(task)
@@ -75,25 +69,29 @@ class ExecuteMaster:
         TODO: pre/post outcome can change the next execution task, need to
               ensure that this happens
 
-        TODO: Pass in emulators
 
         """
         self.toStepDirectory(step)
         executor.initialise(step, job)
-        preOutcome = executor.pre()
+        executionObject = executor
+        if executor.emulationMode:
+            executionObject = executor.emulator
+        
+        
+        preOutcome = executionObject.pre()
         if preOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
             print "TODO: Implement Me!!!"
             executor.saveReport()
             self.toTaskDirectory()
         try:
-            executor.execute()
+            executionObject.execute()
         except WMExecutionFailure, ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
         #TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()
 
-        postOutcome = executor.post()
+        postOutcome = executionObject.post()
         if postOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
             print "TODO: Implement Me!!!"

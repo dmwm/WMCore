@@ -11,6 +11,7 @@ import sys
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.WMStep import WMStepHelper
+from WMCore.WMSpec.Steps.StepFactory import getStepEmulator
 
 getStepName = lambda step: WMStepHelper(step).name()
 
@@ -59,8 +60,9 @@ class Executor:
     def __init__(self):
         self.report = None
         self.diagnostic = None
-
-
+        self.emulator = None
+        self.emulationMode = False
+        
     def initialise(self, step, job):
         """
         _initialise_
@@ -84,6 +86,21 @@ class Executor:
         self.step.execution.reportLocation = "%s/Report.pkl" % (
             self.stepSpace.location,
             )
+
+        #  //
+        # //  Does the step contain settings for an emulator?
+        #//   If so, load it up
+        
+        emulatorName = getattr(self.step.emulator, "emulatorName", None)
+        if emulatorName != None:
+            self.emulator = getStepEmulator(emulatorName)
+            self.emulator.initialise(self)
+            self.emulationMode = True
+            
+            
+            
+            
+            
 
         return
 

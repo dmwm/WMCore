@@ -5,8 +5,8 @@ Slave used for default run failure handler.
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultJobSlave.py,v 1.1 2009/05/08 13:37:21 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+    "$Id: DefaultJobSlave.py,v 1.2 2009/05/08 16:35:52 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -15,14 +15,14 @@ import random
 
 from WMComponent.ErrorHandler.Handler.DefaultSlave import DefaultSlave
 
-class DefaultRunSlave(DefaultSlave):
+class DefaultJobSlave(DefaultSlave):
     """
     The default slave for a run failure message
     """
 
     def __call__(self, parameters):
         DefaultSlave.__call__(self, parameters)
-        logging.debug("I am the default run slave called with parameters:"\
+        logging.debug("I am the default job slave called with parameters:"\
             +str(parameters))
         sleepTime = random.randint(0, 5)
         myThread = threading.currentThread()

@@ -1,10 +1,14 @@
 #!/usr/bin/env python
+"""
+_DBObject_t_
+
+"""
+
+__revision__ = "$Id: DBObjects_t.py,v 1.22 2010/05/19 09:56:33 spigafi Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
-import threading
-import string
 import time
-from datetime import date
 import logging
 
 # Import key features
@@ -19,19 +23,24 @@ from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
 from WMCore.BossLite.Common.Exceptions  import DbError
 
 class DBObjectsTest(unittest.TestCase):
+    """
+    Unit-test for DbObjects
+    """
     
     def setUp(self):
         """
         _setUp_
         """
+        
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.setSchema(customModules = ["WMCore.BossLite"],
                                 useDefault = False)
-
-
+        
+        return
+    
+    
     def tearDown(self):
         """
         Tear down database
@@ -40,15 +49,14 @@ class DBObjectsTest(unittest.TestCase):
         self.testInit.clearDatabase()
 
         return
-
-
+    
+    
     def testA_CreateTaskObjects(self):
         """
         Test creation and destruction of task objects.
         """
         
         db = BossLiteDBWM()
-        myThread = threading.currentThread()
         
         parameters = {'serverName': 'Taginae', 'name': 'Narses'}
         task = Task(parameters = parameters)
@@ -59,8 +67,7 @@ class DBObjectsTest(unittest.TestCase):
         
         self.assertTrue(task.exists(db))
         
-        # Now looks at what's actually there
-        queryResult = db.executeSQL(query = "SELECT * FROM bl_task")
+        queryResult = db.executeSQL(query = """ SELECT * FROM bl_task """)
         taskInfo = queryResult[0].fetchall()[0].values()
         
         self.assertTrue('Narses' in taskInfo)
@@ -70,13 +77,12 @@ class DBObjectsTest(unittest.TestCase):
         task.data['outputDirectory'] = 'Zama'
         task.save(db)
         
-        queryResult = db.executeSQL(query = "SELECT * FROM bl_task")
+        queryResult = db.executeSQL(query = """ SELECT * FROM bl_task """)
         taskInfo = queryResult[0].fetchall()[0].values()
         
         self.assertTrue('Cannae' in taskInfo)
         self.assertTrue('Zama' in taskInfo)
 
-        # Load by ID, test save
         task2 = Task(parameters = {'id': 1})
         task2.load(db)
 
@@ -85,7 +91,6 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(task2.data['startDirectory'], 'Cannae')
         self.assertEqual(task2.data['outputDirectory'], 'Zama')
 
-        # Load by name
         task3 = Task(parameters = {'name': 'Narses'})
         task3.load(db)
 
@@ -104,19 +109,19 @@ class DBObjectsTest(unittest.TestCase):
         self.assertFalse(task4.exists(db))
         
         return
-
-
+    
+    
     def testB_CreateJobObjects(self):
         """
         Test creation and destruction of job objects
-
         """
         
         db = BossLiteDBWM()
         
         task = Task()
         task.create(db)
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
+                                            'taskId': task.exists(db)})
         
         self.assertFalse(job.exists(db))
         
@@ -128,16 +133,13 @@ class DBObjectsTest(unittest.TestCase):
         job.save(db)
         
         self.assertTrue(job.exists(db))
-
-        # Can we load by id?  Test our ability to save parameters as well
-        # ATTENTION: taskID and jobID must be always present to consistency purposes
-        #            'name' is a UUID by default if not specified
-        job2 = Job(parameters = {'id': 1, 'jobId': 101, 'taskId': task.exists(db)})
+        
+        job2 = Job(parameters = {'id': 1, 'jobId': 101, 
+                                        'taskId': task.exists(db)})
         job2.load(db)
         for key in job2.data.keys():
             self.assertEqual(job2.data[key], job.data[key])
             
-        # Test Delete
         self.assertTrue(job2.exists(db))
         
         job2.remove(db)
@@ -150,20 +152,22 @@ class DBObjectsTest(unittest.TestCase):
 
         return
     
-
+    
     def testC_CreateRunningJobs(self):
         """
         Test basic creation, deletion, etc. for RunningJobs
-
         """
         
         db = BossLiteDBWM()
         
         task = Task()
         task.create(db)
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
+                                            'taskId': task.exists(db)})
         job.create(db)
-        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
+        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 
+                                          'taskId': task.exists(db), 
+                                          'submission': 1})
         
         self.assertFalse(runJob.exists(db))
         
@@ -179,13 +183,7 @@ class DBObjectsTest(unittest.TestCase):
         runJob.data['startTime'] = None # 0 -> 1970-01-01 00:00:00
         runJob.data['stopTime'] = tmpTime
         runJob.save(db)
-        
-        # DEBUG
-        # queryResult = db.executeSQL(query = "SELECT * FROM bl_runningjob")
-        # runjobInfo = queryResult[0].fetchall()[0].values()
-        # print runjobInfo
 
-        # Test save() and load() by loading file by ID
         runJob2 = RunningJob(parameters = {'id': 1})
         runJob2.load(db)
         
@@ -195,8 +193,9 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(runJob2.data['startTime'], 0 ) # 0 -> None
         self.assertEqual(runJob2.data['stopTime'], tmpTime )
         
-        # Test load by parameters
-        runJob3 = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
+        runJob3 = RunningJob(parameters = {'jobId': job.data['jobId'], 
+                                           'taskId': task.exists(db), 
+                                           'submission': 1} )
         runJob3.load(db)
         
         for key in ['submission', 'jobId', 'taskId', 'state', 'lfn']:
@@ -207,30 +206,34 @@ class DBObjectsTest(unittest.TestCase):
         # What happens if you load a non-existant job?
         # Note: This test works, but it makes a mess, so I commented it out
         # Uncomment if you want to check it.
-        #runJob4 = RunningJob(parameters = {'jobId': 'retarded', 'taskId': task.exists(), 'submission': 1})
+        #runJob4 = RunningJob(parameters = {'jobId': 'retarded', 
+        #                                    'taskId': task.exists(), 
+        #                                    'submission': 1} )
         #runJob4.load()
 
         runJob3.remove(db)
         self.assertFalse(runJob3.exists(db))
         
         return
-
-
+    
+    
     def testD_TestAssociations(self):
         """
         Test association between jobs, tasks, etc.
-
         """
         
         db = BossLiteDBWM()
         
         task = Task()
         task.create(db)
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
+                                            'taskId': task.exists(db)})
         # WFT??? Yes, it is necessary for consistency... orrible!!!
         job.data['submissionNumber'] = 1
         job.create(db)
-        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
+        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 
+                                            'taskId': task.exists(db), 
+                                            'submission': 1})
         runJob.create(db)
         
         self.assertTrue(job.exists(db))
@@ -243,7 +246,8 @@ class DBObjectsTest(unittest.TestCase):
 
         self.assertTrue(job.runningJob != None)
         
-        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
+                                                'taskId': task.exists(db)})
         
          # WFT??? Yes, it is necessary for consistency... orrible!!!
         job2.data['submissionNumber'] = runJob.data['submission']
@@ -264,7 +268,6 @@ class DBObjectsTest(unittest.TestCase):
         
         self.assertEqual(runJob.data['closed'], 'Y')
 
-        # Get jobs from task
         self.assertEqual(task.jobs, [])
         
         task.loadJobs(db)
@@ -273,25 +276,24 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(task.jobs[0]['jobId'], 101)
         self.assertEqual(task.jobs[0]['taskId'], task.exists(db))
 
-        # Check if task.update works
-        # This recursively tests if job.update works
         task.jobs[0].newRunningInstance(db)
         task.jobs[0].runningJob['service'] = 'Unserved'
         
         task.update(db)
-        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 
+                                            'taskId': task.exists(db)})
         job2.load(db)
         
         job2.getRunningInstance(db)
-        self.assertEqual(job2.runningJob['service'], task.jobs[0].runningJob['service'])
+        self.assertEqual(job2.runningJob['service'], 
+                                    task.jobs[0].runningJob['service'])
         
         return
     
-
+    
     def testE_CreateTaskJobsCascade(self):
         """
         Test save task and jobs in cascade on DB
-
         """
         
         db = BossLiteDBWM()
@@ -325,18 +327,17 @@ class DBObjectsTest(unittest.TestCase):
         
         for jobId in range(0, nTestJobs):
             for key in ['name', 'events'] :
-                self.assertEqual(task.jobs[jobId].data[key], task2.jobs[jobId].data[key])
+                self.assertEqual(task.jobs[jobId].data[key], 
+                                            task2.jobs[jobId].data[key])
           
         return
     
-
+    
     def testF_DeepUpdate(self):
         """
         Test save task and jobs in cascade on DB
-
         """
         
-        myThread = threading.currentThread()
         db = BossLiteDBWM()
         nTestJobs = 13
         
@@ -370,14 +371,16 @@ class DBObjectsTest(unittest.TestCase):
         
         task.update(db, deep=False)
 
-        queryResult = db.executeSQL(query = "SELECT * FROM bl_job WHERE name = 'Doctore-0'")
+        queryResult = db.executeSQL(query = """ SELECT * FROM bl_job
+                                                WHERE name = 'Doctore-0' """)
         jobInfo = queryResult[0].fetchall()[0].values()
         
         self.assertEqual(jobInfo[5], tmp)
         
         task.update(db, deep=True)
         
-        queryResult = db.executeSQL(query = "SELECT * FROM bl_job WHERE name = 'Doctore-0'")
+        queryResult = db.executeSQL(query = """ SELECT * FROM bl_job
+                                                WHERE name = 'Doctore-0' """)
         jobInfo = queryResult[0].fetchall()[0].values()
         
         self.assertNotEqual(jobInfo[5], tmp)
@@ -388,7 +391,6 @@ class DBObjectsTest(unittest.TestCase):
     def testG_JobRunningJob(self):
         """
         Test load/save RunningJob correctly
-
         """ 
         
         db = BossLiteDBWM()
@@ -449,11 +451,10 @@ class DBObjectsTest(unittest.TestCase):
         
         return
     
-
+    
     def testH_ExceptionHandling(self):
         """
         Test Exception Handling for Task, ...
-
         """ 
         
         db = BossLiteDBWM()
@@ -464,7 +465,7 @@ class DBObjectsTest(unittest.TestCase):
             task.load(db)
         except Exception, ex:
             msg = str(ex)
-            self.assertTrue( (string.find(msg, "task instances corresponds")) != -1 )
+            self.assertTrue( (msg.find("task instances corresponds")) != -1 )
         
         # triggering Task removal before save -> exception raised
         task2 = Task(parameters= {'id': 5})
@@ -472,14 +473,14 @@ class DBObjectsTest(unittest.TestCase):
             task2.remove(db)
         except Exception, ex:
             msg = str(ex)
-            self.assertTrue( (string.find(msg, "since it is not in the database")) != -1 )
+            self.assertTrue( (msg.find("is not in the database")) != -1 )
         
         return
 
     
 class DBObjectsPerformance(unittest.TestCase):
     """
-    DBObjectsPerformance unit-test
+    Simple unit-test to measure DB performances
     """
     
     numtask = 1
@@ -493,8 +494,10 @@ class DBObjectsPerformance(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-
-
+        
+        return
+    
+    
     def tearDown(self):
         """
         Tear down database
@@ -502,6 +505,8 @@ class DBObjectsPerformance(unittest.TestCase):
         
         self.testInit.attemptToCloseDBConnections()
         
+        return
+    
     
     def testA_databaseStartup(self):
         """
@@ -511,6 +516,8 @@ class DBObjectsPerformance(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.BossLite"],
                                 useDefault = False)
         
+        return
+    
     
     def testB_createAndSaveObjects(self):
         """
@@ -525,7 +532,7 @@ class DBObjectsPerformance(unittest.TestCase):
         for t in xrange(self.numtask):
             try:
                 task = Task()
-                task.data['name'] = 'task_%s'%str(t)
+                task.data['name'] = 'task_%s'% str(t)
                 task.create(db)
                 tmpId = task['id']
                 
@@ -533,14 +540,12 @@ class DBObjectsPerformance(unittest.TestCase):
                 
                 task.exists(db)
                 for j in xrange(self.numjob):
-                    parameters = {'name': '%s_job_%s'%(str(t),str(j)), 
+                    parameters = {'name': '%s_job_%s' % (str(t), str(j)), 
                                   'jobId': j, 
                                   'taskId': tmpId }
                     job = Job(parameters)
                     job.data['closed'] = 'N'
-                    
-                    # job.save(db, deep= False)
-                    
+                                        
                     runJob = RunningJob()
                     runJob.data['state'] = 'Commodus'
                     runJob.data['closed'] = 'N'
@@ -564,10 +569,12 @@ class DBObjectsPerformance(unittest.TestCase):
         
         return
     
+    
     def testC_LoadObjects(self):
         """
         testC_databaseIsPersistent
         """
+        
         db = BossLiteDBWM()
         log = logging.getLogger( "DBObjectsPerformance" )
 
@@ -586,6 +593,7 @@ class DBObjectsPerformance(unittest.TestCase):
         
         return
     
+    
     def testD_databaseClean(self):
         """
         testC_databaseIsPersistent
@@ -595,20 +603,21 @@ class DBObjectsPerformance(unittest.TestCase):
         
         return
     
+    
 if __name__ == "__main__":
     # Log performance timing...
     LOG_FILENAME = './DBObjects_performance.txt'
     logging.basicConfig(filename=LOG_FILENAME)
     logging.getLogger( "DBObjectsPerformance" ).setLevel( logging.INFO )
     
-    # -> suite1: check if objects and relations between objects     
+    # -> unitA: check if objects and relations between objects     
     #            matching all the requirements (the default)
-    # -> suite2: run a simple benchmark measuring the time to
+    # -> unitB: run a simple benchmark measuring the time to
     #            save into the db a complete set of objects
-    suite1 = unittest.TestLoader().loadTestsFromTestCase(DBObjectsTest)
-    suite2 = unittest.TestLoader().loadTestsFromTestCase(DBObjectsPerformance)
-    alltests = unittest.TestSuite([suite1, suite2])
+    unitA = unittest.TestLoader().loadTestsFromTestCase(DBObjectsTest)
+    unitB = unittest.TestLoader().loadTestsFromTestCase(DBObjectsPerformance)
+    unitComplete = unittest.TestSuite([unitA, unitB])
 
     # run the unit-test
-    unittest.TextTestRunner(verbosity=3).run(suite1)
+    unittest.TextTestRunner(verbosity=3).run(unitA)
     

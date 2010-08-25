@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.32 2009/11/05 13:33:16 diego Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Root.py,v 1.33 2009/11/19 12:35:59 metson Exp $"
+__version__ = "$Revision: 1.33 $"
 
 # CherryPy
 import cherrypy
@@ -194,7 +194,15 @@ class Root(WMObject):
                     docstring = viewObj.__doc__
                     namesAndDocstrings.append((viewName, docstring))
             tree.mount(Welcome(namesAndDocstrings), "/")
-
+    
+    def start(self):
+        # Configure and start the server 
+        self.configureCherryPy()
+        self.loadPages()        
+        self.makeIndex()
+        engine.start()
+        engine.block()
+        
 if __name__ == "__main__":
     config = __file__.rsplit('/', 1)[0] + '/DefaultConfig.py'
     parser = OptionParser()
@@ -206,8 +214,4 @@ if __name__ == "__main__":
     opts, args = parser.parse_args()
     cfg = loadConfigurationFile(opts.inifile)
     root = Root(cfg)
-    root.configureCherryPy()
-    root.loadPages()        
-    root.makeIndex()
-    engine.start()
-    engine.block()
+    root.start()

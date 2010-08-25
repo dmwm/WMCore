@@ -14,13 +14,14 @@ writing unittests / testing details:
 https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest
 
 
+
 """
 
 
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.2 2010/02/03 14:16:55 maxa Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.3 2010/02/03 17:20:49 maxa Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 
@@ -30,6 +31,7 @@ import logging # import WMCore.WMLogging
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
+from WMCore.DAOFactory import DAOFactory
 
 
 class WorkQueueMonitorService(ServiceInterface):
@@ -48,10 +50,26 @@ class WorkQueueMonitorService(ServiceInterface):
         self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after", 
                                         "elementIDs", "subs", "dictKey"])
         
-        # how to retrieve status of WQ elements
-        # DAO manner
+        # DAO stuff
+        # RESTModel.addDAO() usage: COMP/T0/src/python/T0/DAS/Tier0RESTModel.py
+        # (within WMCore no addDAO example except for WebTools_t/DummyRESTModel.py ...)
         
-        # later using DAO (should use self.addDAO() ...    
+        # AttributeError: 'WorkQueueRESTModel' object has no attribute 'daofactory'
+        self.model.daofactory = DAOFactory(package = "WMCore.WorkQueue.Database",
+                                           logger = self.model,
+                                           dbinterface = self.model.dbi)
+        
+        # WorkQueue.status signature:
+        # status(self, status = None, before = None, after = None, elementIDs = None, dictKey = None)
+        
+        # DAO elements
+        # DAO elements by status
+        # TODO
+        # DAO elements ... which else possibilities to add?
+        
+        self.model.addDAO("GET",  "elements", "Monitor.Elements")
+        self.model.addDAO("POST", "elementsbystatus", "ElementsByStatus", args = ["status"])
+        
         logging.info("%s initialised." % self._myClass)        
         
 

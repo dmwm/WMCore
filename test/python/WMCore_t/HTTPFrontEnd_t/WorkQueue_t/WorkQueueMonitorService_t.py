@@ -13,8 +13,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.1 2010/02/03 14:16:55 maxa Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.2 2010/02/03 17:20:49 maxa Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -160,16 +160,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         errMsg = "Expect data starting with '%s', got '%s'" % (dataPrefix, data)
         assert data.startswith(dataPrefix), errMsg         
         
-
-
                 
-    # return number of WorkQueue elements, perhaps with IDs?
-    # obvious thing - to monitor status of WorkQueue elements identified by IDs
-    # DAS testing - see RESTServerSetup, model class has to be DASFormatter (or just
-    # specified in configuration)
-    # DAO stuff
-    
-    
 
     def XtestElementStatus(self):
         print "testElementStatus()"
@@ -198,7 +189,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         
 
     
-    def testElementStatusAvailable(self):
+    def XtestElementStatusAvailable(self):
         print "testElementStatusAvailable()"
         
         self.globalQueue.queueWork(createProductionSpec())
@@ -220,7 +211,28 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         print "\n\n"
         
         status = data[0]["Status"]
-        assert status == "Available", "Had 'Available' element but status is '%s'" % status  
+        assert status == "Available", "Had 'Available' element but status is '%s'" % status
+        
+        
+    
+    def testElementStatusDAO(self):
+        print "testElementStatusDAO()"
+        
+        self.globalQueue.queueWork(createProductionSpec())
+
+        verb = "GET"
+        url = self.urlbase + "elements"
+        contentType = "application/json"
+        output = {"code": 200, "type": "text/json"} # gets already tested in methodTest
+        
+        data, expires = methodTest(verb, url, contentType = contentType, output = output)
+        
+        data = JsonWrapper.loads(data)
+        
+        print "\n\n"
+        print "data: '%s'" % data
+        print "expires: '%s'" % expires
+        print "\n\n"
         
 
                      

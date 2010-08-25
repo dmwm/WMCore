@@ -14,8 +14,8 @@ The component runs in Poll mode, basically submits itself "Poll" message at the 
 We can introduce some delay in polling, if have to.
 """
 
-__revision__ = "$Id: ErrorHandler.py,v 1.6 2009/05/11 16:49:04 afaq Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ErrorHandler.py,v 1.7 2009/05/12 11:13:12 afaq Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -46,45 +46,10 @@ class ErrorHandler(Harness):
         Initializes plugins for different messages
         """
 
-The error handler pools for error conditions (CreateFailed, SubmitFailed, and JobFailed)
-By looking at wmbs_job table's status filed.
-All the jobs are handled respectively.
-
-
-        # in case nothing was configured we have a fallback.
-
-        if not hasattr(self.config.ErrorHandler, "createFailureHandler"):
-            logging.warning("Using default create failure handler!")
-            self.config.ErrorHandler.createFailureHandler =  \
-                'WMComponent.ErrorHandler.Handler.DefaultCreate'
- 
-
-        if not hasattr(self.config.ErrorHandler, "submitFailureHandler"):
-            logging.warning("Using default submit failure handler!")
-            self.config.ErrorHandler.submitFailureHandler =  \
-                'WMComponent.ErrorHandler.Handler.DefaultSubmit'
-
-       if not hasattr(self.config.ErrorHandler, "runFailureHandler"):
-            logging.warning("Using default run failure handler!")
-            self.config.ErrorHandler.runFailureHandler =  \
-                'WMComponent.ErrorHandler.Handler.DefaultRun'
-
-        # use a factory to dynamically load handlers.
-        factory = WMFactory('generic')
-
-        self.messages['PollCreateFailure'] = \
-            factory.loadObject(\
-                self.config.ErrorHandler.createFailureHandler, self)
- 
-        self.messages['PollSubmitFailure'] = \
-            factory.loadObject(\
-                self.config.ErrorHandler.submitFailureHandler, self)
-
-        self.messages['PollJobFailure'] = \
-            factory.loadObject(self.config.ErrorHandler.jobFailureHandler, self)
-
-        # Resubmit the message so that Manager gets into Polling Mode
+        # Add event loop to worker manager
         myThread = threading.currentThread()
-        myThread.msgService.publish(msg)
-        myThread.transaction.commit()
+        pollInterval = self.config.ErrorHandler.pollInterval
+        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        myThread.workerThreadManager.addWorker(WorkflowManagerPoller(), \
+                                               pollInterval)
 

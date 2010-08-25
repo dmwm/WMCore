@@ -5,9 +5,9 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.4 2009/05/08 17:16:36 afaq Exp $"
-__version__ = "$Revision: 1.4 $"
-
+__revision__ = "$Id: DefaultConfig.py,v 1.5 2009/05/12 11:13:12 afaq Exp $"
+__version__ = "$Revision: 1.5 $"
+__author__ = "anzar@fnal.gov"
 
 from WMCore.Agent.Configuration import Configuration
 
@@ -22,14 +22,11 @@ config.ErrorHandler.namespace = 'WMComponent.ErrorHandler.ErrorHandler'
 config.ErrorHandler.maxThreads = 30
 # maximum number of retries we want for job
 config.ErrorHandler.maxRetries = 10
+# The poll interval at which to look for new filesets
+config.ErrrorHandler.pollInterval = 60
+
+
 # depending on the application an operator can reconfigure what we use.
 # but these are the default settings.
-
-config.ErrorHandler.createFailureHandler = \
-    'WMComponent.ErrorHandler.Handler.DefaultCreate'
-config.ErrorHandler.submitFailureHandler = \
-    'WMComponent.ErrorHandler.Handler.DefaultSubmit'
-config.ErrorHandler.jobFailureHandler = \
-    'WMComponent.ErrorHandler.Handler.DefaultJob'
 
 

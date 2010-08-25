@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.23 2009/02/12 21:23:30 sryu Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Job.py,v 1.24 2009/03/10 19:26:46 sryu Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import datetime
 from sets import Set
@@ -177,13 +177,10 @@ class Job(WMBSBase, WMJob):
         """
         if self.id < 0 or self.name == None:
             self.load()
-
-        jobMaskAction = self.daofactory(classname = "Masks.Load")
-        jobMask = jobMaskAction.execute(self.id, conn = self.getReadDBConn(),
-                                        transaction = self.existingTransaction())
-
-        self.mask.update(jobMask)
-
+        
+        # load mask
+        self.getMask()
+        
         fileAction = self.daofactory(classname = "Jobs.LoadFiles")
         files = fileAction.execute(self.id, conn = self.getReadDBConn(),
                                      transaction = self.existingTransaction())
@@ -196,7 +193,22 @@ class Job(WMBSBase, WMJob):
 
         self.file_set.commit()
         return
+    
+    def getMask(self):
+        """
+        _getMask_
+        
+        load job mask from database and update the self.mask
+        and return the value
+        """
+        jobMaskAction = self.daofactory(classname = "Masks.Load")
+        jobMask = jobMaskAction.execute(self.id, conn = self.getReadDBConn(),
+                                        transaction = self.existingTransaction())
 
+        self.mask.update(jobMask)
+        
+        return self.mask
+    
     def getFiles(self, type = "list"):
         """
         _getFiles_

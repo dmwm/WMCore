@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: Block.py,v 1.5 2009/12/15 21:10:29 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Block.py,v 1.6 2010/02/11 17:57:00 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -21,12 +21,6 @@ class Block(StartPolicyInterface):
 
     def split(self):
         """Apply policy to spec"""
-        def valid(block, input):
-            """Run over this block?"""
-            if input.blocks.whitelist:
-                return block in input.blocks.whitelist
-            else:
-                return block not in input.blocks.blacklist
 
         dbs = self.dbs()
         inputDataset = self.initialTask.inputDataset()
@@ -34,8 +28,6 @@ class Block(StartPolicyInterface):
                                      inputDataset.processed,
                                      inputDataset.tier)
         for block in dbs.getFileBlocksInfo(datasetPath):
-            if not valid(block['Name'], self.initialTask.inputDataset()):
-                continue
             parents = []
             if self.initialTask.parentProcessingFlag():
                 parents = block['Parents']
@@ -43,12 +35,9 @@ class Block(StartPolicyInterface):
                     msg = "Parentage required but no parents found for %s"
                     raise RuntimeError, msg % block['Name']
 
-            # copy spec file restricting block
-            spec = deepcopy(self.wmspec)
-            spec.getTask(self.initialTask.name()).data.input.dataset.blocks.whitelist = [block['Name']]
             self.newQueueElement(Data = block['Name'],
                                  ParentData = parents,
-                                 WMSpec = spec,
+                                 WMSpec = self.wmspec,
                                  Jobs = ceil(block[self.args['SliceType']] /
                                                 float(self.args['SliceSize'])))
                                  #Jobs = block[self.args['SliceType']])

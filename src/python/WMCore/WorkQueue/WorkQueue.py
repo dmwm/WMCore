@@ -9,11 +9,10 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.68 2010/02/09 18:28:30 swakef Exp $"
-__version__ = "$Revision: 1.68 $"
+__revision__ = "$Id: WorkQueue.py,v 1.69 2010/02/11 17:57:00 sryu Exp $"
+__version__ = "$Revision: 1.69 $"
 
 
-import uuid
 import time
 import os
 try:
@@ -610,14 +609,7 @@ class WorkQueue(WorkQueueBase):
             units = policy(wmspec, topLevelTask, self.dbsHelpers)
             for unit in units:
                 unit['ParentQueueId'] = parentQueueId
-                wmspec = unit['WMSpec']
-                unique = uuid.uuid4().hex[:10] # hopefully random enough
-                new_url = os.path.join(self.params['CacheDir'],
-                                           "%s.spec" % unique)
-                if os.path.exists(new_url):
-                    raise RuntimeError, "spec file %s exists" % new_url
-                wmspec.setSpecUrl(new_url)
-                wmspec.save(new_url)
+                unit["Task"] = topLevelTask
                 self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
                                 len(units), wmspec.name(), topLevelTask.name()))
             totalUnits.extend(units)
@@ -630,10 +622,10 @@ class WorkQueue(WorkQueueBase):
         primaryInput = unit['Data']
         parentInputs = unit['ParentData']
         nJobs = unit['Jobs']
-        wmspec = unit['WMSpec']
-        task = wmspec.taskIterator().next()        
+        wmspec = unit['WMSpec']       
+        task = unit["Task"]        
+        
         parentQueueId = unit['ParentQueueId']
-
         self._insertWMSpec(wmspec)
         self._insertWMTask(wmspec.name(), task)
 
@@ -665,6 +657,13 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction())
 
         if not exists:
+            #FIXME: add proper cache location from parameter
+            #this might not be needed if the getWorkReturns json of wmSpec
+            #Also if we need local cache need to clean up sometime
+            localCache = "/tmp/%s.pkl" % wmSpec.name()
+            wmSpec.setSpecUrl(localCache)
+            wmSpec.save(localCache)
+            
             wmSpecAction = self.daofactory(classname = "WMSpec.New")
             #TODO: need a unique value (name?) for first parameter
             owner = str(wmSpec.owner()) or self.params['QueueURL'] or "WorkQueue"

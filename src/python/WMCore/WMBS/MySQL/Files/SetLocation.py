@@ -5,7 +5,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 from sets import Set
 
 class SetLocation(DBFormatter):
-    sql = """INSERT wmbs_file_location (file, location) 
+    sql = """INSERT INTO wmbs_file_location (file, location) 
              SELECT wmbs_file_details.id, wmbs_location.id from wmbs_file_details, wmbs_location 
              WHERE wmbs_file_details.lfn = :lfn
              AND wmbs_location.se_name = :location 

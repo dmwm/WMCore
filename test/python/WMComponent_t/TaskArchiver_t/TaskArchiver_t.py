@@ -4,14 +4,15 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: TaskArchiver_t.py,v 1.4 2010/03/22 19:19:51 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TaskArchiver_t.py,v 1.5 2010/07/01 20:32:15 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import logging
 import threading
 import unittest
 import time
+import shutil
 
 from WMCore.Agent.Configuration import loadConfigurationFile
 
@@ -30,7 +31,8 @@ from WMCore.WMBS.Job          import Job
 
 from WMCore.DataStructs.Run   import Run
 
-from WMComponent.TaskArchiver.TaskArchiver import TaskArchiver
+from WMComponent.TaskArchiver.TaskArchiver       import TaskArchiver
+from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
@@ -54,9 +56,11 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+
         #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", 
                                                  "WMCore.ThreadPool", 'WMCore.WorkQueue.Database'],
+
                                 useDefault = False)
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -97,16 +101,16 @@ class TaskArchiverTest(unittest.TestCase):
         config.component_("TaskArchiver")
         config.TaskArchiver.componentDir    = self.testInit.generateWorkDir()
         config.TaskArchiver.WorkQueueParams = {}
-        
         config.TaskArchiver.pollInterval    = 60
         config.TaskArchiver.logLevel        = 'SQLDEBUG'
         config.TaskArchiver.timeOut         = 0
+
 
         return config
         
         
 
-    def createTestJobGroup(self):
+    def createTestJobGroup(self, name = "TestWorkthrough"):
         """
         Creates a group of several jobs
 
@@ -115,13 +119,13 @@ class TaskArchiverTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+                                name = name, task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = Fileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = name)
         testWMBSFileset.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA = File(lfn = "/this/is/a/lfnA" , size = 1024, events = 10)
         testFileA.addRun(Run(10, *[12312]))
         testFileA.setLocation('malpaquet')
 
@@ -157,39 +161,85 @@ class TaskArchiverTest(unittest.TestCase):
 
         return testJobGroup
 
-    def testA_ComponentTest(self):
+
+    def createGiantJobSet(self, name, nSubs = 10, nJobs = 10, nFiles = 1):
         """
-        Tests the components, as in sees if they load.
-        Otherwise does nothing.
+        Creates a massive set of jobs
+
         """
 
-        myThread = threading.currentThread()
 
-        config = self.getConfig()
+        jobList = []
 
-        testJobGroup = self.createTestJobGroup()
+        
 
-        changer = ChangeState(config)
-
-        changer.propagate(testJobGroup.jobs, 'created', 'new')
-        changer.propagate(testJobGroup.jobs, 'executing', 'created')
-        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
-        changer.propagate(testJobGroup.jobs, 'success', 'complete')
-        changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
-
-        time.sleep(2)
-
-        testTaskArchiver = TaskArchiver(config)
-        testTaskArchiver.prepareToStart()
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        return
+        for i in range(0, nSubs):
+            # Make a bunch of subscriptions
+            localName = '%s-%i' % (name, i)
+            testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                    name = localName, task="Test")
+            testWorkflow.create()
+            
+            testWMBSFileset = Fileset(name = localName)
+            testWMBSFileset.create()    
 
 
-    def testB_BasicFunctionTest(self):
+            testSubscription = Subscription(fileset = testWMBSFileset,
+                                            workflow = testWorkflow)
+            testSubscription.create()
+            
+            testJobGroup = JobGroup(subscription = testSubscription)
+            testJobGroup.create()
+
+            filesToComplete = []
+
+            for j in range(0, nJobs):
+                # Create jobs for each subscription
+                testFileA = File(lfn = "%s-%i-lfnA" % (localName, j) , size = 1024, events = 10)
+                testFileA.addRun(Run(10, *[11,12,13,14,15,16,17,18,19,20,
+                                           21,22,23,24,25,26,27,28,29,30,
+                                           31,32,33,34,35,36,37,38,39,40]))
+                testFileA.setLocation('malpaquet')
+                testFileA.create()
+
+                testWMBSFileset.addFile(testFileA)
+                testWMBSFileset.commit()
+
+                filesToComplete.append(testFileA)
+                
+                testJob = Job(name = '%s-%i' % (localName, j))
+                testJob.addFile(testFileA)
+                testJob['retry_count'] = 1
+                testJob['retry_max'] = 10
+                testJobGroup.add(testJob)
+                jobList.append(testJob)
+
+                for k in range(0, nFiles):
+                    # Create output files
+                    testFile = File(lfn = "%s-%i-output" % (localName, k) , size = 1024, events = 10)
+                    testFile.addRun(Run(10, *[12312]))
+                    testFile.setLocation('malpaquet')
+                    testFile.create()
+
+                    testJobGroup.output.addFile(testFile)
+
+                testJobGroup.output.commit()
+
+
+            testJobGroup.commit()
+
+            testWMBSFileset.markOpen(0)
+
+            testSubscription.completeFiles(filesToComplete)
+
+
+        return jobList
+            
+
+    def testA_BasicFunctionTest(self):
         """
+        _BasicFunctionTest_
+        
         Tests the components, by seeing if they can process a simple set of closeouts
         """
 
@@ -207,29 +257,120 @@ class TaskArchiverTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'success', 'complete')
         changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
 
-        time.sleep(2)
-
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
         self.assertEqual(len(result), 1)
 
-        testTaskArchiver = TaskArchiver(config)
-        testTaskArchiver.prepareToStart()
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
+        testTaskArchiver = TaskArchiverPoller(config = config)
+        testTaskArchiver.algorithm()
 
         result = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
-        self.assertEqual(len(result), 0)
-        result = myThread.dbi.processData("SELECT * FROM wmbs_file_details")[0].fetchall()
         self.assertEqual(len(result), 0)
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
         self.assertEqual(len(result), 0)
         result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
         self.assertEqual(len(result), 0)
+        result = myThread.dbi.processData("SELECT * FROM wmbs_fileset")[0].fetchall()
+        result = myThread.dbi.processData("SELECT * FROM wmbs_file_details")[0].fetchall()
+        self.assertEqual(len(result), 0)
+
         testWMBSFileset = Fileset(id = 1)
         self.assertEqual(testWMBSFileset.exists(), False)
         
         return
+
+
+    def testB_Profile(self):
+        """
+        _Profile_
+        
+        DON'T RUN THIS!
+        """
+
+        import cProfile, pstats
+
+        return
+
+        myThread = threading.currentThread()
+
+        name    = makeUUID()
+
+        config = self.getConfig()
+
+        jobList = self.createGiantJobSet(name = name, nSubs = 10, nJobs = 1000, nFiles = 10)
+        changer = ChangeState(config)
+
+        changer.propagate(jobList, 'created', 'new')
+        changer.propagate(jobList, 'executing', 'created')
+        changer.propagate(jobList, 'complete', 'executing')
+        changer.propagate(jobList, 'success', 'complete')
+        changer.propagate(jobList, 'cleanout', 'success')
+
+        testTaskArchiver = TaskArchiverPoller(config = config)
+
+        
+        cProfile.runctx("testTaskArchiver.algorithm()", globals(), locals(), filename = "testStats.stat")
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats()
+
+
+
+        return
+
+
+
+    def testC_Timing(self):
+        """
+        _Timing_
+
+        This is to see how fast things go.
+        """
+
+        return
+
+        myThread = threading.currentThread()
+
+        name    = makeUUID()
+
+        config  = self.getConfig()
+        jobList = self.createGiantJobSet(name = name, nSubs = 10, nJobs = 1000, nFiles = 10)
+        changer = ChangeState(config)
+
+        changer.propagate(jobList, 'created', 'new')
+        changer.propagate(jobList, 'executing', 'created')
+        changer.propagate(jobList, 'complete', 'executing')
+        changer.propagate(jobList, 'success', 'complete')
+        changer.propagate(jobList, 'cleanout', 'success')
+
+
+
+        testTaskArchiver = TaskArchiverPoller(config = config)
+
+        startTime = time.time()
+        testTaskArchiver.algorithm()
+        stopTime  = time.time()
+
+
+        result = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
+        self.assertEqual(len(result), 0)
+        result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
+        self.assertEqual(len(result), 0)
+        result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
+        self.assertEqual(len(result), 0)
+        result = myThread.dbi.processData("SELECT * FROM wmbs_file_details")[0].fetchall()
+        self.assertEqual(len(result), 0)
+        testWMBSFileset = Fileset(id = 1)
+        self.assertEqual(testWMBSFileset.exists(), False)
+
+
+        print "TaskArchiver took %f seconds" % (stopTime - startTime)
+
+
+        
+
+        
+
 
 
 if __name__ == '__main__':

@@ -5,8 +5,8 @@ _Alerts_
 WMCore alert system.
 """
 
-__revision__ = "$Id: Alerts.py,v 1.6 2009/09/02 22:22:28 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Alerts.py,v 1.7 2009/10/01 01:28:54 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.DataStructs.Alert import Alert
 from WMCore.WMFactory import WMFactory
@@ -36,6 +36,8 @@ class Alerts:
             dbNmae = "MySQL"
         elif myThread.dialect == "sqlite":
             dbName = "SQLite"
+        else:
+            dbName = myThread.dialect
             
         queryDialect = dbName + ".Queries"
         factory = WMFactory("alerts", "WMCore.Alerts")

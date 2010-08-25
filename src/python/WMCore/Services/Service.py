@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.33 2010/01/20 21:53:42 sryu Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Service.py,v 1.34 2010/01/20 22:03:46 sryu Exp $"
+__version__ = "$Revision: 1.34 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -103,7 +103,7 @@ class Service(dict):
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours)""" %
                   (self, self["requests"]["host"], self["basepath"],
-                   self["accept_type"], self["cachepath"],
+                   self["requests"]["accept_type"], self["cachepath"],
                    self["cacheduration"]))
 
     def cacheFileName(self, cachefile, inputdata = {}):

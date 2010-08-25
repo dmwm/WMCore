@@ -6,13 +6,14 @@ Recipe 52558: The Singleton Pattern implemented with Python
 http://code.activestate.com/recipes/52558/
 """
 
-__revision__ = "$Id: Singleton.py,v 1.1 2009/11/18 15:38:56 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Singleton.py,v 1.2 2009/11/18 16:26:57 ewv Exp $"
+__version__ = "$Revision: 1.2 $"
 
 class Singleton(object):
     """
     A python singleton
     """
+
 
     class SingletonImplementation:
         """
@@ -24,6 +25,7 @@ class Singleton(object):
             Test method, return singleton id
             """
             return id(self)
+
 
     # Storage for the instance reference
     __instance = None
@@ -40,28 +42,16 @@ class Singleton(object):
         # Store instance reference as the only member in the handle
         self.__dict__['_Singleton__instance'] = Singleton.__instance
 
+
     def __getattr__(self, attr):
         """
         Delegate access to implementation
         """
         return getattr(self.__instance, attr)
 
+
     def __setattr__(self, attr, value):
         """
         Delegate access to implementation
         """
         return setattr(self.__instance, attr, value)
-
-
-# Move this to unit tests
-
-# Test it
-# s1 = Singleton()
-# print "S",id(s1), s1.internalId()
-#
-# s2 = Singleton()
-# print "S",id(s2), s2.internalId()
-
-# Sample output, the second (inner) id is constant:
-# 8172684 8176268
-# 8168588 8176268

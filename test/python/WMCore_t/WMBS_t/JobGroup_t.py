@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.16 2009/03/18 20:03:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.17 2009/04/29 23:24:52 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import logging
@@ -415,7 +415,7 @@ class JobGroupTest(unittest.TestCase):
 
         return
 
-    def testRecordSubscriptionStatus(self):
+    def AtestRecordSubscriptionStatus(self):
         """
         _testRecordSubscriptionStatus_
 
@@ -433,44 +433,66 @@ class JobGroupTest(unittest.TestCase):
         for job in jobs:
             job.load()
         
-        jobs[0].changeStatus("ACTIVE")
+        testJobGroupA.recordAcquire(jobs[0])
         
         assert testJobGroupA.status() == "ACTIVE", \
                """ Error:  One job is in active state: 
                    JobGroup should be in ACTIVE State """
         
-        jobs[1].changeStatus("ACTIVE")
+        testJobGroupA.recordAcquire(jobs[1])
         
         assert testJobGroupA.status() == "ACTIVE", \
                """ Error:  All jobs is in active state: 
                    JobGroup should be in ACTIVE State """
                    
-        jobs[0].changeStatus("COMPLETE")
+        assert  not testJobGroupA.isSuccessful(), \
+               """ Error:  One job is in active state: 
+                   JobGroup should be in ACTIVE State """
+        
+        fileName = "/this/is/a/lfnOut1"
+        testFile = File(lfn = fileName, size = 1024, events = 10)
+        testFile.create()
+        result = testJobGroupA.recordComplete(jobs[0], testFile)
         
         assert testJobGroupA.status() == "ACTIVE", \
                """ Error:  One job is in active state: 
                    JobGroup should be in ACTIVE State """
         
-        jobs[1].changeStatus("COMPLETE")
+        assert  not testJobGroupA.isSuccessful(), \
+               """ Error:  One job is in active state: 
+                   JobGroup should be in ACTIVE State """
+        
+        fileName = "/this/is/a/lfnOut2"
+        testFile = File(lfn = fileName, size = 1024, events = 10)
+        testFile.create()
+        result = testJobGroupA.recordComplete(jobs[1], testFile)
         
         assert testJobGroupA.status() == "COMPLETE", \
                """ Error:  both jobs are in COMPLETE state: 
                    JobGroup should be in COMPLETE State """
-                
-        jobs[1].changeStatus("FAILED")
+                   
+        assert testJobGroupA.isSuccessful(), \
+               """ Error:  both jobs are in COMPLETE state: 
+                   JobGroup should be in COMPLETE State """
         
+        status = testJobGroupA.recordFail(jobs[1])                   
+        
+        assert status == "FailComplete", \
+               """Error: status should be FailComplete: %s""" % status
+               
         assert testJobGroupA.status() == "FAILED", \
                """ Error:  one job is in FAILED state: 
-                   JobGroup should be in FAILD State: %s"""
+                   JobGroup should be in FAILD State: """
         
+        assert  not testJobGroupA.isSuccessful(), \
+               """ Error:  one job is in FAILED state: 
+                   JobGroup should be in FAILD State: """
+                   
         # these will always return true according if no error occurs.
         # To do: check actual files state 
         assert testJobGroupA.recordAcquire() == True, \
                 "Error : recordAcquier failed"
-        assert testJobGroupA.recordComplete() == True, \
-                "Error : recordComplete failed"
-        assert testJobGroupA.recordFail() == True, \
-                "Error : recordFail failed"
+
                 
     def testOutput(self):
         """
@@ -481,6 +503,7 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupA = self.createTestJobGroupA()
         
         jobs = testJobGroupA.getJobIDs(type = "JobList")
+        
         count = 0 
         lfnSet = Set()           
         for job in jobs:
@@ -490,18 +513,12 @@ class JobGroupTest(unittest.TestCase):
             lfnSet.add(fileName)
             testFile = File(lfn = fileName, size = 1024, events = 10)
             testFile.create()
-            job.addOutput(testFile)
-            testJobGroupA.addOutput(testFile)
+            output = testJobGroupA.recordComplete(job, testFile)
         
-        outputFileset = testJobGroupA.output()    
-        assert outputFileset == False, \
-               "Error: JobGroup is not completed but returns value %s"\
-               % outputFileset
-                  
-        for job in jobs:
-            job.changeStatus("COMPLETE")
-        
-        outputFileset = testJobGroupA.output() 
+        assert testJobGroupA.isSuccessful() == True, \
+        	   """Error all the jobs in the job group should be completed"""
+        	                 
+        outputFileset = output
         outputFileset.loadData()
         
         outputLfns = Set()

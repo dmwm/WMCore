@@ -14,8 +14,8 @@ The component runs in Poll mode, basically submits itself "Poll" message at the 
 We can introduce some delay in polling, if have to.
 """
 
-__revision__ = "$Id: ErrorHandler.py,v 1.6 2009/05/11 16:49:04 afaq Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: RetryManager.py,v 1.1 2009/05/11 16:49:04 afaq Exp $"
+__version__ = "$Revision: 1.1 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -46,11 +46,6 @@ class ErrorHandler(Harness):
         Initializes plugins for different messages
         """
 
-The error handler pools for error conditions (CreateFailed, SubmitFailed, and JobFailed)
-By looking at wmbs_job table's status filed.
-All the jobs are handled respectively.
-
-
         # in case nothing was configured we have a fallback.
 
         if not hasattr(self.config.ErrorHandler, "createFailureHandler"):
@@ -69,22 +64,11 @@ All the jobs are handled respectively.
             self.config.ErrorHandler.runFailureHandler =  \
                 'WMComponent.ErrorHandler.Handler.DefaultRun'
 
-        # use a factory to dynamically load handlers.
-        factory = WMFactory('generic')
-
-        self.messages['PollCreateFailure'] = \
-            factory.loadObject(\
-                self.config.ErrorHandler.createFailureHandler, self)
+        if  self.messages['RetryManager::Start']
+	# Start the manager on this manager
  
-        self.messages['PollSubmitFailure'] = \
-            factory.loadObject(\
-                self.config.ErrorHandler.submitFailureHandler, self)
+        if  self.messages['RetryManager::Stop'] = \
+	# Stop the manager on this message
 
-        self.messages['PollJobFailure'] = \
-            factory.loadObject(self.config.ErrorHandler.jobFailureHandler, self)
-
-        # Resubmit the message so that Manager gets into Polling Mode
-        myThread = threading.currentThread()
-        myThread.msgService.publish(msg)
-        myThread.transaction.commit()
+	# ADD the code to let the Manager get into Polling Mode
 

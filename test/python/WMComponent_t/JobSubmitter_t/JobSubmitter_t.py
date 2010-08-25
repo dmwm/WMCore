@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.24 2010/07/23 13:58:25 mnorman Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.25 2010/07/29 18:26:20 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import unittest
 import threading
@@ -299,8 +299,8 @@ class JobSubmitterTest(unittest.TestCase):
             testJob['sandbox'] = task.data.input.sandbox
             testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
-            testJob["siteBlackList"] = bl
-            testJob["siteWhiteList"] = wl
+            testJob["siteBlacklist"] = bl
+            testJob["siteWhitelist"] = wl
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
@@ -398,7 +398,7 @@ class JobSubmitterTest(unittest.TestCase):
         return workload
 
 
-    def checkJDL(self, config, cacheDir, submitFile, site = None, indexFlag = False):
+    def checkJDL(self, config, cacheDir, submitFile, site = None, indexFlag = False, noIndex = False):
         """
         _checkJDL_
 
@@ -414,8 +414,8 @@ class JobSubmitterTest(unittest.TestCase):
         for job in jobs:
             # Check each key
             index = int(job.get('+WMAgent_JobID', 0))
-            self.assertTrue(index != 1)
-            self.assertTrue('+WMAgent_JobName' in job.keys())
+            self.assertTrue(index != 0)
+            #self.assertTrue('+WMAgent_JobName' in job.keys())
             # TODO: Think of a better way to do this
             #self.assertEqual(job.get('initialdir', None),
             #                 os.path.join(cacheDir, 'Job_%i' % index))
@@ -423,16 +423,16 @@ class JobSubmitterTest(unittest.TestCase):
             argValue = index -1
             if indexFlag:
                 batch    = index - 1
-                argValue = 0
             
             inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/TestWorkload', 'TestWorkload-Sandbox.tar.bz2'),
-                                              os.path.join(self.testDir, 'workloadTest/TestWorkload', 'batch_%i_0/JobPackage.pkl' % (batch)),
+                                              os.path.join(self.testDir, 'workloadTest/TestWorkload', 'batch_%i-0/JobPackage.pkl' % (batch)),
                                               os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
-            self.assertEqual(job.get('transfer_input_files', None),
-                             inputFileString)
+            if not noIndex:
+                self.assertEqual(job.get('transfer_input_files', None),
+                                 inputFileString)
             # Arguments use a list starting from 0
             self.assertEqual(job.get('arguments', None),
-                             'TestWorkload-Sandbox.tar.bz2 %i' % (argValue))
+                             'TestWorkload-Sandbox.tar.bz2 %i' % (index))
 
             if site:
                 self.assertEqual(job.get('globusscheduler', None), site)
@@ -508,7 +508,11 @@ class JobSubmitterTest(unittest.TestCase):
 
         
         # Check on the JDL
-        submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
+        submitFile = None
+        for file in os.listdir(config.JobSubmitter.submitDir):
+            if re.search('submit', file):
+                submitFile = file
+        self.assertTrue(submitFile != None)
         self.checkJDL(config = config, cacheDir = cacheDir,
                       submitFile = submitFile, site = 'T2_US_UCSD')
 
@@ -553,7 +557,7 @@ class JobSubmitterTest(unittest.TestCase):
         changeState  = ChangeState(config)
 
         nSubs = 5
-        nJobs = 150
+        nJobs = 300
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -663,7 +667,7 @@ class JobSubmitterTest(unittest.TestCase):
                 tmpJob['cache_dir']   = job['cache_dir']
                 tmpJob['retry_count'] = job['retry_count']
                 jobList.append(tmpJob)
-                package.append(job.getDataStructsJob())
+                package[job['id']] = (job.getDataStructsJob())
             package.save(os.path.join(self.testDir, 'JobPackage.pkl'))
 
                 
@@ -847,7 +851,12 @@ class JobSubmitterTest(unittest.TestCase):
         self.assertEqual(len(result), nSubs * nJobs)
 
         # All jobs should be at UCSD
-        submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
+        submitFile = None
+        for file in os.listdir(config.JobSubmitter.submitDir):
+            if re.search('submit', file):
+                submitFile = file
+        self.assertTrue(submitFile != None)
+        #submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
         self.checkJDL(config = config, cacheDir = cacheDir,
                       submitFile = submitFile, site = 'T2_US_UCSD')
 
@@ -896,9 +905,13 @@ class JobSubmitterTest(unittest.TestCase):
         self.assertEqual(len(result), nSubs * nJobs * 2)
 
         # All jobs should be at UCSD
-        submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
+        submitFile = None
+        for file in os.listdir(config.JobSubmitter.submitDir):
+            if re.search('submit', file):
+                submitFile = file
+        self.assertTrue(submitFile != None)
         self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD')
+                      submitFile = submitFile, site = 'T2_US_UCSD', noIndex = True)
 
 
         # Now clean-up
@@ -1077,6 +1090,9 @@ class JobSubmitterTest(unittest.TestCase):
         """
 
 
+        #return
+
+
         workloadName = "basicWorkload"
 
         myThread = threading.currentThread()
@@ -1128,7 +1144,11 @@ class JobSubmitterTest(unittest.TestCase):
 
         
         # Check on the JDL
-        submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
+        submitFile = None
+        for file in os.listdir(config.JobSubmitter.submitDir):
+            if re.search('submit', file):
+                submitFile = file
+        self.assertTrue(submitFile != None)
         self.checkJDL(config = config, cacheDir = cacheDir,
                       submitFile = submitFile, site = 'T2_US_UCSD', indexFlag = True)
 

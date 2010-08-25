@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.7 2008/11/12 16:15:03 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.8 2009/05/08 13:21:46 afaq Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -78,10 +78,6 @@ class ErrorHandlerTest(unittest.TestCase):
         msgService.subscribeTo('FinalJobFailure')
         myThread.transaction.commit()
 
-        # load a query interface for errorhandler to count the number
-        # of entries in its table.
-        errQueries = myThread.factory['WMComponent.ErrorHandler.Database'].loadObject('Queries')
-
         testErrorHandler = ErrorHandler(config)
         testErrorHandler.prepareToStart()
         # for testing purposes we use this method instead of the 
@@ -89,12 +85,12 @@ class ErrorHandlerTest(unittest.TestCase):
         testErrorHandler.handleMessage('LogState','')
         for i in xrange(0, ErrorHandlerTest._maxMessage):
             for j in xrange(0, 3):
-                testErrorHandler.handleMessage('SubmitFailure', \
-                    'JobID'+str(i))
-                testErrorHandler.handleMessage('CreateFailure', \
-                    'JobID'+str(i))
-                testErrorHandler.handleMessage('RunFailure', \
-                    'JobID'+str(i))
+		# PollFailure Message is sent so that the Component start looking for error condition
+		# each type of error condition has a seprate handler, so we can just Poll For that consition separately
+    		# messages do not take any argument in this case.
+                testErrorHandler.handleMessage('PollCreateFailure', '') 
+                testErrorHandler.handleMessage('PollSubmitFailure', '') 
+                testErrorHandler.handleMessage('PollJobFailure', '') 
             print('Currently: '+str(threading.activeCount())+\
                 ' Threads. Wait until all our threads have finished')
 
@@ -108,51 +104,6 @@ class ErrorHandlerTest(unittest.TestCase):
         retrySize = errQueries.count()
         myThread.transaction.commit()
 
-        # there should be 10 entries each have the retries set to 8
-        assert retrySize == ErrorHandlerTest._maxMessage
-
-        print('Sending the final failure event')
-        # now insert the last failure for most jobs which will trigger
-        # the total failure event.
-        for i in xrange(0, ErrorHandlerTest._maxMessage-5):
-            testErrorHandler.handleMessage('SubmitFailure', \
-                'JobID'+str(i))
-            testErrorHandler.handleMessage('SubmitFailure', \
-                'JobID'+str(i))
-
-        while threading.activeCount() > 1:
-            print('Currently: '+str(threading.activeCount())+\
-                ' Threads. Wait until all our threads have finished')
-            time.sleep(1)
-
-        myThread.transaction.begin()
-        retrySize = errQueries.count()
-        myThread.transaction.commit()
-        assert retrySize == 5
-
-        print('Verifying sending of FinalJobFailure messages')
-        # failures have been published. retrieve them
-        for i in xrange(0, ErrorHandlerTest._maxMessage-5):
-            msg = msgService.get()
-            assert msg['name'] == 'FinalJobFailure'
-            msgService.finish()
-
-        # also send some job success 
-        print('Sending some job success messages')
-        for i in xrange(ErrorHandlerTest._maxMessage-5, \
-        ErrorHandlerTest._maxMessage):
-            testErrorHandler.handleMessage('JobSuccess', \
-                'JobID'+str(i))
-
-        while threading.activeCount() > 1:
-            print('Currently: '+str(threading.activeCount())+\
-                ' Threads. Wait until all our threads have finished')
-            time.sleep(1)
-
-        myThread.transaction.begin()
-        retrySize = errQueries.count()
-        myThread.transaction.commit()
-        assert retrySize == 0
 
     def runTest(self):
         """

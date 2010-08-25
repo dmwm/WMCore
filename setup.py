@@ -5,10 +5,17 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser
 import os, sys
+#PyLinter and coverage aren't standard, but aren't strictly necessary
+can_lint = False
+can_coverage = False
 try:
     from pylint import lint
+    can_lint = True
+except:
+    pass
+try:
     import coverage
-    #PyLinter and coverage aren't standard, but aren't strictly necessary
+    can_coverage = True
 except:
     pass
 
@@ -198,12 +205,15 @@ class LintCommand(Command):
         '''
         Find the code and run lint on it
         '''
-        srcpypath = '/'.join([self._dir, 'src/python/'])
-        sys.path.append(srcpypath) 
-        
-        result = []
-        for filepath in generate_filelist(): 
-            result.append(lint_files([filepath]))
+        if can_lint:
+            srcpypath = '/'.join([self._dir, 'src/python/'])
+            sys.path.append(srcpypath) 
+            
+            result = []
+            for filepath in generate_filelist(): 
+                result.append(lint_files([filepath]))
+        else:
+            print 'You need to install pylint before using the lint command'
             
 class ReportCommand(Command):
     description = "Generate a simple html report for ease of viewing in buildbot"
@@ -327,26 +337,30 @@ class CoverageCommand(Command):
         
         http://nedbatchelder.com/code/coverage/
         """
-        files = generate_filelist()
-        dataFile = None
-        cov = None
-        
-        # attempt to load previously cached coverage information if it exists
-        try:
-            dataFile = open("wmcore-coverage.dat","r")
-            cov = coverage.coverage(branch = True, data_file='wmcore-coverage.dat')
-            cov.load()
-        except:  
-            cov = coverage.coverage(branch = True, )
-            cov.start()
-            runUnitTests()
-            cov.stop()
-            cov.save()
+        if can_coverage:
+            files = generate_filelist()
+            dataFile = None
+            cov = None
             
-        # we have our coverage information, now let's do something with it
-        # get a list of modules
-        cov.report(morfs = files, file=sys.stdout)
-        return 0
+            # attempt to load previously cached coverage information if it exists
+            try:
+                dataFile = open("wmcore-coverage.dat","r")
+                cov = coverage.coverage(branch = True, data_file='wmcore-coverage.dat')
+                cov.load()
+            except:  
+                cov = coverage.coverage(branch = True, )
+                cov.start()
+                runUnitTests()
+                cov.stop()
+                cov.save()
+                
+            # we have our coverage information, now let's do something with it
+            # get a list of modules
+            cov.report(morfs = files, file=sys.stdout)
+            return 0
+        else:
+            print 'You need the coverage module installed before running the' +\
+                            ' coverage command'
     
 class DumbCoverageCommand(Command):
     description = "Run a simple coverage test - find classes that don't have a unit test"

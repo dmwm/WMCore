@@ -618,5 +618,3 @@ setup (name = 'wmcore',
                    'test' : TestCommand },
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
-
-# dummy

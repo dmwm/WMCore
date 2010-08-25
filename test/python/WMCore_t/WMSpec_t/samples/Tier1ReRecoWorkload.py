@@ -253,7 +253,6 @@ if "AOD" in writeDataTiers:
 
 
 
-print workload.listAllTaskNames()
 
 
 

@@ -4,7 +4,7 @@
 Rest Model for WMBS Monitoring.
 """
 
-from WMCore.Wrappers import jsonwrapper
+from WMCore.Wrappers import JsonWrapper
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
 
@@ -53,7 +53,7 @@ class WorkQueueRESTModel(RESTModel):
         TODO: not the best way to handle parameters which is not in dict format
         find the better way to handle it 
         """
-        decodedChildReport = jsonwrapper.loads(child_report)
+        decodedChildReport = JsonWrapper.loads(child_report)
         
         result = self.wq.synchronize(child_url, decodedChildReport)
         #print result
@@ -66,7 +66,7 @@ class WorkQueueRESTModel(RESTModel):
         TODO: not the best way to handle parameters which is not in dict format
         find the better way to handle it 
         """
-        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        decodedElementIDs = JsonWrapper.loads(elementIDs)
         result = self.wq.doneWork(decodedElementIDs)
         #print result
         return result
@@ -78,7 +78,7 @@ class WorkQueueRESTModel(RESTModel):
         TODO: not the best way to handle parameters which is not in dict format
         find the better way to handle it 
         """
-        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        decodedElementIDs = JsonWrapper.loads(elementIDs)
         result = self.wq.doneWork(decodedElementIDs)
         #print result
         return result
@@ -90,7 +90,7 @@ class WorkQueueRESTModel(RESTModel):
         TODO: not the best way to handle parameters which is not in dict format
         find the better way to handle it 
         """
-        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        decodedElementIDs = JsonWrapper.loads(elementIDs)
         result = self.wq.doneWork(decodedElementIDs)
         #print result
         return result
@@ -102,7 +102,7 @@ class WorkQueueRESTModel(RESTModel):
         TODO: not the best way to handle parameters which is not in dict format
         find the better way to handle it 
         """
-        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        decodedElementIDs = JsonWrapper.loads(elementIDs)
         result = self.wq.doneWork(decodedElementIDs)
         #print result
         return result
@@ -114,7 +114,7 @@ class WorkQueueRESTModel(RESTModel):
         TODO: not the best way to handle parameters which is not in dict format
         find the better way to handle it 
         """
-        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        decodedElementIDs = JsonWrapper.loads(elementIDs)
         result = self.wq.doneWork(decodedElementIDs)
         #print result
         return result
@@ -123,7 +123,7 @@ class WorkQueueRESTModel(RESTModel):
                dictKey = None):
         
         if elementIDs != None:
-            elementIDs = jsonwrapper.loads(elementIDs)
+            elementIDs = JsonWrapper.loads(elementIDs)
         
         if before != None:
             before = int(before)

@@ -2,7 +2,7 @@ import urllib
 from urlparse import urlparse
 from httplib import HTTPConnection
 from WMCore.WebTools.Page import make_rfc_timestamp
-from WMCore.Wrappers import jsonwrapper
+from WMCore.Wrappers import JsonWrapper
     
 def makeRequest(url, values=None, type='GET', accept="text/plain", 
                 contentType = None):

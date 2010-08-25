@@ -3,8 +3,8 @@
 Unit tests for json wrapper.
 """
 
-__revision__ = "$Id: JsonWrapper_t.py,v 1.3 2010/01/27 19:33:10 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JsonWrapper_t.py,v 1.4 2010/01/27 19:44:34 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 __test = False
 try:
@@ -79,6 +79,7 @@ class TestWrapper(unittest.TestCase):
         self.assertEqual(dj_result, cj_result)
         
     def test_file_compare(self):
+        # TODO: use python's mktmnam, don't just assume these paths exist
         testfile = '/tmp/jsonwrappertest'
         
         #write self.record to a file via cjson

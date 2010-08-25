@@ -34,7 +34,7 @@ def runboth(testcase):
         print "No cjson module is found, only testing with json"
         
     def decorated_test(self):
-        import WMCore.Wrappers.jsonwrapper as json_wrap
+        import WMCore.Wrappers.JsonWrapper as json_wrap
         for impl in implementations:
             json_wrap._module = impl
             testcase(self)

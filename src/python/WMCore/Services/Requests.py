@@ -6,8 +6,8 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 """
 
-__revision__ = "$Id: Requests.py,v 1.32 2010/01/16 20:13:28 meloam Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Requests.py,v 1.33 2010/01/27 19:44:35 meloam Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import urllib
 import os
@@ -16,8 +16,8 @@ import base64
 from httplib import HTTPConnection
 from httplib import HTTPSConnection
 from WMCore.WMException import WMException
-from WMCore.Wrappers import jsonwrapper as json
-from WMCore.Wrappers.jsonwrapper import JSONEncoder, JSONDecoder
+from WMCore.Wrappers import JsonWrapper as json
+from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 import types
 import pprint
 

@@ -3,7 +3,7 @@ import logging
 import os
 import pwd
 
-from WMCore.Wrappers import jsonwrapper
+from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.Service import Service
 
 class WorkQueue(Service):
@@ -101,7 +101,7 @@ class WorkQueue(Service):
         if dictKey != None:
             args['dictKey'] = dictKey
         if elementIDs != None:
-            encodedElementIDs = jsonwrapper.dumps(elementIDs)
+            encodedElementIDs = JsonWrapper.dumps(elementIDs)
             args['elementIDs'] = encodedElementIDs
         
         callname = 'status'
@@ -111,7 +111,7 @@ class WorkQueue(Service):
         """
         _synchronize_
         """
-        encodedChildReport = jsonwrapper.dumps(child_report)
+        encodedChildReport = JsonWrapper.dumps(child_report)
         args = {}
         args['child_report'] = encodedChildReport
         args['child_url'] = child_url
@@ -123,7 +123,7 @@ class WorkQueue(Service):
         """
         _doneWork_
         """
-        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
         args['elementIDs'] = encodedElementIDs
         
@@ -134,7 +134,7 @@ class WorkQueue(Service):
         """
         _failWork_
         """
-        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
         args['elementIDs'] = encodedElementIDs
         
@@ -145,7 +145,7 @@ class WorkQueue(Service):
         """
         _cancelWork_
         """
-        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
         args['elementIDs'] = encodedElementIDs
         
@@ -156,7 +156,7 @@ class WorkQueue(Service):
         """
         _gotWork_
         """
-        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
         args['elementIDs'] = encodedElementIDs
         

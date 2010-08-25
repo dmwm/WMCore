@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: RESTFormat_t.py,v 1.8 2010/01/26 17:51:06 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: RESTFormat_t.py,v 1.9 2010/01/27 19:44:34 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import json
@@ -21,7 +21,7 @@ from DummyRESTModel import DummyRESTModel
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMCore.Wrappers import jsonwrapper
+from WMCore.Wrappers import JsonWrapper
 
 class RESTFormatTest(RESTBaseUnitTest):
     
@@ -64,7 +64,7 @@ class RESTFormatTest(RESTBaseUnitTest):
         # This is not supported: commented out for now in case it will get supported later
         # auto parameter parsing on certain content type
 #        url = self.urlbase +'list3'
-#        data = jsonwrapper.dumps(input)
+#        data = JsonWrapper.dumps(input)
 #        methodTest('POST', url, accept=type, input=data,
 #                         contentType="text/json",
 #                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"}

@@ -2,7 +2,7 @@
 import unittest
 import json
 
-from WMCore.Wrappers import jsonwrapper
+from WMCore.Wrappers import JsonWrapper
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WorkQueuePopulator import createProductionSpec, createProcessingSpec, getGlobalQueue

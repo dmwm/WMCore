@@ -3,7 +3,7 @@ import logging
 import os
 import pwd
 
-from WMCore.Wrappers import jsonwrapper
+from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.Service import Service
 
 try:
@@ -87,7 +87,7 @@ class RequestManager(Service):
 #            decoder = json.JSONDecoder()
 #            return decoder.decode(result)
 
-        result = jsonwrapper.loads(result)
+        result = JsonWrapper.loads(result)
         return result
     
     def getRequest(self, requestName=None):

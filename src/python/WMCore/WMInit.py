@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.9 2009/07/15 22:31:03 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WMInit.py,v 1.10 2009/07/17 14:22:16 swakef Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -117,7 +117,8 @@ class WMInit:
             factory = WMFactory(factoryName, factoryName + "." + \
                 myThread.dialect)
             create = factory.loadObject("Create")
-            createworked = create.execute(conn = myThread.transaction.conn)
+            createworked = create.execute(conn = myThread.transaction.conn,
+                                          transaction = myThread.transaction)
             if createworked:
                 logging.debug("Tables for "+ factoryName + " created")
             else:

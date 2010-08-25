@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.48 2009/12/16 20:46:44 sryu Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: WorkQueue.py,v 1.49 2009/12/16 22:31:22 sryu Exp $"
+__version__ = "$Revision: 1.49 $"
 
 # pylint: disable-msg = W0104, W0622
 # pylint: enable-msg = W0104, W0622
@@ -298,45 +298,38 @@ class WorkQueue(WorkQueueBase):
 
         return sub
 
-    def doneWork(self, *subscriptions):
+    def doneWork(self, elementIDs):
         """
         _doneWork_
 
         this is called by JSM
         update the WorkQueue status table
         """
-        self.setStatus('Done', subscriptions)
+        self.setStatus('Done', elementIDs)
+        return elementIDs
 
-
-    def failWork(self, *subscriptions):
+    def failWork(self, elementIDs):
         """Mark work as failed"""
-        self.setStatus('Failed', subscriptions)
+        self.setStatus('Failed', elementIDs)
+        return elementIDs
 
-
-    def cancelWork(self, *subscriptions):
+    def cancelWork(self, elementIDs):
         """Mark work as canceled"""
-        self.setStatus('Canceled', subscriptions)
+        self.setStatus('Canceled', elementIDs)
+        return elementIDs
 
-    def gotWork(self, *subscriptions):
+    def gotWork(self, elementIDs):
         """
         _gotWork_
 
         this is called by JSM
         update the WorkQueue status table and remove from further consideration
         """
-        self.setStatus('Acquired', *subscriptions)
+        self.setStatus('Acquired', elementIDs)
+        return elementIDs
 
 
-    def successWork(self, *subscriptions):
-        """
-        _successWork_
-
-        this is called by JSM
-        update the WorkQueue status table
-        """
-        self.setStatus('Success', *subscriptions)
-
-    def deleteWork(self, *subscriptions):
+    def deleteWork(self, elementIDs):
         """
         _deleteWork_
 

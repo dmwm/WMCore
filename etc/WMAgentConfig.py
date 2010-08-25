@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.2 2010/01/26 22:03:40 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.3 2010/03/03 18:02:42 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -124,3 +124,27 @@ config.TaskArchiver.logLevel = "DEBUG"
 config.TaskArchiver.pollInterval = 10
 config.TaskArchiver.timeOut      = 0
 
+config.component_("WorkQueueManager")
+config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
+config.WorkQueueManager.componentDir = config.General.WorkDir + "/WorkQueueManager"
+config.WorkQueueManager.level = "LocalQueue"
+config.WorkQueueManager.queueParams = {'ParentQueue' : 'http://cmssrv52.fnal.gov:8570/workqueue'}
+
+config.webapp_('WorkQueueService')
+config.WorkQueueService.server.port = 8579
+config.WorkQueueService.server.host = config.Agent.hostName
+config.WorkQueueService.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+config.WorkQueueService.admin = config.Agent.contact
+config.WorkQueueService.title = 'WorkQueue Data Service'
+config.WorkQueueService.description = 'Provide WorkQueue related service call'
+config.WorkQueueService.section_('views')
+active = config.WorkQueueService.views.section_('active')
+workqueue = active.section_('workqueue')
+workqueue.object = 'WMCore.WebTools.RESTApi'
+workqueue.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
+workqueue.section_('model')
+workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
+workqueue.section_('formatter')
+workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
+workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
+workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})

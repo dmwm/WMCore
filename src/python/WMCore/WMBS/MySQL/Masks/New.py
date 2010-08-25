@@ -6,8 +6,10 @@ MySQL implementation of Masks.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.3 2009/01/11 17:44:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: New.py,v 1.4 2009/09/09 21:06:59 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
+
+import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -17,14 +19,34 @@ class New(DBFormatter):
     
     def format(self,result):
         return True
+
+    def getDictBinds(self, jobList, inclusivemask = True):
+        binds = []
+        for job in jobList:
+            binds.append({'jobid': job['id'], 'inclusivemask': inclusivemask})
+
+        return binds
     
-    def execute(self, jobid, inclusivemask = None, conn = None,
-                transaction = False):
-        if inclusivemask == None:
-            binds = self.getBinds(jobid = jobid, inclusivemask=True)
-        else:
-            binds = self.getBinds(jobid = jobid, inclusivemask = inclusivemask)
+    def execute(self, jobid = None, inclusivemask = None, conn = None,
+                transaction = False, jobList = None):
+
+        if jobList:
+            binds = self.getDictBinds(jobList, inclusivemask)
+            result = self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
+            return self.format(result)
             
-        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
-        return self.format(result)
+        elif jobid:
+            if inclusivemask == None:
+                binds = self.getBinds(jobid = jobid, inclusivemask=True)
+            else:
+                binds = self.getBinds(jobid = jobid, inclusivemask = inclusivemask)
+            
+            result = self.dbi.processData(self.sql, binds, conn = conn,
+                                          transaction = transaction)
+            return self.format(result)
+
+        else:
+            logging.error('Masks.New asked to create Mask with no Job ID')
+            return
+
+

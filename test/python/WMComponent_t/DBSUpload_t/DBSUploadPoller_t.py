@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101, W6501, W0142, C0103, W0401, E1103
+# W0401: I am not going to import all those functions by hand
+
 
 """
 
@@ -6,8 +9,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.22 2010/04/21 15:56:01 meloam Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.23 2010/05/26 19:23:15 mnorman Exp $"
+__version__ = "$Revision: 1.23 $"
 
 
 import os
@@ -18,14 +21,17 @@ import unittest
 from WMComponent.DBSUpload.DBSUpload import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
-import WMComponent.DBSUpload.DBSUpload
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
 
-from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Agent.Configuration import Configuration
+
+#from WMCore.Services.DBS.DBSReader import DBSReader
+
+from WMComponent.DBSUpload.DBSInterface import *
 
 from DBSAPI.dbsApi import DbsApi
 #import nose
@@ -49,7 +55,7 @@ class DBSUploadTest(unittest.TestCase):
         setUp function for unittest
 
         """
-        raise Exception, "this test hangs buildbot. hard. someone (maybe me) needs to make sure that DBS is accessible";
+        #raise Exception, "this test hangs buildbot. hard. someone (maybe me) needs to make sure that DBS is accessible";
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -68,7 +74,7 @@ class DBSUploadTest(unittest.TestCase):
         locationAction = self.bufferFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
-        #locationAction.execute(siteName = "malpaquet") 
+        locationAction.execute(siteName = "malpaquet") 
 
 
     def tearDown(self):
@@ -80,8 +86,7 @@ class DBSUploadTest(unittest.TestCase):
         
         self.testInit.clearDatabase()
 
-    def createConfig(self, configAddress = os.path.join(os.path.dirname(\
-                        WMComponent.DBSUpload.DBSUpload.__file__), 'DefaultConfig.py')):
+    def createConfig(self):
         """
         _createConfig_
 
@@ -89,486 +94,307 @@ class DBSUploadTest(unittest.TestCase):
 
         """
 
-                # read the default config first.
-        config = self.testInit.getConfiguration(configAddress)
-        config.General.workDir = os.getcwd()
-        config.DBSUpload.uploadFileMax = 150
+
+        config = Configuration()
+
+        #First the general stuff
+        config.section_("General")
+        config.General.workDir = os.getenv("TESTDIR", os.getcwd())
+
+        #Now the CoreDatabase information
+        #This should be the dialect, dburl, etc
+        config.section_("CoreDatabase")
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+
+
+        config.component_("DBSUpload")
+        config.DBSUpload.pollInterval = 10
+        config.DBSUpload.logLevel = 'DEBUG'
+        config.DBSUpload.maxThreads = 1
+        config.DBSUpload.namespace = 'WMComponent.DBSUpload.DBSUpload'
+        config.DBSUpload.componentDir = os.path.join(os.getcwd(), 'Components')
+
+        config.section_("DBSInterface")
+        config.DBSInterface.globalDBSUrl     = 'http://cmssrv49.fnal.gov:8989/DBS209P5/servlet/DBSServlet'
+        config.DBSInterface.globalDBSVersion = 'DBS_2_0_9'
+        config.DBSInterface.DBSUrl           = 'http://cmssrv49.fnal.gov:8989/DBS209P5_2/servlet/DBSServlet'
+        config.DBSInterface.DBSVersion       = 'DBS_2_0_9'
+        config.DBSInterface.DBSBlockMaxFiles = 10
+        config.DBSInterface.DBSBlockMaxSize  = 9999999999
+        config.DBSInterface.DBSBlockMaxTime  = 10000
+        config.DBSInterface.MaxFilesToCommit = 10
 
         return config
 
-    def addToBuffer(self, name):
-        """
-        _addToBuffer_
 
-        Add files to the DBSBuffer with a set dataset path.
+    def getFiles(self, name, tier, nFiles = 12, site = "malpaquet"):
         """
-        testFileParentA = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                     appFam = "RECO", psetHash = "GIBBERISH",
-                                     configContent = "MOREGIBBERISH")
-        testFileParentA.setDatasetPath("/%s/%s/RECO" %(name, name))
-        testFileParentA.addRun(Run(1, *[45]))
-        
-        testFileParentB = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFileParentB.setAlgorithm(appName = "cmsRun2", appVer = "CMSSW_3_1_1",
-                                     appFam = "RECO", psetHash = "GIBBERISH",
-                                     configContent = "MOREGIBBERISH")
-        testFileParentB.setDatasetPath("/%s/%s/RECO" %(name, name))        
-        testFileParentB.addRun(Run(1, *[45]))
-        
-        testFileParentC = DBSBufferFile(lfn = makeUUID()+'hello', size = 1024,
-                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                     appFam = "RECO", psetHash = "GIBBERISH",
-                                     configContent = "MOREGIBBERISH")
-        testFileParentC.setDatasetPath("/%s/%s/RECO" %(name, name))        
-        testFileParentC.addRun(Run( 1, *[46]))
-        
-        testFileParentA.create()
-        testFileParentB.create()
-        testFileParentC.create()
-        
-        testFile = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                 events = 10, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
+        Create some quick dummy test files
+
+
+        """
+
+        files = []
+
+        for f in range(0, nFiles):
+            testFile = DBSBufferFile(lfn = '%s-%s-%i' % (name, site, f), size = 1024,
+                                     events = 20, checksums = {'cksum': 1})
+            testFile.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
+                                  appFam = "RECO", psetHash = "GIBBERISH",
+                                  configContent = "MOREGIBBERISH")
+            testFile.setDatasetPath("/%s/%s/%s" % (name, name, tier))
+            testFile.addRun(Run( 1, *[f]))
+            testFile.create()
+            testFile.setLocation(site)
+            files.append(testFile)
+
+
+        testFileChild = DBSBufferFile(lfn = '%s-%s-child' %(name, site), size = 1024,
+                                 events = 10, checksums = {'cksum': 1})
+        testFileChild.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
-        testFile.setDatasetPath("/%s/%s_2/RECO" %(name, name))
-        testFile.addRun(Run( 1, *[45]))
-        testFile.create()
+        testFileChild.setDatasetPath("/%s/%s_2/RECO" %(name, name))
+        testFileChild.addRun(Run( 1, *[45]))
+        testFileChild.create()
+        testFileChild.setLocation(site)
 
-        #testFile.addParents([testFileParentA["lfn"]])
-        #testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"]])
-        testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"], testFileParentC["lfn"]] )
+        testFileChild.addParents([x['lfn'] for x in files])
 
-        return
 
-    def bulkAddToBuffer(self, name):
+        return files
+
+
+
+    def testA_basicUploadTest(self):
         """
-        _addToBuffer_
+        _basicUploadTest_
 
-        This should add files to the buffer
-
+        Do everything simply once
+        Create dataset, algo, files, blocks,
+        upload them,
+        mark as done, finish them, migrate them
+        Also check the timeout
         """
+
 
         myThread = threading.currentThread()
+        config = self.createConfig()
+        config.DBSInterface.DBSBlockMaxTime = 20
 
-        #Stolen shamelessly from Steve's DBSBufferFile_t
-
-        testFiles = []
-
-        testFileParentA = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                     appFam = "RECO", psetHash = "GIBBERISH",
-                                     configContent = "MOREGIBBERISH")
-        testFileParentA.setDatasetPath("/%s/%s/RECO" %(name, name))
-        testFileParentA.addRun(Run(1, *[45]))
-        
-        testFileParentB = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                     appFam = "RECO", psetHash = "GIBBERISH",
-                                     configContent = "MOREGIBBERISH")
-        testFileParentB.setDatasetPath("/%s/%s/RECO" %(name, name))        
-        testFileParentB.addRun(Run(1, *[45]))
-        
-        testFileParentC = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                     appFam = "RECO", psetHash = "GIBBERISH",
-                                     configContent = "MOREGIBBERISH")
-        testFileParentC.setDatasetPath("/%s/%s/RECO" %(name, name))        
-        testFileParentC.addRun(Run( 1, *[45]))
-        
-        testFileParentA.create()
-        testFileParentB.create()
-        testFileParentC.create()
-
-        for i in range(0,200):
-                testFile = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                         events = 10, checksums = {'cksum': 1}, locations = "malpaquet")
-                testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
-                                      appFam = "RECO", psetHash = "GIBBERISH",
-                                      configContent = "MOREGIBBERISH")
-                testFile.setDatasetPath("/%s/%s/RECO" %(name, name))
-                testFile.addRun(Run( 1, *[45]))
-                testFile.create()
-
-                testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"], testFileParentC["lfn"]] )
-        
-                testFiles.append(testFile)
-
-        return
+        name = "ThisIsATest_%s" % (makeUUID())
+        tier = "RECO"
+        nFiles = 12
+        files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
+        datasetPath = '/%s/%s/%s' % (name, name, tier)
 
 
-    def testUploadFromSelf(self):
-        """
-        _testUploadFromSelf_
-
-        This may do everything itself.  It's hard to say
-
-        """
-        #raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
-
-        #return
-
-        myThread = threading.currentThread()
-
+        # Load components that are necessary to check status
         factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
         dbinterface = factory.loadObject("UploadToDBS")
 
-        name = "ThisIsATest_%s" %(makeUUID())
+        dbsInterface = DBSInterface(config = config)
+        localAPI     = dbsInterface.getAPIRef()
+        globeAPI     = dbsInterface.getAPIRef(globalRef = True)
 
-        config = self.createConfig()
-        config.DBSUpload.componentDir = os.path.join(os.getcwd(), 'Components')
-        self.addToBuffer(name)
 
-        datasets=dbinterface.findUploadableDatasets()
-
-        testDBSUpload = DBSUpload(config)
+        testDBSUpload = DBSUpload(config = config)
         testDBSUpload.prepareToStart()
+        #myThread.workerThreadManager.terminateWorkers()
 
-        #self.addSecondBatch()
-        myThread.workerThreadManager.terminateWorkers()
-        datasets=dbinterface.findUploadableDatasets()
-
-
-        dbsurl     = config.DBSUpload.dbsurl
-        dbsversion = config.DBSUpload.dbsversion
-
-        args = { "url" : dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : dbsversion }
-
-        dbswriter = DbsApi(args)
-        primaryDatasets   = dbswriter.listPrimaryDatasets('*')
-        processedDatasets = dbswriter.listProcessedDatasets()
-        dbsAlgos          = dbswriter.listAlgorithms()
+        time.sleep(1)
         
-        datasetNames   = []
-        processedNames = []
-        algoVer        = []
-        #print primaryDatasets
-        for dataset in primaryDatasets:
-            datasetNames.append(dataset['Name'])
+        # First do the DBS checks
+        # Check datasets and algos
+        # Then files and blocks
+        # Then block migration
 
-        for dataset in processedDatasets:
-            processedNames.append(dataset['Name'])
-
-        for algo in dbsAlgos:
-            #print algo
-            algoVer.append(algo['ApplicationVersion'])
-
-        #Check for primary and processed dataset and application of correct version
-        self.assertEqual(name in datasetNames, True)
-        self.assertEqual(name in processedNames, True)
-        self.assertEqual('CMSSW_3_1_1' in algoVer, True)
-
-        datasetPath = "/%s/%s/RECO" %(name, name)
-
-        files = dbswriter.listDatasetFiles(datasetPath = datasetPath)
-
-        #Check that there are three parent files
-        self.assertEqual(len(files), 3)
+        # Check to see if datasets and algos are in local DBS
+        result  = listAlgorithms(apiRef = localAPI, patternExe = name)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['ExecutableName'], name)
+        result  = listPrimaryDatasets(apiRef = localAPI, match = name)
+        self.assertEqual(result, [name])
+        result    = listProcessedDatasets(apiRef = localAPI, primary = name, dataTier = "*")
+        #self.assertEqual(result, [name, '%s_2' % (name)])
 
 
-        datasetPath = "/%s/%s_2/RECO" %(name, name)
+        # Check that files are in local DBS
+        affectedBlocks = listBlocks(apiRef = localAPI, datasetPath = datasetPath)
+        result = listDatasetFiles(apiRef = localAPI, datasetPath = datasetPath)
+        self.assertEqual(len(result), nFiles)
+        self.assertEqual(len(affectedBlocks), 2)
+        # Create two blocks, one open, one closed, one with ten files, one with two
+        if affectedBlocks[0]['OpenForWriting'] == '0':
+            self.assertEqual(affectedBlocks[1]['OpenForWriting'], '1')
+            self.assertEqual(affectedBlocks[0]['NumberOfFiles'], 10)
+            self.assertEqual(affectedBlocks[1]['NumberOfFiles'], 2)
+        else:
+            self.assertEqual(affectedBlocks[0]['OpenForWriting'], '1')
+            self.assertEqual(affectedBlocks[1]['NumberOfFiles'], 10)
+            self.assertEqual(affectedBlocks[0]['NumberOfFiles'], 2)
 
-        files = dbswriter.listDatasetFiles(datasetPath = datasetPath)
+        # Check parents of the child file
+        # Should have twelve parents
+        # All should be files we created (20 events, 1024 size)
+        result = listDatasetFiles(apiRef = localAPI,
+                                  datasetPath = '/%s/%s_2/%s' % (name, name, tier))
+        self.assertEqual(len(result), 1)
+        result = localAPI.listFileParents(lfn = result[0])
+        self.assertEqual(len(result), nFiles)
+        for f in result:
+            self.assertEqual(f['NumberOfEvents'], 20)
+            self.assertEqual(f['FileSize'], 1024)
 
-        # And one child file
-        self.assertEqual(len(files), 1)
 
-        fileParents = []
+        # There should be one block in global
+        # It should have ten files and be closed
+        result    = listBlocks(apiRef = globeAPI, datasetPath = datasetPath)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['OpenForWriting'], '0')
+        self.assertEqual(result[0]['NumberOfFiles'], 10)
 
-        for file in files:
-            fileParents.append(dbswriter.listFileParents(lfn = file['LogicalFileName']))
 
-        #Check that the final file has three parents
-        self.assertEqual(len(fileParents[0]), 3)
+        # Now see what's in local
 
-        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
+        # First grab blocks
+        # Two from primary, 
+        blockAction = self.bufferFactory(classname = "GetBlockFromDataset")
+        names = blockAction.execute(dataset = datasetPath)
+        self.assertEqual(len(names), 2)
 
-        # Should be three blocks, two in dataset one, one in dataset two
-        self.assertEqual(len(result), 3)
+        # One from secondary
+        names = blockAction.execute(dataset = '/%s/%s_2/%s' % (name, name, tier))
 
-        #Is the algo listed as being in DBS?
-        result = myThread.dbi.processData("SELECT in_dbs FROM dbsbuffer_algo")[0].fetchall()[0].values()[0]
 
-        self.assertEqual(result, 1)
-
-        result = myThread.dbi.processData("SELECT blockname FROM dbsbuffer_block WHERE id IN (SELECT block_id FROM dbsbuffer_file)")[0].fetchall()
-
-        self.assertEqual(len(result), 3)
-
+        # The clumsy way
+        # Should have two open blocks (one child, one primary), and one migrated block
         result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
+        self.assertEqual(result, [('InGlobalDBS',), ('Open',), ('Open',)])
 
-        # The first block should be closed, the other two, in separate datasets, should be open
-        self.assertEqual(result[0].values()[0], 'InGlobalDBS')
-        self.assertEqual(result[1].values()[0], 'Open')
-        self.assertEqual(result[2].values()[0], 'Open')
-        
-
-        return
-
-
-    def testLargeUpload(self):
-        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
-        myThread = threading.currentThread()
-
-        factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
-        dbinterface = factory.loadObject("UploadToDBS")
-
-        name = "ThisIsATest_%s" %(makeUUID())
-
-        config = self.createConfig()
-        self.bulkAddToBuffer(name)
-
-        datasets=dbinterface.findUploadableDatasets()
-
-        file_ids1 = []
-        for dataset in datasets:
-            file_ids1.extend(dbinterface.findUploadableFiles(dataset))
-
-
-        self.assertEqual(len(file_ids1), 203)
-
-        testDBSUpload = DBSUpload(config)
-        testDBSUpload.prepareToStart()
+        result = myThread.dbi.processData("SELECT path FROM dbsbuffer_dataset")[0].fetchall()
+        self.assertEqual(len(result), 2)
 
 
         time.sleep(30)
 
+
         myThread.workerThreadManager.terminateWorkers()
-        datasets=dbinterface.findUploadableDatasets()
 
-        file_ids = []
-        file_list = []
-        for dataset in datasets:
-            file_ids.extend(dbinterface.findUploadableFiles(dataset))
-        for id in file_ids1:
-            tempFile = DBSBufferFile(id = id["ID"])
-            tempFile.load(parentage = 1)
-            file_list.append(tempFile)
+        result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
+
+        for entry in result:
+            self.assertEqual(entry[0], 'InGlobalDBS')
 
 
+        # There should be three block in global
+        # All should be closed
+        # One should have 10, one should have 2, and one should have 1 file
+        result    = listBlocks(apiRef = globeAPI, datasetPath = datasetPath)
+        self.assertEqual(len(result), 2)
+        for block in result:
+            self.assertEqual(block['OpenForWriting'], '0')
+            self.assertTrue(result[0]['NumberOfFiles'] in [ 2, 10])
+        result    = listBlocks(apiRef = globeAPI, datasetPath = '/%s/%s_2/%s' % (name, name, tier))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['OpenForWriting'], '0')
+        self.assertEqual(result[0]['NumberOfFiles'], 1)
 
-        self.assertEqual(len(file_ids), 0)
 
-        child = file_list[3]
-
-        self.assertEqual(len(child['parents']), 3)
-
-        dbsurl     = config.DBSUpload.dbsurl
-        dbsversion = config.DBSUpload.dbsversion
-
-        args = { "url" : dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : dbsversion }
-        #conf = {"level" : 'ERROR', "user" :'NORMAL', "version" : dbsversion }
-        dbswriter = DbsApi(args)
-        #dbsreader = DBSReader(dbsurl)
-        primaryDatasets   = dbswriter.listPrimaryDatasets('*')
-        processedDatasets = dbswriter.listProcessedDatasets()
-        dbsAlgos          = dbswriter.listAlgorithms()
-        
-        datasetNames   = []
-        processedNames = []
-        algoVer        = []
-        #print primaryDatasets
-        for dataset in primaryDatasets:
-            datasetNames.append(dataset['Name'])
-
-        for dataset in processedDatasets:
-            processedNames.append(dataset['Name'])
-
-        for algo in dbsAlgos:
-            #print algo
-            algoVer.append(algo['ApplicationVersion'])
-
-        #Check for primary and processed dataset and application of correct version
-        self.assertEqual(name in datasetNames, True)
-        self.assertEqual(name in processedNames, True)
-        self.assertEqual('CMSSW_3_1_1' in algoVer, True)
-
-        datasetPath = "/%s/%s/RECO" %(name, name)
-
-        files = dbswriter.listDatasetFiles(datasetPath = datasetPath)
-
-        #Check that there are four files
-        self.assertEqual(len(files), 203)
-
-        fileParents = []
-
-        for file in files:
-            fileParents.append(dbswriter.listFileParents(lfn = file['LogicalFileName']))
-
-        time.sleep(10)
-
-        #Check that the final file has three parents
-        self.assertEqual(len(fileParents[3]), 3)
-
-        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
-
-        self.assertEqual(len(result), 102)
-
-        #Is the algo listed as being in DBS?
-        result = myThread.dbi.processData("SELECT in_dbs FROM dbsbuffer_algo")[0].fetchall()[0].values()[0]
-
-        self.assertEqual(result, 1)
 
         return
 
-    def testBlockCreation(self):
-        """
-        _testBlockCreation_
 
-        Run the poller several times and make sure it doesn't unnecessarily
-        create blocks.
+
+    def testB_AlgoMigration(self):
         """
-        
-        #raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
-        #return
+        _AlgoMigration_
+
+        Test our ability to migrate multiple algos to global
+
+        Do this by creating, mid-poll, two separate batches of files
+        One with the same dataset but a different algo
+        One with the same algo, but a different dataset
+        See that they both get to global
+        """
+
 
         myThread = threading.currentThread()
-        
-        countDAO = self.bufferFactory(classname = "CountBlocks")
-        randomDataset = makeUUID()
-
-        blockCount = countDAO.execute()
-        assert blockCount == 0, \
-               "Error: Blocks in buffer before test started."
-
         config = self.createConfig()
-        config.DBSUpload.DBSMaxFiles     = 2
+        config.DBSInterface.DBSBlockMaxTime = 20
+
+        name = "ThisIsATest_%s" % (makeUUID())
+        tier = "RECO"
+        nFiles = 12
+        files = self.getFiles(name = name, tier = tier, nFiles = nFiles)
+        datasetPath = '/%s/%s/%s' % (name, name, tier)
+
+
+        # Load components that are necessary to check status
+        factory     = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database.Interface")
+        dbinterface = factory.loadObject("UploadToDBS")
+
+        dbsInterface = DBSInterface(config = config)
+        localAPI     = dbsInterface.getAPIRef()
+        globeAPI     = dbsInterface.getAPIRef(globalRef = True)
+
+
+        testDBSUpload = DBSUploadPoller(config = config)
+        testDBSUpload.algorithm()
+
+        # There should now be one block
+        result    = listBlocks(apiRef = globeAPI, datasetPath = datasetPath)
+        self.assertEqual(len(result), 1)
+
+        # Okay, by now, the first migration should have gone through.
+        # Now create a second batch of files with the same dataset
+        # but a different algo.
+        for i in range(0, nFiles):
+            testFile = DBSBufferFile(lfn = '%s-batch2-%i' %(name, i), size = 1024,
+                                     events = 20, checksums = {'cksum': 1},
+                                     locations = "malpaquet")
+            testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
+                                  appFam = tier, psetHash = "GIBBERISH_PART2",
+                                  configContent = "MOREGIBBERISH")
+            testFile.setDatasetPath(datasetPath)        
+            testFile.addRun(Run( 1, *[46]))
+            testFile.create()
+
+
+        testDBSUpload.algorithm()
+
+        # There should now be two blocks
+        result    = listBlocks(apiRef = globeAPI, datasetPath = datasetPath)
+        self.assertEqual(len(result), 2)
+
+
+        # Now create another batch of files with the original algo
+        # But in a different dataset
+        for i in range(0, nFiles):
+            testFile = DBSBufferFile(lfn = '%s-batch3-%i' %(name, i), size = 1024,
+                                     events = 20, checksums = {'cksum': 1},
+                                     locations = "malpaquet")
+            testFile.setAlgorithm(appName = name, appVer = "CMSSW_3_1_1",
+                                  appFam = tier, psetHash = "GIBBERISH",
+                                  configContent = "MOREGIBBERISH")
+            testFile.setDatasetPath('/%s/%s_3/%s' % (name, name, tier))        
+            testFile.addRun(Run( 1, *[46]))
+            testFile.create()
+
+
+        testDBSUpload.algorithm()
+
+        # There should now be one block
+        result    = listBlocks(apiRef = globeAPI, datasetPath = '/%s/%s_3/%s' % (name, name, tier))
+        self.assertEqual(len(result), 1)
+
         
-        poller = DBSUploadPoller(config)
-        poller.setup(parameters = None)
-
-        for i in range(10):
-            self.addToBuffer(randomDataset)
-            
-            blockCount = countDAO.execute()
-
-            print "Have %i block" % (blockCount)
-
-            #assert blockCount == 1, \
-            #       "Error: Wrong number of blocks in buffer: %s" % blockCount
-
-        poller.algorithm(parameters = None)
-
-
-        # Build a second dataset to make sure we
-        # Assign the same algos correctly
-        randomDataset2 = makeUUID()
-        
-        for i in range(10):
-            self.addToBuffer(randomDataset2)
-            
-            blockCount = countDAO.execute()
-
-
-
-        poller.algorithm(parameters = None)
-
-        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
-        dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
-
-        primaries = dbsReader.listPrimaryDatasets()
-        self.assertEqual(randomDataset in primaries, True, 'Could not find dataset %s' %(randomDataset))
-        processed = dbsReader.listProcessedDatasets(primary = randomDataset)
-        self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
-        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
-        self.assertEqual(len(datasetFiles), 28)
-
-        self.assertTrue(randomDataset2 in primaries, 'Could not find dataset %s' %(randomDataset2))
-        processed = dbsReader.listProcessedDatasets(primary = randomDataset2)
-        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset2, randomDataset2, 'RECO'))
-        self.assertTrue(randomDataset2 in processed, 'Could not find dataset %s' %(randomDataset2))
-        self.assertEqual(len(datasetFiles), 28)
-
+        # Well, all the blocks got there, so we're done
         return
 
-
-    
-
-
-    def testBlockTimeout(self):
-        """
-        _testBlockTimeout_
         
-        Test closing blocks via timeout
-        """
-        #raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
-
-        #return
-
-        myThread = threading.currentThread()
-
-        countDAO = self.bufferFactory(classname = "CountBlocks")
-        randomDataset = makeUUID()
-
-        blockCount = countDAO.execute()
-        assert blockCount == 0, \
-               "Error: Blocks in buffer before test started."
-
-        config = self.createConfig()
-        config.DBSUpload.DBSBlockTimeout = 20
-        config.DBSUpload.DBSMaxFiles     = 40
-
-        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
-        dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
         
-        poller = DBSUploadPoller(config)
-        poller.setup(parameters = None)
-
-        for i in range(5):
-            self.addToBuffer(randomDataset)
-            blockCount = countDAO.execute()
-
-        poller.algorithm(parameters = None)
-        time.sleep(21)
-        poller.algorithm(parameters = None)
-        
-        for i in range(5):
-            self.addToBuffer(randomDataset)
-            blockCount = countDAO.execute()
-
-
-        poller.algorithm(parameters = None)
-
-        primaries = dbsReader.listPrimaryDatasets()
-        self.assertEqual(randomDataset in primaries, True, 'Could not find dataset %s' %(randomDataset))
-        processed = dbsReader.listProcessedDatasets(primary = randomDataset)
-        self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
-        blocks = dbsReader.listFileBlocks(dataset = '/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'), onlyClosedBlocks = True)
-        self.assertEqual(len(blocks), 1)
-        self.assertEqual(len(dbsReader.listFilesInBlock(fileBlockName = blocks[0])), 15)
-        
-
-        time.sleep(2*config.DBSUpload.DBSBlockTimeout + 1)
-        poller.algorithm(parameters = None)
-
-
-        primaries = dbsReader.listPrimaryDatasets()
-        self.assertEqual(randomDataset in primaries, True, 'Could not find dataset %s' %(randomDataset))
-        processed = dbsReader.listProcessedDatasets(primary = randomDataset)
-        self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
-        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
-        self.assertEqual(len(datasetFiles), 30)
-        blocks = dbsReader.listFileBlocks(dataset = '/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'), onlyClosedBlocks = True)
-        self.assertEqual(len(blocks), 2)
-        self.assertEqual(len(dbsReader.listFilesInBlock(fileBlockName = blocks[1])), 15)
-        
-
-        for entry in myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall():
-            self.assertEqual(entry.values()[0], 'InGlobalDBS')
-
-
-        return
-
-
-
-
 
 if __name__ == '__main__':
     unittest.main()

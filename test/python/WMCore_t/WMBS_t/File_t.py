@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.38 2009/12/21 20:46:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: File_t.py,v 1.39 2010/02/02 16:44:56 mnorman Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import unittest
 import logging
@@ -15,17 +15,18 @@ import commands
 import threading
 import random
 
-from WMCore.Database.DBCore import DBInterface
+from WMCore.Database.DBCore    import DBInterface
 from WMCore.Database.DBFactory import DBFactory
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMFactory import WMFactory
-from WMQuality.TestInit import TestInit
-from WMCore.DataStructs.Run import Run
+from WMCore.DAOFactory         import DAOFactory
+from WMCore.WMBS.File          import File
+from WMCore.WMBS.Fileset       import Fileset
+from WMCore.WMBS.Workflow      import Workflow
+from WMCore.WMBS.Subscription  import Subscription
+from WMCore.WMBS.JobGroup      import JobGroup
+from WMCore.WMFactory          import WMFactory
+from WMQuality.TestInit        import TestInit
+from WMCore.DataStructs.Run    import Run
+from WMCore.DataStructs.File   import File as WMFile
 
 class FileTest(unittest.TestCase):
 
@@ -1265,6 +1266,54 @@ class FileTest(unittest.TestCase):
         assert len(goldenParents) == 0, \
                "Error: Missing parents."        
         return
+
+
+
+    def testLoadFromDataStructsFile(self):
+        """
+        _testLoadFromDataStructsFile_
+
+        Tests our ability to create a WMBS file from a DataStructs File
+        """
+
+        myThread = threading.currentThread()
+        
+        testLFN     = "lfn1"
+        testSize    = 1024
+        testEvents  = 100
+        testCksum   = {"cksum": '1'}
+        testParents = set(["lfn2"])
+        testRun     = Run( 1, *[45])
+        testSE      = "se1.cern.ch"
+
+        parentFile = File(lfn= "lfn2")
+        parentFile.create()
+
+        testFile = File()
+
+        inputFile = WMFile(lfn = testLFN, size = testSize, events = testEvents, checksums = testCksum, parents = testParents)
+        inputFile.addRun(testRun)
+        inputFile.setLocation(se = testSE)
+
+        testFile.loadFromDataStructsFile(file = inputFile)
+        testFile.create()
+        testFile.save()
+
+        
+        loadFile = File(lfn = "lfn1")
+        loadFile.loadData(parentage = 1)
+
+        self.assertEqual(loadFile['size'],   testSize)
+        self.assertEqual(loadFile['events'], testEvents)
+        self.assertEqual(loadFile['checksums'], testCksum)
+        self.assertEqual(loadFile['locations'], set([testSE]))
+        self.assertEqual(loadFile['parents'].pop()['lfn'], 'lfn2')
+
+        run = loadFile['runs'].pop()
+        self.assertEqual(run, testRun)
+
+        return
+    
         
 if __name__ == "__main__":
     unittest.main() 

@@ -5,8 +5,6 @@ from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
-asdfasdf
-
 class NestedModelTest(RESTBaseUnitTest):
     
     def initialize(self):
@@ -14,8 +12,6 @@ class NestedModelTest(RESTBaseUnitTest):
         self.urlbase = self.config.getServerUrl()
     
     def testOuterFooPass(self):
-        assert False
-        
         print "test foo"
         
         verb ='GET'
@@ -34,7 +30,6 @@ class NestedModelTest(RESTBaseUnitTest):
         methodTest(verb, url, input= input, output=output, expireTime=expireTime)
         
     def testInnerPingPass(self):
-        assert False
         verb ='GET'
         url = self.urlbase + 'foo/ping'
         output={'code':200, 'data':'"ping"'}
@@ -43,14 +38,12 @@ class NestedModelTest(RESTBaseUnitTest):
         methodTest(verb, url, output=output, expireTime=expireTime)
     
     def testOuterFooError(self):
-        assert False
         verb ='GET'
         url = self.urlbase + 'foo/123/567'
         output={'code':400}
         methodTest(verb, url, output=output)
     
     def testInnerPingError(self):
-        assert False
         verb ='GET'
         url = self.urlbase + 'foo/123/ping'
         output={'code':400}

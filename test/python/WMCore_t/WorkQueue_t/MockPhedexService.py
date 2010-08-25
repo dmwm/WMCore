@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: MockPhedexService.py,v 1.3 2010/03/22 13:17:45 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MockPhedexService.py,v 1.4 2010/03/23 14:32:54 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 # need to clean this up at some point
 
@@ -80,4 +80,21 @@ class MockPhedexService:
                                                                                 #   "node_id":"641", "custodial":"n", "suspended":"n"}]
                                                     })
             return data
+
+    def getSubscriptionMapping(self, *items):
+        """Nicer wrapping around subscriptions
+        """
+        result = {}
+
+        for data in items:
+            if data.find('#') > -1:
+                # block
+                if data.split('#')[0] in self.datasets:
+                    result[data] = self.locations[data]
+            else:
+                # dataset
+                if data in self.datasets:
+                    result[data] = ['SiteA']
+        return result
+
 # pylint: enable-msg=W0613,R0201

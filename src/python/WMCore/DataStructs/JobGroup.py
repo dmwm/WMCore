@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.17 2009/05/28 16:47:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: JobGroup.py,v 1.18 2009/06/03 19:00:22 mnorman Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Fileset import Fileset
@@ -117,5 +117,21 @@ class JobGroup(WMObject):
         """
         return self.output.getFiles(type = type)
 
+    def getLength(self, obj):
+        """
+        This just gets a length for either dict or list objects
+        """
+        if type(obj) == dict:
+            return len(obj.keys())
+        elif type(obj) == list:
+            return len(obj)
+        else:
+            return 0
+
     def __len__(self):
-        return len(self.jobs.keys()) + len(self.newjobs.keys())
+        """
+        Allows use of len() on JobGroup
+        """
+        return self.getLength(self.jobs) + self.getLength(self.newjobs)
+
+        #return len(self.jobs.keys()) + len(self.newjobs.keys())

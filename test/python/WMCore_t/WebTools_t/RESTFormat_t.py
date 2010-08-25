@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: RESTFormat_t.py,v 1.5 2010/01/12 21:37:58 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: RESTFormat_t.py,v 1.6 2010/01/14 22:20:08 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import json
@@ -73,6 +73,7 @@ class RESTFormatTest(RESTBaseUnitTest):
                          )
     
     def testReturnFormat(self):
+        
         type = 'application/json'
         
         url = self.urlbase +'list3?a=a%&b=b'
@@ -80,6 +81,12 @@ class RESTFormatTest(RESTBaseUnitTest):
                          output={'code':200, 'data':'{"a": "a%", "b": "b"}'})
        
         url = self.urlbase + 'list1?int=a'
+        try:
+            urllib.urlopen(url)
+            #urllib2.urlopen(url)
+        except urllib2.HTTPError, h:
+            print "Exception got cought %s" % h.read()
+            
         methodTest('GET', url, accept=type, 
                          output={'code':400, 
                                  'data':"""{"exception": 400, "type": "HTTPError", "message": "list1() got an unexpected keyword argument 'int'"}"""})
@@ -88,7 +95,16 @@ class RESTFormatTest(RESTBaseUnitTest):
                          output={'code':400, 
                                  'data':"""{"exception": 400, "type": "HTTPError", "message": {"AssertionError": "val_1 failed: <type 'str'> not int"}}"""})
        
-       
+    def testException(self):
+        
+        import urllib2
+        url = self.urlbase + 'list1?int=a'
+        self.assertRaises(urllib2.HTTPError, urllib2.urlopen, url)
+        
+        #TODO check urllib.open is raising HTTPError
+        #import urllib
+        #self.assertRaises(urllib2.HTTPError, urllib.urlopen, url)
+        
 if __name__ == "__main__":
     unittest.main() 
         

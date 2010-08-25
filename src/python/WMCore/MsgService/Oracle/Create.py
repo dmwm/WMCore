@@ -4,12 +4,12 @@
 """
 _Create_
 
-Class for creating MySQL specific schema for persistent messages.
+Class for creating Oracle specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/05/15 15:54:51 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/06/16 14:45:43 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -23,7 +23,24 @@ class Create(DBCreator):
     
     Class for creating MySQL specific schema for persistent messages.
     """
-    
+
+    sequence_tables = []
+
+    sequence_tables.append('ms_process_seq')
+    sequence_tables.append('ms_type_seq')
+    sequence_tables.append('ms_history_seq')
+    sequence_tables.append('ms_history_buffer_seq')
+    sequence_tables.append('ms_history_priority_seq')
+    sequence_tables.append('ms_history_priority_buff_seq')
+    sequence_tables.append('ms_message_seq')
+    sequence_tables.append('ms_message_buffer_in_seq')
+    sequence_tables.append('ms_message_buffer_out_seq')
+    sequence_tables.append('ms_priority_message_seq')
+    sequence_tables.append('ms_prio_message_buff_in_seq')
+    sequence_tables.append('ms_prio_msg_buff_out_seq')
+    sequence_tables.append('ms_subscription_seq')
+    sequence_tables.append('ms_subscription_prio_seq')
+
     
     
     def __init__(self):

@@ -22,6 +22,7 @@ class StageOutTest(unittest.TestCase):
         step = task.getStep("stageOut1")
         realstep = StageOutTemplate.StageOutStepHelper(step.data)
         realstep.disableRetries()
+        realstep.data.section_('stepSpace')
         self.realstep = realstep
         
     def testUnitTestBackend(self):
@@ -32,27 +33,34 @@ class StageOutTest(unittest.TestCase):
             "option"  : "",
             "se-name" : "se-name",
             "lfn-prefix" : "I don't need a stinking prefix"}
-        executor.execute( self.realstep.data, None,**testOverrides)
-        
+        self.realstep.addOverride(override = 'command', overrideValue='test-win')
+        self.realstep.addOverride(override = 'option', overrideValue='test-win')
+        self.realstep.addOverride(override = 'se-name', overrideValue='test-win')
+        self.realstep.addOverride(override = 'lfn-prefix', overrideValue='test-win')
+        executor.step = self.realstep.data
+        #executor.initialise( self.realstep.data, {'id': 1})
+        executor.execute( )
+        return
         # ride the fail whale, hope we get a fail wail.
         testOverrides["command"] = "test-fail"
+        self.realstep.data.override = testOverrides  
+        executor.step = self.realstep.data      
         self.assertRaises(StageOutError.StageOutFailure,
-                          executor.execute,
-                          self.realstep.data,
-                           None,
-                            **testOverrides)
+                          executor.execute)
     
-    def testCPBackend(self):
+    def CPBackend(self):
         executor = StageOutExecutor.StageOut()
-        testOverrides = { "command" : "cp",
-            "option"  : "",
-            "se-name" : "se-name",
-            "lfn-prefix" : ""}
+
         
         pfn = "/etc/hosts"
         lfn = "/tmp/stageOutTest-%s" % int(time.time())
         self.realstep.addFile(pfn, lfn)
-        executor.execute( self.realstep.data, None,**testOverrides)
+        self.realstep.addOverride(override = 'command', overrideValue='cp')
+        self.realstep.addOverride(override = 'option', overrideValue='')
+        self.realstep.addOverride(override = 'se-name', overrideValue='se-name')
+        self.realstep.addOverride(override = 'lfn-prefix', overrideValue='')
+        executor.step = self.realstep        
+        executor.execute( )
         self.assert_( os.path.exists(lfn) )
         os.remove(lfn)
 

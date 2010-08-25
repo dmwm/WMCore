@@ -1,3 +1,4 @@
+import cherrypy
 import urllib
 from urlparse import urlparse
 from httplib import HTTPConnection
@@ -48,7 +49,7 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
     cType = response.getheader('content-type').split(';')[0]
     return data, response.status, cType, response
 
-def methodTest(verb, url, input={}, accept='text/json', contentType = None, output={} , expireTime=300):
+def methodTest(verb, url, input={}, accept='text/json', contentType = None, output={} , expireTime=0):
     
     data, code, type, response = makeRequest(url, input, verb, accept, contentType)
     
@@ -58,8 +59,11 @@ def methodTest(verb, url, input={}, accept='text/json', contentType = None, outp
             'Got a return %s != %s (got %s) (data %s)' % (key, value, keyMap[key], data)
     
     expires = response.getheader('Expires')
-    timeStamp = make_rfc_timestamp(expireTime)        
-    assert expires == timeStamp,\
-             'Expires header incorrect (%s) != (%s)' % (expires % timeStamp)
-    
+    if expireTime != 0:
+        timeStamp = make_rfc_timestamp(expireTime)
+        print expires
+        print timeStamp        
+        assert expires == timeStamp,\
+                 'Expires header incorrect (%s) != (%s)' % (expires % timeStamp)
+        
     return data, expires

@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.16 2010/06/23 20:39:21 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.17 2010/06/30 18:46:19 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import threading
@@ -49,6 +49,7 @@ from WMCore.Services.UUID import makeUUID
 from WMCore.Agent.Configuration             import loadConfigurationFile, Configuration
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.DataStructs.JobPackage          import JobPackage
+from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
 
 
 #Workload stuff
@@ -158,7 +159,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl'])
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossLite'],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossLite', 'WMCore.Agent.Database'],
                                 useDefault = False)
         
         myThread = threading.currentThread()
@@ -191,6 +192,11 @@ class JobSubmitterTest(unittest.TestCase):
 
 
         self.testDir = self.testInit.generateWorkDir()
+
+        # Set heartbeat
+        self.componentName = 'JobSubmitter'
+        self.heartbeatAPI  = HeartbeatAPI(self.componentName)
+        self.heartbeatAPI.registerComponent()
             
         return
 
@@ -320,6 +326,7 @@ class JobSubmitterTest(unittest.TestCase):
         config.component_("Agent")
         config.Agent.WMSpecDirectory = self.testDir
         config.Agent.agentName       = 'testAgent'
+        config.Agent.componentName   = self.componentName
 
 
         #First the general stuff
@@ -614,7 +621,7 @@ class JobSubmitterTest(unittest.TestCase):
         changeState = ChangeState(config)
 
         nSubs = 2
-        nJobs = 500
+        nJobs = 100
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -822,6 +829,10 @@ class JobSubmitterTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nJobs * nSubs)
 
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
         # All jobs should be at UCSD
         submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
         self.checkJDL(config = config, cacheDir = cacheDir,
@@ -867,10 +878,104 @@ class JobSubmitterTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nJobs * nSubs)
 
+        # You'll have jobs from the previous run still in the database
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs * 2)
+
         # All jobs should be at UCSD
         submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
         self.checkJDL(config = config, cacheDir = cacheDir,
                       submitFile = submitFile, site = 'T2_US_UCSD')
+
+
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+
+
+
+
+
+        # Run again with an invalid whitelist
+        # NOTE: After this point, the original two sets of jobs will be executing
+        # The rest of the jobs should move to submitFailed
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            wl = ['T2_US_Namibia'])
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        # Actually run it
+        jobSubmitter.algorithm()
+
+
+        # Check to make sure we have running jobs
+        #nRunning = getCondorRunningJobs(self.user)
+        #self.assertEqual(nRunning, 0)
+
+        # Jobs should be gone
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs * 2)
+        result = getJobsAction.execute(state = 'SubmitFailed', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+
+
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+
+
+
+
+
+        # Run again with all sites blacklisted
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            bl = self.sites)
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        # Actually run it
+        jobSubmitter.algorithm()
+
+
+        # Check to make sure we have running jobs
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0)
+
+        # Jobs should be gone
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs * 2)
+        result = getJobsAction.execute(state = 'SubmitFailed', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs * 2)
+
 
 
         # Now clean-up

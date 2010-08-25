@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.52 2010/02/20 20:04:43 metson Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: CMSCouch.py,v 1.53 2010/04/14 18:34:15 metson Exp $"
+__version__ = "$Revision: 1.53 $"
 
 try:
     # Python 2.6
@@ -118,24 +118,29 @@ class Database(CouchDBRequests):
     def __init__(self, dbname = 'database', 
                   url = 'localhost:5984', size = 1000):
         CouchDBRequests.__init__(self, url)
-        self._queue = []
+        self._reset_queue()
         self.name = urllib.quote_plus(dbname)
         self._queue_size = size
         self.threads = []
         self.last_seq = 0
 
+    def _reset_queue(self):
+        """
+        Set the queue to an empty list, e.g. after a commit
+        """
+        self._queue = []
+
     def timestamp(self, data):
         """
-        Time stamp each doc in a list - should really edit in place, something
-        is up with the references...
+        Time stamp each doc in a list 
         """
         if type(data) == type({}):
             data['timestamp'] = str(datetime.datetime.now())
-            return data
-        for doc in data:
-            if 'timestamp' not in doc.keys():
-                doc['timestamp'] = str(datetime.datetime.now())
-        return list
+        else:
+            for doc in data:
+                if 'timestamp' not in doc.keys():
+                    doc['timestamp'] = str(datetime.datetime.now())
+        return data
 
     def queue(self, doc, timestamp = False, viewlist=[]):
         """
@@ -145,7 +150,7 @@ class Database(CouchDBRequests):
         it was committed
         """
         if timestamp:
-            doc = self.timestamp(doc)
+            self.timestamp(doc)
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print 'queue larger than %s records, committing' % self._queue_size
@@ -177,7 +182,8 @@ class Database(CouchDBRequests):
         else:
             # if we made it out okay, put a flag there
             data[0][u'ok'] = True
-
+            # and restore the old queue
+            self._queue = tmpqueue
             
         return data[0]
         
@@ -196,19 +202,29 @@ class Database(CouchDBRequests):
             self.queue(doc, timestamp, viewlist)
             
         if timestamp:
-            self._queue = self.timestamp(self._queue)
+            self.timestamp(self._queue)
         # commit in thread to avoid blocking others
         uri  = '/%s/_bulk_docs/' % self.name
+        
         data = {'docs': list(self._queue)}
         retval = self.post(uri , data)
-        self._queue = []
+        self._reset_queue()
         return retval
 
     def document(self, id):
         """
         Load a document identified by id
         """
-        return self.get('/%s/%s' % (self.name, urllib.quote_plus(id)))
+        return Document(dict=self.get('/%s/%s' % (self.name, 
+                                                  urllib.quote_plus(id))))
+
+    def delete_doc(self, id):
+        """
+        Delete a document identified by id
+        """
+        doc = self.document(id)
+        doc.delete()
+        self.commitOne(doc)
 
     def compact(self):
         """
@@ -337,11 +353,13 @@ class CouchServer(CouchDBRequests):
         return Database(db, self.url)
 
     def deleteDatabase(self, db):
+        db = urllib.quote_plus(db)
         return self.delete("/%s" % db)
 
     def connectDatabase(self, db):
         if db not in self.listDatabases():
             self.createDatabase(db)
+        db = urllib.quote_plus(db)
         return Database(db, self.url)
 
     def __str__(self):

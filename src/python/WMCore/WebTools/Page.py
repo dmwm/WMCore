@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.26 2009/05/12 20:55:15 metson Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Page.py,v 1.27 2009/06/03 19:58:24 valya Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import md5
 import urllib
@@ -216,7 +216,8 @@ def exposedasjson (func):
         cherrypy.response.headers['ETag'] = data.__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
-            jsondata = encoder.iterencode(data)
+#            jsondata = encoder.iterencode(data)
+            jsondata = encoder.encode(data)
             return jsondata
         except:
             Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
@@ -266,7 +267,6 @@ def runDas(self, func, *args, **kwds):
         res_expire = row['expire']
     else:
         res_expire = 60*5 # 5 minutes
-    print type(func), func.__name__
     if  row.has_key('version'):
         res_version = row['version']
     else:

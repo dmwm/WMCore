@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.9 2009/12/02 19:42:28 evansde Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: CMSSW.py,v 1.10 2009/12/03 22:42:26 evansde Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -146,7 +146,7 @@ class CMSSW(Executor):
             retCode = scram(invokeCommand)
             if retCode > 0:
                 msg = "Error running command\n%s\n" % invokeCommand
-                msg += "%s\n %s\n %s\n" % (retCode, stdout, stderr)
+                msg += "%s\n " % retCode
                 msg += scram.diagnostic()
                 raise WMExecutionFailure(60515, "PreScriptScramFailure", msg)
 

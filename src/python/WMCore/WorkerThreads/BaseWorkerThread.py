@@ -9,8 +9,8 @@ to perform thread-specific setup and clean-up operations
 """
 
 __revision__ = \
-        "$Id: BaseWorkerThread.py,v 1.20 2010/05/13 18:37:55 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+        "$Id: BaseWorkerThread.py,v 1.21 2010/05/13 18:51:37 sryu Exp $"
+__version__ = "$Revision: 1.21 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -76,6 +76,12 @@ class BaseWorkerThread:
         The method that performs the required work. Should be overridden in
         derived classes.
         """
+        #Add Thread name in the child class for debuging purpose 
+        # if multiple BaseWorkerThread is created
+        # import threading
+        # myThread = threading.currentThread()
+        # myThread.name = "Some name"
+        
         logging.error("Calling algorithm on BaseWorkerThread: Override me!")
 
     def initInThread(self, parameters):

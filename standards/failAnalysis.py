@@ -3,6 +3,8 @@ import os, sys
 import xml.dom.minidom
 import time
 import subprocess
+import urllib
+
 try:
     import json
 except:
@@ -52,7 +54,7 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
         longRunning.append([int(case.getAttribute('time')), case.getAttribute('classname'), case.getAttribute('name')])
         longRunning.sort()
 
-        longRunning = longRunning[-10:]
+        longRunning = longRunning[-20:]
         
     if len(case.childNodes) > 0:
         if len(case.childNodes) > 1:
@@ -79,7 +81,7 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
                 "reason": traceback
             }
         curlcall = subprocess.Popen( [ 'curl', '-X', 'PUT', couchURL, '-H', 'Content-Type: application/json',
-                     '--data-urlencode', json.dumps(myData, separators=(',',':'))],
+                     '-d', urllib.urlencode(json.dumps(myData, separators=(',',':')))],
                      stdout = sys.stdout,
                      stderr = sys.stderr)
         curlcall.communicate()
@@ -100,7 +102,8 @@ longRunning.reverse()
 print "These are the longest-running tests:"
 tmp = 1
 for longTest in longRunning:
-    print "%s) %s in %s took %s seconds" % (tmp, longTest[2],longTest[1], longTest[0])
+    print "%s) %s seconds - %s.%s" % (tmp, longTest[0],longTest[1], longTest[2])
+    tmp += 1
     
 
 # testcase win:

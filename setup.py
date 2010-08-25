@@ -6,13 +6,38 @@ from os.path import splitext, basename, join as pjoin, walk
 import os, sys
 try:
     from pylint import lint
-    PyLinter
+    #PyLinter
 except:
     pass
 
 """
 Build, clean and test the WMCore package.
 """
+
+def generate_filelist():
+    files = []
+    for dirpath, dirnames, filenames in os.walk('./src/python/'):
+        # skipping CVS directories and their contents
+        pathelements = dirpath.split('/')
+        result = []
+        if not 'CVS' in pathelements:
+            # to build up a list of file names which contain tests
+            for file in filenames:
+                if file.endswith('.py'):
+                    filepath = '/'.join([dirpath, file]) 
+                    files.append(filepath)
+    return files
+
+def lint_files(files):
+    """
+    lint a (list of) file(s) and return the results 
+    """
+    input = ['--rcfile=standards/.pylintrc', 
+              '--output-format=parseable', 
+              '--reports=n', ]
+    input.extend(files)
+    lint_result = lint.Run(input)
+    return lint_result.linter.stats
 
 class TestCommand(Command):
     """
@@ -69,7 +94,6 @@ class TestCommand(Command):
             sys.exit("Tests unsuccessful. There were %s failures and %s errors"\
                       % (len(result.failures), len(result.errors)))
         
-        
 class CleanCommand(Command):
     """
     Clean up (delete) compiled files
@@ -113,38 +137,106 @@ class LintCommand(Command):
         '''
         Find the code and run lint on it
         '''
-        files = [ ]
-        
         srcpypath = '/'.join([self._dir, 'src/python/'])
         sys.path.append(srcpypath) 
         
-        # Walk the directory tree
-        for dirpath, dirnames, filenames in os.walk('./src/python/'):
-            # skipping CVS directories and their contents
-            pathelements = dirpath.split('/')
-            result = []
-            if not 'CVS' in pathelements:
-                # to build up a list of file names which contain tests
-                for file in filenames:
-                    if file.endswith('.py'):
-                        filepath = '/'.join([dirpath, file]) 
-                        files.append(filepath)
-                        # run individual tests as follows
-                        try:
-                            lint.Run(['--rcfile=standards/.pylintrc', 
-                                      '--output-format=parseable', 
-                                      '--reports=n',
-                                      filepath])
-                        except SystemExit:
-                            pass
-                        except Exception, e:
-                            print "Couldn't lint %s\n%s %s" % (file, e, type(e))
-                            result.append((file, -100))
-        # Could run a global test as:
-        #input = ['--rcfile=standards/.pylintrc']
-        #input.extend(files)
-        #lint.Run(input)    
-                    
+        result = []
+        for filepath in generate_filelist(): 
+            result.append(lint_files([filepath]))
+            
+class ReportCommand(Command):
+    """
+    Generate a simple html report for ease of viewing in buildbot
+    
+    To contain:
+        average lint score
+        % code coverage
+        list of classes missing tests
+        etc.
+    """
+    
+    user_options = [ ]
+    
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        """
+        run all the tests needed to generate the report and make an
+        html table
+        """
+        files = generate_filelist()
+        
+        error = 0 
+        warning = 0
+        refactor = 0
+        convention = 0 
+        statement = 0
+        
+        srcpypath = '/'.join([os.getcwd(), 'src/python/'])
+        sys.path.append(srcpypath)
+    
+        for stats in lint_files(files):
+            error += stats['error']
+            warning += stats['warning']
+            refactor += stats['refactor']
+            convention += stats['convention'] 
+            statement += stats['statement']
+
+        lint_score =  10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+        coverage = 0 # TODO: calculate this
+        testless_classes = [] # TODO: generate this
+        
+        print "<table>"
+        print "<tr>"
+        print "<td colspan=2><h1>WMCore test report</h1></td>"
+        print "</tr>"
+        print "<tr>"
+        print "<td>Average lint score</td>"
+        print "<td>%.2f</td>" % lint_score
+        print "</tr>"
+        print "<tr>"
+        print "<td>% code coverage</td>"
+        print "<td>%s</td>" % coverage
+        print "</tr>"
+        print "<tr>"
+        print "<td>Classes missing tests</td>"
+        print "<td>"
+        if len(testless_classes) == 0:
+            print "None"
+        else:
+            print "<ul>"
+            for c in testless_classes:
+                print "<li>%c</li>" % c
+            print "</ul>"
+        print "</td>"
+        print "</tr>"
+        print "</table>"
+            
+class CoverageCommand(Command):
+    """
+    Run code coverage tests    
+    """
+    
+    user_options = [ ]
+    
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+    
+    def run(self):
+        """
+        Determine the code's test coverage and return that as a float
+        
+        http://nedbatchelder.com/code/coverage/
+        """
+        return 0.0
+    
 def getPackages(package_dirs = []):
     packages = []
     for dir in package_dirs:
@@ -163,9 +255,12 @@ package_dir = {'WMCore': 'src/python/WMCore',
 
 setup (name = 'wmcore',
        version = '1.0',
-       cmdclass = { 'test': TestCommand, 
+       maintainer_email = 'hn-cms-wmDevelopment@cern.ch',
+       cmdclass = {'test': TestCommand, 
                    'clean': CleanCommand, 
-                   'lint': LintCommand },
+                   'lint': LintCommand,
+                   'report': ReportCommand,
+                   'coverage': CoverageCommand },
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
 

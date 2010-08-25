@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.29 2009/10/05 20:32:47 sryu Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: RESTModel.py,v 1.30 2009/11/23 17:43:30 metson Exp $"
+__version__ = "$Revision: 1.30 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -80,7 +80,26 @@ class RESTModel(WebAPI):
             response.status = 501
             return {'exception': data}
         
-    def sanitise_input(self, *args, **kwargs):
+    def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1):
+        """
+        add dao (or any other method handler) in self.methods
+        self.method need to be initialize if sub class doesn't want to take provide by
+        """
+        if not self.methods.has_key(verb):
+            self.methods[verb] = {}
+
+         
+        def function(args, kwargs):
+              input = self.sanitise_input(args, kwargs)
+              dao = self.daofactory(classname=daoStr)
+              return dao.execute(input)
+                  
+        self.methods[verb][methodKey] = {'args': args,
+                                         'call': function,
+                                         'validation': validation,
+                                         'version': version}
+
+    def sanitise_input(self, args=[], kwargs={}, method = None):
         """
         Pull out the necessary input from kwargs (by name) and, failing that, 
         pulls out the number required args from args, which assumes the 
@@ -91,13 +110,15 @@ class RESTModel(WebAPI):
         
         Returns a dictionary.
         """
-        method = sys._getframe(1).f_code.co_name
+        
         args = list(args)
         input = {}
         verb = request.method.upper()
         for a in self.methods[verb][method]['args']:
             if a in kwargs.keys():
                 input[a] = kwargs[a]
+                if len(args):
+                    args.pop(0)
             else:
                 if len(args):
                     input[a] = args.pop(0)

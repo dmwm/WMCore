@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.58 2010/02/25 22:05:49 mnorman Exp $"
-__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: Subscription.py,v 1.59 2010/02/25 22:31:41 sryu Exp $"
+__version__ = "$Revision: 1.59 $"
 
 import logging
 
@@ -167,20 +167,26 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return
           
-    def filesOfStatus(self, status):
+    def filesOfStatus(self, status, limit=0):
         """
         _filesOfStatus_
         
         Return a Set of File objects that have the given status with respect
         to this subscription.
+        
         """
         existingTransaction = self.beginTransaction()
         
         status = status.title()
         files  = set()
-        action = self.daofactory(classname = "Subscriptions.Get%sFiles" % status)
-        fileList = action.execute(self["id"], conn = self.getDBConn(),
-                                  transaction = self.existingTransaction())
+        if limit > 0:
+            action = self.daofactory(classname = "Subscriptions.Get%sFilesByLimit" % status)
+            fileList = action.execute(self["id"], limit, conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
+        else:
+            action = self.daofactory(classname = "Subscriptions.Get%sFiles" % status)
+            fileList = action.execute(self["id"], conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
         
         fileInfoAct  = self.daofactory(classname = "Files.GetByID")
         fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList],
@@ -199,7 +205,8 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         
         
-        return files 
+        return files
+    
     
     def acquireFiles(self, files = None):
         """

@@ -4,8 +4,8 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.11 2010/05/19 10:01:37 spigafi Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: API_t.py,v 1.12 2010/05/20 12:20:24 spigafi Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import os
@@ -270,12 +270,16 @@ class APITest(unittest.TestCase):
 
         testAPI.getNewRunningInstance(job = job, 
                     runningAttrs = {'status': 'Dead', 
-                                    'statusReason': 'WentToTheForum'} )
+                                    'statusReason': 'WentToTheForum',
+                                    'schedulerId' : 'myChild:0',
+                                    'schedulerParentId' : 'myParent:1'} )
 
         self.assertEqual(job.runningJob['jobId'], 101)
         self.assertEqual(job.runningJob['submission'], 1)
         self.assertEqual(job.runningJob['status'], 'Dead')
         self.assertEqual(job.runningJob['statusReason'], 'WentToTheForum')
+        self.assertEqual(job.runningJob['schedulerId'], 'myChild:0')
+        self.assertEqual(job.runningJob['schedulerParentId'], 'myParent:1')
 
         job.runningJob.save(testAPI.db)
 
@@ -300,8 +304,8 @@ class APITest(unittest.TestCase):
         self.assertEqual(job3.runningJob['storage'], 'Ravenna')
 
         # Now test if we can load by attribute
-        jobList = testAPI.loadJobsByRunningAttr( attribute = 'status', 
-                                                 value = 'Dead' )
+        jobList = testAPI.loadJobsByRunningAttr(
+                            binds = {'schedulerParentId': 'myParent:1'} )
         
         self.assertEqual(len(jobList), 1)
         
@@ -313,7 +317,9 @@ class APITest(unittest.TestCase):
         self.assertEqual(job4.runningJob['submission'], 1)
         self.assertEqual(job4.runningJob['status'], 'Dead')
         self.assertEqual(job4.runningJob['statusReason'], 'WentToTheForum')
-        
+        self.assertEqual(job4.runningJob['schedulerId'], 'myChild:0')
+        self.assertEqual(job4.runningJob['schedulerParentId'], 'myParent:1')
+            
         return
     
     

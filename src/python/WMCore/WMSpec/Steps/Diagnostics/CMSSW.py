@@ -103,7 +103,7 @@ class EDMExceptionHandler(DiagnosticHandler):
             #check exit code in report is non zero
             if executor.report.report.status == 0:
                 msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
-                executor.report.addError(executor.step.internal_name,
+                executor.report.addError(executor.step._internal_name,
                                          50116, "MissingErrorReport", msg)
         return
 

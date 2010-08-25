@@ -90,10 +90,9 @@ def runUnitTests():
                 failedTestFiles.append("%s - %s -retry-> %s" % (test, e,f))
             
     
-    t = TextTestRunner(verbosity=0)
+    t = TextTestRunner(verbosity=2)
     result = t.run(testsuite)
     #sys.stdout = sys.__stdout__
-
     #sys.stderr = sys.__stderr__
     
     print sys.path

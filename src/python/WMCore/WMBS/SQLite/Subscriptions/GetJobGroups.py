@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 """
-_ChangeState_
+_GetJobGroups_
 
-Sqlite implementation of Job.ChangeState
+SQLite implementation of Subscriptions.GetJobGroups
 """
 
-__all__ = []
-__revision__ = "$Id: GetJobGroups.py,v 1.3 2009/07/15 21:55:17 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: GetJobGroups.py,v 1.4 2009/10/28 12:51:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMBS.MySQL.Subscriptions.GetJobGroups import GetJobGroups as BaseDAO
 
 class GetJobGroups(BaseDAO):

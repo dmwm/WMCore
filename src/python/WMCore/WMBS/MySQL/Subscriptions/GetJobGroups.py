@@ -2,31 +2,39 @@
 """
 _GetJobGroups_
 
-MySQL implementation of Subscription.GetJobGroups
+MySQL implementation of Subscriptions.GetJobGroups
 """
 
-__all__ = []
-__revision__ = "$Id: GetJobGroups.py,v 1.5 2009/09/28 20:19:03 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: GetJobGroups.py,v 1.6 2009/10/28 12:51:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
-from WMCore.WMBS.JobGroup import JobGroup
+
 class GetJobGroups(DBFormatter):
+    sql = """SELECT DISTINCT wmbs_jobgroup.id FROM wmbs_jobgroup
+               INNER JOIN wmbs_job ON
+                 wmbs_jobgroup.id = wmbs_job.jobgroup
+               INNER JOIN wmbs_job_state ON
+                 wmbs_job.state = wmbs_job_state.id
+              WHERE wmbs_jobgroup.subscription = :subscription AND
+                    wmbs_job_state.name = 'new'"""
 
-    sql = """SELECT wmbs_jobgroup.id FROM wmbs_jobgroup
-              WHERE wmbs_jobgroup.subscription = :subscription
-    """
-    
+    def format(self, results):
+        """
+        _format_
+
+        Format the results into a single list of job group IDs.
+        """
+        results = DBFormatter.format(self, results)        
+
+        jobGroupIDs = []
+        for result in results:
+            for row in result:
+                jobGroupIDs.append(int(row))
+
+        return jobGroupIDs
+        
     def execute(self, subscription = None, conn = None, transaction = False):
-
-        result = self.dbi.processData(self.sql, {"subscription": subscription}, \
+        result = self.dbi.processData(self.sql, {"subscription": subscription},
                                       conn = conn, transaction = transaction)
-
-        #For some reason, this returns a list of lists; I think
-        #Doesn't seem to bother people yet
         return self.format(result)
-
-
-
-    
-  

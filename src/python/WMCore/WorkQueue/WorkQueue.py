@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.72 2010/02/12 16:33:55 swakef Exp $"
-__version__ = "$Revision: 1.72 $"
+__revision__ = "$Id: WorkQueue.py,v 1.73 2010/02/12 18:00:51 swakef Exp $"
+__version__ = "$Revision: 1.73 $"
 
 
 import time
@@ -502,20 +502,17 @@ class WorkQueue(WorkQueueBase):
         totalUnits = []
         if self.parent_queue:
             if not resources:
-                from WMCore.DAOFactory import DAOFactory
-                action = DAOFactory(package = 'WMBS.Database',
-                                    logger = self.logger,
-                                    dbinterface = self.dbi)('Locations.List')
-                wmbs_sites = action.execute(conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+                from WMCore.ResourceControl.ResourceControl import ResourceControl
+                rc_sites = ResourceControl.listThresholdsForCreate()
+                # get more work than we have slots - QueueDepth param
                 sites = {}
-                # get more work for the future
                 [sites.__setitem__(name,
-                                   self.params['QueueDepth'] * slots) for _,
-                                   name, slots in wmbs_sites if slots > 0]
+                    self.params['QueueDepth'] * slots['total_slots']) for name,
+                    slots in rc_sites.items() if slots['total_slots'] > 0]
                 self.logger.info("Pull work for sites %s" % str(sites))
                 _, resources = self._match(sites)
 
+            # if we have sites with no queued work try and get some
             if resources:
                 work = self.parent_queue.getWork(resources,
                                                  self.params['QueueURL'])

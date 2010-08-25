@@ -5,8 +5,9 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.4 2010/05/20 16:14:42 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.5 2010/05/21 21:15:39 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
+from os import path
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -46,9 +47,18 @@ workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
-workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
+workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService',
+                            'WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueMonitorService']
 workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 workqueue.queueParams.setdefault('CacheDir', config.General.workDir + '/WorkQueueManager/wf')
 workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (config.Agent.hostName,
                                                                   config.WorkQueueService.server.port,
                                                                   'workqueue'))
+
+workqueuemonitor = active.section_('workqueuemonitor')
+workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
+workqueuemonitor.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+workqueuemonitor.javascript = path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/WMCore/WebTools')
+workqueuemonitor.html = path.join(WMCore.WMInit.getWMBASE(), 'src/html/WorkQueue')
+
+workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})

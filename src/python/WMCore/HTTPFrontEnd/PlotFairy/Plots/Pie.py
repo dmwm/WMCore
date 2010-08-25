@@ -20,7 +20,7 @@ class Pie(Plot):
         
         xy = (input['width']/input.get('dpi',96), 
               input['height']/input.get('dpi',96))
-        fig = figure(figsize = xy)
+        fig = figure(figsize=xy, dpi=input.get('dpi',96))
         axis = fig.add_axes([0.1, 0.1, 0.8, 0.8])
         
         labels = []

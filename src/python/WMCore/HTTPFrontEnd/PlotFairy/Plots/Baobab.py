@@ -30,7 +30,7 @@ class Baobab(Plot):
         'threshold':0.05 - threshold of parent value below which children are culled to unclutter the plot
         """
         xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy)
+        fig = figure(figsize=xy, dpi=input.get('dpi',96))
     
         axes = fig.add_axes([0.1,0.1,0.8,0.8],polar=True)
         axes.set_title(input.get('title',''))

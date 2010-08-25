@@ -19,7 +19,7 @@ class Sparkline(Plot):
         'overlay': Overlay the plots, instead of making a stack of separate plots.
         """
         xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy)
+        fig = figure(figsize=xy, dpi=input.get('dpi',96))
     
         labelled = input.get('labelled',False)
         overlay = input.get('overlay',False)

@@ -22,7 +22,7 @@ class QualityMap(Plot):
         Data should be a list of rows, containing floats in the range 0>=x>=1.
         """
         xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy)
+        fig = figure(figsize=xy, dpi=input.get('dpi',96))
         
         axes = fig.add_axes([0.1,0.1,0.8,0.8])
         axes.set_title(input.get('title',''))

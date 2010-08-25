@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.22 $"
-__revision__ = "$Id: Report.py,v 1.22 2010/04/14 19:23:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Report.py,v 1.23 2010/04/21 16:15:33 mnorman Exp $"
 
 import cPickle
 import logging
@@ -353,6 +353,28 @@ class Report:
         return
 
 
+
+    def addRemovedCleanupFile(self, **attrs):
+        """
+        _addRemovedCleanupFile_
+        
+        Add a file to the cleanup.removed file
+        """
+
+        removedFiles = self.report.cleanup.removed
+        count = self.report.cleanup.removed.fileCount
+        label = 'file%s' % count
+
+        removedFiles.section_(label)
+        newFile = getattr(removedFiles, label)
+
+        [ setattr(newFile, x, y) for x,y in attrs.items() ]
+
+        self.report.cleanup.removed.fileCount += 1
+
+        return
+
+
     def addError(self, stepName, exitCode, errorType, errorDetails):
         """
         _addError_
@@ -451,6 +473,7 @@ class Report:
         self.report.skipped.section_("files")
         self.report.skipped.files.fileCount = 0
         self.report.analysis.fileCount = 0
+        self.report.cleanup.removed.fileCount = 0
 
         return
 

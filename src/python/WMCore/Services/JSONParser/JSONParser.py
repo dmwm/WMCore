@@ -6,8 +6,8 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.6 2009/03/25 14:39:36 ewv Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JSONParser.py,v 1.7 2009/03/25 17:41:47 ewv Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import urllib
 import cStringIO
@@ -26,7 +26,10 @@ class JSONParser:
     def __init__(self, url, logger = None):
         dict = {}
         dict['endpoint'] = url
-        dict['cachepath'] = '/tmp/jsonparser_' + pwd.getpwuid(os.getuid())[0]
+        if os.getenv('HOME'):
+            dict['cachepath'] = os.getenv('HOME') + '/.cms_jsoncache'
+        else:
+            dict['cachepath'] = '/tmp/jsonparser_' + pwd.getpwuid(os.getuid())[0]
         if not os.path.isdir(dict['cachepath']):
             os.mkdir(dict['cachepath'])
         if not logger:

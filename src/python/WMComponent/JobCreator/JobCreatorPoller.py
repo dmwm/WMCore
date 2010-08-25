@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.3 2009/09/10 20:27:57 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.4 2009/10/05 20:08:39 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -16,6 +16,7 @@ import os.path
 import time
 import random
 import inspect
+#import cProfile, pstats
 
 import pickle
 
@@ -37,7 +38,7 @@ from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
 from WMComponent.JobCreator.JobCreatorSiteDBInterface   import JobCreatorSiteDBInterface as JCSDBInterface
 
 from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
-
+from WMCore.ResourceControl.ResourceControl             import ResourceControl
 from WMCore.JobStateMachine.ChangeState                 import ChangeState
 
 from WMCore.WMSpec.Makers.JobMaker                      import JobMaker
@@ -84,14 +85,15 @@ init jobCreator
         #Variables
         self.jobCacheDir    = config.JobCreator.jobCacheDir
         self.topOffFactor   = 1.0
+        self.defaultJobType = config.JobCreator.defaultJobType
 
         self.seederDict     = {}
         
         BaseWorkerThread.__init__(self)
 
-        self.jobMaker = JobMaker(self.config)
-        self.createWorkArea = CreateWorkArea()
-        
+        #self.jobMaker = JobMaker(self.config)
+        self.createWorkArea  = CreateWorkArea()
+        self.resourceControl = ResourceControl()
 
 
         #Testing
@@ -134,7 +136,8 @@ init jobCreator
         Actually runs the code
         """
         logging.debug("Running JSM.JobCreator")
-        self.jobMaker.prepareToStart()
+        #self.jobMaker.prepareToStart()
+        startTime = time.clock()
         myThread = threading.currentThread()
         try:
             self.runJobCreator()
@@ -142,6 +145,9 @@ init jobCreator
             myThread.transaction.rollback()
             msg = "Failed to execute JobCreator \n%s" %(ex)
             raise Exception(msg)
+
+        print self.timing
+        print "Job took %f seconds" %(time.clock()-startTime)
 
         
 
@@ -196,14 +202,21 @@ init jobCreator
         #Now go through each one looking for jobs
         for subscription in subscriptions:
 
+
+
             myThread.transaction.begin()
 
             wmbsSubscription = Subscription(id = subscription)
             wmbsSubscription.load()
+            #if not len(wmbsSubscription.availableFiles()) > 0:
+                #continue
             #I need this later
             wmbsSubscription["workflow"].load()
 
+            #print "Have %i files" %(len(wmbsSubscription.availableFiles()))
+
             #My hope is that the job factory is smart enough only to split un-split jobs
+            jsStartTime = time.clock()
             wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = wmbsSubscription)
 
             wmWorkload  = self.retrieveWMSpec(wmbsSubscription)
@@ -211,17 +224,22 @@ init jobCreator
 
             wmbsJobGroups = wmbsJobFactory(**splitParams)
 
+            self.timing['pollSubSplit'] += (time.clock() - jsStartTime)
+
             myThread.transaction.commit()
 
             jobGroupConfig = {}
 
+            cwaStartTime = time.clock()
             for wmbsJobGroup in wmbsJobGroups:
                 self.createJobGroup(wmbsJobGroup, jobGroupConfig, wmbsSubscription, wmWorkload)
                 #Create a directory
                 self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(), startDir = self.jobCacheDir)
 
+            self.timing['createWorkArea'] += (time.clock() - cwaStartTime)
+
+            bagStartTime = time.clock()
             for wmbsJobGroup in wmbsJobGroups:
-                logging.error(wmbsJobGroup.jobs)
                 for job in wmbsJobGroup.jobs:
                     #Now, if we had the seeder do something, we save it
                     baggage = job.getBaggage()
@@ -232,6 +250,7 @@ init jobCreator
                         output = open(os.path.join(cacheDir, 'baggage.pcl'),'w')
                         pickle.dump(baggage, output)
                         output.close()
+            self.timing['baggage'] += (time.clock() - bagStartTime)
 
         return
 
@@ -253,8 +272,6 @@ init jobCreator
         locationList  = self.daoFactory(classname = "Locations.ListSites")
         locations     = locationList.execute()
         
-        logging.info(locations)
-
         #Prepare to get all jobs
         jobStates  = ['Created', 'Executing', 'SubmitFailed', 'JobFailed', 'SubmitCooloff', 'JobCooloff']
 
@@ -300,7 +317,13 @@ init jobCreator
         locationAction = self.daoFactory(classname = "Locations.SetJobSlots")
 
         for location in self.sites.keys():
-            slots = siteDB.getPledgedSlots(location)
+            #slots = siteDB.getPledgedSlots(location)
+            slotList = self.resourceControl.getThresholds(siteNames = location)
+            slots = 0
+            for entry in slotList:
+                if entry.get('threshold_name', None) == '%sThreshold' %(self.defaultJobType):
+                    slots = entry.get('threshold_value', 0)
+                    break
             locationAction.execute(location, slots)
             self.slots[location] = slots
 
@@ -332,7 +355,7 @@ init jobCreator
             workQueueDict[location] = freeSlots
 
 
-        #workQueue.askWork(workQueueDict)
+        #workQueue.getWork(workQueueDict)
 
         self.timing['askWorkQueue'] += (time.clock() - startTime)
         return
@@ -435,10 +458,13 @@ init jobCreator
             job["location"] = self.findSiteForJob(job)
             self.sites[job["location"]] += 1
 
-        myThread.transaction.commit()
+
 
         #Create the job
         changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
+        myThread.transaction.commit()
+        #logging.info(len(wmbsJobGroup.jobs))
+        #logging.info(myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall())
 
         logging.info("JobCreator has changed jobs to Created for jobGroup %i and is ending" %(wmbsJobGroup.id))
 

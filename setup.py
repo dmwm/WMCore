@@ -51,7 +51,7 @@ def lint_files(files):
 
 
 import logging
-import os
+import os, os.path
 import unittest
 
 MODULE_EXTENSIONS = set('.py'.split())

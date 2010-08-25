@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: FileBased.py,v 1.11 2009/07/30 18:37:07 sfoulkes Exp $"
-__version__  = "$Revision: 1.11 $"
+__revision__ = "$Id: FileBased.py,v 1.12 2009/07/31 16:05:26 sfoulkes Exp $"
+__version__  = "$Revision: 1.12 $"
 
 from sets import Set
 import logging
@@ -116,7 +116,7 @@ class FileBased(JobFactory):
 
                     
                 filesInJob += 1
-                job.addFile(availableFile)
+                job.addFile(file)
                 listOfFiles.append(File(id = file))
                 
 

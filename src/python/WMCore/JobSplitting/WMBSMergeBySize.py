@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.9 2010/03/11 21:11:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.10 2010/05/03 15:58:37 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 
@@ -16,7 +16,6 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
 
 def mergeUnitCompare(a, b):
     """
@@ -134,7 +133,7 @@ class WMBSMergeBySize(JobFactory):
         Create a merge job for the given merge units.  All the files contained
         in the merge units will be associated to the job.
         """
-        self.newJob(name = makeUUID())
+        self.newJob(name = self.getJobName())
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
         for file in sortedFiles:

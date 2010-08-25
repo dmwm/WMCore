@@ -4,13 +4,17 @@ _TrackingDB_
 
 """
 
-__version__ = "$Id: TrackingDB.py,v 1.1 2010/04/29 14:43:35 spigafi Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: TrackingDB.py,v 1.2 2010/05/03 07:28:50 spigafi Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 from copy import deepcopy
 
-from ProdCommon.BossLite.Common.Exceptions import DbError
-from ProdCommon.BossLite.Common.System import evalCustomList
+from WMCore.BossLite.Common.Exceptions  import DbError
+from WMCore.BossLite.Common.System      import evalCustomList
+
+from WMCore.BossLite.DbObjects.Task         import Task
+from WMCore.BossLite.DbObjects.Job          import Job
+from WMCore.BossLite.DbObjects.RunningJob   import RunningJob
 
 from WMCore.WMConnectionBase import WMConnectionBase
 
@@ -28,7 +32,7 @@ def dbTransaction(func):
         try:
             res = func(self, *args, **kwargs)
             self.commitTransaction(self.existingTransaction)
-        except DbError, ex:
+        except Exception, ex:
             msg = "Failure in TrackingDB class"
             msg += str(ex)
             myThread = threading.currentThread()
@@ -41,6 +45,8 @@ def dbTransaction(func):
 class TrackingDB(WMConnectionBase):
     """
     _TrackingDB_
+    
+    This class is *strongly* specialized to use WMCore DB back-end
     """
 
     ##########################################################################
@@ -54,7 +60,7 @@ class TrackingDB(WMConnectionBase):
         WMConnectionBase.__init__(self, daoPackage = "WMCore.BossLite")
 
     ##########################################################################
-
+    
     def insert(self, obj):
         """
         Uses default values for non specified parameters. Note that all
@@ -724,4 +730,127 @@ class TrackingDB(WMConnectionBase):
         """
         
         raise NotImplementedError
+    
+    ##########################################################################
+    # Metodi di accesso al database specializzati per singolo oggetto
+    ##########################################################################
+    
+    @dbTransaction
+    def objExists(self, obj, classname, name):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            raise NotImplementedError
         
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError
+        
+    ##########################################################################
+    
+    @dbTransaction
+    def objSave(self):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            raise NotImplementedError
+        
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError    
+        
+    ##########################################################################
+    
+    @dbTransaction
+    def objCreate(self):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            raise NotImplementedError
+        
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError        
+        
+    ##########################################################################
+    
+    @dbTransaction
+    def objLoad(self):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            raise NotImplementedError
+        
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError        
+        
+    ##########################################################################
+    
+    @dbTransaction
+    def objUpdate(self):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            raise NotImplementedError
+        
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError        
+        
+    ##########################################################################
+    
+    @dbTransaction
+    def objRemove(self):
+        """
+        put your description here
+        """
+
+        if type(obj) == Task :
+            raise NotImplementedError
+        
+        elif type(obj) == Job :
+            raise NotImplementedError
+        
+        elif type(obj) == RunningJob :
+            raise NotImplementedError
+        
+        else :
+            raise NotImplementedError        
+        
+    ##########################################################################

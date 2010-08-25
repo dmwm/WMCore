@@ -6,10 +6,13 @@ File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
 
-__revision__ = "$Id: FileBased.py,v 1.27 2010/07/13 14:32:45 sfoulkes Exp $"
-__version__  = "$Revision: 1.27 $"
+__revision__ = "$Id: FileBased.py,v 1.28 2010/08/03 14:38:39 mnorman Exp $"
+__version__  = "$Revision: 1.28 $"
 
 import threading
+import sys
+import logging
+import gc
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 
@@ -22,12 +25,10 @@ class FileBased(JobFactory):
         maximum of 'files_per_job'.  If the 'files_per_job' parameters is not
         passed in jobs will process a maximum of 10 files.
         """
-        myThread = threading.currentThread()
-        
+
         filesPerJob  = int(kwargs.get("files_per_job", 10))
         jobsPerGroup = int(kwargs.get("jobs_per_group", 0))
         filesInJob   = 0
-        totalJobs    = 0
         listOfFiles  = []
 
         #Get a dictionary of sites, files
@@ -50,15 +51,20 @@ class FileBased(JobFactory):
                             self.newGroup()
                             jobsInGroup = 0
 
-                    self.newJob(name = self.getJobName(length=totalJobs))
+                    self.newJob(name = self.getJobName())
                     
                     filesInJob   = 0
-                    totalJobs   += 1
                     jobsInGroup += 1
                     
                 filesInJob += 1
                 self.currentJob.addFile(file)
                 
                 listOfFiles.append(file)
+
+            #logging.error("Made it to end of FileBased location")
+            #logging.error(gc.get_count())
+            #logging.error(gc.get_referrers())
+
+
 
         return

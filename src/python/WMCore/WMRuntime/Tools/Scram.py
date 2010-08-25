@@ -25,7 +25,11 @@ sample usage:
 
 """
 
+__revision__ = "$Id: Scram.py,v 1.4 2010/04/26 20:05:43 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
+
 import os
+import os.path
 import sys
 import subprocess
 
@@ -147,9 +151,10 @@ class Scram:
         self.stdout, self.stderr = proc.communicate()
         if proc.returncode == 0:
             for l in self.stdout.split(";\n"):
-                if l.strip() == "": continue
+                if l.strip() == "":
+                    continue
                 l = l.replace("export ", "")
-                var,val = l.split("=", 1)
+                var, val = l.split("=", 1)
                 self.runtimeEnv[var] = val
         self.code = proc.returncode
         self.lastExecuted = "eval `%s ru -sh`" % self.command
@@ -169,10 +174,17 @@ class Scram:
         if self.runtimeEnv == {}:
             msg = "Scram runtime environment is empty/runtime() not called"
             raise RuntimeError, msg
+        logName = 'scramOutput.log'
+        if not os.path.exists(logName):
+            f = open(logName, 'w')
+            f.write('Log for recording SCRAM command-line output\n')
+            f.write('-------------------------------------------\n')
+            f.close()
+        logFile = open(logName, 'a')
         proc = subprocess.Popen(["/bin/bash"], shell=True, cwd=self.projectArea,
                                 env = self.runtimeEnv,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
+                                stdout=logFile,
+                                stderr=logFile,
                                 stdin=subprocess.PIPE,
                                 )
 
@@ -187,6 +199,7 @@ class Scram:
         self.stdout, self.stderr = proc.communicate()
         self.code = proc.returncode
         self.lastExecuted = command
+        logFile.close()
         return self.code
 
 

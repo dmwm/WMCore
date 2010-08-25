@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.2 2009/07/20 17:35:13 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Destroy.py,v 1.3 2009/08/12 17:18:06 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -31,8 +31,8 @@ class Destroy(DBCreator):
         DBCreator.__init__(self, logger, dbi)
 
         self.create = {}
-
-        self.create["03tp_threadpool"]             = "DROP TABLE tp_threadpool"
-        self.create["02tp_threadpool_buffer_in"]   = "DROP TABLE tp_threadpool_buffer_in"
-        self.create["01tp_threadpool_buffer_out"]  = "DROP TABLE tp_threadpool_buffer_out"
+        self.delete = {}
+        self.delete["03tp_threadpool"]             = "DROP TABLE tp_threadpool"
+        self.delete["02tp_threadpool_buffer_in"]   = "DROP TABLE tp_threadpool_buffer_in"
+        self.delete["01tp_threadpool_buffer_out"]  = "DROP TABLE tp_threadpool_buffer_out"
 

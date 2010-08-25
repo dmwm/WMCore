@@ -27,7 +27,7 @@ class RequestManager(Service):
 
         if not dict.has_key('endpoint'):
             #TODO needs to change proper default location
-            dict['endpoint'] = "%scmssrv49.fnal.gov:8585/requestmgr/" % \
+            dict['endpoint'] = "%scmssrv49.fnal.gov:8585/reqMgr/" % \
                                 ((secure and "https://" or "http://"))
         if dict.has_key('cachepath'):
             pass
@@ -87,6 +87,7 @@ class RequestManager(Service):
 #            decoder = json.JSONDecoder()
 #            return decoder.decode(result)
 
+        result = jsonwrapper.loads(result)
         return result
     
     def getRequest(self, requestName=None):

@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.19 2010/05/04 21:29:40 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.20 2010/05/07 21:39:10 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -229,6 +229,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         for site in self.sites.keys():
             if not jobType in self.sites[site].keys():
                 # Then we don't actually have this type at this site
+                continue
+            if not self.sites[site][jobType]['task_running_jobs'] \
+               < self.sites[site][jobType]['max_slots']:
+                # Then we have too many jobs in this place already
                 continue
             nSpaces = self.sites[site][jobType]['min_slots'] \
                       - self.sites[site][jobType]['task_running_jobs']

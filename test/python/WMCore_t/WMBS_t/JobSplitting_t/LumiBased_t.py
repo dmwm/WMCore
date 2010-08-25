@@ -5,21 +5,27 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.1 2009/07/13 16:23:27 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.2 2009/07/13 18:17:26 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
+import os
+import threading
+import logging
 import unittest
 
-from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.Job import Job
-from WMCore.DataStructs.Subscription import Subscription
-from WMCore.DataStructs.Workflow import Workflow
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMFactory import WMFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
+from WMQuality.TestInit import TestInit
 
 class EventBasedTest(unittest.TestCase):
     """
@@ -42,31 +48,62 @@ class EventBasedTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
+
+
+        
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
+        
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        locationAction = daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "somese.cern.ch")
+
+        
         self.multipleFileFileset = Fileset(name = "TestFileset1")
+        self.multipleFileFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
             newFile.addRun(Run(i, *[45+i]))
+            newFile.create()
             self.multipleFileFileset.addFile(newFile)
+        self.multipleFileFileset.commit()
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
-        newFile = File("/some/file/name", size = 1000, events = 100)
+        self.singleFileFileset.create()
+        newFile = File("/some/file/name", size = 1000, events = 100, locations = "somese.cern.ch")
         newFile.addRun(Run(1, *[45]))
+        newFile.create()
         self.singleFileFileset.addFile(newFile)
+        self.singleFileFileset.commit()
 
         self.multipleFileLumiset = Fileset(name = "TestFileset3")
+        self.multipleFileLumiset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
             newFile.addRun(Run(1, *[45+i/3]))
+            newFile.create()
             self.multipleFileLumiset.addFile(newFile)
+        self.multipleFileLumiset.commit()
 
         self.singleLumiFileset = Fileset(name = "TestFileset4")
+        self.singleLumiFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
             newFile.addRun(Run(1, *[45]))
+            newFile.create()
             self.singleLumiFileset.addFile(newFile)
+        self.singleLumiFileset.commit()
             
 
-        testWorkflow = Workflow()
+        testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman", name = "wf001", task="Test")
+        testWorkflow.create()
         self.multipleFileSubscription  = Subscription(fileset = self.multipleFileFileset,
                                                       workflow = testWorkflow,
                                                       split_algo = "LumiBased",
@@ -84,6 +121,11 @@ class EventBasedTest(unittest.TestCase):
                                                       split_algo = "LumiBased",
                                                       type = "Processing")
 
+        self.multipleFileSubscription.create()
+        self.singleFileSubscription.create()
+        self.multipleLumiSubscription.create()
+        self.singleLumiSubscription.create()
+
 
         return
 
@@ -93,7 +135,24 @@ class EventBasedTest(unittest.TestCase):
 
         Nothing to do...
         """
-        pass
+
+        myThread = threading.currentThread()
+
+        if myThread.transaction == None:
+            myThread.transaction = Transaction(self.dbi)
+            
+        myThread.transaction.begin()
+            
+        factory = WMFactory("WMBS", "WMCore.WMBS")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        
+        if not destroyworked:
+            raise Exception("Could not complete WMBS tear down.")
+            
+        myThread.transaction.commit()
+        
+        return
 
     def testExactLumi(self):
         """
@@ -106,7 +165,7 @@ class EventBasedTest(unittest.TestCase):
         print "testExactLumi"
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
         jobGroups = jobFactory(lumis_per_job = 1)
 
@@ -135,7 +194,7 @@ class EventBasedTest(unittest.TestCase):
         print "testMoreLumi"
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
         jobGroups = jobFactory(lumis_per_job = 2)
 
@@ -159,7 +218,7 @@ class EventBasedTest(unittest.TestCase):
         print "testFileBasedSplitting"
         
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleLumiSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleLumiSubscription)
 
         jobGroups = jobFactory(files_per_job = 1)
 
@@ -192,7 +251,7 @@ class EventBasedTest(unittest.TestCase):
         print "testLumiBasedSplitting"
         
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleLumiSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleLumiSubscription)
 
         jobGroups = jobFactory(lumis_per_job = 1)
 
@@ -225,12 +284,13 @@ class EventBasedTest(unittest.TestCase):
         """
 
         print "testEventBasedSplitting"
+
+        myThread = threading.currentThread()
         
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleLumiSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleLumiSubscription)
 
         jobGroups = jobFactory(events_per_job = 100)
-
 
         self.assertEqual(len(jobGroups),         1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -263,7 +323,7 @@ class EventBasedTest(unittest.TestCase):
         print "testMultipleLumi"
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleLumiSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleLumiSubscription)
 
         jobGroups = jobFactory(files_per_job = 1)
 
@@ -297,204 +357,5 @@ class EventBasedTest(unittest.TestCase):
 
 
     
-#
-#    def testMoreEvents(self):
-#        """
-#        _testMoreEvents_
-#
-#        Test event based job splitting when the number of events per job is
-#        greater than the number of events in the input file.
-#        """
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.singleFileSubscription)
-#        
-#        jobGroups = jobFactory(events_per_job = 1000)
-#        
-#        assert len(jobGroups) == 1, \
-#               "ERROR: JobFactory didn't return one JobGroup."
-#
-#        assert len(jobGroups[0].jobs) == 1, \
-#               "ERROR: JobFactory didn't create a single job."
-#
-#        job = jobGroups[0].jobs.pop()
-#
-#        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-#               "ERROR: Job contains unknown files."
-#        
-#        assert job.mask.getMaxEvents() == 1000, \
-#               "ERROR: Job's max events is incorrect."
-#        
-#        assert job.mask["FirstEvent"] == 0, \
-#               "ERROR: Job's first event is incorrect."
-#
-#        return
-#
-#    def test50EventSplit(self):
-#        """
-#        _test50EventSplit_
-#
-#        Test event based job splitting when the number of events per job is
-#        50, this should result in two jobs.        
-#        """
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.singleFileSubscription)
-#        
-#        jobGroups = jobFactory(events_per_job = 50)
-#        
-#        assert len(jobGroups) == 1, \
-#               "ERROR: JobFactory didn't return one JobGroup."
-#
-#        assert len(jobGroups[0].jobs) == 2, \
-#               "ERROR: JobFactory didn't create two jobs."
-#
-#        firstEvents = []
-#        for job in jobGroups[0].jobs:
-#            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-#                   "ERROR: Job contains unknown files."
-#        
-#            assert job.mask.getMaxEvents() == 50, \
-#                   "ERROR: Job's max events is incorrect."
-#        
-#            assert job.mask["FirstEvent"] in [0, 50], \
-#                   "ERROR: Job's first event is incorrect."
-#
-#            assert job.mask["FirstEvent"] not in firstEvents, \
-#                   "ERROR: Job's first event is repeated."
-#            firstEvents.append(job.mask["FirstEvent"])
-#
-#        return
-#
-#    def test99EventSplit(self):
-#        """
-#        _test99EventSplit_
-#
-#        Test event based job splitting when the number of events per job is
-#        99, this should result in two jobs.        
-#        """
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.singleFileSubscription)
-#        
-#        jobGroups = jobFactory(events_per_job = 99)
-#        
-#        assert len(jobGroups) == 1, \
-#               "ERROR: JobFactory didn't return one JobGroup."
-#
-#        assert len(jobGroups[0].jobs) == 2, \
-#               "ERROR: JobFactory didn't create two jobs."
-#
-#        firstEvents = []
-#        for job in jobGroups[0].jobs:
-#            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-#                   "ERROR: Job contains unknown files."
-#        
-#            assert job.mask.getMaxEvents() == 99, \
-#                   "ERROR: Job's max events is incorrect."
-#        
-#            assert job.mask["FirstEvent"] in [0, 99], \
-#                   "ERROR: Job's first event is incorrect."
-#
-#            assert job.mask["FirstEvent"] not in firstEvents, \
-#                   "ERROR: Job's first event is repeated."
-#            firstEvents.append(job.mask["FirstEvent"])            
-#
-#        return
-#
-#    def test100EventMultipleFileSplit(self):
-#        """
-#        _test100EventMultipleFileSplit_
-#
-#        Test job splitting into 100 event jobs when the input subscription has
-#        more than one file available.
-#        """
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.multipleFileSubscription)
-#
-#        jobGroups = jobFactory(events_per_job = 100)
-#
-#        assert len(jobGroups) == 1, \
-#               "ERROR: JobFactory didn't return one JobGroup."
-#
-#        assert len(jobGroups[0].jobs) == 10, \
-#               "ERROR: JobFactory didn't create 10 jobs."
-#        
-#        for job in jobGroups[0].jobs:
-#            assert len(job.getFiles(type = "lfn")) == 1, \
-#                   "ERROR: Job contains too many files."
-#        
-#            assert job.mask.getMaxEvents() == 100, \
-#                   "ERROR: Job's max events is incorrect."
-#        
-#            assert job.mask["FirstEvent"] == 0, \
-#                   "ERROR: Job's first event is incorrect."
-#
-#        return
-#    
-#    def test50EventMultipleFileSplit(self):
-#        """
-#        _test50EventMultipleFileSplit_
-#
-#        Test job splitting into 50 event jobs when the input subscription has
-#        more than one file available.
-#        """
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.multipleFileSubscription)        
-#
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.multipleFileSubscription)
-#
-#        jobGroups = jobFactory(events_per_job = 50)
-#
-#        assert len(jobGroups) == 1, \
-#               "ERROR: JobFactory didn't return one JobGroup."
-#
-#        assert len(jobGroups[0].jobs) == 20, \
-#               "ERROR: JobFactory didn't create 20 jobs."
-#        
-#        for job in jobGroups[0].jobs:
-#            assert len(job.getFiles(type = "lfn")) == 1, \
-#                   "ERROR: Job contains too many files."
-#        
-#            assert job.mask.getMaxEvents() == 50, \
-#                   "ERROR: Job's max events is incorrect."
-#        
-#            assert job.mask["FirstEvent"] in [0, 50], \
-#                   "ERROR: Job's first event is incorrect."
-#
-#        return
-#
-#    def test150EventMultipleFileSplit(self):
-#        """
-#        _test150EventMultipleFileSplit_
-#
-#        Test job splitting into 150 event jobs when the input subscription has
-#        more than one file available.  This test verifies that the job splitting
-#        code will put at most one file in a job.
-#        """
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.multipleFileSubscription)        
-#
-#        splitter = SplitterFactory()
-#        jobFactory = splitter(self.multipleFileSubscription)
-#
-#        jobGroups = jobFactory(events_per_job = 150)
-#
-#        assert len(jobGroups) == 1, \
-#               "ERROR: JobFactory didn't return one JobGroup."
-#
-#        assert len(jobGroups[0].jobs) == 10, \
-#               "ERROR: JobFactory didn't create 10 jobs."
-#        
-#        for job in jobGroups[0].jobs:
-#            assert len(job.getFiles(type = "lfn")) == 1, \
-#                   "ERROR: Job contains too many files."
-#        
-#            assert job.mask.getMaxEvents() == 150, \
-#                   "ERROR: Job's max events is incorrect."
-#        
-#            assert job.mask["FirstEvent"] == 0, \
-#                   "ERROR: Job's first event is incorrect."
-#
-#        return    
-
 if __name__ == '__main__':
     unittest.main()

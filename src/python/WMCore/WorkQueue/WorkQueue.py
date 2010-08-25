@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.140 2010/08/16 19:19:24 sryu Exp $"
-__version__ = "$Revision: 1.140 $"
+__revision__ = "$Id: WorkQueue.py,v 1.141 2010/08/17 15:01:18 swakef Exp $"
+__version__ = "$Revision: 1.141 $"
 
 
 import time
@@ -75,10 +75,7 @@ class WorkQueue(WorkQueueBase):
     """
     _WorkQueue_
 
-    collection of work queue elements,
-
-    This  provide API for JSM (WorkQueuePool) - getWork(), gotWork()
-    and injector
+    WorkQueue object - interface to WorkQueue functionality.
     """
     def __init__(self, logger = None, dbi = None, **params):
 
@@ -450,17 +447,6 @@ class WorkQueue(WorkQueueBase):
             else:
                 raise
         return elementIDs
-
-    def gotWork(self, elementIDs):
-        """
-        _gotWork_
-
-        this is called by JSM
-        update the WorkQueue status table and remove from further consideration
-        """
-        self.setStatus('Acquired', elementIDs)
-        return elementIDs
-
 
     def deleteWork(self, elementIDs, id_type = 'id'):
         """

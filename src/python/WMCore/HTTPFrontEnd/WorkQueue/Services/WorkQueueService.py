@@ -63,7 +63,6 @@ class WorkQueueService(ServiceInterface):
         self.model.addMethod('GET', 'wf', partial(serveWorkflow, self.wq), args = ['name'])
         self.model.addMethod('PUT', 'synchronize', self.wq.synchronize, args = ["child_url", "child_report"])
         
-        self.model.addMethod('PUT', 'gotwork', self.wq.gotWork, args = ["elementIDs"])
         self.model.addMethod('PUT', 'failwork', self.wq.failWork, args = ["elementIDs"])
         self.model.addMethod('PUT', 'donework', self.wq.doneWork, args = ["elementIDs"])
         self.model.addMethod('PUT', 'cancelwork', self.wq.cancelWork, args = ["elementIDs"])

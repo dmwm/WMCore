@@ -91,7 +91,6 @@ class WorkQueueTest(RESTBaseUnitTest):
         self.globalQueue.queueWork(self.specGenerator.createProcessingSpec('ProcessingSpec', "file"))
         wqApi = WorkQueueDS(self.params)
 
-        print wqApi.gotWork([1])
         print wqApi.status()
         print wqApi.doneWork([1])
         print wqApi.status()

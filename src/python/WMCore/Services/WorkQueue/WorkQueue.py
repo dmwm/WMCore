@@ -154,14 +154,3 @@ class WorkQueue(Service):
         
         callname = 'cancelwork'
         return self._getResult(callname, args = args, verb = "PUT")
-    
-    def gotWork(self, elementIDs):
-        """
-        _gotWork_
-        """
-        args = {}
-        args['elementIDs'] = elementIDs
-        
-        callname = 'gotwork'
-        return self._getResult(callname, args = args, verb = "PUT")
-    

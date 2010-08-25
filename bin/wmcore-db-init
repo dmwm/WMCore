@@ -4,8 +4,8 @@ Commands for initializing the proper database tables
 or cleaning the database.
 """
 
-__revision__ = "$Id: wmcore-db-init,v 1.6 2010/01/22 19:35:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: wmcore-db-init,v 1.7 2010/02/01 19:22:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -107,7 +107,7 @@ def connectionTest(config):
                                     socketLoc = socket)
     except Exception, ex:
         msg = "Unable to make connection to using \n"
-        msg += "parameters provided in %s\n" % databaseStr 
+        msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl
         msg += str(ex)
         print msg
         raise ex

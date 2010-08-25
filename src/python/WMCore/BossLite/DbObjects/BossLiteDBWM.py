@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.11 2010/05/19 13:26:19 spigafi Exp $"
-__revision__ = "$Revision: 1.11 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.12 2010/05/21 12:19:33 spigafi Exp $"
+__revision__ = "$Revision: 1.12 $"
 
 import threading
 
@@ -66,6 +66,8 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         self.existingTransaction = None
         
+        return
+    
     
     ##########################################################################
     # Methods for DbObjects (basic)
@@ -162,24 +164,24 @@ class BossLiteDBWM(BossLiteDBInterface):
             if classname == 'Task.GetJobs' :
                 binds = {'taskId' : obj.data['id'] }
                 
+                action = self.engine.daofactory( classname = classname )
+                result = action.execute(binds = binds,
+                                        conn = self.engine.getDBConn(),
+                                        transaction = self.existingTransaction)
+                
+                return result
+            
             elif obj.data['id'] > 0:
-                classname = "Task.SelectTask"
+                classname = "Task.Load"
                 binds = {'id' : obj.data['id'] }
                 
             elif obj.data['name']:
-                classname = "Task.SelectTask"
+                classname = "Task.Load"
                 binds = {'name' : obj.data['name'] }
                 
             else:
                 # Then you're screwed
                 return []
-            
-            action = self.engine.daofactory(classname = classname)
-            result = action.execute(binds = binds,
-                                    conn = self.engine.getDBConn(),
-                                    transaction = self.existingTransaction)
-            
-            return result
         
         elif type(obj) == Job :
             
@@ -197,14 +199,6 @@ class BossLiteDBWM(BossLiteDBInterface):
                 # We have no identifiers.  We're screwed
                 # this branch doesn't exist
                 return []
-            
-            # action = self.engine.daofactory(classname = "Job.Load")
-            action = self.engine.daofactory(classname = "Job.SelectJob")
-            result = action.execute(binds = binds, 
-                                    conn = self.engine.getDBConn(),
-                                    transaction = self.existingTransaction)
-            
-            return result
         
         elif type(obj) == RunningJob :
             
@@ -220,18 +214,11 @@ class BossLiteDBWM(BossLiteDBInterface):
             else:
                 # We have nothing
                 return []
-
-            action = self.engine.daofactory( classname = "RunningJob.Load" )
-            result = action.execute(binds = binds,
-                                    conn = self.engine.getDBConn(),
-                                    transaction = self.existingTransaction)
             
-            return result
-        
         else :
             raise NotImplementedError        
         
-        return
+        return self.objAdvancedLoad(obj = obj, binds = binds)
     
     
     @dbTransaction
@@ -284,10 +271,9 @@ class BossLiteDBWM(BossLiteDBInterface):
             
             # verify data is complete
             if not obj.valid(['id']):
-                # in this specific case I use the real db field name
                 binds = {'job_id' : obj.data['jobId'], 
                          'task_id' : obj.data['taskId'], 
-                        ' submission' : obj.data['submission'] }
+                         'submission' : obj.data['submission'] }
             else :
                 binds = {'id' : obj.data['id'] }
             
@@ -298,41 +284,40 @@ class BossLiteDBWM(BossLiteDBInterface):
                        conn = self.engine.getDBConn(),
                        transaction = self.existingTransaction)  
 
+        return
+    
+    
     ##########################################################################
     # Methods for DbObjects (advanced)
     ##########################################################################
     
     @dbTransaction
-    def objAdvancedLoad(self, obj, binds, classname= None):
+    def objAdvancedLoad(self, obj, binds):
         """
         put your description here
         """
         
         if type(obj) == Task : 
             
-            action = self.engine.daofactory(classname = "Task.SelectTask")
-            result = action.execute(binds = binds,
-                                    conn = self.engine.getDBConn(),
-                                    transaction = self.existingTransaction)
+            action = self.engine.daofactory(classname = "Task.Load")
             
-            return result
-        
         elif type(obj) == Job :
             
-            # action = self.engine.daofactory(classname = "Job.Load")
-            action = self.engine.daofactory(classname = "Job.SelectJob")
-            result = action.execute(binds = binds, 
-                                    conn = self.engine.getDBConn(),
-                                    transaction = self.existingTransaction)
-            
-            return result
+            action = self.engine.daofactory(classname = "Job.Load")
         
         elif type(obj) == RunningJob :
             
-            raise NotImplementedError
-        
+            action = self.engine.daofactory( classname = "RunningJob.Load" )
+            
         else :
             raise NotImplementedError 
+    
+        result = action.execute(binds = binds,
+                                conn = self.engine.getDBConn(),
+                                transaction = self.existingTransaction)
+            
+        return result
+        
     
     @dbTransaction
     def jobLoadByRunningAttr(self,  binds, limit = None):
@@ -347,6 +332,7 @@ class BossLiteDBWM(BossLiteDBInterface):
                                 transaction = self.existingTransaction)
         
         return result
+    
     
     ##########################################################################
     # Method for execute raw SQL statements through general-purpose DAO

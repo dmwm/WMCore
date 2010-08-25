@@ -6,12 +6,11 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.49 2010/01/22 17:53:34 sryu Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: RESTModel.py,v 1.50 2010/01/26 17:47:12 sryu Exp $"
+__version__ = "$Revision: 1.50 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
-from ContentTypeHandler import ContentTypeHandler
 import sys
 import traceback
 
@@ -100,11 +99,6 @@ class RESTModel(WebAPI):
         self.classifyHTTPError(verb, args, kwargs)
         try:
             method = args[0]
-            # doesn't need positional argument
-            #kwargs = ContentTypeHandler().convertToParam(kwargs)
-            #print "%%%%%%%%"
-            #print kwargs, kwargs.__class__.__name__
-            #print kwargs
             data = self.methods[verb][method]['call'](*args[1:], **kwargs)
         # in case sanitise_input is not called with in the method, if args doesn't
         # match throws the 400 error

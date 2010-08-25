@@ -79,7 +79,7 @@ class ReRecoWorkloadFactory():
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchUrl = None,
-                            couchDBName = None, configDoc = None):
+                            couchDBName = None, configDoc = None, splitAlgo = "FileBased"):
         """
         _setupProcessingTask_
 
@@ -106,7 +106,7 @@ class ReRecoWorkloadFactory():
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()
-        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setSplittingAlgorithm(splitAlgo, files_per_job = 1)
         procTask.addGenerator("BasicNaming")
         procTask.addGenerator("BasicCounter")
         procTask.setTaskType(taskType)
@@ -333,7 +333,7 @@ class ReRecoWorkloadFactory():
         parentCmsswStep = parentMergeTask.getStep("cmsRun1")
         self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
-                                 configDoc = skimConfigDoc)
+                                 configDoc = skimConfigDoc, splitAlgo = "TwoFileBased")
         #addLogCollectTask(skimTask)
 
         skimOutputModules = self.getOutputModuleInfo(self.skimConfig,

@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.21 2010/07/13 12:35:06 meloam Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.22 2010/07/19 16:48:59 mnorman Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import threading
 import traceback
@@ -110,6 +110,7 @@ class ExecuteMaster:
             logging.error("Exception is %s" % ex)
             logging.error("Traceback: ")
             logging.error(traceback.format_exc())
+            error = True
         #TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()
 

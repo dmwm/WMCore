@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.34 2010/01/29 20:37:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: DBCore.py,v 1.35 2010/01/29 20:46:00 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -186,7 +186,7 @@ class DBInterface(WMObject):
                 raise Exception, """DBInterface.processData Nothing executed, problem with your arguments 
                 Probably mismatched sizes for sql (%i) and binds (%i)""" % (len(sqlstmt), len(binds))
         finally:
-            if not conn:
+            if not conn and connection != None:
                 connection.close() # Return connection to the pool
         return result
         

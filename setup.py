@@ -64,9 +64,9 @@ def unit_test_extractor(tup, path, filenames):
     logging.debug('Filenames: %s', filenames)
     relpath = path[ len(package_path) + 1: ]
     #relpath = os.path.relpath(path, package_path)
-    print "relpath is %s for path %s and package_path %s" % (relpath, path, package_path)
+    #print "relpath is %s for path %s and package_path %s" % (relpath, path, package_path)
     relpath_pieces = relpath.split(os.sep)
-    print "pieces as %s" % relpath_pieces
+    #print "pieces as %s" % relpath_pieces
     if relpath_pieces[0] == '.': # Base directory.
         relpath_pieces.pop(0) # Otherwise, screws up module name.
 #elif not any(os.path.exists(os.path.join(path, '__init__' + ext))
@@ -84,12 +84,16 @@ def unit_test_extractor(tup, path, filenames):
             module_name = '.'.join(relpath_pieces + [base])
             logging.debug("Got %s from %s and %s" % (module_name, relpath_pieces, base))
             logging.info('Importing from %s', module_name)
-            module = __import__(module_name)
-            module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
-            logging.info('Got suites: %s', module_suites)
             
+            try:
+                module = __import__(module_name)
+                module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
+                logging.info('Got suites: %s', module_suites)
+                all_test_suites.append(module_suites)
+            except ImportError, e:
+                logging.fatal(e)
+                
             #suites += module_suites
-            all_test_suites.append(module_suites)
         #except Exception, e:
         #    print("LoadFail: %s %s" % (filename, e))
 

@@ -7,8 +7,8 @@ Class for creating MySQL specific schema for the FeederManager
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/02/05 10:38:59 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/10/07 09:49:52 spiga Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -22,7 +22,7 @@ class Create(DBCreator):
     Class for creating MySQL specific schema for persistent messages.
     """
     
-    def __init__(self):
+    def __init__(self,logger=None, dbi=None, params = None):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}

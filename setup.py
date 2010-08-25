@@ -277,21 +277,46 @@ class DumbCoverageCommand(Command):
         Determine the code's test coverage in a dumb way and return that as a 
         float.
         """
-        files = generate_filelist()
-        tests = len(files)
+        print "This determines test coverage in a very crude manner. If your"
+        print "test file is incorrectly named it will not be counted, and" 
+        print "result in a lower coverage score." 
+        filelist = generate_filelist()
+        tests = 0
+        files = 0
+        pkgcnt = 0
         dir = os.getcwd()
-        for f in files:
+        pkg = {'name': '', 'files': 0, 'tests': 0}
+        for f in filelist:
             testpath = '/'.join([dir, f])
             pth = testpath.split('./src/python/')
             pth.append(pth[1].replace('/', '_t/').replace('.', '_t.'))
+            if pkg['name'] == pth[2].rsplit('/', 1)[0].replace('_t/', '/'):
+                # pkg hasn't changed, increment counts
+                pkg['files'] += 1
+            else:
+                # new package, print stats for old package
+                pkgcnt += 1
+                if pkg['name'] != '' and pkg['files'] > 0:
+                    print 'Package %s has coverage %.1f percent' % (pkg['name'], 
+                                (float(pkg['tests'])/float(pkg['files']) * 100))
+                # and start over for the new package
+                pkg['name'] = pth[2].rsplit('/', 1)[0].replace('_t/', '/')
+                # do global book keeping
+                files += pkg['files']
+                tests += pkg['tests'] 
+                pkg['files'] = 0 
+                pkg['tests'] = 0
             pth[1] = 'test/python'
             testpath = '/'.join(pth)
-            try:
-                assert os.stat(testpath)
+            try: 
+                os.stat(testpath)
+                pkg['tests'] += 1
             except:
-                tests -= 1
-        coverage = (float(tests) / float(len(files))) * 100
-        print 'coverage is %2f percent' % coverage
+                pass
+            
+        coverage = (float(tests) / float(files)) * 100
+        print '----------------------------------'
+        print 'Code coverage (%s packages) is %.2f percent' % (pkgcnt, coverage)
         return coverage
     
 def getPackages(package_dirs = []):

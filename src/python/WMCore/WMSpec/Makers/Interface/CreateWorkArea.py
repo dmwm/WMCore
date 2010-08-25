@@ -102,19 +102,23 @@ class CreateWorkArea:
 
 
 
-    def __init__(self, jobGroupID = None):
+    def __init__(self, jobGroupID = None, startDir = None):
 
 
-        myThread          = threading.currentThread()
-        myThread.logger   = logging.getLogger()
+        myThread           = threading.currentThread()
+        myThread.logger    = logging.getLogger()
 
-        self.jobGroupID   = jobGroupID
-        self.jobGroup     = None
-        self.subscript    = None
-        self.workflow     = None
-        self.startDir     = os.getcwd()
+        self.jobGroupID    = jobGroupID
+        self.jobGroup      = None
+        self.subscript     = None
+        self.workflow      = None
+        self.collectionDir = None
+        if not startDir:
+            self.startDir     = os.getcwd()
+        else:
+            self.startDir  = startDir
 
-        self.jobs         = {}
+        self.jobs          = {}
 
         self.getNewJobGroup(jobGroupID)
 
@@ -122,7 +126,7 @@ class CreateWorkArea:
 
 
 
-    def getNewJobGroup(self, jobGroupID = None):
+    def getNewJobGroup(self, jobGroupID = None, startDir = None):
         """
         This gets a job group passed to the thread
         """
@@ -134,14 +138,18 @@ class CreateWorkArea:
             else:
                 return
 
+        if startDir:
+            self.startDir = startDir
+
         myThread = threading.currentThread()
 
+        #Load the JobGroup object
         jobGroup = JobGroup(id = self.jobGroupID)
 
         jobGroup.load()
-        jobGroup.loadData()
         self.subscript = jobGroup.subscription
-        #self.subscript.loadData()
+        self.subscript.loadData()
+        #We need the workflow to get the spec
         self.workflow  = self.subscript['workflow']
 
         if not jobGroup.exists():
@@ -158,27 +166,26 @@ class CreateWorkArea:
 
     def createJobGroupArea(self):
         """
-        Creates an area for the JobGroup which is just the jobGroupUID, in which the jobs will be put
+        Creates an area for the task which is just the jobGroupUID, in which the jobs will be put
 
         """
 
+        os.chdir(self.startDir)
+
         workloadDir, taskDir = self.getMasterName()
 
+        #Create the workload directory
         if not os.path.isdir(workloadDir):
             os.mkdir(workloadDir)
 
+        #Change to the workload directory
         os.chdir(workloadDir)
 
+        #Create the task directory
         if not os.path.isdir(taskDir):
             os.mkdir(taskDir)
 
-        #if os.path.exists(taskDir):
-        #    msg = 'JobMaker: Attempting to create working directory %s that already exists' %(taskDir)
-        #    logging.error(msg)
-        #    raise Exception(msg)
-
-        #os.mkdir(taskDir)
-
+        #Move to the task Directory
         os.chdir(taskDir)
 
         logging.info('JobMaker: Now in directory %s' %(os.getcwd()))
@@ -203,36 +210,59 @@ class CreateWorkArea:
             logging.error(msg)
             raise Exception(msg)
 
-        taskDir = os.getcwd()
+        workloadDir, taskDir       = self.getMasterName()
         jobCounter    = 0
         jobCollDir    = 0
 
+        jobList = self.jobGroup.listJobIDs()
+
+        #print "Starting a jobGroup with %i jobs and ID %i" %(len(jobList), self.jobGroup.id)
+
         #Now actually start to do things
-        for job in self.jobGroup.jobs:
+        for jid in jobList:
+            job = Job(id = jid)
             if jobCounter%1000 == 0:
-                jobCollDir = '%s/JobCollection_%i_%i' %(taskDir, self.jobGroup.id, jobCounter/1000)
-                if os.path.isdir(jobCollDir):
-                    #This should NEVER happen
-                    jobCounter += len(os.listdir(jobCollDir))
-                else:
-                    os.mkdir(jobCollDir)
-                os.chdir(jobCollDir)
+                #Create a new jobCollection
+                #Increment jobCreator if there's already something there
+                #print "Creating new dir at value %i" %(jobCounter)
+                jobCounter += self.createJobCollection(jobCounter, taskDir)
                 
             jobCounter = jobCounter + 1
-            #print "jobCounter now %i" %(jobCounter)
-            #job.load()
+
             #Only work with new jobs
+            os.chdir(self.collectionDir)
             if job['state'] == 'new':
                 name = self.getDirectoryName(job)
                 self.createDirectory(name, job)
+                
 
         os.chdir(self.startDir)
 
-        print "Ending in %s" %(os.getcwd())
-            
-
-
         return
+
+    def createJobCollection(self, jobCounter, taskDir):
+        """
+
+        Create a sub-directory to allow storage of large jobs
+        """
+
+        value = jobCounter/1000
+        jobCollDir = '%s/JobCollection_%i_%i' %(taskDir, self.jobGroup.id, value)
+        #Set this to a global variable
+        self.collectionDir = jobCollDir
+        if os.path.isdir(jobCollDir):
+            #This should never happen
+            return len(os.listdir(jobCollDir))
+        elif os.path.isfile(jobCollDir):
+            #We'll, you're screwed, some other file is in the way: IN A DIRECTORY YOU JUST CREATED.
+            #Time to freak the fuck out
+            raise Exception ("Could not create jobCollection %s; non-directory file in the way!" %(jobCollDir))
+        else:
+            #This should be the only application
+            #You return 0 because the directory you just made should be empty
+            os.mkdir(jobCollDir)
+            return 0
+        
 
 
     def createDirectory(self, workdir, job):
@@ -260,7 +290,7 @@ class CreateWorkArea:
         
         #logging.info('JobMaker: Created directory %s for jobGroup %s' %(workdir, self.jobGroupID))
         workloadName, taskName = self.getMasterName()
-        self.jobs['%s/%s/%s' %(workloadName, taskName, job['name'])] = ('%s/%s' %(os.getcwd(), workdir))
+        self.jobs['%s/%s/%s' %(workloadName, taskName, job['name'])] = ('%s' %(workdir))
 
         #Now fill them with stuff
         #self.createLocalBin(workdir)
@@ -368,20 +398,21 @@ class CreateWorkArea:
 
         name = 'job_%i' %(job['id'])
 
-        return name
+        return os.path.join(self.collectionDir, name)
 
     def getMasterName(self):
         """
         Gets a universal name for the jobGroup directory
+        Return the uid as the name if none available (THIS SHOULD NEVER HAPPEN)
 
         """
 
         if self.workflow.spec.find('/') == -1:
-            return self.jobGroup.uid, self.jobGroup.uid
+            return os.path.join(self.startDir, self.jobGroup.uid), os.path.join(self.startDir, self.jobGroup.uid)
         else:
             workload = self.workflow.spec.split('/')[0]
             task     = self.workflow.spec.split('/')[1]
-            return workload, task
+            return os.path.join(self.startDir, workload), os.path.join(self.startDir, workload, task)
 
 
     def cleanUpAll(self):

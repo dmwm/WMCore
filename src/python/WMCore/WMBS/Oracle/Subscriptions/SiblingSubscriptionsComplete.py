@@ -5,8 +5,8 @@ _SiblingSubscriptionsComplete_
 Oracle implementation of Subscription.SiblingSubscriptionsComplete
 """
 
-__revision__ = "$Id: SiblingSubscriptionsComplete.py,v 1.2 2010/07/08 20:07:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SiblingSubscriptionsComplete.py,v 1.3 2010/07/27 16:18:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.SiblingSubscriptionsComplete import \
     SiblingSubscriptionsComplete as SiblingCompleteMySQL    
@@ -14,16 +14,22 @@ from WMCore.WMBS.MySQL.Subscriptions.SiblingSubscriptionsComplete import \
 class SiblingSubscriptionsComplete(SiblingCompleteMySQL):
     sql = """SELECT wmbs_file_details.id, wmbs_file_details.events,
                     wmbs_file_details.lfn, wmbs_location.se_name FROM wmbs_file_details
-               INNER JOIN wmbs_fileset_files ON
-                 wmbs_file_details.id = wmbs_fileset_files.fileid AND
-                 wmbs_fileset_files.fileset = :fileset
-               INNER JOIN wmbs_file_location ON
-                 wmbs_file_details.id = wmbs_file_location.fileid
-               INNER JOIN wmbs_location ON
-                 wmbs_file_location.location = wmbs_location.id                 
-               LEFT OUTER JOIN wmbs_sub_files_acquired this_sub_acquired ON
-                 wmbs_file_details.id = this_sub_acquired.fileid AND
-                 this_sub_acquired.subscription = :subscription
+               INNER JOIN
+                 (SELECT wmbs_fileset_files.fileid FROM wmbs_fileset_files
+                    LEFT OUTER JOIN wmbs_sub_files_acquired ON
+                      wmbs_fileset_files.fileid = wmbs_sub_files_acquired.fileid AND
+                      wmbs_sub_files_acquired.subscription = :subscription
+                    LEFT OUTER JOIN wmbs_sub_files_complete ON
+                      wmbs_fileset_files.fileid = wmbs_sub_files_complete.fileid AND
+                      wmbs_sub_files_complete.subscription = :subscription
+                    LEFT OUTER JOIN wmbs_sub_files_failed ON
+                      wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid AND
+                      wmbs_sub_files_failed.subscription = :subscription
+                  WHERE wmbs_sub_files_acquired.fileid IS Null AND
+                        wmbs_sub_files_complete.fileid IS Null AND
+                        wmbs_sub_files_failed.fileid IS Null AND
+                        wmbs_fileset_files.fileset = :fileset) available_files ON
+                 wmbs_file_details.id = available_files.fileid       
                LEFT OUTER JOIN
                  (SELECT wmbs_sub_files_complete.fileid AS fileid, COUNT(*) AS complete_files
                     FROM wmbs_sub_files_complete
@@ -40,9 +46,12 @@ class SiblingSubscriptionsComplete(SiblingCompleteMySQL):
                       wmbs_subscription.fileset = :fileset
                   GROUP BY wmbs_sub_files_failed.fileid) failed_files ON
                  wmbs_file_details.id = failed_files.fileid
+               INNER JOIN wmbs_file_location ON
+                 wmbs_file_details.id = wmbs_file_location.fileid
+               INNER JOIN wmbs_location ON
+                 wmbs_file_location.location = wmbs_location.id
              WHERE COALESCE(complete_files.complete_files, 0) +
                    COALESCE(failed_files.failed_files, 0) =
                (SELECT COUNT(*) FROM wmbs_subscription
                 WHERE wmbs_subscription.id != :subscription AND
-                      wmbs_subscription.fileset = :fileset) AND
-               this_sub_acquired.fileid IS Null"""
+                      wmbs_subscription.fileset = :fileset)"""

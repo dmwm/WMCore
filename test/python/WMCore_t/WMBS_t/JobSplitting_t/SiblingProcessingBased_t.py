@@ -5,8 +5,8 @@ _SiblingProcessingBased_t_
 Test SiblingProcessing job splitting.
 """
 
-__revision__ = "$Id: SiblingProcessingBased_t.py,v 1.3 2010/07/26 16:21:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SiblingProcessingBased_t.py,v 1.4 2010/07/27 16:18:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import os
@@ -275,8 +275,8 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testFilesetA.commit()
         self.testFilesetA.markOpen(False)
 
-        self.deleteSubscriptionA.completeFiles([testFile1, testFile2, testFile3])
-        self.deleteSubscriptionA.completeFiles([self.testFileA, self.testFileB, self.testFileC])
+        self.testSubscriptionA.completeFiles([testFile1, testFile2, testFile3])
+        self.testSubscriptionA.completeFiles([self.testFileA, self.testFileB, self.testFileC])
         
         splitter = SplitterFactory()
         deleteFactoryA = splitter(package = "WMCore.WMBS",

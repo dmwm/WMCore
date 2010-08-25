@@ -9,6 +9,12 @@ SplitAlgoToStartPolicy = {"FileBased" : "NumberOfFiles",
 SplitAlgoToArgMap = {"FileBased" : "files_per_job",
                      "EventBased" : "events_per_job"}
 
+#if the spliting Algo is not known (other than above)
+#TODO: this shouldn't be needed when Lumibased is supported,
+# remove default value.
+DefaultSliceType = "NumOfFiles"
+DefaultSliceSize = 1
+
 def getSliceType(splitAlgo):
     """
     convert split algorithm to slice type
@@ -16,7 +22,11 @@ def getSliceType(splitAlgo):
     if SplitAlgoToStartPolicy.has_key(splitAlgo):
         return SplitAlgoToStartPolicy[splitAlgo]
     else:
-        return SplitAlgoToStartPolicy["FileBased"]
+        #TODO: there shouldn't be else condition
+        # All top level split algo should be known.
+        # currently Lumibase info is not supported in DBS
+        # when it gets supported remove else block. 
+        return DefaultSliceType
         
 def getSliceSize(splitAlgo, splitArgs):
     """
@@ -26,8 +36,9 @@ def getSliceSize(splitAlgo, splitArgs):
     if SplitAlgoToStartPolicy.has_key(splitAlgo):
         return splitArgs[SplitAlgoToArgMap[splitAlgo]]
     else:
-        if splitArgs.has_key(SplitAlgoToArgMap["FileBased"]):
-            return splitArgs[SplitAlgoToArgMap["FileBased"]]
-        else:
-            return 1
+        #TODO: there shouldn't be else condition
+        # All top level split algo should be known.
+        # currently Lumibase info is not supported in DBS
+        # when it gets supported remove else block. 
+        return DefaultSliceSize
     

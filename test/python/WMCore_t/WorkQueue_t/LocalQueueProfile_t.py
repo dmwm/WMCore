@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: LocalQueueProfile_t.py,v 1.2 2010/08/09 20:58:26 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LocalQueueProfile_t.py,v 1.3 2010/08/09 21:19:20 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 #setup emulator for test, this needs to be at top of the file
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
@@ -31,6 +31,8 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         If we dont have a wmspec file create one
         """
         WorkQueueTestCase.setUp(self)
+        
+        #TODO: need to fix why always get the same number of blocks
         GlobalParams.setNumOfBlocksPerDataset(1)
         GlobalParams.setNumOfFilesPerBlock(100)
         
@@ -67,9 +69,9 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         prof.runcall(function)
         prof.dump_stats(file)
         p = pstats.Stats(file)
-        p.strip_dirs().sort_stats('cumulative').print_stats(10)
-        p.strip_dirs().sort_stats('time').print_stats(10)
-        p.strip_dirs().sort_stats('calls').print_stats(30)
+        p.strip_dirs().sort_stats('cumulative').print_stats(0.1)
+        p.strip_dirs().sort_stats('time').print_stats(0.1)
+        p.strip_dirs().sort_stats('calls').print_stats(0.1)
         #p.strip_dirs().sort_stats('name').print_stats(10)
             
     def testGetWorkLocalQueue(self):

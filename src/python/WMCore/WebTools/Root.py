@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.50 2010/03/03 20:25:43 metson Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: Root.py,v 1.51 2010/03/25 21:04:38 sryu Exp $"
+__version__ = "$Revision: 1.51 $"
 
 # CherryPy
 import cherrypy
@@ -76,6 +76,7 @@ class Root(WMObject, Harness):
         configDict = self.serverConfig.dictionary_()
 
         cpconfig["server.environment"] = configDict.get("environment", "production")
+        cpconfig["server.thread_pool"] = configDict.get("thread_pool", 10)
         cpconfig["server.socket_port"] = configDict.get("port", 8080)
         cpconfig["server.socket_host"] = configDict.get("host", "localhost")
         cpconfig["tools.expires.secs"] = configDict.get("expires", 300)

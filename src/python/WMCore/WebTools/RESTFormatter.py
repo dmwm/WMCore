@@ -17,7 +17,8 @@ class RESTFormatter(TemplatedPage):
                    'text/x-json': self.json, 
                    'application/json': self.json,
                    'text/html': str,
-                   'text/plain': str}
+                   'text/plain': str,
+                   '*/*': str}
     
     @exposejson
     def json(self, data):

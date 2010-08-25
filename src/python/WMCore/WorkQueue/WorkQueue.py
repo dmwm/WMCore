@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.102 2010/04/20 18:27:15 sryu Exp $"
-__version__ = "$Revision: 1.102 $"
+__revision__ = "$Id: WorkQueue.py,v 1.103 2010/05/06 11:47:29 swakef Exp $"
+__version__ = "$Revision: 1.103 $"
 
 
 import time
@@ -660,10 +660,10 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction())
 
             whitelist = task.siteWhitelist()
-            if len(whitelist) != 0:
+            if whitelist:
                 self._insertWhiteList(elementID, whitelist)
             blacklist = task.siteBlacklist()
-            if len(blacklist) != 0:
+            if blacklist:
                 self._insertBlackList(elementID, blacklist)
         return elementID
 

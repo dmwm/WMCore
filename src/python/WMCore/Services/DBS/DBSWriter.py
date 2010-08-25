@@ -225,32 +225,9 @@ class DBSWriter:
             raise DBSWriterError(msg)
         return
         
-
-    #ef createMergeDatasets(self, workflowSpec, fastMerge = True):
-    #   """
-    #   _createMergeDatasets_
-    #
-    #   Create merge output datasets for a workflow Spec
-    #   Expects a Processing workflow spec from which it will generate the
-    #   merge datasets automatically.
-    #
-    #   
-    #   """
-    #   mergeSpec = createMergeDatasetWorkflow(workflowSpec, fastMerge)        
-    #   try:
-    #       mergeSpec.payload.operate(
-    #           _CreateMergeDatasetOperator(self.dbs, workflowSpec)
-    #           )
-    #       
-    #   except DbsException, ex:
-    #       msg = "Error in DBSWriter.createMergeDatasets\n"
-    #       msg += "For Workflow: %s\n" % workflowSpec.workflowName()
-    #       msg += "%s\n" % formatEx(ex)
-    #       raise DBSWriterError(msg)
-    #   
-    #   return
-        
-    def insertFilesForDBSBuffer(self, files, procDataset, algos, jobType = "NotMerge", insertDetectorData = False, maxFiles = 100, maxSize = 99999999):
+    def insertFilesForDBSBuffer(self, files, procDataset, algos,
+                                jobType = "NotMerge", insertDetectorData = False,
+                                maxFiles = 100, maxSize = 99999999):
         """
         _insertFiles_
 

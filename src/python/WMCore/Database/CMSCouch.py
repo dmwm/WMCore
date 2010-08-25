@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.26 2009/06/08 15:54:06 meloam Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: CMSCouch.py,v 1.27 2009/06/22 16:04:32 valya Exp $"
+__version__ = "$Revision: 1.27 $"
 
 try:
     # Python 2.6
@@ -20,6 +20,62 @@ import urllib
 from httplib import HTTPConnection
 import time
 import datetime
+import thread
+from threading import Thread
+import traceback
+import types
+
+def httpRequest(url, uri, data, request='POST'):
+    """
+    Make a request to the remote database. for a give URI. The type of
+    request will determine the action take by the server (be careful with
+    DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
+    """
+    headers = {"Content-type": 'application/x-www-form-urlencoded', 
+               "Accept": 'text/plain'}
+    encoded_data = ''
+    if request != 'GET' and data:
+        if  type(data) is types.StringType:
+            encoded_data = data
+        else:
+            encoded_data = json.dumps(data)
+        headers["Content-length"] = len(encoded_data)
+    else:
+        #encode the data as a get string
+        if  not data:
+            data = {}
+        uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
+    conn = HTTPConnection(url)
+    conn.connect()
+    conn.request(request, uri, encoded_data, headers)
+    response = conn.getresponse()
+    data = response.read()
+    conn.close()
+    return response.status, data
+
+class HttpRequestThread(Thread):
+    def __init__(self, url, path, data, request):
+        Thread.__init__(self)
+        self.url = url
+        self.path = path
+        self.data = data
+        self.request = request
+        self.retry = False
+
+    def run(self):
+        """
+        Request data to/from couch. If necessary made a few retries.
+        This method calls httpRequest and can be used in thread.
+        """
+        # TODO: think about failed request, how we can ensure
+        # that all data will be injected properly
+        status, data = httpRequest(self.url, self.path , self.data, 'POST')
+        if  status - 400 >= 0 and not self.retry: 
+            # trigger all cases with HTTP response 400 and above
+            # try one more time
+            time.sleep(1)
+            self.retry = True
+            return self.run()
 
 class Document(dict):
     """
@@ -81,39 +137,48 @@ class Requests:
         """
         return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
 
-    def makeRequest(self, uri=None, data=None, type='GET',
+    def makeRequest(self, uri=None, data=None, request='GET',
                      encode=None, decode=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
         DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
-        headers = {"Content-type": 
-                    'application/x-www-form-urlencoded', #self.accept_type,
-                    "Accept": self.accept_type}
-        encoded_data = ''
-            
-        if type != 'GET' and data:
-            if (encode == False):
-                encoded_data = data
-            else:
-                encoded_data = self.encode(data)
-            headers["Content-length"] = len(encoded_data)
-        else:
-            #encode the data as a get string
-            if  not data:
-                data = {}
-            uri = "%s?%s" % (uri, urllib.urlencode(data))
-        self.conn.connect()
-        self.conn.request(type, uri, encoded_data, headers)
-        response = self.conn.getresponse()
-
-        data = response.read()
-        self.conn.close()
-        if (decode == False):
+        # I didn't use encode parameter in httpRequest, instead it uses
+        # data type to decide to encode it via json or not
+        status, data = httpRequest(self.url, uri, data, request)
+        if  status - 400 >= 0:
+            print "HTTP request status", status
+        if  (decode == False):
             return data
         else:
             return self.decode(data)
+
+#        headers = {"Content-type": 
+#                    'application/x-www-form-urlencoded', #self.accept_type,
+#                    "Accept": self.accept_type}
+#        encoded_data = ''
+#            
+#        if request != 'GET' and data:
+#            if (encode == False):
+#                encoded_data = data
+#            else:
+#                encoded_data = self.encode(data)
+#            headers["Content-length"] = len(encoded_data)
+#        else:
+#            if  not data:
+#                data = {}
+#            uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
+#        self.conn.connect()
+#        self.conn.request(request, uri, encoded_data, headers)
+#        response = self.conn.getresponse()
+
+#        data = response.read()
+#        self.conn.close()
+#        if (decode == False):
+#            return data
+#        else:
+#            return self.decode(data)
 
     def encode(self, data):
         """
@@ -231,8 +296,15 @@ class Database(CouchDBRequests):
                 self.queue(doc)
             if timestamp:
                 self._queue = self.timestamp(self._queue)
-            result = self.post('/%s/_bulk_docs/' % self.name, 
-                                 {'docs': self._queue})
+            # commit in thread to avoid blocking others
+            uri  = '/%s/_bulk_docs/' % self.name
+            data = {'docs': list(self._queue)}
+            thr  = HttpRequestThread(self.url, uri, data, 'POST')
+            thr.start() 
+            # TODO: how to deal with threads, should we wait???
+            # if we will wait for all request then we should use thr.join()
+#            result = self.post('/%s/_bulk_docs/' % self.name, 
+#                                 {'docs': self._queue})
             self._queue = []
             return result
         elif doc:

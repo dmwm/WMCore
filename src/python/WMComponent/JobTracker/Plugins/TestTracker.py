@@ -3,29 +3,32 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: TestTracker.py,v 1.2 2009/11/06 20:36:56 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TestTracker.py,v 1.3 2009/11/17 17:39:14 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 import logging
 import os
-import string
 
-from xml.sax.handler import ContentHandler
+#from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
-
-
-#from ResourceMonitor.Monitors.CondorQ import condorQ
 
 from WMComponent.JobTracker.Plugins.TrackerPlugin  import TrackerPlugin
 from WMComponent.JobTracker.Plugins.CondorQHandler import CondorQHandler
 
 
 class TestTracker(TrackerPlugin):
+    """
+    TestTracker
+
+    Basic class to track jobs passing through a local condor_schedd
+
+    """
 
 
     def __init__(self, config):
 
+        TrackerPlugin.__init__(self, config)
         self.classAds = None
 
         return
@@ -39,12 +42,17 @@ class TestTracker(TrackerPlugin):
         return trackDict
 
     def getClassAds(self):
+        """
+        _getClassAds_
+        
+        Grab classAds from condor_q using xml parsing
+        """
 
         constraint = "\"WMAgent_JobID =!= UNDEFINED\""
 
 
         command = "condor_q -xml -constraint %s  " % constraint
-        logging.debug("condorQ command: '%s'"%command)
+        logging.debug("condorQ command: '%s'" % command)
         si, sout = os.popen2(command)
         content = sout.read()
 
@@ -62,7 +70,7 @@ class TestTracker(TrackerPlugin):
             parser.feed(content)
         except Exception, ex:
             # No xml data, no override, nothing to be done...
-            return 
+            return ex
         
         classAdsRaw = handler.classads
         classAds = {}
@@ -84,20 +92,18 @@ class TestTracker(TrackerPlugin):
         Kill a list of jobs based on the WMBS job names
 
         """
-        listToKill = []
-
         #Should already HAVE the ClassAds
         #self.getClassAds()
         command = "condor_rm"
         for name in killList:
-            command = '%s %s' %(command, str(self.classAds[name]['ClusterId']))
+            command = '%s %s' % (command, str(self.classAds[name]['ClusterId']))
         
         #Now kill 'em
         logging.debug("condor_rm command: '%s'"%command)
-        si, sout = os.popen2(command)
-        content = sout.read()        
+        sout    = os.popen(command)
+        content = sout.read()
 
-        return
+        return content
 
 
     def track(self, jobDict):
@@ -114,23 +120,26 @@ class TestTracker(TrackerPlugin):
             elif self.classAds[job['id']]['JobStatus'] == 5:
                 #Job is Held
                 trackDict[job['id']] = {'Status': 'Held', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
-                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
-                                        'StatusReason': self.classAds[job['name']]['HoldReason']}
+                                        - self.classAds[job['id']]['EnteredCurrentStatus'], \
+                                        'StatusReason': self.classAds[job['id']]['HoldReason']}
             elif self.classAds[job['id']]['JobStatus'] == 1:
                 #Job is Idle
+                logging.error("Job is idle")
+                logging.error(self.classAds[job['id']])
                 trackDict[job['id']] = {'Status': 'Idle', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
-                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
-                                        'StatusReason': self.classAds[job['name']]['LastRejMatchReason']}
+                                        - self.classAds[job['id']]['EnteredCurrentStatus']}
+                if self.classAds[job['id']].has_key('LastRejMatchReason'):
+                    trackDict[job['id']]['StatusReason'] = self.classAds[job['id']]['LastRejMatchReason']
             elif self.classAds[job['id']]['JobStatus'] == 2:
                 #Job is Running
                 trackDict[job['id']] = {'Status': 'Running', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
-                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
+                                        - self.classAds[job['id']]['EnteredCurrentStatus'], \
                                         'StatusReason': -1}
             else:
                 #Job is in some strange state
                 trackDict[job['id']] = {'Status': 'Unknown', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
-                                        - self.classAds[job['name']]['EnteredCurrentStatus'], \
-                                        'StatusReason': self.classAds[job['name']]['JobStatus'] }
+                                        - self.classAds[job['id']]['EnteredCurrentStatus'], \
+                                        'StatusReason': self.classAds[job['id']]['JobStatus'] }
 
 
         return trackDict

@@ -2,16 +2,13 @@
 """
 _Destroy_
 
+SQLite implementation of ResourceControl.Destroy.
 """
 
-__revision__ = "$Id: Destroy.py,v 1.1 2009/10/05 20:03:01 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
-
+__revision__ = "$Id: Destroy.py,v 1.2 2010/02/09 17:59:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.ResourceControl.MySQL.Destroy import Destroy as MySQLDestroy
 
 class Destroy(MySQLDestroy):
-    """
-    Identical to MySQL version
-
-    """
+    pass

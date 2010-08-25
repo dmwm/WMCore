@@ -1,18 +1,15 @@
-#/usr/bin/env python2.4
+#/usr/bin/env python
 """
 _Destroy_
 
+Clear out the ResourceControl schema.
 """
 
-__revision__ = "$Id: Destroy.py,v 1.1 2009/10/05 20:03:00 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Destroy.py,v 1.2 2010/02/09 17:59:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
-
 from WMCore.Database.DBCreator import DBCreator
-
-from WMCore.WMException import WMException
-from WMCore.WMExceptions import WMEXCEPTION
 
 class Destroy(DBCreator):    
     def __init__(self, logger = None, dbi = None):
@@ -32,6 +29,6 @@ class Destroy(DBCreator):
 
         self.create = {}
         self.delete = {}
-        self.delete["03rc_site"]             = "DROP TABLE rc_site"
-        self.delete["02rc_site_threshold"]   = "DROP TABLE rc_site_threshold"
-        self.delete["01rc_site_attr"]        = "DROP TABLE rc_site_attr"
+        self.delete["01rc_thresholds"] = "DROP TABLE rc_threshold"
+
+        return

@@ -1,22 +1,14 @@
 #!/usr/bin/env python
-
 """
 _InsertThreshold_
 
-This module inserts thresholds for the given sites for SQLite
-
+SQLite implementation of ResourceControl.InsertThreshold
 """
 
-__revision__ = "$Id: InsertThreshold.py,v 1.1 2009/10/05 20:05:52 mnorman Exp $"
-__version__  = "$Revision: 1.1 $"
-
-import threading
+__revision__ = "$Id: InsertThreshold.py,v 1.2 2010/02/09 17:59:15 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from WMCore.ResourceControl.MySQL.InsertThreshold import InsertThreshold as MySQLInsertThreshold
 
 class InsertThreshold(MySQLInsertThreshold):
-    """
-    _InsertThreshold_
-    
-    This module finds thresholds for the given sites for SQLite
-    """
+    pass

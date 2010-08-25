@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.15 2009/09/24 20:13:57 sryu Exp $"
-__revision__ = "$Revision: 1.15 $"
+__version__ = "$Id: WMTask.py,v 1.16 2009/10/02 19:09:20 evansde Exp $"
+__revision__ = "$Revision: 1.16 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -256,46 +256,46 @@ class WMTaskHelper(TreeHelper):
         datadict = getattr(self.data.input, "splitting")
         return datadict.dictionary_()
 
-    def getSeederConfigs(self):
+
+    def addGenerator(self, generatorName, **settings):
         """
-        _getSeederConfigs_
+        _addGenerator_
 
-        Returns a list of seeder config options in a dict with the seeder name as the key.
+
         """
-
-        result = []
-
-        if not hasattr(self.data, "seeders"):
-            return result
-
-        for seederName in self.data.seeders.listSections_():
-            confValues = TreeHelper(getattr(self.data.seeders, seederName))
-            args = {}
-            tempArgs = confValues.pythoniseDict(sections = False)
-            for entry in tempArgs.keys():
-                args[entry.split('%s.' %seederName)[1]] = tempArgs[entry]
-            result.append({seederName: args})
-
-        return result
+        if not 'generators' in self.data.listSections_():
+            self.data.section_('generators')
+        if not generatorName in self.data.generators.listSections_():
+            self.data.generators.section_(generatorName)
 
 
-    def addSeeder(self, seederName, args = None):
-        """
-        _addSeeder_
-
-        This SHOULD allow you to add a new seeder to the config section with any variable you want
-        """
-
-        if not 'seeders' in self.data.listSections_():
-            self.data.section_('seeders')
-        if not seederName in self.data.seeders.listSections_():
-            self.data.seeders.section_(seederName)
-
-        if args:
-            helper = TreeHelper(getattr(self.data.seeders, seederName))
-            helper.addValue(args)
+        helper = TreeHelper(getattr(self.data.generators, generatorName))
+        helper.addValue(settings)
 
         return
+
+
+    def listGenerators(self):
+        generators = getattr(self.data, "generators", None)
+        if generators == None:
+            return []
+        return generators.listSections_()
+
+
+    def getGeneratorSettings(self, generatorName):
+        generators = getattr(self.data, "generators", None)
+        if generators == None:
+            return {}
+        generator = getattr(generators, generatorName, None)
+        if generator == None:
+            return {}
+
+        confValues = TreeHelper(generator)
+        args = {}
+        tempArgs = confValues.pythoniseDict(sections = False)
+        for entry in tempArgs.keys():
+            args[entry.split('%s.' %generatorName)[1]] = tempArgs[entry]
+        return args
 
     def addInputDataset(self, **options):
         """

@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.6 2010/02/06 10:28:36 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.7 2010/03/03 20:59:54 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -50,7 +50,7 @@ class WorkQueueMonitorService(ServiceInterface):
         # from WorkQueueService
         self.wq = WorkQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
         
-        self.model.addMethod("POST", "status", self.wq.status,
+        self.model.addMethod("GET", "status", self.wq.status,
                              args = ["status", "before", "after", "elementIDs", "subs", "dictKey"])
         
         # DAO stuff

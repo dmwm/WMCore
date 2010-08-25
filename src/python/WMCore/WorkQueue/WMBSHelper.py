@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.22 2010/04/12 21:17:06 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.23 2010/05/07 15:09:23 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import logging
 
@@ -16,6 +16,7 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.DataStructs.Run import Run
 
 class WMBSHelper:
 
@@ -155,6 +156,10 @@ class WMBSHelper:
                         parents = wmbsParents,
                         locations = set(storageElements))
         
+        for lumi in dbsFile['LumiList']:
+            run = Run(lumi['RunNumber'], lumi['LumiSectionNumber']) 
+            wmbsFile.addRun(run)
+            
         logging.info("WMBS File: %s\n on Location: %s" 
                      % (wmbsFile['lfn'], wmbsFile['newlocations']))
         return wmbsFile

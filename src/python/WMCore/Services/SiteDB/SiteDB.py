@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.16 2010/04/07 18:13:07 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: SiteDB.py,v 1.17 2010/05/06 14:07:24 swakef Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.Services.SSLService import SSLService
 import urllib
@@ -181,13 +181,16 @@ class SiteDBJSON(SSLService):
                             '').replace('_Buffer',
                                         '').replace('_Export', '')
 
-        if node in self.cmsNametoPhEDExNode(name):
-            return name
-
-        # As far as i can tell there is no way to get a full listing, would
-        # need to call CMSNametoPhEDExNode?cms_name= but can't find a way to do
-        # that. So simply raise an error
-        raise ValueError, "Unable to find CMS name for \'%s\'" % node
+        return name
+        # Disable cross-check until following bug fixed.
+        # https://savannah.cern.ch/bugs/index.php?67044
+#        if node in self.cmsNametoPhEDExNode(name):
+#            return name
+#
+#        # As far as i can tell there is no way to get a full listing, would
+#        # need to call CMSNametoPhEDExNode?cms_name= but can't find a way to do
+#        # that. So simply raise an error
+#        raise ValueError, "Unable to find CMS name for \'%s\'" % node
 
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 

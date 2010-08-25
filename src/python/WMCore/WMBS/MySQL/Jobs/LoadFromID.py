@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFromID.
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.5 2009/05/11 14:47:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: LoadFromID.py,v 1.6 2009/05/12 16:18:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -37,10 +37,8 @@ class LoadFromID(DBFormatter):
         formatDict() turns everything into strings.
         """
         formattedResult = DBFormatter.formatDict(self, result)[0]
-        formattedResult["id"] = int(formattedResult["id"])
-        formattedResult["jobgroup"] = int(formattedResult["jobgroup"])
 
-        if formattedResult["bool_outcome"] == "0":
+        if formattedResult["bool_outcome"] == 0:
             formattedResult["outcome"] = "fail"
         else:
             formattedResult["outcome"] = "success"

@@ -6,8 +6,8 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 """
 
-__revision__ = "$Id: Requests.py,v 1.31 2010/01/12 00:09:15 metson Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Requests.py,v 1.32 2010/01/16 20:13:28 meloam Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import urllib
 import os
@@ -630,7 +630,8 @@ class SecureRequests(Requests):
             key = os.environ['X509_HOST_KEY']
     
         # Second preference to User Proxy, very common
-        elif os.path.exists( os.environ['X509_USER_PROXY']):
+        elif (os.environ.has_key('X509_USER_PROXY')) and \
+                (os.path.exists( os.environ['X509_USER_PROXY'])):
             cert = os.environ['X509_USER_PROXY']
             key = cert
     

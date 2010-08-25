@@ -4,8 +4,8 @@
 _Feeder_
 """
 __all__ = []
-__revision__ = "$Id: Feeder.py,v 1.2 2009/07/14 13:30:36 riahi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Feeder.py,v 1.3 2009/07/20 10:04:11 riahi Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "simon"
 
 # DBS2
@@ -59,9 +59,6 @@ class Feeder(FeederImpl):
 
         # The last run that was identified as new, and run purge time
         self.purgeTime = purgeTime * 3600 # Convert hours to seconds
-
-        # DBS parameter
-        self.dbsReader = DBSReader(dbsUrl)
     
     def __call__(self, fileset):
         """

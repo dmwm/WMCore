@@ -5,20 +5,20 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.6 2009/11/12 16:43:31 swakef Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: GetElements.py,v 1.7 2009/11/20 22:59:58 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
 
 class GetElements(DBFormatter):
-    sql = """SELECT we.id, we.status, we.wmspec_id, we.input_id, we.num_jobs,
+    sql = """SELECT we.id, we.status, we.wmtask_id, we.input_id, we.num_jobs,
                     we.priority, we.parent_flag, we.insert_time,
                     we.update_time, we.subscription_id, we.parent_queue_id,
                     wq.url child_url
                 FROM wq_element we
-                LEFT JOIN wq_queues wq ON we.child_queue = wq.id
+                LEFT JOIN wq_child_queues wq ON we.child_queue = wq.id
           """
 #                ORDER BY priority ASC
     def execute(self, status = None,

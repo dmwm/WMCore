@@ -6,24 +6,25 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.15 2009/10/12 15:07:50 swakef Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WorkSpecTaskParser.py,v 1.1 2009/11/20 22:59:59 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 
 #TODO: Pull useful stuff out of wmspec then free it - large data structure
 #TODO: Cleanup, logArchive etc. WorkflowTypes needed???
 
 #globalDBS = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
 
-class WorkSpecParser:
+class WorkSpecTaskParser:
     """
     Helper object to parse a WMSpec and return chunks of work
     """
 
-    def __init__(self, wmspec):
-        self.wmspec = wmspec
-        self.initialTask = self.wmspec.taskIterator().next()
+    def __init__(self, task):
+        self.wmspec = getWorkloadFromTask(task)
+        self.initialTask = task
         self.splitAlgo = self.initialTask.jobSplittingAlgorithm()
         self.splitSize = self.initialTask.jobSplittingParameters()["size"]
 

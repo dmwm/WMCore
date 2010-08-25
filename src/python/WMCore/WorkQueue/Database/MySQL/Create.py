@@ -7,8 +7,8 @@ Inherit from CreateWorkQueueBase, and add MySQL specific substitutions (e.g. add
 INNODB).
 """
 
-__revision__ = "$Id: Create.py,v 1.14 2009/11/12 16:43:31 swakef Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Create.py,v 1.15 2009/11/20 23:00:01 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -31,11 +31,22 @@ class Create(CreateWorkQueueBase):
              id          INTEGER      NOT NULL AUTO_INCREMENT, 
              name        VARCHAR(500) NOT NULL,
              url         VARCHAR(500) NOT NULL,
+             owner       VARCHAR(250) NOT NULL,
              PRIMARY KEY(id),
              UNIQUE (name)
              )"""
-
-        self.create["02wq_data"] = \
+        
+        self.create["02wq_wmtask"] = \
+          """CREATE TABLE wq_wmtask (
+             id          INTEGER      NOT NULL AUTO_INCREMENT,
+             wmspec_id  INTEGER NOT NULL,
+             name         VARCHAR(500) NOT NULL,
+             dbs_url    VARCHAR(500),
+             PRIMARY KEY(id),
+             UNIQUE (wmspec_id, name)
+             )"""
+             
+        self.create["03wq_data"] = \
           """CREATE TABLE wq_data (
              id             INTEGER      NOT NULL AUTO_INCREMENT,
              name           VARCHAR(500) NOT NULL,
@@ -43,20 +54,22 @@ class Create(CreateWorkQueueBase):
              UNIQUE (name)
              )"""
 
-        self.create["03wq_queues"] = \
-          """CREATE TABE wq_queues (
+        self.create["04wq_child_queues"] = \
+          """CREATE TABLE wq_child_queues (
              id               INTEGER    NOT NULL AUTO_INCREMENT,
              url              VARCHAR(255) NOT NULL,
-             PRIMARY KEY (id, url),
-             UNIQUE(url)"""
+             PRIMARY KEY (id),
+             UNIQUE(url)
+             )"""
+             
 
-        self.create["04wq_element"] = \
+        self.create["05wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL AUTO_INCREMENT,
-             wmspec_id        INTEGER    NOT NULL,
+             wmtask_id        INTEGER    NOT NULL,
              input_id         INTEGER,
              parent_queue_id  INTEGER,
-             child_queue      VARCHAR(255),
+             child_queue      INTEGER,
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
@@ -64,11 +77,10 @@ class Create(CreateWorkQueueBase):
              subscription_id  INTEGER    NOT NULL,
              insert_time      INTEGER    NOT NULL,
              update_time      INTEGER    NOT NULL,
-             PRIMARY KEY (id),
-             UNIQUE (wmspec_id, subscription_id)
+             PRIMARY KEY (id)
              ) """
 
-        self.create["06wq_site"] = \
+        self.create["07wq_site"] = \
               """CREATE TABLE wq_site (
                  id          INTEGER      NOT NULL AUTO_INCREMENT,
                  name        VARCHAR(255) NOT NULL,

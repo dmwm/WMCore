@@ -5,41 +5,50 @@ MySQL implementation of WorkQueueElement.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.8 2009/11/12 16:43:31 swakef Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: New.py,v 1.9 2009/11/20 22:59:58 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WorkQueue.Database import States
 
 class New(DBFormatter):
-    sql = """INSERT INTO wq_element (wmspec_id, input_id, num_jobs, priority,
-                         parent_flag, status, subscription_id, insert_time,
-                         parent_queue_id)
-                 VALUES ((SELECT id FROM wq_wmspec WHERE name = :wmSpecName),
+    sql = """INSERT INTO wq_element (wmtask_id, input_id, num_jobs, priority,
+                         parent_flag, status, insert_time,
+                         parent_queue_id, update_time)
+                 VALUES ((SELECT wt.id FROM wq_wmtask wt
+                           INNER JOIN wq_wmspec ws ON ws.id = wt.wmspec_id
+                          WHERE ws.name = :wmSpecName AND wt.name = :wmTaskName),
                          (SELECT id FROM wq_data WHERE name = :input),
                          :numJobs, :priority, :parentFlag, :available,
-                         :subscription, :insertTime, :parentQueueId)
+                         :insertTime, :parentQueueId, :insertTime)
           """
-    sql_no_input = """INSERT INTO wq_element (wmspec_id, num_jobs, priority,
-                         parent_flag, status, subscription_id, insert_time,
+    sql_no_input = """INSERT INTO wq_element (wmtask_id, num_jobs, priority,
+                         parent_flag, status, insert_time,
                          parent_queue_id, update_time)
-                 VALUES ((SELECT id FROM wq_wmspec WHERE name = :wmSpecName),
+                 VALUES ((SELECT wt.id FROM wq_wmtask wt
+                           INNER JOIN wq_wmspec ws ON ws.id = wt.wmspec_id
+                          WHERE ws.name = :wmSpecName AND wt.name = :wmTaskName),
                          :numJobs, :priority, :parentFlag, :available,
-                         :subscription, :insertTime, :parentQueueId,
+                         :insertTime, :parentQueueId,
                          :insertTime)
           """
-
-    def execute(self, wmSpecName, input, numJobs, priority,
-                parentFlag, subscription, parentQueueId,
+    # for the previous version than  MySQL 5.1.12 has different meaning.
+    # Check the http://dev.mysql.com/doc/refman/5.1/en/information-functions.html#function_last-insert-id
+    # this is not the good way: not sure safe for the race condition even in one transaction
+    # Need to define some unique values for the table other than id
+    sql_get_id = """SELECT LAST_INSERT_ID()"""
+    
+    def execute(self, wmSpecName, wmTaskName,  input, numJobs, priority,
+                parentFlag, parentQueueId,
                 conn = None, transaction = False):
 
         #if input == None:
         #    input = "NoBlock"
         binds = {"wmSpecName" : wmSpecName,
+                 "wmTaskName" : wmTaskName,
                  "numJobs" : numJobs, "priority" : priority,
                  "parentFlag" : parentFlag, "insertTime" : int(time.time()),
-                 "subscription" : subscription,
                  "available" : States['Available'],
                  "parentQueueId" : parentQueueId}
         if input:
@@ -49,4 +58,8 @@ class New(DBFormatter):
             sql = self.sql_no_input
         self.dbi.processData(sql, binds, conn = conn,
                              transaction = transaction)
-        return
+        
+        result = self.dbi.processData(self.sql_get_id, {}, conn = conn,
+                             transaction = transaction)
+        id = self.format(result)
+        return int(id[0][0])

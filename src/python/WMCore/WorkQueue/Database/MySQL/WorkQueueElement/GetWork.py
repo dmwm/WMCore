@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.6 2009/09/22 19:40:18 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: GetWork.py,v 1.7 2009/11/20 22:59:58 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import random
 import time
@@ -19,30 +19,18 @@ from WMCore.WorkQueue.Database import States
 class GetWork(DBFormatter):
     # get elements that match each site resource ordered by priority
     # elements which do not process any data have their input_id set to NULL
-    sql = """SELECT we.subscription_id, wsite.name site_name, valid,
-                    wmbs_location.site_name AS wmbs_site_name,
+    sql = """SELECT we.id, we.wmtask_id, we.subscription_id, wsite.name site_name,
                     we.num_jobs, we.input_id, we.parent_flag
             FROM wq_element we
             LEFT JOIN wq_data_site_assoc wbmap ON
                     wbmap.data_id = we.input_id
             LEFT JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
-            LEFT JOIN wmbs_location ON (wsite.name = wmbs_location.site_name)
-            LEFT JOIN wmbs_subscription_location wmbs_bl ON
-                    (we.subscription_id = wmbs_bl.subscription AND
-                     wmbs_location.id = wmbs_bl.location)
             WHERE we.status = :available AND
                   we.num_jobs <= :jobs AND
                   -- If have input data release to site with that data,
                   -- else can release to any site
                   (wsite.name = :site OR
-                          (wsite.name IS NULL AND we.input_id is NULL)) AND
-                  -- can release if white listed,
-                  -- or not in black list and no white list for subscription
-                  (wmbs_bl.valid = 1 OR (wmbs_bl.valid is NULL AND
-                                         we.subscription_id NOT IN
-                                                 (SELECT DISTINCT subscription
-                                                  FROM wmbs_subscription_location
-                                                  WHERE valid = 1)))
+                          (wsite.name IS NULL AND we.input_id is NULL))
             ORDER BY (we.priority +
                     :weight * (:current_time - we.insert_time)) DESC
             """
@@ -68,9 +56,9 @@ class GetWork(DBFormatter):
 
             # Production jobs (can run anywhere) are assigned to a random site
             site = result['site_name'] or random.choice(resources.keys())
-            if  result['subscription_id'] not in acquired_ids and \
+            if  result['id'] not in acquired_ids and \
                                     result['num_jobs'] <= resources[site]:
                 acquired.append(result)
-                acquired_ids.append(result['subscription_id'])
+                acquired_ids.append(result['id'])
                 resources[site] = resources[site] - result['num_jobs']
         return acquired

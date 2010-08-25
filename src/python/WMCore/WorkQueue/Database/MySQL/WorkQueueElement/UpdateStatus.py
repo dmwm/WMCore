@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.4 2009/11/12 16:43:31 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: UpdateStatus.py,v 1.5 2009/11/20 22:59:58 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -15,17 +15,17 @@ import time
 
 class UpdateStatus(DBFormatter):
     sql1 = """UPDATE wq_element SET status = :status, update_time = :now"""
-    sql2 = """, child_queue = (SELECT id FROM wq_queues WHERE url = :queue)"""
+    sql2 = """, child_queue = (SELECT id FROM wq_child_queues WHERE url = :queue)"""
     sql3 = """ WHERE %s = :id"""
 
-    queue_insert_sql = """INSERT IGNORE INTO wq_queues (url) VALUES (:queue)"""
+    queue_insert_sql = """INSERT IGNORE INTO wq_child_queues (url) VALUES (:queue)"""
 
-    def execute(self, status, ids, id_type = 'subscription_id',
+    def execute(self, status, ids, id_type = 'id',
                 child_queue = None,
                 conn = None, transaction = False):
         if status not in States:
             raise RuntimeError, "Invalid state: %s" % status
-        if id_type not in ('subscription_id', 'parent_queue_id', 'id'):
+        if id_type not in ('parent_queue_id', 'id'):
             raise RuntimeError, "Invalid id_type: %s" % id_type
 
         now = int(time.time())

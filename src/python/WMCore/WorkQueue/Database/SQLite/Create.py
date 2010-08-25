@@ -5,8 +5,8 @@ Implementation of CreateWorkQueue for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.8 2009/11/12 16:43:32 swakef Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Create.py,v 1.9 2009/11/20 22:59:59 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -24,10 +24,10 @@ class Create(CreateWorkQueueBase):
         CreateWorkQueueBase.__init__(self, logger, dbi)
 
         # Can't use ALTER TABLE to add constrints
-        self.create["04wq_element"] = \
+        self.create["05wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
-             wmspec_id        INTEGER    NOT NULL REFERENCES wq_wmspec(id),
+             wmtask_id        INTEGER    NOT NULL REFERENCES wq_wmspec(id),
              input_id         INTEGER             REFERENCES wq_data(id),
              parent_queue_id  INTEGER,
              child_queue      VARCHAR(255)        REFERENCES wq_queues(id),
@@ -35,21 +35,20 @@ class Create(CreateWorkQueueBase):
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
              status           INTEGER    DEFAULT 0 REFERENCES wq_element_status(id),
-             subscription_id  INTEGER    NOT NULL REFERENCES wmbs_subscription(id),
+             subscription_id  INTEGER,
              insert_time      INTEGER    NOT NULL,
              update_time      INTEGER    NOY NULL,
-             PRIMARY KEY (id),
-             UNIQUE (wmspec_id, subscription_id)
+             PRIMARY KEY (id)
              ) """
 
-        self.create["05wq_data_parentage"] = \
+        self.create["06wq_data_parentage"] = \
           """CREATE TABLE wq_data_parentage (
              child        INTEGER    NOT NULL REFERENCES wq_data(id),
              parent       INTEGER    NOT NULL REFERENCES wq_data(id),
              PRIMARY KEY (child, parent)
              )"""
 
-        self.create["07wq_data_site_assoc"] = \
+        self.create["08wq_data_site_assoc"] = \
           """CREATE TABLE wq_data_site_assoc (
              data_id     INTEGER    NOT NULL REFERENCES wq_data(id),
              site_id      INTEGER    NOT NULL REFERENCES wq_site(id),
@@ -57,5 +56,12 @@ class Create(CreateWorkQueueBase):
              PRIMARY KEY (data_id, site_id)
              )""" #-- PRIMARY KEY (block_id, site_id) #-- online BOOL DEFAULT FALSE, -- for when we track staging
 
+        self.create["09wq_element_site_validation"] = \
+          """CREATE TABLE wq_element_site_validation (
+             element_id   INTEGER    NOT NULL REFERENCES wq_element(id),
+             site_id      INTEGER    NOT NULL REFERENCES wq_site(id),
+             valid    CHAR(1) CHECK(valid IN (0, 1)),
+             PRIMARY KEY (element_id, site_id)
+             )"""
         # constraints added in table definition
         self.constraints.clear()

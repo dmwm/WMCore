@@ -2,8 +2,8 @@
 """
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
-__revision__ = "$Id: WMBSHelper.py,v 1.11 2009/10/12 15:07:50 swakef Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.12 2009/11/20 22:59:58 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 from sets import Set
 
 from WMCore.WMBS.File import File
@@ -11,19 +11,23 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.Services.UUID import makeUUID
-from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 
 class WMBSHelper:
 
-    def __init__(self, wmspec, blockName):
+    def __init__(self, wmSpecName, wmSpecUrl, wmSpecOwner, taskName, 
+                 whitelist, blacklist,blockName):
         #TODO: 
         # 1. get the top level task.
         # 2. get the top level step and input
         # 3. generated the spec, owner, name from task
         # 4. get input file list from top level step
         # 5. generate the file set from work flow.
-        self.wmSpec = wmspec
-        self.topLevelTask = self.wmSpec.taskIterator().next()
+       	self.wmSpecName = wmSpecName
+        self.wmSpecUrl = wmSpecUrl
+        self.wmSpecOwner = wmSpecOwner
+        self.topLevelTaskName = taskName
+        self.whitelist = whitelist
+        self.blacklist = blacklist
         self.block = blockName or None
         self.fileset = None
         self.workflow = None
@@ -31,13 +35,10 @@ class WMBSHelper:
 
     def createWorkflow(self):
         # create workflow
-        # make up workflow name from task name
-        workflowName = self.wmSpec.name()
-
-        #if self.workflow == None:
-        self.workflow = Workflow(self.wmSpec.specUrl(),
-                             self.wmSpec.owner(), workflowName,
-                             self.topLevelTask.name())
+        # make up workflow name from wmspec name
+        self.workflow = Workflow(self.wmSpecUrl, self.wmSpecOwner, 
+                                 self.wmSpecName,
+                                 self.topLevelTaskName)
         self.workflow.create()
 
         return self.workflow
@@ -45,11 +46,13 @@ class WMBSHelper:
     def createFilesset(self):
         # create fileset
         # make up fileset name from task name
-        filesetName = ("%s-%s" % (self.wmSpec.name(), self.topLevelTask.name()))
+        filesetName = ("%s-%s" % (self.wmSpecName, self.topLevelTaskName))
         if self.block:
             filesetName += "-%s" % self.block
         else:
+            #create empty fileset for production job
             filesetName += "-%s" % makeUUID()
+            
         self.fileset = Fileset(filesetName)
         self.fileset.create()
         return self.fileset
@@ -65,8 +68,8 @@ class WMBSHelper:
         self.createFilesset()
         self.createWorkflow()
         self.subscription = Subscription(self.fileset, self.workflow,
-                                         whitelist = self.topLevelTask.siteWhitelist(),
-                                         blacklist = self.topLevelTask.siteBlacklist())
+                                         whitelist = self.whitelist,
+                                         blacklist = self.blacklist)
         self.subscription.create()
         return self.subscription
 

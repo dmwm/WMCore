@@ -5,16 +5,17 @@ MySQL implementation of WorkQueueElement.UpdatePrioriy
 """
 
 __all__ = []
-__revision__ = "$Id: UpdatePriority.py,v 1.2 2009/08/18 23:18:15 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: UpdatePriority.py,v 1.3 2009/11/20 22:59:58 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
 
 class UpdatePriority(DBFormatter):
     sql = """UPDATE wq_element SET priority = :priority
-             WHERE wmspec_id = (SELECT id from wq_wmspec
-                                   WHERE name = :workflow)"""
+             WHERE wmtask_id IN (SELECT wt.id FROM wq_wmtask wt 
+                                  INNER JOIN wq_wmspec ws ON ws.id = wt.wmspec_id 
+                                  WHERE ws.name = :workflow)"""
 
     def execute(self, priority, workflows, conn = None, transaction = False):
         binds = [{"priority": priority, "workflow" : x} for x in workflows]

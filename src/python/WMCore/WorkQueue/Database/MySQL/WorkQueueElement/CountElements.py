@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.CountElements
 """
 
 __all__ = []
-__revision__ = "$Id: CountElements.py,v 1.1 2009/11/17 16:53:36 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CountElements.py,v 1.2 2009/11/20 22:59:58 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -36,4 +36,4 @@ class CountElements(DBFormatter):
             sep = "AND"
         result = self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
-        return self.format(result)[0][0]
+        return int(self.format(result)[0][0])

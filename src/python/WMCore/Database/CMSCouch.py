@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.38 2009/07/09 23:56:01 meloam Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: CMSCouch.py,v 1.39 2009/07/11 08:39:36 metson Exp $"
+__version__ = "$Revision: 1.39 $"
 
 try:
     # Python 2.6
@@ -18,18 +18,18 @@ except:
     import simplejson as json
 import urllib
 from httplib import HTTPConnection
-import httplib
 import time
 import datetime
 import thread
 import threading
 import traceback
 import types
+from WMCore.Services.Requests import JSONRequests
 
 def httpRequest(url, path, data, method='POST', viewlist=[]):
     """
-    Make a request to the remote database. for a give URI. The type of
-    request will determine the action take by the server (be careful with
+    Make a request to the remote database. for a given URI. The type of
+    request will determine the action taken by the server (be careful with
     DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
     """
     headers = {'Content-type': 'application/x-www-form-urlencoded',
@@ -88,131 +88,15 @@ class Document(dict):
     """
     Document class is the instantiation of one document in the CouchDB
     """
-    def __init__(self, id=None):
+    def __init__(self, id=None, dict = {}):
         dict.__init__(self)
+        self.update(dict)
         if id:
             self.setdefault("_id", id)
 
     def delete(self):
         self['_deleted'] = True
         
-def makeDocument( data ):
-    """
-    helper function to wrap a plain dict (i.e. one returned by couchserver)
-    in a Document instance
-    
-    We don't simply do a return Document( data ) because arguments to the constructor
-    are stuck into the _id field, not added to the dict
-    """
-    document = Document()
-    document.update( data )
-    return document
-
-    
-class Requests:
-    """
-    Generic class for sending different types of HTTP Request to a given URL
-    TODO: Find a better home for this than WMCore.Databases
-    """
-
-    def __init__(self, url = 'localhost'):
-        self.accept_type = 'text/html'
-        self.url = url
-        self.conn = HTTPConnection(self.url)
-
-    def get(self, uri=None, data=None, encoder = None, decoder=None):
-        """
-        Get a document of known id
-        """
-        return self.makeRequest(uri, data, 'GET', encoder, decoder)
-
-    def post(self, uri=None, data=None, encoder = None, decoder=None):
-        """
-        POST some data
-        """
-        return self.makeRequest(uri, data, 'POST', encoder, decoder)
-
-    def put(self, uri=None, data=None, encoder = None, decoder=None):
-        """
-        PUT some data
-        """
-        return self.makeRequest(uri, data, 'PUT', encoder, decoder)
-       
-    def delete(self, uri=None, data=None, encoder = None, decoder=None):
-        """
-        DELETE some data
-        """
-        return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
-
-    def makeRequest(self, uri=None, data=None, type='GET',
-                     encode=None, decode=None):
-        """
-        Make a request to the remote database. for a give URI. The type of
-        request will determine the action take by the server (be careful with
-        DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
-        """
-        headers = {"Content-type": 
-                    'application/x-www-form-urlencoded', #self.accept_type,
-                    "Accept": self.accept_type}
-        encoded_data = ''
-            
-        if type != 'GET' and data:
-            if (encode == False):
-                encoded_data = data
-            else:
-                encoded_data = self.encode(data)
-            headers["Content-length"] = len(encoded_data)
-        else:
-            #encode the data as a get string
-            if  not data:
-                data = {}
-            uri = "%s?%s" % (uri, urllib.urlencode(data))
-        self.conn.connect()
-        self.conn.request(type, uri, encoded_data, headers)
-        response = self.conn.getresponse()
-        data = response.read()
-        self.conn.close()
-        checkForCouchError( response.status )
-        if (decode == False):
-            return data
-        else:
-            return self.decode(data)
-
-    def encode(self, data):
-        """
-        encode data into some appropriate format, for now make it a string...
-        """
-        return urllib.urlencode(data)
-
-    def decode(self, data):
-        """
-        decode data to some appropriate format, for now make it a string...
-        """
-        return data.__str__()
-
-class JSONRequests(Requests):
-    """
-    Implementation of Requests that encodes data to JSON.
-    """
-    def __init__(self, url = 'localhost:8080'):
-        Requests.__init__(self, url)
-        self.accept_type = "application/json"
-
-    def encode(self, data):
-        """
-        encode data as json
-        """
-        return json.dumps(data)
-
-    def decode(self, data):
-        """
-        decode the data to python from json
-        """
-        if data:
-            return json.loads(data)
-        else:
-            return {}
-
 class CouchDBRequests(JSONRequests):
     """
     CouchDB has two non-standard HTTP calls, implement them here for
@@ -221,6 +105,7 @@ class CouchDBRequests(JSONRequests):
     def __init__(self, url = 'localhost:5984'):
         JSONRequests.__init__(self, url)
         self.accept_type = "application/json"
+        
     def move(self, uri=None, data=None):
         """
         MOVE some data
@@ -232,7 +117,40 @@ class CouchDBRequests(JSONRequests):
         COPY some data
         """
         return self.makeRequest(uri, data, 'COPY')
-
+    
+    def makeRequest(self, uri=None, data=None, type='GET',
+                     encode=True, decode=True):
+        """
+        Make the request, handle any failed status, return just the data (for 
+        compatibility).
+        """
+        result, status, reason = JSONRequests.makeRequest(self, uri, data, type, encode, decode)
+        self.checkForCouchError(status, reason, data)
+        return result
+    
+    def checkForCouchError(self, status, reason, data = None):
+        """
+        Check the HTTP status and raise an appropriate exception 
+        """
+        if (status == 400 ):
+            raise CouchBadRequestError( reason, data )
+        elif (status == 404):
+            raise CouchNotFoundError( reason, data )
+        elif (status == 405):
+            raise CouchNotAllowedError( reason, data )
+        elif (status == 409):
+            raise CouchConflictError( reason, data )
+        elif (status == 412):
+            raise CouchPreconditionFailedError( reason, data )
+        elif (status == 500):
+            raise CouchInternalServerError( reason, data )
+        elif (status >= 400):
+            # we have a new error status, log it
+            raise CouchError("""NEW ERROR STATUS! UPDATE CMSCOUCH.PY! 
+            status: %s reason: %s data: %s""" % (status, reason, data))
+        else:
+            return
+        
 class Database(CouchDBRequests):
     """
     Object representing a connection to a CouchDB Database instance.
@@ -295,12 +213,13 @@ class Database(CouchDBRequests):
         try:
             data = self.commit(doc,returndocs,timestamp,viewlist)
         except:
+            self._queue = tmpqueue
             raise
+#        finally:
+#            self._queue = tmpqueue
         else:
             # if we made it out okay, put a flag there
             data[0][u'ok'] = True
-        finally:
-            self._queue = tmpqueue
 
             
         return data[0]
@@ -407,7 +326,6 @@ class Database(CouchDBRequests):
         else:
             return retval
             
-
     def createDesignDoc(self, design='myview', language='javascript'):
         view = Document('_design/%s' % design)
         view['language'] = language
@@ -488,51 +406,42 @@ class CouchServer(CouchDBRequests):
 #  http://wiki.apache.org/couchdb/HTTP_status_list
 
 class CouchError(Exception):
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, reason, data):
+        self.reason = reason
+        self.data = data
         self.type = "CouchError"
+    
     def __str__(self):
-        return "%s: %s" % (self.type, repr(self.value))
+        return "%s - reason: %s, data: %s" % (self.type, 
+                                             self.reason, 
+                                             repr(self.data))
+    
 class CouchBadRequestError(CouchError):
-    def __init__(self,value):
-        CouchError.__init__(value)
+    def __init__(self, reason, data):
+        CouchError.__init__(reason, data)
         self.type = "CouchBadRequestError"
+                
 class CouchNotFoundError(CouchError):
-    def __init__(self,value):
-        CouchError.__init__(self, value)
+    def __init__(self, reason, data):
+        CouchError.__init__(self, reason, data)
         self.type = "CouchNotFoundError"
+        
 class CouchNotAllowedError(CouchError):
-    def __init__(self,value):
-        CouchError.__init__(self, value)
+    def __init__(self, reason, data):
+        CouchError.__init__(self, reason, data)
         self.type = "CouchNotAllowedError"
+        
 class CouchConflictError(CouchError):
-    def __init__(self,value):
-        CouchError.__init__(self, value)
+    def __init__(self, reason, data):
+        CouchError.__init__(self, reason, data)
         self.type = "CouchConflictError"
+        
 class CouchPreconditionFailedError(CouchError):
-    def __init__(self,value):
-        CouchError.__init__(self, value)
+    def __init__(self, reason, data):
+        CouchError.__init__(self, reason, data)
         self.type = "CouchPreconditionFailedError"
+        
 class CouchInternalServerError(CouchError):
-    def __init__(self,value):
-        CouchError.__init__(self, value)
-        self.type = "CouchError"
-
-def checkForCouchError(status, data = None):
-    if (status == 400 ):
-        raise CouchBadRequestError( data )
-    elif (status == 404 ):
-        raise CouchNotFoundError( data )
-    elif (status == 405 ):
-        raise CouchNotAllowedError( data )
-    elif (status == 409 ):
-        raise CouchConflictError( data )
-    elif (status == 412 ):
-        raise CouchPreconditionFailedError( data )
-    elif (status == 500 ):
-        raise CouchInternalServerError( data )
-    elif (status >= 400 ):
-        # we have a new error status, log it
-        raise CouchError( "NEW ERROR STATUS! UPDATE CMSCOUCH.PY! status: %s data: %s" % (status, data))
-    else:
-        return
+    def __init__(self, reason, data):
+        CouchError.__init__(self, reason, data)
+        self.type = "CouchInternalServerError"

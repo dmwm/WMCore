@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.25 2010/08/11 21:33:36 sryu Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.26 2010/08/16 14:13:09 swakef Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import re
 import os
@@ -50,17 +50,19 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     wmspec = WMWorkloadHelper()
                     wmspec.load(workLoadUrl)
 
-                    if self.wq._insertWMSpec(wmspec):
+                    units = self.wq._splitWork(wmspec)
+
+                    # Process each request in a transaction - isolate bad req's
+                    with self.wq.transactionContext() as trans:
+                        if self.wq._insertWMSpec(wmspec):
                         # check whether there is duplicate wmspec. 
                         # If there is, log the error message and continue 
-                        self.wq.logger.error("Error: There are duplicate wmspec: %s" 
-                                             % wmspec.name())
-                        continue
+                        # inside transaction so nothing is inserted on error
+                            msg = "Error: Duplicate wmspec: %s, ignore request"
+                            self.wq.logger.error(msg % wmspec.name())
+                            self.wq.rollbackTransaction(trans)
+                            continue
 
-                    units = self.wq._splitWork(wmspec)
-                    
-                    # Process each request in a transaction - isolate bad req's
-                    with self.wq.transactionContext():
                         for unit in units:
                             self.wq._insertWorkQueueElement(unit, reqName,
                                                             team)
@@ -70,7 +72,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                         except Exception, ex:
                             self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
                             self.wq.logger.error('Request "%s" not queued' % reqName)
-                            raise
+                            self.wq.rollbackTransaction(trans)
 
                     work += len(units)
                 except Exception, ex:

@@ -8,6 +8,10 @@ from WMCore.Database.Dialects import SQLiteDialect
 from WMCore.Database.Dialects import OracleDialect
 
 class DBFactory(object):
+    
+    # class variable
+    engineMap = {}
+    
     def __init__(self, logger, dburl=None, options={}):
         self.logger = logger
         if dburl:
@@ -66,15 +70,18 @@ class DBFactory(object):
                 del options['database']
             elif 'sid' in options.keys():
                 self.dburl = '%s/%s' % (self.dburl, options['sid'])
-                del options['sid']
+                del options['sid']    
+                
            
-            
-        self.engine = create_engine(self.dburl, 
-                               #echo_pool=True,
-                               convert_unicode=True, 
-                               encoding='utf-8',
-                               strategy='threadlocal',
-                               connect_args = options)
+        self.engine = self.engineMap.setdefault(self.dburl,     
+                                         create_engine(self.dburl, 
+                                                       #echo_pool=True,
+                                                       convert_unicode=True, 
+                                                       encoding='utf-8',
+                                                       strategy='threadlocal',
+                                                       pool_size = 25,
+                                                       connect_args = options)
+                                                  )
         self.dia = self.engine.dialect
         self.lock = threading.Condition()
 

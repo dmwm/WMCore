@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.1 2008/11/24 21:51:36 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Destroy.py,v 1.2 2009/07/21 14:32:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.DestroyWMBSBase import DestroyWMBSBase
 from WMCore.WMBS.Oracle.Create import Create
@@ -19,7 +19,7 @@ class Destroy(DestroyWMBSBase):
         deletion,
         """        
         DestroyWMBSBase.__init__(self, logger, dbi)
-        self.create["30wmbs_subs_type"] = "DROP TABLE wmbs_subs_type"
+        self.delete["30wmbs_subs_type"] = "DROP TABLE wmbs_subs_type"
         
         j=50
         for i in Create.sequence_tables:

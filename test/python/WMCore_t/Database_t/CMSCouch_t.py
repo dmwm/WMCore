@@ -5,7 +5,7 @@ CouchDB instance, and is not going to work in an automated way just yet - we'll
 need to add Couch as an external, include it in start up scripts etc.
 """
 
-from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.Database.CMSCouch import CouchServer, Document, Database
 import random
 import unittest
 
@@ -13,7 +13,7 @@ class CMSCouchTest(unittest.TestCase):
     test_counter = 0
     def setUp(self):
         # Make an instance of the server
-        self.server = CouchServer()
+        self.server = CouchServer('http://admin:password@localhost:5984')
         testname = self.id().split('.')[-1]
         # Create a database, drop an existing one first
         dbname = 'cmscouch_unittest_%s' % testname.lower()
@@ -216,7 +216,24 @@ class CMSCouchTest(unittest.TestCase):
                 self.assertEqual(1, row['value'])
             else:
                 self.assertEqual(counts[row['key']], row['value'])
-
+    
+    def testSlashInDBName(self):
+        """
+        Slashes are a valid character in a database name, and are useful as it 
+        creates a directory strucutre for the couch data files.
+        """
+        db_name = 'wmcore/unittests'
+        db = self.server.connectDatabase(db_name)
+        info = db.info()
+        assert info['db_name'] == db_name
+        
+    def testInvalidName(self):
+        """
+        Capitol letters are not allowed in database names.
+        """
+        db_name = 'Not A Valid Name'
+        self.assertRaises(ValueError, self.server.connectDatabase, db_name)
+        self.assertRaises(ValueError, Database, db_name)
 
 if __name__ == "__main__":
     unittest.main()

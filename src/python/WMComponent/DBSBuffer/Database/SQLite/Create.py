@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for SQLite
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2009/07/13 19:17:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2009/07/20 19:16:55 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 import threading
@@ -102,14 +102,14 @@ class Create(DBCreator):
              FOREIGN KEY(location) REFERENCES dbsbuffer_location(id)
                ON DELETE CASCADE)"""
 
-        self.constraints["FK_dbsbuffer_file_ds"]=\
-		      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_file_ds
-    			 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
-
-        self.constraints["FK_dbsbuffer_file_ds"]=\
-                      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_dbsbuffile
-                         foreign key(WMBS_File_ID) references dbsbuffer_file(ID)"""
-
-        self.constraints["FK_dbsbuffer_ds_algo"]=\
-              """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuffer_ds_algo
-                 foreign key(Algo) references dbsbuffer_algo(ID)"""
+        #self.constraints["FK_dbsbuffer_file_ds"]=\
+	#	      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_file_ds
+    	#		 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
+        #
+        #self.constraints["FK_dbsbuffer_file_ds"]=\
+        #              """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_dbsbuffile
+        #                 foreign key(WMBS_File_ID) references dbsbuffer_file(ID)"""
+        #
+        #self.constraints["FK_dbsbuffer_ds_algo"]=\
+        #      """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuffer_ds_algo
+        #         foreign key(Algo) references dbsbuffer_algo(ID)"""

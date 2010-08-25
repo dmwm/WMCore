@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: RESTFormat_t.py,v 1.10 2010/01/27 20:18:20 meloam Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: RESTFormat_t.py,v 1.11 2010/04/19 14:46:50 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 try:
@@ -18,6 +18,7 @@ except:
     # Prior to 2.6 requires simplejson
     import simplejson as json
 import urllib
+import urllib2
 
 from cherrypy import HTTPError
 from WMCore.WebTools.RESTFormatter import RESTFormatter
@@ -96,14 +97,17 @@ class RESTFormatTest(RESTBaseUnitTest):
             #urllib2.urlopen(url)
         except urllib2.HTTPError, h:
             print "Exception got cought %s" % h.read()
-            
+        
+        # urllib2,urlopen raise the error but not urllib.urlopen
+        self.assertRaises(urllib2.HTTPError, urllib2.urlopen, url)
+        
         methodTest('GET', url, accept=type, 
                          output={'code':400, 
                                  'data':"""{"exception": 400, "type": "HTTPError", "message": "list1() got an unexpected keyword argument 'int'"}"""})
         url = self.urlbase + 'list?int=a&str=a'
         methodTest('GET', url, accept=type,
                          output={'code':400, 
-                                 'data':"""{"exception": 400, "type": "HTTPError", "message": {"AssertionError": "val_1 failed: <type 'str'> not int"}}"""})
+                                 'data':"""{"exception": 400, "type": "HTTPError", "message": "val_1 failed: <type 'str'> not int"}"""})
        
     def testException(self):
         

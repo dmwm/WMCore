@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.14 2010/05/24 19:40:58 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: LogArchive.py,v 1.15 2010/05/27 19:35:35 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import os.path
@@ -16,6 +16,7 @@ import re
 import tarfile
 import time
 import signal
+import traceback
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -49,7 +50,7 @@ class LogArchive(Executor):
         if (emulator != None):
             return emulator.emulatePre( self.step )
 
-        print "Steps.Executors.LogArchive.pre called"
+        logging.info("Steps.Executors.LogArchive.pre called")
         return None
 
     def execute(self, emulator = None, **overrides):
@@ -58,11 +59,14 @@ class LogArchive(Executor):
 
 
         """
-        #Are we using emulators again?
+        # Are we using emulators again?
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
-        #Wait fifteen minutes for stageOut
+
+        logging.info("Beginning Steps.Executors.LogArchive.Execute")
+
+        # Wait fifteen minutes for stageOut
         waitTime = overrides.get('waitTime', 900)
 
         matchFiles = [
@@ -120,7 +124,11 @@ class LogArchive(Executor):
             self.report.addError(self.stepName, 1, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
-            raise
+            msg = "Failure in transferring logArchive tarball"
+            msg += str(ex)
+            msg += traceback.format_exc()
+            logging.error(msg)
+            raise Exception(msg)
         
         signal.alarm(0)
         return
@@ -138,7 +146,7 @@ class LogArchive(Executor):
         if (emulator != None):
             return emulator.emulatePost( self.step )
         
-        print "Steps.Executors.StageOut.post called"
+        logging.info("Steps.Executors.StageOut.post called")
         return None
 
 
@@ -180,8 +188,12 @@ class LogArchive(Executor):
 
         year, month, day = reqTime[:3]
 
-        LFN = "/store/unmerged/logs/prod/%s/%s/%s%s/%s/%s-%s" % \
+
+        LFN = "/store/unmerged/logs/prod/%s/%s/%s/%s/%s/%s-%i-%s" % \
               (year, month, day, self.task.getPathName(),
-               lfnGroup(self.job), self.job["name"], tarName)
+               lfnGroup(self.job), self.job["name"],
+               self.job.get('retry_count', 0),
+               tarName)
+
 
         return LFN

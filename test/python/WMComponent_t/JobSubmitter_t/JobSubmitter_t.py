@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.26 2010/07/29 20:06:33 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.27 2010/08/02 17:35:15 meloam Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import unittest
 import threading
@@ -544,7 +544,7 @@ class JobSubmitterTest(unittest.TestCase):
         return
 
 
-
+    @attr('performance')
     def testB_TimeLongSubmission(self):
         """
         _TimeLongSubmission_

@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.36 2009/09/16 20:14:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Job.py,v 1.37 2009/10/12 19:22:57 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import datetime
 from sets import Set
@@ -282,7 +282,9 @@ class Job(WMBSBase, WMJob):
         if self.has_key("state_changes"):
             jobDict["state_changes"] = self["state_changes"]
         if self.has_key("fwkjrs"):
-            jobDict["fwkjrs"] = self["fwkjrs"]
+            jobDict["fwkjrs"] = []
+            for fwkjr in self["fwkjrs"]:
+                jobDict["fwkjrs"].append(thunker._thunk(fwkjr))
 
         return jobDict
 

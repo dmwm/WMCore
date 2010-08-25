@@ -8,8 +8,8 @@
 The DBSUploadWorker for uploading to DBS
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadWorker.py,v 1.3 2010/08/06 15:40:24 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBSUploadWorker.py,v 1.4 2010/08/10 16:03:12 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 
@@ -287,7 +287,7 @@ class DBSUploadWorker:
 
             # STEP THREE: Insert Into DBS and Update DBSBuffer
             try:
-                myThread.transaction.begin()
+
 
                 # Damn it Anzar: Why does DBS print stuff out?
                 originalOut = sys.stdout
@@ -299,6 +299,7 @@ class DBSUploadWorker:
                 logging.info("About to send %i blocks to DBSInterface" % (len(readyBlocks)))
                 for block in readyBlocks:
                     logging.info("About to send to DBS block %s" %(block['Name']))
+                    logging.info("Block status: %s" % (block.get('open', None) ))
                 
                 
                 affBlocks = self.dbsInterface.runDBSBuffer(algo = algo,
@@ -307,6 +308,9 @@ class DBSUploadWorker:
 
                 sys.stdout = originalOut
                 sys.stderr = originalErr
+
+
+                myThread.transaction.begin()
                 
                 if not algo['InDBS']:
                     # List the algo as uploaded

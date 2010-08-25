@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.49 2009/10/28 10:18:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: CMSCouch.py,v 1.50 2009/10/28 10:29:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.50 $"
 
 try:
     # Python 2.6
@@ -81,8 +81,8 @@ class CouchDBRequests(BasicAuthJSONRequests):
             print "BadStatusLine failure: %s" % e
             print "     at uri: %s" % uri
             print "  with data: %s" % data
-            #raise
-        #self.checkForCouchError(status, reason, data, result)
+            raise
+        self.checkForCouchError(status, reason, data, result)
         return result
     
     def checkForCouchError(self, status, reason, data = None, result = None):

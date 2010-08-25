@@ -6,8 +6,8 @@ _TestMonitor_
 This is the test class for monitors
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: TestMonitor.py,v 1.1 2009/12/21 15:59:48 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TestMonitor.py,v 1.2 2009/12/21 17:18:40 mnorman Exp $"
 
 import threading
 import time
@@ -47,7 +47,7 @@ def getStepPID(stepSpace, stepName):
         logging.error(msg)
         return None
 
-    return PID
+    return stepPID
 
 
 def searchForEvent(file):
@@ -178,7 +178,7 @@ class TestMonitor(WMRuntimeMonitor):
                 pass
 
         #Do timeout
-        if not self.timeOut:
+        if not self.softTimeOut:
             return
 
 

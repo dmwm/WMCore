@@ -6,8 +6,8 @@ _Watchdog_
 This cleverly named object is the thread that handles the monitoring of individual jobs
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: Watchdog.py,v 1.1 2009/12/21 15:57:21 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Watchdog.py,v 1.2 2009/12/21 17:18:40 mnorman Exp $"
 
 import threading
 import logging
@@ -247,7 +247,7 @@ class Watchdog(threading.Thread):
             if self._RunUpdate.isSet():
                 for monitor in self._Monitors:
                     try:
-                        monitor.periodicUpdate(step)
+                        monitor.periodicUpdate()
                     except Exception, ex:
                         msg = "Error in periodicUpdate for monitor class %s in Watchdog:\n" % monitor.__class__
                         msg += str(ex)

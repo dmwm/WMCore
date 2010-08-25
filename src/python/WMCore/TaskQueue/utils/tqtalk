@@ -1,0 +1,195 @@
+#!/bin/env python
+
+
+"""
+======
+tqtalk
+======
+Sends messages and receives responses from the TaskQueue
+--------------------------------------------------------
+
+You need to provide the endpoint of the TQ's Listener.
+
+First argument should be a valid message type.
+
+Second argument should be a python expression that will
+become the payload of the message (normally a dict with
+some expected attributes). The specified expression will
+be evaluated as python. Notice that this means that 
+strings should be quoted twice (as indicated by the 
+examples below).
+
+
+SYNOPSIS
+========
+tqtalk -e <endpoint> <msgType> <payload-expr>
+
+tqtalk [-u | -h]
+
+
+OPTIONS
+=======
+-v, --verbose   Print of extra informative messages in the run
+                of the command. 
+
+-u, --usage   Usage information is displayed.
+
+-h, --help    Help information is displayed.
+
+
+EXAMPLES
+========
+$> tqtalk  -e glitece:20030 taskEnd "{'pilotId': 14, 'taskId': 1}"
+
+Message sent
+Response:
+{"msg": {"msgType": "TaskEndACK", "payload": {"Info": "Task updated as Done.",
+"TaskId": 1}}}
+
+
+$> tqtalk  -e glitece:20030 getTask "{'pilotId': 9, 'host': 'somehost.cern.ch'}"
+
+Message sent
+Response:
+{"msg": {"msgType": "TaskAssigned", "payload": {"SandboxUrl": "http://glitece.
+ciemat.es:20030/static/sandbox//Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz",
+"SpecUrl": "http://glitece.ciemat.es:20030/static/spec//Test-QCDpt_0_15-IDEAL_
+V9_TestPA01-8-JobSpec.xml", "TaskId": 10}}}
+
+"""
+
+####   IMPORTS   ####
+import sys
+from traceback import extract_tb
+import getopt
+from TQComp.CommonUtil import dojson, doencode
+import urllib2
+
+
+####   CONSTANTS   ####
+
+
+####   FUNCTIONS   ####
+
+def err(msg):
+    """
+    Prints the specified string msg to standard error (with an added trailing newline)
+    """
+    sys.stderr.write(msg+'\n')
+
+
+def help():
+    """
+    Provides some information regarding this script functionality.
+
+    """
+    print globals()['__doc__']
+   
+
+def usage():
+    """
+    Describes usage of the script.
+ 
+    """
+    v = globals()['__doc__'].split('\n')
+    start = end = 0
+    for i in xrange(len(v)):
+        if(v[i].startswith("SYNOPSIS")):
+            start = i + 2
+        if(start and (i > start+1)):
+            if(v[i].startswith("====")):
+                end = i-2
+                break
+    print 'Usage:  '+reduce(lambda x,y: x+ '\n        '+y, v[start:end])
+
+
+
+####   MAIN   ####
+def main():
+    """
+    Performes the main task of the script (invoked directly).
+    For information on its functionality, please call the help function.
+    """
+ 
+    # Options
+    longoptions=["help", "usage", "verbose", "endpoint="]
+    try:
+        # For options with args, just add ':' after the option letter here
+        optlist, args = getopt.getopt(sys.argv[1:], 'huve:', longoptions)
+    except getopt.GetoptError, inst:
+        err ("Bad usage: %s" % inst)
+        usage()
+        return 1
+    
+    verb = False
+    endpoint = None
+    for opt, val in optlist:
+        if opt in ("-h", "--help"):
+            help()
+            sys.exit(0)
+        elif opt in ("-u", "--usage"):
+            usage()
+            sys.exit(0)
+        elif opt in ("-v", "--verbose"):
+            verb = True
+        elif opt in ("-e","--endpoint"):
+            endpoint = val
+ 
+    # Endpoing 
+    if not endpoint:
+        err("You need to provide and endpoint!")
+        usage()
+        return 2
+            
+    # Args           
+    if(len(args)<2):
+        err("Not enough input arguments!")
+        usage()
+        return 2
+  
+ 
+    #### REAL MAIN ####
+ 
+    baseurl = "http://%s/msg" % (endpoint)
+    if verb:
+        print "-- Base URL: %s" % baseurl
+    
+    try:
+        if verb:
+            print "-- Payload: %s" % args[1]
+        expr = eval(args[1])
+        if verb:
+            print "-- Evaluated: %s" % expr
+        expr = dojson(expr)
+        if verb:
+            print "-- Json: %r" % expr
+
+        postargs = doencode((("msgType", "%s" % args[0]), ("payload",expr)))
+        if verb:
+            print "-- Encoded: %r" % postargs
+            
+        conn = urllib2.urlopen(baseurl, postargs)
+        all  = conn.readlines()
+        conn.close()
+        print "\nMessage sent"
+        print "Response:"
+        for line in all:
+            print line
+
+    except:
+        type, val, tb = sys.exc_info()
+        err("Error with arg %s: %s - %s. Trace: %s" % \
+           (args[1], type, val, extract_tb(tb, limit=5)))
+
+ 
+    # Exit successfully
+    return 0
+ 
+ 
+###    SCRIPT    ####
+if __name__=="__main__":
+   sys.exit(main())
+
+
+
+

@@ -1,0 +1,330 @@
+#!/usr/bin/env python
+
+"""
+========
+tqclient
+========
+Command Line Wrapper for the TaskQueue APIs
+-------------------------------------------
+
+Creates an interface object for the TQComp component (i.e. acquires
+an interface to its database) and translates given commands to calls
+to this API.
+
+Acceptable commands are those named like any of the methods of the 
+TQ API classes. 
+
+Arguments to the commands should be those expected by the methods, 
+and provided in the appropriate order. Every argument will be evaluated
+as a python expression, so that e.g. dicts can be passed to the
+methods. Notice that this means that strings should be quoted twice
+(as indicated by the examples below).
+
+
+SYNOPSIS
+========
+tqclient [-v] -c <conf-file> <command> ["<arg>" ..]
+
+tqclient --showcommands
+
+tqclient [-u | -h]
+
+
+OPTIONS
+=======
+-c, --config <conf-file>   Indicates configuration file for TQComp
+
+--showcommands   Lists acceptable command
+
+-v, --verbose   Print of extra informative messages in the run
+                of the command. 
+
+-u, --usage   Usage information is displayed.
+
+-h, --help    Help information is displayed.
+
+
+EXAMPLES
+========
+$> tqclient -c confFile.py  getTasks "{'state': 0}"
+[
+[10L,
+'/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-8-JobSpec.xml',
+'/pool/TaskQueue/playground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
+'prod_A', 5L, None, 0L, datetime.datetime(2009, 4, 23, 18, 5, 30), None],
+[11L,
+'/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-8-JobSpec.xml',
+'/pool/TaskQueue/playground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
+'prod_B', 3L, None, 0L, datetime.datetime(2009, 4, 23, 18, 5, 30), None],
+]
+
+
+$> tqclient -c confFile.py  -f /tmp/insertTaskCmd
+
+# Where /tmp/insertTaskCmd contains (2 lines):
+-------------------------------------
+insertTask "{'spec': '/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-
+8-JobSpec.xml', 'wkflow': 'prod_A' , 'type': 5, 'sandbox': '/pool/TaskQueue/playground/sa
+ndbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz'}"
+
+insertTask "{'spec': '/pool/TaskQueue/playground/specs/Some-Other-spec-file.xml', 'wkflow
+': 'test_3' , 'type': 3, 'sandbox': '/pool/TaskQueue/playground/sandbox/Some-Other-sandbo
+x-file.tgz'}"
+-------------------------------------
+
+"""
+
+
+####   IMPORTS   ####
+import sys
+import getopt
+import logging
+import threading 
+from WMCore import Configuration
+from TQComp.CommonUtil import commasLB
+
+
+####   CONSTANTS   ####
+namespace = 'TQComp.Apis.'
+#submitCmds = ['insertTask']
+#pollCmds = []
+#stateCmds = []
+#cmds = {'TQSubmitApi': submitCmds, \
+#        'TQPollApi': pollCmds, \
+#        'TQStateApi': stateCmds}
+modules = ['TQSubmitApi', 'TQPollApi', 'TQStateApi']
+
+
+####   FUNCTIONS   ####
+
+def err(msg):
+    """
+    Prints the specified string msg to standard error (with an added trailing newline)
+    """
+    sys.stderr.write(msg+'\n')
+
+
+def help():
+    """
+    Provides some information regarding this script functionality.
+   
+    """
+    print globals()['__doc__']
+   
+
+def usage():
+    """
+    Describes usage of the script.
+    
+    """
+    v = globals()['__doc__'].split('\n')
+    start = end = 0
+    for i in xrange(len(v)):
+        if(v[i].startswith("SYNOPSIS")):
+            start = i + 2
+        if(start and (i > start+1)):
+            if(v[i].startswith("====")):
+                end = i-2
+                break
+    print 'Usage:  '+reduce(lambda x,y: x+ '\n        '+y, v[start:end])
+
+
+def getAllowedCmds(modules):
+    result = {}
+    for mod in modules:
+        mymod = __import__(namespace+mod, globals(), locals(), mod)
+        myclass = getattr(mymod, mod)
+        result[mod] = [myclass, []]
+        for i in myclass.__dict__:
+            if not i.startswith('_'): 
+                result[mod][1].append(i)
+    return result
+
+def showcommands(cmds):
+    """
+    Lists the acceptable commands.
+    """
+    print
+    print "Acceptable commands, grouped by type of API:"
+    print
+    for cgroup in cmds:
+        print "  %s:" % cgroup, cmds[cgroup][1]
+        print
+        
+def setLogging(verb = False):
+    logHandler = logging.StreamHandler(sys.stdout)
+    logFormatter = \
+        logging.Formatter("%(asctime)s:%(levelname)s:%(filename)s:%(message)s")
+    logHandler.setFormatter(logFormatter)
+    mylogger = logging.getLogger("tqclient")
+    mylogger.addHandler(logHandler)
+    if verb:
+        mylogger.setLevel(logging.DEBUG)
+    else:
+        mylogger.setLevel(logging.WARNING)
+
+    return mylogger
+
+
+def parseLine(s, skipComments = False):
+    """
+    Splits passed string s using blank as separator, but joining
+    together those tokens enclosed within double commas (""). 
+    The double commas themselves are eliminated.
+
+    If skipComments is set to True, for strings starting with '#', 
+    returns an empty list.
+    """
+    if not s: 
+        return []
+    if skipComments:
+        s = s.strip()
+        if not s:
+           return []
+        if s[0] == '#':
+            return []
+    tokens = s.split()
+    to_del = []
+    vals = range(len(tokens))
+    for i in vals:
+        if tokens[i][0] == '"':
+             for j in vals[i+1:]:
+                 if tokens[j][-1] == '"':
+                     tokens[i] = tokens[i][1:]
+                     for k in vals[i+1:j]:
+                         tokens[i] += " "+tokens[k]
+                         to_del.insert(0, k)
+                     tokens[i] += " "+tokens[j][:-1]
+                     to_del.insert(0, j)
+                     vals = range(len(tokens))
+                     break
+
+    for item in to_del:
+       tokens.pop(item)
+
+    return tokens
+
+
+
+####   MAIN   ####
+def main():
+    """
+    Performes the main task of the script (invoked directly).
+    For information on its functionality, please call the help function.
+    """
+
+    # Before anything else, evaluate available commands
+    cmds = getAllowedCmds(modules)
+
+    # Options
+    longoptions=["help", "usage", "verbose", "showcommands", "config=", \
+                 "from-file="]
+    try:
+        # For options with args, just add ':' after the option letter here
+        optlist, args = getopt.getopt(sys.argv[1:], 'huvc:f:', longoptions)
+    except getopt.GetoptError, inst:
+        err ("Bad usage: %s" % inst)
+        usage()
+        return 1
+    
+    verb = False
+    confFile = None   
+    fname = None
+    for opt, val in optlist:
+        if opt in ("-h", "--help"):
+            help()
+            sys.exit(0)
+        elif opt in ("-u", "--usage"):
+            usage()
+            sys.exit(0)
+        elif opt in ("-v", "--verbose"):
+            verb = True
+        elif opt in ("-c", "--config"):
+            confFile = val
+        elif opt in ("--showcommands"):
+            showcommands(cmds)
+            sys.exit(0)
+        elif opt in ("-f", "--from-file"):
+            fname = val
+
+           
+    # Option checking
+    if not confFile:
+        err("Option --config is compulsory\n")
+        usage()
+        return 2
+
+    # Args           
+    if(len(args)<1) and (not fname):
+        err("Not enough input arguments!")
+        usage()
+        return 2
+
+
+
+    #### REAL MAIN ####
+
+    # Build command (from arguments or fname)
+    if fname:
+        myfile = open(fname, 'r')
+        lines = myfile.readlines()
+    else:
+        lines = [args[0]]
+        args = args[1:]
+ 
+
+    mylogger = setLogging(verb)
+    myconfig = Configuration.loadConfigurationFile(confFile)
+
+
+    # Now run once per specified command
+    for line in lines:
+        tokens = parseLine(line, True)
+        if not tokens:
+            continue
+        thecmd = tokens[0]
+        if not args:
+            args = tokens[1:]
+
+        for i in xrange(len(args)):
+            args[i] = eval(args[i])
+
+        if verb:
+            print "\n--Command: %s %s\n" % (thecmd, args)
+
+        # Load API
+        myclass = None
+        for cgroup in cmds:
+            if thecmd in cmds[cgroup][1]:
+                myclass = cmds[cgroup][0]
+                
+        if not myclass:
+            err("Not supported command: %s" % thecmd)
+            continue
+    
+        # Instantiate API
+        tqApi = myclass(mylogger, myconfig, None)
+
+        # Call indicated method
+        mymethod = getattr(tqApi, thecmd)
+        out = mymethod(*args)
+
+        args = None
+
+        if out:
+            if verb:
+                print "\n--Command output follows:"
+            if hasattr(out, '__iter__'):
+                print '['
+                print reduce(commasLB, out)
+                print ']'
+            else:
+                print out
+
+    # Exit successfully
+    return 0
+
+
+###    SCRIPT    ####
+if __name__=="__main__":
+    sys.exit(main())

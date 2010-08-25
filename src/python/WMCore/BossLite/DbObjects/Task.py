@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.13 2010/05/03 08:38:06 spigafi Exp $"
-__revision__ = "$Revision: 1.13 $"
+__version__ = "$Id: Task.py,v 1.14 2010/05/03 10:45:09 spigafi Exp $"
+__revision__ = "$Revision: 1.14 $"
 
 import os.path
 # import threading # seems unused
@@ -14,9 +14,8 @@ import os.path
 from WMCore.Services.UUID import makeUUID
 
 from WMCore.BossLite.DbObjects.DbObject import DbObject
-# from WMCore.BossLite.DbObjects.Job      import Job
+from WMCore.BossLite.DbObjects.Job      import Job
 from WMCore.BossLite.Common.Exceptions  import TaskError
-# from WMCore.BossLite.Common.Exceptions import JobError, DbError # seem unused
 
 class Task(DbObject):
     """
@@ -145,7 +144,7 @@ class Task(DbObject):
         if deep :
             for job in self.jobs:
                 job['taskId'] = self.data['id']
-                job.save()
+                job.save(db)
                 job.existsInDataBase = True
                 status += 1
         
@@ -243,7 +242,7 @@ class Task(DbObject):
         for job in jobList:
             tmp = Job()
             tmp.data.update(job)
-            tmp.getRunningInstance()
+            tmp.getRunningInstance(db)
             tmp.existsInDataBase = True
             
             self.jobs.append(tmp)
@@ -263,7 +262,7 @@ class Task(DbObject):
         """
         
         # return number of entries updated
-        return self.save(deep)
+        return self.save(db, deep)
 
     ##########################################################################
 

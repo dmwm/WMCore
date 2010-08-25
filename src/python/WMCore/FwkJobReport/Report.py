@@ -180,8 +180,14 @@ class Report:
             jsonStep["status"] = reportStep.status
 
             stepTimes = self.getTimes(stepName)
-            jsonStep["start"] = int(stepTimes["startTime"])
-            jsonStep["end"] = int(stepTimes["stopTime"])
+
+            if stepTimes["startTime"] != None:
+                stepTimes["startTime"] = int(stepTimes["startTime"])
+            if stepTimes["stopTime"] != None:
+                stepTimes["stopTime"] = int(stepTimes["stopTime"])
+                
+            jsonStep["start"] = stepTimes["startTime"]
+            jsonStep["stop"] = stepTimes["stopTime"]
 
             jsonStep["output"] = {}
             for outputModule in reportStep.outputModules:

@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.35 2010/06/21 19:01:31 sfoulkes Exp $"
-__revision__ = "$Revision: 1.35 $"
+__version__ = "$Id: WMTask.py,v 1.36 2010/07/01 15:16:58 mnorman Exp $"
+__revision__ = "$Revision: 1.36 $"
 
 import os
 import os.path
@@ -28,6 +28,7 @@ from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 import WMCore.FwkJobReport.Report as Report
+
 
 
 def getTaskFromStep(stepRef):
@@ -620,6 +621,12 @@ class WMTaskHelper(TreeHelper):
         """
 
         finalReport = Report.Report()
+        # We left the master report somewhere way up at the top
+        testPath = os.path.join(jobLocation, '../../', logLocation)
+        if os.path.exists(testPath):
+            # If a report already exists, we load it and
+            # append our steps to it
+            finalReport.load(testPath)
         taskSteps = self.listAllStepNames()
         for taskStep in taskSteps:
             reportPath = os.path.join(jobLocation, taskStep, "Report.pkl")
@@ -627,11 +634,13 @@ class WMTaskHelper(TreeHelper):
                 stepReport = Report.Report(taskStep)
                 stepReport.unpersist(reportPath)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
-                
+
+        finalReport.data.completed = True
         finalReport.persist(logLocation)
 
 
         return
+
 
 
 

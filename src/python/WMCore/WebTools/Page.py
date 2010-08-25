@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.37 2009/12/23 22:30:36 metson Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: Page.py,v 1.38 2010/01/19 15:57:30 valya Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import urllib
 import cherrypy
@@ -121,7 +121,7 @@ def exposeatom (func):
         cherrypy.response.headers['Content-Type'] = "application/atom+xml"
         return self.templatepage('Atom', data = data,
                                  config = self.config,
-                                 request = request)
+                                 path = request.path_info)
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
@@ -133,7 +133,7 @@ def exposexml (func):
         cherrypy.response.headers['Content-Type'] = "application/xml"
         return self.templatepage('XML', data = data,
                                  config = self.config,
-                                 request = request)
+                                 path = request.path_info)
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True

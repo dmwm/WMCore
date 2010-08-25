@@ -121,10 +121,16 @@ def printTransitionInfo():
                 successSeen = True
             elif transition["newstate"] == "exhausted":
                 failureSeen = True
-            
-            print "  %s %s -> %s" % (timestampDate.isoformat(" "),
-                                     transition["oldstate"],
-                                     transition["newstate"])
+
+            if transition["location"] == "Agent":
+                print "  %s %s -> %s" % (timestampDate.isoformat(" "),
+                                         transition["oldstate"],
+                                         transition["newstate"])
+            else:
+                print "  %s %s -> %s (%s)" % (timestampDate.isoformat(" "),
+                                              transition["oldstate"],
+                                              transition["newstate"],
+                                              transition["location"])
 
     print "\nRetries: %s" % (retryCount - 1)
 

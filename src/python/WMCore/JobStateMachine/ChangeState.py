@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.52 2010/07/13 22:11:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: ChangeState.py,v 1.53 2010/08/10 20:53:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.53 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -25,6 +25,7 @@ function(doc) {
   if (doc['type'] == 'state') {
     emit(doc['jobid'], {'oldstate': doc['oldstate'],
                         'newstate': doc['newstate'],
+                        'location': doc['location'],
                         'timestamp': doc['timestamp']});
     }
   }
@@ -124,7 +125,6 @@ class ChangeState(WMObject, WMConnectionBase):
         yet exist in couch it will be saved as a seperate document.  If the job
         has a FWJR attached that will be saved as a seperate document.
         """
-
         if not self.database:
             return
         
@@ -153,14 +153,21 @@ class ChangeState(WMObject, WMConnectionBase):
 
             if newstate == "new":
                 oldstate = "none"
-            else:
-                oldstate = job["state"]
                 
             transitionDocument = {"jobid": job["id"],
                                   "oldstate": oldstate,
                                   "newstate": newstate,
                                   "timestamp": timestamp,
                                   "type": "state"}
+
+            if job.get("location", None):
+                if newstate == "executing":
+                    transitionDocument["location"] = job["location"]
+                else:
+                    transitionDocument["location"] = "Agent"
+            else:
+                transitionDocument["location"] = "Agent"
+                
             self.database.queue(transitionDocument)
 
             if couchDocID == None:

@@ -27,16 +27,12 @@ config.PilotManagerComponent.logLevel = 'DEBUG'
 config.PilotManagerComponent.emulationMode = True
 
 #component dir
-#config.PilotManagerComponent.componentDir = '/data/khawar/prototype/PilotManager'
-
-config.PilotManagerComponent.tqAddress = 'vocms13.cern.ch:8030'
 
 config.PilotManagerComponent.defaultScheduler = 'LSF'
 config.PilotManagerComponent.pilotTar = 'Pilot.tar.gz'
-config.PilotManagerComponent.tarPath = '/data/khawar/PAProd/0_12_15p1/prodAgent'
-config.PilotManagerComponent.pilotCode = '/data/khawar/prototype/LSFPilot_JSON'
+config.PilotManagerComponent.plugin = 'PilotBossSubmitter'
+#config.PilotManagerComponent.tarPath = '/data/khawar/PAProd/0_12_15p1/prodAgent'
+#config.PilotManagerComponent.pilotCode = '/data/khawar/prototype/LSFPilot_JSON'
 
-# depending on the application an operator can reconfigure what we use.
-# but these are the default settings.
 config.PilotManagerComponent.pilotManagerHandler = 'PilotManager.Handler.PilotManagerHandler'
 

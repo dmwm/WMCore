@@ -31,12 +31,22 @@ except StandardError, ex:
     raise RuntimeError, msg
 
 compCfg['ComponentDir'] = os.path.expandvars(compCfg['ComponentDir'])
-
 config = loadConfigurationFile(compCfg['defaultConfig'])
 config.PilotManagerComponent.componentDir=compCfg['ComponentDir']
-config.PilotManagerComponent.plugin=compCfg['plugin']
-config.section_("CoreDatabase")
+
+if ( compCfg.has_key("plugin") ):
+    config.PilotManagerComponent.plugin=compCfg['plugin']
+
+if ( compCfg.has_key("tarPath") ):
+    config.PilotManagerComponent.tarPath=compCfg['tarPath']
+else:
+    config.PilotManagerComponent.tarPath=compCfg['ComponentDir']
+
+config.PilotManagerComponent.pilotCode=compCfg['pilotCode']
+config.PilotManagerComponent.tqAddress=compCfg['tqAddress']
+
 #settig up the configuration for PilotMonitor
+config.section_("CoreDatabase")
 config.CoreDatabase.dialect  = dbConfig['dbType']
 config.CoreDatabase.socket   = dbConfig['socketFileLocation']
 config.CoreDatabase.user     = dbConfig['user']
@@ -45,7 +55,7 @@ config.CoreDatabase.hostname = dbConfig['host']
 #config.CoreDatabase.name     = dbConfig['dbName']
 config.CoreDatabase.name     = 'WMCoreDB'
 
-#print config
+print config
 
 #  //
 # // Initialise and start the component

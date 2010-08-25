@@ -103,9 +103,9 @@ class FileManager:
             # the PFN that is received here is mapped from the LFN
             (seName, command, options, pfn, protocol) =\
                 self.getTransferDetails(lfn, currentMethod)
-            log.debug("Mapped LFN:    %s" % lfn)
-            log.debug("    to PFN:    %s" % pfn)
-            log.debug("LocalFileName: %s" % localFileName)
+            log.info("Mapped LFN:    %s" % lfn)
+            log.info("    to PFN:    %s" % pfn)
+            log.info("LocalFileName: %s" % localFileName)
             newPfn = self._doTransfer(currentMethod, methodCounter, localFileName, pfn, stageOut)
             if newPfn:
                 log.info("Transfer succeeded: %s" % fileToStage)
@@ -142,7 +142,7 @@ class FileManager:
                       'SEName': seName}        
             
             log.info("Attempting deletion method %s" % (methodCounter, ))
-            log.debug("Current method information: %s" % currentMethod)
+            log.info("Current method information: %s" % currentMethod)
             
             deleteSlave =  retrieveStageOutImpl(command, useNewVersion=True)
             
@@ -199,13 +199,13 @@ class FileManager:
         if option:
             self.defaultMethod['option'] = option
         
-        log.debug("Local Stage Out Implementation to be used is: %s" % implName)
-        log.debug("Local Stage Out SE Name to be used is %s" % seName)
-        log.debug("Local Stage Out Catalog to be used is %s" % catalog)
-        log.debug("Trivial File Catalog has been loaded:\n%s" % str(self.tfc))
-        log.debug("There are %s fallback stage out definitions" % len(self.fallbacks))
+        log.info("Local Stage Out Implementation to be used is: %s" % implName)
+        log.info("Local Stage Out SE Name to be used is %s" % seName)
+        log.info("Local Stage Out Catalog to be used is %s" % catalog)
+        log.info("Trivial File Catalog has been loaded:\n%s" % str(self.tfc))
+        log.info("There are %s fallback stage out definitions" % len(self.fallbacks))
         for item in self.fallbacks:
-            log.debug("Fallback to : %s using: %s " % (item['se-name'], item['command']))
+            log.info("Fallback to : %s using: %s " % (item['se-name'], item['command']))
 
     def initialiseOverride(self):
         """
@@ -217,12 +217,12 @@ class FileManager:
         but I can't think of a nice way to do it
     
         """
-        implName = seName = lfn_prefix = option = None
+        implName = seName = lfn_prefix = None
+        option = ""
         try:
             implName   = self.overrideConf["command"]
             seName     = self.overrideConf["se-name"]
             lfn_prefix = self.overrideConf["lfn-prefix"]
-            option     = self.overrideConf['option']
               
         except:
             log.critical( 'Either command, se-name or the lfn-prefix are missing from the override' )
@@ -287,7 +287,7 @@ class FileManager:
                     
         for retryNumber in range(self.numberOfRetries + 1):
             log.info("Attempting transfer method %s, Retry number: %s" % (methodCounter, retryNumber))
-            log.debug("Current method information: %s" % currentMethod)
+            log.info("Current method information: %s" % currentMethod)
             
             stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=True)
             

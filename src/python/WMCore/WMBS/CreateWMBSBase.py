@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.41 2009/12/03 17:40:21 mnorman Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.42 2009/12/04 20:59:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import threading
 
@@ -136,6 +136,7 @@ class CreateWMBSBase(DBCreator):
              workflow_id       INTEGER NOT NULL,
              output_identifier VARCHAR(255) NOT NULL,
              output_fileset    INTEGER NOT NULL,
+             output_parent     VARCHAR(255),
              INDEX (workflow_id),
              INDEX (output_fileset),
              FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)

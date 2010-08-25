@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.28 2009/12/02 20:14:19 mnorman Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Create.py,v 1.29 2009/12/03 17:40:57 mnorman Exp $"
+__version__ = "$Revision: 1.29 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -125,5 +125,12 @@ class Create(DBCreator):
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES dbsbuffer_file(id)
                 ON DELETE CASCADE) ENGINE=InnoDB"""
+
+
+        checksumTypes = ['cksum', 'adler32', 'md5']
+        for i in checksumTypes:
+            checksumTypeQuery = """INSERT INTO dbsbuffer_checksum_type (type) VALUES ('%s')
+            """ % (i)
+            self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
              
              

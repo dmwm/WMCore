@@ -4,8 +4,8 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.13 2010/05/30 14:49:28 spigafi Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: API_t.py,v 1.14 2010/05/31 09:44:03 spigafi Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import os
@@ -264,6 +264,7 @@ class APITest(unittest.TestCase):
         job1 = Job(parameters = { 'standardError' : 'hostname.err',
                                  'standardOutput' : 'hostname.out' } )
         task.addJob(job1)
+        testAPI.updateDB(job1)
         tmp = testAPI.getNewRunningInstance(job = job1, runningAttrs = { 
                                             'processStatus' :  'not_handled',
                                             'service' : 'vattelapesca',
@@ -280,6 +281,7 @@ class APITest(unittest.TestCase):
         job2 = Job(parameters = { 'standardError' : 'date.err',
                                  'standardOutput' : 'date.out' } )
         task.addJob(job2)
+        testAPI.updateDB(job2)
         tmp = testAPI.getNewRunningInstance(job = job2, runningAttrs = { 
                                             'processStatus' :  'handled',
                                             'service' : 'cippirimerlo',
@@ -304,8 +306,9 @@ class APITest(unittest.TestCase):
         job3 = Job(parameters = { 'standardError' : 'top.err',
                                  'standardOutput' : 'top.out' } )
         task.addJob(job3)
+        testAPI.updateDB(job3)
         tmp = testAPI.getNewRunningInstance(job = job3, runningAttrs = { 
-                                            'processStatus' :  'terminated',
+                                            'processStatus' :  'in_progress',
                                             'service' : 'cacao',
                                             'status' : 'T' } ) 
         
@@ -320,6 +323,7 @@ class APITest(unittest.TestCase):
         job4 = Job(parameters = { 'standardError' : 'uname.err',
                                  'standardOutput' : 'uname.out' } )
         task.addJob(job4)
+        testAPI.updateDB(job4)
         tmp = testAPI.getNewRunningInstance(job = job4, runningAttrs = { 
                                             'processStatus' :  'handled',
                                             'service' : 'ramato',
@@ -350,7 +354,7 @@ class APITest(unittest.TestCase):
         self.assertEqual(loadedTask.jobs[1].runningJob['processStatus'], 
                                                     'not_handled')
         self.assertEqual(loadedTask.jobs[2].runningJob['processStatus'], 
-                                                    'terminated')
+                                                    'in_progress')
         self.assertEqual(loadedTask.jobs[3].runningJob['processStatus'], 
                                                     'not_handled')
         

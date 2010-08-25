@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.10 2010/02/12 21:15:25 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.11 2010/02/26 15:35:33 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -23,6 +23,7 @@ import time
 import os.path
 import cPickle
 import random
+import traceback
 #import common
 
 # WMBS objects
@@ -111,22 +112,26 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
-    def algorithm(self, parameters):
+    def algorithm(self, parameters = None):
         """
         Actually runs the code
         """
         logging.debug("Running JSM.JobSubmitter")
         
         try:
-            startTime = time.clock()
+            #startTime = time.clock()
             self.runSubmitter()
-            stopTime = time.clock()
-            logging.debug("Running jobSubmitter took %f seconds" \
-                          %(stopTime - startTime))
+            #stopTime = time.clock()
+            #logging.debug("Running jobSubmitter took %f seconds" \
+            #              %(stopTime - startTime))
             #print "Runtime for JobSubmitter %f" %(stopTime - startTime)
             #print self.timing
-        except:
-            #myThread.transaction.rollback()
+        except Exception, ex:
+            msg = "Caught exception in JobSubmitter\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            msg += "\n\n"
+            myThread.transaction.rollback()
             raise
 
 
@@ -137,6 +142,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         Keeps track of, and does, everything
         """
 
+        logging.info("About to call JobSubmitter.pollJobs()")
         self.pollJobs()
         if not len(self.sites.keys()) > 0:
             # Then we have no active sites?
@@ -144,8 +150,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             return
         jobList = self.getJobs()
         jobList = self.grabTask(jobList)
-        #logging.error("Task grabbed properly")
-        #logging.error(jobList)
         self.submitJobs(jobList)
 
 
@@ -174,12 +178,15 @@ class JobSubmitterPoller(BaseWorkerThread):
                 job.load()
                 job['type']     = jobType
                 job["location"] = self.findSiteForJob(job)
+                job['custom']['location'] = job['location']    #Necessary for JSON
                 # Take care of accounting for the job
                 self.sites[job['location']][jobType]['task_running_jobs'] += 1
                 for key in self.sites[job['location']].keys():
                     self.sites[job['location']][key]['total_running_jobs'] += 1
                 # Now add the new job
                 newList.append(job)
+
+        logging.info("Have %i jobs in JobSubmitter.getJobs()" % len(newList))
 
         return newList
 
@@ -192,10 +199,13 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
 
         # Find types, we'll need them later
+        logging.error("About to go find Subscription types in JobSubmitter.pollJobs()")
         typeFinder = self.daoFactory(classname = "Subscriptions.GetSubTypes")
         self.types = typeFinder.execute()
+        logging.error("Found types in JobSubmitter.pollJobs()")
 
         self.sites = self.resourceControl.listThresholdsForSubmit()
+        logging.error(self.sites)
 
         return
 
@@ -266,7 +276,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         changeState = ChangeState(self.config)
 
         #logging.error("In submitJobs")
-        #logging.error(jobList)
+        #logging.error(len(jobList))
 
         count = 0
         successList = []
@@ -287,8 +297,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             #package.extend(listOfJobs)
             package.save(os.path.join(packagePath, 'JobPackage.pkl'))
 
-            #logging.error('About to send jobs to ShadowPoolPlugin')
-            #logging.error(listOfJobs)
+            #logging.error('About to send jobs to Plugin')
+            #logging.error(len(listOfJobs))
             
             while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
                 listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]

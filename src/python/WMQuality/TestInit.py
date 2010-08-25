@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.19 2009/10/14 06:29:12 meloam Exp $"
+    "$Id: TestInit.py,v 1.20 2009/10/14 13:30:46 meloam Exp $"
 __version__ = \
-    "$Revision: 1.19 $"
+    "$Revision: 1.20 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -163,7 +163,7 @@ class TestInit:
             raise RuntimeError, \
                 "You must set the DATABASE environment variable to run tests"
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.dialect = self.getBackendFromDBURL( os.getenv("DATABASE") )
+        config.CoreDatabase.dialect = self.getBackendFromDbURL( os.getenv("DATABASE") )
         config.CoreDatabase.socket = os.getenv("DBSOCK")
         if os.getenv("DBHOST"):
             print "****WARNING: the DBHOST environment variable will be deprecated soon***"

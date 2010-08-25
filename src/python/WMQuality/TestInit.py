@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.45 2010/02/09 17:43:29 sfoulkes Exp $"
+    "$Id: TestInit.py,v 1.46 2010/02/09 18:26:52 meloam Exp $"
 __version__ = \
-    "$Revision: 1.45 $"
+    "$Revision: 1.46 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -24,6 +24,7 @@ import os
 import threading
 import tempfile
 import shutil
+import time
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -114,7 +115,6 @@ class TestInit:
             dbi = self.getDBInterface()
             dialect = self.coreConfig.CoreDatabase.dialect
             formatter = DBFormatter(logging.getLogger(''), dbi)
-            print "wiping dialect: %s " % dialect
             if (dialect == 'MySQL'):
                 print "wiping mysql"
                 formatter.sql = r"SHOW TABLES"
@@ -139,16 +139,25 @@ class TestInit:
             elif (dialect == 'SQLite'):
                 formatter.sql = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
                 result = formatter.execute()
-                print "we got the following result for SHOW TABLES: %s " % result
 
                 for oneTable in result:
                     # sqlite stores some magic in the database
                     if ( oneTable[0].startswith('sqlite_') ):
                         continue
                     query = "DROP TABLE IF EXISTS %s" % oneTable[0]
-                    print query
-                    formatter.sql = query
-                    formatter.execute()
+                    failCount = 0
+                    for x in range(5):
+                        try:
+                            formatter.sql = query
+                            formatter.execute()
+                        except Exception:
+                            # sleep a sec and try again
+                            failCount = failCount + 1
+                            if (failCount == 5):
+                                raise
+                            else:
+                                time.sleep(1)
+                            
       
             elif (dialect == 'Oracle'):
                 pass
@@ -273,6 +282,7 @@ class TestInit:
 
         modules.reverse()
         self.init.clearDatabase(modules)
+        
 
 
 

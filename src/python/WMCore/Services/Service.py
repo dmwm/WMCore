@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.31 2010/01/09 09:18:17 metson Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Service.py,v 1.32 2010/01/11 16:24:44 metson Exp $"
+__version__ = "$Revision: 1.32 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -126,7 +126,7 @@ class Service(dict):
 
         return cachefile
 
-    def refreshCache(self, cachefile, url='', inputdata = {}):
+    def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True):
         """
         See if the cache has expired. If it has make a new request to the 
         service for the input data. Return the cachefile as an open file object.  
@@ -137,7 +137,10 @@ class Service(dict):
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
             self.getData(cachefile, url, inputdata)
-        return open(cachefile, 'r')
+        if openfile:
+            return open(cachefile, 'r')
+        else:
+            return cachefile
 
     def forceRefresh(self, cachefile, url='', inputdata = {}):
         """

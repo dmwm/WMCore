@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.127 2010/07/30 09:49:43 swakef Exp $"
-__version__ = "$Revision: 1.127 $"
+__revision__ = "$Id: WorkQueue.py,v 1.128 2010/07/30 16:51:31 swakef Exp $"
+__version__ = "$Revision: 1.128 $"
 
 
 import time
@@ -241,6 +241,24 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction())
         if not affected:
             raise RuntimeError, "ReqMgr status not changed: No matching elements"
+
+    def resetWork(self, ids):
+        """Put work back in Available state, from here either another queue
+         or wmbs can pick it up.
+
+         If work was Acquired by a child queue, the next status update will
+         cancel the work in the child.
+
+         Note: That the same child queue is free to pick the work up again,
+          there is no permanent blacklist of queues.
+        """
+        try:
+            iter(ids)
+        except TypeError:
+            ids = [ids]
+
+        return self.setStatus('Available', ids,
+                              source = 'Reset to original state')
 
     def getWork(self, siteJobs, pullingQueueUrl = None, team = None):
         """ 

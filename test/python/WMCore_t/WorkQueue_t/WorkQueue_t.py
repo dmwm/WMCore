@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.41 2010/07/28 15:24:30 swakef Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.42 2010/07/30 16:51:32 swakef Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import unittest
 import os
@@ -506,6 +506,46 @@ class WorkQueueTest(WorkQueueTestCase):
         # elements in local deleted at end of update, only global ones left
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
                          totalBlocks)
+
+
+    def testResetWork(self):
+        """Reset work in global to different child queue"""
+        totalBlocks = 2
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}),
+                         totalBlocks)
+        self.localQueue.updateLocationInfo()
+        work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
+        self.assertEqual(len(work), totalBlocks)
+        self.localQueue.updateParent()
+        self.assertEqual(len(self.localQueue.status(status = 'Acquired')),
+                         3) # sum of both queues
+
+        # Re-assign work in global
+        self.globalQueue.resetWork([x['id'] for x in work])
+        self.localQueue.updateParent()
+        # work should be canceled in local
+
+        self.assertEqual(len(self.localQueue.status(status = 'Acquired')),
+                         0)
+        self.assertEqual(len(self.localQueue.status(status = 'Available')),
+                         1)
+        work_at_local = [x for x in self.globalQueue.status(status = 'Acquired') \
+                         if x['ChildQueueUrl'] == self.localQueue.params['QueueURL']]
+        self.assertEqual(len(work_at_local), 0)
+
+        # now 2nd queue calls and acquires work
+        self.assertEqual(self.localQueue2.pullWork({'SiteA' : 1000}),
+                         totalBlocks)
+        self.localQueue2.updateParent()
+
+        # check work in global assigned to local2
+        self.assertEqual(len(self.localQueue.status(status = 'Available')),
+                         2) # work in local2
+        work_at_local2 = [x for x in self.globalQueue.status(status = 'Acquired') \
+                         if x['ChildQueueUrl'] == self.localQueue2.params['QueueURL']]
+        self.assertEqual(len(work_at_local2), 1)
 
 if __name__ == "__main__":
     unittest.main()

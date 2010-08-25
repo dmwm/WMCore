@@ -4,6 +4,7 @@
 import unittest
 import os
 
+from WMCore.Configuration import ConfigSection
 from WMCore.Configuration import Configuration
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Configuration import saveConfigurationFile
@@ -242,6 +243,54 @@ class ConfigurationTest(unittest.TestCase):
         #print commentConfig.commentedString_()
         #print docConfig.documentedString_()
         print docConfig.commentedString_()
+
+
+
+    def testF(self):
+        """
+        Test internal functions pythonise_, pythoniseDict_, listSections_
+
+        Added by mnorman for his functions
+        """
+
+        config = ConfigSection("config")
+
+        config.section_("SectionA")
+        config.section_("SectionB")
+        config.SectionA.section_("Section1")
+        config.SectionA.section_("Section2")
+        config.SectionA.Section1.x   = 100
+        config.SectionA.Section1.y   = 100
+
+        pythonise = config.pythonise_()
+
+        assert "config.section_('SectionA')"      in pythonise, "Pythonise failed: Could not find SectionA"
+        assert "config.SectionA.Section1.x = 100" in pythonise, "Pythonise failed: Could not find x"
+
+        pythonise = config.SectionA.pythonise_()
+
+        assert "SectionA.section_('Section1')" in pythonise, "Pythonise failed: Could not find Section1"
+        assert "SectionA.Section1.x = 100"     in pythonise, "Pythonise failed: Could not find x"        
+        
+        pythonDict = config.pythoniseDict_()
+
+        self.assertEqual(pythonDict['config.SectionA.Section1.x'], 100)
+        self.assertEqual(pythonDict['config.SectionA.Section1.y'], 100)
+
+
+        pythonDict = config.SectionA.pythoniseDict_()
+
+        self.assertEqual(pythonDict['SectionA.Section1.x'], 100)
+        self.assertEqual(pythonDict['SectionA.Section1.y'], 100)
+
+        self.assertEqual(config.listSections_(), ['SectionB', 'SectionA'])
+        self.assertEqual(config.SectionA.listSections_(), ['Section2', 'Section1'])
+
+
+        return
+
+
+        
 
     def runTest(self):
         self.testA()

@@ -8,96 +8,92 @@ exists on) a logger and a type (json, xml etc).
 
 Has a default timeout of 30 seconds. Over ride this by passing in a timeout via
 the configuration dict, set to None if you want to turn off the timeout.
+
+If you just want to retrieve the data without caching use the Requests class
+directly.
 """
 
-__revision__ = "$Id: Service.py,v 1.13 2009/07/08 14:46:36 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Service.py,v 1.14 2009/07/11 08:38:56 metson Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import datetime
 import os
 import urllib
 import time
 import socket
+from urlparse import urlparse
+from WMCore.Services.Requests import Requests
 
-class Service:
+class Service(Requests):
     def __init__(self, dict={}):
         #The following should read the configuration class
         for a in ['logger', 'endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
 
-        self.logger = dict['logger']
-        self.endpoint = dict['endpoint']
-
-        if 'cachepath' in dict.keys():
-            self.path = dict['cachepath']
-        else:
-            self.path = '/tmp'
-        if 'cacheduration' in dict.keys():
-            self.cacheduration = dict['cacheduration']
-        else:
-            self.cacheduration = 0.5
-        if 'type' in dict.keys():
-            self.type = dict['type']
-        else:
-            self.type = 'text/xml'
+        # Inherit from Resource
+        # then split the endpoint into netloc and basepath
+        endpoint = urlparse(dict['endpoint'])
+        self.setdefault("basepath", endpoint.path)
+        Requests.__init__(self, endpoint.netloc)
+        
+         #set up defaults
+        self.setdefault("cachepath", '/tmp')
+        self.setdefault("cacheduration", 0.5)
+        self.setdefault("accept_type", 'text/xml')
+        self.setdefault("method", 'GET')
         
         #Set a timeout for the socket
-        self.timeout = 30
-        if 'timeout' in dict.keys() and int(dict['timeout']) > self.timeout:
-            self.timeout = int(dict['timeout'])
-        elif 'timeout' in dict.keys() and dict['timeout'] == None:
-            self.timeout = None
-
-        self.logger.debug("""Service initialised (%s):
-\t endpoint: %s (%s)\n\t cache: %s (duration %s hours)""" %
-                  (self, self.endpoint, self.type, self.path, self.cacheduration))
+        self.setdefault("timeout", 30)
+        
+        # then update with the incoming dict
+        self.update(dict)
+      
+        
+        self['logger'].debug("""Service initialised (%s):
+\t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours)""" %
+                  (self, self["host"], self["basepath"], self["accept_type"], self["cachepath"], 
+                   self["cacheduration"]))
 
     def refreshCache(self, cachefile, url):
+        cachefile = "%s/%s" % (self["cachepath"], cachefile)
 
-        cachefile = "%s/%s" % (self.path, cachefile)
-
-        url = self.endpoint + url
-
-        t = datetime.datetime.now() - datetime.timedelta(hours=self.cacheduration)
+        t = datetime.datetime.now() - datetime.timedelta(hours=self['cacheduration'])
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
-            self.logger.debug("%s expired, refreshing cache" % cachefile)
+            self['logger'].debug("%s expired, refreshing cache" % cachefile)
             self.getData(cachefile, url)
         return open(cachefile, 'r')
 
     def forceRefresh(self, cachefile, url):
-        cachefile = "%s/%s" % (self.path, cachefile)
+        cachefile = "%s/%s" % (self["cachepath"], cachefile)
 
-        url = self.endpoint + url
-
-        self.logger.debug("Forcing cache refresh of %s" % cachefile)
+        self['logger'].debug("Forcing cache refresh of %s" % cachefile)
         self.getData(cachefile, url)
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile):
-        cachefile = "%s/%s" % (self.path, cachefile)
+        cachefile = "%s/%s" % (self["cachepath"], cachefile)
         try:
             os.remove(cachefile)
         except OSError: # File doesn't exist
             return
 
     def getData(self, cachefile, url):
+        """
+        Takes the *full* path to the cachefile and the url of the resource.
+        """
         # Set the timeout
-        socket.setdefaulttimeout(self.timeout)
-        # Get the dat
-        u = self._getURLOpener()
-        u.addheader('Accept', self.type)
+        socket.setdefaulttimeout(self['timeout'])
         try:
-            u.retrieve(url, cachefile)
+            # Get the data
+            url = self["basepath"] + url
+            data, status, reason = self.makeRequest(uri=url, type=self["method"])
+            # Don't need to prepend the cachepath, methods calling getData have
+            # done that for us 
+            f = open(cachefile, 'w')
+            f.write(data)
+            f.close()
         except Exception, e:
-            self.logger.exception(e)
+            self['logger'].exception(e)
             raise e
         # Reset the timeout to None
         socket.setdefaulttimeout(None)
-
-    def _getURLOpener(self):
-        """
-        method getting url opener, it is used by getData method
-        sub class can override this to have different URL opener
-        i.e. - if it needs authentication
-        """
-        return urllib.URLopener()

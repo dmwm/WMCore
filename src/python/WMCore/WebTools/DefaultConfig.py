@@ -23,13 +23,13 @@ config.component_('Webtools')
 config.Webtools.application = 'WebtoolsDocs'
 
 # This is the Security config the application will use
-config.component_('CernOpenID')
-config.CernOpenID.enabled = True
-config.CernOpenID.use_decorators = True
-config.CernOpenID.store = 'filestore'
-config.CernOpenID.store_path = environ['WTBASE'] + '/security-store'
+config.component_('SecurityModule')
+config.SecurityModule.enabled = True
+config.SecurityModule.use_decorators = True
+config.SecurityModule.store = 'filestore'
+config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
 #config.CernOpenID.store.database = 'sqlite://'
-config.CernOpenID.default_session_name = 'CernOpenIdTool'
+config.SecurityModule.default_session_name = 'SecurityModule'
 
 # This is the config for the application
 config.component_('WebtoolsDocs')
@@ -63,6 +63,10 @@ active.section_('secretdocumentation')
 active.secretdocumentation.object = 'WMCore.WebTools.Documentation'
 # I don't want the world to see the secret documents on the welcome page. 
 active.secretdocumentation.hidden = True
+
+# I can use an openID secured class
+active.section_('securedocumentation')
+active.secretdocumentation.object = 'WMCore.WebTools.SecureDocumentation'
 
 #active.section_('welcome')
 #active.welcome.object = 'WMCore.WebTools.Welcome'

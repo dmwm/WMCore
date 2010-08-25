@@ -4,17 +4,17 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.7 2010/05/17 19:11:09 spigafi Exp $"
-__revision__ = "$Revision: 1.7 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.8 2010/05/18 13:50:47 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
-import logging
+#import logging
 import copy
 
 # Task and job objects
 from WMCore.BossLite.DbObjects.Job        import Job
 from WMCore.BossLite.DbObjects.Task       import Task
 from WMCore.BossLite.DbObjects.RunningJob import RunningJob
-from WMCore.BossLite.Common.Exceptions    import TaskError, JobError, DbError
+#from WMCore.BossLite.Common.Exceptions    import TaskError, JobError, DbError
 
 # database engine
 from WMCore.BossLite.DbObjects.BossLiteDBWM    import BossLiteDBWM
@@ -46,11 +46,11 @@ def parseRange(  nRange, rangeSep = ':', listSep = ',' ) :
 
 class BossLiteAPI(object):
     """
-    High level API class for DBObjets.
-    It allows load/operate/update jobs and tasks using just id ranges
+    High level API class for DBObjets. It allows load/operate/update jobs 
+    and tasks using just id ranges.
     """
 
-    def __init__(self, database = "WMCore", dbConfig=None, pool=None, makePool=False):
+    def __init__(self, database = "WMCore"):
         """
         initialize the API instance
         """
@@ -62,6 +62,7 @@ class BossLiteAPI(object):
             raise NotImplementedError
         
         return
+    
     
     ##########################################################################
     # General purpose Methods
@@ -99,9 +100,8 @@ class BossLiteAPI(object):
          
         try :
             task.save(self.db)
-        except Exception, err:
+        except Exception :
             
-            # These statements reuire a check...
             #if str(err).find( 'column name is not unique') == -1 and \
             #       str(err).find( 'Duplicate entry') == -1 and \
             #       task['id'] is not None :
@@ -178,17 +178,18 @@ class BossLiteAPI(object):
             tasks.append(tmp)
             
         return tasks
-
+    
+    
     def removeTask(self, task):
         """
         remove task, jobs and their running instances from db
-        NOT SQLite safe (why? NdFilippo)
         """
 
         # remove task
         task.remove(self.db)
 
         return
+    
     
     ##########################################################################
     # Methods for Job
@@ -316,7 +317,7 @@ class BossLiteAPI(object):
         return job.runningJob
     
     
-    def updateRunningInstances( self, task, notSkipClosed=True ) :
+    def updateRunningInstances( self, task ) :
         """
         update runningInstances of a task in the DB
         """
@@ -329,6 +330,7 @@ class BossLiteAPI(object):
                 job.updateRunningInstance(self.db)
 
         return
+    
     
     ##########################################################################
     # Methods for Combined Job-RunningJob
@@ -350,7 +352,8 @@ class BossLiteAPI(object):
             binds = value
 
 
-        results  = self.db.jobLoadByRunningAttr(attribute = attribute, binds = binds)
+        results  = self.db.jobLoadByRunningAttr(attribute = attribute, 
+                                                    binds = binds )
         
         for entry in results:
             job = Job()
@@ -365,7 +368,7 @@ class BossLiteAPI(object):
         retrieve information from db for jobs created but not submitted using:
         - it takes the highest submission number for each job
         """
-
+        
         return self.loadJobsByRunningAttr(attribute = 'status', value = 'W')
     
     
@@ -403,134 +406,51 @@ class BossLiteAPI(object):
                                                   value = 'K'))
         
         return jobList
-
-
-    def loadJobsByTimestamp( self, more, less, runningAttrs=None, jobAttributes=None) :
-        """
-        retrieve job information from db for job
-        whose running instance match attributes
-        """
-
-        return NotImplementedError
     
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # creating running jobs
-        if runningAttrs is None :
-            run = RunningJob()
-        else:
-            run = RunningJob( runningAttrs )
-
-        # creating jobs
-        if jobAttributes is None :
-            job = Job()
-        else :
-            job = Job( jobAttributes )
-
-        # load job from db
-        jMap = { 'jobId' : 'jobId',
-                 'taskId' : 'taskId',
-                 'submissionNumber' : 'submission' }
-
-        runJobList = self.db.selectJoin( job, run, \
-                                         jMap=jMap, \
-                                         less=less, \
-                                         more=more )
-
-        # recall jobs
-        for job, runningJob in runJobList :
-            job.setRunningInstance( runningJob )
-
-        # return
-        return [key[0] for key in runJobList]
-
-
+    
     ##########################################################################
-    # Missing Methods
+    # Missing Methods - Not Implemented Yet
     ##########################################################################
     
-    def loadJobDistinct( self, taskId, distinctAttr, jobAttributes=None ):
+    def loadJobsByTimestamp( self ) :
+        """
+        retrieve job information from db for job whose running instance match attributes
+        """
+
+        raise NotImplementedError
+    
+    
+    def loadJobDistinct( self ):
         """
         retrieve job templates with distinct job attribute
         """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # creating job
-        if jobAttributes is None :
-            job = Job()
-        else :
-            job = Job( jobAttributes )
-        job['taskId'] =  taskId
-
-        # load job from db
-        jobList = self.db.selectDistinct(job, distinctAttr)
-
-        return jobList
+        
+        raise NotImplementedError
 
     
-    def loadRunJobDistinct( self, taskId, distinctAttr, jobAttributes=None ):
+    def loadRunJobDistinct( self ):
         """
         retrieve job templates with distinct job attribute
         """
+        
+        raise NotImplementedError
 
-        # db connect
-        if self.db is None :
-            self.connect()
 
-        # creating job
-        if jobAttributes is None :
-            job = RunningJob()
-        else :
-            job = RunningJob( jobAttributes )
-        job['taskId'] =  taskId
-
-        # load job from db
-        jobList = self.db.selectDistinct(job, distinctAttr)
-
-        return jobList
-
-    ## DanieleS.
-    def loadJobDist( self, taskId, value ) :
+    def loadJobDist( self ) :
         """
         retrieve job distinct job attribute
         """
 
-        # db connect
-        if self.db is None :
-            self.connect()
+        raise NotImplementedError
 
-        # creating job
-        jobAttributes = { 'taskId' : taskId}
-        job = Job( jobAttributes )
 
-        # load job from db
-        jobList = self.db.distinct(job, value)
-
-        return jobList
-
-    ## DanieleS. NOTE: ToBeRevisited
-    def loadJobDistAttr( self, taskId, value_1, value_2, alist ) :
+    def loadJobDistAttr( self ) :
         """
         retrieve job distinct job attribute
         """
 
-        # db connect
-        if self.db is None :
-            self.connect()
+        raise NotImplementedError
 
-        # creating job
-        jobAttributes = { 'taskId' : taskId}
-        job = Job( jobAttributes )
-
-        # load job from db
-        jobList = self.db.distinctAttr(job, value_1, value_2, alist )
-
-        return jobList
 
     ##########################################################################
     # Serialize Task in XML and vice-versa
@@ -581,12 +501,12 @@ class BossLiteAPI(object):
                         val = val.split(',')
                     rjAttrs[key] = val
             runningJobsAttribs[ jobInfo['name'] ] = copy.deepcopy(rjAttrs)
-
+        
         # return objects
         return taskInfo, jobs, runningJobsAttribs
 
     
-    def serialize( self, task ):
+    def serialize( self, task ) :
         """
         obtain XML object from task object
         """
@@ -628,7 +548,7 @@ class BossLiteAPI(object):
 
         root.appendChild(node)
         cfile.appendChild(root)
-
+        
         # return xml string
         return cfile.toprettyxml().replace('\&quot;','')
     
@@ -675,8 +595,9 @@ class BossLiteAPI(object):
     
     def updateDB( self, obj ) :
         """
-        Update any object table in the DB. It works for tasks, jobs, runningJobs
+        Update any object table in the DB. It works for tasks, j
+        obs, runningJobs.
         """
         
-        self.db.objUpdate(self.db)
+        obj.update(self.db)
         

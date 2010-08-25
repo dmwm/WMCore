@@ -3,7 +3,7 @@ Created on Jul 15, 2009
 
 @author: meloam
 '''
-
+from sets import Set
 class Transitions(dict):
     """
     All allowed state transitions in the JSM.

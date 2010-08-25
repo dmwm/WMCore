@@ -5,47 +5,16 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.10 2009/07/13 21:55:15 meloam Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: ChangeState.py,v 1.11 2009/07/15 22:28:35 meloam Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.JobStateMachine.Transitions import Transitions
 from sets import Set
 import threading
-
-class Transitions(dict):
-    """
-    All allowed state transitions in the JSM.
-    """
-    def __init__(self):
-        self.setdefault('none', ['new'])
-        self.setdefault('new', ['created', 'createfailed'])
-        self.setdefault('created', ['executing', 'submitfailed'])
-        self.setdefault('executing', ['complete'])
-        self.setdefault('complete', ['jobfailed', 'success'])
-        self.setdefault('createfailed', ['createcooloff', 'exhausted'])
-        self.setdefault('submitfailed', ['submitcooloff', 'exhausted'])
-        self.setdefault('jobfailed', ['jobcooloff', 'exhausted'])
-        self.setdefault('createcooloff', ['new'])
-        self.setdefault('submitcooloff', ['created'])
-        self.setdefault('jobcooloff', ['created'])
-        self.setdefault('success', ['closeout'])
-        self.setdefault('exhausted', ['closeout'])
-        self.setdefault('closeout', ['cleanout'])
-
-    def states(self):
-        """
-        Return a list of all known states, derive it in case we add new final
-        states other than cleanout.
-        """
-        knownstates = Set(self.keys())
-        for possiblestates in self.values():
-            for i in possiblestates:
-                knownstates.add(i)
-        return list(knownstates)
-
 
 
 class ChangeState(WMObject):
@@ -74,10 +43,18 @@ class ChangeState(WMObject):
         """
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
-        # 2. Document the state transition
+        # 2. Are the jobs actually in the old state we're claiming?
+        # FIXME race conditions?
+#        for job in jobs:
+#            realstate = job.getState()
+#            assert job.getState() == oldstate ,\
+#                    "Job id %s in state %s, not %s" %\
+#                    (job['id'], realstate, oldstate)
+                    
+        # 3. Document the state transition
         jobs = self.recordInCouch(jobs, newstate, oldstate)
-        # 3. Make the state transition
-        self.persist(jobs, newstate)
+        # 4. Make the state transition
+        self.persist(jobs, newstate, oldstate)
         # TODO: decide if I should update the doc created in step 2 after
         # completing step 3.
 
@@ -119,11 +96,12 @@ class ChangeState(WMObject):
         return jobs
 
 
-    def persist(self, jobs, newstate):
+    def persist(self, jobs, newstate, oldstate):
         """
         Write the state change to WMBS, via DAO
         """
         for job in jobs:
             job['state'] = newstate
+            job['oldstate'] = oldstate
         dao = self.daofactory(classname = "Jobs.ChangeState")
         dao.execute(jobs)

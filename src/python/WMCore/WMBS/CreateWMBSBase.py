@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.25 2009/05/08 16:43:50 sryu Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.26 2009/05/09 11:45:25 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import threading
 
@@ -45,13 +45,10 @@ class CreateWMBSBase(DBCreator):
                                "11wmbs_sub_files_failed",
                                "12wmbs_sub_files_complete",
                                "13wmbs_jobgroup",
-                               "14wmbs_job",
-                               "15wmbs_job_assoc",
-                               "16wmbs_group_job_acquired",
-                               "17wmbs_group_job_failed",
-                               "18wmbs_group_job_complete",
-                               "19wmbs_job_mask"]
-        
+                               "14wmbs_job_state",
+                               "15wmbs_job",
+                               "16wmbs_job_assoc",
+                               "17wmbs_job_mask"]
         
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -98,9 +95,10 @@ class CreateWMBSBase(DBCreator):
         
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
-             id      INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             se_name VARCHAR(255) NOT NULL,
-             UNIQUE(se_name))"""
+             id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
+             site_name VARCHAR(255) NOT NULL,
+             job_slots INTEGER,
+             UNIQUE(site_name))"""
              
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
@@ -194,19 +192,30 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
                     ON DELETE CASCADE)"""
 
-        self.create["14wmbs_job"] = \
+        self.create["14wmbs_job_state"] = \
+          """CREATE TABLE wmbs_job_state (
+             id        INTEGER       PRIMARY KEY AUTO_INCREMENT,
+             name      VARCHAR(100),
+             retry_max INTEGER       NOT NULL default 0)"""
+
+        self.create["15wmbs_job"] = \
           """CREATE TABLE wmbs_job (
-             id          INTEGER   PRIMARY KEY AUTO_INCREMENT,
-             jobgroup    INTEGER   NOT NULL,
-             name        VARCHAR(255),             
-             last_update INTEGER   NOT NULL,
-             submission_time INTEGER,
-             completion_time INTEGER,
+             id           INTEGER       PRIMARY KEY AUTO_INCREMENT,
+             jobgroup     INTEGER       NOT NULL,
+             name         VARCHAR(255),
+             state        INTEGER       NOT NULL,
+             state_time   INTEGER       NOT NULL,
+             retry_count  INTEGER       NOT NULL DEFAULT 0,
+             couch_record VARCHAR(255),
+             location     INTEGER,
+             final_state  INTEGER       DEFAULT 0,
              UNIQUE(name),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-               ON DELETE CASCADE)"""
+               ON DELETE CASCADE,
+             FOREIGN KEY (state) REFERENCES wmbs_job_state(id),
+             FOREIGN KEY (location) REFERENCES wmbs_location(id))"""
 
-        self.create["15wmbs_job_assoc"] = \
+        self.create["16wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (
              job    INTEGER NOT NULL,
              file   INTEGER NOT NULL,
@@ -215,34 +224,7 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY (file) REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE)"""
 
-        self.create["16wmbs_group_job_acquired"] = \
-          """CREATE TABLE wmbs_group_job_acquired (
-              jobgroup INTEGER NOT NULL,
-              job         INTEGER     NOT NULL,
-              FOREIGN KEY (jobgroup)     REFERENCES wmbs_jobgroup(id)
-                ON DELETE CASCADE,
-              FOREIGN KEY (job)       REFERENCES wmbs_job(id)
-                ON DELETE CASCADE)"""
-
-        self.create["17wmbs_group_job_failed"] = \
-          """CREATE TABLE wmbs_group_job_failed (
-              jobgroup INTEGER NOT NULL,
-              job         INTEGER     NOT NULL,
-              FOREIGN KEY (jobgroup)     REFERENCES wmbs_jobgroup(id)
-                ON DELETE CASCADE,
-              FOREIGN KEY (job)       REFERENCES wmbs_job(id)
-                ON DELETE CASCADE)"""
-
-        self.create["18wmbs_group_job_complete"] = \
-          """CREATE TABLE wmbs_group_job_complete (
-              jobgroup INTEGER NOT NULL,
-              job         INTEGER     NOT NULL,
-              FOREIGN KEY (jobgroup)     REFERENCES wmbs_jobgroup(id)
-                ON DELETE CASCADE,
-              FOREIGN KEY (job)       REFERENCES wmbs_job(id)
-                ON DELETE CASCADE)"""
-             
-        self.create["19wmbs_job_mask"] = \
+        self.create["17wmbs_job_mask"] = \
           """CREATE TABLE wmbs_job_mask (
               job           INTEGER     NOT NULL,
               FirstEvent    INTEGER,
@@ -254,8 +236,18 @@ class CreateWMBSBase(DBCreator):
               inclusivemask BOOLEAN DEFAULT TRUE,
               FOREIGN KEY (job)       REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
-             
-    def execute(self, conn=None, transaction=None):
+
+        self.jobStates = ["new", "created", "createfailed", "createcooloff", 
+                          "executing", "submitfailed", "submitcooloff", 
+                          "complete", "jobfailed", "jobcooloff", "sitecooloff",
+                          "success", "exhausted", "closeOut", "cleanout"]
+        
+        for jobState in self.jobStates:
+            jobStateQuery = "INSERT INTO wmbs_job_state (name) VALUES ('%s')" % \
+                (jobState)
+            self.inserts["job_state_%s" % jobState] = jobStateQuery
+
+    def execute(self, conn = None, transaction = None):
         """
         _execute_
         

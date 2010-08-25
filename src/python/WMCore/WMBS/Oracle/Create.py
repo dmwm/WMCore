@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.11 2009/05/08 16:43:26 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Create.py,v 1.12 2009/05/09 11:45:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -27,6 +27,7 @@ class Create(CreateWMBSBase):
     sequence_tables.append('wmbs_subscription') 
     sequence_tables.append('wmbs_jobgroup')
     sequence_tables.append('wmbs_job')
+    sequence_tables.append('wmbs_job_state')
     
     def __init__(self, logger = None, dbi = None):
         """
@@ -94,9 +95,10 @@ class Create(CreateWMBSBase):
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
              id          INTEGER not null,
-             se_name VARCHAR(255) not null,
+             site_name   VARCHAR(255) not null,
+             job_slots   INTEGER,
              constraint pk_sename primary key (id),
-             constraint uk_sename unique (se_name))"""
+             constraint uk_sename unique (site_name))"""
              
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
@@ -112,11 +114,11 @@ class Create(CreateWMBSBase):
          
         self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
-             id          INTEGER not null,
-             spec         VARCHAR(255) not null,
-             name         VARCHAR(255) not null,
-             task         VARCHAR(255),
-             owner        VARCHAR(255),
+             id    INTEGER not null,
+             spec  VARCHAR(255) not null,
+             name  VARCHAR(255) not null,
+             task  VARCHAR(255),
+             owner VARCHAR(255),
              
              constraint pk_workflow primary key (id),
              constraint uk_workflow_nameowner unique (name, owner))"""
@@ -222,21 +224,32 @@ class Create(CreateWMBSBase):
              constraint uk_jobgroup_output unique (output),
              constraint uk_jobgroup_uid unique (guid))"""
              
-        self.create["14wmbs_job"] = \
+        self.create["14wmbs_job_state"] = \
+          """CREATE TABLE wmbs_job_state (
+             id  INTEGER NOT NULL,
+             name VARCHAR(100),
+             constraint pk_wmbs_job_state primary key (id))"""
+
+        self.create["15wmbs_job"] = \
           """CREATE TABLE wmbs_job (
-             id          INTEGER not null,
-             jobgroup    INTEGER   not null,
-             name        VARCHAR(255),
-             last_update INTEGER not null,
-             submission_time INTEGER,
-             completion_time INTEGER,
+             id           INTEGER not null,
+             jobgroup     INTEGER   not null,
+             name         VARCHAR(255),
+             state        INTEGER not null,
+             state_time   INTEGER not null,
+             retry_count  INTEGER DEFAULT 0,
+             couch_record VARCHAR(255),
+             location     INTEGER,
+             final_state  INTEGER NOT NULL,
              constraint fk_job_jobgroup
                  FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                    ON DELETE CASCADE,
+             constraint fk_location REFERENCES wmbs_location(id),
+             constraint fk_state REFERENCES wmbs_job_state(id),
              constraint pk_job primary key (id),
-             constraint uk_job_name unique (name))"""               
+             constraint uk_job_name unique (name))"""     
 
-        self.create["15wmbs_job_assoc"] = \
+        self.create["16wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (
              job    INTEGER not null,
              fileid  INTEGER not null,
@@ -247,37 +260,7 @@ class Create(CreateWMBSBase):
                  FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
                    ON DELETE CASCADE)"""
 
-        self.create["16wmbs_group_job_acquired"] = \
-          """CREATE TABLE wmbs_group_job_acquired (
-              jobgroup INTEGER not null,
-              job         INTEGER     not null,
-             constraint fk_jobgrpacquired_group
-                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-                   ON DELETE CASCADE,
-             constraint fk_jobgrpacquired_job
-                 FOREIGN KEY (job)         REFERENCES wmbs_job(id))"""
-
-        self.create["17wmbs_group_job_failed"] = \
-          """CREATE TABLE wmbs_group_job_failed (
-              jobgroup INTEGER not null,
-              job         INTEGER     not null,
-             constraint fk_jobgrpfailed_group
-                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-                   ON DELETE CASCADE,
-             constraint fk_jobgrpfailed_job
-                 FOREIGN KEY (job)         REFERENCES wmbs_job(id))"""
-
-        self.create["18wmbs_group_job_complete"] = \
-          """CREATE TABLE wmbs_group_job_complete (
-              jobgroup INTEGER not null,
-              job         INTEGER     not null,
-             constraint fk_jobgrpcomplete_group
-                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-                   ON DELETE CASCADE,
-             constraint fk_jobgrpcomplete_job
-                 FOREIGN KEY (job)         REFERENCES wmbs_job(id))"""
-             
-        self.create["19wmbs_job_mask"] = \
+        self.create["17wmbs_job_mask"] = \
       """CREATE TABLE wmbs_job_mask (
           job           INTEGER     not null,
           FirstEvent    INTEGER,
@@ -290,15 +273,17 @@ class Create(CreateWMBSBase):
           constraint fk_mask_job
               FOREIGN KEY (job) REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
+
+        for jobState in jobStates:
+            jobStateQuery = """INSERT INTO wmbs_job_state(id, name) VALUES
+                               (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
+            self.inserts["job_state_%s" % jobState] = jobStateQuery
           
         for subType in ("Processing", "Merge"):
             subTypeQuery = """INSERT INTO wmbs_subs_type (id, name) 
                           values (wmbs_subs_type_SEQ.nextval, '%s')""" % subType
             self.inserts["wmbs_subs_type_%s" % subType] = subTypeQuery
 
-        #for i in self.create.keys():
-        #    self.create[i] = self.create[i].replace('INTEGER', 'number(10)')
-        #    self.create[i] = self.create[i].replace('INT(11)', 'number(10)')
         j = 50
         for i in self.sequence_tables:
             seqname = '%s_SEQ' % i

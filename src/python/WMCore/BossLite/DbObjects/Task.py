@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.6 2010/04/20 15:06:49 spigafi Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: Task.py,v 1.7 2010/04/20 15:33:23 spigafi Exp $"
+__revision__ = "$Revision: 1.7 $"
 
 import os.path
 import threading
@@ -116,7 +116,7 @@ class Task(DbObject):
     ####################################################################
 
     @dbTransaction
-    def save(self, deep = True):
+    def save(self):
         """
         Save the task if there is new information in it.
         """
@@ -133,7 +133,7 @@ class Task(DbObject):
             self.create()
         
         for job in self.jobs:
-                job.save(deep)
+                job.save()
                 status += 1
                 
         return status
@@ -200,7 +200,7 @@ class Task(DbObject):
     ###################################################################
 
     @dbTransaction
-    def loadJobs(self, deep = False):
+    def loadJobs(self):
         """
         Load jobs from the database
 
@@ -230,11 +230,12 @@ class Task(DbObject):
         """
         update task object from database (with all jobs)
         """
-
+        
         status = 0
 
         self.save()
 
+        # probably redundant...
         if deep:
             for job in self.jobs:
                 job.update(deep)

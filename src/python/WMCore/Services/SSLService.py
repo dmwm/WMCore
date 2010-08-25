@@ -6,8 +6,8 @@ An SSLService is the same as a Service but uses HTTPS to connect to the remote
 resources.
 """
 
-__revision__ = "$Id: SSLService.py,v 1.1 2009/08/18 14:22:34 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SSLService.py,v 1.2 2010/07/30 12:14:50 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import datetime, os, urllib, time
 
@@ -23,8 +23,8 @@ class SSLService(Service):
     """
     def __init__(self, dict={}):
         try:
+            self["requests"] = SSLRequests(dict['endpoint'], dict)
             Service.__init__(self, dict)
-            self["requests"] = SSLRequests(self["requests"]["host"])
              
         except WMException, ex:
             msg = str(ex)

@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.27 $"
-__revision__ = "$Id: Report.py,v 1.27 2010/06/21 19:48:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Report.py,v 1.28 2010/06/22 19:47:17 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -89,6 +89,7 @@ class Report:
     def __init__(self, reportname = None):
         self.data = ConfigSection("FrameworkJobReport")
         self.data.steps         = []
+        self.data.workload = "Unknown"
 
         if reportname:
             self.addStep(reportname = reportname)

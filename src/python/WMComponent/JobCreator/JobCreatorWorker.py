@@ -11,8 +11,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.13 2010/06/11 19:32:23 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.14 2010/06/14 21:03:43 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import threading
 import logging
@@ -159,8 +159,6 @@ class JobCreatorWorker:
             workflow         = wmbsSubscription["workflow"]
             wmWorkload       = retrieveWMSpec(wmbsSubscription)
 
-            logging.info("Retrieved WMBS info")
-
             if not workflow.task or not wmWorkload:
                 wmTask = None
                 seederList = []
@@ -193,8 +191,10 @@ class JobCreatorWorker:
             for wmbsJobGroup in wmbsJobGroups:
                 self.createJobGroup(wmbsJobGroup)
                 # Create a directory
-                self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(),
-                                                startDir = self.jobCacheDir)
+                self.createWorkArea.processJobs(jobGroup = wmbsJobGroup,
+                                                startDir = self.jobCacheDir,
+                                                workflow = workflow,
+                                                wmWorkload = wmWorkload)
                 
                 for job in wmbsJobGroup.jobs:
                     jobNumber += 1
@@ -217,8 +217,6 @@ class JobCreatorWorker:
 
                 logging.info("Finished call for jobGroup %i" \
                              %(wmbsJobGroup.exists()))
-
-        #print "Finished JobCreatorWorker.__call__"
 
         return parameters
 

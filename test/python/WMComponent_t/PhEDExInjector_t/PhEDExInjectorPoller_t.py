@@ -7,8 +7,8 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.9 2010/04/01 19:41:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.10 2010/04/27 16:24:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import time
@@ -43,7 +43,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         Install the DBSBuffer schema into the database and connect to PhEDEx.
         """
-        self.phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/tbedi/"
+        self.phedexURL = "https://cmswttest.cern.ch/phedex/datasvc/json/tbedi/"
         self.dbsURL = "http://cmssrv49.fnal.gov:8989/DBS/servlet/DBSServlet"
         
         self.testInit = TestInit(__file__)

@@ -5,8 +5,8 @@ _SAM_
 Talk to the SAM Service to get site status from the results of SAM tests.
 """
 
-__revision__ = "$Id: SAM.py,v 1.4 2010/01/08 23:26:36 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SAM.py,v 1.5 2010/01/09 09:15:34 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Services.Service import Service
 
@@ -67,12 +67,12 @@ if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG,
                     format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt = '%m-%d %H:%M',
-                    filename = '/tmp/sam/samstatus.log',
+                    filename = '/tmp/samstatus.log',
                     filemode = 'w')
 
     dict = {}
     dict['endpoint'] = 'https://lcg-sam.cern.ch:8443'
-    dict['cachepath'] = '/tmp/sam'
+    dict['cachepath'] = '/tmp/'
     dict['type'] = 'text/json'
     dict['logger'] = logging.getLogger('SAMtest')
 

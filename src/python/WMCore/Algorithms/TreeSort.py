@@ -12,11 +12,15 @@ Caveats:
   - Items declaring each other as parents are unsorteable
 """
 
+__revision__ = "$Id: TreeSort.py,v 1.3 2009/06/19 12:37:13 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
+
+# pylint: disable-msg=W0104,W0622
 try:
     set
 except NameError:
     from sets import Set as set
-
+# pylint: enable-msg=W0104,W0622
 
 class _SearchOp:
     """
@@ -28,9 +32,9 @@ class _SearchOp:
         self.target = name
         self.result = None
 
-    def __call__(self, _Node):
-        if _Node.name == self.target:
-            self.result = _Node
+    def __call__(self, node):
+        if node.name == self.target:
+            self.result = node
 
 
 class _OrderOp:
@@ -141,9 +145,11 @@ class TreeSort:
         # // firstly we build the tree roots from all the files that
         #//  dont have parents within the list of files we are dealing with
         for f in inputs:
+            name = nameGetter(f)
             parents = set(parentGetter(f))
-            # strip out external parents
-            parents = list(parents.difference(externalParents))
+            # strip out external parents and self
+            parents = list(parents - externalParents - set((name,)))
+            
             if len(parents) == 0:
                 # No parents, top of tree
                 self.addRoot(nameGetter(f), f)
@@ -151,14 +157,14 @@ class TreeSort:
             if len(parents) == 1:
                 #f['MatchParent'] = parents[0]
                 #remainders.append(f)
-                node = _Node(nameGetter(f), f) #cant get parents as need external ones removed
+                node = _Node(name, f) #cant get parents as need external ones removed
                 node.parents[parents[0]] = node
                 remainders.append(node)
                 continue
             if len(parents) > 1:
                 # Multiple parents ==> PANIC!
                 msg = "Object %s has too many parents for tree sort"
-                raise RuntimeError, msg % nameGetter(f)
+                raise RuntimeError, msg % name
     
         #  //
         # // Now we have pruned out the roots, we process the

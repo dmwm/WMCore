@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.12 2009/09/17 15:37:54 swakef Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.13 2009/09/18 13:42:42 swakef Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import pickle
@@ -15,7 +15,8 @@ from WMCore.WMSpec.WMTask import makeWMTask
 
 from WorkQueueTestCase import WorkQueueTestCase
 
-def createSpec(name, path, dataset = None):
+def createSpec(name, path, dataset = None,
+               blacklist = None, whitelist = None):
     """
     create a wmspec object and save to disk
     """
@@ -25,7 +26,10 @@ def createSpec(name, path, dataset = None):
         task.data.parameters.inputDatasets = dataset
         task.data.parameters.splitType = 'File'
         task.data.parameters.splitSize = 1
-        task.data.constraints.sites.blacklist = ['SiteA']
+        if blacklist:
+            task.data.constraints.sites.blacklist = blacklist
+        if whitelist:
+            task.data.constraints.sites.whitelist = whitelist
         wmspec.data.dbs = 'http://example.com'
     else:
         task.data.parameters.splitType = 'Event'
@@ -122,10 +126,23 @@ class WorkQueueTest(WorkQueueTestCase):
         self.specName = 'testWf'
         createSpec(self.specName, self.specFile)
         self.processingSpecName = 'testProcessing'
+        self.blacklistSpecName = 'testBlacklist'
+        self.whitelistSpecName = 'testWhitelist'
         self.processingSpecFile = os.path.join(os.getcwd(),
                                             self.processingSpecName + ".pckl")
+        self.blacklistSpecFile = os.path.join(os.getcwd(),
+                                            self.blacklistSpecName + ".pckl")
+        self.whitelistSpecFile = os.path.join(os.getcwd(),
+                                            self.whitelistSpecName + ".pckl")
         createSpec(self.processingSpecName,
                    self.processingSpecFile, ['/fake/test/RAW'])
+        createSpec(self.blacklistSpecName,
+                   self.blacklistSpecFile, ['/fake/test/RAW'],
+                   blacklist = ['SiteA'])
+        createSpec(self.whitelistSpecName,
+                   self.whitelistSpecFile, ['/fake/test/RAW'],
+                   whitelist = ['SiteB'])
+
 
         self.globalQueue = WorkQueue(SplitByBlock = False) # Global queue
         self.midQueue = WorkQueue(SplitByBlock = False,
@@ -143,7 +160,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
 
-        for f in (self.specFile, self.processingSpecFile):
+        for f in (self.specFile, self.processingSpecFile,
+                  self.blacklistSpecFile, self.whitelistSpecFile):
             try:
                 os.unlink(f)
             except OSError:
@@ -236,8 +254,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Black & White list functionality
         """
-
-        specfile = self.processingSpecFile
+        specfile = self.blacklistSpecFile
         njobs = [5, 10] # array of jobs per block
         numBlocks = len(njobs)
         total = sum(njobs)
@@ -247,22 +264,38 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(numBlocks, len(self.queue))
         self.queue.updateLocationInfo()
 
-        #In blacklist (SiteA) or not at location (SiteB)
-        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), 0) # Fail here till blacklist works
+        #In blacklist (SiteA)
+        work = self.queue.getWork({'SiteA' : total})
+        self.assertEqual(len(work), 0)
 
         fakeDBS = self.queue.dbsHelpers['http://example.com']
         fakeDBS.locations['/fake/test/RAW#1'] = ['SiteA', 'SiteB']
         self.queue.updateLocationInfo()
 
-        # SiteA still blacklisted for all blocks - but not supported
+        # SiteA still blacklisted for all blocks
         work = self.queue.getWork({'SiteA' : total})
         self.assertEqual(len(work), 0)
         # SiteB can run all blocks now
         work = self.queue.getWork({'SiteB' : total})
         self.assertEqual(len(work), 2)
 
-        #TODO: Add whitelist test here
+        # Test whitelist stuff
+        specfile = self.whitelistSpecFile
+        njobs = [5, 10] # array of jobs per block
+        numBlocks = len(njobs)
+        total = sum(njobs)
+
+        # Queue Work & check accepted
+        self.queue.queueWork(specfile)
+        self.assertEqual(numBlocks, len(self.queue))
+
+        # Only SiteB in whitelist
+        work = self.queue.getWork({'SiteA' : total})
+        self.assertEqual(len(work), 0) # Fail here till whitelist works
+
+        # Site B can run
+        work = self.queue.getWork({'SiteB' : total})
+        self.assertEqual(len(work), 2)
 
 
     def testGlobalQueue(self):

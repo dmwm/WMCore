@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+
+import os
 import unittest
 try:
     # Python 2.6
@@ -26,11 +28,13 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
     """
     def initialize(self):
         self.config = DefaultConfig('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
-        self.config.setDBUrl('sqlite:////tmp/resttest.db')
-        self.urlbase = self.config.getServerUrl()
-        # mysql example
+        
+        # set up database
+        dbUrl = os.environ["DATABASE"] or "sqlite:////tmp/resttest.db"
+        self.config.setDBUrl(dbUrl)
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
-        #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
+        self.urlbase = self.config.getServerUrl()
+        
         self.schemaModules = ["WMCore.WorkQueue.Database"]
         wqConfig = self.config.getModelConfig()
         wqConfig.queueParams = {}

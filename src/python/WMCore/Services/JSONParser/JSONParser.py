@@ -6,8 +6,8 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.7 2009/03/25 17:41:47 ewv Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JSONParser.py,v 1.8 2009/03/31 14:53:45 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import urllib
 import cStringIO
@@ -20,54 +20,8 @@ from WMCore.Services.Service import Service
 
 class JSONParser:
     """
-    API for dealing with retrieving information from SiteDB
+    Parser for dealing with broken json from SiteDB
     """
-
-    def __init__(self, url, logger = None):
-        dict = {}
-        dict['endpoint'] = url
-        if os.getenv('HOME'):
-            dict['cachepath'] = os.getenv('HOME') + '/.cms_jsoncache'
-        else:
-            dict['cachepath'] = '/tmp/jsonparser_' + pwd.getpwuid(os.getuid())[0]
-        if not os.path.isdir(dict['cachepath']):
-            os.mkdir(dict['cachepath'])
-        if not logger:
-            logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=dict['cachepath'] + '/jsonparser.log',
-                    filemode='w')
-            logger = logging.getLogger('JSONParser')
-
-        dict['type'] = 'text/json'
-        dict['logger'] = logger
-        self.service = Service(dict)
-
-    def getJSON(self, service, file='result.json', clearCache=False, **args):
-        """
-        _getJSON_
-
-        retrieve JSON formatted information given the service name and the
-        argument dictionaries
-
-        """
-        params = urllib.urlencode(args)
-        query = service + '?' + params
-        if clearCache:
-            self.service.clearCache(file)
-        try:
-            f = self.service.refreshCache(file, query)
-            #f = urllib.urlopen(service, params)
-            result = f.read()
-            f.close()
-        except IOError:
-            raise RuntimeError("URL not available: %s" % service )
-
-        output = self.dictParser(result)
-        return output
-
-
     def parse(self, token, src):
         """
         Dictionary string parser from

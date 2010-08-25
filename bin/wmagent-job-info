@@ -58,8 +58,11 @@ def getJobInfo():
     fwjrDocsResult = changeStateDB.loadView("JobDump", "fwjrsByJobID", options)        
     jobDocResult = changeStateDB.loadView("JobDump", "jobsByJobID", options)
 
-    if len(jobDocResult["rows"]) != 1:
+    if len(jobDocResult["rows"]) == 0:
         print "Unknown job: %s" % jobID
+        sys.exit(1)
+    elif len(jobDocResult["rows"]) > 1:
+        print "Multiple entries for this job: %s" % jobID
         sys.exit(1)
 
     global jobDoc

@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.11 2009/07/22 21:55:15 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WMInit.py,v 1.12 2009/08/26 20:38:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -111,7 +111,7 @@ class WMInit:
         parameters = None
         flag = False
         #Set up for typical DBCreator format: logger, dbi, params
-        if not params == None:
+        if params != None:
             parameters = [None, None, params]
             flag = True
         

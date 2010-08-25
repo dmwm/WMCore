@@ -7,8 +7,8 @@ and then for each task do the jobs necessary for the task
 to start as a proper job.
 
 """
-__revision__ = "$Id: TaskMaker.py,v 1.3 2010/02/10 17:42:41 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TaskMaker.py,v 1.4 2010/02/16 17:50:19 evansde Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 
@@ -122,14 +122,15 @@ class TaskMaker:
         if hasattr(self.workload, 'owner'):
             self.owner = self.workload.owner
 
-        for task in self.workload.taskIterator():
+        for toptask in self.workload.taskIterator():
             #for each task, build sandbox, register, and subscribe
-            if task.name() in self.workflowDict.keys():
-                raise Exception('Duplicate task name for workload %s, task %s' %(workload.name(), task.name()))
+            for task in toptask.taskIterator():
+                if task.name() in self.workflowDict.keys():
+                    raise Exception('Duplicate task name for workload %s, task %s' %(workload.name(), task.name()))
 
-            if not self.skipSubscription:
-                subscribeInfo = self.subscribeWMBS(task)
-            sandboxInfo   = self.createSandbox(task)
+                if not self.skipSubscription:
+                    subscribeInfo = self.subscribeWMBS(task)
+                sandboxInfo   = self.createSandbox(task)
 
         logging.info('Done processing workload %s' %(self.workload.name()))
 

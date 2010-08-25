@@ -6,7 +6,9 @@ import md5
 import socket
 import popen2
 
-def uuid( *args ):
+import WMCore.Algorithms.External.uuid75421 as uuid
+
+def ourUUID( *args ):
     """
     Generates a universally unique ID.
     Any arguments only create more randomness.
@@ -23,28 +25,15 @@ def uuid( *args ):
     return data
 
 
-
-def uuidgen():
-    """
-    Try to create a uuid with uuidgen if available, returns None if not
-    """
-    pop = popen2.Popen4("uuidgen")
-    pop.wait()
-    exitCode = pop.poll()
-    if exitCode:
-        return None
-    hash = pop.fromchild.read().strip()
-    return hash
-
-
 def makeUUID():
     """
     _makeUUID_
-
-    return a UUID
-
+    
+    Makes a UUID from the uuid class, returns it
     """
-    guid = uuidgen()
-    if guid == None:
-        guid = uuid()
-    return guid
+
+    guid = uuid.uuid1()
+    if not guid:
+        guid = ourUUID()
+    return str(guid)
+    

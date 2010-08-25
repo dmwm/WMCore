@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 """
 _WMTask_
@@ -10,8 +11,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.23 2010/02/26 19:35:07 evansde Exp $"
-__revision__ = "$Revision: 1.23 $"
+__version__ = "$Id: WMTask.py,v 1.24 2010/03/09 20:50:53 sfoulkes Exp $"
+__revision__ = "$Revision: 1.24 $"
 
 import os
 
@@ -109,6 +110,7 @@ class WMTaskHelper(TreeHelper):
         
         """
         return self.data.pathName
+
     def listPathNames(self):
         """
         _listPathNames
@@ -129,10 +131,6 @@ class WMTaskHelper(TreeHelper):
         workflow.task = self.getPathName()
         return workflow
 
-
-
-
-    
     def steps(self):
         """get WMStep structure"""
         if self.data.steps.topStepName == None:
@@ -140,6 +138,13 @@ class WMTaskHelper(TreeHelper):
         step = getattr(self.data.steps, self.data.steps.topStepName, None)
         return WMStepHelper(step)
 
+    def getTopStepName(self):
+        """
+        _getTopStepName_
+
+        Retrieve the name of the top step.
+        """
+        return self.data.steps.topStepName
     
     def setStep(self, wmStep):
         """set topStep to be the step instance provided"""
@@ -216,6 +221,14 @@ class WMTaskHelper(TreeHelper):
         helper = template.helper(step.data)
         return helper
 
+    def getOutputModulesForStep(self, stepName):
+        """
+        _getOutputModulesForStep_
+
+        Retrieve all the output modules for the particular step.
+        """
+        step = self.getStep(stepName)
+        return step.data.output.modules
     
     def build(self, workingDir):
         """

@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.16 2009/10/02 19:09:20 evansde Exp $"
-__revision__ = "$Revision: 1.16 $"
+__version__ = "$Id: WMTask.py,v 1.17 2009/10/15 16:07:43 evansde Exp $"
+__revision__ = "$Revision: 1.17 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -20,7 +20,7 @@ import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
-
+from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 
 def getTaskFromStep(stepRef):
     """
@@ -70,6 +70,17 @@ class WMTaskHelper(TreeHelper):
         node.setPathName(pName)
         return node
 
+    def taskIterator(self):
+        """
+        _taskIterator_
+
+        return output of nodeIterator(self) wrapped in TaskHelper instance
+
+        """
+        for x in self.nodeIterator():
+            yield WMTaskHelper(x)
+
+
     def setPathName(self, pathName):
         """
         _setPathName_
@@ -89,6 +100,21 @@ class WMTaskHelper(TreeHelper):
 
         """
         return self.data.pathName
+
+    def makeWorkflow(self):
+        """
+        _makeWorkflow_
+
+        Create a WMBS compatible Workflow structure that represents this
+        task and the information contained within it
+
+        """
+        workflow = DataStructsWorkflow()
+        workflow.task = self.getPathName()
+        return workflow
+
+
+
 
 
     def steps(self):
@@ -351,17 +377,17 @@ class WMTaskHelper(TreeHelper):
             if opt == 'dbsurl':
                 self.data.input.dataset.dbsurl = arg
             # all other options
-                
+
             setattr(self.data.input.dataset, opt, arg)
 
         return
-    
+
     def addProduction(self, **options):
         """
         _addProduction_
-        
+
         Add details of production job related information.
-        
+
         options should contain at least:
         TODO: Not sure what is necessary data ask Dave
         optional
@@ -369,11 +395,11 @@ class WMTaskHelper(TreeHelper):
 
         """
         self.data.section_("production")
-        
+
         for opt, arg in options.items():
             if opt == 'totalevents':
                 self.data.production.totalEvents = arg
-                
+
             setattr(self.data.production, opt, arg)
 
     def inputDataset(self):
@@ -384,43 +410,43 @@ class WMTaskHelper(TreeHelper):
 
         """
         return getattr(self.data.input, "dataset", None)
-    
+
     def siteWhitelist(self):
         """
         _siteWhitelist_
-        
+
         accessor for white list for the task
         """
-        
+
         return self.data.constraints.sites.whitelist
-    
+
     def siteBlacklist(self):
         """
         _siteBlacklist_
-        
+
         accessor for white list for the task
         """
-        
+
         return self.data.constraints.sites.blacklist
-    
+
     def parentProcessingFlag(self):
         """
         _parentProcessingFlag_
-        
+
         accessor for parentProcessing information (two file input)
         """
         return getattr(self.data.input.dataset, "parentFlag", False)
-    
+
     def totalEvents(self):
         """
         _totalEvents_
-        
+
         accessor for total events in the given dataset
         """
         #TODO: save the total events for  the production job
-        return self.data.production.totalEvents 
+        return self.data.production.totalEvents
         #return self.data.input.dataset.totalEvents
-    
+
     def dbsUrl(self):
         """
         _dbsUrl_

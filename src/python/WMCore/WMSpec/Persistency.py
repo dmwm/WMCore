@@ -9,11 +9,12 @@ Placeholder for ideas at present....
 
 """
 
-__revision__ = "$Id: Persistency.py,v 1.7 2010/02/12 20:34:22 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Persistency.py,v 1.8 2010/03/05 15:52:08 swakef Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import pickle
-from urllib import urlopen
+from urllib2 import urlopen, Request
+from urlparse import urlparse
 
 #from WMCore.Wrappers import JsonWrapper
 #from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
@@ -65,7 +66,12 @@ class PersistencyHelper:
         
         #TODO: currently support both loading from file path or url
         #if there are more things to filter may be separate the load function
-        handle = urlopen(filename)
+
+        # urllib2 needs a scheme - assume local file if none given
+        if not urlparse(filename)[0]:
+            filename = 'file:' + filename
+        # Send Accept header so we dont get default which may be fancy ie. json
+        handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
         extension = filename.split(".")[-1].lower()
         if extension == "pkl":
             self.data = pickle.load(handle)

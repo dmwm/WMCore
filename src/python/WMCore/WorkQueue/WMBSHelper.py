@@ -5,14 +5,15 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.14 2010/02/08 19:05:45 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.15 2010/03/15 18:26:39 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.Services.UUID import makeUUID
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 class WMBSHelper:
 
@@ -32,21 +33,55 @@ class WMBSHelper:
         self.whitelist = whitelist
         self.blacklist = blacklist
         self.block = blockName or None
-        self.fileset = None
-        self.workflow = None
-        self.subscription = None
+        self.topLevelFileset = None
+        self.topLevelSubscription = None
+        #TODO: in case there are multiple top level tasks are
+        # exist find the way to avoid loading wmspec multiple times
+        wmspec = WMWorkloadHelper()
+        # the url should be url from cache 
+        # (check whether that is updated correctly in DB)
+        wmspec.load(self.wmSpecUrl)    
+        self.topLevelTask = wmspec.getTask(self.topLevelTaskName)
 
-    def createWorkflow(self):
+    def createSubscription(self):
+        self.createTopLevelFilesset()
+        return self._createChildSubscription(self.topLevelTask, self.topLevelFileset)
+        
+    def _createChildSubscription(self, task, fileset):
         # create workflow
         # make up workflow name from wmspec name
-        self.workflow = Workflow(self.wmSpecUrl, self.wmSpecOwner, 
+        workflow = Workflow(self.wmSpecUrl, self.wmSpecOwner, 
                                  self.wmSpecName,
-                                 self.topLevelTaskName)
-        self.workflow.create()
+                                 task.getPathName())
+        workflow.create()
+        subs = Subscription(fileset = fileset, workflow = workflow,
+                            split_algo = task.jobSplittingAlgorithm(),
+                            type = task.taskType())
+        
+        if self.topLevelSubscription == None:
+            self.topLevelSubscription = subs
+        
+        outputModules =  task.getOutputModulesForStep(task.getTopStepName())
+        for outputModuleName in outputModules.listSections_():
+            if task.taskType() == "Merge":
+                outputFilesetName = "%s/merged-%s" % (task.getPathName(),
+                                                      outputModuleName)
+            else:
+                outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
+                                                        outputModuleName)
+    
+            outputFileset = Fileset(name = outputFilesetName)
+            outputFileset.create()
+    
+            workflow.addOutput(outputModuleName, outputFileset)
+    
+            for childTask in task.childTaskIterator():
+                if childTask.data.input.outputModule == outputModuleName:
+                    self._createChildSubscription(childTask, outputFileset) 
+        
+        return self.topLevelSubscription
 
-        return self.workflow
-
-    def createFilesset(self):
+    def createTopLevelFilesset(self):
         # create fileset
         # make up fileset name from task name
         filesetName = ("%s-%s" % (self.wmSpecName, self.topLevelTaskName))
@@ -56,46 +91,55 @@ class WMBSHelper:
             #create empty fileset for production job
             filesetName += "-%s" % makeUUID()
             
-        self.fileset = Fileset(filesetName)
-        self.fileset.create()
-        return self.fileset
+        self.topLevelFileset = Fileset(filesetName)
+        self.topLevelFileset.create()
+        return self.topLevelFileset
 
 
-    def createSubscription(self):
-        """
-        _createSubscription_
-        
-        create the wmbs subscription by a given fileset name and workflow name
-        """
-        #if self.subscription == None:
-        self.createFilesset()
-        self.createWorkflow()
-        self.subscription = Subscription(self.fileset, self.workflow,
-                                         whitelist = self.whitelist,
-                                         blacklist = self.blacklist,
-                                         type = self.topLevelTaskType)
-        self.subscription.create()
-        return self.subscription
-
-    def addFiles(self, dbsFiles, locations):
+    
+    def addFiles(self, dbsBlock):
         """
         _createFiles_
         
-        create wmbs files from given dbs files.
+        create wmbs files from given dbs block.
         as well as run lumi update
         """
 
-        if type(dbsFiles) != list:
-            dbsFiles = [dbsFiles]
-
-        fileset = self.createFilesset()
-        for dbsFile in dbsFiles:
-            wmbsFile = File(lfn = dbsFile["LogicalFileName"],
-                            size = dbsFile["FileSize"],
-                            events = dbsFile["NumberOfEvents"],
-                            cksum = dbsFile["Checksum"],
-                            parents = dbsFile["ParentList"],
-                            locations = set(locations))
-            wmbsFile.create()
-            fileset.addFile(wmbsFile)
+        fileset = self.topLevelFileset
+        for dbsFile in dbsBlock['Files']:
+            fileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
+                                            dbsBlock['StorageElements']))
+                    
         fileset.commit()
+        fileset.markOpen(False)
+        
+
+    def _convertDBSFileToWMBSFile(self, dbsFile, storageElements):
+        """
+        There are two assumptions made to make this method behave properly,
+        1. DBS returns only one level of ParentList.
+           If DBS returns multiple level of parentage, it will be still get handled.
+           However that might not be what we wanted. In that case, restrict to one level.
+        2. Assumes parents files are in the same location as child files.
+           This is not True in general case, but workquue should only select work only
+           where child and parent files are in the same location  
+        """
+        wmbsParents = []
+        
+        for parent in dbsFile["ParentList"]:
+            wmbsParents.append(self._convertDBSFileToWMBSFile(parent, storageElements))
+        
+        checksums = {}
+        if dbsFile.get('Checksum'):
+            checksums['cksum'] = dbsFile['Checksum']
+        if dbsFile.get('Adler32'):
+            checksums['adler32'] = dbsFile['Adler32']
+            
+        wmbsFile = File(lfn = dbsFile["LogicalFileName"],
+                        size = dbsFile["FileSize"],
+                        events = dbsFile["NumberOfEvents"],
+                        checksums = checksums,
+                        #TODO: need to get list of parent lfn
+                        parents = wmbsParents,
+                        locations = set(storageElements))
+        return wmbsFile

@@ -28,7 +28,7 @@ class ReqMgrRESTModel(RESTModel):
     def __init__(self, config = {}):
         RESTModel.__init__(self, config)
         #self.dialect = config.dialect
-        self.urlPrefix = 'http://%s/download?filepath=' % config.model.reqMgrHost
+        self.urlPrefix = '%s/download?filepath=' % config.model.reqMgrHost
         self.cache = WMWorkloadCache.WMWorkloadCache(config.model.workloadCache)
 
         self.methods = {'GET':{'request' : {'call':self.getRequest, 'args':['requestName']},

@@ -17,7 +17,7 @@ class CmsDriverWebRequest(TemplatedPage):
         self.cmsswVersion = config.cmsswDefaultVersion
         self.configCache = config.configCacheUrl
         self.componentDir = config.componentDir
-        self.urlPrefix = 'http://%s/download?filepath=' % config.reqMgrHost
+        self.urlPrefix = '%s/download?filepath=' % config.reqMgrHost
         self.versions = []
         cherrypy.config.update({'tools.sessions.on': True})
 

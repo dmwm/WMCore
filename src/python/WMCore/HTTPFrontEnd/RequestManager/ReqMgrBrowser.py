@@ -17,7 +17,7 @@ class ReqMgrBrowser(TemplatedPage):
         # Take a guess
         self.templatedir = __file__.rsplit('/', 1)[0]
         print self.templatedir
-        self.urlPrefix = 'http://%s/download/?filepath=' % config.reqMgrHost
+        self.urlPrefix = '%s/download/?filepath=' % config.reqMgrHost
         self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'ReqMgrRequestorBasePriority', 'ReqMgrGroupBasePriority', 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         self.linkedFields = {'RequestName':'requestDetails'}

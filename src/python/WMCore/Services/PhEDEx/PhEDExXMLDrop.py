@@ -51,7 +51,7 @@ class XMLFileblock(list):
         result.attrs['is-open'] = self.isOpen
         for entry in self:
             #To do: check this appending is needed anymore
-            #I don't think it is
+            #I don't think it is; we remove automatic cksum typing, choose correct sum earlier in the chain
             #checksum="cksum:%s"%entry[1] #add cksum:
             file = IMProvNode("file")
             file.attrs['name'] =  entry[0]
@@ -221,8 +221,10 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
         else:
             xmlBlock = dataset.getFileblock(block, "n")
 
+        #Any Checksum from DBS is type cksum
+
         [ xmlBlock.addFile(
-            x['LogicalFileName'],x['Checksum'] ,x['FileSize']
+            x['LogicalFileName'],'cksum:%s' % (x['Checksum']) ,x['FileSize']
             ) for x in blockContent[block]['Files'] ]
 
     improv = spec.save()

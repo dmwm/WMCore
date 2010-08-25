@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.24 $"
-__revision__ = "$Id: Report.py,v 1.24 2010/04/26 21:19:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Report.py,v 1.25 2010/05/12 19:42:36 mnorman Exp $"
 
 import cPickle
 import logging
@@ -565,19 +565,20 @@ class Report:
             newRun = Run(int(run), *lumis)
             file.addRun(newRun)
 
-        file["lfn"] = getattr(fileRef, "lfn", None)
-        file["pfn"] = getattr(fileRef, "pfn", None)
-        file["events"] = int(getattr(fileRef, "events", 0))
-        file["size"] = int(getattr(fileRef, "size", 0))
-        file["branches"] = getattr(fileRef, "branches", [])
-        file["input"] = getattr(fileRef, "input", [])
-        file["branch_hash"] = getattr(fileRef, "branch_hash", None)
-        file["catalog"] = getattr(fileRef, "catalog", "")
-        file["guid"] = getattr(fileRef, "guid", "")
+        file["lfn"]          = getattr(fileRef, "lfn", None)
+        file["pfn"]          = getattr(fileRef, "pfn", None)
+        file["events"]       = int(getattr(fileRef, "events", 0))
+        file["size"]         = int(getattr(fileRef, "size", 0))
+        file["branches"]     = getattr(fileRef, "branches", [])
+        file["input"]        = getattr(fileRef, "input", [])
+        file["branch_hash"]  = getattr(fileRef, "branch_hash", None)
+        file["catalog"]      = getattr(fileRef, "catalog", "")
+        file["guid"]         = getattr(fileRef, "guid", "")
         file["module_label"] = getattr(fileRef, "module_label", "")
-        file["checksums"] = getattr(fileRef, "checksums", {})
-        file["merged"] = bool(getattr(fileRef, "merged", False))
-        file["dataset"] = getattr(fileRef, "dataset", {})
+        file["checksums"]    = getattr(fileRef, "checksums", {})
+        file["merged"]       = bool(getattr(fileRef, "merged", False))
+        file["dataset"]      = getattr(fileRef, "dataset", {})
+        file["outputModule"] = outputModule
 
         return file
 
@@ -620,6 +621,21 @@ class Report:
 
         for step in self.data.steps:
             tmp = self.getAllFilesFromStep(step = step)
+            if tmp:
+                listOfFiles.extend(tmp)
+
+        return listOfFiles
+
+    def getAllInputFiles(self):
+        """
+        _getAllInputFiles_
+        
+        Gets all the input files
+        """
+
+        listOfFiles = []
+        for step in self.data.steps:
+            tmp = self.getInputFilesFromStep(stepName = step)
             if tmp:
                 listOfFiles.extend(tmp)
 
@@ -714,6 +730,23 @@ class Report:
             return True
 
         return False
+
+
+    def taskSuccessful(self):
+        """
+        _taskSuccessful_
+
+        Return True if all steps successful, False otherwise
+        """
+        value = True
+
+        for stepName in self.data.steps:
+            stepReport = self.retrieveStep(step = stepName)
+            if int(getattr(stepReport, "status", 1)) == 1:
+                value = False
+
+        return True
+        
 
     def getAllFileRefsFromStep(self, step):
         """

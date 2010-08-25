@@ -65,6 +65,8 @@ class WebRequestSchema(TemplatedPage):
             skimInput=None, dbs=None, lfnCategory=None,
             processingConfig=None,
             skimConfig=None,
+            splitAlgo=None, filesPerJob=None, lumisPerJob=None, eventsPerJob=None, splitFilesBetweenJob=False,
+            skimSplitAlgo=None, skimFilesPerJob=None, skimTwoFilesPerJob=None,
             runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None,
             siteWhitelist=None, siteBlacklist=None, RECO=None, ALCA=None, AOD=None,
             minMergeSize=None, maxMergeSize=None, maxMergeEvents=None):
@@ -107,9 +109,9 @@ class WebRequestSchema(TemplatedPage):
         if minMergeSize != None:  
             schema["MinMergeSize"] = minMergeSize
         if maxMergeSize != None:
-            schema["MaxMergeSize"] = minMergeSize
+            schema["MaxMergeSize"] = maxMergeSize
         if maxMergeEvents != None:
-            schema["MaxMergeEvents"] = minMergeSize
+            schema["MaxMergeEvents"] = maxMergeEvents
 
         schema["Label"] = "WHATEVER"
         tiers = []
@@ -120,6 +122,30 @@ class WebRequestSchema(TemplatedPage):
         if AOD != None:
            tiers.append("AOD")
         schema["OutputTiers"] = tiers
+
+        if splitAlgo != None:
+            schema["StdJobSplitAlgo"] = splitAlgo
+            d = {}
+            if splitAlgo == "FileBased":
+                 d = {'files_per_job' : filesPerJob }
+            elif splitAlgo == "LumiBased":
+                 d = {'lumis_per_job' : lumisPerJob, 'split_files_between_jobs':splitFilesBetweenJob}
+            elif splitAlgo == "EventBased":        
+                 d = {'events_per_job': eventsPerJob}
+            else:
+                  raise RuntimeError("Cannot find splitting algo " + splitAlgo)
+            schema["StdJobSplitArgs"] = d
+
+        if skimSplitAlgo != None:
+            schema["SkimJobSplitAlgo"] = skimSplitAlgo
+            files_per_job = 0
+            if skimSplitAlgo == "FileBased":
+               files_per_job = skimFilesPerJob
+            elif skimSplitAlgo == "TwoFileBased":
+               files_per_job = skimTwoFilesPerJob
+            else:
+                  raise RuntimeError("Cannot find splitting algo " + skimSplitAlgo)
+            schema["SkimJobSplitArgs"] = {'files_per_job': files_per_job}
 
         if requestType == "CmsGen":
             # No idea what I'm doing here

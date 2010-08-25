@@ -92,7 +92,7 @@ if can_nose:
             if self.buildBotMode:
                 retval =  nose.run(argv=[__file__,'--with-xunit', '--all-modules','-v','test/python'])
             else:    
-                retval =  nose.run(argv=['sup.py','--with-xunit', '--all-modules','-v','test/python','-a','!integration'],
+                retval =  nose.run(argv=[__file__,'--with-xunit', '--all-modules','-v','test/python','-a','!integration,!performance'],
                                     addplugins=[DetailedOutputter()])
                 
             if retval:

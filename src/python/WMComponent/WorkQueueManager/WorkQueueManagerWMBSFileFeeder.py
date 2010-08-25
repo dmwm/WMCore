@@ -3,8 +3,8 @@
 pullWork poller
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerWMBSFileFeeder.py,v 1.2 2010/05/13 18:43:34 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueManagerWMBSFileFeeder.py,v 1.3 2010/05/14 18:56:45 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 import threading
@@ -41,8 +41,6 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         Pull in work
         """
         # reinitialize site and slot
-        myThread = threading.currentThread()
-        myThread.name = "WorkQueueManagerWMBSFileFeeder"
         self.sites = {}
         self.slots = {}
         self.pollJobs()

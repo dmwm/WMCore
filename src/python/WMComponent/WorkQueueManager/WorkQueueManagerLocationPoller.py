@@ -3,11 +3,10 @@
 updateLocations poller
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerLocationPoller.py,v 1.2 2010/05/13 18:43:34 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueManagerLocationPoller.py,v 1.3 2010/05/14 18:56:45 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
-import threading
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 
@@ -26,8 +25,6 @@ class WorkQueueManagerLocationPoller(BaseWorkerThread):
         """
         Update locations
 	    """
-        myThread = threading.currentThread()
-        myThread.name = "WorkQueueManagerLocationPoller"
         
         self.queue.logger.info("Updating data locations")
         try:

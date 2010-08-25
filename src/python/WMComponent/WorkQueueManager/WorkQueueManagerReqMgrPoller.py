@@ -3,10 +3,9 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.5 2010/05/13 18:43:34 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.6 2010/05/14 18:56:45 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
-import threading
 import re
 import os
 import os.path
@@ -31,8 +30,6 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         """
         retrive workload (workspec) from RequestManager
 	    """
-        myThread = threading.currentThread()
-        myThread.name = "WorkQueueManagerReqMgrPoller"
         
         self.wq.logger.info("Contacting Request manager for more work %s" % self.reqMgr.__class__)
         if self.retrieveCondition():

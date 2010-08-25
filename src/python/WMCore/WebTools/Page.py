@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.20 2009/03/24 09:03:08 metson Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Page.py,v 1.21 2009/05/05 02:28:02 valya Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import urllib
 import cherrypy
@@ -256,14 +256,40 @@ def runDas(self, func, *args, **kwds):
     Run a query and produce a dictionary for DAS formatting
     """
     start_time = time.time()
-    call_time = time.time() - start_time
+    results    = func(self, *args, **kwds)
+    call_time  = time.time() - start_time
+    if  type(results) is types.ListType:
+        row = results[0]
+    else:
+        row = results
+    if  type(row) is not types.DictType:
+        data  = str(results)
+        dtype = type(results)
+        raise Exception("Unsupported data format '%s' data type '%s'" % (data, dtype))
+    if  row.has_key('expire'):
+        res_expire = row['expire']
+    else:
+        res_expire = 60*5 # 5 minutes
+    if  row.has_key('version'):
+        res_version = row['version']
+    else:
+        res_version = 'unknown'
+    keyhash = md5.new()
+    keyhash.update(str(results))
+    res_checksum = keyhash.hexdigest()
     dasdata = {'application':'%s.%s' % (self.config.application, func.__name__),
                'request_timestamp': start_time,
                'request_url': request.base + request.path_info + \
                                             request.query_string,
-               'request_version': 0,
+               'request_method' : request.method,
+               'request_params' : request.params,
+               'response_version': res_version,
+               'response_expires': res_expire,
+               'response_checksum': res_checksum,
                'request_call': func.__name__,
-               'call_time': call_time
-               }
-    dasdata.update(func(self, *args, **kwds))
+               'call_time': call_time,
+               'results': results,
+              }
+#    dasdata.update(func(self, *args, **kwds))
     return dasdata
+

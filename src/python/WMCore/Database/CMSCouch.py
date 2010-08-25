@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.25 2009/05/29 19:53:03 meloam Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: CMSCouch.py,v 1.26 2009/06/08 15:54:06 meloam Exp $"
+__version__ = "$Revision: 1.26 $"
 
 try:
     # Python 2.6
@@ -37,10 +37,14 @@ def makeDocument( data ):
     """
     helper function to wrap a plain dict (i.e. one returned by couchserver)
     in a Document instance
+    
+    We don't simply do a return Document( data ) because arguments to the constructor
+    are stuck into the _id field, not added to the dict
     """
     document = Document()
     document.update( data )
     return document
+
     
 class Requests:
     """
@@ -78,7 +82,7 @@ class Requests:
         return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
 
     def makeRequest(self, uri=None, data=None, type='GET',
-                     encoder=None, decoder=None):
+                     encode=None, decode=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
@@ -88,13 +92,12 @@ class Requests:
                     'application/x-www-form-urlencoded', #self.accept_type,
                     "Accept": self.accept_type}
         encoded_data = ''
-        if (encoder == None):
-            encoder = self.encode
-        if (decoder == None):
-            decoder = self.decode
             
         if type != 'GET' and data:
-            encoded_data = encoder(data)
+            if (encode == False):
+                encoded_data = data
+            else:
+                encoded_data = self.encode(data)
             headers["Content-length"] = len(encoded_data)
         else:
             #encode the data as a get string
@@ -107,7 +110,10 @@ class Requests:
 
         data = response.read()
         self.conn.close()
-        return decoder(data)
+        if (decode == False):
+            return data
+        else:
+            return self.decode(data)
 
     def encode(self, data):
         """
@@ -305,15 +311,15 @@ class Database(CouchDBRequests):
             name = "attachment"
         return self.put('/%s/%s/%s?rev=%s' % (self.name, id, name, rev),
                          value,
-                         self.noop)
+                         False)
     
     def getAttachment(self, id, name=None):
         if (name == None):
             name = "attachment"
         attachment = self.get('/%s/%s/%s' % (self.name,id,name),
                          None,
-                         self.noop,
-                         self.noop)
+                         False,
+                         False)
         # there has to be a better way to do this but if we're not de-jsoning
         # the return values, then this is all I can do for error checking,
         # right?
@@ -322,9 +328,6 @@ class Database(CouchDBRequests):
             raise RuntimeError, "File not found, deleted"
         return attachment
        
-    def noop(self, data):
-        return data
-
 class CouchServer(CouchDBRequests):
     """
     An object representing the CouchDB server, use it to list, create, delete

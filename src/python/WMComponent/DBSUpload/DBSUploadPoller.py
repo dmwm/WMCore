@@ -24,8 +24,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.20 2010/03/03 17:50:03 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.21 2010/05/14 16:40:31 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import threading
 import logging
@@ -243,26 +243,32 @@ class DBSUploadPoller(BaseWorkerThread):
             raise Exception(msg)
 
         #Second step: commit files that need committing
-        try:
-            myThread.transaction.begin()
-            unsortedFileList = self.dbinterface.findUploadableFiles()
-            fileList = sortByDAS(input = unsortedFileList)
-            # Should now have a whole bunch of information
-            for datasetAlgo in fileList:
+        #myThread.transaction.begin()
+        unsortedFileList = self.dbinterface.findUploadableFiles()
+        fileList = sortByDAS(input = unsortedFileList)
+        #myThread.transaction.commit()
+        # Should now have a whole bunch of information
+        for datasetAlgo in fileList:
+            
+            try:
+                #myThread.transaction.begin()
+                
                 # Dataset/Algo info should be uniform
                 # Just take from the first file
                 files = []
                 algo    = createAlgoFromInfo(info = fileList[datasetAlgo][0])
                 dataset = createDatasetFromInfo(info = fileList[datasetAlgo][0])
-
+                
                 for f in fileList[datasetAlgo]:
-                    #logging.info('Beginning to process file %s for dataset %s' %(str(fileIter), str(datasetAlgo)))
                     dbsfile = DBSBufferFile(id=f['ID'])
                     dbsfile.load(parentage=1)
                     fileLFNs.append(dbsfile["lfn"])
                     files.append(dbsfile)
 
 
+
+                myThread.transaction.begin()
+                    
                 # Now that you have the files, insert them as a list
                 if len(files) > 0:
                     logging.info('Preparing to insert %i files' % (len(files)))
@@ -292,22 +298,26 @@ class DBSUploadPoller(BaseWorkerThread):
 
                     # Update the file status, and then recount UnMigrated Files
                     dbinterface.updateFilesStatus(fileLFNs, "InDBS")
+                    
+                    # And we're done
+                    myThread.transaction.commit()
 
                     
-            # And we're done
-            myThread.transaction.commit()
+            except Exception, ex:
+                msg =  'Error in committing files to DBS\n'
+                msg += str(ex)
+                msg += str(traceback.format_exc())
+                msg += '\n\n'
+                logging.error(msg)
+                myThread.transaction.rollback()
+                # Check that algo actually got to DBS
+                algo    = createAlgoFromInfo(info = fileList[datasetAlgo][0])
+                addToBuffer.addDataset(datasetAlgo, 0)
+                addToBuffer.updateAlgo(algo, 0)
+                raise Exception(msg)
+                    
+            
                 
-        except Exception, ex:
-            msg =  'Error in committing files to DBS\n'
-            msg += str(ex)
-            msg += str(traceback.format_exc())
-            msg += '\n\n'
-            logging.error(msg)
-            myThread.transaction.rollback()
-            raise Exception(msg)
-
-
-
 
 
         # And we're done.  Wrap up the dataset-algo stuff and the blocks and go home
@@ -436,4 +446,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         logging.debug("Running subscription / fileset matching algorithm")
         self.uploadDatasets()
+
+
+
 

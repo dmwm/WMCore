@@ -54,3 +54,21 @@ class StepSpace:
         return
 
 
+    def getWMTask(self):
+        """
+        _getWMTask_
+
+        Get the WMTask from the TaskSpace
+
+        """
+        return self.taskSpace.getWMTask()
+
+    def getWMStep(self):
+        """
+        _getWMStep_
+
+        Get the WMStep for this Step
+
+        """
+        task = self.taskSpace.getWMTask()
+        return task.getStep(self.stepName)

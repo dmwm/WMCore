@@ -11,7 +11,9 @@ Runtime utils for a Task
 import os
 import sys
 import inspect
+import pickle
 
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 class TaskSpace:
     """
@@ -24,9 +26,37 @@ class TaskSpace:
     def __init__(self, **args):
         self.taskName = args['TaskName']
         self.location = os.path.dirname(inspect.getsourcefile(args['Locator']))
+        self.task = None
+
+    def getWMTask(self):
+        """
+        _getWMTask_
+
+        Get the WMTask for this space
+
+        TODO: Refactor to getWMWorkload method
+
+        """
+        if self.task != None:
+            return self.task
+        try:
+            import WMSandbox
+        except ImportError, ex:
+            msg = "Error importing WMSandbox module"
+            msg += str(ex)
+            raise RuntimeError, msg
+
+        wmsandboxLoc = inspect.getsourcefile(WMSandbox)
+        workloadPcl = wmsandboxLoc.replace("__init__.py","WMWorkload.pcl")
+
+        handle = open(workloadPcl, 'r')
+        wmWorkload = pickle.load(handle)
+        handle.close()
 
 
-
+        workload = WMWorkloadHelper(wmWorkload)
+        self.task = workload.getTask(self.taskName)
+        return self.task
 
     def stepSpaces(self):
         """

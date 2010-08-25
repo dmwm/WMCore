@@ -12,8 +12,13 @@ from WMCore.WMFactory import WMFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 from WMCore.JobStateMachine import DefaultConfig
 from WMCore.WMBS.Job import Job
+from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 import WMCore.Database.CMSCouch as CMSCouch
+from WMCore.DataStructs.Run import Run
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Subscription import Subscription
+from sets import Set
 import time
 # Framework for this code written automatically by Inspect.py
 
@@ -36,13 +41,17 @@ class TestChangeState(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+       
+        
         try:
-            self.testInit.setSchema(customModules = ["WMCore.ThreadPool"], useDefault = False)
+           self.testInit.setSchema(customModules = ["WMCore.ThreadPool", "WMCore.WMBS"], useDefault = False)
         except:
             print "Warning: something bad happened when trying to do testinit.SetSchema"
             factory = WMFactory("Threadpool", "WMCore.ThreadPool")
             destroy = factory.loadObject(myThread.dialect + ".Destroy")
             destroyworked = destroy.execute(conn = myThread.transaction.conn)
+            raise
+
 
                                 
         # if you want to keep from colliding with other people

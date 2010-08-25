@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.24 2009/09/21 20:51:32 metson Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: RESTModel.py,v 1.25 2009/09/21 21:36:06 sryu Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -60,8 +60,8 @@ class RESTModel(WebAPI):
         if verb in self.methods.keys():
             method = args[0]
             if method in self.methods[verb].keys():
-                data = self.methods[verb][method]['call'](args[1:], kwargs)
-                return data 
+                data = self.methods[verb][method]['call'](*args[1:], **kwargs)
+                return data
             else:
                 data = {"message": "Unsupported method for %s: %s" % (verb, method),
                     "args": args,
@@ -77,7 +77,7 @@ class RESTModel(WebAPI):
             response.status = 501
             return {'exception': data}
         
-    def sanitise_input(self, args, kwargs):
+    def sanitise_input(self, *args, **kwargs):
         """
         Pull out the necesary input from kwargs (by name) and, failing that, 
         pulls out the number required args from args, which assumes the 

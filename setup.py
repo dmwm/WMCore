@@ -43,8 +43,8 @@ if can_nose:
             pass
     
         def run(self):
-            retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             print "DID CVS GET THIS"
+            retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             if retval:
                 sys.exit( 0 ) 
             else:

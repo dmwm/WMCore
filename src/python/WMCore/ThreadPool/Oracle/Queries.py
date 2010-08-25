@@ -8,9 +8,9 @@ This module implements the Oracle backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.1 2009/05/14 16:50:31 mnorman Exp $"
+    "$Id: Queries.py,v 1.2 2009/05/15 15:53:09 mnorman Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "mnorman@fnal.gov"
 
@@ -18,7 +18,7 @@ import threading
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-from WMCore.Threadpool.MySQL.Queries import Queries as MySQLQueries
+from WMCore.ThreadPool.MySQL.Queries import Queries as MySQLQueries
 
 class Queries(MySQLQueries):
     """
@@ -27,7 +27,94 @@ class Queries(MySQLQueries):
     This module implements the Oracle backend for the persistent threadpool.
     
     """
+
+    def updateWorkStatus(self, args, pooltable = 'tp_threadpool'):
+        """
+        Updates work status of work being processed.
+        """
+
+        # differentiate between onequeu and multi queue
+        if pooltable in ['tp_threadpool', 'tp_threadpool_buffer_in', \
+            'tp_threadpool_buffer_out']:
+            sqlStr = """
+UPDATE %s SET state='queued' WHERE component = :componentName
+AND thread_pool_id = :thread_pool_id
+        """ % (pooltable)
+            self.execute(sqlStr, args)
+        else:
+            sqlStr = """
+UPDATE %s SET state="queued" 
+        """ % (pooltable)
+            self.execute(sqlStr, {})
+
+        return
+
     
+    def moveWorkFromBufferIn(self, source, target):
+        """
+        Moves work from buffer in to main queue or buffer out
+        """
+        sqlUpd1 = ''
+        sqlStr1 = ''
+        sqlStr2 = ''
+        if source == 'tp_threadpool_buffer_in':
+            sqlUpd1 = """
+CURSOR %s_c1 IS
+  SELECT event, component, payload, thread_pool_id FROM %s
+  FOR UPDATE
+            """ %(target, source)
+            sqlStr1 = """
+INSERT INTO %s(event,component,payload,thread_pool_id) SELECT event,component,payload,thread_pool_id FROM %s
+            """ % (target, source)
+            sqlStr2 = """ DELETE FROM %s """ % (source)
+            #self.execute(sqlUpd1, {})
+        else:
+            sqlStr1 = """
+INSERT INTO %s(event,payload) SELECT event,payload FROM %s
+            """ % (target, source)
+            sqlStr2 = """ DELETE FROM %s """ % (source)
+        
+        self.execute(sqlStr1, {})
+        self.execute(sqlStr2, {})
+
+        return
+
+    def moveWorkToBufferOut(self, args, source, target, limit):
+        """
+        Moves work from buffer in or main queue to the buffer out 
+        table.
+        """
+
+        sqlStr1 = ''
+        sqlStr2 = ''
+        if source in ['tp_threadpool', 'tp_threadpool_buffer_in', \
+            'tp_threadpool_buffer_out']:
+            # we need a for update in the select to prevent (harmless) deadlock
+            # situations with innodb
+            sqlStr1 = """
+INSERT INTO %s(event,component,payload,thread_pool_id) 
+   SELECT event,component,payload,thread_pool_id FROM %s 
+   WHERE component= :component AND thread_pool_id = :thread_pool_id
+   AND ROWNUM < %s
+            """ % (target, source, limit)
+            sqlStr2 = """ 
+DELETE FROM %s 
+WHERE component= :component AND thread_pool_id = :thread_pool_id AND ROWNUM < %s
+""" % (source, limit)
+            self.execute(sqlStr1, args)
+            self.execute(sqlStr2, args)
+        else:
+            sqlStr1 = """
+INSERT INTO %s(event,payload) SELECT event,payload FROM %s WHERE ROWNUM < %s
+            """ % (target, source, limit)
+            sqlStr2 = """ 
+DELETE FROM %s ORDER BY id WHERE ROWNUM < %s
+            """ % (source )
+            self.execute(sqlStr1, {})
+            self.execute(sqlStr2, {})
+
+
+
     def insertThreadPoolTables(self, threadpool):
         """
         __insertThreadPoolTable

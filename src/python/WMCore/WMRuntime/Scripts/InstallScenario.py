@@ -95,9 +95,13 @@ class InstallScenario(ScriptInterface):
             process.GlobalTag.globaltag = ""
 
         # revlimiter for testing
-        #if hasattr(process, "maxEvents"):
-        #    if hasattr(process.maxEvents, "input"):
-        #        process.maxEvents.input = 2
+        if hasattr(process, "maxEvents"):
+            if hasattr(process.maxEvents, "input"):
+                process.maxEvents.input = 2
+
+        process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
+        process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
+        process.source.cacheSize = cms.untracked.uint32(100000000)
 
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location

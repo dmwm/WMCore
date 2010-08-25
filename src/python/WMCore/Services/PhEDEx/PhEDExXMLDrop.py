@@ -232,8 +232,6 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
             checksums = {'cksum' : x['Checksum']}
             if x.get('Adler32') not in (None, ''):
                 checksums['adler32'] = x['Adler32']
-            if x.get('Md5') not in (None, ''):
-            	checksums['md5'] = x['Md5'] 
             xmlBlock.addFile(x['LogicalFileName'], checksums, x['FileSize'])
 
     improv = spec.save()

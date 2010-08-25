@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.23 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.24 2009/10/22 18:35:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import unittest
 import logging
@@ -134,31 +134,31 @@ class JobGroupTest(unittest.TestCase):
         testJobGroup = JobGroup(subscription = testSubscription)
         testJobGroup.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(10, *[12312]))
-        testFileA.setLocation("goodse.cern.ch")
-        testFileA.setLocation("malpaquet")
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10)
+        testFileC.addRun(Run(10, *[12312]))
+        testFileC.setLocation("goodse.cern.ch")
+        testFileC.setLocation("malpaquet")
 
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(10, *[12312]))
-        testFileB.setLocation("goodse.cern.ch")
-        testFileB.setLocation("malpaquet")
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10)
+        testFileD.addRun(Run(10, *[12312]))
+        testFileD.setLocation("goodse.cern.ch")
+        testFileD.setLocation("malpaquet")
 
-        testFileA.create()
-        testFileB.create()
+        testFileC.create()
+        testFileD.create()
 
         testJobA = Job(name = "TestJobA1")
-        testJobA.addFile(testFileA)
+        testJobA.addFile(testFileC)
         
         testJobB = Job(name = "TestJobB1")
-        testJobB.addFile(testFileB)
+        testJobB.addFile(testFileD)
 
         testJobGroup.add(testJobA)
         testJobGroup.add(testJobB)
 
         for i in range(0,100):
             testJob = Job(name = "TestJob%i" %(i))
-            testJob.addFile(testFileA)
+            testJob.addFile(testFileC)
             testJobGroup.add(testJob)
 
         if commitFlag:
@@ -513,8 +513,8 @@ class JobGroupTest(unittest.TestCase):
 
         self.assertEqual(len(testJobGroupC.getJobs()), 102)
 
-        self.assertEqual(testJobGroupC.jobs[0].getFiles()[0]['lfn'], '/this/is/a/lfnA')
-        self.assertEqual(testJobGroupC.jobs[1].getFiles()[0]['lfn'], '/this/is/a/lfnB')
+        self.assertEqual(testJobGroupC.jobs[0].getFiles()[0]['lfn'], '/this/is/a/lfnC')
+        self.assertEqual(testJobGroupC.jobs[1].getFiles()[0]['lfn'], '/this/is/a/lfnD')
 
         return
 

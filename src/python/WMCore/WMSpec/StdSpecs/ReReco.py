@@ -20,6 +20,15 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 parseDataset = lambda x : { "Primary" : x.split("/")[1], 
                             "Processed": x.split("/")[2],
                             "Tier" : x.split("/")[3]}
+
+
+def outputModule(key):
+    d =  {"RECO": "outputRECORECO",
+          "AOD":"outputAODRECO",
+          "ALCARECO": "outputALCARECOALCARECO"}
+
+    return d.get(key, None)
+                        
                             
 
 
@@ -148,7 +157,7 @@ def rerecoWorkload(workloadName, arguments):
 
     if "RECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputRECORECO", primaryDataset = inputPrimaryDataset,
+            outputModule("RECO"), primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
             dataTier = "RECO",
             lfnBase = "%s/RECO/%s" % ( unmergedLfnBase, processedDatasetName)
@@ -156,7 +165,7 @@ def rerecoWorkload(workloadName, arguments):
 
     if "ALCARECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputALCARECOALCARECO", primaryDataset = inputPrimaryDataset,
+            outputModule("ALCARECO"), primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
             dataTier = "ALCARECO",
             lfnBase = "%s/ALCARECO/%s" % ( unmergedLfnBase, processedDatasetName)
@@ -164,7 +173,7 @@ def rerecoWorkload(workloadName, arguments):
 
     if "AOD" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputAODRECO", primaryDataset = inputPrimaryDataset,
+            outputModule("AOD"), primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
             dataTier = "AOD",
             lfnBase = "%s/AOD/%s" % ( unmergedLfnBase, processedDatasetName)
@@ -217,7 +226,7 @@ def rerecoWorkload(workloadName, arguments):
         )
 
 
-        mergeReco.setInputReference(rerecoCmssw, outputModule = "outputRECORECO")
+        mergeReco.setInputReference(rerecoCmssw, outputModule = outputModule("RECO"))
         if emulationMode:
             mergeRecoStageOutHelper = mergeRecoStageOut.getTypeHelper()
             mergeRecoLogArchHelper  = mergeRecoLogArch.getTypeHelper()
@@ -255,7 +264,7 @@ def rerecoWorkload(workloadName, arguments):
         )
 
 
-        mergeAlca.setInputReference(rerecoCmssw, outputModule = "outputALCARECOALCARECO")
+        mergeAlca.setInputReference(rerecoCmssw, outputModule = outputModule("ALCARECO"))
         if emulationMode:
             mergeAlcaStageOutHelper = mergeAlcaStageOut.getTypeHelper()
             mergeAlcaLogArchHelper  = mergeAlcaLogArch.getTypeHelper()
@@ -295,7 +304,7 @@ def rerecoWorkload(workloadName, arguments):
             lfnBase = "%s/AOD/%s" % ( commonLfnBase, processedDatasetName)
         )
 
-        mergeAod.setInputReference(rerecoCmssw, outputModule = "outputAODRECO")
+        mergeAod.setInputReference(rerecoCmssw, outputModule = outputModule("AOD"))
         if emulationMode:
             mergeAodStageOutHelper = mergeAodStageOut.getTypeHelper()
             mergeAodLogArchHelper  = mergeAodLogArch.getTypeHelper()

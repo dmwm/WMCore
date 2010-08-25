@@ -6,8 +6,8 @@ MySQL implementation of Subscriptions.Jobs
 """
 
 __all__ = []
-__revision__ = "$Id: Jobs.py,v 1.5 2009/01/16 22:40:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Jobs.py,v 1.6 2009/05/13 17:59:26 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -27,7 +27,7 @@ class Jobs(DBFormatter):
         for formattedResult in formattedResults:
             formattedResult["id"] = int(formattedResult["id"])
 
-        return formatttedResults
+        return formattedResults
 
     def execute(self, subscription = 0, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"subscription": subscription},

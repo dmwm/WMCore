@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.15 2009/09/30 23:41:26 meloam Exp $"
+    "$Id: TestInit.py,v 1.16 2009/10/13 21:44:25 meloam Exp $"
 __version__ = \
-    "$Revision: 1.15 $"
+    "$Revision: 1.16 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -22,6 +22,8 @@ import commands
 import logging
 import os
 import threading
+import tempfile
+import shutil
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -36,15 +38,18 @@ class TestInit:
     minimize code duplication.
     """ 
 
-    def __init__(self, testClassName, backend = None):
+    def __init__(self, testClassName):
         self.testClassName = testClassName
-        if ( backend == None ):
-            if ( os.getenv('DIALECT') == None ):
-                backend = 'MySQL'
-            else:
-                backend = os.getenv('DIALECT')
-        self.backend = backend
+        self.testDir = None
         self.init = WMInit()
+    
+    def __del__(self):
+        if (self.testDir != None):
+            try:
+                shutil.rmtree( self.testDir )
+            except:
+                # meh, if it fails, I guess something weird happened
+                pass
 
     def setLogging(self, logLevel = logging.INFO):
         """
@@ -59,24 +64,36 @@ class TestInit:
 
         self.init.setLogging(self.testClassName, self.testClassName,
                              logExists = False, logLevel = logLevel)
-
+    
+    def generateWorkDir(self, config = None):
+        self.testDir = tempfile.mkdtemp()
+        if config:
+            config.section_("General")
+            config.General.workDir = os.getenv("TESTDIR")
+        return self.testDir
+        
+    def getBackendFromDbURL(self, dburl):
+        dialectPart = dburl.split(":")[0]
+        if dialectPart == 'mysql':
+            return 'MySQL'
+        elif dialectPart == 'sqlite':
+            return 'SQLite'
+        elif dialectPart == 'oracle':
+            return 'Oracle'
+        else:
+            raise RuntimeError, "Unrecognized dialect"
+        
     def setDatabaseConnection(self):
         """
         Set up the database connection by retrieving the environment
         parameters.
         """
-        if (os.getenv('DATABASE') == None):
-            raise RuntimeError, \
-                "You must set the DATABASE environment variable to run tests"
+        config = self.getConfiguration()
         
-        # need to make sure that the dialect matches the database
-        if ( not os.getenv('DATABASE').lower().startswith( \
-                    self.backend.lower())):
-            raise RuntimeError, \
-                "It appears that your database doesn't match your dialect config"
-        
-        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
-            self.backend, os.getenv("DBSOCK"))
+        self.init.setDatabaseConnection(
+                    config.CoreDatabase.connectUrl,
+                    config.CoreDatabase.dialect,
+                    config.CoreDatabase.socket)
 
     def setSchema(self, customModules = [], useDefault = True, params = None):
         """
@@ -130,17 +147,19 @@ class TestInit:
         config.Agent.agentName = "Lebron James"
 
         config.section_("General")
-        config.General.workDir = os.getenv("TESTDIR")
+        # If you need a testDir, call testInit.generateWorkDir
+        # config.General.workDir = os.getenv("TESTDIR")
 
         config.section_("CoreDatabase")
+        if (os.getenv('DATABASE') == None):
+            raise RuntimeError, \
+                "You must set the DATABASE environment variable to run tests"
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.dialect = self.backend.lower()
+        config.CoreDatabase.dialect = self.getBackendFromDBURL( os.getenv("DATABASE") )
         config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = os.getenv("DBUSER")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        config.CoreDatabase.hostname = os.getenv("DBHOST")
-        config.CoreDatabase.name = os.getenv("DBNAME")
-
+        if os.getenv("DBHOST"):
+            print "****WARNING: the DBHOST environment variable will be deprecated soon***"
+            print "****WARNING: UPDATE YOUR ENVIRONMENT OR TESTS WILL FAIL****"
         # after this you can augment it with whatever you need.
         return config
 
@@ -150,21 +169,6 @@ class TestInit:
         it will clear the whole database.
         """
         myThread = threading.currentThread()
-        # need to find a way to do this for oracle dbs too.
-        # FIXME
-        # this next block has problems. is there a reason to use it over
-        # having WMInit tear down the database?
-#        if myThread.dialect == 'MySQL' and modules == []:
-#            # call the script we use for cleaning:
-#            # FIXME: need to be more general
-#            if (os.getenv('WMCOREBASE') == None):
-#                raise RuntimeError, "WMCOREBASE environment variable undefined"
-#            
-#            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-#            result = commands.getstatusoutput(command)
-#            for entry in result:
-#                print(str(entry))
-#        else:
         self.init.clearDatabase(modules)
 
 

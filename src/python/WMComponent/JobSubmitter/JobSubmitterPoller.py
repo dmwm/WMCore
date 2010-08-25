@@ -5,8 +5,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.2 2009/10/28 20:26:32 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.3 2009/11/06 19:29:49 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 
@@ -72,7 +72,8 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         BaseWorkerThread.__init__(self)
 
-        configDict = {'submitDir': self.config.JobSubmitter.submitDir, 'submitNode': self.config.JobSubmitter.submitNode}
+        configDict = {'submitDir': self.config.JobSubmitter.submitDir, 'submitNode': self.config.JobSubmitter.submitNode,
+                      'submitScript': self.config.JobSubmitter.submitScript}
 
         workerName = "%s.%s" %(self.config.JobSubmitter.pluginDir, self.config.JobSubmitter.pluginName)
 
@@ -94,7 +95,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.runSubmitter()
             stopTime = time.clock()
             logging.debug("Running jobSubmitter took %f seconds" %(stopTime - startTime))
-            print "Runtime for JobSubmitter %f" %(stopTime - startTime)
+            #print "Runtime for JobSubmitter %f" %(stopTime - startTime)
             #print self.timing
         except:
             myThread.transaction.rollback()
@@ -116,6 +117,14 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobList = self.setJobLocations(jobList)
         jobList = self.grabTask(jobList)
         self.submitJobs(jobList)
+
+
+        idList = []
+        for job in jobList:
+            idList.append({'jobid': job['id'], 'location': job['location']})
+        SetLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
+        SetLocationAction.execute(bulkList = idList)
+                          
 
         return
 
@@ -178,7 +187,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         sites = list(job.getFiles()[0]['locations'])
 
         tmpSite  = ''
-        tmpSlots = 0
+        tmpSlots = -1
         for loc in sites:
             if not loc in self.slots.keys() or not loc in self.sites.keys():
                 logging.error('Found job for unknown site %s' %(loc))

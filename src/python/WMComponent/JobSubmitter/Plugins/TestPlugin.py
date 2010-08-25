@@ -73,6 +73,7 @@ class TestPlugin(PluginBase):
             command = ["condor_submit", submit]
             pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
+            logging.error("I have submitted a job to condor")
 
 
         result = {'Success': []}
@@ -125,7 +126,7 @@ class TestPlugin(PluginBase):
         
         # -- scriptFile & Output/Error/Log filenames shortened to 
         #    avoid condorg submission errors from > 256 character pathnames
-        scriptFile = "%s/submit.sh" % job['cache_dir']
+        scriptFile = "%s" %self.config['submitScript']
         #self.makeWrapperScript(scriptFile, jobID)
         logging.debug("Submit Script: %s" % scriptFile)
         

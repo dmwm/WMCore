@@ -88,15 +88,11 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(task3.data['outputDirectory'], 'Zama')
 
 
-
         task4 = Task(parameters = {'id': 1})
         task4.load()
         self.assertTrue(task4.exists())
         task3.remove()
         self.assertFalse(task4.exists())
-
-
-
         
         
         return
@@ -242,33 +238,34 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(job2.runningJob['service'], task.jobs[0].runningJob['service'])
 
 
-
         return
 
     def testE_CreateTaskJobsCascade(self):
         """
-        Test creation task and jobs in cascade
+        Test save task and jobs in cascade on DB
 
         """
         
-        nTestJobs = 10
+        nTestJobs = 7
         
-        parameters = {'serverName': 'Spartacus', 'name': 'Destiny'}
+        parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
         task = Task(parameters = parameters)
         
-        task.create()
+        taskId = task.create()
+        
+        task.data['startDirectory']  = 'Ilithyia'
+        task.data['outputDirectory'] = 'Lucretia'
         
         for jobId in range(0, nTestJobs):
-            job = Job( parameters = {'name': ('Filippo-' + str(jobId)), 
-                                            'jobId': (100+jobId),
-                                            'taskId': task.exists(),
-                                            'events' : jobId*3 } )
+            job = Job( parameters = {'name': ('Doctore-' + str(jobId)),
+                                            'events' : jobId+1000 } )
             task.addJob(job)
 
         task.save()
-               
-        task2 = Task(parameters = {'id': 1})  
-        task2.load(deep = True)
+        self.assertTrue(task.exists())
+        
+        task2 = Task(parameters = {'id': taskId})  
+        task2.load()
         
         self.assertTrue(task2.exists())
         self.assertEqual(task.exists(), task2.exists())
@@ -277,9 +274,59 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(len(task2.jobs), nTestJobs)
         
         for jobId in range(0, nTestJobs):
-            for key in ['name', 'jobId', 'taskId', 'events'] :
+            for key in ['name', 'events'] :
                 self.assertEqual(task.jobs[jobId].data[key], task2.jobs[jobId].data[key])
+        
+          
+        return
+
+    def testF_DeepUpdate(self):
+        """
+        Test save task and jobs in cascade on DB
+
+        """
+        
+        myThread = threading.currentThread()
+        nTestJobs = 13
+        
+        parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
+        task = Task(parameters = parameters)
+        
+        taskId = task.create()
+        
+        task.data['startDirectory']  = 'Ilithyia'
+        task.data['outputDirectory'] = 'Lucretia'
+        
+        for jobId in range(0, nTestJobs):
+            job = Job( parameters = {'name': ('Doctore-' + str(jobId)),
+                                            'events' : jobId+1000 } )
+            task.addJob(job)
+
+        task.save()
+        self.assertTrue(task.exists())
+        
+        self.assertEqual(task.data['serverName'], 'Spartacus')
+        task['serverName'] = 'Crixus'
+        task.update(deep=False)
+        self.assertEqual(task.data['serverName'], 'Crixus')
+        
+        tmp = task.jobs[0].data['events']
+        for jobId in range(0, nTestJobs):
+            task.jobs[jobId].data['events'] = jobId+2000
             
+        self.assertNotEqual(task.jobs[0].data['events'], tmp)
+        
+        task.update(deep=False)
+
+        jobInfo = myThread.dbi.processData("SELECT * FROM bl_job WHERE name = 'Doctore-0'")[0].fetchall()[0].values()       
+        self.assertEqual(jobInfo[5], tmp)
+        
+        task.update(deep=True)
+        
+        jobInfo = myThread.dbi.processData("SELECT * FROM bl_job WHERE name = 'Doctore-0'")[0].fetchall()[0].values()
+        self.assertNotEqual(jobInfo[5], tmp)
+        
+        
         return
 
 if __name__ == "__main__":

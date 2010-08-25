@@ -12,7 +12,7 @@ class Transitions(dict):
         self.setdefault('none', ['new'])
         self.setdefault('new', ['created', 'createfailed'])
         self.setdefault('created', ['executing', 'submitfailed'])
-        self.setdefault('executing', ['complete'])
+        self.setdefault('executing', ['complete', 'jobfailed'])
         self.setdefault('complete', ['jobfailed', 'success'])
         self.setdefault('createfailed', ['createcooloff', 'exhausted'])
         self.setdefault('submitfailed', ['submitcooloff', 'exhausted'])

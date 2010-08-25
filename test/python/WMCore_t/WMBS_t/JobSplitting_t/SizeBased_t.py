@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-_EventBased_t_
+_SizeBased_t_
 
-Event based splitting test.
+Size based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.5 2009/12/16 19:02:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.6 2010/03/31 21:33:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import threading
@@ -24,11 +24,11 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
-class EventBasedTest(unittest.TestCase):
+class SizeBasedTest(unittest.TestCase):
     """
-    _EventBasedTest_
+    _SizeBasedTest_
 
-    Test event based job splitting.
+    Test size based job splitting.
     """
     
     def setUp(self):

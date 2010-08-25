@@ -1120,8 +1120,6 @@ class SubscriptionTest(unittest.TestCase):
         
         return
             
-        
-            
     def testListIncompleteDAO(self):
         """
         _testListIncompeteDAO_
@@ -1150,6 +1148,11 @@ class SubscriptionTest(unittest.TestCase):
         for subId in incompleteSubs:
             if subId != testSubscription["id"]:
                 otherSub = subId
+
+        incompleteSub = subIncomplete.execute(minSub = min(incompleteSubs) + 1)
+
+        assert len(incompleteSub) == 1, \
+               "ERROR: Only one subscription should be returned: %s" % incompleteSub
 
         testSubscription.completeFiles([testFileA, testFileB, testFileC])
 

@@ -10,8 +10,8 @@ Has a default timeout of 30 seconds. Over ride this by passing in a timeout via
 the configuration dict, set to None if you want to turn off the timeout.
 """
 
-__revision__ = "$Id: Service.py,v 1.12 2009/06/24 16:16:33 spiga Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Service.py,v 1.13 2009/07/08 14:46:36 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import datetime
 import os
@@ -84,7 +84,7 @@ class Service:
         # Set the timeout
         socket.setdefaulttimeout(self.timeout)
         # Get the dat
-        u = urllib.URLopener()
+        u = self._getURLOpener()
         u.addheader('Accept', self.type)
         try:
             u.retrieve(url, cachefile)
@@ -93,3 +93,11 @@ class Service:
             raise e
         # Reset the timeout to None
         socket.setdefaulttimeout(None)
+
+    def _getURLOpener(self):
+        """
+        method getting url opener, it is used by getData method
+        sub class can override this to have different URL opener
+        i.e. - if it needs authentication
+        """
+        return urllib.URLopener()

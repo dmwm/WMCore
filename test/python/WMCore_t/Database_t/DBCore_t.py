@@ -3,33 +3,25 @@
 _DBCore_t_
 
 Unit tests for the DBInterface class
-
 """
 
-__revision__ = "$Id: DBCore_t.py,v 1.5 2010/02/10 03:52:27 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DBCore_t.py,v 1.6 2010/03/01 16:50:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
-import commands
 import unittest
 import logging
 import threading
-import os
-import nose
 
-from sqlalchemy import create_engine
 from sqlalchemy.exceptions import OperationalError
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
-from WMCore.Database.DBCore import DBInterface
 
 class DBCoreTest(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                    useDefault = False)
+        self.testInit.setSchema(customModules = ["WMQuality.TestDB"],
+                                useDefault = False)
 
         return
             
@@ -39,46 +31,6 @@ class DBCoreTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         return
-
-    def testConnection(self):
-        """
-        Test class for the connection functions for DBCore
-        
-        """
-
-        #This function tests for two things:
-        # a) Did it actually manage to get one of the tables from the dataset?
-        # b) Was the table blank?
-        # This assumes that you use the default WMBS table setup that I copied over
-        # In the future we may want to change the order to create a table first.
-        # -mnorman
-    
-        print "testConnection"
-
-        myThread = threading.currentThread()
-
-        testInterface = myThread.dbi
-        connection = testInterface.connection()
-        excepted   = False
-        dbOutput   = []
-
-        try:
-            #This depends on the WMBS database setup format
-            result = connection.execute('select * from wmbs_fileset')
-        except OperationalError, oe:
-            excepted = True
-            print oe
-
-        
-        #This is a clumsy way to do this, but unittest lacks an inbuilt assert for exceptions
-        #assertRaises uses reverse logic for what we need to do.
-        self.assertEqual(excepted, False)
-
-        self.assertEqual(result.fetchall(), dbOutput)
-
-        return
-
-
 
     def testBuildBinds(self):
         """
@@ -91,8 +43,6 @@ class DBCoreTest(unittest.TestCase):
         #So that it sets the key seqname to the proper name in the files list
         #Also right now tests that it sets the keys right in each dict, but this seems redundant
         # -mnorman
-
-        print "testBuildBinds"
 
         seqname       = 'file'
         dictbinds     = {'lumi':123, 'test':100}
@@ -116,248 +66,224 @@ class DBCoreTest(unittest.TestCase):
 
         return
 
-
-
-
-
-    def testProcessDataCreateDelete(self):
+    def testProcessDataNoBinds(self):
         """
-        Test whether we can create and delete a table with processData()
+        _testProcessDataNoBinds_
 
+        Verify that insert and select queries work when no binds are used.
         """
-      
-        #Putting this in a seperate function allows tearDown to delete the test table
-        #in other lines of code, removing the problem of adding the test table multiple times
-        #should an error occur
-
-        print "testProcessDataCreateDelete"
-
+        insertSQL = "INSERT INTO test_tablea VALUES (1, 2, 'three')"
+        selectSQL = "SELECT column1, column2, column3 from test_tablea"
 
         myThread = threading.currentThread()
+        myThread.dbi.processData(insertSQL)
+        resultSets = myThread.dbi.processData(selectSQL)
 
-        testInterface = myThread.dbi
-
-        binds         = None
-        sql           = ""
-        failed        = False
-        blank         = None
-        times         = 501
-
-        #Table creation may be dialect dependent
-        if self.mydialect.lower() == 'mysql':
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB "
-        elif self.mydialect.lower() == 'sqlite':
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-        else:
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-
-
-        #Can we create a table with it?
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-
+        assert len(resultSets) == 1, \
+               "Error: Wrong number of ResultSets returned."
         
-        #Test if we can delete the table
-        sql    = 'drop table test'
-        result = myThread.dbi.processData(sqlstmt = sql, binds = blank, conn = myThread.dbi.connection())
+        results = resultSets[0].fetchall()
+
+        assert len(results) == 1, \
+               "Error: Wrong number of rows returned."
+        assert len(results[0]) == 3, \
+               "Error: Wrong number of columns returned."
+        assert results[0][0] == 1, \
+               "Error: Column one is wrong."
+        assert results[0][1] == 2, \
+               "Error: Column two is wrong."
+        assert results[0][2] == "three", \
+               "Error: Column three is wrong."
+               
+        return
+
+    def testProcessDataOneBind(self):
+        """
+        _testProcessDataOneBind_
+
+        Verify that insert and select queries work with one set of bind variables.
+        """
+        bindsA = {"one": 1, "two": 2, "three": "three"}
+        bindsB = {"one": 3, "two": 2, "three": "one"}
+        insertSQL = "INSERT INTO test_tablea VALUES (:one, :two, :three)"
+        selectSQL = \
+          """SELECT column1, column2, column3 FROM test_tablea
+             WHERE column1 = :one AND column2 = :two AND column3 = :three"""
+
+        myThread = threading.currentThread()
+        myThread.dbi.processData(insertSQL, binds = bindsA)
+        myThread.dbi.processData(insertSQL, binds = bindsB)        
+
+        resultSets = myThread.dbi.processData(selectSQL, bindsA)
+
+        assert len(resultSets) == 1, \
+               "Error: Wrong number of ResultSets returned."
+        
+        results = resultSets[0].fetchall()
+
+        assert len(results) == 1, \
+               "Error: Wrong number of rows returned."
+        assert len(results[0]) == 3, \
+               "Error: Wrong number of columns returned."
+        assert results[0][0] == 1, \
+               "Error: Column one is wrong."
+        assert results[0][1] == 2, \
+               "Error: Column two is wrong."
+        assert results[0][2] == "three", \
+               "Error: Column three is wrong."
+
+        resultSets = myThread.dbi.processData(selectSQL, bindsB)
+
+        assert len(resultSets) == 1, \
+               "Error: Wrong number of ResultSets returned."
+        
+        results = resultSets[0].fetchall()
+
+        assert len(results) == 1, \
+               "Error: Wrong number of rows returned."
+        assert len(results[0]) == 3, \
+               "Error: Wrong number of columns returned."
+        assert results[0][0] == 3, \
+               "Error: Column one is wrong."
+        assert results[0][1] == 2, \
+               "Error: Column two is wrong."
+        assert results[0][2] == "one", \
+               "Error: Column three is wrong."        
 
         return
 
-
-    def testProcessData(self):
+    def testProcessDataSeveralBinds(self):
         """
-        Test function for DBCore.processData
+        _testProcessDataSeveralBinds_
 
+        Verify that insert and select queries work with several binds.
         """
-    
-        # We have opted to put the main testing functions in here
-        # This test creates a test table, inserts and selects elements
-        # from that table, inserts and selects elements from a dictionary
-        # as a bind, from a list of dictionaries used as binds, and then
-        # from an extremely long list of dictionaries
-        # -mnorman
+        bindsA = [{"one": 1, "two": 2, "three": "three"},
+                  {"one": 3, "two": 2, "three": "one"},
+                  {"one": 4, "two": 5, "three": "six"},
+                  {"one": 6, "two": 5, "three": "four"}]
+        bindsB = [{"one": 10, "two": 11, "three": "twelve"},
+                  {"one": 12, "two": 11, "three": "ten"}]
 
-        print "testProcessData"
-
+        insertSQL = "INSERT INTO test_tablea VALUES (:one, :two, :three)"
+        selectSQL = \
+          """SELECT column1, column2, column3 FROM test_tablea
+             WHERE column1 = :one AND column2 = :two AND column3 = :three"""
 
         myThread = threading.currentThread()
+        myThread.dbi.processData(insertSQL, binds = bindsA)
+        myThread.dbi.processData(insertSQL, binds = bindsB)        
 
-        testInterface = myThread.dbi
+        resultSets = myThread.dbi.processData(selectSQL, bindsA)
 
-        binds         = None
-        sql           = ""
-        failed        = False
-        blank         = None
-        times         = 501
-
-        #Table creation may be dialect dependent
-        if self.mydialect.lower() == 'mysql':
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB "
-        elif self.mydialect.lower() == 'sqlite':
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-        else:
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-
-
-        initialInsert = {'bind1':'value1a', 'bind2': 'value2a'}
-        secondInsert  = [ {'bind1':'value3a', 'bind2': 'value2a'},
-                          {'bind1':'value3b', 'bind2': 'value2b'},
-                          {'bind1':'value3c', 'bind2': 'value2c'}]
-
-        #Can we create a table with it?
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-        self.remove_test = True
-
-
-        #Is the table there?
-        sql    = 'select * from test'
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-
-
-        #Now, can we insert into this table?
-        sql           = "insert into test (bind1, bind2) values (:bind1, :bind2)"
-
-
-        result = myThread.dbi.processData(sqlstmt = sql, binds = initialInsert, conn = myThread.dbi.connection())
+        assert len(resultSets) == 1, \
+               "Error: Wrong number of ResultSets returned."
         
+        results = resultSets[0].fetchall()
 
-
-        #What can we get from this table?
-
-        #Test with a single dictionary
-        sql = "select * from test where bind1 = :bind1    "
-        binds = {'bind1':initialInsert['bind1']}
+        assert len(results) == 4, \
+               "Error: Wrong number of rows returned."
         
+        for result in results:
+            assert len(result) == 3, \
+                   "Error: Wrong number of columns returned."
+            for bind in bindsA:
+                if bind["one"] == result[0] and bind["two"] == result[1] and \
+                   bind["three"] == result[2]:
+                    bindsA.remove(bind)
+                    break
 
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
+        assert len(bindsA) == 0, \
+               "Error: Missing rows from select."
 
-        #result should be a list of ResultSets, which should have a list of elements
-        self.assertEqual(str(result[0].fetchall()[0][0]), initialInsert['bind1'])
+        resultSets = myThread.dbi.processData(selectSQL, bindsB)
 
-        #Test with two dictionaries.
-        sql = "select * from test where bind1 = :bind1    "
-        binds = [ {'bind1':initialInsert['bind1']},
-                  {'bind1':initialInsert['bind2']} ]
+        assert len(resultSets) == 1, \
+               "Error: Wrong number of ResultSets returned."
         
+        results = resultSets[0].fetchall()
 
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-
-        #result should be a list of ResultSets, which should have a list of elements
-        self.assertEqual(str(result[0].fetchall()[0][0]), initialInsert['bind1'])
-
-
-        #Test looking for the same variable twice.
-        #First, can we insert them?
-        if not myThread.dialect == 'Oracle':
-            #This doesn't work in Oracle, and I think it's Oracle yet: ORA-00957
-            sql           = "insert into test (bind1, bind1, bind2) values (:bind1, :bind1, :bind2)"
-            binds         = {'bind1':'valueX1', 'bind2': 'valueX2'}
-
-
-            result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-
+        assert len(results) == 2, \
+               "Error: Wrong number of rows returned."
         
-            sql = "select bind1, bind1, bind2 from test where bind1 = :bind1    "
-            binds = [ {'bind1':initialInsert['bind1']},
-                      {'bind1':'valueX1'} ]
-        
+        for result in results:
+            assert len(result) == 3, \
+                   "Error: Wrong number of columns returned."
+            for bind in bindsB:
+                if bind["one"] == result[0] and bind["two"] == result[1] and \
+                   bind["three"] == result[2]:
+                    bindsB.remove(bind)
+                    break
 
-            result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-
-
-            #First and second element should be the same
-            self.assertEqual(result[0].fetchall()[0][0], result[0].fetchall()[0][1])
-
-
-        #Now insert more elements into the table
-        #Insert a list of dictionaries (secondInsert)
-        sql           = "insert into test (bind1, bind2) values (:bind1, :bind2)"
-
-        result = myThread.dbi.processData(sqlstmt = sql, binds = secondInsert, conn = myThread.dbi.connection())
-
-        #Test multiple selections
-        value2 = 'value3a'
-        sql = "select * from test where bind1 = :bind1    "
-        binds = [ {'bind1':initialInsert['bind1']},
-                  {'bind1':value2} ]
-        
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-
-        #result should be a list of ResultSets, which should have a list of elements
-        self.assertEqual(str(result[0].fetchall()[0][0]), initialInsert['bind1'])
-        self.assertEqual(str(result[0].fetchall()[1][0]), value2)
+        assert len(bindsB) == 0, \
+               "Error: Missing rows from select."        
 
         return
 
-
-
-
-    def testProcessDataMultiple(self):
+    def testProcessDataHugeBinds(self):
         """
-        Test for inserting and selecting with large numbers of binds using processData()
+        _testProcessDataHugeBinds_
 
+        Verify that select and insert queries work with several thousand binds.
         """
+        bindsA = []
+        bindsB = []
+        for i in range(3001):
+            bindsA.append({"one": i, "two": i * 2, "three": str(i * 3)})
 
-        print "testProcessDataMultiple"
-                
-
-        myThread = threading.currentThread()
-
-        testInterface = myThread.dbi
-
-        binds         = None
-        sql           = ""
-        failed        = False
-        blank         = None
-        times         = 501
-        initialInsert = {'bind1':'value1a', 'bind2': 'value2a'}
-
-        #Table creation may be dialect dependent
-        if self.mydialect.lower() == 'mysql':
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB "
-        elif self.mydialect.lower() == 'sqlite':
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-        else:
-            sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-        self.remove_test = True
-
-
-
-
-        #Now insert and select a huge number of dictionaries
-        #This depends on the times variable
-        binds = [ ]
-        largeInsert  = [ {'bind1':'value3a', 'bind2': 'value2a'}]
-                         
-                         
-
-        for i in range(times):
-            binds.append({'bind1':'value1' + str(i)})
-            largeInsert.append({'bind1':'value1'+str(i), 'bind2': 'value2'+str(i)})
-
-        sql    = "insert into test (bind1, bind2) values (:bind1, :bind2)"
-        result = myThread.dbi.processData(sqlstmt = sql, binds = largeInsert, conn = myThread.dbi.connection())
-
-        sql = "select * from test where bind1 = :bind1"      
-        result = myThread.dbi.processData(sqlstmt = sql, binds = binds, conn = myThread.dbi.connection())
-
+        for i in range(1501):
+            bindsB.append({"one": (i + 1) * 2, "two": i, "three": str(i * 5)})
             
-        #Test that we have the right number of results, and that the first one matches
-        self.assertEqual(sum([ len(res.fetchall()) for res in result]), times)
-        self.assertEqual(result[0].fetchall()[0][0], 'value10')
-        
+        insertSQL = "INSERT INTO test_tablea VALUES (:one, :two, :three)"
+        selectSQL = \
+          """SELECT column1, column2, column3 FROM test_tablea
+             WHERE column1 = :one AND column2 = :two AND column3 = :three"""
 
-        
+        myThread = threading.currentThread()
+        myThread.dbi.processData(insertSQL, binds = bindsA)
+        myThread.dbi.processData(insertSQL, binds = bindsB)        
 
+        resultSets = myThread.dbi.processData(selectSQL, bindsA)
+        results = []
+        for resultSet in resultSets:
+            results.extend(resultSet.fetchall())
         
+        assert len(results) == 3001, \
+               "Error: Wrong number of rows returned: %d" % len(results)
+        
+        for result in results:
+            assert len(result) == 3, \
+                   "Error: Wrong number of columns returned."
+            for bind in bindsA:
+                if bind["one"] == result[0] and bind["two"] == result[1] and \
+                   bind["three"] == result[2]:
+                    bindsA.remove(bind)
+                    break
+
+        assert len(bindsA) == 0, \
+               "Error: Missing rows from select."
+
+        resultSets = myThread.dbi.processData(selectSQL, bindsB)
+        results = []
+        for resultSet in resultSets:
+            results.extend(resultSet.fetchall())
+
+        assert len(results) == 1501, \
+               "Error: Wrong number of rows returned."
+        
+        for result in results:
+            assert len(result) == 3, \
+                   "Error: Wrong number of columns returned."
+            for bind in bindsB:
+                if bind["one"] == result[0] and bind["two"] == result[1] and \
+                   bind["three"] == result[2]:
+                    bindsB.remove(bind)
+                    break
+
+        assert len(bindsB) == 0, \
+               "Error: Missing rows from select."                
+
         return
-
-
-
-
-
-    
 
 if __name__ == "__main__":
     unittest.main()     

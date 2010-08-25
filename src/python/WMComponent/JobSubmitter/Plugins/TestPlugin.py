@@ -17,28 +17,49 @@ from WMComponent.JobSubmitter.Plugins.PluginBase import PluginBase
 
 class TestPlugin(PluginBase):
 
-    def submitJobs(self, jobList, localConfig):
+    def __init__(self, **configDict):
+        self.config = configDict
+
+    def __call__(self, parameters):
         """
         _submitJobs_
         
         If this class actually did something, this would handle submissions
         """
 
+        jobList = parameters
+
+        if parameters == {} or parameters == []:
+            return {'NoResult': [0]}
+
+        if type(jobList) == dict:
+            #We only got one of them
+            #Retain list functionality for possibiity of future multi-jobs
+            jobList = [jobList]
+
+
+
+
+
         myThread = threading.currentThread()
 
-        if not os.path.isdir(self.config.JobSubmitter.submitDir):
-            if not os.path.exists(self.config.JobSubmitter.submitDir):
-                os.mkdir(self.config.JobSubmitter.submitDir)
+        if not os.path.isdir(self.config['submitDir']):
+            if not os.path.exists(self.config['submitDir']):
+                os.mkdir(self.config['submitDir'])
 
 
         baseConfig = self.initSubmit()
 
         jobSubmitFiles = []
         for job in jobList:
+            logging.error('Have job separated out')
+            logging.error(job)
+            if job == {}:
+                continue
             tmpList = []
             tmpList.extend(baseConfig)
             tmpList.extend(self.makeSubmit(job))
-            jdlFile = "%s/submit_%i.jdl" %(self.config.JobSubmitter.submitDir, job['id'])
+            jdlFile = "%s/submit_%i.jdl" %(self.config['submitDir'], job['id'])
             handle = open(jdlFile, 'w')
             handle.writelines(tmpList)
             handle.close()
@@ -47,16 +68,22 @@ class TestPlugin(PluginBase):
 
         #Now submit them
 
-        #for submit in jobSubmitFiles:
-        submit = jobSubmitFiles[0]
-        command = ["condor_submit", submit]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.wait()
-        print "Executed command"
+        for submit in jobSubmitFiles:
+            #submit = jobSubmitFiles[0]
+            command = ["condor_submit", submit]
+            pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+            pipe.wait()
 
+
+        result = {'Success': []}
+
+        for job in jobList:
+            if job == {}:
+                continue
+            result['Success'].append(job['id'])
 
         #We must return a list of jobs successfully submitted, and a list of jobs failed
-        return jobList, []
+        return result
 
 
 
@@ -89,6 +116,13 @@ class TestPlugin(PluginBase):
         For a given job/cache/spec make a JDL fragment to submit the job
 
         """
+
+        logging.error("In makeSubmit")
+        logging.error(job)
+        logging.error(type(job))
+        logging.error(job.keys())
+        logging.error(job.get('cache_dir', 'This is silly'))
+        
         # -- scriptFile & Output/Error/Log filenames shortened to 
         #    avoid condorg submission errors from > 256 character pathnames
         scriptFile = "%s/submit.sh" % job['cache_dir']
@@ -98,7 +132,7 @@ class TestPlugin(PluginBase):
         jdl = []
         jdl.append("Executable = %s\n" % scriptFile)
         jdl.append("initialdir = %s\n" % job['cache_dir'])
-        argString = "arguments = %i %s %s\n" %(job['id'], self.config.JobSubmitter.submitNode, job['sandbox'])
+        argString = "arguments = %i %s %s\n" %(job['id'], self.config['submitNode'], job['sandbox'])
         jdl.append(argString)
 
 

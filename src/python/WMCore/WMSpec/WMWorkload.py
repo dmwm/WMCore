@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.7 2009/09/24 20:14:46 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMWorkload.py,v 1.8 2009/09/28 20:57:35 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 
 
@@ -61,11 +61,13 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.persistency.specUrl = url
         
     def specUrl(self):
+        """
+        _specUrl_
+        
+        return url location of workload
+        """
         return self.data.persistency.specUrl
-    #TODO: I am not sure using property function is better for simple accessor.
-    #Ask Dave: either remove this do for other function for consistency
-    specUrl = property(specUrl)
-    
+
     def name(self):
         """
         _name_

@@ -3,8 +3,8 @@
 gLite CLI interaction class through JSON formatted output
 """
 
-__revision__ = "$Id: SchedulerGLite.py,v 1.3 2010/06/11 16:54:55 spigafi Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SchedulerGLite.py,v 1.4 2010/06/25 13:34:26 spigafi Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "filippo.spiga@cern.ch"
 
 import os
@@ -140,7 +140,8 @@ class SchedulerGLite(SchedulerInterface) :
                                     '/lib/WMCore/BossLite/Scheduler/'
         else :
             # Impossible to locate GLiteQueryStatus.py ...
-            raise SchedulerError('Impossible to locate GLiteQueryStatus.py ')      
+            raise SchedulerError(
+                    'Impossible to locate GLiteQueryStatus.py' )      
         
         # cache pattern to optimize reg-exp substitution
         self.pathPattern = re.compile('location:([\S]+)$', re.M)
@@ -154,8 +155,11 @@ class SchedulerGLite(SchedulerInterface) :
         version = version.strip()
         if version.find( '3.2' ) != 0 :
             raise SchedulerError( 'SchedulerGLite is allowed on UI >3.2' )
-
-
+        
+        # job killed per CLI call (tunable value)
+        self.killThreshold = 100
+    
+    
     ##########################################################################
 
     def delegateProxy( self, wms = '' ):
@@ -280,8 +284,8 @@ class SchedulerGLite(SchedulerInterface) :
             
             # the object passed is a valid Job, let's go on ...
                 
-            command = "glite-wms-job-output --json --noint --dir " + outdir + " " \
-                                + obj.runningJob['schedulerId']
+            command = "glite-wms-job-output --json --noint --dir " \
+                            + outdir + " " + obj.runningJob['schedulerId']
             
             out, ret = self.ExecuteCommand( self.proxyString + command ) 
                 
@@ -337,8 +341,8 @@ class SchedulerGLite(SchedulerInterface) :
                 if not self.valid( selJob.runningJob ):
                     continue
                 
-                command = "glite-wms-job-output --json --noint --dir " + outdir + " " \
-                          + selJob.runningJob['schedulerId']
+                command = "glite-wms-job-output --json --noint --dir " \
+                            + outdir + " " + selJob.runningJob['schedulerId']
                 
                 out, ret = self.ExecuteCommand( self.proxyString + command )
                 
@@ -445,6 +449,8 @@ class SchedulerGLite(SchedulerInterface) :
         """
         kill job
         """
+            
+        jobsToKill = []
         
         # the object passed is a job
         if type(obj) == Job and self.valid( obj.runningJob ):
@@ -452,24 +458,44 @@ class SchedulerGLite(SchedulerInterface) :
             # check for the RunningJob integrity
             schedIdList = str( obj.runningJob['schedulerId'] ).strip()
         
+            command = "glite-wms-job-cancel --json --noint " + schedIdList
+            
+            out, ret = self.ExecuteCommand( self.proxyString + command )
+            
+            if ret != 0 :
+                raise SchedulerError(
+                        'error executing glite-wms-job-cancel', out)
+            elif ret == 0 and out.find("result: success") == -1 :
+                raise SchedulerError('error', out)
+        
         # the object passed is a Task
         elif type(obj) == Task :
             
-            schedIdList = ""
             for job in obj.jobs:
                 if not self.valid( job.runningJob ):
                     continue
-                schedIdList += " " + \
-                               str( job.runningJob['schedulerId'] ).strip()
+                jobsToKill.append(str( job.runningJob['schedulerId'] ).strip())
+                
+            # split the list
+            chunk = lambda ulist, step:  map(lambda i: ulist[i:i+step], \
+                                                xrange(0, len(ulist), step))
+            lljobs = chunk(jobsToKill, self.killThreshold)
+                
+            for x in lljobs :
+                
+                schedIdList = ' '.join(x)
         
-        command = "glite-wms-job-cancel --json --noint " + schedIdList
+                command = "glite-wms-job-cancel --json --noint " + schedIdList
+                
+                out, ret = self.ExecuteCommand( self.proxyString + command )
+                
+                if ret != 0 :
+                    raise SchedulerError(
+                            'error executing glite-wms-job-cancel', out)
+                elif ret == 0 and out.find("result: success") == -1 :
+                    raise SchedulerError('error', out)
         
-        out, ret = self.ExecuteCommand( self.proxyString + command )
-        
-        if ret != 0 :
-            raise SchedulerError('error executing glite-wms-job-cancel', out)
-        elif ret == 0 and out.find("result: success") == -1 :
-            raise SchedulerError('error', out)
+        return 0
 
 
     ##########################################################################
@@ -501,7 +527,7 @@ class SchedulerGLite(SchedulerInterface) :
         except :
             pass
         
-        fakeJdl += 'SignificantAttributes = {"Requirements", "Rank", "FuzzyRank"};'
+        fakeJdl += ' SignificantAttributes = {"Requirements", "Rank", "FuzzyRank"};'
         fakeJdl += "\n]\n"
         
         tmpFile.write( fakeJdl )
@@ -536,7 +562,9 @@ class SchedulerGLite(SchedulerInterface) :
         # return CE without duplicate
         listCE=list(set(out))
         if len(listCE)==0:
-            self.logging.debug('List match performed with following requirements:\n %s'%str(fakeJdl))  
+            self.logging.debug(
+                'List match performed with following requirements:\n %s'
+                                                            % str(fakeJdl) )  
         return listCE
     
     
@@ -550,7 +578,8 @@ class SchedulerGLite(SchedulerInterface) :
         command = "glite-wms-job-logging-info -v 3 " + schedulerId + \
                   " > " + outfile
         
-        out, ret = self.ExecuteCommand( self.proxyString + self.hackEnv + command )
+        out, ret = self.ExecuteCommand( 
+                        self.proxyString + self.hackEnv + command )
             
         return out
 
@@ -598,12 +627,13 @@ class SchedulerGLite(SchedulerInterface) :
                     command = self.commandQueryPath \
                         + 'GLiteStatusQuery.py --jobId=%s' % formattedJobIds
                     
-                    outJson, ret = self.ExecuteCommand(self.proxyString + self.hackEnv + command)
+                    outJson, ret = self.ExecuteCommand(
+                                    self.proxyString + self.hackEnv + command)
                                            
                     # Check error
                     if ret != 0 :
                         # obj.errors doesn't exist for Task object...
-                        obj.warnings.append( "Errors: " + str(outJson.strip()) )
+                        obj.warnings.append( "Errors: " + str(outJson.strip()))
                         raise SchedulerError(
                             'error executing GLiteStatusQuery', \
                                                  str(outJson.strip()))
@@ -613,7 +643,7 @@ class SchedulerGLite(SchedulerInterface) :
                             out = json.loads(outJson)
                             # DEBUG # print json.dumps( out,  indent=4 )
                         except ValueError:
-                            raise SchedulerError('error parsing JSON', outJson )
+                            raise SchedulerError('error parsing JSON', outJson)
                   
             elif objType == 'parent' :
                 
@@ -642,12 +672,13 @@ class SchedulerGLite(SchedulerInterface) :
                         + 'GLiteStatusQuery.py --parentId=%s --jobId=%s' \
                             % (formattedParentIds, formattedJobIds)
                     
-                    outJson, ret = self.ExecuteCommand(self.proxyString + self.hackEnv + command)
+                    outJson, ret = self.ExecuteCommand(
+                                    self.proxyString + self.hackEnv + command)
                                            
                     # Check error
                     if ret != 0 :
                         # obj.errors doesn't exist for Task object...
-                        obj.warnings.append( "Errors: " + str(outJson.strip()) )
+                        obj.warnings.append( "Errors: " + str(outJson.strip()))
                         raise SchedulerError(
                             'error executing GLiteStatusQuery', \
                                                  str(outJson.strip()))
@@ -657,7 +688,7 @@ class SchedulerGLite(SchedulerInterface) :
                             out = json.loads(outJson)                     
                             # DEBUG # print json.dumps( out,  indent=4 )
                         except ValueError:
-                            raise SchedulerError('error parsing JSON', outJson )
+                            raise SchedulerError('error parsing JSON', outJson)
             
             if jobIds :
                 # Refill objects...  

@@ -5,8 +5,11 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.6 2010/03/22 19:06:24 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.7 2010/04/06 18:10:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
+
+import os
+import WMCore.WMInit
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -15,10 +18,12 @@ config.section_("Agent")
 config.Agent.hostName = "cmssrv52.fnal.gov"
 config.Agent.contact = "sfoulkes@fnal.gov"
 config.Agent.teamName = "DMWM"
-config.Agent.agentName = "ReRecoDOMINATOR"
+config.Agent.agentName = "WMAgentCommissioning"
+config.Agent.useMsgService = False
+config.Agent.useTrigger = False
 
 config.section_("General")
-config.General.workDir = "/home/sfoulkes/WMAgent/work"
+config.General.workDir = "/storage/local/data1/wmagent2/work"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = "cmssrv52.fnal.gov:5984"
@@ -27,7 +32,18 @@ config.JobStateMachine.default_retries = 5
 
 config.section_("CoreDatabase")
 config.CoreDatabase.socket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
-config.CoreDatabase.connectUrl = "mysql://sfoulkes:@localhost/WMAgentDB_sfoulkes"
+config.CoreDatabase.connectUrl = "mysql://sfoulkes:@localhost/WMAgentDB2_sfoulkes"
+
+config.component_('WorkQueueManager')
+config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
+config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
+config.WorkQueueManager.level = 'LocalQueue'
+config.WorkQueueManager.logLevel = 'INFO'
+config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:8570'
+config.WorkQueueManager.pollInterval = 10
+config.WorkQueueManager.queueParams = {'PopulateFilesets' : True,
+                                       'ParentQueue':'http://%s/workqueue/' % config.WorkQueueManager.serviceUrl,
+                                       'QueueURL': "/storage/local/data1/workqueue/workWorkQueueManager"}
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
@@ -52,38 +68,11 @@ config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.phedexurl = "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.pollInterval = 100
 
-
-config.component_("WorkQueueManager")
-config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
-config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
-config.WorkQueueManager.level = "LocalQueue"
-config.WorkQueueManager.queueParams = {'ParentQueue' : 'http://cmssrv52.fnal.gov:8570/workqueue'}
-
-config.webapp_('WorkQueueService')
-config.WorkQueueService.server.port = 8579
-config.WorkQueueService.server.host = config.Agent.hostName
-config.WorkQueueService.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
-config.WorkQueueService.admin = config.Agent.contact
-config.WorkQueueService.title = 'WorkQueue Data Service'
-config.WorkQueueService.description = 'Provide WorkQueue related service call'
-config.WorkQueueService.section_('views')
-active = config.WorkQueueService.views.section_('active')
-workqueue = active.section_('workqueue')
-workqueue.object = 'WMCore.WebTools.RESTApi'
-workqueue.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
-workqueue.section_('model')
-workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
-workqueue.section_('formatter')
-workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
-workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
-workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
-
-
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
 config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
 config.JobAccountant.logLevel = "DEBUG"
-config.JobAccountant.workerThreads = 2
+config.JobAccountant.workerThreads = 1
 config.JobAccountant.pollInterval = 60
 
 config.component_("JobCreator")
@@ -91,15 +80,13 @@ config.JobCreator.namespace = "WMComponent.JobCreator.JobCreator"
 config.JobCreator.componentDir = config.General.workDir + "/JobCreator"
 config.JobCreator.logLevel = "DEBUG"
 config.JobCreator.maxThreads = 1
-config.JobCreator.UpdateFromSiteDB = True
+config.JobCreator.UpdateFromResourceControl = True
 config.JobCreator.pollInterval = 10
 config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
 config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 2
 config.JobCreator.useWorkQueue = False
-if config.JobCreator.useWorkQueue:
-    # take queueParams from WorkQueueManager - specify here to override
-    config.JobCreator.WorkQueueParams = getattr(config.WorkQueueManager, 'queueParams', {})
+config.JobCreator.WorkQueueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 
 config.component_("JobSubmitter")
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
@@ -107,11 +94,11 @@ config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
 config.JobSubmitter.logLevel = "DEBUG"
 config.JobSubmitter.maxThreads = 1
 config.JobSubmitter.pollInterval = 10
-config.JobSubmitter.pluginName = "ShadowPoolPlugin"
+config.JobSubmitter.pluginName = "CondorGlobusPlugin"
 config.JobSubmitter.pluginDir = "JobSubmitter.Plugins"
+config.JobSubmitter.submitNode = "cmssrv52.fnal.gov"
 config.JobSubmitter.submitDir = config.General.workDir + "/SubmitJDLs"
-config.JobSubmitter.submitNode = "cms-sleepgw.fnal.gov"
-config.JobSubmitter.submitScript = "submit.sh"
+config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/JobSubmitter_t', 'submit.sh')
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 
@@ -142,16 +129,40 @@ config.RetryManager.pollInterval = 10
 config.RetryManager.coolOffTime = {"create": 10, "submit": 10, "job": 10}
 config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
 config.RetryManager.pluginName = "CreateRetryAlgo"
+config.RetryManager.WMCoreBase = WMCore.WMInit.getWMBASE()
 
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
-config.JobArchiver.pollInterval = 10
+config.JobArchiver.pollInterval = 60
 config.JobArchiver.logLevel = "DEBUG"
 config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
+config.JobArchiver.numberOfJobsToCluster = 1000
 
 config.component_("TaskArchiver")
+config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
+config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = "DEBUG"
 config.TaskArchiver.pollInterval = 10
 config.TaskArchiver.timeOut      = 0
-config.TaskArchiver.WorkQueueParams = getattr(config.WorkQueueManager, 'queueParams', {})
+config.TaskArchiver.useWorkQueue = False
+
+config.webapp_('WorkQueueService')
+config.WorkQueueService.componentDir = config.General.workDir + "/WorkQueueService"
+config.WorkQueueService.server.port = 9997
+config.WorkQueueService.server.host = config.Agent.hostName
+config.WorkQueueService.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+config.WorkQueueService.admin = config.Agent.contact
+config.WorkQueueService.title = 'WorkQueue Data Service'
+config.WorkQueueService.description = 'Provide WorkQueue related service call'
+config.WorkQueueService.section_('views')
+config.WorkQueueService.views.section_('active')
+config.WorkQueueService.views.active.section_('workqueue')
+config.WorkQueueService.views.active.workqueue.object = 'WMCore.WebTools.RESTApi'
+config.WorkQueueService.views.active.workqueue.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
+config.WorkQueueService.views.active.workqueue.section_('model')
+config.WorkQueueService.views.active.workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
+config.WorkQueueService.views.active.workqueue.section_('formatter')
+config.WorkQueueService.views.active.workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
+config.WorkQueueService.views.active.workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
+config.WorkQueueService.views.active.workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})

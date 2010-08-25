@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.6 2009/08/06 16:51:17 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: EventBased_t.py,v 1.7 2009/09/30 11:08:03 metson Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from sets import Set
 import unittest
@@ -44,10 +44,12 @@ class EventBasedTest(unittest.TestCase):
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile.setLocation('se01')
             self.multipleFileFileset.addFile(newFile)
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         newFile = File("/some/file/name", size = 1000, events = 100)
+        newFile.setLocation('se02')
         self.singleFileFileset.addFile(newFile)
 
         testWorkflow = Workflow()
@@ -78,9 +80,8 @@ class EventBasedTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
-
         jobGroups = jobFactory(events_per_job = 100)
-
+         
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
 
@@ -116,7 +117,7 @@ class EventBasedTest(unittest.TestCase):
                "ERROR: JobFactory didn't return one JobGroup."
 
         assert len(jobGroups[0].jobs) == 1, \
-               "ERROR: JobFactory didn't create a single job."
+               "ERROR: JobFactory created %s jobs not one" % len(jobGroups[0].jobs)
 
         job = jobGroups[0].jobs.pop()
 
@@ -138,6 +139,7 @@ class EventBasedTest(unittest.TestCase):
         Test event based job splitting when the number of events per job is
         50, this should result in two jobs.        
         """
+
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
         
@@ -147,8 +149,8 @@ class EventBasedTest(unittest.TestCase):
                "ERROR: JobFactory didn't return one JobGroup."
 
         assert len(jobGroups[0].jobs) == 2, \
-               "ERROR: JobFactory didn't create two jobs."
-
+               "ERROR: JobFactory created %s jobs not two" % len(jobGroups[0].jobs)
+        
         firstEvents = []
         for job in jobGroups[0].jobs:
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
@@ -180,10 +182,10 @@ class EventBasedTest(unittest.TestCase):
         
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
-
+        
         assert len(jobGroups[0].jobs) == 2, \
-               "ERROR: JobFactory didn't create two jobs."
-
+               "ERROR: JobFactory created %s jobs not two" % len(jobGroups[0].jobs)
+               
         firstEvents = []
         for job in jobGroups[0].jobs:
             assert job.getFiles(type = "lfn") == ["/some/file/name"], \
@@ -217,7 +219,7 @@ class EventBasedTest(unittest.TestCase):
                "ERROR: JobFactory didn't return one JobGroup."
 
         assert len(jobGroups[0].jobs) == 10, \
-               "ERROR: JobFactory didn't create 10 jobs."
+               "ERROR: JobFactory created %s jobs not ten" % len(jobGroups[0].jobs)
         
         for job in jobGroups[0].jobs:
             assert len(job.getFiles(type = "lfn")) == 1, \
@@ -238,9 +240,7 @@ class EventBasedTest(unittest.TestCase):
         Test job splitting into 50 event jobs when the input subscription has
         more than one file available.
         """
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)        
-
+        
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
@@ -250,7 +250,7 @@ class EventBasedTest(unittest.TestCase):
                "ERROR: JobFactory didn't return one JobGroup."
 
         assert len(jobGroups[0].jobs) == 20, \
-               "ERROR: JobFactory didn't create 20 jobs."
+               "ERROR: JobFactory created %s jobs not twenty" % len(jobGroups[0].jobs)
         
         for job in jobGroups[0].jobs:
             assert len(job.getFiles(type = "lfn")) == 1, \
@@ -284,7 +284,7 @@ class EventBasedTest(unittest.TestCase):
                "ERROR: JobFactory didn't return one JobGroup."
 
         assert len(jobGroups[0].jobs) == 10, \
-               "ERROR: JobFactory didn't create 10 jobs."
+               "ERROR: JobFactory created %s jobs not ten" % len(jobGroups[0].jobs)
         
         for job in jobGroups[0].jobs:
             assert len(job.getFiles(type = "lfn")) == 1, \
@@ -297,6 +297,5 @@ class EventBasedTest(unittest.TestCase):
                    "ERROR: Job's first event is incorrect."
 
         return    
-
 if __name__ == '__main__':
     unittest.main()

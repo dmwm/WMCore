@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.9 2010/03/18 19:37:35 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.10 2010/03/24 19:41:47 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -64,6 +64,9 @@ class WorkQueueMonitorService(ServiceInterface):
         # status(self, status = None, before = None, after = None, elementIDs = None, dictKey = None)
         
         self.model.addDAO("GET",  "elements", "Monitor.Elements")
+        self.model.addDAO("GET",  "sites", "Monitor.Sites")
+        self.model.addDAO("GET",  "data", "Monitor.Data")
+        self.model.addDAO("GET",  "datasitemap", "Monitor.DataSiteMap")
         self.model.addDAO("POST", "elementsbystate", "Monitor.ElementsByState",
                            args = ["status"], validation = [self.validateState])
         self.model.addDAO("POST", "elementsbyid", "Monitor.ElementsById",

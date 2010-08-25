@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.3 2009/07/28 21:14:46 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.4 2009/07/28 21:23:07 ewv Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -79,11 +79,12 @@ class EventBasedTest(unittest.TestCase):
             newFile.addRun(Run(1, *[45+i/3]))
             newFile.setLocation('malpaquet')
             self.multipleSiteLumiset.addFile(newFile)
-            
+
         self.multiRunFileset = Fileset(name = "TestFileset5")
         for j in range(4):
             newFile = File(makeUUID(), size = 1000, events = 100)
             for i in range(5):
+                # Eric's test which splits each run across two files, lumis 45-54 for each run
                 #lumiNum = 45+i*j
                 #if lumiNum > 64:
                 #    lumiNum -= 20
@@ -297,7 +298,7 @@ class EventBasedTest(unittest.TestCase):
 
         Test lumi based job splitting with 10 files, split between four different lumi sections
         but with jobs limited by number of files
-        
+
 
         """
 
@@ -366,41 +367,41 @@ class EventBasedTest(unittest.TestCase):
     def testMultipleSites(self):
         """
         _testMultipleLumi_
-    
+
         Test lumi based job splitting with 20 files, with 10 each in two different sites
-        
+
         """
-    
+
         print "testMultipleSites"
-    
+
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleSiteSubscription)
-    
+
         jobGroups = jobFactory(lumis_per_job = 1)
-    
-    
+
+
         self.assertEqual(len(jobGroups),         2)
         self.assertEqual(len(jobGroups[0].jobs), 4)
         self.assertEqual(len(jobGroups[1].jobs), 4)
         self.assertEqual(len(jobGroups[0].jobs[0].getFiles()), 3)
         self.assertEqual(len(jobGroups[0].jobs[3].getFiles()), 1)
-    
+
         jobGroup2 = jobFactory(files_per_job = 2)
-    
+
         self.assertEqual(len(jobGroup2),         8)
         self.assertEqual(len(jobGroup2[3].jobs), 1)
         self.assertEqual(len(jobGroup2[1].jobs), 2)
         self.assertEqual(len(jobGroup2[1].jobs[0].getFiles()), 2)
-    
+
         jobGroup3 = jobFactory(events_per_job = 100)
-    
+
         self.assertEqual(len(jobGroup3),                       8)
         self.assertEqual(len(jobGroup3[1].jobs),               3)
         self.assertEqual(len(jobGroup3[0].jobs[0].getFiles()), 1)
-    
-        
+
+
         return
-        
+
 
 if __name__ == '__main__':
     unittest.main()

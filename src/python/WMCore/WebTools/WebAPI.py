@@ -3,6 +3,7 @@ from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson, exposedasj
 from WMCore.Lexicon import sitetier, countrycode
 from cherrypy import expose, HTTPRedirect
 import sys
+import traceback
 
 class WebAPI(DatabasePage):
     __version__ = 1
@@ -132,7 +133,8 @@ class WebAPI(DatabasePage):
         except Exception, e:
             error = e.__str__()
             self.debug(error)
-            self.debug("%s:%s" % (sys.exc_type, sys.exc_value))
+            self.debug(traceback.print_exc())
+#            self.debug("%s:%s" % (sys.exc_type, sys.exc_value))
             dict = {'Exception':{'Exception_thrown_in': method,
                        'Exception_type': '%s' % sys.exc_type,
                        'Exception_detail':error, 

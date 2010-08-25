@@ -23,6 +23,8 @@ class WorkQueueRESTModel(RESTModel):
         #only support get for now
         self.methods = {'GET':{}, 'POST':{}, 'PUT':{}, 'DELETE':{}}
         self.addMethod('POST', 'getwork', self.getWork, args=[])
+        self.addMethod('POST', 'status', self.status, args=["status", "before", "after", 
+                                        "elementIDs", "subs", "dictKey"])
         self.addMethod('PUT', 'synchronize', self.synchronize, args=["child_url", "child_report"])
         self.addMethod('PUT', 'gotwork', self.gotWork, args=["elementIDs"])
         self.addMethod('PUT', 'failwork', self.failWork, args=["elementIDs"])
@@ -116,4 +118,20 @@ class WorkQueueRESTModel(RESTModel):
         decodedElementIDs = jsonwrapper.loads(elementIDs)
         result = self.wq.doneWork(decodedElementIDs)
         #print result
+        return result
+    
+    def status(self, status = None, before = None, after = None, elementIDs=None, 
+               dictKey = None):
+        
+        if elementIDs != None:
+            elementIDs = jsonwrapper.loads(elementIDs)
+        
+        if before != None:
+            before = int(before)
+        if after != None:
+            after = int(after)
+        
+        result = self.wq.status(status, before, after, elementIDs, 
+                                dictKey)
+        
         return result

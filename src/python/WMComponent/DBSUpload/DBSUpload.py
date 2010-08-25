@@ -8,17 +8,22 @@ Performs bulk DBS File(s) insertion by :
 	if buffer has hit the configured limit
 """
 
-__revision__ = "$Id: DBSUpload.py,v 1.3 2008/10/31 00:55:34 afaq Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBSUpload.py,v 1.4 2009/07/20 18:13:29 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
+import threading
 
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
 # we do not import failure handlers as they are dynamicly 
 # loaded from the config file.
 from WMCore.WMFactory import WMFactory
+
+from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
+
+
 
 
 #['__call__', '__doc__', '__init__', '__module__', '__str__', 'config', 'handleMessage', 'initInThread', 'initialization', 'logState', 'postInitialization', 'preInitialization', 'prepareToStart', 'publishItem', 'startComponent']
@@ -28,6 +33,8 @@ class DBSUpload(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
+        self.pollTime = 1
+        
 	print "DBSUpload.__init__"
 
     def preInitialization(self):
@@ -36,11 +43,22 @@ class DBSUpload(Harness):
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')
         
-        self.messages['BufferSuccess'] = \
-            factory.loadObject(self.config.DBSUpload.bufferSuccessHandler, self)
-            
-        self.messages['NewWorkflow'] = \
-            factory.loadObject(self.config.DBSUpload.newWorkflowHandler, self)
+
+        # Add event loop to worker manager
+        myThread = threading.currentThread()
+        
+        pollInterval = self.config.DBSUpload.pollInterval
+        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        myThread.workerThreadManager.addWorker(DBSUploadPoller(self.config), pollInterval)
+
+        return
+
+
+
+
+
+
+
 
 
 

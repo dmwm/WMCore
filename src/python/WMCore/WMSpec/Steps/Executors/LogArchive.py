@@ -5,8 +5,8 @@ _Step.Executor.LogArchive_
 Implementation of an Executor for a LogArchive step
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.20 2010/07/04 23:51:32 meloam Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: LogArchive.py,v 1.21 2010/07/05 00:46:05 meloam Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import os
 import os.path
@@ -72,9 +72,13 @@ class LogArchive(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
+        overrides = {}
+        if hasattr(self.step, 'override'):
+            overrides = self.step.override.dictionary_()
 
         logging.info("Beginning Steps.Executors.LogArchive.Execute")
-
+        logging.info("Using the following overrides: %s " % overrides)
+        logging.info("Step is: %s" % self.step)
         # Wait fifteen minutes for stageOut
         waitTime = overrides.get('waitTime', 900)
             
@@ -98,7 +102,7 @@ class LogArchive(Executor):
             manager.retryPauseTime  = self.step.retryDelay
         else:
             # new style
-            print "LOGARCHIVE IS USING NEW STAGEOUT CODE"
+            logging.info("LOGARCHIVE IS USING NEW STAGEOUT CODE")
             manager = WMCore.Storage.FileManager.StageOutMgr(
                                 retryPauseTime  = self.step.retryDelay,
                                 numberOfRetries = self.step.retryCount,

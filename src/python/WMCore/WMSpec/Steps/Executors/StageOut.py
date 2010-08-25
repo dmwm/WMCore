@@ -11,8 +11,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.24 2010/07/04 23:51:32 meloam Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: StageOut.py,v 1.25 2010/07/05 00:46:05 meloam Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import os
 import os.path
@@ -74,7 +74,8 @@ class StageOut(Executor):
 
         # Set wait to 15 minutes
         waitTime = overrides.get('waitTime', 900)
-        print "override %s " % self.step
+        
+        self.info("StageOut override is: %s " % self.step)
 
         # Pull out StageOutMgr Overrides
         
@@ -102,7 +103,7 @@ class StageOut(Executor):
             manager.retryPauseTime  = self.step.retryDelay
         else:
             # new style
-	    logging.critical("STAGEOUT IS USING NEW STAGEOUT CODE")
+            logging.critical("STAGEOUT IS USING NEW STAGEOUT CODE")
             print "STAGEOUT IS USING NEW STAGEOUT CODE"
             manager = WMCore.Storage.FileManager.StageOutMgr(
                                 retryPauseTime  = self.step.retryDelay,

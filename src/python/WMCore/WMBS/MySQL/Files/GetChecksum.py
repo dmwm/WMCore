@@ -5,8 +5,8 @@ MySQL implementation of GetChecksum
 """
 
 
-__revision__ = "$Id: GetChecksum.py,v 1.1 2009/12/02 19:34:36 mnorman Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: GetChecksum.py,v 1.2 2009/12/09 17:26:57 mnorman Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -30,22 +30,16 @@ class GetChecksum(DBFormatter):
             if len(dictVersion) == 0:
                 #Then it's empty
                 return None
-            elif len(dictVersion) == 1:
-                #There's only one entry
-                formattedResult['cktype'] = dictVersion[0].get('cktype', None)
-                formattedResult['cksum']  = dictVersion[0].get('cksum', None)
             else:
                 #Otherwise there are several, and we have to record each one
                 #I don't know how to do this yet.
-                tmpList = []
+                tmpDict = {}
                 for entry in dictVersion:
-                    tmpList.append({'cktype': entry.get('cktype', None), 'cksum': entry.get('cksum', None)})
-                formattedResult['cktype'] = tmpList
-                formattedResult['cksum']  = tmpList
+                    tmpDict.update({entry.get('cktype', 'Default'): entry.get('cksum', None)})
+                formattedResult['cksums']  = tmpDict
         else:
-            formattedResult['cktype'] = dictVersion.get('cktype', None)
-            formattedResult['cksum']  = dictVersion.get('cksum', None)
-            if formattedResult == {'cktype': None, 'cksum': None}:
+            formattedResult['cksums']  = {'Default': dictVersion.get('cksum', None)}
+            if formattedResult == {'Default': None}:
                 #Then the thing was empty anyway
                 return None
 

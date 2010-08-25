@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.32 2009/11/24 08:03:34 metson Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: RESTModel.py,v 1.33 2009/11/24 08:12:25 metson Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -82,8 +82,8 @@ class RESTModel(WebAPI):
         
     def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1):
         """
-        add dao (or any other method handler) in self.methods
-        self.method need to be initialize if sub class doesn't want to take provide by
+        add dao in self.methods and wrap it with sanitise_input. Assumes that a 
+        DAOFactory instance is available from self.
         """
         def function(args, kwargs):
             # store the method name
@@ -95,10 +95,24 @@ class RESTModel(WebAPI):
                   
         self.addMethod(verb, methodKey, function, args, validation, version)
         
+    def addWrappedMethod(self, verb, methodKey, funcName, args=[], validation=[], version=1):
+        """
+        add a method handler in self.methods and wrap it with sanitise_input.
+        """
+        def function(args, kwargs):
+            # store the method name
+            method = methodKey
+            input = self.sanitise_input(args, kwargs, method)
+            # store the function
+            func = funcName
+            return func(input)
+                  
+        self.addMethod(verb, methodKey, function, args, validation, version)
+        
     def addMethod(self, verb, methodKey, function, args=[], validation=[], version=1):
         """
-        add dao (or any other method handler) in self.methods
-        self.method need to be initialize if sub class doesn't want to take provide by
+        add a method handler to self.methods self.methods need to be initialize 
+        if sub class hasn't done this already.
         """
         if not self.methods.has_key(verb):
             self.methods[verb] = {}

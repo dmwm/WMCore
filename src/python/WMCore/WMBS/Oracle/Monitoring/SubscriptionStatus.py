@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+"""
+_SubscriptionStatus_
+
+Oracle implementation of Monitoring.SubscriptionStatus
+"""
+
+__revision__ = "$Id: SubscriptionStatus.py,v 1.1 2009/11/17 18:33:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.1 $"
+
+from WMCore.WMBS.MySQL.Monitoring.SubscriptionStatus import SubscriptionStatus \
+ as SubscriptionStatusMySQL
+
+class SubscriptionStatus(SubscriptionStatusMySQL):
+    pass

@@ -17,40 +17,136 @@ try:
 except NameError:
     from sets import Set as set
 # pylint: enable-msg=W0104,W0622
+from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WorkQueue.DBSHelper import DBSHelper
-from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
 
-class _WQElement(WMObject):
+class _WQElement(WorkQueueBase):
     """
     _WQElement_
 
     WQElement container
 
     """
-    def __init__(self, specUrl, primaryBlock = None, blockLocations = None,
-                 priority = 0, online = 0, njobs = 0, whiteList = None,
+    def __init__(self, specUrl, primaryBlock = None, parentBlocks = None,
+                 priority = 0, online = 0, nJobs = 0, whiteList = None,
                  blackList = None):
         WMObject.__init__(self)
         self.specUrl = specUrl
         self.primaryBlock = primaryBlock
-        # blockLocations is dict format of {blockName:[location List], ...}
-        self.blockLocations = blockLocations or {}
-        if primaryBlock:
-            blockLocations[primaryBlock] = []
+        self.parentBlocks = parentBlocks or []
         self.whiteList = whiteList or []
         self.blackList = blackList or []
         self.priority = priority
         self._online = online
-        self.njobs = njobs
-        self.time = time.time()
+        self.nJobs = nJobs
+        self.lastUpdated = None
         self.status = "Available"
         self.subscription = None
         self.wmSpec = WorkSpecParser(specUrl)
 
+    def create(self):
+        """
+        Insert the work queue element to DB
+        """
+        existingTransaction = self.beginTransaction()
+        self._insertWMSpec()
+        self._insertBlock()
+        self._insertWorkQueueElement()
+        self.commitTransaction(existingTransaction)
 
+    def _insertWMSpec(self):
+        """
+        """
+        wmSpecAction = self.daofactory(classname = "WMSpec.New")
+        #TODO: need a unique value (name?) for first parameter
+        wmSpecAction.execute(self.wmSpec.specUrl, conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+                
+    def _insertBlock(self):
+        """
+        """
+        def _blockCreation(self, block):
+            """
+            """
+            blockAction.execute(block["Name"], block["Size"], block["NumEvent"],
+                                block["NumFiles"], conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+                
+            for site in block["Locations"]:
+                siteAction.execute(site, conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
+                
+            self._updatedBlockLocations(block["Name"], block["Locations"])
+        
+        blockAction = self.daofactory(classname = "Block.New")
+        siteAction = self.daofactory(classname = "Site.New")
+        blockParantageAction = self.daofactory(classname = "Block.Parentage")
+            
+        _blockCreation(self.primaryBlock)
+        for block in self.parentBlocks:
+            _blockCreation(block)
+            blockParantageAction.execute(self.primaryBlock["Name"], 
+                                         block["Name"],
+                                         conn = self.getDBConn(),
+                                         transaction = self.existingTransaction())
+    
+    def _insertWorkQueueElement(self):
+        """
+        """
+        wqAction = self.daofactory(classname = "WorkQueueElement.New")
+        if self.parentBlocks:
+            parentFlag = 1
+        else:
+            parentFlag = 0
+        wqAction.execute(self.wmSpec.specUrl, self.primaryBlock["Name"], 
+                         self.nJobs, self.priority, parentFlag,
+                         conn = self.getDBConn(),
+                         transaction = self.existingTransaction())
+        
+    def load(self, id, wmspecID, blockID, numJobs, priority, parentFlag):
+        """
+        Load work queue element by various tables from DB
+        """
+        wmSpecLoad = self.daofactory(classname = "WMSpec.LoadByID")
+        
+        self.specUrl = wmSpecLoad.execute(blockID, conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+        
+        wqBlockLoad = self.daofactory(classname = "Block.LoadByID")
+        
+        self.primaryBlock = wqBlockLoad.execute(blockID, conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+        
+        wqSiteLoad = self.daofactory(classname = "Site.LoadByBlockID")
+        locations =  wqSiteLoad.execute(blockID, conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+        
+        self.primaryBlock["Locations"] = locations 
+        
+        if parentFlag:
+            wqParentAction = self.daofactory(classname = "Block.GetParentsByChildID")
+            self.parentBlocks = wqParentAction.execute(blockID, conn = self.getDBConn(),
+                                               transaction = self.existingTransaction())
+            # update information
+            for parentBlock in self.parentBlocks:
+                locations =  wqSiteLoad.execute(parentBlock["id"], conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+        
+                parentBlock["Locations"] = locations 
+           
+        self.priority = priority
+        #TODO: need to get info somewhere
+        self._online = True
+        self.nJobs = numJobs
+        #self.lateUpdated = None
+        self.status = "Available"
+        self.subscription = None
+    
     def __cmp__(self, other):
         """
         Compare work units so they can be sorted by priority
@@ -59,15 +155,15 @@ class _WQElement(WMObject):
         """
         current = time.time()
         weight = 0.01
-        lhs = self.priority + weight * (current - self.time)
-        rhs = other.priority + weight * (current - other.time)
+        lhs = self.priority + weight * (current - self.lastUpdated)
+        rhs = other.priority + weight * (current - other.lastUpdated)
         return cmp(rhs, lhs) # Contrary to normal sorting (high priority first)
 
 
     def __str__(self):
-        return "WQElement: %s:%s priority=%s, njobs=%s, time=%s" % (self.specUrl,
+        return "WQElement: %s:%s priority=%s, nJobs=%s, time=%s" % (self.specUrl,
                                             self.primaryBlock, self.priority,
-                                            self.njobs, self.time)
+                                            self.nJobs, self.lastUpdated)
 
 
     def online(self):
@@ -81,10 +177,11 @@ class _WQElement(WMObject):
         """
         Can we run at the given site?
         """
-        if not self.blockLocations:
+        commonLocations = self.locations()
+        if not commonLocations and not self.primaryBlock:
             return True # no input blocks - match any site
         #TODO: Stager behavior faked for now - should be site specific
-        return self.online() and site in self.locations
+        return self.online() and site in commonLocations
     
     
     def slotsAvailable(self, slots):
@@ -93,7 +190,7 @@ class _WQElement(WMObject):
         """
         #Options: Strict matching?, x% of block slots available?
         #For now strict - assume block small enough to release
-        return slots >= self.njobs
+        return slots >= self.nJobs
 
 
     def match(self, conditions):
@@ -113,7 +210,7 @@ class _WQElement(WMObject):
             if self.dataAvailable(site) and self.slotsAvailable(slots):
                 newconditions = {}
                 newconditions.update(conditions)
-                newslots = slots - self.njobs
+                newslots = slots - self.nJobs
                 if newslots > 0:
                     newconditions[site] = newslots
                 else:
@@ -137,27 +234,39 @@ class _WQElement(WMObject):
         return list of locations in the WQElement only if there is some common location
         in a primary block and its parent block
         """
-        commonLocation = set(self.blockLocations[self.primaryBlock])
-        for locations in self.blockLocations.values():
-            commonLocation = commonLocation.intersection(set(locations))
+        commonLocation = set(self.primaryBlock["Locations"])
+        for block in self.parentBlocks:
+            commonLocation = commonLocation.intersection(
+                                        set(block["Locations"]))
         return list(commonLocation)
-    locations = property(locations)
-    
-            
+    #locations = property(locations)
+           
     def updateLocations(self, dbsHelper):
         """
         _updateLocations_
         
         update all the block locations in the WQElement 
         """
-        for block in self.blockLocations.keys():
-            locations = dbsHelper.getBlockLocations(block)
+        locations = dbsHelper.getBlockLocations(self.primaryBlock["Name"])
             # just replace the location since the previous location might be
             # deleted 
-            self.blockLocations[block] = locations    
+        self.primaryBlock["Locations"] = locations    
 
+        for block in self.parentBlocks:
+            locations = dbsHelper.getBlockLocations(block["Name"])
+            # just replace the location since the previous location might be
+            # deleted 
+            block["Locations"] = locations    
 
-
+    def _updatedBlockLocations(self, block):
+        blockSiteDetele = self.daofactory(classname = "Block.DeleteSiteAssoc")
+        blockSiteAdd = self.daofactory(classname = "Block.AddSiteAssoc")
+        blockSiteDetele.execute(block["Name"], conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+        for site in block["Locations"]:
+            blockSiteAdd.execute(block["Name"], site, conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
+        
 
 class WorkQueue(WMObject):
     """
@@ -169,6 +278,7 @@ class WorkQueue(WMObject):
     and injector
     """
     def __init__(self, dbsUrl):
+        WMObject.__init__(self)
         self.elements = [ ]
         self.dbsHelper = DBSReader(dbsUrl)
 
@@ -191,14 +301,15 @@ class WorkQueue(WMObject):
         blockLocations = {}
         for block in blocks:
             blockLocations[block] = []
-#        if primaryBlock:
-#            blockLocations[primaryBlock] = self.dbsHelper.listFileBlockLocation(primaryBlock)
-#        for block in blocks:
-#            blockLocations[block] = self.dbsHelper.listFileBlockLocation(block)
+        if primaryBlock:
+            blockLocations[primaryBlock] = self.dbsHelper.listFileBlockLocation(primaryBlock)
+        for block in blocks:
+            blockLocations[block] = self.dbsHelper.listFileBlockLocation(block)
         online = True # TODO: Should be automated 
         element = _WQElement(specUrl, primaryBlock, blockLocations, 
                                         priority, online, nJobs,
                                         whiteList, blackList)
+        element.create()
         self.elements.append(element)
 
 

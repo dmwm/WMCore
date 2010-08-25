@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.2 2010/04/15 20:53:11 mnorman Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.3 2010/04/19 20:44:41 mnorman Exp $"
+__revision__ = "$Revision: 1.3 $"
 __author__ = "Giuseppe.Codispoti@bo.infn.it"
 
 import logging
@@ -483,6 +483,38 @@ class BossLiteAPI(WMConnectionBase):
         return task
 
 
+    ##########################################################################
+
+    def removeTask(self, task):
+        """
+        remove task, jobs and their running instances from db
+        NOT SQLite safe
+        """
+
+        # remove task
+        task.remove()
+
+        task = None
+
+        return task
+
+
+    ##########################################################################
+    
+    def removeJob( self, job ):
+        """
+        remove job and its running instances from db
+        NOT SQLite safe
+        """
+
+        # remove job
+        job.remove()
+
+        job = None
+
+        return job
+
+
     #def loadLastJobByName( self, jobName ) :
     #    """
     #    retrieve job information from db for jobs with name 'name'
@@ -644,65 +676,65 @@ class BossLiteAPI(WMConnectionBase):
 
 
     ##########################################################################
-    def removeJob( self, job ):
-        """
-        remove job and its running instances from db
-        """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # remove runnningjobs in db with non relational checks
-        if self.bossLiteDB.database == "SQLite":
-
-            # load running jobs
-            rjob = RunningJob( { 'jobId' : job['jobId'],
-                                 'taskId' : job['taskId'] } )
-            rjobList = self.db.select( rjob)
-            for rjob in rjobList :
-                rjob.remove( self.db )
-
-        # remove job
-        job.remove( self.db )
-        self.bossLiteDB.commit()
-
-        job = None
-
-        return job
+    #def removeJob( self, job ):
+    #    """
+    #    remove job and its running instances from db
+    #    """
+    #
+    #    # db connect
+    #    if self.db is None :
+    #        self.connect()
+    #
+    #    # remove runnningjobs in db with non relational checks
+    #    if self.bossLiteDB.database == "SQLite":
+    #
+    #        # load running jobs
+    #        rjob = RunningJob( { 'jobId' : job['jobId'],
+    #                             'taskId' : job['taskId'] } )
+    #        rjobList = self.db.select( rjob)
+    #        for rjob in rjobList :
+    #            rjob.remove( self.db )
+    #
+    #    # remove job
+    #    job.remove( self.db )
+    #    self.bossLiteDB.commit()
+    #
+    #    job = None
+    #
+    #    return job
 
     ##########################################################################
-    def removeTask( self, task ):
-        """
-        remove task, jobs and their running instances from db
-        """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # remove jobs in db with non relational checks
-        if self.bossLiteDB.database == "SQLite":
-
-            # load running jobs
-            rjob = RunningJob( { 'taskId' : task['id'] } )
-            rjobList = self.db.select( rjob)
-            for rjob in rjobList :
-                rjob.remove( self.db )
-
-            # load jobs
-            job = Job( { 'taskId' : task['id'] } )
-            jobList = self.db.select( job)
-            for job in jobList :
-                job.remove( self.db )
-
-        # remove task
-        task.remove( self.db )
-        self.bossLiteDB.commit()
-
-        task = None
-
-        return task
+    #def removeTask( self, task ):
+    #    """
+    #    remove task, jobs and their running instances from db
+    #    """
+    #
+    #    # db connect
+    #    if self.db is None :
+    #        self.connect()
+    #
+    #    # remove jobs in db with non relational checks
+    #    if self.bossLiteDB.database == "SQLite":
+    #
+    #        # load running jobs
+    #        rjob = RunningJob( { 'taskId' : task['id'] } )
+    #        rjobList = self.db.select( rjob)
+    #        for rjob in rjobList :
+    #            rjob.remove( self.db )
+    #
+    #        # load jobs
+    #        job = Job( { 'taskId' : task['id'] } )
+    #        jobList = self.db.select( job)
+    #        for job in jobList :
+    #            job.remove( self.db )
+    #
+    #    # remove task
+    #    task.remove( self.db )
+    #    self.bossLiteDB.commit()
+    #
+    #    task = None
+    #
+    #    return task
 
     ##########################################################################
     #def loadTask( self, taskId, jobRange='all', deep=True ) :
@@ -879,72 +911,72 @@ class BossLiteAPI(WMConnectionBase):
 
 
     ##########################################################################
-    def load_old( self, task, jobRange="all", jobAttributes=None, runningAttrs=None, strict=True, limit=None, offset=None ) :
-        """
-        retrieve information from db for:
-        - jobRange can be of the form:
-             'a,b:c,d,e'
-             ['a',b','c']
-             'all'
-             None (no jobs to be loaded
-
-        In some way these should be the option to build the query.
-        Maybe, same options should be used also in
-        loadSubmitted, loadCreated, loadEnded, loadFailed
-
-        Takes the highest submission number for each job
-        """
-
-        # db connect
-        if self.db is None :
-            self.connect()
-
-        # already loaded task?
-        if not isinstance( task, Task ) :
-            task = Task({'id' : task})
-            task.load(self.db, False)
-        elif jobRange == 'all' and task.jobs != []:
-            jobRange = None
-
-        # simple case: no jobs loading request
-        if jobRange is None:
-            return task
-
-        # defining default
-        if jobAttributes is None :
-            jobAttributes = {}
-
-        # evaluate job list
-        jobList = None
-        if jobRange is not None and jobRange != 'all':
-
-            # identify jobRange
-            if type( jobRange ) == list :
-                jobList = jobRange
-            else :
-                jobList = parseRange( jobRange )
-
-            # if there are loaded jobs, load just missing
-            if task.jobs != []:
-                s = [ str(job['jobId']) for job in task.jobs ]
-                jobList = [str(x) for x in jobList if str(x) not in s]
-
-            # no jobs to be loaded?
-            if jobList == [] :
-                return task
-            elif jobList is not None:
-                jobList.sort()
-
-        # load
-        jobAttributes['taskId'] = int( task['id'] )
-        jobs = self.loadJobsByRunningAttr( runningAttrs, \
-                                           jobAttributes, \
-                                           strict=strict, \
-                                           limit=limit, offset=offset,\
-                                           jobList=jobList )
-        task.appendJobs( jobs )
-
-        return task
+    #def load( self, task, jobRange="all", jobAttributes=None, runningAttrs=None, strict=True, limit=None, offset=None ) :
+    #    """
+    #    retrieve information from db for:
+    #    - jobRange can be of the form:
+    #         'a,b:c,d,e'
+    #         ['a',b','c']
+    #         'all'
+    #         None (no jobs to be loaded
+    #
+    #    In some way these should be the option to build the query.
+    #    Maybe, same options should be used also in
+    #    loadSubmitted, loadCreated, loadEnded, loadFailed
+    #
+    #    Takes the highest submission number for each job
+    #    """
+    #
+    #    # db connect
+    #    if self.db is None :
+    #        self.connect()
+    #
+    #    # already loaded task?
+    #    if not isinstance( task, Task ) :
+    #        task = Task({'id' : task})
+    #        task.load(self.db, False)
+    #    elif jobRange == 'all' and task.jobs != []:
+    #        jobRange = None
+    #
+    #    # simple case: no jobs loading request
+    #    if jobRange is None:
+    #        return task
+    #
+    #    # defining default
+    #    if jobAttributes is None :
+    #        jobAttributes = {}
+    #
+    #    # evaluate job list
+    #    jobList = None
+    #    if jobRange is not None and jobRange != 'all':
+    #
+    #        # identify jobRange
+    #        if type( jobRange ) == list :
+    #            jobList = jobRange
+    #        else :
+    #            jobList = parseRange( jobRange )
+    #
+    #        # if there are loaded jobs, load just missing
+    #        if task.jobs != []:
+    #            s = [ str(job['jobId']) for job in task.jobs ]
+    #            jobList = [str(x) for x in jobList if str(x) not in s]
+    #
+    #        # no jobs to be loaded?
+    #        if jobList == [] :
+    #            return task
+    #        elif jobList is not None:
+    #            jobList.sort()
+    #
+    #    # load
+    #    jobAttributes['taskId'] = int( task['id'] )
+    #    jobs = self.loadJobsByRunningAttr( runningAttrs, \
+    #                                       jobAttributes, \
+    #                                       strict=strict, \
+    #                                       limit=limit, offset=offset,\
+    #                                       jobList=jobList )
+    #    task.appendJobs( jobs )
+    #
+    #    return task
 
 
     ##########################################################################

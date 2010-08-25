@@ -10,8 +10,8 @@ Has a default timeout of 30 seconds. Over ride this by passing in a timeout via
 the configuration dict, set to None if you want to turn off the timeout.
 """
 
-__revision__ = "$Id: Service.py,v 1.10 2009/06/24 09:21:55 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Service.py,v 1.11 2009/06/24 13:35:55 spiga Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import datetime
 import os
@@ -40,10 +40,13 @@ class Service:
             self.type = dict['type']
         else:
             self.type = 'text/xml'
+        
+        #get default timeout
+        self.defTimeout= socket.getdefaulttimeout()
 
         #Set a timeout for the socket
         self.timeout = 30
-        if 'timeout' in dict.keys() and int(dict['timeout']) > timeout:
+        if 'timeout' in dict.keys() and int(dict['timeout']) > self.timeout:
             self.timeout = int(dict['timeout'])
         elif 'timeout' in dict.keys() and dict['timeout'] == None:
             self.timeout = None
@@ -61,7 +64,7 @@ class Service:
         t = datetime.datetime.now() - datetime.timedelta(hours=self.cacheduration)
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self.logger.debug("%s expired, refreshing cache" % cachefile)
-            getData(cachefile, url)
+            self.getData(cachefile, url)
         return open(cachefile, 'r')
 
     def forceRefresh(self, cachefile, url):
@@ -70,7 +73,7 @@ class Service:
         url = self.endpoint + url
 
         self.logger.debug("Forcing cache refresh of %s" % cachefile)
-        getData(cachefile, url)
+        self.getData(cachefile, url)
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile):
@@ -91,5 +94,5 @@ class Service:
         except Exception, e:
             self.logger.exception(e)
             raise e
-        # Reset the timeout to 30s
-        socket.setdefaulttimeout(None)
+        # Reset the timeout to default
+        socket.setdefaulttimeout(self.defTimeout)

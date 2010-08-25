@@ -7,12 +7,12 @@ A basic REST formatter.
 Could add YAML via http://pyyaml.org/
 """
 from WMCore.WebTools.Page import TemplatedPage
-from WMCore.WebTools.Page import exposejson, exposexml, exposeatom, expose
+from WMCore.WebTools.Page import exposejson, exposexml, exposeatom 
 from WMCore.WebTools.Page import DEFAULT_EXPIRE
-from cherrypy import response, HTTPError
+from cherrypy import response, HTTPError, expose
 
-__revision__ = "$Id: RESTFormatter.py,v 1.16 2009/12/27 13:40:45 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: RESTFormatter.py,v 1.17 2009/12/27 18:16:46 akhukhun Exp $"
+__version__ = "$Revision: 1.17 $"
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):

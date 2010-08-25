@@ -41,6 +41,7 @@ def deamonize(stdout= '/dev/null', stderr= None, stdin= '/dev/null', \
         if it shares a file with stdout then interleaved output
         may not appear in the order that you expect.
     '''
+    raise RuntimeError, "some user of Deamonize is using it wrong, temporary exception to find out who"
     # Do first fork.
     try:
         pid = os.fork()

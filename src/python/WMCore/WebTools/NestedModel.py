@@ -53,36 +53,36 @@ class NestedModel(RESTModel):
         be path components, e.g. other method names. 
         """
         verb = verb.upper()
-        print '################################'
-        print 'NestedMethod handler'
+        #print '################################'
+        #print 'NestedMethod handler'
         self.classifyHTTPError(verb, args, kwargs)
         args = list(args)
         basemethnom = args[0]
         basemethod = self.methods[verb][basemethnom]
         children = self.methods[verb][basemethnom].keys()
         method = children.pop(children.index('default'))
-        print 'basemethod', basemethnom
-        print 'children', children
+        #print 'basemethod', basemethnom
+        #print 'children', children
         try:
-            print 'args', args
-            print 'args[1:]', args[1:]
+            #print 'args', args
+            #print 'args[1:]', args[1:]
             
             # is there a method in the keywords?
             for a in kwargs.keys():
-                print 'kwargs a', a
+                #print 'kwargs a', a
                 if a in children:
                     method = a
                     if not len(kwargs[a]): 
                         kwargs.pop(a)
             # is there a method in the positional args?
             for a in args[1:]:
-                print 'args a', a
+                #print 'args a', a
                 if a in children:
                     method = args.pop(args.index(a))
             
-            print 'method', method        
+            #print 'method', method        
             data = basemethod[method]['call'](*args[1:], **kwargs)
-            print '################################'
+            #print '################################'
         # in case sanitise_input is not called with in the method, if args doesn't
         # match throws the 400 error
         except TypeError, e:

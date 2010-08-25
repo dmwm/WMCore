@@ -4,15 +4,16 @@ _System_
 
 """
 
-from ProdCommon.BossLite.Common.Exceptions import TimeOut
+from WMCore.BossLite.Common.Exceptions import TimeOut
+
 from subprocess import Popen, PIPE, STDOUT
 import time
 import os
 import logging
 import select, signal, fcntl
 
-__version__ = "$Id: System.py,v 1.1 2010/04/27 08:25:46 spigafi Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: System.py,v 1.2 2010/05/06 09:37:48 spigafi Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 
 def setPgid():

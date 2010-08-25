@@ -223,15 +223,34 @@ class CMSCouchTest(unittest.TestCase):
         creates a directory strucutre for the couch data files.
         """
         db_name = 'wmcore/unittests'
+        try:
+            self.server.deleteDatabase(db_name)
+        except:
+            # Ignore this - the database shouldn't already exist 
+            pass
+        
+        db = self.server.createDatabase(db_name)
+        info = db.info()
+        assert info['db_name'] == db_name
+        
+        db_name = 'wmcore/unittests'
         db = self.server.connectDatabase(db_name)
         info = db.info()
         assert info['db_name'] == db_name
+        
+        db = Database(db_name)
+        info = db.info()
+        assert info['db_name'] == db_name
+        
+        self.server.deleteDatabase(db_name)
         
     def testInvalidName(self):
         """
         Capitol letters are not allowed in database names.
         """
         db_name = 'Not A Valid Name'
+        self.assertRaises(ValueError, self.server.createDatabase, db_name)
+        self.assertRaises(ValueError, self.server.deleteDatabase, db_name)
         self.assertRaises(ValueError, self.server.connectDatabase, db_name)
         self.assertRaises(ValueError, Database, db_name)
 

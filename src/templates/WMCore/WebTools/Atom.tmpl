@@ -14,6 +14,11 @@
 <webMaster>$config.admin</webMaster>
 #try
 #for item in $data
+#assert $item.title
+#assert $item.desc
+#assert $item.link
+#assert $item.date
+#assert $item.guid
 <item>
 <title>$item.title</title>
 <description>$item.desc</description>

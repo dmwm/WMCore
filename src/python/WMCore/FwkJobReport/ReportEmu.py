@@ -5,8 +5,8 @@ _ReportEmu_
 Class for creating bogus framework job reports.
 """
 
-__revision__ = "$Id: ReportEmu.py,v 1.5 2010/03/19 15:28:25 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ReportEmu.py,v 1.6 2010/03/23 20:14:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os.path
 
@@ -120,6 +120,7 @@ class ReportEmu(object):
                                      "dataTier": outputModuleSection.dataTier,
                                      "applicationName": "cmsRun",
                                      "applicationVersion": self.step.getCMSSWVersion()}
+            outputFile["module_label"] = outputModuleName
             
             outputFileSection = report.addOutputFile(outputModuleName, outputFile)
             for inputFile in self.job["input_files"]:

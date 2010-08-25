@@ -288,7 +288,7 @@ class DBSWriter:
             logging.debug("lumi list created for the file")
 
             dbsfile = DbsFile(
-                              Checksum = str(outFile['cksum']),
+                              #Checksum = str(outFile['cksum']),
                               NumberOfEvents = outFile['events'],
                               LogicalFileName = outFile['lfn'],
                               FileSize = int(outFile['size']),
@@ -302,6 +302,29 @@ class DBSWriter:
                               ParentList = outFile.getParentLFNs(),
                               #BranchHash = outFile['BranchHash'],
                             )
+            #Set checksums by hand
+            if type(outFile['cktype']) == list:
+                #Well, then we're in trouble
+                #Multiple checksums
+                print "We have a list?"
+                print outFile['cktype']
+                for entry in outFile['cktype']:
+                    #This should be a dictionary with a cktype and cksum key
+                    if str(entry['cktype']).lower() == 'cksum':
+                        dbsfile['Checksum'] = str(outFile['cksum'])
+                    elif str(entry['cktype']).lower() == 'adler32':
+                        dbsfile['Adler32'] = str(outFile['cksum'])
+                    elif str(entry['cktype']).lower() == 'md5':
+                        dbsfile['Md5'] = str(outFile['cksum'])
+            elif str(outFile['cktype']).lower() == 'cksum':
+                dbsfile['Checksum'] = str(outFile['cksum'])
+            elif str(outFile['cktype']).lower() == 'adler32':
+                dbsfile['Adler32'] = str(outFile['cksum'])
+            elif str(outFile['cktype']).lower() == 'md5':
+                dbsfile['Md5'] = str(outFile['cksum'])
+            
+
+            
             #This check comes from ProdAgent, not sure if its required
             if len(outFile["locations"]) > 0:
                   seName = list(outFile["locations"])[0]
@@ -342,7 +365,7 @@ class DBSWriter:
         for file in insertFiles:
             #Try and close the box
             if self.manageFileBlock(fileblockName = fileBlock['Name'], maxFiles = maxFiles, maxSize = maxSize, timeOut = timeOut):
-                fileBlock['OpenForWriting'] = 0
+                fileBlock['OpenForWriting'] = '0'
                 if not fileBlock in affectedBlocks:
                     affectedBlocks.append(fileBlock)
                 #Then we need a new block
@@ -352,8 +375,6 @@ class DBSWriter:
                         procDataset,
                         seName)
                     fileBlock['files'] = []
-                    #if not fileBlock in affectedBlocks:
-                    #    affectedBlocks.append(fileBlock)
                 except DbsException, ex:
                     msg = "Error in DBSWriter.insertFilesForDBSBuffer\n"
                     msg += "Cannot retrieve FileBlock for dataset:\n"
@@ -574,7 +595,6 @@ class DBSWriter:
 
         """
 
-
         #  //
         # // Check that the block exists, and is open before we close it
         #//
@@ -590,7 +610,7 @@ class DBSWriter:
             raise DBSWriterError(msg)
         blockInstance = blockInstance[0]
         isClosed = blockInstance.get('OpenForWriting', '1')
-        if isClosed == "0":
+        if isClosed != '1':
             msg = "Block %s already closed" % fileblockName
             logging.warning(msg)
             return False

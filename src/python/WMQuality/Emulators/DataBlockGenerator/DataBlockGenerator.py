@@ -30,15 +30,25 @@ class DataBlockGenerator(object):
             for fileID in range(numOfFiles):
                 if not self.files.has_key(blockName):
                     self.files[blockName] = []
-                self.files[blockName].append(
-                                {'Checksum': "123456",
-                                 'LogicalFileName': "/store/data/%s/file%s" % (blockName, fileID),
-                                 'NumberOfEvents': Globals.NUM_OF_EVENTS_PER_FILE,
-                                 'FileSize': Globals.SIZE_OF_FILE,
-                                 'ParentList': []
-                                 })
+                    
+                fileName =  "/store/data/%s/file%s" % (blockName, fileID)
+                parentFileName = "/store/data/%s_parent/file%s_parent" % (blockName, fileID)
+                dbsFile = {'LogicalFileName': fileName, 
+                           'ParentList' : [self.createDBSFile({'LogicalFileName':parentFileName})]
+                          }
+                self.files[blockName].append(self.createDBSFile(dbsFile))
+        
         return self.blocks[dataset]
     
+    def createDBSFile(self, dbsFile = {}):
+        defaultDBSFile = {'Checksum': "123456",
+                          'NumberOfEvents': Globals.NUM_OF_EVENTS_PER_FILE,
+                          'FileSize': Globals.SIZE_OF_FILE,
+                          'ParentList': []
+                          }
+        defaultDBSFile.update(dbsFile)
+        return defaultDBSFile
+        
     def getBlocks(self, dataset):
         
         if not self.blocks.has_key(dataset):

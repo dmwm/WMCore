@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.14 2010/03/22 12:24:56 swakef Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: SiteDB.py,v 1.15 2010/04/06 19:20:28 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.Services.SSLService import SSLService
 import urllib
@@ -188,3 +188,16 @@ class SiteDBJSON(SSLService):
         # need to call CMSNametoPhEDExNode?cms_name= but can't find a way to do
         # that. So simply raise an error
         raise ValueError, "Unable to find CMS name for \'%s\'" % node
+    
+    def phEDExNodetoCE(self, node):
+        """
+        Convert PhEDEx node name to se site
+        """
+        return self.cmsNametoSE(self.phEDExNodetocmsName(node))
+
+
+# TODO: find the better way to handle emulation:
+# hacky code: swap the namespace if emulator config is set 
+from WMQuality.Emulators import emulatorSwitch
+if emulatorSwitch("SiteDB"):
+    from WMQuality.Emulators.SiteDBClient.SiteDB import SiteDBJSON

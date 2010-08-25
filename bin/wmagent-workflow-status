@@ -51,6 +51,11 @@ result = statusDao.execute()
 
 workflowInfo = {}
 for row in result:
+    if row["success"] == None:
+        row["success"] = 0
+    if row["jobs"] == None:
+        row["jobs"] = 0        
+        
     if not workflowInfo.has_key(row["owner"]):
         workflowInfo[row["owner"]] = {}
     if not workflowInfo[row["owner"]].has_key(row["task"]):
@@ -68,7 +73,9 @@ for row in result:
 for owner in workflowInfo.keys():
     print "\n%s:" % owner
 
-    for task in workflowInfo[owner].keys():
+    tasks = workflowInfo[owner].keys()
+    tasks.sort()
+    for task in tasks:
         print "  %s:" % task
         print "    %s pending, %s running, %s complete (%s successful)" % (workflowInfo[owner][task]["pending"],
                                                                            workflowInfo[owner][task]["running"],

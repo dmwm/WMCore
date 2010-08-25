@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.11 2009/12/02 17:55:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.12 2009/12/02 18:34:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 import logging
@@ -83,6 +83,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         _injectFiles_
 
+        Inject any uninjected files in PhEDEx.
         """
         myThread = threading.currentThread()
         uninjectedFiles = self.getUninjected.execute()
@@ -123,6 +124,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                               (uninjectedFiles[siteName], injectRes["error"]))
 
         if len(injectedFiles) > 0:
+            logging.debug("Injecting files: %s" % injectedFiles)
             self.setStatus.execute(injectedFiles, "InPhEDEx", 
                                      conn = myThread.transaction.conn,
                                      transaction = myThread.transaction)
@@ -133,6 +135,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         _closeBlocks_
 
+        Close any blocks that have been migrated to global DBS.
         """
         myThread = threading.currentThread()
         migratedBlocks = self.getMigrated.execute()
@@ -172,6 +175,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                               (uninjectedFiles[siteName], injectRes["error"]))
 
         for closedBlock in closedBlocks:
+            logging.debug("Closing block %s" % closedBlock)
             self.setBlockStatus.execute(closedBlock, locations = None,
                                         open_status = "Closed", 
                                         conn = myThread.transaction.conn,

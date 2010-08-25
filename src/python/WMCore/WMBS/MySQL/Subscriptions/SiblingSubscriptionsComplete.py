@@ -37,7 +37,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
                         wmbs_fileset_files.fileset = :fileset) available_files ON
                  wmbs_file_details.id = available_files.file       
                LEFT OUTER JOIN
-                 (SELECT DISTINCT wmbs_sub_files_complete.file AS file, COUNT(DISTINCT file) AS complete_files
+                 (SELECT wmbs_sub_files_complete.file AS file, COUNT(file) AS complete_files
                     FROM wmbs_sub_files_complete
                     INNER JOIN wmbs_subscription ON
                       wmbs_sub_files_complete.subscription = wmbs_subscription.id AND
@@ -45,7 +45,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
                   GROUP BY wmbs_sub_files_complete.file) complete_files ON
                  wmbs_file_details.id = complete_files.file
                LEFT OUTER JOIN
-                 (SELECT DISTINCT wmbs_sub_files_failed.file AS file, COUNT(DISTINCT file) AS failed_files
+                 (SELECT wmbs_sub_files_failed.file AS file, COUNT(file) AS failed_files
                     FROM wmbs_sub_files_failed
                     INNER JOIN wmbs_subscription ON
                       wmbs_sub_files_failed.subscription = wmbs_subscription.id AND

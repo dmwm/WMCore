@@ -5,38 +5,23 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.4 2009/10/13 19:56:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.5 2009/10/13 20:57:14 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
-import logging
 import os
-import commands
 import threading
-import random
 from sets import Set
 
-from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
 
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 class FileTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """
@@ -45,8 +30,6 @@ class FileTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         DBSBuffer tables.  Also add some dummy locations.
         """
-        if self._setup:
-            return
 
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
@@ -63,34 +46,14 @@ class FileTest(unittest.TestCase):
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")        
         
-        self._setup = True
-        return
-          
     def tearDown(self):        
         """
         _tearDown_
         
         Drop all the DBSBuffer tables.
         """
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
+        self.testInit.clearDatabase()
 
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-        
-        myThread.transaction.begin()
-
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-        
-        myThread.transaction.commit()    
-        self._teardown = True
             
     def testCreateDeleteExists(self):
         """
@@ -622,7 +585,7 @@ class FileTest(unittest.TestCase):
         blockName = getBlockAction.execute(lfn = testFile["lfn"])
 
         assert blockName[0][0] == "someblockname", \
-               "Error: Incorrect block returned: %s" % blockname[0][0]
+               "Error: Incorrect block returned: %s" % blockName[0][0]
         return
 
     def testCountFilesDAO(self):

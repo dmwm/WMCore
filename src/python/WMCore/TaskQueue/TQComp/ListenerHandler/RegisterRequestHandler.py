@@ -3,8 +3,8 @@
 Base handler for registerRequest.
 """
 __all__ = []
-__revision__ = "$Id: RegisterRequestHandler.py,v 1.1 2009/06/01 09:57:09 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RegisterRequestHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -92,7 +92,7 @@ class RegisterRequestHandler(object):
 
                 # Give the result back
                 fields['registerStatus'] = 'RegisterDone'
-                fields['pilotid'] = pilotId 
+                fields['pilotId'] = pilotId 
                 fields['otherPilots'] = pilotList
                 result = 'registerResponse'
       

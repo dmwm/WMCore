@@ -63,7 +63,7 @@ OPTIONS
 EXAMPLES
 ========
 $> tqtalk  -e glitece:20030 registerRequest "{'host': 'somehost.cern.ch',
-'site': 'T0_CH_CERN', 'cacheDir': '/my/fake/path/cache', 'ttl': 50000}"
+'se': 'srm.cern.ch', 'cacheDir': '/my/fake/path/cache', 'ttl': 50000}"
 
 Message sent
 Response:
@@ -71,14 +71,19 @@ Response:
 "/some/path/cache", "id": 12}], "pilotid": 23, "registerStatus": "RegisterDone"}}}
 
 
-$> tqtalk  -e glitece:20030 getTask "{'pilotId': 9}"
+$> tqtalk -e glitece:20030 getTask "{'pilotId': 6, 'swarch': 'slc4_ia32_gcc345', 
+'cmssw': ['CMSSW_2_1_11']}"
 
 Message sent
 Response:
-{"msg": {"msgType": "TaskAssigned", "payload": {"SandboxUrl": "http://glitece.
-ciemat.es:20030/static/sandbox//Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.ta
-r.gz", "SpecUrl": "http://glitece.ciemat.es:20030/static/spec//Test-QCDpt_0_15-
-IDEAL_V9_TestPA01-8-JobSpec.xml", "TaskId": 10}}}
+{"msg": {"msgType": "TaskAssigned", "payload": {"reportUrl":
+"http://glitece.ciemat.es:20030/upload/reports/Test-QCDpt_0_15-IDEAL_V9_TestPA0
+1/0000/245/FrameworkJobReport.xml", "sandboxUrl": "http://glitece.ciemat.es:200
+30/static/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01/Processing/Test-QCDpt_0_15-
+IDEAL_V9_TestPA01-Processing.tar.gz", "specUrl": "http://glitece.ciemat.es:2003
+0/static/spec/Test-QCDpt_0_15-IDEAL_V9_TestPA01/0000/245/ANTO_3_QCDpt_0_15-IDEA
+L_V9_TestPA01-245-JobSpec.xml", "taskId": "ANTO_3_QCDpt_0_15-IDEAL_V9_TestPA01-
+245", "workflowType": "Test-QCDpt_0_15-IDEAL_V9_TestPA01"}}}
 
 
 $> tqtalk -e glitece:20030 heartbeat "{'pilotId': 2, 'ttl': 800}"
@@ -88,33 +93,43 @@ Response:
 {"msg": {"msgType": "heartbeatAck", "payload": {"info": "Done"}}}
 
 
-$> tqtalk  -e glitece:20030 taskEnd "{'pilotId': 14, 'taskId': 43}"
-
-Message sent
-Response:
-{"msg": {"msgType": "TaskEndACK", "payload": {"Info": "Task updated as Done.",
- "ReportUrl":  "http://glitece.ciemat.es:20030/reports/Test-QCDpt_0_15-IDEAL_V9/
-FrameworkJobReport.xml", "TaskId": 43}}}
-
-
 $> tqtalk -e glitece:20030 --put \
   --dest /upload/reports/Test-QCD/0000/5/FrameworkJobReport.xml /tmp/myfile.tgz
 
 File uploaded
 Response:
 {"msg": {"msgType": "FileStored", "payload": {"Path": "/Test-QCDpt/0000/5/Frame
-workJobReport.xml", "Length": 0}}
+workJobReport.xml", "Length": 245}}
 
 
-$> tqtalk -e glitece:20030 addFile "{'pilotId': 4, 'fileguid': 'f5', 'filesize':
-100, 'filetype': 'typeB'}"
+$> tqtalk  -e glitece:20030 taskEnd "{'pilotId': 14, 'taskId':
+'Test-QCDpt_0_15-IDEAL_V9-781', 'exitStatus': 'Done'}"
+
+Message sent
+Response:
+{"msg": {"msgType": "TaskEndACK", "payload": {"Info": "Task updated as Done.",
+"TaskId": 'Test-QCDpt_0_15-IDEAL_V9-781'}}}
+
+
+$> tqtalk  -e glitece:20030 taskEnd "{'pilotId': 14, 'taskId':
+'Test-QCDpt_0_15-IDEAL_V9-781', 'exitStatus': 'Failed'}"
+
+Message sent
+Response:
+{"msg": {"msgType": "TaskEndACK", "payload": {"Info": "Task updated as Failed.",
+"TaskId": 'Test-QCDpt_0_15-IDEAL_V9-781'}}}
+
+
+$> tqtalk -e glitece:20030 addFile "{'pilotId': 6, 'fileList': [{'fileGuid': 'f2',
+'fileSize':100, 'fileType': 'typeB'}]}"
 
 Message sent
 Response:
 {"msg": {"msgType": "addFileAck", "payload": {"info": "Done"}}}
 
 
-$>tqtalk -e glitece:20030 fileRemoved "{'pilotId': 1, 'fileguid': 'ayUasf36d0'}"
+$> tqtalk -e glitece:20030 fileRemoved "{'pilotId': 3, 'fileList':
+['ayUasf36d0']}"
 
 Message sent
 Response:

@@ -9,9 +9,9 @@ This module implements the mysql backend for the TQComp
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.3 2009/06/01 09:57:09 delgadop Exp $"
+    "$Id: Queries.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
 __version__ = \
-    "$Revision: 1.3 $"
+    "$Revision: 1.4 $"
 __author__ = \
     "delgadop@cern.ch"
 
@@ -19,7 +19,7 @@ import threading
 import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
-from TQComp.CommonUtil import bindVals, bindWhere, commas 
+from TQComp.CommonUtil import bindVals, bindWhere, commas, commasStr
 import TQComp.Constants
 
 
@@ -52,9 +52,11 @@ class Queries(DBFormatter):
         """      
         logging.debug("Queries.addBulk: %s entries" % (len(taskList)))
         sqlStr = """
-         INSERT INTO tq_tasks(spec, sandbox, wkflow, type, reqs) 
-         VALUES (:spec, :sandbox, :wkflow, :type, :reqs) 
+         INSERT INTO tq_tasks(id, spec, sandbox, wkflow, type, reqs, req_se) 
+         VALUES (:id, :spec, :sandbox, :wkflow, :type, :reqs, :req_se) 
         """ 
+        # It seems that the DB iface requires a proper dict (rather than Task)
+        taskList = map(dict, taskList)
         self.execute(sqlStr, taskList)
 
 
@@ -66,10 +68,11 @@ class Queries(DBFormatter):
         """
 #        logging.debug("Queries.add: %s %s %s %s %s" %(spec, sandbox, type, pilot, state))
         sqlStr = """
-         INSERT INTO tq_tasks(spec, sandbox, wkflow, type, reqs) 
-         VALUES (:spec, :sandbox, :wkflow, :type, :reqs) 
+         INSERT INTO tq_tasks(id, spec, sandbox, wkflow, type, reqs, req_se) 
+         VALUES (:id, :spec, :sandbox, :wkflow, :type, :reqs, :req_se) 
         """ 
-        self.execute(sqlStr, task)
+        # It seems that the DB iface requires a proper dict (rather than Task)
+        self.execute(sqlStr, dict(task))
 
 
 
@@ -81,7 +84,7 @@ class Queries(DBFormatter):
         fields to return; otherwise, all are returned. The optional argument 
         limit can be used to limit the maximum number of records returned.
         If the optional argument 'asDict' is True, the result is returned as 
-        a list with field names as keys; otherwise, result is a list of field
+        a dict with field names as keys; otherwise, result is a list of field
         values.
         """
         
@@ -91,6 +94,46 @@ class Queries(DBFormatter):
     
         if filter:
             filterStr = "WHERE %s" % reduce(commas, map(bindWhere, filter))
+        if fields:
+            fieldsStr = "%s" % (reduce(commas, fields))
+        if limit:
+            limitStr = "LIMIT %s" % (limit)
+    
+        sqlStr = """
+        SELECT %s FROM tq_tasks %s %s
+        """ % (fieldsStr, filterStr, limitStr)
+#        logging.debug("getTasksWithFilter sqlStr:", sqlStr)
+        
+        result = self.execute(sqlStr, filter)
+    
+        if asDict:
+            return self.formatDict(result)
+        else:
+            return self.format(result)
+
+
+    def getTasksToMatch(self, filter, se, fields=None, limit=None, asDict=True):
+        """
+        Returns all tasks that match the specified filter and whose req_se
+        contains the specified 'se'. Filter must be a dict containing valid 
+        fields as keys and the corresponding values to match. The optional 
+        argument fields may contain a list of fields to return; otherwise, 
+        all are returned. The optional argument limit can be used to limit 
+        the maximum number of records returned. If the optional argument 
+        'asDict' is False, the result is returned as a list of field values,
+        otherwise, result is a dict with field names as keys.
+        """
+        
+#        logging.debug("getTasksToMatch running:", filter, se, fields, limit, asDict)
+        filterStr = limitStr = ""
+        fieldsStr = '*'
+    
+        if filter:
+            filterStr = "WHERE %s" % reduce(commas, map(bindWhere, filter))
+        if se:
+            filterStr += " AND (find_in_set(:se, req_se) OR (req_se IS NULL));"
+            if not 'se' in filter:
+                filter['se'] = se
         if fields:
             fieldsStr = "%s" % (reduce(commas, fields))
         if limit:
@@ -233,28 +276,145 @@ class Queries(DBFormatter):
         Counts the number of running tasks in the list.
         """
         state = TQComp.Constants.taskStates['Running']
+
         sqlStr = """
-         SELECT COUNT(*) FROM tq_tasks WHERE state = %s
-        """ % (state)
+         SELECT COUNT(*) FROM tq_tasks WHERE state = :state
+        """
+#        """ % (state)
  
-        result = self.execute(sqlStr, {})
+#        result = self.execute(sqlStr, {})
+        result = self.execute(sqlStr, {'state': state})
         return self.formatOne(result)[0]
  
  
     def countQueued(self):
         """ 
-        Counts the number of running tasks in the list.
+        Counts the number of queued tasks in the list.
         """
         state = TQComp.Constants.taskStates['Queued']
         sqlStr = """
-         SELECT COUNT(*) FROM tq_tasks WHERE state = %s
-        """ % (state)
+         SELECT COUNT(*) FROM tq_tasks WHERE state = :state
+        """
+#        """ % (state)
  
-        result = self.execute(sqlStr, {})
+#        result = self.execute(sqlStr, {})
+        result = self.execute(sqlStr, {'state': state})
         return self.formatOne(result)[0]
+
+
+    def countDone(self):
+        """ 
+        Counts the number of correctly finished tasks in the list (not yet
+        removed).
+        """
+        state = TQComp.Constants.taskStates['Done']
+        sqlStr = """
+         SELECT COUNT(*) FROM tq_tasks WHERE state = :state
+        """
+#        """ % (state)
  
+#        result = self.execute(sqlStr, {})
+        result = self.execute(sqlStr, {'state': state})
+        return self.formatOne(result)[0]
+
+
+    def countFailed(self):
+        """ 
+        Counts the number of failed tasks in the list.
+        """
+        state = TQComp.Constants.taskStates['Failed']
+        sqlStr = """
+         SELECT COUNT(*) FROM tq_tasks WHERE state = :state
+        """
+#        """ % (state)
  
+#        result = self.execute(sqlStr, {})
+        result = self.execute(sqlStr, {'state': state})
+        return self.formatOne(result)[0]
+
+
+    def countTasksBySeReq(self):
+        """
+        Counts the number of queued tasks grouped per the req_se field
+        (list of valid SEs to run on, or NULL for any). The returned
+        value is formatted as a list of dicts, with 'sites' as key for 
+        the list representing the required SEs and 'tasks' as key whose
+        value if the count of tasks.
+        """
+        state = TQComp.Constants.taskStates['Queued']
+        sqlStr = """
+         SELECT req_se as sites, COUNT(id) as tasks 
+         FROM tq_tasks WHERE state = :state GROUP BY req_se
+        """
+ 
+        result = self.execute(sqlStr, {'state': state})
+        return self.formatDict(result)
+
+
+    def getStateOfTasks(self, taskIds = []):
+        """
+        Returns a dict with the provided task IDs as keys and their
+        corresponding states as values.
+        """
+
+#        self.logger.debug("getStateOfTasks - taskIds: %s" % taskIds)
+
+        if not taskIds:
+            return {}
+
+        # The following (with bind vars) should be fine, but for some reasons,
+        # it only works for bind vars being integers, not string...
+
+#        sqlStr = """
+#         SELECT id, state FROM tq_tasks WHERE id IN :range
+#        """ 
+#        result = self.execute(sqlStr, {'range': taskIds})
+
+
+        if len(taskIds) == 1:
+            taskIds = "('%s')" % taskIds[0]
+        else: 
+            taskIds = "%s" % (tuple(taskIds),)
+
+        sqlStr = """
+         SELECT id, state FROM tq_tasks WHERE id IN %s
+        """ % (taskIds)
+
+        result = self.execute(sqlStr, {})
+        result = self.format(result)
+
+#        self.logger.debug("getStateOfTasks - result: %s" % result)
+
+        return dict(result)
+
     
+    def removeTasksById(self, taskIds = []):
+        """
+        Remove all tasks whose Id is included in the 'taskIds' list
+        (and exist in the queue).
+        """
+        if taskIds:
+
+
+            # The following (with bind vars) should be fine, but for some reasons,
+            # it only works for bind vars being integers, not string...
+#            sqlStr = """
+#            DELETE FROM tq_tasks WHERE id IN :range
+#            """ 
+#            self.execute(sqlStr, {'range': taskIds})
+
+            if len(taskIds) == 1:
+                taskIds = "('%s')" % taskIds[0]
+            else: 
+                taskIds = "%s" % (tuple(taskIds),)
+                
+            sqlStr = """
+            DELETE FROM tq_tasks WHERE id IN %s
+            """ % (taskIds)
+
+            result = self.execute(sqlStr, {})
+
+
 # ------------ PILOTS ----------------
     
     def addPilot(self, vars):
@@ -373,7 +533,7 @@ class Queries(DBFormatter):
         values.
         """
         sqlStr = """
-         SELECT id, cacheDir FROM tq_pilots 
+         SELECT id as pilotId, cacheDir FROM tq_pilots 
          WHERE host = :host AND se = :se"""
  
         result = self.execute(sqlStr, {'host': host, 'se': se})
@@ -397,6 +557,39 @@ class Queries(DBFormatter):
          """ 
  
         result = self.execute(sqlStr, {'hostPattern': hostPattern})
+        return self.format(result)
+
+
+    def getActivePilotsBySite(self):
+        """
+        Returns a list of lists. The inner lists have the 'se' string as 
+        first element and the number of active pilots at that SE as second
+        element. 
+        """
+
+        sqlStr = """
+        SELECT tq_pilots.se, COUNT(DISTINCT tq_pilots.id) FROM tq_pilots JOIN tq_tasks ON
+        tq_tasks.pilot = tq_pilots.id GROUP BY tq_pilots.se;
+        """
+
+        result = self.execute(sqlStr, {})
+        return self.format(result)
+
+
+    def getIdlePilotsBySite(self):
+        """
+        Returns a list of lists. The inner lists have the 'se' string as 
+        first element and the number of active pilots at that SE as second
+        element. 
+        """
+
+        sqlStr = """
+        SELECT tq_pilots.se, COUNT(tq_pilots.id) FROM tq_pilots LEFT JOIN
+        tq_tasks ON tq_tasks.pilot = tq_pilots.id WHERE tq_tasks.id IS NULL
+        GROUP BY tq_pilots.se;
+        """
+
+        result = self.execute(sqlStr, {})
         return self.format(result)
 
 

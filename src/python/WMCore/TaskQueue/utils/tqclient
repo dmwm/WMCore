@@ -70,7 +70,7 @@ $> tqclient -c $TQCONF  getTasks "{'id': 20}" "[]" 5 True
 'reqs': None, 'sandbox':
 '/pool/TaskQueue/playground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
 'wkflow': 'prod_B', 'current_state_time': datetime.datetime(2009, 5, 27, 14, 12,
-39), 'type': 3L, 'id': 20L, 'pilot': 1L}
+39), 'type': 'Processing', 'id': 20L, 'pilot': 1L}
 ]
 
 
@@ -86,13 +86,13 @@ $> tqclient -c confFile.py  -f /tmp/insertTaskCmd
 # Where /tmp/insertTaskCmd contains (2 lines):
 -------------------------------------
 insertTask "{'spec': '/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-
-8-JobSpec.xml', 'wkflow': 'prod_A' , 'type': 5, 'sandbox': '/pool/TaskQueue/playground/sa
-ndbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz', 'reqs':
-'se==\'srm.cern.ch\''}"
+8-JobSpec.xml', 'wkflow': 'prod_A' , 'type': 'Processing', 'sandbox': '/pool/TaskQueue/pl
+ayground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz', 'reqs': 'se==\'srm
+.cern.ch\''}"
 
 insertTask "{'spec': '/pool/TaskQueue/playground/specs/Some-Other-spec-file.xml', 'wkflow
-': 'test_3' , 'type': 3, 'sandbox': '/pool/TaskQueue/playground/sandbox/Some-Other-sandbo
-x-file.tgz', 'reqs': 'se==\'srm.cern.ch\' and \'f1\' in cache' }"
+': 'test_3' , 'type': 'Processing', 'sandbox': '/pool/TaskQueue/playground/sandbox/Some-O
+ther-sandbox-file.tgz', 'reqs': 'se==\'srm.cern.ch\' and \'f1\' in cache' }"
 -------------------------------------
 
 

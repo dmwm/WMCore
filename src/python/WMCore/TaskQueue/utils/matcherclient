@@ -23,7 +23,7 @@ methods. Notice that this means that strings should be quoted twice
 
 SYNOPSIS
 ========
-matcherclient [-v] -c <conf-file> <command> ["<arg>" ..]
+matcherclient [-v] -c <conf-file> <MatcherPlugin> <command> ["<arg>" ..]
 
 matcherclient [-u | -h]
 

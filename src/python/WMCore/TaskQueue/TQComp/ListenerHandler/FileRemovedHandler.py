@@ -3,8 +3,8 @@
 Base handler for fileRemoved.
 """
 __all__ = []
-__revision__ = "$Id: FileRemovedHandler.py,v 1.1 2009/06/01 09:57:09 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FileRemovedHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -61,7 +61,8 @@ class FileRemovedHandler(object):
                 myThread.transaction.begin()
               
                 # Extract the pilot attributes
-                required = ['pilotId', 'fileguid']
+#                required = ['pilotId', 'fileguid']
+                required = ['pilotId', 'fileList']
                 for param in required:
                     if not param in payload:
                         result = 'Error'
@@ -71,7 +72,7 @@ class FileRemovedHandler(object):
                         return {'msgType': result, 'payload': fields}
 
                 pilotId = payload['pilotId']
-                fileguid = payload['fileguid']
+                files = payload['fileList']
 
                 # Get pilot info from DB (check that it's registered)
                 res = self.queries.getPilotsWithFilter({'id': pilotId}, \
@@ -83,8 +84,20 @@ class FileRemovedHandler(object):
                     myThread.transaction.rollback()
                     return {'msgType': result, 'payload': fields}
 
-                # Delete the file from the hostdata association
-                self.queries.removeFileHost(fileguid, pilotId)
+                # Remove the files from the DB
+                for guid in files:
+                    if not (isinstance(guid, str) or isinstance(guid, unicode)): 
+                        self.logger.debug('Type of guid: %s' % type(guid))
+                        result = 'Error'
+                        msg = 'Members of "fileList" should be strings (GUIDs)'
+                        fields = {'Error': msg}
+                        myThread.transaction.rollback()
+                        return {'msgType': result, 'payload': fields}
+
+                for guid in files:
+                    # TODO: Is there a better way to do this in bulk mode?
+                    # Delete the file from the hostdata association
+                    self.queries.removeFileHost(guid, pilotId)
 
                 # Update last heartbeat
                 self.queries.updatePilot(pilotId, {'last_heartbeat': None})
@@ -97,9 +110,9 @@ class FileRemovedHandler(object):
                 myThread.transaction.commit()
               
             except:
-                type, val, tb = sys.exc_info()
+                etype, val, tb = sys.exc_info()
                 myThread.transaction.rollback()
-                messg = 'Error in FileRemoved, due to: %s - %s '% (type, val)
+                messg = 'Error in FileRemoved, due to: %s - %s '% (etype, val)
                 self.logger.warning(messg + "Trace: %s"% extract_tb(tb,limit=5))
                 result = 'Error'
                 fields = {'Error': messg}

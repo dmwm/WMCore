@@ -7,8 +7,8 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQStateApi.py,v 1.3 2009/06/01 09:57:08 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TQStateApi.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
 #import logging
 import threading
@@ -29,6 +29,18 @@ class TQStateApi(TQApi):
         """
         # Call our parent to set everything up
         TQApi.__init__(self, logger, tqRef, dbIface)
+
+
+    def getStateOfTasks(self, taskIds = []):
+        """
+        Returns a dict with the provided task IDs as keys and their
+        corresponding states as values.
+        """
+
+        self.transaction.begin()
+        result = self.queries.getStateOfTasks(taskIds)
+        self.transaction.commit()
+        return result
 
 
     def getTasks(self, filter={}, fields=[], limit=None, asDict=False):
@@ -119,10 +131,10 @@ class TQStateApi(TQApi):
             self.logger.debug('%s: Requesting fields: %s' % (caller, fields2))
 
         # Perform query
-#        self.transaction.begin()
+        self.transaction.begin()
         result = method(filter2, fields2, limit, asDict)
+        self.transaction.commit()
         return result
-#        self.transaction.commit()
 
 
     def getDataPerHost(self, hostPattern = "%"):
@@ -131,7 +143,9 @@ class TQStateApi(TQApi):
         files (names) as values. Only hosts matching the provided 
         pattern are returned (all by default).
         """
+        self.transaction.begin()
         res = self.queries.getDataPerHost(hostPattern)
+        self.transaction.commit()
 
 #        self.logger.debug("res: %s" % res)
         d = {}
@@ -151,7 +165,9 @@ class TQStateApi(TQApi):
         (ids) as values. Only hosts matching the provided pattern are 
         returned (all by default).
         """
+        self.transaction.begin()
         res = self.queries.getPilotsPerHost(hostPattern)
+        self.transaction.commit()
 
 #        self.logger.debug("res: %s" % res)
         d = {}
@@ -177,9 +193,10 @@ class TQStateApi(TQApi):
         a list with field names as keys; otherwise, result is a list of field
         values.
         """
-#        self.transaction.begin()
-        return self.queries.getPilotsAtHost(host, se, asDict)
-#        self.transaction.commit()
+        self.transaction.begin()
+        result = self.queries.getPilotsAtHost(host, se, asDict)
+        self.transaction.commit()
+        return result
 
 
     def countRunning(self):
@@ -189,10 +206,10 @@ class TQStateApi(TQApi):
         self.logger.debug('Getting number of running tasks')
 
         # Perform query
-#        self.transaction.begin()
+        self.transaction.begin()
         result = self.queries.countRunning()
+        self.transaction.commit()
         return result
-#        self.transaction.commit()
 
 
     def countQueued(self):
@@ -202,7 +219,84 @@ class TQStateApi(TQApi):
         self.logger.debug('Getting number of queued tasks')
 
         # Perform query
-#        self.transaction.begin()
+        self.transaction.begin()
         result = self.queries.countQueued()
+        self.transaction.commit()
         return result
-#        self.transaction.commit()
+
+
+    def getTaskCounts(self):
+        """
+        Returns a dict with task states as keys and the number of tasks at that
+        state as values (regardless of assigned site or other considerations).
+        Returned states at the moment is:
+           running, queued, failed, done. 
+        """
+        result = {}
+
+        self.transaction.begin()
+        result['running'] = self.queries.countRunning()
+        result['queued'] = self.queries.countQueued()
+        result['failed'] = self.queries.countFailed()
+        result['done'] = self.queries.countDone()
+        self.transaction.commit()
+        
+        return result
+
+
+    def getPilotCountsBySite(self):
+        """
+        Returns a dict with SEs as keys and dicts as values. These internal
+        dicts have the strings 'ActivePilots' (for pilots running a task) 
+        and 'IdlePilots' (for pilots registered but not running a task yet) 
+        as keys and the corresponding number of pilots in those states as 
+        values.
+
+        Output format:
+          {
+            'se1': {'ActivePilots': 30, 'IdlePilots': 5}
+            'se2': {'ActivePilots': 20, 'IdlePilots': 0}
+          }
+
+        """
+        result = {}
+
+        self.transaction.begin()
+        active = self.queries.getActivePilotsBySite()
+        idle = self.queries.getIdlePilotsBySite()
+        self.transaction.commit()
+
+        for i in active:
+            result[i[0]] = {'ActivePilots': i[1]}
+
+        for i in idle:
+            result[i[0]]['IdlePilots'] = i[1]
+        
+        return result
+
+
+    def countTasksBySeReq(self):
+        """
+        Counts the number of queued tasks grouped per the req_se field
+        (list of valid SEs to run on, or NULL for any). The returned
+        value is formatted as a list of dicts.
+        """
+        self.transaction.begin()
+        counts = self.queries.countTasksBySeReq()
+        for count in counts:
+            if count['sites']: 
+                count['sites'] = count['sites'].split(',')
+        self.transaction.commit()
+
+        return counts 
+
+    def removeTasksById(self, taskIds = []):
+        """
+        Remove all tasks whose Id is included in the 'taskIds' list
+        (and exist in the queue).
+        """
+
+        if taskIds:
+            self.transaction.begin()
+            self.queries.removeTasksById(taskIds)
+            self.transaction.commit()

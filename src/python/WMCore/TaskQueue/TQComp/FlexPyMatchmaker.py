@@ -9,8 +9,8 @@ at configuration time as matcherPlugin. Otherwise, the default one in this modul
 is used.
 """
 
-__revision__ = "$Id: FlexPyMatchmaker.py,v 1.1 2009/06/01 09:55:08 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FlexPyMatchmaker.py,v 1.2 2009/07/08 17:28:07 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 
@@ -59,7 +59,7 @@ class FlexPyMatchmaker(object):
         self.logger.debug("Trying to match pilot: %s" % pilot)
         t0 = time.time()
 
-        tasks = self.getTaskList()
+        tasks = self.getTaskList(pilot['se'])
         self.logger.debug("Time spent in getTaskList: %1.2e" % (time.time() - t0))
 
         # Make it possible for reqs to include calls to QTIME()
@@ -127,7 +127,7 @@ class FlexPyMatchmaker(object):
 
 
 
-    def getTaskList(self):
+    def getTaskList(self, se):
         """
         Returns the list of tasks currently in the queue. Each task is
         represented by a dictionary with its characteristics. The implementation
@@ -138,8 +138,10 @@ class FlexPyMatchmaker(object):
         # TODO: Implement in-memory myThread vars (taskList, timestamp, lock) to 
         # avoid querying the DB all the time
 
-        return self.queries.getTasksWithFilter({\
-                     'State': taskStates['Queued']}, asDict = True)
+#        return self.queries.getTasksWithFilter({\
+#                     'State': taskStates['Queued']}, asDict = True)
+        return self.queries.getTasksToMatch({\
+                     'State': taskStates['Queued']}, se)
 
 
 

@@ -6,8 +6,8 @@ creates logger handler for logging
  
 """
 
-__revision__ = "$Id: CommonUtil.py,v 1.3 2009/06/07 23:14:27 valya Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: CommonUtil.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import logging
@@ -217,6 +217,16 @@ def commas(x,y):
     reduce(commas, vars)
     """
     return "%s, %s" % (x, y) 
+
+def commasStr(x,y):
+    """
+    Used with reduce, for a dict with keys (a, b, ..), 
+    returns a string "'a', 'b', .."
+    Useful e.g. for the ennumeration of strins in a 'IN (..)' clause.
+
+    reduce(commasStr, vars)
+    """
+    return "'%s', '%s'" % (x, y) 
 
 def commasLB(x,y):
     """

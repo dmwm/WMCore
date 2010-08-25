@@ -4,8 +4,8 @@
 Main component of the Task Queue
 """
 
-__revision__ = "$Id: TQComp.py,v 1.3 2009/06/01 09:57:08 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TQComp.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import os
@@ -97,6 +97,10 @@ class TQComp(Harness):
         params['downloadBaseUrl'] = self.config.TQComp.downloadBaseUrl
         params['sandboxBasePath'] = self.config.TQComp.sandboxBasePath
         params['specBasePath'] = self.config.TQComp.specBasePath
+        if hasattr(self.config.TQComp, 'uploadBaseUrl'):
+            params['uploadBaseUrl'] = self.config.TQComp.uploadBaseUrl
+        else:
+            params['uploadBaseUrl'] = self.config.TQComp.downloadBaseUrl
         if hasattr(self.config.TQComp, 'matcherPlugin'):
             params['matcherPlugin'] = self.config.TQComp.matcherPlugin
         else:
@@ -106,11 +110,11 @@ class TQComp(Harness):
            
         # taskEnd handler
         params = {}
-        if hasattr(self.config.TQComp, 'uploadBaseUrl'):
-            params['uploadBaseUrl'] = self.config.TQComp.uploadBaseUrl
-        else:
-            params['uploadBaseUrl'] = self.config.TQComp.downloadBaseUrl
-        params['specBasePath'] = self.config.TQComp.specBasePath
+#        if hasattr(self.config.TQComp, 'uploadBaseUrl'):
+#            params['uploadBaseUrl'] = self.config.TQComp.uploadBaseUrl
+#        else:
+#            params['uploadBaseUrl'] = self.config.TQComp.downloadBaseUrl
+#        params['specBasePath'] = self.config.TQComp.specBasePath
         self.listener.setHandler('taskEnd', \
            'TQComp.ListenerHandler.TaskEndHandler', params)
 

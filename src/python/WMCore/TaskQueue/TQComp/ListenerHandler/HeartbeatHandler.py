@@ -3,8 +3,8 @@
 Base handler for heartbeat.
 """
 __all__ = []
-__revision__ = "$Id: HeartbeatHandler.py,v 1.1 2009/06/01 09:57:09 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: HeartbeatHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -90,7 +90,7 @@ class HeartbeatHandler(object):
                 # Look for extra optional parameters 
 
                 # cacheUpdate
-                if 'cacheUpdate' in payload:
+                if 'cache' in payload:
                     # TODO: Update cache if required based on this info
                     pass
 

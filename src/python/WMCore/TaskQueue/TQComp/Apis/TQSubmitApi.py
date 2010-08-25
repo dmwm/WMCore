@@ -7,8 +7,8 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQSubmitApi.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TQSubmitApi.py,v 1.3 2009/07/08 17:28:07 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -28,9 +28,11 @@ class TQSubmitApi(TQApi):
       myThread = threading.currentThread()
       tqApi = TQSubmitApi(myThread.logger, self.config, myThread.transaction)
 
+      id = 'some-id-34'
       spec = '/pool/TaskQueue/playground/specs/some-sec-file.xml'
       sandbox = '/pool/TaskQueue/playground/sandbox/some-sandbox.tar.gz'
-      mydict = {'spec': spec, 'wkflow': 'TEST' , 'type': 5, 'sandbox': sandbox}
+      mydict = {'id': id, 'spec': spec, 'wkflow': 'TEST' , 'type': 5, \
+                'sandbox': sandbox, 'reqs' = None, 'req_se': None}
       task = TQComp.Apis.TQApiData.Task(mydict)
 
       tqApi.insertTask(task)
@@ -46,7 +48,7 @@ class TQSubmitApi(TQApi):
 
     def insertTaskBulk(self, taskList):
         """
-        Insert a bunch of task.
+        Insert a bunch of tasks.
         The 'taskList' must be a list of dicts as defined in
         TQComp.Apis.TQApiData.Task.
         """

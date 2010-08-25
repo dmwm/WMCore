@@ -3,8 +3,8 @@
 Base handler for addFile.
 """
 __all__ = []
-__revision__ = "$Id: AddFileHandler.py,v 1.1 2009/06/01 09:57:09 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: AddFileHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -60,7 +60,8 @@ class AddFileHandler(object):
                 myThread.transaction.begin()
               
                 # Message attributes
-                required = ['pilotId', 'fileguid', 'filesize', 'filetype']
+#                required = ['pilotId', 'fileguid', 'filesize', 'filetype']
+                required = ['pilotId', 'fileList']
                 for param in required:
                     if not param in payload:
                         result = 'Error'
@@ -69,10 +70,14 @@ class AddFileHandler(object):
                         myThread.transaction.rollback()
                         return {'msgType': result, 'payload': fields}
                 pilotId= payload['pilotId']
-                file = {}
-                file['guid'] = payload['fileguid']
-                file['size'] = payload['filesize']
-                file['type'] = payload['filetype']
+                files = []
+                for i in payload['fileList']:
+                    file = {}
+                    file['guid'] = i['fileGuid']
+                    file['size'] = i['fileSize']
+                    file['type'] = i['fileType']
+#                    self.logger.debug('fileId: %s' % file['guid'])
+                    files.append(file)
 
                 # Get pilot info from DB (check that it's registered)
                 res = self.queries.getPilotsWithFilter({'id': pilotId}, \
@@ -85,13 +90,17 @@ class AddFileHandler(object):
                     return {'msgType': result, 'payload': fields}
 
 
-                # Add file to data table (or retrieve id, if already there)
-                self.queries.addFile({'guid': file['guid'], 'type': \
-                                     file['type'], 'size': file['size']})
-#                self.logger.debug('fileId: %s' % fileId)
-                
-                # Register file with pilot's host (if not already there)
-                self.queries.addFileHost(pilotId, file['guid'])
+                # Add the files to the DB
+                # TODO: Is there a better way to do this in bulk mode?
+                for file in files:
+
+                    # Add file to data table (or retrieve it, if already there)
+                    self.queries.addFile({'guid': file['guid'], 'type': \
+                                         file['type'], 'size': file['size']})
+                    self.logger.debug('addFile: %s' % file['guid'])
+                    
+                    # Register file with pilot's host (if not already there)
+                    self.queries.addFileHost(pilotId, file['guid'])
 
                 # Update last heartbeat
                 self.queries.updatePilot(pilotId, {'last_heartbeat': None})

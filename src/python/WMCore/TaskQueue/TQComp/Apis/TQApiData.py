@@ -3,20 +3,20 @@
 Data objects for TQ APIs use.
 """
 
-__revision__ = "$Id: TQApiData.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TQApiData.py,v 1.3 2009/07/08 17:28:07 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import xml.dom.minidom
 
 
 ############ MODULE CONSTANTS ################
-TASK_REQUIRED = ['spec', 'wkflow', 'type', 'sandbox', 'reqs']
-TASK_DEFAULTS = {'wkflow': None, 'type': 0, 'reqs': '', \
-                 'sandbox': 'sandboxFromSpec'}
+TASK_REQUIRED = ['id', 'spec', 'wkflow', 'type', 'sandbox', 'reqs', 'req_se']
+TASK_DEFAULTS = {'wkflow': None, 'type': None, 'reqs': None, \
+                 'req_se': None, 'sandbox': 'sandboxFromSpec'}
 
-# The fields in the task table (those that can be queried upon)
-TASK_FIELDS = ['id', 'spec', 'wkflow', 'type', 'sandbox', 'state', \
-               'pilot', 'reqs', 'creat_time', 'current_state_time']
+# The fields in the task related tables (those that can be queried upon)
+TASK_FIELDS = ['id', 'spec', 'wkflow', 'type', 'sandbox', 'state', 'pilot', \
+               'reqs', 'req_se', 'creat_time', 'current_state_time']
 
 # The fields in the pilot table (those that can be queried upon)
 PILOT_FIELDS = ['id', 'host', 'se', 'site', 'cachedir', 'ttl', \

@@ -3,15 +3,13 @@
 Base handler for taskEnd.
 """
 __all__ = []
-__revision__ = "$Id: TaskEndHandler.py,v 1.3 2009/06/01 09:57:09 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TaskEndHandler.py,v 1.4 2009/07/08 17:28:08 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 
-#from WMCore.Agent.BaseHandler import BaseHandler
-#from WMCore.ThreadPool.ThreadPool import ThreadPool
 from WMCore.WMFactory import WMFactory
 
 from TQComp.Constants import taskStates
-from TQComp.Constants import reportUrlDir, uploadRoot
+#from TQComp.Constants import reportUrlDir, uploadRoot
 
 from traceback import extract_tb
 import sys
@@ -31,7 +29,8 @@ class TaskEndHandler(object):
         The required params are as follow:
            uploadBaseUrl, specBasePath
         """
-        required = ["uploadBaseUrl", "specBasePath"]
+#        required = ["uploadBaseUrl", "specBasePath"]
+        required = []
         for param in required:
             if not param in params:
                 messg = "GetTaskHandler object requires params['%s']" % param
@@ -39,8 +38,8 @@ class TaskEndHandler(object):
                 numb = 0
                 raise WMException(messg, numb)
 
-        self.uploadBaseUrl = params["uploadBaseUrl"]
-        self.specBasePath = params["specBasePath"]
+#        self.uploadBaseUrl = params["uploadBaseUrl"]
+#        self.specBasePath = params["specBasePath"]
         myThread = threading.currentThread()
         factory = WMFactory("default", \
                   "TQComp.Database."+myThread.dialect)
@@ -69,6 +68,14 @@ class TaskEndHandler(object):
                 # Here we should check that all arguments are given correctly...
                 pilotId = payload['pilotId']
                 taskId = payload['taskId']
+                status = payload['exitStatus']
+                possibleStatus = ('Done', 'Failed')
+                if not (status in possibleStatus):
+                    fields = {'Error': 'exitStatus should be one of %s' % \
+                                       (possibleStatus)}
+                    self.logger.warning("Incorrect exitStatus: %s" % status)
+                    myThread.transaction.rollback()
+                    return {'msgType': result, 'payload': fields}
               
                 # Retrieve the task spec (check the task is in this pilot)
                 res = self.queries.getTasksWithFilter({'id': taskId}, \
@@ -86,18 +93,21 @@ class TaskEndHandler(object):
              
                 specFile = res[0][0]
 
-                # Mark the task as done in the DB
+                # Mark the task as Done/Failed in the DB
 #                vars = {'state': taskStates['Done'], 'pilot': None}
-                vars = {'state': taskStates['Done']}
+#                vars = {'state': taskStates['Done']}
+                vars = {'state': taskStates[status]}
                 self.queries.updateOneTask(taskId, vars)
-                self.logger.debug("Task updated as Done.")
+#                self.logger.debug("Task updated as Done.")
+                self.logger.debug("Task updated as %s." % status)
               
                 # Give the result back
                 fields['TaskId'] = taskId
-                fields['Info'] = 'Task updated as Done.'
-                # TODO: By now, store report in the same dir as spec (like PA)
-                reportUrl = self.__buildReportUrl(specFile)
-                fields['ReportUrl'] = reportUrl 
+#                fields['Info'] = 'Task updated as Done.'
+                fields['Info'] = 'Task updated as %s.' % status
+#                # TODO: By now, store report in the same dir as spec (like PA)
+#                reportUrl = self.__buildReportUrl(specFile)
+#                fields['ReportUrl'] = reportUrl 
                 result = 'TaskEndACK'
       
                 # Commit
@@ -118,8 +128,9 @@ class TaskEndHandler(object):
             pass
     
 
-    def __buildReportUrl(self, thefile):
-        path = thefile.replace(self.specBasePath, reportUrlDir+'/')
-        path = path.replace(thefile.split('/')[-1], 'FrameworkJobReport.xml')
-        return self.uploadBaseUrl+'/'+uploadRoot+'/'+path
+#    def __buildReportUrl(self, thefile):
+#        # TODO: maybe need to change the file name/location for error reports?
+#        path = thefile.replace(self.specBasePath, reportUrlDir+'/')
+#        path = path.replace(thefile.split('/')[-1], 'FrameworkJobReport.xml')
+#        return self.uploadBaseUrl+'/'+uploadRoot+'/'+path
         

@@ -3,8 +3,8 @@
 Base handler for pilotShutdown.
 """
 __all__ = []
-__revision__ = "$Id: PilotShutdownHandler.py,v 1.1 2009/06/01 09:57:09 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PilotShutdownHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -12,21 +12,9 @@ from traceback import extract_tb
 import sys
 import threading
 
-
+# This is for the reschedule method
 # TODO: If this is used by someone else, factorize to an external lib module
 from TQComp.Constants import taskStates
-def rescheduleTasks(taskList):
-
-    # Extract ids
-    idList = map(lambda x: x['id'], taskList)
-        
-# TODO: Need a more sophisticated logic for this?
-#       This is just changing state of all tasks to queued (never abort?)
-
-    # Update all tasks to be queued
-    self.queries.updateTasks(idList, ['state', 'pilot'], \
-                             [taskStates['Queued'], None])
-
 
 
 class PilotShutdownHandler(object):
@@ -85,6 +73,8 @@ class PilotShutdownHandler(object):
                         myThread.transaction.rollback()
                         return {'msgType': result, 'payload': fields}
                 pilotId= payload['pilotId']
+                if 'reason' in payload:
+                    reason = payload['reason']
 
                 # See if this was the last pilot on its own host
                 # and if so, remove its cache from that host
@@ -110,7 +100,7 @@ class PilotShutdownHandler(object):
                 res = self.queries.getTasksWithFilter( \
                           {'pilot': pilotId}, asDict = True)
                 if res: 
-                    rescheduleTasks(res)
+                    self.rescheduleTasks(res)
 
                 # Finally, delete the pilot from the DB
                 self.queries.removePilot(pilotId)
@@ -138,3 +128,16 @@ class PilotShutdownHandler(object):
             # unexpected message, scream?
             pass
     
+    # TODO: If this is used by someone else, factorize to an external lib module
+    def rescheduleTasks(self, taskList):
+
+        # Extract ids
+        idList = map(lambda x: x['id'], taskList)
+            
+    # TODO: Need a more sophisticated logic for this?
+    #       This is just changing state of all tasks to queued (never abort?)
+
+        # Update all tasks to be queued
+        self.queries.updateTasks(idList, ['state', 'pilot'], \
+                                 [taskStates['Queued'], None])
+

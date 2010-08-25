@@ -73,6 +73,19 @@ class ProcessPool:
             
         return
 
+    def __del__(self):
+        """
+        __del__
+
+        Kill all the workers processes by sending them an invalid JSON object.
+        This will cause them to shut down.
+        """
+        for worker in self.workers:
+            worker.stdin.write("\n")
+            worker.stdin.flush()
+
+        return
+
     def enqueue(self, work):
         """
         __enqeue__
@@ -130,7 +143,7 @@ def setupLogging(componentDir):
     logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     logHandler.setFormatter(logFormatter)
     logging.getLogger().addHandler(logHandler)
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
 
     myThread = threading.currentThread()
     myThread.logger = logging.getLogger()

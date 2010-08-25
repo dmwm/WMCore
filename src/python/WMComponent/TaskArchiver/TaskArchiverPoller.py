@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.7 2010/05/20 20:59:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.8 2010/05/27 14:12:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
@@ -28,17 +28,20 @@ class TaskArchiverPoller(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
-        self.config = config
 
         myThread = threading.currentThread()
-        
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+
+        self.config = config
         if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
             self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
         else:
             self.workQueue = None
+
+        self.timeout = getattr(self.config.TaskArchiver, "timeOut", 0)
+        return        
     
     def setup(self, parameters):
         """
@@ -107,7 +110,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         myThread.transaction.begin()
 
         subscriptionList = self.daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
-        subscriptions    = subscriptionList.execute()
+        subscriptions    = subscriptionList.execute(timeOut = self.timeout)
 
         for subscription in subscriptions:
             wmbsSubscription = Subscription(id = subscription['id'])

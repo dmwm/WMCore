@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.9 2010/05/19 13:27:07 spigafi Exp $"
-__revision__ = "$Revision: 1.9 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.10 2010/05/24 12:26:58 spigafi Exp $"
+__revision__ = "$Revision: 1.10 $"
 
 #import logging
 import copy
@@ -158,7 +158,7 @@ class BossLiteAPI(object):
         return task
 
     
-    def loadTasksByAttr( self, binds ) :
+    def loadTasksByAttr( self, binds, deep = True ) :
         """
         Retrieve list of tasks from db matching the list of task attributes
         """
@@ -175,6 +175,10 @@ class BossLiteAPI(object):
             tmp = Task()
             tmp.data.update(x)
             tmp.existsInDataBase = True
+            
+            if deep :
+                tmp.loadJobs(self.db)
+                
             tasks.append(tmp)
             
         return tasks
@@ -195,7 +199,7 @@ class BossLiteAPI(object):
     # Methods for Job
     ##########################################################################
 
-    def loadJob( self, taskId, jobId ) :
+    def loadJob( self, taskId, jobId, deep = True ) :
         """
         retrieve job information from db using task and job id
         """
@@ -205,12 +209,12 @@ class BossLiteAPI(object):
         job = Job(parameters = jobAttributes)
 
         # load job from db
-        job.load(self.db)
+        job.load(self.db, deep)
 
         return job
 
     
-    def loadJobsByAttr( self, binds) :
+    def loadJobsByAttr( self, binds, deep = True) :
         """
         retrieve job information from db for job matching attributes
         """
@@ -229,20 +233,24 @@ class BossLiteAPI(object):
         for x in result : 
             tmp = Job()
             tmp.data.update(x)
+            
+            if deep :
+                tmp.getRunningInstance(self.db)
+            
             tmp.existsInDataBase = True
             jobs.append(tmp)
             
         return jobs
     
     
-    def loadJobByName( self, jobName ) :
+    def loadJobByName( self, jobName, deep = True ) :
         """
         retrieve job information from db for jobs with name 'name'
         """
 
         params = {'name': jobName}
         job = Job(parameters = params)
-        job.load(self.db)
+        job.load(self.db, deep)
 
         return job
 

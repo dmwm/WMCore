@@ -38,7 +38,7 @@ class Baobab(Plot):
         
         fig = self.getfig(input)
     
-        axes = fig.add_axes([0.05,0.05,0.9,0.8],polar=True)
+        axes = fig.add_axes([0.025,0,0.95,0.9],polar=True)
         axes.set_aspect(1,'box','C')
         axes.set_title(input.get('title',''))
         axes.set_axis_off()
@@ -50,7 +50,6 @@ class Baobab(Plot):
             cmap = cm.Accent 
     
         theta = lambda x: x*(2*math.pi)/data_root['value']
-        #threshold = input.get('threshold',0.05)
         minpixel = input.get('minpixel',10)
         
         def depth_recursor(here):
@@ -119,20 +118,25 @@ class Baobab(Plot):
     
             for i in range(int(data_root['value']/use_bar_location)+1):
                 lx = theta(i*use_bar_location)
-                ly = max_height+3
+                if input.get('external',True):
+                    ly = max_height+3
+                else:
+                    ly = max_height+1.5
             
                 line = Line2D((lx,lx),(0.75,ly),linewidth=1,linestyle='-.',zorder=-2,color='blue')
                 axes.add_line(line)
                 axes.text(lx,ly,siformat(i*use_bar_location,unit),horizontalalignment='center',verticalalignment='center',zorder=-1,color='blue')
         else:
-            axes.add_line(Line2D((0,0),(0.75,max_height+3),linewidth=0,alpha=0,zorder=-3))
+            if input.get('external',True):
+                axes.add_line(Line2D((0,0),(0.75,max_height+3),linewidth=0,alpha=0,zorder=-3))
+            else:
+                axes.add_line(Line2D((0,0),(0.75,max_height+1.5),linewidth=0,alpha=0,zorder=-3))
             #axes.set_ybound(0,max_height+3)
             
     
         bars = axes.bar(left=left[1:],height=height[1:],width=width[1:],bottom=bottom[1:],color=colours[1:])
 
         def fontsize(pix,chars):
-            print pix, chars,int(pix/((2+0.6*chars)*(input.get('dpi',96)/72.))) 
             return int(pix/((2+0.6*chars)*(input.get('dpi',96)/72.)))
 
         if input.get('labelled',False):
@@ -153,17 +157,22 @@ class Baobab(Plot):
                     angle_tan -= 180
                 if angle_deg>270 and angle_deg<=360:
                     angle_tan -= 180
-                radial_text_length = (1./(max_height+3))*input['width']/2              
-                if b==max_height:
-                    max_text_length = (2.5/(max_height+3))*input['width']/2
-                    max_text_height = w*((max_height+0.5)/(max_height+3))*input['width']/2
-                    axes.text(cx,cy+1.5,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=min(fontsize(max_text_length,len(n)),fontsize(max_text_height,-1)))
-                elif b==min_height:
-                    max_text_length = min(w,math.pi/2)*(h+.5)/(max_height+3)*input['width']/2
-                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=fontsize(max_text_length,len(n)))
+                if input.get('external',True):
+                    radial_length = (1./(max_height+3))*(input['width']/2)
                 else:
-                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(radial_text_length,len(n)))
-    
+                    radial_length = (1./(max_height+1.5))*(input['width']/2)
+                #print b,n
+                if b==max_height and input.get('external',True):
+                    #print 'max_height','rad',radial_length,fontsize(2*radial_length,len(n)),'tan',tangential_length,fontsize(tangential_length,-1)
+                    tangential_length = w*(max_height+0.5)*radial_length
+                    axes.text(cx,cy+2.0,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=min(fontsize(2*radial_length,len(n)),fontsize(tangential_length,-1)))
+                else:
+                    tangential_length = min(w*(b+.33)*radial_length,2*radial_length*math.sqrt(1.33*b+0.88))#h+0.75))
+                    #print 'other','rad',radial_length,fontsize(2*radial_length,len(n)),'tan',tangential_length,fontsize(tangential_length,-1)
+                    if tangential_length>radial_length:
+                        axes.text(cx,cy-0.16,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=min(fontsize(radial_length,-1),fontsize(tangential_length,len(n))))
+                    else:
+                        axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=min(fontsize(tangential_length,-1),fontsize(radial_length,len(n))))
             axes.text(0,0,siformat(data_root['value'],unit),horizontalalignment='center',verticalalignment='center',weight='bold')
     
         return fig

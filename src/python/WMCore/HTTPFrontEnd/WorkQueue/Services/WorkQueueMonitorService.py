@@ -23,14 +23,13 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.5 2010/02/06 01:20:38 maxa Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.6 2010/02/06 10:28:36 sryu Exp $"
 __version__ = "$Revision"
 
 
 import os
 import time
 import logging # import WMCore.WMLogging
-from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 from WMCore.WorkQueue.WorkQueue import WorkQueue
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from WMCore.DAOFactory import DAOFactory
@@ -42,10 +41,7 @@ class WorkQueueMonitorService(ServiceInterface):
     
     def register(self):
         self._myClass = self.__class__.__name__ 
-
-        self.config = DefaultConfig("WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel")
-        # provide DAS output formatting ...
-        self.config.setFormatter("WMCore.WebTools.DASRESTFormatter")
+        
         
         #self._testDbReadiness()
 

@@ -15,6 +15,7 @@ class PlotFormatter(RESTFormatter):
         RESTFormatter.__init__(self, config)
  
         self.supporttypes.update({'image/png': self.png,
+                                  '*/*': self.png,
                                   'application/pdf': self.pdf})
     
     def pdf(self, data):

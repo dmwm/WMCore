@@ -7,8 +7,8 @@ and then for each task do the jobs necessary for the task
 to start as a proper job.
 
 """
-__revision__ = "$Id: TaskMaker.py,v 1.2 2009/10/15 16:15:33 evansde Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TaskMaker.py,v 1.3 2010/02/10 17:42:41 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 
@@ -148,9 +148,8 @@ class TaskMaker:
         sandboxCreator = SandboxCreator()
         sandboxCreator.makeSandbox(self.workdir, self.workload, task)
 
-        setattr(task.data.input, 'sandbox', "%s/%s/%s/WMSandbox" % (self.workdir, self.workload.name(), task.name()))
-
-        logging.info('Created sandbox for task %s' %(task.name()))
+        #setattr(task.data.input, 'sandbox', "%s/%s/%s/WMSandbox" % (self.workdir, self.workload.name(), task.name()))
+        setattr(task.data.input, 'sandbox', "%s/%s-Sandbox.tar.bz2" % (self.workdir, task.name()))
 
         return
 

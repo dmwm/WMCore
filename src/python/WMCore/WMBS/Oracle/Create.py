@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.30 2010/01/20 15:41:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Create.py,v 1.31 2010/02/09 17:45:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -29,6 +29,7 @@ class Create(CreateWMBSBase):
     sequence_tables.append('wmbs_job')
     sequence_tables.append('wmbs_job_state')
     sequence_tables.append('wmbs_checksum_type')
+    sequence_tables.append('wmbs_sub_types')    
     
     def __init__(self, logger = None, dbi = None, params = None):
         """
@@ -37,7 +38,6 @@ class Create(CreateWMBSBase):
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """
-
         CreateWMBSBase.__init__(self, logger, dbi)
 
         tablespaceTable = ""
@@ -156,6 +156,8 @@ class Create(CreateWMBSBase):
           """CREATE TABLE wmbs_location (
                id        INTEGER      NOT NULL,
                site_name VARCHAR(255) NOT NULL,
+               se_name   VARCHAR(255),
+               ce_name   VARCHAR(255),
                job_slots INTEGER
                ) %s""" % tablespaceTable
 
@@ -566,19 +568,23 @@ class Create(CreateWMBSBase):
         self.constraints["01_idx_wmbs_file_checksums"] = \
           """CREATE INDEX idx_wmbs_file_checksums_file ON wmbs_file_checksums(fileid) %s""" % tablespaceIndex
 
-        
-
         for jobState in Transitions().states():
             jobStateQuery = """INSERT INTO wmbs_job_state(id, name) VALUES
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
             self.inserts["job_state_%s" % jobState] = jobStateQuery
 
-        checksumTypes = ['cksum', 'adler32', 'md5']
-        for i in checksumTypes:
-            checksumTypeQuery = """INSERT INTO wmbs_checksum_type (id, type) VALUES (wmbs_checksum_type_SEQ.nextval, '%s')
-            """ % (i)
-            self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
+        self.subTypes = ["Processing", "Merge", "Harvesting"]
+        for i in range(len(self.subTypes)):
+            subTypeQuery = """INSERT INTO wmbs_sub_types (id, name)
+                              VALUES (wmbs_sub_types_SEQ.nextval, '%s')""" % (self.subTypes[i])
+            self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery
 
+        checksumTypes = ["cksum", "adler32", "md5"]
+        for i in checksumTypes:
+            checksumTypeQuery = \
+               """INSERT INTO wmbs_checksum_type (id, type)
+                  VALUES (wmbs_checksum_type_SEQ.nextval, '%s')""" % (i)
+            self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
           
         j = 50
         for i in self.sequence_tables:

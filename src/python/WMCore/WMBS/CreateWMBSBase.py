@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.46 2010/01/25 20:46:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.47 2010/02/09 17:45:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.47 $"
 
 import threading
 
@@ -111,6 +111,8 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_location (
              id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
              site_name VARCHAR(255) NOT NULL,
+             se_name   VARCHAR(255),
+             ce_name   VARCHAR(255),
              job_slots INTEGER,
              UNIQUE(site_name))"""
 
@@ -147,7 +149,7 @@ class CreateWMBSBase(DBCreator):
         
         self.create["07wmbs_sub_types"] = \
           """CREATE TABLE wmbs_sub_types (
-               id   INTEGER      PRIMARY KEY,
+               id   INTEGER      PRIMARY KEY AUTO_INCREMENT,
                name VARCHAR(255) NOT NULL,
                UNIQUE(name))"""
 
@@ -375,8 +377,6 @@ class CreateWMBSBase(DBCreator):
         self.constraints["01_idx_wmbs_file_checksums"] = \
           """CREATE INDEX idx_wmbs_file_checksums_file ON wmbs_file_checksums(fileid) %s""" % tablespaceIndex
 
-
-
         # The transitions class holds all states and allowed transitions, use
         # that to populate the wmbs_job_state table
         for jobState in Transitions().states():
@@ -386,8 +386,8 @@ class CreateWMBSBase(DBCreator):
 
         self.subTypes = ["Processing", "Merge", "Harvesting"]
         for i in range(len(self.subTypes)): 
-            subTypeQuery = """INSERT INTO wmbs_sub_types (id, name)
-                                VALUES (%s, '%s')""" % (i, self.subTypes[i])
+            subTypeQuery = """INSERT INTO wmbs_sub_types (name)
+                                VALUES ('%s')""" % (self.subTypes[i])
             self.inserts["wmbs_sub_types_%s" % self.subTypes[i]] = subTypeQuery
 
         checksumTypes = ['cksum', 'adler32', 'md5']
@@ -395,7 +395,6 @@ class CreateWMBSBase(DBCreator):
             checksumTypeQuery = """INSERT INTO wmbs_checksum_type (type) VALUES ('%s')
             """ % (i)
             self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
-                         
 
         return
 

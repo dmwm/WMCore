@@ -7,6 +7,9 @@ inherit this object and implement the methods accordingly
 
 """
 
+from WMCore.Storage.Execute import runCommandWithOutput as runCommand
+from WMCore.Storage.StageOutError import StageOutError
+import logging
 
 class StageOutImplV2:
     """
@@ -58,3 +61,22 @@ class StageOutImplV2:
             return "file:%s" % pfn
         else:
             return pfn
+    
+    def runCommandFailOnNonZero(self, command):
+        (exitCode, output) = runCommand(command)
+        if not exitCode:
+            logging.error("Error in file transfer:")
+            logging.error(output)
+            raise StageOutError, "Transfer failure"
+    
+    def generateCommandFromPreAndPostParts(self, pre,post,options):
+        """
+        simply put, this will return an array with [pre, options.split(), post]
+        but if options is empty, won't put it in'
+        """
+        temp = pre
+        if options != None:
+            temp.extend(options.split())
+        temp.extend(post)
+        return temp
+        

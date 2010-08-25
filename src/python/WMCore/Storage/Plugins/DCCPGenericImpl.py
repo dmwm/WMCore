@@ -11,68 +11,62 @@ Doesnt support deletion yet: This needs to be added
 
 """
 import os
-from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl
+import logging
+from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 
 
 _CheckExitCodeOption = True
 
 
 
-class DCCPGenericImpl(StageOutImpl):
+class DCCPGenericImpl(StageOutImplV2):
     """
     _DCCPGenericImpl_
 
     Implement interface for dccp command
     
     """
-    def createOutputDirectory(self, targetPFN):
+
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
         """
-        _createOutputDirectory_
-
-        Create a dir for the target pfn
-
-        ASSUMPTION: Directory already exists 
-        
+            performs a transfer. stageOut tells you which way to go. returns the new pfn or
+            raises on failure. StageOutError (and inherited exceptions) are for expected errors
+            such as temporary connection failures. Anything else will be handled as an unexpected
+            error and skip retrying with this plugin
+            
+            if stageOut is true:
+                The fromPfn is the LOCAL FILE NAME on the node, without file://
+                the toPfn is the target PFN, mapped from the LFN using the TFC or overrrides
+            if stageOut is false:
+                The toPfn is the LOCAL FILE NAME on the node, without file://
+                the fromPfn is the target PFN, mapped from the LFN using the TFC or overrrides
+            
+            this behavior is because most transfer commands will switch their direction
+            simply by swapping the order of the arguments. the stageOut flag is provided
+            however, because sometimes you want to pass different command line args
+                
         """
-        pass
-        
-    def createSourceName(self, protocol, pfn):
+        ourCommand = \
+            self.generateCommandFromPreAndPostParts(\
+                        ["dccp"],
+                        [fromPfn, toPfn],
+                        options)
+        self.runCommandFailOnNonZero(ourCommand)
+
+        return toPfn
+    
+    def doDelete(self, pfn, seName, command, options, protocol  ):
         """
-        _createSourceName_
-
-        dccp takes a local path, so all we have to do is return the
-        pfn as-is
-
+            deletes a file, raises on error
+            StageOutError (and inherited exceptions) are for expected errors
+            such as temporary connection failures. Anything else will be handled as an unexpected
+            error and skip retrying with this plugin
         """
-        return pfn
+        logging.info("Attempted to delete, but delete not supported")
+        logging.info(pfn)
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
-        """
-        _createStageOutCommand_
-
-        Build a dccp command 
-
-        """
-        optionsStr = ""
-        if options != None:
-            optionsStr = str(options)
-        dirname = os.path.dirname(targetPFN)
-        result = "#!/bin/sh\n"
-        result += "dccp %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
-        return result
 
     
-    def removeFile(self, pfnToRemove):
-        """
-        _removeFile_
 
-        CleanUp pfn provided:
-
-        Cannot implement this, since there isnt a dcrm command
-        
-        """
-        pass
-    
-
-registerStageOutImpl("dccp-generic", DCCPGenericImpl)
+registerStageOutImplVersionTwo("dccp-generic", DCCPGenericImpl)

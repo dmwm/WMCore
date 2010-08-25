@@ -28,18 +28,13 @@ class HadoopImpl(StageOutImplV2):
             such as temporary connection failures. Anything else will be handled as an unexpected
             error and skip retrying with this plugin
         """
-        original_size = os.stat(fromPfn)[6]
-        print "Local File Size is: %s" % original_size
-        commandArgs = ["hadoop","fs","-put"]
-        endingCommand = [fromPfn, toPfn]
-        if options != None:
-            commandArgs.extend(options.split())
-        commandArgs.extend(endingCommand)
-        (exitCode, output) = runCommand(commandArgs)
-        if not exitCode:
-            logging.error("Error in hadoop transfer:")
-            logging.error(output)
-            raise StageOutError, "Transfer failure"
+
+        ourCommand = \
+            self.generateCommandFromPreAndPostParts(\
+                        ["hadoop","fs","-put"],
+                        [fromPfn, toPfn],
+                        options)
+        self.runCommandFailOnNonZero(ourCommand)
       
         return toPfn
 

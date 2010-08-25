@@ -86,35 +86,39 @@ def outputModulesFromConfig(configHandle):
     return outputModules
 
 if __name__ == "__main__":
-   jsonHandler = JSONRequests()
+    try:
+        jsonHandler = JSONRequests()
 
-   encodedConfig = sys.stdin.readline()
-   config = jsonHandler.decode(encodedConfig)
+        encodedConfig = sys.stdin.readline()
+        config = jsonHandler.decode(encodedConfig)
 
-   setupCMSSWEnv(config["cmsPath"], config["scramArch"],
-                 config["frameworkVersion"])
+        setupCMSSWEnv(config["cmsPath"], config["scramArch"],
+                      config["frameworkVersion"])
 
-   if config.get("configUrl", None):
-       tempDir = tempfile.mkdtemp()
-       configPath = os.path.join(tempDir, "cmsswConfig.py")
-       compConfigPath = os.path.join(tempDir, "cmsswConfig.pyc")
-       configString = urllib.urlopen(config["configUrl"]).read(-1)
-       configFile = open(configPath, "w")
-       configFile.write(configString)
-       configFile.close()
-       process = loadConfig(configPath).process
-       os.remove(configPath)
-       os.remove(compConfigPath)
-       os.rmdir(tempDir)
-   else:
-       from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
-       mySetup = SetupCMSSWPset()
-       mySetup.createProcess(config["scenarioName"], config["scenarioFunc"],
-                             config["scenarioArgs"])
-       process = mySetup.process
+        if config.get("configUrl", None):
+            tempDir = tempfile.mkdtemp()
+            configPath = os.path.join(tempDir, "cmsswConfig.py")
+            compConfigPath = os.path.join(tempDir, "cmsswConfig.pyc")
+            configString = urllib.urlopen(config["configUrl"]).read(-1)
+            configFile = open(configPath, "w")
+            configFile.write(configString)
+            configFile.close()
+            process = loadConfig(configPath).process
+            os.remove(configPath)
+            os.remove(compConfigPath)
+            os.rmdir(tempDir)
+        else:
+            from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+            mySetup = SetupCMSSWPset()
+            mySetup.createProcess(config["scenarioName"], config["scenarioFunc"],
+                                  config["scenarioArgs"])
+            process = mySetup.process
 
-   outputModules = outputModulesFromConfig(process)
-   outputModulesJSON = jsonHandler.encode(outputModules)
+        outputModules = outputModulesFromConfig(process)
+        outputModulesJSON = jsonHandler.encode(outputModules)
 
-   sys.stdout.write("%s\n" % outputModulesJSON)
-   sys.stdout.flush()
+        sys.stdout.write("%s\n" % outputModulesJSON)
+        sys.stdout.flush()
+        sys.exit(0)
+    except Exception, ex:
+        sys.exit(1)

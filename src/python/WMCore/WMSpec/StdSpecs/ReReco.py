@@ -39,6 +39,11 @@ class ReRecoWorkloadFactory():
                                          stdout = subprocess.PIPE)
         outmodProcess.stdin.write("%s\n" % self.encoder.encode(config))
         outmodProcess.stdin.flush()
+
+        returnCode = outmodProcess.wait()
+        if returnCode != 0:
+            raise Exception("Failed to get output module config.")
+        
         output = outmodProcess.stdout.readline()
         return self.encoder.decode(output)
     

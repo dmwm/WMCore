@@ -15,8 +15,8 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Workflow.py,v 1.26 2009/09/29 15:32:29 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Workflow.py,v 1.27 2009/12/04 21:27:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -134,12 +134,13 @@ class Workflow(WMBSBase, WMWorkflow):
 
         for result in results:
             outputFileset = Fileset(id = result["output_fileset"])
-            self.outputMap[result["output_identifier"]] = outputFileset
+            self.outputMap[result["output_identifier"]] = {"output_fileset": outputFileset,
+                                                           "output_parent": result["output_parent"]}
             
         self.commitTransaction(existingTransaction)
         return
 
-    def addOutput(self, outputIdentifier, outputFileset):
+    def addOutput(self, outputIdentifier, outputFileset, outputParent = None):
         """
         _addOutput_
 
@@ -150,11 +151,13 @@ class Workflow(WMBSBase, WMWorkflow):
         if self.id == False:
             self.create()
         
-        self.outputMap[outputIdentifier] = outputFileset
+        self.outputMap[outputIdentifier] = {"output_fileset": outputFileset,
+                                            "output_parent": outputParent}
         
         action = self.daofactory(classname = "Workflow.InsertOutput")
         action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
-                       filesetID = outputFileset.id, conn = self.getDBConn(),
+                       filesetID = outputFileset.id, outputParent = outputParent,
+                       conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         
         self.commitTransaction(existingTransaction)

@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.14 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Workflow_t.py,v 1.15 2009/12/04 21:27:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import os
@@ -220,8 +220,8 @@ class WorkflowTest(unittest.TestCase):
         assert len(testWorkflowB.outputMap.keys()) == 0, \
             "ERROR: Output map exists before output is assigned"
 
-        testWorkflowA.addOutput("outModOne", testFilesetA)
-        testWorkflowA.addOutput("outModTwo", testFilesetB)        
+        testWorkflowA.addOutput("outModOne", testFilesetA, "parentA")
+        testWorkflowA.addOutput("outModTwo", testFilesetB)
 
         testWorkflowC = Workflow(name = "wf001", task='Test')
         testWorkflowC.load()
@@ -233,10 +233,14 @@ class WorkflowTest(unittest.TestCase):
         assert "outModTwo" in testWorkflowC.outputMap.keys(), \
                "ERROR: Output modules missing from workflow output map"        
 
-        assert testWorkflowC.outputMap["outModOne"].id == testFilesetA.id, \
+        assert testWorkflowC.outputMap["outModOne"]["output_fileset"].id == testFilesetA.id, \
                "ERROR: Output map incorrectly maps filesets."
-        assert testWorkflowC.outputMap["outModTwo"].id == testFilesetB.id, \
+        assert testWorkflowC.outputMap["outModOne"]["output_parent"] == "parentA", \
+               "ERROR: Output map has incorrect parent."        
+        assert testWorkflowC.outputMap["outModTwo"]["output_fileset"].id == testFilesetB.id, \
                "ERROR: Output map incorrectly maps filesets."
+        assert testWorkflowC.outputMap["outModTwo"]["output_parent"] == None, \
+               "ERROR: Output map has incorrect parent."
 
         return
 

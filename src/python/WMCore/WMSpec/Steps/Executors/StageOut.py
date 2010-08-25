@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.10 2010/03/22 15:05:35 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: StageOut.py,v 1.11 2010/03/31 18:22:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import os.path
@@ -116,12 +116,12 @@ class StageOut(Executor):
                 if hasattr(output, 'files'):
                     stepFiles = getattr(output, 'files')
                     for file in stepFiles:
-                        if hasattr(file, 'LFN') and hasattr(file, 'PFN'):
+                        if hasattr(file, 'lfn') and hasattr(file, 'pfn'):
                             # Save the input PFN in case we need it
-                            # Undecided whether to move file.PFN to the output PFN
-                            file.InputPFN        = file.PFN
-                            fileForTransfer = {'LFN': getattr(file, 'LFN'), \
-                                               'PFN': getattr(file, 'PFN'), \
+                            # Undecided whether to move file.pfn to the output PFN
+                            file.InputPFN        = file.pfn
+                            fileForTransfer = {'LFN': getattr(file, 'lfn'), \
+                                               'PFN': getattr(file, 'pfn'), \
                                                'SEName' : None, \
                                                'StageOutCommand': None}
                             signal.signal(signal.SIGALRM, alarmHandler)
@@ -131,7 +131,6 @@ class StageOut(Executor):
                                 #Afterwards, the file should have updated info.
                                 filesTransferred.append(fileForTransfer)
                                 file.StageOutCommand = fileForTransfer['StageOutCommand']
-                                file.SEName          = fileForTransfer['SEName']
                                 file.location        = fileForTransfer['SEName']
                                 file.OutputPFN       = fileForTransfer['PFN']
                             except Alarm:
@@ -142,7 +141,7 @@ class StageOut(Executor):
                                 raise
                             signal.alarm(0)
                         else:
-                            msg = "Not a file"
+                            msg = "Not a file: %s" % file
                             logging.error(msg)
                             continue
 

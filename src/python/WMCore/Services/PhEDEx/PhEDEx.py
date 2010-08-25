@@ -78,9 +78,7 @@ class PhEDEx(Service):
             # overwrite original self['method']
             # this is only place used self['method'], it is safe to overwrite
             # If that changes keep the reset to original self['method']
-            print "TEST"
-            print file
-            file = "result"
+            
             self["method"] = verb
             f = self.refreshCache(file, callname, args)
             result = f.read()

@@ -17,7 +17,7 @@ from WMCore.Storage.StageOutError import StageOutError
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.DeleteMgr import DeleteMgr
-from WMCore.Storage.Registry import retrieveStageOutImpl
+from WMCore.Storage.Registry import retrieveStageOutImpl, RegistryError
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 import WMCore.Storage.Backends
@@ -153,6 +153,7 @@ class FileManager:
             except StageOutError, ex:
                 log.info("Delete failed in an expected manner. Exception is:")
                 log.info("%s" % str(ex))
+                log.info(traceback.format_exc())
                 continue
             # note to people who think it's cheeky to catch exception after ranting against it:
             # this makes sense because no matter what the exception, we want to keep going
@@ -161,6 +162,7 @@ class FileManager:
             except Exception, ex:
                 log.critical("Delete failed in an unexpected manner. Exception is:")
                 log.critical("%s" % str(ex))
+                log.info(traceback.format_exc())
                 continue
             
             # successful deletions make it here
@@ -290,7 +292,14 @@ class FileManager:
             log.info("Attempting transfer method %s, Retry number: %s" % (methodCounter, retryNumber))
             log.info("Current method information: %s" % currentMethod)
             
-            stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=True)
+            try:
+                stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=True)
+            except RegistryError:
+                stageOutSlave =  retrieveStageOutImpl(command, useNewVersion=False)
+                logging.error("Tried to load stageout backend %s, a new version isn't there yet" % command)
+                logging.error("Will try to fall back to the oldone, but it's really best to redo it")
+                logging.error("Here goes...")
+                return stageOutSlave( protocol, localFileName, pfn, options )
             
             # do the copy. The implementation is responsible for its own verification
             newPfn = None
@@ -337,9 +346,9 @@ class FileManager:
             try:
                 self.deleteLFN(lfn)
             except StageOutFailure, ex:
-                msg = "Failed to cleanup staged out file after error:"
-                msg += " %s\n%s" % (lfn, str(ex))
-                print msg
+                log.info("Failed to cleanup staged out file after error:")
+                log.info(" %s\n%s" % (lfn, str(ex)))
+                log.info(traceback.format_exc())
 
 
 
@@ -353,26 +362,23 @@ class FileManager:
 
         """
         if self.tfc == None:
-            msg = "Trivial File Catalog not available to match LFN:\n"
-            msg += lfn
-            print msg
+            log.info("Trivial File Catalog not available to match LFN:")
+            log.info(lfn)
             return None
         if self.tfc.preferredProtocol == None:
-            msg = "Trivial File Catalog does not have a preferred protocol\n"
-            msg += "which prevents local stage out for:\n"
-            msg += lfn
-            print msg
+            log.info("Trivial File Catalog does not have a preferred protocol")
+            log.info("which prevents local stage out for:")
+            log.info(lfn)
             return None
 
         pfn = self.tfc.matchLFN(self.tfc.preferredProtocol, lfn)
         if pfn == None:
-            msg = "Unable to map LFN to PFN:\n"
-            msg += "LFN: %s\n" % lfn
+            log.info("Unable to map LFN to PFN:")
+            log.info("LFN: %s" % lfn)
             return None
 
-        msg = "LFN to PFN match made:\n"
-        msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
-        print msg
+        log.info("LFN to PFN match made:")
+        log.info("LFN: %s\nPFN: %s\n" % (lfn, pfn))
         return pfn
 
 
@@ -395,7 +401,7 @@ class StageOutMgr(FileManager):
         stages out a file, fileToStage is a dict with at least the LFN key
         the dict will be modified and returned, or an exception will be raised
         """
-        print "StageOutMgr called with file: %s" % fileToStage
+        log.info("StageOutMgr called with file: %s" % fileToStage)
         return self.stageOut(fileToStage)
 
 class DeleteMgr(FileManager):
@@ -406,7 +412,7 @@ class DeleteMgr(FileManager):
         stages out a file, fileToStage is a dict with at least the LFN key
         the dict will be modified and returned, or an exception will be raised
         """
-        return self.stageOut(fileToStage)
+        return self.deleteLFN(fileToStage)
 
 
 

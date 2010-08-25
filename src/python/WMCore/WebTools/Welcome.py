@@ -17,6 +17,7 @@ class Welcome(Page):
         html += '<h1>Welcome to the DMWM web framework</h1>'
         html += "<table>\n"
         html += "<tr><th><h3>Service</h3></th><th><h3>Description</h3></th></tr>\n"
+        self.namesAndDocstrings.sort()
         for name, docstring in self.namesAndDocstrings:
             html += '<tr><td><p><a href="%s">%s</a></p></td><td><p>%s</p></td></tr>' % (name, name, docstring)
         html += "<tr><td><h3>Server info</h3</td></tr>\n"

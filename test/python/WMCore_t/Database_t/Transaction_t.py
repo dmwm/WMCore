@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.8 2010/08/02 16:13:36 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Transaction_t.py,v 1.9 2010/08/02 17:39:07 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import commands
 import logging
@@ -86,6 +86,7 @@ class TransactionTest(unittest.TestCase):
     def testBadTransaction(self):
         print('testBadTransaction')
         #self._teardown = True
+        raise RuntimeError, "This test seems to hang for a long long time"
         myThread = threading.currentThread()
         myThread.transaction.begin()
         myThread.transaction.processData(self.create[myThread.dialect])

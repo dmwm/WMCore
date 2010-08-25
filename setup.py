@@ -10,6 +10,7 @@ import unittest
 #PyLinter and coverage aren't standard, but aren't strictly necessary
 can_lint = False
 can_coverage = False
+can_nose = False
 try:
     from pylint.lint import Run 
     from pylint.lint import preprocess_options, cb_init_hook
@@ -22,6 +23,39 @@ try:
     can_coverage = True
 except:
     pass
+
+try:
+    import nose
+    can_nose = True
+except:
+    pass
+
+if can_nose:
+    class NoseCommand(Command):
+        user_options = [ ]
+
+        def initialize_options(self):
+            pass
+        
+        def finalize_options(self):
+            pass
+    
+        def run(self):
+            nose.run(argv=[__file__,'--all-modules','-v','test/python'])
+            pass
+else:
+    class NoseCommand(Command):
+        user_options = [ ]
+        def run(self):
+            print "Nose isn't installed, fail"
+            pass
+        
+        def initialize_options(self):
+            pass
+        
+        def finalize_options(self):
+            pass
+        pass
 
 if can_lint:
     class LinterRun(Run):
@@ -738,13 +772,14 @@ package_dir = {'WMCore': 'src/python/WMCore',
 setup (name = 'wmcore',
        version = '1.0',
        maintainer_email = 'hn-cms-wmDevelopment@cern.ch',
-       cmdclass = {'test': TestCommand, 
+       cmdclass = {#'test': TestCommand, 
                    'clean': CleanCommand, 
                    'lint': LintCommand,
                    'report': ReportCommand,
                    'coverage': CoverageCommand ,
                    'missing': DumbCoverageCommand,
-                   'env': EnvCommand },
+                   'env': EnvCommand,
+                   'test' : NoseCommand },
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
 

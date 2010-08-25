@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.29 2010/05/25 21:26:25 sryu Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.30 2010/05/26 18:05:14 sryu Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import logging
 
@@ -76,6 +76,9 @@ class WMBSHelper:
         
                 outputFileset = Fileset(name = outputFilesetName)
                 outputFileset.create()
+                # this will reopen child fileset every time 
+                # the fileset exist already 
+                outputFileset.markOpen(True)
                 workflow.addOutput(outputModuleName, outputFileset)
         
                 for childTask in task.childTaskIterator():

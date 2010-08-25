@@ -5,8 +5,8 @@ Slave used for default AddDatasetWatch behavior
 
 __all__ = []
 __revision__ = \
-"$Id: DefaultAddDatasetWatchSlave.py,v 1.5 2009/11/06 11:24:21 riahi Exp $"
-__version__ = "$Revision: 1.5 $"
+"$Id: DefaultAddDatasetWatchSlave.py,v 1.6 2009/12/15 23:15:11 riahi Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = \
     "james.jackson@cern.ch"
 
@@ -43,9 +43,12 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
         # Create empty fileset if fileset.name doesn't exist
         filesetName = message["dataset"] 
         feederType = message["FeederType"]
+        fileType = message["FileType"]
+        startRun = message["StartRun"]
 
         logging.debug("Dataset " + filesetName + " arrived")
-        fileset = Fileset(name = filesetName+':'+feederType)
+        fileset = Fileset(name = filesetName+':'\
+          +feederType+':'+fileType+':'+startRun)
 
         # Check if the fileset is already there 
         if fileset.exists() == False:

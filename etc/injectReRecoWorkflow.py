@@ -6,6 +6,7 @@ _injectReRecoWorkflow_
 
 import os
 import sys
+import threading
 
 from WMCore.WMInit import WMInit
 from WMCore.Configuration import loadConfigurationFile
@@ -169,6 +170,8 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     inputFileset.markOpen(False)
     return
 
+myThread = threading.currentThread()
+myThread.transaction.begin()
 for workloadTask in workload.taskIterator():
     inputFileset = Fileset(name = workloadTask.getPathName())
     inputFileset.create()
@@ -181,3 +184,5 @@ for workloadTask in workload.taskIterator():
 
     injectTaskIntoWMBS(os.path.join(os.getcwd(), workloadName, workloadFile),
                        workloadName, workloadTask, inputFileset)
+
+myThread.transaction.commit()

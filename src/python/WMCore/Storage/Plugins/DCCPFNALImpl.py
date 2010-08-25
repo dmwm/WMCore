@@ -94,7 +94,7 @@ class DCCPFNALImpl(StageOutImplV2):
             logging.info("  commandline: %s" % copyCommand)
             print "command is %s" % copyCommand
             (exitCode, output) = self.doWrapped(copyCommand)
-            if not exitCode:
+            if exitCode:
                 logging.error("Transfer failed")
                 raise StageOutFailure, "DCCP failed - No good"
             # riddle me this, the following line fails with:

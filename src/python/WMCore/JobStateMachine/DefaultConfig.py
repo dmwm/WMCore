@@ -1,8 +1,12 @@
 from WMCore.Configuration import Configuration
-from os import environ
+import os
 
 config = Configuration()
 
 jsm = config.component_('JobStateMachine')
-jsm.couchurl = 'http://localhost:5984'
+
+if (os.getenv('COUCHURL') != None):
+    jsm.couchurl = os.getenv('COUCHURL')
+else:
+    jsm.couchurl = 'http://localhost:5984'
 jsm.default_retries = 1

@@ -11,6 +11,7 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 from WMCore.JobStateMachine import DefaultConfig
+import WMCore.Database.CMSCouch as CMSCouch
 # Framework for this code written automatically by Inspect.py
 
 
@@ -24,13 +25,14 @@ class TestChangeState(unittest.TestCase):
         _setUp_
         """
         if self._setup:
+            
             self.change = ChangeState(DefaultConfig.config)
             return
         self.transitions = Transitions()
         # TODO: write a config here
         
         # We need to set up the proper thread state for our test to run. Try it.
-        self.testInit = TestInit( self.__class__ )
+        self.testInit = TestInit( "TestChangeState" )
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema()
@@ -42,6 +44,7 @@ class TestChangeState(unittest.TestCase):
         """
         _tearDown_
         """
+        self.testInit.clearDatabase()
         if self._teardown:
             return
 
@@ -81,9 +84,10 @@ class TestChangeState(unittest.TestCase):
 
 
     def testRecordInCouch(self):
-    	"""
-    	This is the test class for function RecordInCouch from module ChangeState
-    	"""
+        """
+        	This is the test class for function RecordInCouch from module ChangeState
+        	"""
+        CMSCouch.Database()
         return
 
 
@@ -102,7 +106,4 @@ if __name__ == "__main__":
 #export DATABASE="mysql://sfoulkes:@localhost/ProdAgentDB_sfoulkes"
 #export DIALECT="MySQL"
 #export DBSOCK="/var/lib/mysql/mysql.sock"
-    os.putenv("DATABASE", "sqlite://home/meloam/test.db")
-    os.putenv("DBSOCK", "0")
-    os.putenv("DIALECT", "sqlite")
-    unittest.main()
+unittest.main()

@@ -5,14 +5,15 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.5 2009/05/12 10:32:21 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ChangeState.py,v 1.6 2009/07/02 19:21:26 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
 from sets import Set
+import threading
 
 class Transitions(dict):
     """

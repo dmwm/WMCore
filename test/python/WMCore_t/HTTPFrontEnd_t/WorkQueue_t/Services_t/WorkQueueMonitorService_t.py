@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.3 2010/03/19 15:06:45 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.4 2010/03/25 13:50:52 maxa Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 
@@ -305,11 +305,42 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         self._checkHTTPError(data)
 
 
+
     def testElementsByIncorrectStringIdDAO(self):
         testName = inspect.stack()[0][3]
         inpt = {"id": "nonsenseelementid"}
         data, exp = self._tester(testName, "POST", 400, "elementsbyid", inpt = inpt)        
         self._checkHTTPError(data)
+
+        
+        
+    def testSitesDAO(self):
+        testName = inspect.stack()[0][3]
+        data, exp = self._tester(testName, "GET", 200, "sites")
+        r = data["results"]            
+        # TODO
+        # currently returns no data
+        # implement some test when data is available
+        
+
+
+    def testDataDAO(self):        
+        testName = inspect.stack()[0][3]
+        data, exp = self._tester(testName, "GET", 200, "data")
+        r = data["results"]
+        # TODO
+        # currently returns no data
+        # implement some test when data is available
+
+
+    
+    def testDataSiteMapDAO(self):
+        testName = inspect.stack()[0][3]
+        data, exp = self._tester(testName, "GET", 200, "datasitemap")
+        r = data["results"]
+        # TODO
+        # currently returns no data
+        # implement some test when data is available
         
     
         

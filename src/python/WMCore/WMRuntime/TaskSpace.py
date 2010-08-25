@@ -15,6 +15,22 @@ import pickle
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
+
+def preloadWorkload(x):
+    """
+    _preloadWorkload_
+
+    Method decorator to ensure that accessors to the workload are
+    called only when the workload has been loaded
+
+    Use only for decorating no-arg getters
+
+    """
+    def wrapper(self):
+        self.getWMWorkload()
+        return x(self)
+    return wrapper
+
 class TaskSpace:
     """
     _TaskSpace_
@@ -27,8 +43,15 @@ class TaskSpace:
         self.taskName = args['TaskName']
         self.location = os.path.dirname(inspect.getsourcefile(args['Locator']))
         self.task = None
+        self.workload = None
 
-    def getWMTask(self):
+
+
+
+
+
+
+    def getWMWorkload(self):
         """
         _getWMTask_
 
@@ -37,8 +60,8 @@ class TaskSpace:
         TODO: Refactor to getWMWorkload method
 
         """
-        if self.task != None:
-            return self.task
+        if self.workload != None:
+            return self.workload
         try:
             import WMSandbox
         except ImportError, ex:
@@ -52,11 +75,23 @@ class TaskSpace:
         handle = open(workloadPcl, 'r')
         wmWorkload = pickle.load(handle)
         handle.close()
+        self.workload = WMWorkloadHelper(wmWorkload)
+        return
 
+    @preloadWorkload
+    def workloadName(self):
+        return self.workload.name()
 
-        workload = WMWorkloadHelper(wmWorkload)
-        self.task = workload.getTask(self.taskName)
-        return self.task
+    @preloadWorkload
+    def getWMTask(self):
+        """
+        _getWMTask_
+
+        Get the WMTask instance from the workload
+
+        """
+        return self.workload.getTask(self.taskName)
+
 
     def stepSpaces(self):
         """

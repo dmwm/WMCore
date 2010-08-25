@@ -43,6 +43,46 @@ class MaskTest(unittest.TestCase):
 
         return
 
+
+    def testSetMaxAndSkipLumis(self):
+        """
+        test class for setMaxAndSkipLumis in Mask.py
+
+        """
+
+        print "testSetMaxAndSkipLumis"
+
+        testMask  = Mask()
+        maxLumis  = 10
+        skipLumis = 2
+
+        testMask.setMaxAndSkipLumis(maxLumis, skipLumis)
+
+        self.assertEqual(testMask['FirstLumi'], skipLumis)
+        self.assertEqual(testMask['LastLumi'],  maxLumis + skipLumis)
+
+        return
+
+
+    def testSetMaxAndSkipRuns(self):
+        """
+        test class for setMaxAndSkipRuns in Mask.py
+
+        """
+
+        print "testSetMaxAndSkipRuns"
+
+        testMask  = Mask()
+        maxRuns   = 1000
+        skipRuns  = 200
+
+        testMask.setMaxAndSkipRuns(maxRuns, skipRuns)
+
+        self.assertEqual(testMask['FirstRun'], skipRuns)
+        self.assertEqual(testMask['LastRun'],  maxRuns + skipRuns)
+
+        return
+
     def testGetMaxEvents(self):
         """
         test class for getMaxEvents in Mask.py
@@ -71,6 +111,25 @@ class MaskTest(unittest.TestCase):
         tempMax = testMask.getMaxEvents()
 
         self.assertEqual(tempMax, maxEvents + skipEvents)
+
+
+    def testGetMax(self):
+        """
+        test class for the getMax() routine added to Mask.py
+
+        """
+
+        print "testGetMax"
+
+        testMask  = Mask()
+        maxRuns   = 1000
+        skipRuns  = 200
+
+        testMask.setMaxAndSkipRuns(maxRuns, skipRuns)
+
+        self.assertEqual(testMask.getMax('Lumi'), None)
+        self.assertEqual(testMask.getMax('junk'), None)
+        self.assertEqual(testMask.getMax('Run'),  1000)
 
 
 

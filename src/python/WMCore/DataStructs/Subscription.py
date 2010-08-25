@@ -8,11 +8,10 @@ TODO: Add some kind of tracking for state of files - though if too much is
 added becomes counter productive
 """
 __all__ = []
-__revision__ = "$Id: Subscription.py,v 1.26 2009/11/18 14:56:13 evansde Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Subscription.py,v 1.27 2009/12/15 14:13:51 spiga Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import copy
-from sets import Set
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
 
@@ -23,9 +22,9 @@ class Subscription(Pickleable, dict):
         if fileset == None:
             fileset = Fileset()
         if whitelist == None:
-            whitelist = Set()
+            whitelist = set()
         if blacklist == None:
-            blacklist = Set()
+            blacklist = set()
 
         self.setdefault('fileset', fileset)
         self.setdefault('workflow', workflow)
@@ -162,7 +161,7 @@ class Subscription(Pickleable, dict):
             files and locations are sets. method returns the subset of files
             that are at the locations - this is a lot simpler with the database
             """
-            magicfiles = Set()
+            magicfiles = set()
             for f in files:
                 if len(f['locations'] & locations) > 0:
                     magicfiles.add(f)

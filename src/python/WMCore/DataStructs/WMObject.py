@@ -6,10 +6,9 @@ Helper class that other objects should inherit from
 
 """
 __all__ = []
-__revision__ = "$Id: WMObject.py,v 1.8 2009/08/31 16:43:44 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMObject.py,v 1.9 2009/12/15 14:13:51 spiga Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from sets import Set
 
 class WMObject(object):
     """
@@ -23,7 +22,7 @@ class WMObject(object):
         """
         Simple method to ensure thelist is a list
         """
-        if isinstance(thelist, (Set, set)):
+        if isinstance(thelist, (set, set)):
             thelist = list(thelist)
         elif not isinstance(thelist, list):
             thelist = [thelist]
@@ -33,8 +32,8 @@ class WMObject(object):
         """
         Simple method to ensure theset is a set
         """
-        if not isinstance(theset, Set):
-            theset = Set(self.makelist(theset))
+        if not isinstance(theset, set):
+            theset = set(self.makelist(theset))
         return theset
 
     def flatten(self, list):

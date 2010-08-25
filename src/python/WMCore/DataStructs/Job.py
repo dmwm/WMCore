@@ -7,8 +7,8 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.29 2009/11/10 21:55:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Job.py,v 1.30 2009/12/15 14:13:51 spiga Exp $"
+__version__ = "$Revision: 1.30 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
@@ -18,7 +18,6 @@ from WMCore.Configuration import ConfigSection
 
 from WMCore.Services.UUID import makeUUID
 
-from sets import Set
 import time
 
 

@@ -6,9 +6,8 @@ Data object that contains a set of files
 
 """
 __all__ = []
-__revision__ = "$Id: Fileset.py,v 1.23 2009/07/22 16:37:14 meloam Exp $"
-__version__ = "$Revision: 1.23 $"
-from sets import Set
+__revision__ = "$Id: Fileset.py,v 1.24 2009/12/15 14:13:50 spiga Exp $"
+__version__ = "$Revision: 1.24 $"
 from WMCore.DataStructs.WMObject import WMObject 
 
 class Fileset(WMObject):
@@ -21,10 +20,10 @@ class Fileset(WMObject):
         Assume input files are new
         """
         self.name = name
-        self.files = Set()
+        self.files = set()
         
         if files == None:
-            self.newfiles = Set()
+            self.newfiles = set()
         else:
             self.newfiles = files
             
@@ -95,7 +94,7 @@ class Fileset(WMObject):
         Add contents of self.newfiles to self, empty self.newfiles
         """
         self.files = self.makeset(self.files) | self.makeset(self.newfiles)
-        self.newfiles = Set()
+        self.newfiles = set()
     
     def __len__(self):
         return len(self.getFiles(type='set'))

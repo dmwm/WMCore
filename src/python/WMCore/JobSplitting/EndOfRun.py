@@ -6,8 +6,8 @@ If a subscription's fileset is closed, make a job that will run over any availab
 files
 """
 
-__revision__ = "$Id: EndOfRun.py,v 1.1 2009/07/22 19:42:00 meloam Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: EndOfRun.py,v 1.2 2009/07/28 20:10:39 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from sets import Set
 
@@ -39,10 +39,11 @@ class EndOfRun(JobFactory):
         # // get the fileset
         #//
         fileset = self.subscription.getFileset()
-        
+        fileset.load()
+
         if (not fileset.open):
             availFiles = self.subscription.availableFiles()
-                
+
             baseName = makeUUID()
             currentJob = jobInstance(name = '%s-endofrun' % (baseName,))
             
@@ -52,12 +53,13 @@ class EndOfRun(JobFactory):
             
             for f in availFiles:                    
                 currentJob.addFile(f)
-                    
+
+            self.subscription.acquireFiles(availFiles)
+
             jobs.append(currentJob)
             jobGroup = groupInstance(subscription = self.subscription)
             jobGroup.add(jobs)
             jobGroup.commit()
-            #jobGroup.recordAcquire(list(jobs))
             return [jobGroup]
         else:
             return []

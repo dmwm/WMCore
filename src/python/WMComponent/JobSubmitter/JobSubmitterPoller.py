@@ -7,8 +7,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.5 2010/01/20 17:30:19 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.6 2010/01/22 17:44:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -55,8 +55,15 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         #Set config objects
         self.database = config.CoreDatabase.connectUrl
-        self.dialect  = config.CoreDatabase.dialect
 
+        (connectDialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
+        if connectDialect.lower() == "mysql":
+            self.dialect = "MySQL"
+        elif connectDialect.lower() == "oracle":
+            self.dialect = "Oracle"
+        elif connectDialect.lower() == "sqlite":
+            self.dialect = "SQLite"
+        
         self.session = None
         self.schedulerConfig = {}
         self.config = config
@@ -91,7 +98,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             #print "Runtime for JobSubmitter %f" %(stopTime - startTime)
             #print self.timing
         except:
-            myThread.transaction.rollback()
+            #myThread.transaction.rollback()
             raise
 
     def runSubmitter(self):

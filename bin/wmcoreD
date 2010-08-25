@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.4 2009/10/07 20:04:46 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: wmcoreD,v 1.5 2010/01/22 17:44:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -166,26 +166,17 @@ def connectionTest(configFile):
     wmInit = WMInit()    
     print 'checking default database connection'
 
-    if config.CoreDatabase.dialect.lower() == "oracle":
-        databaseStr = "oracle://%s:%s@%s" % (config.CoreDatabase.masterUser,
-                                             config.CoreDatabase.masterPasswd,
-                                             config.CoreDatabase.hostname)
-        socketLoc = None
-    else:
-        databaseStr = "%s://%s:%s@%s/%s" % (config.CoreDatabase.dialect.lower(),
-                                            config.CoreDatabase.masterUser,
-                                            config.CoreDatabase.masterPasswd,
-                                            config.CoreDatabase.hostname,
-                                            config.CoreDatabase.name)
-        socketLoc = config.CoreDatabase.socket
+    (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
+    socket = getattr(config.CoreDatabase, "socket", None)
+
     try:
        wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.DEBUG)
-       wmInit.setDatabaseConnection(dbConfig = databaseStr,
-                                    dialect = config.CoreDatabase.dialect,
-                                    socketLoc = socketLoc)
+       wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
+                                    dialect = dialect,
+                                    socketLoc = socket)
     except Exception, ex:
         msg = "Unable to make connection to using \n"
-        msg += "parameters provided in %s\n" % databaseStr 
+        msg += "parameters provided in %s\n" % config.CoreDatabase.connectUrl 
         msg += str(ex)
         print msg
         raise ex
@@ -209,7 +200,7 @@ def startup(configFile):
         componentObject.startDeamon(keepParent = True)
         print('Waiting 1 seconds, to ensure daemon file is created')
         time.sleep(1)
-        compDir = config.component_(component).ComponentDir
+        compDir = config.component_(component).componentDir
         compDir = os.path.expandvars(compDir)
         daemonXML = os.path.join( compDir, "Daemon.xml")
         if os.path.exists(daemonXML):
@@ -239,7 +230,7 @@ def shutdown(configFile):
     config = loadConfigurationFile(configFile)
     for component in components:
         print('Stopping: '+component)
-        compDir = config.component_(component).ComponentDir
+        compDir = config.component_(component).componentDir
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):
@@ -295,7 +286,7 @@ def status(configFile):
     print('Status components: '+str(components))
     config = loadConfigurationFile(configFile)
     for component in components:
-        compDir = config.component_(component).ComponentDir
+        compDir = config.component_(component).componentDir
         compDir = os.path.expandvars(compDir)
         daemonXml = os.path.join(compDir, "Daemon.xml")
         if not os.path.exists(daemonXml):

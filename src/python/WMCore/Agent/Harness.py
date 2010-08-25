@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.26 2009/10/15 21:00:38 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Harness.py,v 1.27 2010/01/22 17:44:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -136,19 +136,8 @@ class Harness:
                 options['unix_socket'] = coreSect.socket
             logging.info(">>>Building database connection string")
             # check if there is a premade string if not build it yourself.
-            if hasattr(coreSect, "connectUrl"):
-                dbStr = coreSect.connectUrl
-            else:
-                if coreSect.dialect.lower() == "oracle":
-                    dbStr = "oracle://%s:%s@%s" % (coreSect.user,
-                                                   coreSect.passwd,
-                                                   coreSect.hostname)
-                else:
-                    dbStr = "%s://%s:%s@%s/%s" % (coreSect.dialect,
-                                                  coreSect.user,
-                                                  coreSect.passwd,
-                                                  coreSect.hostname,
-                                                  coreSect.name)
+            dbStr = coreSect.connectUrl
+
             # we only want one DBFactory per database so we will need to 
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
@@ -164,15 +153,14 @@ class Harness:
             myThread.workerThreadManager.pauseWorkers()
 
             logging.info(">>>Initialize transaction dictionary")
-            if not hasattr(coreSect, "dialect"):
-                raise WMException(WMEXCEPTION['WMCORE-5'],'WMCORE-5')
-            logging.info(">>>Determining Dialect: "+coreSect.dialect)
 
-            if coreSect.dialect.lower() == 'mysql':
+            (connectDialect, junk) = coreSect.connectUrl.split(":", 1)
+
+            if connectDialect.lower() == 'mysql':
                 myThread.dialect = 'MySQL'
-            elif coreSect.dialect.lower() == 'oracle':
+            elif connectDialect.lower() == 'oracle':
                 myThread.dialect = 'Oracle'
-            elif coreSect.dialect.lower() == 'sqlite':
+            elif connectionDialect.lower() == 'sqlite':
                 myThread.dialect = 'SQLite' 
             logging.info(">>>Initializing MsgService Factory")
             WMFactory("msgService", "WMCore.MsgService."+ \

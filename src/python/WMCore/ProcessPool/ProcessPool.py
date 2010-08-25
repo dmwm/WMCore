@@ -61,7 +61,15 @@ class ProcessPool:
         else:
             socket = None
 
-        dbConfig = {"dialect": config.CoreDatabase.dialect,
+        (connectDialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
+        if connectDialect.lower() == "mysql":
+            dialect = "MySQL"
+        elif connectDialect.lower() == "oracle":
+            dialect = "Oracle"
+        elif connectDialect.lower() == "sqlite":
+            dialect = "SQLite"
+
+        dbConfig = {"dialect": dialect,
                     "connectUrl": config.CoreDatabase.connectUrl,
                     "socket": socket,
                     "componentDir": componentDir}

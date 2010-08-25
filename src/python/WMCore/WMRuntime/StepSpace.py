@@ -23,7 +23,7 @@ class StepSpace:
         self.args = args
         self.stepName = args.get("StepName", None)
         self.initmodule = inspect.getsourcefile(args.get("Locator", None))
-        self.directory  = os.path.dirname(self.initmodule)
+        self.location  = os.path.dirname(self.initmodule)
         self.sandbox = Sandbox(self.stepName)
 
     def sandboxFiles(self):
@@ -49,7 +49,7 @@ class StepSpace:
         sbox = self.sandbox.getFile(filename)
         if target == None:
             target = filename
-        destination = os.path.join(self.directory, target)
+        destination = os.path.join(self.location, target)
         os.system("/bin/cp %s %s" % (sbox, destination))
         return
 

@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.38 2010/02/08 20:06:22 meloam Exp $"
+    "$Id: TestInit.py,v 1.39 2010/02/08 21:28:25 meloam Exp $"
 __version__ = \
-    "$Revision: 1.38 $"
+    "$Revision: 1.39 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -117,14 +117,14 @@ class TestInit:
             print "wiping dialect: %s " % dialect
             if (dialect == 'MySQL'):
                 print "wiping mysql"
-                formatter.sql = "SHOW TABLES"
+                formatter.sql = r"SHOW TABLES"
                 result = formatter.execute()
                 
                 formatter.sql = "SET foreign_key_checks = 0"
                 formatter.execute()
                 tableNames = []
                 for oneTable in result:
-                    tableNames.append( oneTable(0) )
+                    tableNames.append( oneTable[0] )
                 tableList = ",".join( tableNames )
                 query = "DROP TABLE IF EXISTS %s" % tableList
                 print query
@@ -134,14 +134,17 @@ class TestInit:
                 formatter.execute()
                 
             elif (dialect == 'SQLite'):
-                pass
-#                result = formatter.execute("SHOW TABLES")
-#                tableNames = []
-#                for oneTable in result:
-#                    tableNames.append( oneTable(0) )
-#                tableList = ",".join( tableNames )
-#                query = "DROP TABLE IF EXISTS %s" % tableList
-#                formatter.execute(query)
+                formatter.sql = ".tables"
+                result = formatter.execute()
+                
+                tableNames = []
+                for oneTable in result:
+                    tableNames.append( oneTable[0] )
+                tableList = ",".join( tableNames )
+                query = "DROP TABLE IF EXISTS %s" % tableList
+                print query
+                formatter.sql = query
+                formatter.execute()
             elif (dialect == 'Oracle'):
                 pass
             else:

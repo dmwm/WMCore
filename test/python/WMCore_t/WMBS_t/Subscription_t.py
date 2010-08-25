@@ -15,6 +15,8 @@ from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Job      import Job
 from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.JobStateMachine import DefaultConfig
 
 class SubscriptionTest(unittest.TestCase):
     _setup = False
@@ -1101,13 +1103,13 @@ class SubscriptionTest(unittest.TestCase):
         """
         (testSubscription, testFileset, testWorkflow, testFileA,\
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
-        
+        stateChanger = ChangeState(DefaultConfig.config,'subscription_t_jsm_database')
 
         self.assertFalse(testSubscription.exists() , \
                "ERROR: Subscription exists before it was created")
 
         testSubscription.create()
-        
+    
         assert testSubscription.exists() >= 0, \
                "ERROR: Subscription does not exist after it was created"
                
@@ -1131,20 +1133,51 @@ class SubscriptionTest(unittest.TestCase):
         testJobGroupA.add(testJobA)
         testJobGroupA.add(testJobB)
         testJobGroupA.commit()
+       
+        testJobGroupB = JobGroup(subscription = testSubscription)
+        testJobGroupB.create()
+
+        testFileC = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileC.addRun(Run(10, *[12312]))
+
+        testFileD = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileD.addRun(Run(10, *[12312]))
+        testFileC.create()
+        testFileD.create()
+
+        testJobC = Job(name = "TestJobC")
+        testJobC.addFile(testFileC)
+        
+        testJobD = Job(name = "TestJobD")
+        testJobD.addFile(testFileD)
+        
+        testJobGroupB.add(testJobC)
+        testJobGroupB.add(testJobD)
+        testJobGroupB.commit() 
         
         firstResult = testSubscription.getJobGroups()
-        self.assertEquals(firstResult, [testJobGroupA.id], \
-                                 "One jobgroup should be available not: %s"
+        self.assertEquals(firstResult.sort(), [testJobGroupA,testJobGroupB].sort(), \
+                                 "Two jobgroups should be available not: %s"
                                      %firstResult)
-        testJobA.changeStatus('Failed')
+        stateChanger.propagate([testJobA], 'created', 'new')
         secondResult = testSubscription.getJobGroups()
-        self.assertEquals(secondResult, [testJobGroupA.id],\
-                            "Should be one jobgroup available, found %s" % secondResult)
-        testJobB.changeStatus('Complete')
+        self.assertEquals(secondResult.sort(), [testJobGroupA,testJobGroupB].sort(),\
+                            "Should be two jobgroups available, found %s" % secondResult)
+        stateChanger.propagate([testJobB], 'created', 'new')
+        
+        # riddle me this. For whatever reason, the assertEquals below HAS
+        # to be done on the IDs. If you do it on just the objects, someone
+        # mutates the result and it becomes incorrect
+        
         thirdResult  = testSubscription.getJobGroups()
-        self.assertFalse(thirdResult,\
-                            "Should be no jobgroups, found %s" % thirdResult)    
-            
+        self.assertEquals(len(thirdResult), 1, "Should only be one jobgroup")
+        self.assertEquals([thirdResult[0].id], [testJobGroupB.id], \
+                            "Should be one jobgroup %s, found %s" % ([testJobGroupB.id], [thirdResult[0].id]))
+        self.assertEquals(len(thirdResult),1)
+        stateChanger.propagate([testJobC,testJobD], 'created', 'new')
+        fourthResult  = testSubscription.getJobGroups()
+        self.assertFalse(fourthResult, \
+                            "Should be no jobgroups, found %s" % (fourthResult,))
                
 if __name__ == "__main__":
     unittest.main()

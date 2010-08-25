@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.5 2010/04/19 18:00:41 mnorman Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: Task.py,v 1.6 2010/04/20 15:06:49 spigafi Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 import os.path
 import threading
@@ -116,20 +116,27 @@ class Task(DbObject):
     ####################################################################
 
     @dbTransaction
-    def save(self):
+    def save(self, deep = True):
         """
         Save the task if there is new information in it.
         """
+        
+        status = 0
 
         if self.exists():
             action = self.daofactory(classname = "Task.Save")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
+            
         else:
             self.create()
-
-        return
+        
+        for job in self.jobs:
+                job.save(deep)
+                status += 1
+                
+        return status
 
     #########################################################################
 
@@ -137,6 +144,9 @@ class Task(DbObject):
     def create(self):
         """
         Create a new task in the database
+        -> at this time, no information about the 'id' is stored inside 
+        the new object, to fix (NdFilippo)
+        
         """
         action = self.daofactory(classname = "Task.New")
         action.execute(binds = self.data,
@@ -148,9 +158,11 @@ class Task(DbObject):
     ###########################################################################
 
     @dbTransaction
-    def load(self):
+    def load(self, deep = False):
         """
         Load a task
+        -> 'deep = True' is the default (NdFilippo)
+        
         """
         if self.data['id'] > 0:
             action = self.daofactory(classname = "Task.SelectTask")
@@ -167,33 +179,43 @@ class Task(DbObject):
         else:
             # Then you're screwed
             return
-
+                
         if result == []:
             # Then we have nothing
             logging.error('Attempted to load non-existant task with parameters:\n %s' %(self.data))
             return
-
+        
         # If we're calling this internally, we only care about the first task
         self.data.update(result[0])
-
+        
+        if deep :
+            self.loadJobs()
+            
+            # to check
+            for job in self.jobs:
+                job.getRunningInstance()
+            
         return
 
     ###################################################################
 
     @dbTransaction
-    def loadJobs(self):
+    def loadJobs(self, deep = False):
         """
         Load jobs from the database
 
         """
+        # uh?
         if self.data['id'] < 0:
             self.exists()
-
+        
         action = self.daofactory(classname = 'Task.GetJobs')
         jobList = action.execute(id = self.data['id'],
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction)
 
+
+        # update the jobs information, no runninJob associated (?)...
         for job in jobList:
             tmp = Job()
             tmp.data.update(job)

@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.46 2010/08/10 19:22:23 sfoulkes Exp $"
-__revision__ = "$Revision: 1.46 $"
+__version__ = "$Id: ReReco.py,v 1.47 2010/08/10 20:20:12 meloam Exp $"
+__revision__ = "$Revision: 1.47 $"
 
 import subprocess
 
@@ -68,7 +68,7 @@ class ReRecoWorkloadFactory(StdBase):
     """
     _ReRecoWorkloadFactory_
 
-    Stamp out ReReco workfloads.
+    Stamp out ReReco workflows.
     """
     def __init__(self):
         StdBase.__init__(self)

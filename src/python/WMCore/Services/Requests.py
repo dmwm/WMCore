@@ -8,8 +8,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-__revision__ = "$Id: Requests.py,v 1.43 2010/08/09 14:53:49 metson Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: Requests.py,v 1.44 2010/08/10 18:09:31 metson Exp $"
+__version__ = "$Revision: 1.44 $"
 
 import urllib
 from urlparse import urlunparse
@@ -223,7 +223,7 @@ class JSONRequests(Requests):
     Example implementation of Requests that encodes data to/from JSON.
     """
     def __init__(self, url = 'http://localhost:8080', dict={}):
-        Requests.__init__(self, url, dict={})
+        Requests.__init__(self, url, dict)
         self['accept_type'] = "application/json"
         self['content_type'] = "application/json"
 
@@ -260,7 +260,7 @@ class BasicAuthJSONRequests(JSONRequests):
     """
     def __init__(self, url = "http://localhost:8080", dict={}):
         if url.find("@") == -1:
-            JSONRequests.__init__(self, url, dict={})
+            JSONRequests.__init__(self, url, dict)
             return
 
         # Cleanly pull out the user/password from the url

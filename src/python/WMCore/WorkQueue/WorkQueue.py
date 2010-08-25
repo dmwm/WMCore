@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.40 2009/12/04 16:20:57 swakef Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: WorkQueue.py,v 1.41 2009/12/09 17:12:44 swakef Exp $"
+__version__ = "$Revision: 1.41 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -356,8 +356,8 @@ class WorkQueue(WorkQueueBase):
             if dbs_url and not self.dbsHelpers.has_key(dbs_url):
                 self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
 
-            policy = startPolicy(wmspec.data.policies.start.policyName,
-                             self.params['SplittingMapping'])
+            policy = startPolicy(wmspec.startPolicy(),
+                                 self.params['SplittingMapping'])
 
             units.extend(policy(wmspec, self.dbsHelpers))
 

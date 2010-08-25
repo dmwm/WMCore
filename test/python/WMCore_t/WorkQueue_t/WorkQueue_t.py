@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.20 2009/12/02 20:34:56 swakef Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.21 2009/12/09 17:12:44 swakef Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import unittest
 import os
@@ -31,8 +31,8 @@ def createSpec(name, path, dataset = None,
     if dataset:
         task.addInputDataset(**dataset)
         task.setSplittingAlgorithm("FileBased", size = 1)
-        wmspec.data.policies.start.policyName = 'DatasetBlock'
-        wmspec.data.policies.end.policyName = 'SingleShot'
+        wmspec.setStartPolicy('DatasetBlock')
+        wmspec.setEndPolicy('SingleShot')
 
         #FixMe? need setter for blocklist and whitelist
         if blacklist:
@@ -42,8 +42,8 @@ def createSpec(name, path, dataset = None,
         task.data.input.dataset.dbsurl = 'http://example.com'
     else:
         task.setSplittingAlgorithm("EventBased", size = 100)
-        wmspec.data.policies.start.policyName = 'MonteCarlo'
-        wmspec.data.policies.end.policyName = 'SingleShot'
+        wmspec.setStartPolicy('MonteCarlo')
+        wmspec.setEndPolicy('SingleShot')
         #FIXME need to add WMSpec to save total event properly for production j
         task.addProduction(totalevents = 1000)
     wmspec.addTask(task)
@@ -391,7 +391,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.queueWork(specfile)
         self.assertEqual(numBlocks, len(self.queue))
         self.queue.updateLocationInfo()
-        
+
         # Only SiteB in whitelist
         work = self.queue.getWork({'SiteA' : total})
         self.assertEqual(len(work), 0)

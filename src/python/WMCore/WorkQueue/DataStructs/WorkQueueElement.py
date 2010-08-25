@@ -4,12 +4,11 @@ WorkQueueElement
 A dictionary based object meant to represent a WorkQueue element
 """
 
-__revision__ = "$Id: WorkQueueElement.py,v 1.1 2009/12/02 13:52:45 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueElement.py,v 1.2 2009/12/09 17:12:44 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 STATES = ('Available', 'Negotiating', 'Acquired',
             'Done', 'Failed', 'Canceled')
-END_STATES = ('Done', 'Failed', 'Canceled')
 
 class WorkQueueElement(dict):
     """Class to represent a WorkQueue element"""
@@ -38,4 +37,19 @@ class WorkQueueElement(dict):
 
     def inEndState(self):
         """Have we finished processing"""
-        return self['Status'] in END_STATES
+        return self.isComplete() or self.isFailed() or self.isCanceled()
+
+    def isComplete(self):
+        return self['Status'] == 'Done'
+
+    def isFailed(self):
+        return self['Status'] == 'Failed'
+
+    def isRunning(self):
+        return self['Status'] == 'Acquired'
+
+    def isAvailable(self):
+        return self['Status'] == 'Available'
+
+    def isCanceled(self):
+        return self['Status'] == 'Canceled'

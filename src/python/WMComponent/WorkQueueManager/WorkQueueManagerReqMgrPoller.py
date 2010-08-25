@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.9 2010/06/18 15:12:50 swakef Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.10 2010/06/23 16:15:33 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import re
 import os
@@ -114,7 +114,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         """Report request status to ReqMgr"""
         now = int(time.time())
         try:
-            elements = self.wq.status(since = self.lastReport)
+            elements = self.wq.status(after = self.lastReport)
             for ele in elements:
                 args = {'percent_complete' : ele['PercentComplete'],
                         'percent_success' : ele['PercentSuccess']}

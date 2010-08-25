@@ -10,9 +10,7 @@ Placeholder for ideas at present....
 """
 
 import pickle
-
-
-
+from urllib import urlopen
 
 class PersistencyHelper:
     """
@@ -28,6 +26,7 @@ class PersistencyHelper:
 
 
     """
+        
     def save(self, filename):
         """
         _save_
@@ -47,11 +46,13 @@ class PersistencyHelper:
         Unpickle data from file
 
         """
-        handle = open(filename, 'r')
+        
+        #TODO: currently support both loading from file path or url
+        #if there are more things to filter may be separate the load function
+        handle = urlopen(filename)
         self.data = pickle.load(handle)
         handle.close()
         return
-
 
 
 

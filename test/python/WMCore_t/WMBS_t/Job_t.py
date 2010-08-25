@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.26 2009/09/10 16:47:51 mnorman Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Job_t.py,v 1.27 2009/10/13 20:10:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import unittest
 import logging
@@ -31,6 +31,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine import DefaultConfig
 from WMCore.DataStructs.Run import Run
+from WMCore.Services.UUID import makeUUID
 
 from WMQuality.TestInit import TestInit
 
@@ -102,8 +103,8 @@ class JobTest(unittest.TestCase):
         Create a test job with two files as input.  This will also create the
         appropriate workflow, jobgroup and subscription.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task="Test")
+        testWorkflow = Workflow(spec = makeUUID(), owner = "Simon",
+                                name = makeUUID(), task="Test")
         testWorkflow.create()
         
         testWMBSFileset = WMBSFileset(name = "TestFileset")
@@ -123,7 +124,7 @@ class JobTest(unittest.TestCase):
         testFileA.create()
         testFileB.create()
 
-        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
+        testJob = Job(name = makeUUID(), files = [testFileA, testFileB])
         testJob["couch_record"] = "somecouchrecord"
         testJob["location"] = "test.site.ch"
         testJob.create(group = testJobGroup)
@@ -324,7 +325,7 @@ class JobTest(unittest.TestCase):
         """
         testJobA = self.createTestJob()
         testJobB = Job(id = testJobA["id"])
-        testJobC = Job(name = "TestJob")
+        testJobC = Job(name = testJobA["name"])
         testJobB.load()
         testJobC.load()
 
@@ -388,7 +389,7 @@ class JobTest(unittest.TestCase):
         testJobA.save()
 
         testJobB = Job(id = testJobA["id"])
-        testJobC = Job(name = "TestJob")
+        testJobC = Job(name = testJobA["name"])
         testJobB.loadData()
         testJobC.loadData()
 
@@ -717,6 +718,148 @@ class JobTest(unittest.TestCase):
         
         return
 
+    def testJobFWJRPath(self):
+        """
+        _testJobFWJRPath_
+
+        Verify the correct operation of the Jobs.SetFWJRPath and
+        Jobs.GetFWJRByState DAOs.
+        """
+        testJobA = self.createTestJob()
+        testJobA["state"] = "complete"
+        testJobB = self.createTestJob()
+        testJobB["state"] = "executing"
+        testJobC = self.createTestJob()
+        testJobC["state"] = "complete"
+
+        myThread = threading.currentThread()
+        setFWJRAction = self.daoFactory(classname = "Jobs.SetFWJRPath")
+        setFWJRAction.execute(jobID = testJobA["id"], fwjrPath = "NonsenseA",
+                              conn = myThread.transaction.conn,
+                              transaction = True)                              
+        setFWJRAction.execute(jobID = testJobB["id"], fwjrPath = "NonsenseB",
+                              conn = myThread.transaction.conn,
+                              transaction = True)                              
+        setFWJRAction.execute(jobID = testJobC["id"], fwjrPath = "NonsenseC",
+                              conn = myThread.transaction.conn,
+                              transaction = True)                              
+
+        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
+        changeStateAction.execute(jobs = [testJobA, testJobB, testJobC],
+                                  conn = myThread.transaction.conn,
+                                  transaction = True)
+
+        getJobsAction = self.daoFactory(classname = "Jobs.GetFWJRByState")
+        jobs = getJobsAction.execute(state = "complete",
+                                     conn = myThread.transaction.conn,
+                                     transaction = True)
+
+        goldenIDs = [testJobA["id"], testJobC["id"]]
+        for job in jobs:
+            assert job["id"] in goldenIDs, \
+                   "Error: Unknown job: %s" % job["id"]
+
+            goldenIDs.remove(job["id"])
+
+            if job["id"] == testJobA["id"]:
+                assert job["fwjr_path"] == "NonsenseA", \
+                       "Error: Wrong fwjr path: %s" % job["fwjr_path"]
+            else:
+                assert job["fwjr_path"] == "NonsenseC", \
+                       "Error: Wrong fwjr path: %s" % job["fwjr_path"]
+
+        assert len(goldenIDs) == 0, \
+               "Error: Jobs missing: %s" % len(goldenIDs)
+
+        return
+
+    def testFailJobInput(self):
+        """
+        _testFailJobInput_
+
+        Test the Jobs.FailInput DAO and verify that it doesn't affect other
+        jobs/subscriptions that run over the same files.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task="Test")
+        bogusWorkflow = Workflow(spec = "spec1.xml", owner = "Steve",
+                                name = "wf002", task="Test")
+        testWorkflow.create()
+        bogusWorkflow.create()
+
+        testFileset = WMBSFileset(name = "TestFileset")
+        bogusFileset = WMBSFileset(name = "BogusFileset")
+        testFileset.create()
+        bogusFileset.create()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        bogusSubscription = Subscription(fileset = bogusFileset,
+                                         workflow = bogusWorkflow)
+        testSubscription.create()
+        bogusSubscription.create()
+
+        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileC = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+                         
+        testFileset.addFile([testFileA, testFileB, testFileC])
+        bogusFileset.addFile([testFileA, testFileB, testFileC])        
+        testFileset.commit()
+        bogusFileset.commit()
+
+        testSubscription.completeFiles([testFileA, testFileB, testFileC])
+        bogusSubscription.acquireFiles([testFileA, testFileB, testFileC])
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        bogusJobGroup = JobGroup(subscription = bogusSubscription)
+        testJobGroup.create()
+        bogusJobGroup.create()
+
+        testJob = Job(name = "TestJob", files = [testFileA, testFileB, testFileC])
+        bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB, testFileC])
+        testJob.create(group = testJobGroup)
+        bogusJob.create(group = bogusJobGroup)
+        
+        failInputAction = self.daoFactory(classname = "Jobs.FailInput")
+        failInputAction.execute(jobID = testJob["id"])
+
+        availFiles = len(testSubscription.filesOfStatus("Available"))
+        assert availFiles == 0, \
+               "Error: test sub has wrong number of available files: %s" % availFiles
+
+        acqFiles = len(testSubscription.filesOfStatus("Acquired"))
+        assert acqFiles == 0, \
+               "Error: test sub has wrong number of acquired files: %s" % acqFiles
+
+        compFiles = len(testSubscription.filesOfStatus("Completed"))
+        assert compFiles == 0, \
+               "Error: test sub has wrong number of complete files: %s" % compFiles
+
+        failFiles = len(testSubscription.filesOfStatus("Failed"))
+        assert failFiles == 3, \
+               "Error: test sub has wrong number of failed files: %s" % failFiles
+
+        availFiles = len(bogusSubscription.filesOfStatus("Available"))
+        assert availFiles == 0, \
+               "Error: test sub has wrong number of available files: %s" % availFiles
+
+        acqFiles = len(bogusSubscription.filesOfStatus("Acquired"))
+        assert acqFiles == 3, \
+               "Error: test sub has wrong number of acquired files: %s" % acqFiles
+
+        compFiles = len(bogusSubscription.filesOfStatus("Completed"))
+        assert compFiles == 0, \
+               "Error: test sub has wrong number of complete files: %s" % compFiles
+
+        failFiles = len(bogusSubscription.filesOfStatus("Failed"))
+        assert failFiles == 0, \
+               "Error: test sub has wrong number of failed files: %s" % failFiles        
+        
+        return
 
 if __name__ == "__main__":
     unittest.main() 

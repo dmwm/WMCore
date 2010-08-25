@@ -5,19 +5,19 @@ _JobPackage_
 Data structure for storing and retreiving multiple job objects.
 """
 
-__revision__ = "$Id: JobPackage.py,v 1.1 2009/06/08 20:01:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobPackage.py,v 1.2 2010/07/28 15:43:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import cPickle
 
 from WMCore.DataStructs.WMObject import WMObject
 
-class JobPackage(WMObject, list):
+class JobPackage(WMObject, dict):
     """
     _JobPackage_
     """
     def __init__(self):
-        list.__init__(self)
+        dict.__init__(self)
 
     def save(self, fileName):
         """
@@ -38,6 +38,6 @@ class JobPackage(WMObject, list):
         """
         fileHandle = open(fileName, "r")
         loadedJobPackage = cPickle.load(fileHandle)
-        del self[0:len(self)]
-        self.extend(loadedJobPackage)
+        self.clear()
+        self.update(loadedJobPackage)
         return

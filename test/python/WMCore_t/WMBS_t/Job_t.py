@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.22 2009/08/03 18:38:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Job_t.py,v 1.23 2009/08/21 10:00:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 import logging
@@ -322,9 +322,6 @@ class JobTest(unittest.TestCase):
         database using the name and the id and then verify that all information
         was loaded correctly.
         """
-
-        # test loading state, state_time, retry count, etc...
-
         testJobA = self.createTestJob()
         testJobB = Job(id = testJobA["id"])
         testJobC = Job(name = "TestJob")
@@ -618,6 +615,83 @@ class JobTest(unittest.TestCase):
                "ERROR: Job returned in wrong state: %s" % result[0]["name"]
 
         return
-    
+
+    def testGetOutputParentLFNs(self):
+        """
+        _testGetOutputParentLFNs_
+
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task="Test")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10, 
+                         merged = True)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10, 
+                         merged = True)
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10, 
+                         merged = False)
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10, 
+                         merged = False)
+        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10, 
+                         merged = True)
+        testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10, 
+                         merged = True)
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        testFileD.create()
+        testFileE.create()
+        testFileF.create()
+
+        testFileC.addChild(testFileE["lfn"])
+        testFileD.addChild(testFileF["lfn"])
+
+        testJobA = Job(name = "TestJob", files = [testFileA, testFileB])
+        testJobA["couch_record"] = "somecouchrecord"
+        testJobA["location"] = "test.site.ch"
+        testJobA.create(group = testJobGroup)
+        testJobA.associateFiles()
+
+        testJobB = Job(name = "TestJobB", files = [testFileC, testFileD])
+        testJobB["couch_record"] = "somecouchrecord"
+        testJobB["location"] = "test.site.ch"
+        testJobB.create(group = testJobGroup)
+        testJobB.associateFiles()
+
+        goldenLFNs = ["/this/is/a/lfnA", "/this/is/a/lfnB"]
+        
+        parentLFNs = testJobA.getOutputDBSParentLFNs()
+        for parentLFN in parentLFNs:
+            assert parentLFN in goldenLFNs, \
+                "ERROR: Unknown lfn: %s" % parentLFN
+            goldenLFNs.remove(parentLFN)
+
+        assert len(goldenLFNs) == 0, \
+            "ERROR: LFNs are missing..."
+
+        goldenLFNs = ["/this/is/a/lfnE", "/this/is/a/lfnF"]
+        
+        parentLFNs = testJobB.getOutputDBSParentLFNs()
+        for parentLFN in parentLFNs:
+            assert parentLFN in goldenLFNs, \
+                "ERROR: Unknown lfn: %s" % parentLFN
+            goldenLFNs.remove(parentLFN)
+
+        assert len(goldenLFNs) == 0, \
+            "ERROR: LFNs are missing..."
+        
+        return
+
 if __name__ == "__main__":
     unittest.main() 

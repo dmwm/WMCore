@@ -12,6 +12,22 @@ import sys
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMBS.Oracle.Create import Create
 
+def fixupLocal(localT0AST):
+    """
+    _fixupLocal_
+
+    Change the acquisition era to something so that we can easily distinguish
+    dataproduced by this as bogus and reset all block status so that they get
+    skimmed.
+    """
+    acqEra = "UPDATE run SET acq_era = 'PromptSkimTest'"
+    block = """UPDATE block SET status =
+                 (SELECT id FROM block_status WHERE status = 'Exported')"""
+
+    localT0AST.processData(acqEra)
+    localT0AST.processData(block)
+    return
+
 def copyTableSubset(remoteT0AST, localT0AST, tableName, selectSQL, selectBinds):
     """
     _copyTableSubset_
@@ -293,3 +309,4 @@ fileParentsSelect = """SELECT child, parent FROM wmbs_file_parent
 copyTableSubset(remoteDbi, localDbi, "wmbs_file_parent", fileParentsSelect,
                 {"runid": runNum})
 
+fixupLocal(localDbi)

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.92 2010/03/30 18:18:21 sryu Exp $"
-__version__ = "$Revision: 1.92 $"
+__revision__ = "$Id: WorkQueue.py,v 1.93 2010/04/06 20:29:36 sryu Exp $"
+__version__ = "$Revision: 1.93 $"
 
 
 import time
@@ -24,14 +24,6 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-#from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
-# SiteDB requires host cert - work around for now
-class SiteDB:
-    def phEDExNodetocmsName(self, node):
-        return node.replace('_MSS',
-                            '').replace('_Buffer',
-                                        '').replace('_Export', '')
-
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.Policy.Start import startPolicy
@@ -140,8 +132,6 @@ class WorkQueue(WorkQueueBase):
         self.dbsHelpers.update(self.params.get('DBSReaders', {}))
         if not self.dbsHelpers.has_key(self.params["GlobalDBS"]):
             self.dbsHelpers[self.params["GlobalDBS"]] = DBSReader(self.params["GlobalDBS"])
-
-        self.SiteDB = SiteDB()
 
     #  //
     # // External API
@@ -768,14 +758,11 @@ class WorkQueue(WorkQueueBase):
             self.lastLocationUpdate = response['request_timestamp']
             for block in response['block']:
                 result.setdefault(block['name'], [])
-                nodes = [se['node'] for se in block['replica']]
-                result[block['name']].extend(nodes)
+                seNames = [se['se'] for se in block['replica']]
+                result[block['name']].extend(seNames)
         else:
             raise RuntimeError, "invalid selection"
 
-        # convert PhEDEx node name to CMS site name
-        [result.__setitem__(data, map(self.SiteDB.phEDExNodetocmsName,
-                                       result[data])) for data in result]
         return result, fullRefresh
 
 

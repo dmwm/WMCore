@@ -4,8 +4,8 @@ WorkQueue splitting by dataset
 
 """
 __all__ = []
-__revision__ = "$Id: Dataset.py,v 1.5 2010/03/24 16:22:49 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Dataset.py,v 1.6 2010/03/24 16:48:46 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
@@ -14,7 +14,7 @@ class Dataset(StartPolicyInterface):
     """Split elements into datasets"""
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
-        self.args.setdefault('SliceType', 'NumberOfFiles')
+        self.args.setdefault('SliceType', 'number_of_files')
         self.args.setdefault('SliceSize', 100)
 
 

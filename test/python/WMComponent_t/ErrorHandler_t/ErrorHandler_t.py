@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.15 2010/02/05 16:52:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.16 2010/04/29 14:48:06 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import os
 import threading
@@ -52,6 +52,8 @@ class ErrorHandlerTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
         self.setJobTime = self.daofactory(classname = "Jobs.SetStateTime")
+        locationAction = self.daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "malpaquet", seName = "malpaquet")
         self.testDir = self.testInit.generateWorkDir()
         self.nJobs = 10
         return
@@ -103,6 +105,9 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         Creates a group of several jobs
         """
+
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
         testWorkflow.create()
@@ -123,7 +128,8 @@ class ErrorHandlerTest(unittest.TestCase):
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileB.addRun(Run(10, *[12312]))
-        testFileA.setLocation('malpaquet')
+        testFileB.setLocation('malpaquet')
+        
         testFileA.create()
         testFileB.create()
 
@@ -136,7 +142,14 @@ class ErrorHandlerTest(unittest.TestCase):
             testJobGroup.add(testJob)
         
         testJobGroup.commit()
+
+
+        testSubscription.acquireFiles(files = [testFileA, testFileB])
+        testSubscription.save()
+        myThread.transaction.commit()
+        
         return testJobGroup
+
 
     def testCreate(self):
         """
@@ -219,6 +232,51 @@ class ErrorHandlerTest(unittest.TestCase):
         idList = self.getJobs.execute(state = 'JobCooloff')
         self.assertEqual(len(idList), self.nJobs)
         return
+
+
+    def testExhausted(self):
+        """
+        _testExhausted_
+
+        Test that the system can exhaust jobs correctly
+        """
+
+        testJobGroup = self.createTestJobGroup()
+
+        config = self.getConfig()
+        config.ErrorHandler.maxRetries = 1
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
+
+        testSubscription = Subscription(id = 1) # You should only have one
+        testSubscription.load()
+        testSubscription.loadData()
+
+        # Do we have files to start with?
+        self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 2)
+
+
+        testErrorHandler = ErrorHandlerPoller(config)
+        testErrorHandler.setup(None)
+        testErrorHandler.algorithm(None)
+
+        idList = self.getJobs.execute(state = 'JobFailed')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'JobCooloff')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'Exhausted')
+        self.assertEqual(len(idList), self.nJobs)
+
+        
+
+        # Did we fail the files?
+        self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 0)
+        self.assertEqual(len(testSubscription.filesOfStatus("Failed")), 2)
 
 if __name__ == '__main__':
     unittest.main()

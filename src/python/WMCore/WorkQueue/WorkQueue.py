@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.79 2010/02/26 17:51:42 swakef Exp $"
-__version__ = "$Revision: 1.79 $"
+__revision__ = "$Id: WorkQueue.py,v 1.80 2010/02/27 12:24:18 swakef Exp $"
+__version__ = "$Revision: 1.80 $"
 
 
 import time
@@ -556,9 +556,10 @@ class WorkQueue(WorkQueueBase):
         items = [dict(endPolicy(group,
                            self.params['EndPolicySettings'])) for \
                                                     group in elements.values()]
+        # Strip out data members we don't want to send to the server
         for i in items:
-            i.remove('Elements')
-            i.remove('WMSpec')
+            i.pop('Elements', None)
+            i.pop('WMSpec', None)
 
         if items:
             self.logger.debug("Update parent queue with: %s" % str(items))

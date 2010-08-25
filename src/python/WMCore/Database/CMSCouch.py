@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.65 2010/07/12 11:29:49 metson Exp $"
-__version__ = "$Revision: 1.65 $"
+__revision__ = "$Id: CMSCouch.py,v 1.66 2010/07/12 14:28:58 metson Exp $"
+__version__ = "$Revision: 1.66 $"
 
 import urllib
 import datetime
@@ -321,7 +321,38 @@ class Database(CouchDBRequests):
                         (retval['error'], retval['reason'])
         else:
             return retval
+        
+    def loadList(self, design, list, view, options = {}, keys = []):
+        """
+        Load data from a list function. This returns data that hasn't been 
+        decoded, since a list can return data in any format. It is expected that
+        the caller of this function knows what data is being returned and how to
+        deal with it appropriately.  
+        """
+        encodedOptions = {}
+        for k,v in options.iteritems():
+            encodedOptions[k] = self.encode(v)
+
+        if len(keys):
+            if (encodedOptions):
+                data = urllib.urlencode(encodedOptions)
+                retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
+                        (self.name, design, list, view, data), {'keys':keys}, decode=False)
+            else:
+                retval = self.post('/%s/_design/%s/_list/%s/%s' % \
+                        (self.name, design, list, view), {'keys':keys}, decode=False)
+        else:
+            retval = self.get('/%s/_design/%s/_list/%s/%s' % \
+                        (self.name, design, list, view), encodedOptions, decode=False)
             
+        if ('error' in retval):
+            raise RuntimeError ,\
+                    "Error in CouchDB: viewError '%s' reason '%s'" %\
+                        (retval['error'], retval['reason'])
+        else:
+            return retval
+        
+        
     def createDesignDoc(self, design='myview', language='javascript'):
         """
         Create a document that represents a design document

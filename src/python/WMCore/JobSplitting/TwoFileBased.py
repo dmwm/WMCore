@@ -7,15 +7,49 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.11 2010/06/01 13:22:11 sfoulkes Exp $"
-__version__  = "$Revision: 1.11 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.12 2010/06/08 20:05:57 mnorman Exp $"
+__version__  = "$Revision: 1.12 $"
 
 import logging
+import threading
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUID           import makeUUID
+from WMCore.DAOFactory              import DAOFactory
+
+from WMCore.WMBS.File  import File
 
 class TwoFileBased(JobFactory):
+
+
+    def __init__(self, package='WMCore.DataStructs',
+                 subscription=None,
+                 generators=[]):
+        """
+        __init__
+
+        Create the DAOs
+        """
+
+        myThread = threading.currentThread()
+
+        JobFactory.__init__(self, package = 'WMCore.WMBS',
+                            subscription = subscription,
+                            generators = generators)
+
+
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+        
+        self.getParentInfoAction     = self.daoFactory(classname = "Files.GetParentInfo")
+
+
+
+        return
+
+        
+    
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -25,18 +59,84 @@ class TwoFileBased(JobFactory):
         passed in jobs will process a maximum of 10 files.
         """
         filesPerJob = int(kwargs.get("files_per_job", 10))
-        filesInJob = 0
-        totalJobs = 0
+        jobsPerGroup = int(kwargs.get("jobs_per_group", 0))
+        filesInJob   = 0
+        totalJobs    = 0
+        listOfFiles  = []
 
-        baseName = makeUUID()
+        #Get a dictionary of sites, files
+        locationDict = self.sortByLocation()
 
-        for availableFile in self.subscription.availableFiles():
-            availableFile.loadData(parentage = 1)
-            if filesInJob == 0 or filesInJob == filesPerJob:
-                self.newGroup()
-                self.newJob(name = "%s-%s" % (baseName, totalJobs))
-                totalJobs += 1
-                filesInJob = 0
+        for location in locationDict.keys():
+            #Now we have all the files in a certain location
+            fileList    = locationDict[location]
+            filesInJob  = 0
+            jobsInGroup = 0
+            self.newGroup()
+            if len(fileList) == 0:
+                #No files for this location
+                #This isn't supposed to happen, but better safe then sorry
+                continue
+            for file in fileList:
+                parentLFNs = self.findParent(lfn = file['lfn'])
+                for lfn in parentLFNs:
+                    parent = File(lfn = lfn)
+                    file['parents'].add(parent)
+                if filesInJob == 0 or filesInJob == filesPerJob:
+                    if jobsPerGroup:
+                        if jobsInGroup > jobsPerGroup:
+                            self.newGroup()
+                            jobsInGroup = 0
 
-            filesInJob += 1
-            self.currentJob.addFile(availableFile)
+                    self.newJob(name = self.getJobName(length=totalJobs))
+                    
+                    filesInJob   = 0
+                    totalJobs   += 1
+                    jobsInGroup += 1
+                    
+                filesInJob += 1
+                self.currentJob.addFile(file)
+                
+                listOfFiles.append(file)
+
+        return
+
+
+
+
+    def findParent(self, lfn):
+        """
+        _findParent_
+
+        Find the parents for a file based on its lfn
+        """
+
+
+        parentsInfo = self.getParentInfoAction.execute([lfn])
+        newParents = set()
+        for parentInfo in parentsInfo:
+
+            # This will catch straight to merge files that do not have redneck
+            # parents.  We will mark the straight to merge file from the job
+            # as a child of the merged parent.
+            if int(parentInfo["merged"]) == 1:
+                newParents.add(parentInfo["lfn"])
+
+            elif parentInfo['gpmerged'] == None:
+                continue
+
+            # Handle the files that result from merge jobs that aren't redneck
+            # children.  We have to setup parentage and then check on whether or
+            # not this file has any redneck children and update their parentage
+            # information.
+            elif int(parentInfo["gpmerged"]) == 1:
+                newParents.add(parentInfo["gplfn"])
+
+            # If that didn't work, we've reached the great-grandparents
+            # And we have to work via recursion
+            else:
+                parentSet = self.findParent(lfn = parentInfo['gplfn'])
+                for parent in parentSet:
+                    newParents.add(parent)
+
+        return newParents

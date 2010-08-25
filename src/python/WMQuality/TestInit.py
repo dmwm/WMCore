@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.58 2010/02/18 19:20:42 sfoulkes Exp $"
+    "$Id: TestInit.py,v 1.59 2010/04/21 19:04:11 meloam Exp $"
 __version__ = \
-    "$Revision: 1.58 $"
+    "$Revision: 1.59 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -118,10 +118,8 @@ class TestInit:
             dialect = self.coreConfig.CoreDatabase.dialect
             formatter = DBFormatter(logging.getLogger(''), dbi)
             if (dialect == 'MySQL'):
-                print "wiping mysql"
                 formatter.sql = r"SHOW TABLES"
                 result = formatter.execute()
-                print "we got the following result for SHOW TABLES: %s " % result
                 formatter.sql = "SET foreign_key_checks = 0"
                 formatter.execute()
                 allTables = []
@@ -131,9 +129,7 @@ class TestInit:
                 if len(allTables) == 0:
                     return
                 
-                print "all tables is %s" % allTables
                 query = "DROP TABLE IF EXISTS `%s`" % ("`,`".join(allTables))
-                print query
                 formatter.sql = query
                 formatter.execute()
 

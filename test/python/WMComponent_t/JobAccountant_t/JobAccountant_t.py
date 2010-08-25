@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.4 2009/10/13 21:39:29 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.5 2009/10/14 19:16:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import os.path
@@ -143,7 +143,7 @@ class JobAccountantTest(unittest.TestCase):
         testJob["state"] = "complete"
         self.stateChangeAction.execute(jobs = [testJob])
 
-        fwjrPath = os.path.join(os.getenv("WMCOREBASE"),"test/python/WMComponent_t/JobAccountant_t/", fwjrName)
+        fwjrPath = os.path.join(os.getenv("WMCOREBASE"), "test/python/WMComponent_t/JobAccountant_t/", fwjrName)
         self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
         return
 
@@ -344,7 +344,7 @@ class JobAccountantTest(unittest.TestCase):
 
         for fwkJobReportFile in fwkJobReportFiles:
             assert jobOutput.has_key(fwkJobReportFile["LFN"]), \
-                   "Error: output file is not a child of the input: %s" % fwkJobReportFile["LFN"]
+                   "Error: output file is not a child of the input: %s %s" % (fwkJobReportFile["LFN"], jobOutput.keys())
 
             outputFile = jobOutput[fwkJobReportFile["LFN"]]
 
@@ -648,11 +648,11 @@ class JobAccountantTest(unittest.TestCase):
         self.testJob.save()
         self.stateChangeAction.execute(jobs = [self.testJob])
 
-        self.setFWJRAction.execute(jobID = self.testJob["id"],
+        self.setFWJRAction.execute(self.testJob["id"],
                                    os.path.join(os.getenv("WMCOREBASE"),
-                                                "/test/python/WMComponent_t/JobAccountant_t/",
+                                                "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedSkimSuccess.xml"))
-        
+        return
 
     def testMergedSkim(self):
         """
@@ -670,7 +670,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.processPool.dequeue(1)
 
         jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
-                                                "/test/python/WMComponent_t/JobAccountant_t/",
+                                                "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedSkimSuccess.xml"))
         self.verifyFileMetaData(self.testJob["id"], jobReports[0].files)
         self.verifyJobSuccess(self.testJob["id"])
@@ -803,7 +803,7 @@ class JobAccountantTest(unittest.TestCase):
 
         self.setFWJRAction.execute(jobID = self.testJob["id"],
                                    fwjrPath = os.path.join(os.getenv("WMCOREBASE"),
-                                                "/test/python/WMComponent_t/JobAccountant_t/",
+                                                "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergeSuccess.xml"))
         return
 
@@ -822,8 +822,8 @@ class JobAccountantTest(unittest.TestCase):
         accountant.processPool.dequeue(1)
 
         jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
-                                                "/test/python/WMComponent_t/JobAccountant_t/",
-                                                "MergedSkimSuccess.xml"))
+                                                "test/python/WMComponent_t/JobAccountant_t/",
+                                                "MergeSuccess.xml"))
         self.verifyFileMetaData(self.testJob["id"], jobReports[0].files)
         self.verifyJobSuccess(self.testJob["id"])
 

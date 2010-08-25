@@ -6,6 +6,7 @@ A REST formatter that appends the DAS headers to the result data
 """
 
 from WMCore.WebTools.Page import exposedasjson, exposedasxml
+from WMCore.WebTools.Page import exposedasplist
 from WMCore.WebTools.RESTFormatter import RESTFormatter
 
 class DASRESTFormatter(RESTFormatter):
@@ -15,4 +16,8 @@ class DASRESTFormatter(RESTFormatter):
 
     @exposedasxml
     def xml(self, data):
+        return data
+
+    @exposedasplist
+    def plist(self, data):
         return data

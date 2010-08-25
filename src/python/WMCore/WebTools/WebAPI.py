@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson, exposedasjson, exposedasxml
+from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson
+from WMCore.WebTools.Page import exposedasplist, exposedasjson, exposedasxml
 from WMCore.Lexicon import sitetier, countrycode
 from cherrypy import expose, HTTPRedirect
 import sys
+import types
 import traceback
 
 class WebAPI(DatabasePage):
@@ -66,8 +68,12 @@ class WebAPI(DatabasePage):
         name, kwargs are passed to the method
         """
         if len(args) > 0:
-            dict = self.runMethod(args[0], kwargs)
-            return dict
+#            dict = self.runMethod(args[0], kwargs)
+#            return dict
+            res = self.runMethod(args[0], kwargs)
+            if  type(res) is types.StringType:
+                res = eval(res)
+            return res
         else:
             raise HTTPRedirect("doc")
     
@@ -106,6 +112,20 @@ class WebAPI(DatabasePage):
         except:
             raise HTTPRedirect("doc")
     
+    @exposedasplist
+    def plist(self, *args, **kwargs):
+        """
+        The das compatible xml output. args is assumed to be length 1 and 
+        contain the method name, kwargs are passed to the method
+        """
+        try:
+            res = self.runMethod(args[0], kwargs)
+            if  type(res) is types.StringType:
+                res = eval(res)
+            return res
+        except:
+            raise HTTPRedirect("doc")
+    
     @exposexml
     def xml(self, *args, **kwargs):
         """
@@ -113,8 +133,12 @@ class WebAPI(DatabasePage):
         name, kwargs are passed to the method
         """
         if len(args) > 0:
-            dict = self.runMethod(args[0], kwargs)
-            return dict
+#            dict = self.runMethod(args[0], kwargs)
+#            return dict
+            res = self.runMethod(args[0], kwargs)
+            if  type(res) is types.StringType:
+                res = eval(res)
+            return res
         else:
             raise HTTPRedirect("doc")
     

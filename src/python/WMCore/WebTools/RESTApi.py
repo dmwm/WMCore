@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.7 2009/03/16 12:59:50 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: RESTApi.py,v 1.8 2009/06/08 19:05:21 valya Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
@@ -122,7 +122,10 @@ class RESTApi(WebAPI):
             return self.formatter.json(data)
         elif datatype == 'application/xml':
             # Serialise to xml
-            return self.formatter.xml(data)
+            try:
+                return self.formatter.plist(data)
+            except:
+                return self.formatter.xml(data)
         elif datatype == 'application/atom+xml':
             # Serialise to atom
             return self.formatter.atom(data)

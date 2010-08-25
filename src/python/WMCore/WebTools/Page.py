@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.28 2009/06/07 23:14:28 valya Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Page.py,v 1.29 2009/06/08 19:05:21 valya Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import md5
 import urllib
@@ -31,20 +31,25 @@ class Page(WMObject):
     Page is a base class that holds a configuration
     """
     def warning(self, msg):
-        self.log(msg, logging.WARNING)
+        if  msg:
+            self.log(msg, logging.WARNING)
 
     def exception(self, msg):
-        self.log(msg, logging.ERROR)
+        if  msg:
+            self.log(msg, logging.ERROR)
 
     def debug(self, msg):
-        self.log(msg, logging.DEBUG)
+        if  msg:
+            self.log(msg, logging.DEBUG)
 
     def info(self, msg):
-        self.log(msg, logging.INFO)
+        if  msg:
+            self.log(msg, logging.INFO)
 
     def log(self, msg, severity):
-        cplog(msg, context=self.config.application,
-                severity=severity, traceback=False)
+        if  msg:
+            cplog(msg, context=self.config.application,
+                    severity=severity, traceback=False)
 
 class TemplatedPage(Page):
     """
@@ -149,6 +154,24 @@ def exposexml (func):
     wrapper.exposed = True
     return wrapper
 
+def exposedasplist (func):
+    """
+    Return data in XML plist format, 
+    see http://docs.python.org/library/plistlib.html#module-plistlib
+    """
+    def wrapper (self, *args, **kwds):
+        import plistlib
+        data_struct = func(self, *args, **kwds)
+#        data_struct = runDas(self, func, *args, **kwds)
+        plist_str = plistlib.writePlistToString(data_struct)
+#        cherrypy.response.headers['ETag'] = das['results'].__str__().__hash__()
+        cherrypy.response.headers['Content-Type'] = "application/xml"
+        return plist_str
+    wrapper.__doc__ = func.__doc__
+    wrapper.__name__ = func.__name__
+    wrapper.exposed = True
+    return wrapper
+
 def exposedasxml (func):
     """
     This will prepend the DAS header to the data and calculate the checksum of
@@ -194,7 +217,8 @@ def exposejson (func):
         data = func (self, *args, **kwds)
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
-            jsondata = encoder.iterencode(data)
+#            jsondata = encoder.iterencode(data)
+            jsondata = encoder.encode(data)
             return jsondata
         except:
             Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
@@ -263,15 +287,19 @@ def runDas(self, func, *args, **kwds):
         row = results[0]
     else:
         row = results
-    if  type(row) is not types.DictType:
-        data  = str(results)
-        dtype = type(results)
-        raise Exception("Unsupported data format '%s' data type '%s'" % (data, dtype))
-    if  row.has_key('expire'):
+    if  type(row) is types.StringType:
+        row = eval(row)
+#    if  type(results) is types.StringType:
+#        results = eval(results)
+#    if  type(row) is not types.DictType:
+#        data  = str(results)
+#        dtype = type(results)
+#        raise Exception("Unsupported data format '%s' data type '%s'" % (data, dtype))
+    if  type(row) is types.DictType and row.has_key('expire'):
         res_expire = row['expire']
     else:
         res_expire = 60*5 # 5 minutes
-    if  row.has_key('version'):
+    if  type(row) is types.DictType and row.has_key('version'):
         res_version = row['version']
     else:
         res_version = 'unknown'

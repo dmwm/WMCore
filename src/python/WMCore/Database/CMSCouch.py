@@ -7,8 +7,8 @@ A simple API to CouchDB that sends HTTP requests to the REST interface.
 http://wiki.apache.org/couchdb/API_Cheatsheet
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.70 2010/07/29 13:46:17 metson Exp $"
-__version__ = "$Revision: 1.70 $"
+__revision__ = "$Id: CMSCouch.py,v 1.71 2010/07/30 11:13:42 metson Exp $"
+__version__ = "$Revision: 1.71 $"
 
 import urllib
 import datetime
@@ -113,6 +113,8 @@ class CouchDBRequests(BasicAuthJSONRequests):
         """
         if status == 400:
             raise CouchBadRequestError(reason, data, result)
+        elif status == 401:
+            raise CouchUnauthorisedError(reason, data, result)
         elif status == 403:
             raise CouchForbidden(reason, data, result)
         elif status == 404:
@@ -553,6 +555,11 @@ class CouchBadRequestError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchBadRequestError"
+        
+class CouchUnauthorisedError(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchUnauthorisedError"
                 
 class CouchNotFoundError(CouchError):
     def __init__(self, reason, data, result):

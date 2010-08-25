@@ -5,8 +5,8 @@ _AlgoDatasetAssoc_
 MySQL implementation of DBSBuffer.AlgoDatasetAssoc
 """
 
-__revision__ = "$Id: AlgoDatasetAssoc.py,v 1.1 2009/07/13 19:57:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: AlgoDatasetAssoc.py,v 1.2 2009/10/22 15:11:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -46,4 +46,7 @@ class AlgoDatasetAssoc(DBFormatter):
         result = self.dbi.processData(self.idsql, binds, conn = conn,
                                       transaction = transaction)
         formattedResult = self.formatDict(result)
-        return formattedResult[0]["id"]
+        if len(formattedResult) == 1:
+            return formattedResult[0]["id"]
+        
+        return None

@@ -47,7 +47,7 @@ var dataSchema = {
      };
 
 var dataUrl = "/workqueue/elementsinfowithlimit?";
-var tableConfig = WMCore.WebTools.defaultTableConfig;
+var tableConfig = WMCore.WebTools.createDefaultTableConfig();
 tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 5});
 tableConfig.initialRequest = "startIndex=0&results=5";
 tableConfig.dynamicData =  true;

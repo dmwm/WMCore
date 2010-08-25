@@ -193,7 +193,7 @@ var tree;
 		var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema);
 		var dataTable = WMCore.WebTools.createDataTable("workloadprogress", dataSource, 
 		                             WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-		                             WMCore.WebTools.defaultTableConfig, 100000);
+		                             WMCore.WebTools.createDefaultTableConfig(), 100000);
 	};
 	
 	var elementTable = function() {
@@ -217,7 +217,7 @@ var tree;
 
         var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
         
-		tableConfig = WMCore.WebTools.defaultTableConfig;
+		tableConfig = WMCore.WebTools.createDefaultTableConfig();
 		
 		tableConfig.paginator = new YAHOO.widget.Paginator({rowsPerPage : 10});
 		

@@ -29,15 +29,19 @@ WMCore.WebTools.createDefaultTableDef = function (tableDef) {
     return defaultDef;
 };
 
-WMCore.WebTools.defaultTableConfig = {
-    // Set up pagination
-    paginator : new YAHOO.widget.Paginator({
-        rowsPerPage : 25
-    }),
-    // Set up initial sort state
-    sortedBy: {
-        key: "id", dir:YAHOO.widget.DataTable.CLASS_ASC
-	}
+WMCore.WebTools.createDefaultTableConfig = function() {
+	
+	var defaultConfig = {
+	    // Set up pagination
+	    paginator : new YAHOO.widget.Paginator({
+	        rowsPerPage : 25
+	    }),
+	    // Set up initial sort state
+	    sortedBy: {
+	        key: "id", dir:YAHOO.widget.DataTable.CLASS_ASC
+		}
+    }
+	return defaultConfig
 };
 
 

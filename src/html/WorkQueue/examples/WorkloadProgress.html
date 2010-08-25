@@ -28,17 +28,23 @@
 <!-- WebTools library -->
 <script src="../javascript/namespace.js"></script>
 <script src="../javascript/dataTable.js"></script>
+<script src="../javascript/debugging.js"></script>
 </head>
 <body class="yui-skin-sam">
 <div id="workloadprogress"></div>
 <script type="text/javascript">
+
+enableDebug()
 
 var formatUrl = function(elCell, oRecord, oColumn, sData) { 
                 elCell.innerHTML = "<a href='" + oRecord.getData("ChildQueueUrl") + "' target='_blank'>" + sData + "</a>"; 
             };
 var pbs = [];
 var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
-            var pb = new YAHOO.widget.ProgressBar({
+            writeDebugObject(oRecord)
+			writeDebug(oRecord.getData("total"))
+			writeDebug(oData)
+			var pb = new YAHOO.widget.ProgressBar({
                 width:'90px',
                 height:'11px',
                 maxValue:oRecord.getData("total"),
@@ -49,16 +55,21 @@ var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
         };
 
 var dataSchema = {
-        fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, 
-		         {key: "owner"}, {key: "done", label: "progress", formatter: progressFormatter}]
+        fields: [{key: "spec_id"}, {key: "spec_name"}, {key: "owner"}, 
+		         {key: "total", label: "Total Elements"}, 
+				 {key: "done", label: "progress", formatter: progressFormatter}]
         };
 
-var dataUrl = "/workqueue/workloadprogress"
+var dataUrl = "/workqueue/workloadprogress";
 
+var tableConfig = WMCore.WebTools.createDefaultTableConfig()
+tableConfig.sortedBy ={
+        key: "spec_id", dir:YAHOO.widget.DataTable.CLASS_ASC
+    }
 var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 var dataTable = WMCore.WebTools.createDataTable("workloadprogress", dataSource, 
                              WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.defaultTableConfig, 100000)
+                             tableConfig, 100000)
 
 </script>
 </body>

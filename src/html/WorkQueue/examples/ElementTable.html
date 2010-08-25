@@ -47,7 +47,7 @@ var dataUrl = "/workqueue/elementsinfo"
 var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 var dataTable = WMCore.WebTools.createDataTable("elements", dataSource, 
                              WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.defaultTableConfig, 100000)
+                             WMCore.WebTools.createDefaultTableConfig(), 100000)
 
 </script>
 </body>

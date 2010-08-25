@@ -313,7 +313,7 @@ class PhEDEx(Service):
 
     def getNodeTFC(self, node):
         data = self._getResult('tfc', args = {'node':node}, verb="GET")
-        print data
+        return data
 
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 

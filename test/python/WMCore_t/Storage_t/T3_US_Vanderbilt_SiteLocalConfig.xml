@@ -11,7 +11,7 @@
     </local-stage-out>
     <fallback-stage-out>
       <command value="srmv2-lcg" />
-      <catalog url="trivialcatalog_file://gpfs1/grid/grid-app/cmssoft/cms/SITECONF/local/PhEDEx/storage.xml?protocol=srmv2"/>
+      <lfn-prefix value="srm://se1.accre.vanderbilt.edu:6288/srm/v2/server?SFN=" />
       <se-name value="se1.accre.vanderbilt.edu" />
     </fallback-stage-out>
     <calib-data>

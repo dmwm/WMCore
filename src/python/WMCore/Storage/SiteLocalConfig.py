@@ -6,8 +6,8 @@ Utility for reading a site local config XML file and converting it
 into an object with an API for getting info from it.
 """
 
-__version__ = "$Revision: 1.4 $"
-__revision__ = "$Id: SiteLocalConfig.py,v 1.4 2010/06/16 18:23:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SiteLocalConfig.py,v 1.5 2010/06/16 19:12:45 sfoulkes Exp $"
 
 import os
 
@@ -278,8 +278,8 @@ def processFallbackStageOut():
                 localReport['command'] = subnode.attrs.get('value', None)
             elif subnode.name == 'option':
                 localReport['option'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'catalog':
-                localReport['catalog'] = subnode.attrs.get('url', None)
+            elif subnode.name == 'lfn-prefix':
+                localReport['lfn-prefix'] = subnode.attrs.get('value', None)
         report['fallbackStageOut'] = [localReport]
 
 

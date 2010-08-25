@@ -5,8 +5,8 @@ _SiteLocalConfig_t_
 Unit test for parsing the site local config file.
 """
 
-__revision__ = "$Id: SiteLocalConfig_t.py,v 1.1 2010/06/16 18:25:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SiteLocalConfig_t.py,v 1.2 2010/06/16 19:12:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import unittest
@@ -140,8 +140,8 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Incorrect fallback command."
         assert mySiteConfig.fallbackStageOut[0]["se-name"] == "se1.accre.vanderbilt.edu", \
                "Error: Incorrect fallback SE."
-        assert mySiteConfig.fallbackStageOut[0]["catalog"] == "trivialcatalog_file://gpfs1/grid/grid-app/cmssoft/cms/SITECONF/local/PhEDEx/storage.xml?protocol=srmv2", \
-               "Error: Incorrect fallback catalog."
+        assert mySiteConfig.fallbackStageOut[0]["lfn-prefix"] == "srm://se1.accre.vanderbilt.edu:6288/srm/v2/server?SFN=", \
+               "Error: Incorrect fallback LFN prefix."
         return
 
 if __name__ == "__main__":

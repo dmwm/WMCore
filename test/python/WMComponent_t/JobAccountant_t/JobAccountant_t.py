@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.36 2010/07/22 15:53:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.37 2010/08/02 17:34:19 meloam Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import logging
 import os.path
@@ -36,6 +36,7 @@ from WMCore.DataStructs.Run   import Run
 from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
+from nose.plugins.attrib import attr
 
 class JobAccountantTest(unittest.TestCase):
     """
@@ -1031,7 +1032,8 @@ class JobAccountantTest(unittest.TestCase):
 
         inputFileset.commit()
         return
-
+    
+    @attr('performance')
     def testOneProcessLoadTest(self):
         """
         _testOneProcessLoadTest_

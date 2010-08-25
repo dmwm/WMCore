@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.49 2010/06/23 13:56:17 meloam Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: Service.py,v 1.50 2010/06/23 13:59:17 meloam Exp $"
+__version__ = "$Revision: 1.50 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -210,7 +210,7 @@ class Service(dict):
         # Set the timeout
         deftimeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self['timeout'])
-
+        data, status, reason = (None, "UNKNOWN", "UNKNOWN")
         # Nested form for version < 2.5 
         try:
             try:

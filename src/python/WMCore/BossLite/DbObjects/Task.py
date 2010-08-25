@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.18 2010/05/24 09:45:04 spigafi Exp $"
-__revision__ = "$Revision: 1.18 $"
+__version__ = "$Id: Task.py,v 1.19 2010/05/29 13:06:22 spigafi Exp $"
+__revision__ = "$Revision: 1.19 $"
 
 import os.path
 
@@ -385,6 +385,7 @@ class TaskDBFormatter(DbObjectDBFormatter):
         result['cfgName']            = res['cfgName']
         result['serverName']         = res['serverName']
         result['jobType']            = res['jobType']
+        result['totalEvents']        = res['totalEvents']
         result['outfileBasename']    = res['outfileBasename']
         result['commonRequirements'] = res['commonRequirements']
         result['name']               = res['name']
@@ -409,6 +410,7 @@ class TaskDBFormatter(DbObjectDBFormatter):
             result['cfgName']            = entry['cfgname']
             result['serverName']         = entry['servername']
             result['jobType']            = entry['jobtype']
+            result['totalEvents']        = entry['total_events']
             result['outfileBasename']    = entry['outfilebasename']
             result['commonRequirements'] = entry['commonrequirements']
             result['name']               = entry['name']

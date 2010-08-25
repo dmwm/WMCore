@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Task.Save
 """
 
 __all__ = []
-__revision__ = "$Id: Save.py,v 1.2 2010/05/10 12:54:43 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Save.py,v 1.3 2010/05/29 13:03:56 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Task import TaskDBFormatter
@@ -25,6 +25,7 @@ class Save(DBFormatter):
                  cfg_name = :cfgName, 
                  server_name = :serverName, 
                  job_type = :jobType, 
+                 total_events = :totalEvents,
                  user_proxy = :user_proxy, 
                  outfile_basename = :outfileBasename, 
                  common_requirements = :commonRequirements

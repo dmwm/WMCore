@@ -4,8 +4,8 @@ _Create_
 Base class for creating the BossLite database.
 """
 
-__revision__ = "$Id: Create.py,v 1.5 2010/05/18 08:56:52 mcinquil Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Create.py,v 1.6 2010/05/29 13:05:06 spigafi Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 
@@ -53,6 +53,7 @@ class Create(DBCreator):
     cfg_name TEXT,
     server_name TEXT,
     job_type TEXT,
+    total_events INT,
     user_proxy TEXT,
     outfile_basename TEXT,
     common_requirements TEXT,

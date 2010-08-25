@@ -48,6 +48,7 @@ class Create(MySQLCreate):
     cfg_name             TEXT,
     server_name          TEXT,
     job_type             TEXT,
+    total_events         INT,
     user_proxy           TEXT,
     outfile_basename     TEXT,
     common_requirements  TEXT,

@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.5 2010/03/22 14:27:26 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.6 2010/03/22 19:06:24 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -99,7 +99,7 @@ config.JobCreator.workerThreads = 2
 config.JobCreator.useWorkQueue = False
 if config.JobCreator.useWorkQueue:
     # take queueParams from WorkQueueManager - specify here to override
-    config.JobCreator.WorkQueuParams = getattr(config.WorkQueueManager, 'queueParams', {})
+    config.JobCreator.WorkQueueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 
 config.component_("JobSubmitter")
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
@@ -154,3 +154,4 @@ config.component_("TaskArchiver")
 config.TaskArchiver.logLevel = "DEBUG"
 config.TaskArchiver.pollInterval = 10
 config.TaskArchiver.timeOut      = 0
+config.TaskArchiver.WorkQueueParams = getattr(config.WorkQueueManager, 'queueParams', {})

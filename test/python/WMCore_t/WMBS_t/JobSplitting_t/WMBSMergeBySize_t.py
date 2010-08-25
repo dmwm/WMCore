@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.15 2010/06/24 16:15:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.16 2010/07/06 15:33:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import os
@@ -108,6 +108,8 @@ class WMBSMergeBySize(unittest.TestCase):
         parentFile3.create()
         parentFile4 = File(lfn = "parentFile4")
         parentFile4.create()        
+        self.parentFileSite2 = File(lfn = "parentFileSite2")
+        self.parentFileSite2.create()
 
         jobGroup1 = JobGroup(subscription = inputSubscription)
         jobGroup1.create()
@@ -184,6 +186,17 @@ class WMBSMergeBySize(unittest.TestCase):
         testJob6["outcome"] = "failure"
         testJob6.save()        
         changeStateDAO.execute([testJob6])                
+
+        testJob7 = Job()
+        testJob6.addFile(self.parentFileSite2)
+        testJob6.create(jobGroup2)
+        testJob6["state"] = "cleanout"
+        testJob6["oldstate"] = "new"
+        testJob6["couch_record"] = "somejive"
+        testJob6["retry_count"] = 0
+        testJob6["outcome"] = "success"
+        testJob6.save()        
+        changeStateDAO.execute([testJob7])
 
         badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024,
                         first_event = 0)
@@ -969,6 +982,53 @@ class WMBSMergeBySize(unittest.TestCase):
         assert len(result) == 1, \
                "Error: One merge job should have been created: %s" % len(result)
         
+        return
+
+    def testLocationMerging(self):
+        """
+        _testLocationMerging_
+
+        Verify that files residing on different SEs are not merged together in
+        the same job.
+        """
+        self.stuffWMBS()
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute(siteName = "s2", seName = "somese2.cern.ch")
+
+        fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
+                         first_event = 0, locations = set(["somese2.cern.ch"]))
+        fileSite2.addRun(Run(1, *[46]))
+        fileSite2.create()
+        fileSite2.addParent(self.parentFileSite2["lfn"])
+
+        self.mergeFileset.addFile(fileSite2)
+        self.mergeFileset.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        result = jobFactory(min_merge_size = 4097, max_merge_size = 99999999,
+                            max_merge_events = 999999999)
+
+        assert len(result) == 1, \
+               "ERROR: More than one JobGroup returned."
+
+        assert len(result[0].jobs) == 2, \
+               "ERROR: Two jobs should have been returned."
+
+        for job in result[0].jobs:
+            firstInputFile = job.getFiles()[0]
+            baseLocation = list(firstInputFile["locations"])[0]
+            
+            for inputFile in job.getFiles():
+                assert len(inputFile["locations"]) == 1, \
+                       "Error: Wrong number of locations"
+
+                assert list(inputFile["locations"])[0] == baseLocation, \
+                       "Error: Wrong location."
+                       
         return
     
 if __name__ == '__main__':

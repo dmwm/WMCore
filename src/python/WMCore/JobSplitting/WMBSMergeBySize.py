@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.11 2010/06/24 18:31:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.12 2010/07/06 15:33:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 
@@ -103,10 +103,13 @@ class WMBSMergeBySize(JobFactory):
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 
-            if not mergeUnits.has_key(newMergeFile["file_run"]):
-                mergeUnits[newMergeFile["file_run"]] = []
+            if not mergeUnits.has_key(newMergeFile["se_name"]):
+                mergeUnits[newMergeFile["se_name"]] = {}
+
+            if not mergeUnits[newMergeFile["se_name"]].has_key(newMergeFile["file_run"]):
+                mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]] = []
                 
-            for mergeUnit in mergeUnits[newMergeFile["file_run"]]:
+            for mergeUnit in mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]]:
                 if mergeUnit["file_parent"] == mergeableFile["file_parent"]:
                     mergeUnit["files"].append(newMergeFile)
                     mergeUnit["total_size"] += newMergeFile["file_size"]
@@ -128,7 +131,7 @@ class WMBSMergeBySize(JobFactory):
                 newMergeUnit["lumi"] = newMergeFile["file_lumi"]
                 newMergeUnit["files"] = []
                 newMergeUnit["files"].append(newMergeFile)
-                mergeUnits[newMergeFile["file_run"]].append(newMergeUnit)
+                mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]].append(newMergeUnit)
 
         return mergeUnits
 
@@ -215,7 +218,8 @@ class WMBSMergeBySize(JobFactory):
         mergeUnits = self.defineMergeUnits(mergeableFiles)
 
         self.newGroup()
-        for runNumber in mergeUnits.keys():
-            self.defineMergeJobs(mergeUnits[runNumber])
+        for seName in mergeUnits.keys():
+            for runNumber in mergeUnits[seName].keys():
+                self.defineMergeJobs(mergeUnits[seName][runNumber])
 
         return

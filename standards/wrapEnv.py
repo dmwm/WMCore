@@ -52,7 +52,6 @@ commandLine = sys.argv[3:]
 print "Commandline: %s" % commandLine
 print "PATH: %s" % os.environ['PATH']
 print "LD_LIBRARY_PATH: %s" % os.environ['LD_LIBRARY_PATH']
-print "database is %s" % os.environ['DATABASE']
 if 'PYTHONHOME' in os.environ:
     print "PYTHONHOME: %s" % os.environ['PYTHONHOME']
 if 'PYTHONPATH' in os.environ:

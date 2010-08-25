@@ -7,8 +7,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.34 $"
-__revision__ = "$Id: Report.py,v 1.34 2010/08/16 14:51:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Report.py,v 1.35 2010/08/16 16:36:49 mnorman Exp $"
 
 import cPickle
 import logging
@@ -818,6 +818,26 @@ class Report:
         stopTime  = getattr(reportStep, 'stopTime', None)
 
         return {'startTime': startTime, 'stopTime': stopTime}
+
+
+    def setTaskName(self, taskName):
+        """
+        _setTaskName_
+        
+        Set the task name for the report
+        """
+
+        self.data.task = taskName
+        return
+
+    def getTaskName(self):
+        """
+        _getTaskName_
+
+        Return the task name
+        """
+
+        return getattr(self.data, 'task', None)
                 
 if __name__ == "__main__":
     myReport = Report("cmsRun1")

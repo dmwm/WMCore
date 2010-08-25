@@ -5,8 +5,8 @@ _ListClosable_
 Oracle implementation of Fileset.ListClosable
 """
 
-__revision__ = "$Id: ListClosable.py,v 1.5 2010/06/24 16:32:32 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ListClosable.py,v 1.6 2010/07/14 18:35:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMBS.MySQL.Fileset.ListClosable import ListClosable as ListFilesetClosableMySQL
 
@@ -15,7 +15,8 @@ class ListClosable(ListFilesetClosableMySQL):
                (SELECT wmbs_fileset.id AS fileset, SUM(wmbs_parent_fileset.open) AS open_parent_filesets,
                        SUM(fileset_size.total_files) AS total_input_files,
                        SUM(files_complete.total_files) AS total_complete_files,
-                       SUM(files_failed.total_files) AS total_failed_files FROM wmbs_fileset
+                       SUM(files_failed.total_files) AS total_failed_files,
+                       SUM(running_jobs.running_count) AS running_jobs FROM wmbs_fileset
                   INNER JOIN wmbs_workflow_output ON
                     wmbs_fileset.id = wmbs_workflow_output.output_fileset
                   INNER JOIN wmbs_subscription wmbs_parent_subscription ON
@@ -40,9 +41,9 @@ class ListClosable(ListFilesetClosableMySQL):
                     wmbs_parent_subscription.id = running_jobs.subscription                              
                   INNER JOIN wmbs_fileset wmbs_parent_fileset ON
                     wmbs_parent_subscription.fileset = wmbs_parent_fileset.id
-                WHERE wmbs_fileset.open = 1 AND COALESCE(running_jobs.running_count, 0) = 0
-                GROUP BY wmbs_fileset.id) closeable_filesets
+                WHERE wmbs_fileset.open = 1 GROUP BY wmbs_fileset.id) closeable_filesets
              WHERE closeable_filesets.open_parent_filesets = 0 AND
+                   COALESCE(closeable_filesets.running_jobs, 0) = 0 AND
                    closeable_filesets.total_input_files =
                      COALESCE(closeable_filesets.total_complete_files, 0) +
                      COALESCE(closeable_filesets.total_failed_files, 0)"""

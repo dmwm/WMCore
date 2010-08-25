@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.25 2010/06/17 19:39:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Fileset_t.py,v 1.26 2010/07/14 18:35:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import unittest
 import logging
@@ -709,7 +709,113 @@ class FilesetTest(unittest.TestCase):
 
         assert len(goldenFilesets) == 0, \
                "Error: Filesets are missing"
-        return    
+        return
+
+    def testFilesetClosing3(self):
+        """
+        _testFilesetClosing3_
+
+        Verify that fileset closing works correctly in the case where multiple
+        subscriptions feed into a single fileset and accounts for running jobs
+        correctly.
+        """
+        testOutputFileset1 = Fileset(name = "TestOutputFileset1")
+        testOutputFileset1.create()
+        testOutputFileset2 = Fileset(name = "TestOutputFileset2")
+        testOutputFileset2.create()
+        
+        testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = False)
+        testFilesetOpen.create()
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, checksums = {'cksum': 3})
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20, checksums = {'cksum': 3})        
+        testFilesetOpen.addFile(testFileA)
+        testFilesetOpen.addFile(testFileB)
+        testFilesetOpen.commit()
+
+        testFilesetClosed1 = Fileset(name = "TestFilesetClosed1", is_open = False)
+        testFilesetClosed1.create()
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20, checksums = {'cksum': 3})
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
+                         events = 20, checksums = {'cksum': 3})        
+        testFilesetClosed1.addFile(testFileC)
+        testFilesetClosed1.addFile(testFileD)
+        testFilesetClosed1.commit()
+
+        testFilesetClosed2 = Fileset(name = "TestFilesetClosed2", is_open = False)
+        testFilesetClosed2.create()
+        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024,
+                         events = 20, checksums = {'cksum': 3})
+        testFileF = File(lfn = "/this/is/a/lfnF", size = 1024,
+                         events = 20, checksums = {'cksum': 3})        
+        testFilesetClosed2.addFile(testFileE)
+        testFilesetClosed2.addFile(testFileF)
+        testFilesetClosed2.commit()
+
+        testFilesetClosed3 = Fileset(name = "TestFilesetClosed3", is_open = False)
+        testFilesetClosed3.create()
+        testFileG = File(lfn = "/this/is/a/lfnG", size = 1024,
+                         events = 20, checksums = {'cksum': 3})
+        testFileH = File(lfn = "/this/is/a/lfnH", size = 1024,
+                         events = 20, checksums = {'cksum': 3})        
+        testFilesetClosed3.addFile(testFileG)
+        testFilesetClosed3.addFile(testFileH)
+        testFilesetClosed3.commit()        
+
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
+                                 name = "wf001", task = "sometask")
+        testWorkflow1.create()
+        testWorkflow1.addOutput("out1", testOutputFileset1)
+
+        testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
+                                 name = "wf002", task = "sometask")
+        testWorkflow2.create()
+        testWorkflow2.addOutput("out2", testOutputFileset2)
+
+        testSubscription1 = Subscription(fileset = testFilesetOpen,
+                                         workflow = testWorkflow1)
+        testSubscription1.create()
+        testSubscription1.completeFiles([testFileA, testFileB])
+        testSubscription2 = Subscription(fileset = testFilesetClosed1,
+                                         workflow = testWorkflow1)
+        testSubscription2.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription2)
+        testJobGroup.create()
+        testJob = Job(name = "TestJob1")
+        testJob.create(testJobGroup)
+        
+        testSubscription3 = Subscription(fileset = testFilesetClosed2,
+                                         workflow = testWorkflow2)
+        testSubscription3.create()
+        testSubscription3.completeFiles([testFileE, testFileF])
+        testSubscription4 = Subscription(fileset = testFilesetClosed3,
+                                         workflow = testWorkflow2)
+        testSubscription4.create()
+        testSubscription4.completeFiles([testFileG, testFileH])
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
+        closableFilesets = closableFilesetDAO.execute()
+
+        goldenFilesets = ["TestOutputFileset2"]
+
+        for closableFileset in closableFilesets:
+            newFileset = Fileset(id = closableFileset)
+            newFileset.load()
+
+            assert newFileset.name in goldenFilesets, \
+                   "Error: Unknown closable fileset"
+
+            goldenFilesets.remove(newFileset.name)
+
+        assert len(goldenFilesets) == 0, \
+               "Error: Filesets are missing"
+        return        
 
     def testBulkAddDAO(self):
         """

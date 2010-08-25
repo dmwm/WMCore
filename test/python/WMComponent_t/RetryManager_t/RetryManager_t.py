@@ -4,12 +4,10 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.1 2009/07/30 19:25:00 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.2 2009/10/13 22:04:43 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
-import commands
-import logging
 import os
 import threading
 import time
@@ -17,10 +15,7 @@ import unittest
 
 from WMComponent.RetryManager.RetryManager import RetryManager
 
-from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory     import WMFactory
+
 from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -42,8 +37,6 @@ class RetryManagerTest(unittest.TestCase):
     TestCase for TestRetryManager module 
     """
 
-    _setup_done = False
-    _teardown = False
     _maxMessage = 10
 
     def setUp(self):
@@ -57,11 +50,9 @@ class RetryManagerTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",
+                                                 "WMCore.MsgService"],
                                 useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.MsgService"],
-                                useDefault = False)
-        self._setup_done = True
         
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -75,71 +66,15 @@ class RetryManagerTest(unittest.TestCase):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-
-
-        factory = WMFactory("WMBS", "WMCore.MsgService")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-
-
-        self._teardown = False
+        self.testInit.clearDatabase()
 
 
 
     def getConfig(self, configPath=os.path.join(os.getenv('WMCOREBASE'), \
                                                 'src/python/WMComponent/RetryManager/DefaultConfig.py')):
 
-
-        if os.path.isfile(configPath):
-            config = loadConfigurationFile(configPath)
-        else:
-            config = Configuration()
-            config.component_("RetryManager")
-            config.JobAccountant.logLevel = 'INFO'
-            config.JobAccountant.pollInterval = 10
-
-        myThread = threading.currentThread()
-
-        config.section_("General")
-        
-        config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database = os.getenv("DATABASE")
-
-
-
+        config = self.testInit.getConfiguration(configPath)
+       
         return config
 
 
@@ -193,7 +128,6 @@ class RetryManagerTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        self._teardown = True
         # read the default config first.
         config = self.getConfig()
 
@@ -249,7 +183,6 @@ class RetryManagerTest(unittest.TestCase):
         """
         Mimics creation of component and test jobs failed in create stage.
         """
-        self._teardown = True
         # read the default config first.
         config = self.getConfig()
 
@@ -306,7 +239,6 @@ class RetryManagerTest(unittest.TestCase):
         """
         Mimics creation of component and test jobs failed in create stage.
         """
-        self._teardown = True
         # read the default config first.
         config = self.getConfig()
 

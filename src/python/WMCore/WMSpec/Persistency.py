@@ -11,6 +11,7 @@ Placeholder for ideas at present....
 
 import pickle
 from urllib import urlopen
+from WMCore.Wrappers import JsonWrapper
 
 class PersistencyHelper:
     """
@@ -23,19 +24,27 @@ class PersistencyHelper:
     - python mode: write using pythonise, read using import
        Needs work to preserve tree information
     - gzip mode: also gzip/unzip content if set to True
-
+    - json mode: read/write using json
 
     """
         
-    def save(self, filename):
+    def save(self, filename, mode="pickle"):
         """
         _save_
 
         Pickle data to a file
 
         """
-        handle = open(filename, 'w')
-        pickle.dump(self.data, handle)
+        
+        if mode.lower() == "pickle":
+            handle = open("%s.pkl" % filename, 'w')
+            pickle.dump(self.data, handle)
+        elif mode.lower() == "json":
+            handle = open("%s.json" % filename, 'w')
+            JsonWrapper.dump(self.data, handle)
+        else:
+            handle = open(filename, 'w')
+            handle.write(self.data)
         handle.close()
         return
 
@@ -50,7 +59,13 @@ class PersistencyHelper:
         #TODO: currently support both loading from file path or url
         #if there are more things to filter may be separate the load function
         handle = urlopen(filename)
-        self.data = pickle.load(handle)
+        extension = filename.split(".")[-1]
+        if extension == "pkl":
+            self.data = pickle.load(handle)
+        elif extension == 'json':
+            self.data = JsonWrapper.load(handle)
+        else:
+            self.data = handle.read()
         handle.close()
         return
 

@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.5 2010/06/11 21:46:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Report_t.py,v 1.6 2010/06/16 18:22:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -17,20 +17,7 @@ import WMCore.WMInit
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
-def requiresPython26(testMethod, *args, **kwargs):
-    def skipTest(*args, **kwargs):
-        print "SKIPPING"
-        #raise nose.SkipTest
-        
-    import sys
-
-    majorVersion = sys.version_info[0]
-    minorVersion = sys.version_info[1]
-
-    if (majorVersion == 2 and minorVersion >= 6) or majorVersion > 2:
-        return testMethod
-
-    return skipTest
+from WMQuality.TestInit import requiresPython26
 
 class ReportTest(unittest.TestCase):
     """

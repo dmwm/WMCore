@@ -7,8 +7,8 @@ _PilotManagerClient_
 
 """
 
-__revision__ = "$Id: PilotManagerClient.py,v 1.3 2009/09/16 12:39:13 khawar Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: PilotManagerClient.py,v 1.4 2010/02/05 14:17:33 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -52,5 +52,5 @@ pilotManager.prepareToStart()
 #pilotManager.handleMessage('NewPilotJob','Pilot#45,45,xyzfiles')
 msg={'site':'T1_CERN_CH', 'bulkSize':1, 'submissionMethod':'LSF'}
 #pilotManager.handleMessage('SubmitPilotJob', msg)
-pilotManager.startDeamon()
+pilotManager.startDaemon()
 

@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.15 2010/02/05 14:16:12 meloam Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Harness_t.py,v 1.16 2010/02/05 14:17:34 meloam Exp $"
+__version__ = "$Revision: 1.16 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -103,7 +103,7 @@ class HarnessTest(unittest.TestCase):
         os.makedirs( config.TestComponent.componentDir )
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
-        testComponent.startDeamon(keepParent = True)
+        testComponent.startDaemon(keepParent = True)
         print('trying to kill the component')
         time.sleep(2)
         daemonFile = os.path.join(config.TestComponent.componentDir, "Daemon.xml")
@@ -128,7 +128,7 @@ class HarnessTest(unittest.TestCase):
         os.makedirs( config.TestComponent.componentDir )
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
-        testComponent.startDeamon(keepParent = True)
+        testComponent.startDaemon(keepParent = True)
         time.sleep(2)
         daemonFile = os.path.join(config.TestComponent.componentDir, "Daemon.xml")
         details = Details(daemonFile)

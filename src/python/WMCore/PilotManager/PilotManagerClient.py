@@ -7,8 +7,8 @@ _PilotManagerClient_
 
 """
 
-__revision__ = "$Id: PilotManagerClient.py,v 1.1 2009/05/27 17:26:09 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PilotManagerClient.py,v 1.2 2010/02/05 14:17:34 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -48,7 +48,7 @@ config.CoreDatabase.name = 'ProdAgentDB'
 pilotManager = PilotManagerComponent(config)
 pilotManager.prepareToStart()
 
-#pilotManager.startDeamon()
+#pilotManager.startDaemon()
 
 #pilotManager.handleMessage('NewPilotJob','Pilot#45,45,xyzfiles')
 

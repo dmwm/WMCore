@@ -41,7 +41,7 @@ def daemonize(stdout= '/dev/null', stderr= None, stdin= '/dev/null', \
         if it shares a file with stdout then interleaved output
         may not appear in the order that you expect.
     '''
-    raise RuntimeError, "some user of Deamonize is using it wrong, temporary exception to find out who"
+    raise RuntimeError, "some user of Daemonize is using it wrong, temporary exception to find out who"
     # Do first fork.
     try:
         pid = os.fork()
@@ -178,7 +178,7 @@ information on that.
     return daemonize(workdir = workdir,startmsg = startmsg, keepParent = keepParent)
  
 if __name__ == "__main__":
-    parent_id = createDeamon('/tmp', keepParent = False)
+    parent_id = createDaemon('/tmp', keepParent = False)
     if parent_id == 0:
         test()
     print('Kept parent: '+str(parent_id))

@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.28 2010/02/05 14:16:13 meloam Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Harness.py,v 1.29 2010/02/05 14:17:35 meloam Exp $"
+__version__ = "$Revision: 1.29 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -429,7 +429,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
         myThread = threading.currentThread()
         myThread.msgService.finish()
         
-    def startDeamon(self, keepParent = False):
+    def startDaemon(self, keepParent = False):
         """
         Same result as start component, except that the comopnent
         is started as a daemon, after which you can close your xterm

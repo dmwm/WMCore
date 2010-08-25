@@ -63,4 +63,4 @@ print config
 print "Starting PilotManager Component..."
 pilotManager = PilotManagerComponent(config)
 pilotManager.prepareToStart()
-pilotManager.startDeamon()
+pilotManager.startDaemon()

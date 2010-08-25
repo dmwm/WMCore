@@ -9,8 +9,8 @@ Also, provides utils to shutdown the daemon process
 
 """
 
-__revision__ = "$Id: Details.py,v 1.2 2008/11/11 16:49:18 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Details.py,v 1.3 2010/02/05 14:17:34 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -77,7 +77,7 @@ class Details(dict):
         """
         os.kill(self['ProcessID'], signal)
         time.sleep(1)
-        self.removeAndBackupDeamonFile()
+        self.removeAndBackupDaemonFile()
         return
 
     def killWithPrejudice(self, signal = 15):
@@ -92,14 +92,14 @@ class Details(dict):
         for count in range(0, 3):
             time.sleep(1)
             if not self.isAlive():
-                self.removeAndBackupDeamonFile()
+                self.removeAndBackupDaemonFile()
                 return
             continue
         os.kill(self['ProcessID'], 9)
-        self.removeAndBackupDeamonFile()
+        self.removeAndBackupDaemonFile()
         return
 
-    def removeAndBackupDeamonFile(self):
+    def removeAndBackupDaemonFile(self):
         """
         Removes the daemon file (after a kill) and backs it up
         for post mortem.

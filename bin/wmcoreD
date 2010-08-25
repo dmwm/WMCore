@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.9 2010/02/05 14:16:13 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: wmcoreD,v 1.10 2010/02/05 14:17:35 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -200,7 +200,7 @@ def startup(configFile):
         factory = WMFactory('componentFactory')
         namespace = config.component_(component).namespace
         componentObject = factory.loadObject(classname = namespace, args = config)
-        componentObject.startDeamon(keepParent = True)
+        componentObject.startDaemon(keepParent = True)
         print('Waiting 1 seconds, to ensure daemon file is created')
         time.sleep(1)
         compDir = config.component_(component).componentDir

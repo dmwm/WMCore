@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.12 2010/08/03 06:17:32 meloam Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Transaction_t.py,v 1.13 2010/08/04 20:10:13 meloam Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import commands
 import logging
@@ -25,6 +25,7 @@ class TransactionTest(unittest.TestCase):
 
 
     def setUp(self):
+        raise RuntimeError, "All of these tests fail. esp. on Mysql. help"
         #self.tearDown()
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -37,7 +38,7 @@ class TransactionTest(unittest.TestCase):
         self.create['Oracle'] = "create table test (bind1 varchar(20), bind2 varchar(20))"
 
         self.destroy = {}
-        self.destroy['MySQL']  = "drop table test ENGINE=InnoDB"
+        self.destroy['MySQL']  = "drop table test"
         self.destroy['Oracle'] = "drop table test"
         self.destroy['SQLite'] = "drop table test"
     

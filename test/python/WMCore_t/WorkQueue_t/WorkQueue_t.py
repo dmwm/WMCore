@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.43 2010/08/03 14:48:23 swakef Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.44 2010/08/06 20:40:54 sryu Exp $"
+__version__ = "$Revision: 1.44 $"
 
 import unittest
 import os
@@ -546,5 +546,35 @@ class WorkQueueTest(WorkQueueTestCase):
                          if x['ChildQueueUrl'] == self.localQueue2.params['QueueURL']]
         self.assertEqual(len(work_at_local2), 1)
 
+    def testDuplicateElement(self):
+        """
+        test duplicate element prevention in processing work case.
+        To do: needs to find the way to 
+        """
+        self.assertEqual(0, len(self.globalQueue))
+        
+        # GlobalQueue duplication checking
+        # Add work to top most queue
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.assertEqual(1, len(self.globalQueue))
+        # Add the same work to the same queue.
+        self.globalQueue.queueWork(self.processingSpec.specUrl())
+        # it should be ignored
+        self.assertEqual(1, len(self.globalQueue))
+        
+        # LocalQueue duplication checking
+        # pull to local queue
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(2, self.localQueue.pullWork({'SiteA' : 1000}))
+        self.assertEqual(2, len(self.localQueue))
+        # pull work more but status should be negociationg so no more work is pulled.
+        self.assertEqual(0, self.localQueue.pullWork({'SiteA' : 1000}))
+        # queue1 hasn't claimed work so reset element to Available
+        self.assertEqual(self.globalQueue.flushNegotiationFailures(), 1)
+        # pull work more 
+        self.assertEqual(2, self.localQueue.pullWork({'SiteA' : 1000}))
+        # but queue should only have 2 elements instead of 4 since they are the same elements
+        self.assertEqual(2, len(self.localQueue))
+        
 if __name__ == "__main__":
     unittest.main()

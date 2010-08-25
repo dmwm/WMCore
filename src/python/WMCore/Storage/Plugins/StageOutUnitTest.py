@@ -20,22 +20,12 @@ class WinImpl(StageOutImplV2):
     Test plugin that always returns success
 
     """
-    def createSourceName(self, protocol, lfn):
+    def doTransfer(self, lfn, pfn, stageOut, seName, command, options, protocol  ):
         return "WIN!!!"
 
+    def doDelete(self, lfn, pfn, seName, command, options, protocol  ):
+        pass
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
-        print "WinImpl.createStageOutCommand(%s, %s, %s)" % (sourcePFN, targetPFN, options)
-        return "WIN!!!"
-
-
-    def removeFile(self, pfnToRemove):
-        print "WinImpl.removeFile(%s)" % pfnToRemove
-        return "WIN!!!"
-
-
-    def executeCommand(self, command):
-        return 0
 
 
 
@@ -47,23 +37,12 @@ class FailImpl(StageOutImplV2):
 
     """
 
-    def createSourceName(self, protocol, lfn):
-        return "FAIL!!!"
+    def doTransfer(self, lfn, pfn, stageOut, seName, command, options, protocol  ):
+        raise StageOutFailure("FailImpl returns FAIL!!!")
 
 
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
-        print "FailImpl.createStageOutCommand(%s, %s, %s)" % (sourcePFN, targetPFN, options)
-        return "FAIL!!!"
-
-
-    def removeFile(self, pfnToRemove):
-        print "FailImpl.removeFile(%s)" % pfnToRemove
-        return "FAIL!!!"
-
-
-    def executeCommand(self, command):
-        msg = "FailImpl returns FAIL!!!"
-        raise StageOutFailure( msg)
+    def doDelete(self, lfn, pfn, seName, command, options, protocol  ):
+        raise StageOutFailure("FailImpl returns FAIL!!!")
 
 
 class LocalCopyImpl(StageOutImplV2):

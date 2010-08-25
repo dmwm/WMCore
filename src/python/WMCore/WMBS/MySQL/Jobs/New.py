@@ -6,8 +6,8 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.12 2009/09/10 16:47:28 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: New.py,v 1.13 2009/12/22 16:09:36 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import time
 
@@ -15,11 +15,13 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
     sql = """INSERT INTO wmbs_job (jobgroup, name, state, state_time, 
-                                   couch_record, cache_dir, location) VALUES 
+                                   couch_record, cache_dir, location, outcome,
+                                   fwjr_path) VALUES 
               (:jobgroup, :name,
                (SELECT id FROM wmbs_job_state WHERE name = 'new'),
                :state_time, :couch_record, :cache_dir, 
-               (SELECT id FROM wmbs_location WHERE site_name = :location))"""
+               (SELECT id FROM wmbs_location WHERE site_name = :location),
+               :outcome, :fwjr_path)"""
 
     getIDsql = """SELECT id as id, name as name FROM wmbs_job WHERE name= :name AND jobgroup= :jobgroup"""
 
@@ -34,6 +36,11 @@ class New(DBFormatter):
             tmpDict["location"]     = job.get("location", None)
             tmpDict["cache_dir"]    = job.get("cache_dir", None)
             tmpDict["state_time"]   = int(time.time())
+            if job.get("outcome", 'failure') == 'success':
+                tmpDict['outcome'] = 1
+            else:
+                tmpDict['outcome'] = 0
+            tmpDict["fwjr_path"]    = job.get("fwjr", None)
             binds.append(tmpDict)
 
         return binds
@@ -47,7 +54,12 @@ class New(DBFormatter):
         return result
     
     def execute(self, jobgroup = None, name = None, couch_record = None, location = None, cache_dir = None,
-                conn = None, transaction = False, jobList = None):
+                outcome = None, fwjr = None, conn = None, transaction = False, jobList = None):
+
+        if outcome.lower() == 'success':
+            boolOutcome = 1
+        else:
+            boolOutcome = 0
 
         #Adding jobList enters bulk mode
 
@@ -69,7 +81,7 @@ class New(DBFormatter):
         elif jobgroup and name:
             binds = {"jobgroup": jobgroup, "name": name, 
                      "couch_record": couch_record, "state_time": int(time.time()),
-                     "location": location, "cache_dir": cache_dir}
+                     "location": location, "cache_dir": cache_dir, "outcome": boolOutcome, "fwjr_path": fwjr}
 
             self.dbi.processData(self.sql, binds, conn = conn,
                                  transaction = transaction)            

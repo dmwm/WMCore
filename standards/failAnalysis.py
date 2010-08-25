@@ -13,9 +13,7 @@ except:
 sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
 import buildslaveconfig as buildslave
 
-url = buildslave.conf['failTarget'].strip('/').strip('buildbot-couch')
-
-couch = CouchServer(url)
+couch = CouchServer(buildslave.conf['failTarget'])
 database = couch.connectDatabase('buildbot-couch')
 # what the slave does to us
 #                f.addStep(ShellCommand(command=['python','standards/wrapEnv.py','python26',

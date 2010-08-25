@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.15 2009/04/29 16:27:53 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Job_t.py,v 1.16 2009/04/29 23:24:23 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import logging
@@ -498,10 +498,12 @@ class JobTest(unittest.TestCase):
         assert testJobA.getStatus() == "FAILED", \
                "Error: job has to be FAILED status"
                
-        testJobA.changeStatus("COMPLETE", testFile)
+        testJobA.changeStatus("COMPLETE")
         
         assert testJobA.getStatus() == "COMPLETE", \
                "Error: job has to be complete status"
+        
+        testJobA.processSuccessfulJob(testFile)
                
         testFile.loadData(parentage = 1)
         inputFileSet = testJobA.getFiles(type = "set")

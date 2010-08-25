@@ -43,14 +43,19 @@ class ServiceTest(unittest.TestCase):
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cachepath': '/my/path'}
         service = Service(dict)
-        assert service.path == dict['cachepath']
+        assert service['cachepath'] == dict['cachepath']
     
     def testCacheDuration(self):
         dict = {'logger': logging.getLogger('JSONParser'), 
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cacheduration': 100}
         service = Service(dict)
-        assert service.cacheduration == dict['cacheduration']
+        assert service['cacheduration'] == dict['cacheduration']
+        dict = {'logger': logging.getLogger('ServiceTest'), 
+                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cacheduration': None}
+        service = Service(dict)
+        assert service['cacheduration'] == dict['cacheduration']
 
 if __name__ == '__main__':
     unittest.main()

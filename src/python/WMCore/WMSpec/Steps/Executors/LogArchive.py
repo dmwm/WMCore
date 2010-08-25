@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.4 2010/03/31 18:23:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: LogArchive.py,v 1.5 2010/04/14 19:23:18 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import os.path
@@ -66,6 +66,8 @@ class LogArchive(Executor):
 
         matchFiles = [
             ".log$",
+            "Report.pkl",
+            "Report.pcl",
             "^FrameworkJobReport.xml$",
             "^FrameworkJobReport-Backup.xml$",
             "^PSet.py$"
@@ -112,11 +114,12 @@ class LogArchive(Executor):
 
         #print fileInfo
         #Now tag things
-        self.step.output.outputPFN = fileInfo['PFN']
-        self.step.output.SEName    = fileInfo['SEName']
-        self.step.output.LFN       = fileInfo['LFN']
-        #print self.step.output
 
+        outputRef = getattr(self.report.data, self.stepName)
+        outputRef.output.outputPFN = fileInfo['PFN']
+        outputRef.output.SEName    = fileInfo['SEName']
+        outputRef.output.LFN       = fileInfo['LFN']
+        #print self.step.output
 
 
         #And now we have to send it

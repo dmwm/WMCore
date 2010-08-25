@@ -9,8 +9,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.22 2010/06/29 20:45:50 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.23 2010/07/02 19:59:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import os
 import WMCore.WMInit
@@ -53,10 +53,12 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'INFO'
-config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:9997'
+config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:8570'
 config.WorkQueueManager.pollInterval = 10
-config.WorkQueueManager.queueParams = {"ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
-                                       }
+config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
+                                       "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
+                                       "QueueURL": "http://cmssrv52.fnal.gov:9997",
+                                       "JobSlotMultiplier": 1000} 
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"

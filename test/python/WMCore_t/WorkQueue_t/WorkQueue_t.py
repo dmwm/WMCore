@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.25 2010/01/28 13:53:21 swakef Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.26 2010/02/11 17:55:44 sryu Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import unittest
 import os
@@ -104,6 +104,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a production WMSpec.
         """
+        print "Test Production Spec"
         specfile = self.spec.specUrl()
         numBlocks = 2
         njobs = [1] * numBlocks # array of jobs per block
@@ -131,6 +132,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Test priority change functionality
         """
+        print "Test Priority"
+        
         numBlocks = 2
         njobs = [10] * numBlocks # array of jobs per block
         total = sum(njobs)
@@ -155,6 +158,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a processing WMSpec.
         """
+        print "Test Processing Spec"
+        
         specfile = self.processingSpec.specUrl()
         njobs = [1, 1] # array of jobs per block
         total = sum(njobs)
@@ -185,6 +190,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Black & White list functionality
         """
+        print "Test Black List"
+        
         specfile = self.blacklistSpec.specUrl()
         njobs = [5, 10] # array of jobs per block
         numBlocks = len(njobs)
@@ -238,6 +245,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Chain WorkQueues, pull work down and verify splitting
         """
+        print "Test White List"
+        
         self.assertEqual(0, len(self.globalQueue))
         # check no work in local queue
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
@@ -278,7 +287,11 @@ class WorkQueueTest(WorkQueueTestCase):
 
 
     def testQueueChainingNegotiationFailures(self):
+        
         """Chain workQueues and verify status updates, negotiation failues etc"""
+        
+        print "Test testQueueChainingNegotiationFailures"
+        
         # verify that negotiation failures are removed
         #self.globalQueue.flushNegotiationFailures()
         #self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
@@ -312,6 +325,9 @@ class WorkQueueTest(WorkQueueTestCase):
 
 
     def testQueueChainingStatusUpdates(self):
+        
+        print "Test testQueueChainingStatusUpdates"
+        
         """Chain workQueues, pass work down and verify lifecycle"""
         self.assertEqual(0, len(self.globalQueue))
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
@@ -354,6 +370,8 @@ class WorkQueueTest(WorkQueueTestCase):
         multiTaskProduction spec consist 2 top level tasks each task has event size 1000 and 2000
         respectfully  
         """
+        print "Test testMultiTaskProduction"
+        #TODO: needs more rigorous test on each element per task
         # Basic production Spec
         spec = MultiTaskProductionWorkload
         spec.setSpecUrl(os.path.join(self.workDir, 'multiTaskProduction.spec'))

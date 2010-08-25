@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+"""
+_injectReRecoWorkflow_
+
+"""
 
 import os
 import sys
@@ -18,9 +22,29 @@ from DBSAPI.dbsApi import DbsApi
 
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
+arguments = {
+    "OutputTiers" : ["RECO", "ALCARECO"],
+    "AcquisitionEra" : "WMAgentCommissioining10",
+    "GlobalTag" :"GR09_R_34X_V5::All",
+    "LFNCategory" : "/store/backfill/2",
+    "TemporaryLFNCategory": "/store/backfill/2/unmerged",
+    "ProcessingVersion" : "v1",
+    "Scenario" : "cosmics",
+    "CMSSWVersion" : "CMSSW_3_5_6",
+    "InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW",
+    "Emulate" : False,
+    }
+
 if not os.environ.has_key("WMAGENT_CONFIG"):
     print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
-    sys.exit(0)
+    sys.exit(1)
+
+if len(sys.argv) != 2:
+    print "Usage:"
+    print "./injectReRecoWorkflow.py PROCESSING_VERSION"
+    sys.exit(1)
+else:
+    arguments["ProcessingVersion"] = sys.argv[1]
 
 wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
 
@@ -35,28 +59,17 @@ myWMInit = WMInit()
 myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
                                socketLoc = socketLoc)
 
-
-arguments = {
-    "OutputTiers" : ["RECO", "ALCARECO"],
-    "AcquisitionEra" : "WMAgentCommissioining10",
-    "GlobalTag" :"GR09_R_34X_V5::All",
-    "LFNCategory" : "/store/backfill/2",
-    "TemporaryLFNCategory": "/store/backfill/2/unmerged",
-    "ProcessingVersion" : "v1",
-    "Scenario" : "cosmics",
-    "CMSSWVersion" : "CMSSW_3_4_2_patch1",
-    "InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW",
-    "Emulate" : False,
-    }
-
-workload = rerecoWorkload("Tier1ReReco-v1", arguments)
+workloadName = "ReReco-%s" % arguments["ProcessingVersion"]
+workloadFile = "reReco-%s.pkl" % arguments["ProcessingVersion"]
+os.mkdir(workloadName)
+workload = rerecoWorkload(workloadName, arguments)
 
 # Build a sandbox using TaskMaker
-taskMaker = TaskMaker(workload, os.getcwd())
+taskMaker = TaskMaker(workload, os.path.join(os.getcwd(), workloadName))
 taskMaker.skipSubscription = True
 taskMaker.processWorkload()
 
-workload.save("rereco-v1.pkl")
+workload.save(os.path.join(workloadName, workloadFile))
 
 def doIndent(level):
     myStr = ""
@@ -66,7 +79,7 @@ def doIndent(level):
 
     return myStr
 
-def injectTaskIntoWMBS(specUrl, workflowName, ask, inputFileset, indent = 0):
+def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
     """
     _injectTaskIntoWMBS_
 
@@ -77,6 +90,7 @@ def injectTaskIntoWMBS(specUrl, workflowName, ask, inputFileset, indent = 0):
     myWorkflow = Workflow(spec = specUrl, owner = "sfoulkes@fnal.gov",
                           name = workflowName, task = task.getPathName())
     myWorkflow.create()
+
     mySubscription = Subscription(fileset = inputFileset, workflow = myWorkflow,
                                   split_algo = task.jobSplittingAlgorithm(),
                                   type = task.taskType())
@@ -112,11 +126,12 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     """
     print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
     args={}
-    args['url']='http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
-    args['version']='DBS_2_0_9'
-    args['mode']='GET'
+    args["url"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+    args["version"] = "DBS_2_0_9"
+    args["mode"] = "GET"
     dbsApi = DbsApi(args)
     dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
+    dbsResults = dbsResults[0:1]
     print "  found %d files, inserting into wmbs..." % (len(dbsResults))
 
     for dbsResult in dbsResults:
@@ -144,8 +159,8 @@ for workloadTask in workload.taskIterator():
                                       inputDataset.tier)
     injectFilesFromDBS(inputFileset, inputDatasetPath)
 
-    injectTaskIntoWMBS("/storage/local/data1/wmagent2/install/WMCORE/etc/rereco-v1/rereco-v1.pkl", "Tier1ReReco-v1", workloadTask,
-                       inputFileset)
+    injectTaskIntoWMBS(os.path.join(os.getcwd(), workloadName, workloadFile),
+                       workloadName, workloadTask, inputFileset)
 
 
 

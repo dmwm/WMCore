@@ -3,8 +3,8 @@
 A page that knows how to format DB queries
 """
 
-__revision__ = "$Id: DatabasePage.py,v 1.6 2010/02/25 16:05:38 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DatabasePage.py,v 1.7 2010/03/01 20:26:23 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import threading
@@ -44,7 +44,6 @@ class DatabasePage(TemplatedPage, DBFormatter):
         """
         TemplatedPage.__init__(self, config)
         dbConfig = ConfigDBMap(config)
-        print dbConfig.getOption()
         conn = DBFactory(self, dbConfig.getDBUrl(), dbConfig.getOption()).connect()
         DBFormatter.__init__(self, self, conn)
         myThread = threading.currentThread()

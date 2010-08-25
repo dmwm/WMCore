@@ -118,6 +118,7 @@ class FileManager:
                 # transfer method didn't work, go to next one
                 break
         # if we're here, then nothing worked. transferfail.
+        log.error("Error in stageout")
         raise StageOutError, "Error in stageout, this has been logged in the logs"
     
     def deleteLFN(self, lfn):
@@ -394,6 +395,7 @@ class StageOutMgr(FileManager):
         stages out a file, fileToStage is a dict with at least the LFN key
         the dict will be modified and returned, or an exception will be raised
         """
+        print "StageOutMgr called with file: %s" % fileToStage
         return self.stageOut(fileToStage)
 
 class DeleteMgr(FileManager):

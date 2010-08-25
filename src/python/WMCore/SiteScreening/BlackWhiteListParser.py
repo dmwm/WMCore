@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.10 2009/05/26 10:27:49 spiga Exp $"
-__version__  = "$Revision: 1.10 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.11 2009/06/03 15:19:56 ewv Exp $"
+__version__  = "$Revision: 1.11 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -69,8 +69,9 @@ class BlackWhiteListParser(object):
         hadErrors = False
         for item in userList:
             item = item.strip()
+            searchTerm = "%" + item
             try:
-                expandedItem = self.mapper(item)
+                expandedItem = self.mapper(searchTerm)
             except (RuntimeError, SyntaxError):
                 expandedItem = None
                 hadErrors = True

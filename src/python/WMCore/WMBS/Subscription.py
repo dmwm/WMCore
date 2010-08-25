@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.50 2009/10/12 21:11:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: Subscription.py,v 1.51 2009/10/15 19:47:25 mnorman Exp $"
+__version__ = "$Revision: 1.51 $"
 
 from sets import Set
 import logging
@@ -176,20 +176,27 @@ class Subscription(WMBSBase, WMSubscription):
         to this subscription.
         """
         existingTransaction = self.beginTransaction()
-
+        
         status = status.title()
         files  = Set()
         action = self.daofactory(classname = "Subscriptions.Get%sFiles" % status)
-        for f in action.execute(self["id"], conn = self.getDBConn(),
-                                transaction = self.existingTransaction()):
-            fl = File(id = f["file"])
-            fl.load()
-            if "locations" in f.keys():
-                fl.setLocation(f["locations"])
+        fileList = action.execute(self["id"], conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
+        
+        fileInfoAct  = self.daofactory(classname = "Files.GetByID")
+        fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList])
+        
+        #Run through all files
+        for f in fileList:
+            fl = File(id = f['file'])
+            fl.update(fileInfoDict[f['file']])
+            if 'locations' in f.keys():
+                fl.setLocation(f['locations'], immediateSave = False)
             files.add(fl)
-
-
+            
         self.commitTransaction(existingTransaction)
+        
+        
         return files 
     
     def acquireFiles(self, files = None):

@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.9 2010/06/22 13:29:39 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.10 2010/06/30 14:11:08 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 
@@ -126,6 +126,8 @@ class EventBasedTest(unittest.TestCase):
 
 
 
+
+
         # Now do five files with two lumis per file
         twoLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -180,7 +182,7 @@ class EventBasedTest(unittest.TestCase):
         jobGroups = jobFactory(lumis_per_job = 3,
                                split_files_between_job = True)
         self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 4)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
             self.assertTrue(len(job['input_files']) in [1, 3])
 
@@ -199,30 +201,29 @@ class EventBasedTest(unittest.TestCase):
 
 
 
-        wholeLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
+        wholeLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 3)
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = wholeLumiFiles)
-        jobGroups = jobFactory(lumis_per_job = 3,
+        jobGroups = jobFactory(lumis_per_job = 2,
                                split_files_between_job = True)
         self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 4)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
         jobList = jobGroups[0].jobs
-        self.assertEqual(len(jobList[0]['input_files']), 2)
-        self.assertEqual(len(jobList[1]['input_files']), 2)
-        self.assertEqual(len(jobList[2]['input_files']), 2)
-        self.assertEqual(len(jobList[3]['input_files']), 1)
+        for job in jobList:
+            self.assertEqual(len(job['input_files']), 1)
+
         self.assertEqual(jobList[0]['mask'],
-                         {'LastRun': 1L, 'FirstRun': 0L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 100L, 'FirstLumi': 0L})
+                         {'LastRun': 0, 'FirstRun': 0, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 1, 'FirstLumi': 0})
         self.assertEqual(jobList[1]['mask'],
-                         {'LastRun': 2L, 'FirstRun': 1L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 201L, 'FirstLumi': 101L})
+                         {'LastRun': 0, 'FirstRun': 0, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 2, 'FirstLumi': 2})
         self.assertEqual(jobList[2]['mask'],
-                         {'LastRun': 4L, 'FirstRun': 3L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 400L, 'FirstLumi': 300L})
+                         {'LastRun': 1, 'FirstRun': 1, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 101, 'FirstLumi': 100})
         self.assertEqual(jobList[3]['mask'],
-                         {'LastRun': 4L, 'FirstRun': 4L, 'LastEvent': None,
-                          'FirstEvent': None, 'LastLumi': 401L, 'FirstLumi': 401L})
+                         {'LastRun': 1, 'FirstRun': 1, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 102, 'FirstLumi': 102})
 
 
 

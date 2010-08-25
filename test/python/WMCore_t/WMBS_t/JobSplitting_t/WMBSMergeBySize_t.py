@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.13 2010/03/31 21:32:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.14 2010/06/21 17:50:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import os
@@ -28,10 +28,6 @@ from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
 class WMBSMergeBySize(unittest.TestCase):
-    """
-    _WMBSMergeBySize_
-
-    """
     def setUp(self):
         """
         _setUp_
@@ -71,12 +67,31 @@ class WMBSMergeBySize(unittest.TestCase):
         """
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 
+        self.mergeFileset = Fileset(name = "mergeFileset")
+        self.mergeFileset.create()
+        self.bogusFileset = Fileset(name = "bogusFileset")
+        self.bogusFileset.create()        
+
+        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
+                                 owner = "Steve", task="Test")
+        mergeWorkflow.create()
+        
+        self.mergeSubscription = Subscription(fileset = self.mergeFileset,
+                                              workflow = mergeWorkflow,
+                                              split_algo = "WMBSMergeBySize")
+        self.mergeSubscription.create()
+        self.bogusSubscription = Subscription(fileset = self.bogusFileset,
+                                              workflow = mergeWorkflow,
+                                              split_algo = "WMBSMergeBySize")
+
         inputFileset = Fileset(name = "inputFileset")
         inputFileset.create()
 
         inputWorkflow = Workflow(name = "inputWorkflow", spec = "input",
                                 owner = "Steve", task = "Test")
         inputWorkflow.create()
+        inputWorkflow.addOutput("output", self.mergeFileset)
+        inputWorkflow.addOutput("output2", self.bogusFileset)
         
         inputSubscription = Subscription(fileset = inputFileset,
                                         workflow = inputWorkflow)
@@ -250,23 +265,6 @@ class WMBSMergeBySize(unittest.TestCase):
         jobGroup2.output.addFile(fileZ)
         jobGroup2.output.addFile(badFile1)
         jobGroup2.output.commit()
-
-        self.mergeFileset = Fileset(name = "mergeFileset")
-        self.mergeFileset.create()
-        self.bogusFileset = Fileset(name = "bogusFileset")
-        self.bogusFileset.create()        
-
-        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
-                                 owner = "Steve", task="Test")
-        mergeWorkflow.create()
-        
-        self.mergeSubscription = Subscription(fileset = self.mergeFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "WMBSMergeBySize")
-        self.mergeSubscription.create()
-        self.bogusSubscription = Subscription(fileset = self.bogusFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "WMBSMergeBySize")
 
         for file in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
                      fileII, fileIII, fileIV, fileX, fileY, fileZ, badFile1]:
@@ -597,7 +595,6 @@ class WMBSMergeBySize(unittest.TestCase):
         _testMaxEvents1_
 
         Set the maximum number of events per merge job to 1.  
-
         """
         self.stuffWMBS()
 
@@ -740,6 +737,203 @@ class WMBSMergeBySize(unittest.TestCase):
                (len(goldenFilesA) == 0 or len(goldenFilesC) == 0), \
                "ERROR: Files not allocated to jobs correctly."
 
+        return
+
+    def testParallelProcessing(self):
+        """
+        _testParallelProcessing_
+
+        Verify that merging works correctly when multiple processing
+        subscriptions are run over the same input files.  The merging algorithm
+        should ignore processing jobs that feed into different merge
+        subscriptions.
+        """
+        mergeFilesetA = Fileset(name = "mergeFilesetA")
+        mergeFilesetB = Fileset(name = "mergeFilesetB")
+        mergeFilesetA.create()
+        mergeFilesetB.create()
+
+        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bogus",
+                                 owner = "Steve", task = "Test")
+        mergeWorkflow.create()
+
+        mergeSubscriptionA = Subscription(fileset = mergeFilesetA,
+                                          workflow = mergeWorkflow,
+                                          split_algo = "WMBSMergeBySize")
+        mergeSubscriptionB = Subscription(fileset = mergeFilesetB,
+                                          workflow = mergeWorkflow,
+                                          split_algo = "WMBSMergeBySize")
+        mergeSubscriptionA.create()
+        mergeSubscriptionB.create()
+        
+        inputFileset = Fileset(name = "inputFileset")
+        inputFileset.create()
+
+        inputFileA = File(lfn = "inputLFNA")
+        inputFileB = File(lfn = "inputLFNB")
+        inputFileA.create()
+        inputFileB.create()
+
+        procWorkflowA = Workflow(name = "procWorkflowA", spec = "bunk2",
+                                 owner = "Steve", task = "Test")
+        procWorkflowA.create()
+        procWorkflowA.addOutput("output", mergeFilesetA)
+        procWorkflowB = Workflow(name = "procWorkflowB", spec = "bunk3",
+                                 owner = "Steve", task = "Test2")
+        procWorkflowB.create()
+        procWorkflowB.addOutput("output", mergeFilesetB)
+
+        procSubscriptionA = Subscription(fileset = inputFileset,
+                                         workflow = procWorkflowA,
+                                         split_algo = "EventBased")
+        procSubscriptionA.create()
+        procSubscriptionB = Subscription(fileset = inputFileset,
+                                         workflow = procWorkflowB,
+                                         split_algo = "EventBased")
+        procSubscriptionB.create()
+
+        jobGroupA = JobGroup(subscription = procSubscriptionA)
+        jobGroupA.create()
+        jobGroupB = JobGroup(subscription = procSubscriptionB)
+        jobGroupB.create()
+
+        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+
+        testJobA = Job()
+        testJobA.addFile(inputFileA)
+        testJobA.create(jobGroupA)
+        testJobA["state"] = "cleanout"
+        testJobA["oldstate"] = "new"
+        testJobA["couch_record"] = "somejive"
+        testJobA["retry_count"] = 0
+        testJobA["outcome"] = "success"
+        testJobA.save()
+
+        testJobB = Job()
+        testJobB.addFile(inputFileB)
+        testJobB.create(jobGroupA)
+        testJobB["state"] = "cleanout"
+        testJobB["oldstate"] = "new"
+        testJobB["couch_record"] = "somejive"
+        testJobB["retry_count"] = 0
+        testJobB["outcome"] = "success"
+        testJobB.save()        
+
+        testJobC = Job()
+        testJobC.addFile(inputFileA)
+        testJobC.create(jobGroupB)
+        testJobC["state"] = "cleanout"
+        testJobC["oldstate"] = "new"
+        testJobC["couch_record"] = "somejive"
+        testJobC["retry_count"] = 0
+        testJobC["outcome"] = "success"
+        testJobC.save()
+
+        testJobD = Job()
+        testJobD.addFile(inputFileA)
+        testJobD.create(jobGroupB)
+        testJobD["state"] = "cleanout"
+        testJobD["oldstate"] = "new"
+        testJobD["couch_record"] = "somejive"
+        testJobD["retry_count"] = 0
+        testJobD["outcome"] = "failure"
+        testJobD.save()
+
+        testJobE = Job()
+        testJobE.addFile(inputFileB)
+        testJobE.create(jobGroupB)
+        testJobE["state"] = "cleanout"
+        testJobE["oldstate"] = "new"
+        testJobE["couch_record"] = "somejive"
+        testJobE["retry_count"] = 0
+        testJobE["outcome"] = "success"
+        testJobE.save()
+
+        testJobF = Job()
+        testJobF.addFile(inputFileB)
+        testJobF.create(jobGroupB)
+        testJobF["state"] = "cleanout"
+        testJobF["oldstate"] = "new"
+        testJobF["couch_record"] = "somejive"
+        testJobF["retry_count"] = 0
+        testJobF["outcome"] = "failure"
+        testJobF.save()                
+
+        changeStateDAO.execute([testJobA, testJobB, testJobC, testJobD,
+                                testJobE, testJobF])
+
+        fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0)
+        fileA.addRun(Run(1, *[45]))
+        fileA.create()
+        fileA.addParent(inputFileA["lfn"])
+        fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 0)
+        fileB.addRun(Run(1, *[45]))
+        fileB.create()
+        fileB.addParent(inputFileB["lfn"])
+
+        jobGroupA.output.addFile(fileA)
+        jobGroupA.output.addFile(fileB)
+        jobGroupA.output.commit()
+
+        mergeFilesetA.addFile(fileA)
+        mergeFilesetA.addFile(fileB)
+        mergeFilesetA.commit()
+
+        fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 0)
+        fileC.addRun(Run(1, *[45]))
+        fileC.create()
+        fileC.addParent(inputFileA["lfn"])        
+        fileD = File(lfn = "fileD", size = 1024, events = 1024, first_event = 0)
+        fileD.addRun(Run(1, *[45]))
+        fileD.create()
+        fileD.addParent(inputFileB["lfn"])
+
+        jobGroupB.output.addFile(fileC)
+        jobGroupB.output.addFile(fileD)
+
+        mergeFilesetB.addFile(fileC)
+        mergeFilesetB.addFile(fileD)
+        mergeFilesetB.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = mergeSubscriptionB)
+
+        result = jobFactory(min_merge_size = 1, max_merge_size = 20000,
+                            max_merge_events = 7169)
+
+        assert len(result) == 0, \
+               "Error: No merge jobs should have been created."
+
+        fileE = File(lfn = "fileE", size = 1024, events = 1024, first_event = 0)
+        fileE.addRun(Run(1, *[45]))
+        fileE.create()
+        fileE.addParent(inputFileA["lfn"])        
+        fileF = File(lfn = "fileF", size = 1024, events = 1024, first_event = 0)
+        fileF.addRun(Run(1, *[45]))
+        fileF.create()
+        fileF.addParent(inputFileB["lfn"])
+
+        jobGroupB.output.addFile(fileE)
+        jobGroupB.output.addFile(fileF)
+
+        mergeFilesetB.addFile(fileE)
+        mergeFilesetB.addFile(fileF)
+        mergeFilesetB.commit()
+
+        testJobD["outcome"] = "success"
+        testJobD.save()
+        testJobF["outcome"] = "success"
+        testJobF.save()
+
+        changeStateDAO.execute([testJobD, testJobF])
+
+        result = jobFactory(min_merge_size = 1, max_merge_size = 20000,
+                            max_merge_events = 7169)
+
+        assert len(result) == 1, \
+               "Error: One merge job should have been created."
+        
         return
     
 if __name__ == '__main__':

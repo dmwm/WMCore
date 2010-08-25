@@ -5,8 +5,8 @@ _GetFilesForMerge_
 Oracle implementation of Subscription.GetFilesForMerge
 """
 
-__revision__ = "$Id: GetFilesForMerge.py,v 1.8 2010/03/11 19:22:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: GetFilesForMerge.py,v 1.9 2010/06/21 17:50:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFilesForMerge import GetFilesForMerge as GetFilesForMergeMySQL
 
@@ -48,8 +48,15 @@ class GetFilesForMerge(GetFilesForMergeMySQL):
                  wmbs_file_parent.child = wmbs_fileset_files.fileid
                INNER JOIN wmbs_job_assoc ON
                  wmbs_file_parent.parent = wmbs_job_assoc.fileid
+               INNER JOIN wmbs_workflow_output ON
+                 wmbs_fileset_files.fileset = wmbs_workflow_output.output_fileset
+               INNER JOIN wmbs_subscription c ON
+                 wmbs_workflow_output.workflow_id = c.workflow
+               INNER JOIN wmbs_jobgroup ON
+                 c.id = wmbs_jobgroup.subscription
                INNER JOIN wmbs_job a ON
-                 a.id = wmbs_job_assoc.job
+                 a.id = wmbs_job_assoc.job AND
+                 a.jobgroup = wmbs_jobgroup.id
                LEFT OUTER JOIN wmbs_job b ON
                  b.id = wmbs_job_assoc.job AND
                  b.outcome = 1

@@ -186,7 +186,13 @@ class SetupCMSSWPset(ScriptInterface):
             
         # revlimiter for testing
         # self.process.maxEvents.input = 2
-
+        
+        # accept an overridden TFC from the step
+        if hasattr(step.application,'overrideCatalog'):
+            print "Found a TFC override: %s" % step.application.overrideCatalog
+            self.process.source.overrideCatalog = \
+                cms.untracked.string(step.application.overrideCatalog)
+        
         self.process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
         self.process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
         self.process.source.cacheSize = cms.untracked.uint32(100000000)

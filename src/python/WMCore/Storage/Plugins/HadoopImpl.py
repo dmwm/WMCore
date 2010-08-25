@@ -46,7 +46,7 @@ class HadoopImpl(StageOutImplV2):
             such as temporary connection failures. Anything else will be handled as an unexpected
             error and skip retrying with this plugin
         """
-        runCommand(["hadoop", "fs", "-rm" ,"pfnToRemove"])
+        runCommand(["hadoop", "fs", "-rm" ,pfn])
 
 
     

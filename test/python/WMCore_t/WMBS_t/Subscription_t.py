@@ -1022,6 +1022,49 @@ class SubscriptionTest(unittest.TestCase):
                "ERROR: Subscription didn't load ID correctly."
 
         return
-       
+
+    def testSubscriptionList(self):
+        """
+        _testSubscriptionList_
+
+        Create two subscriptions and verify that the Subscriptions.List DAO
+        object returns their IDs.
+        """
+        testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflowB = Workflow(spec = "spec2.xml", owner = "Simon",
+                                name = "wf002")
+        testWorkflowA.create()
+        testWorkflowB.create()        
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testSubscriptionA = Subscription(fileset = testFileset,
+                                         workflow = testWorkflowA)
+        testSubscriptionB = Subscription(fileset = testFileset,
+                                         workflow = testWorkflowB)        
+        testSubscriptionA.create()
+        testSubscriptionB.create()        
+        
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        
+        subListAction = daofactory(classname = "Subscriptions.List")        
+        subIDs = subListAction.execute()
+
+        assert len(subIDs) == 2, \
+               "ERROR: Too many subscriptions returned."
+
+        assert testSubscriptionA["id"] in subIDs, \
+               "ERROR: Subscription A is missing."
+
+        assert testSubscriptionB["id"] in subIDs, \
+               "ERROR: Subscription B is missing."
+
+        return
+        
 if __name__ == "__main__":
     unittest.main()

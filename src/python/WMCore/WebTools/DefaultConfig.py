@@ -64,8 +64,8 @@ active.section_('controllers')
 active.controllers.object = 'WMCore.WebTools.Controllers'
 # The configuration for this object - the location of css and js
 active.controllers.css = {'reset.css': environ['YUI_ROOT'] + '/reset/reset.css', 
-        'cms_reset.css': environ['WMCORE_ROOT'] + '/src/css/WMCore/WebTools/cms_reset.css', 
-        'style.css': environ['WMCORE_ROOT'] + '/src/css/WMCore/WebTools/style.css'}
+        'cms_reset.css': environ['WTBASE'] + '/src/css/WMCore/WebTools/cms_reset.css', 
+        'style.css': environ['WTBASE'] + '/src/css/WMCore/WebTools/style.css'}
 active.controllers.js = {}
 # These are pages in "maintenance mode" - to be completed
 maint = config.WebtoolsDocs.views.section_('maintenance')
@@ -74,17 +74,15 @@ active.section_('masthead')
 active.masthead.object = 'WMCore.WebTools.Masthead'
 active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Masthead'
 
-# This is how you would configure a RESTful service, commented out because 
-# you'll need an active database for it to make sense - we just want to show the
-# documentation 
-#active.section_('rest')
-#active.rest.object = 'WMCore.WebTools.RESTApi'
-#active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
-##active.rest.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
-#active.rest.section_('model')
-#active.rest.model.object = 'RESTModel'
-#active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
-#active.rest.model.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
-#active.rest.section_('formatter')
-#active.rest.formatter.object = 'RESTFormatter'
+# This is how you would configure a RESTful service
+active.section_('rest')
+active.rest.object = 'WMCore.WebTools.RESTApi'
+active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+# Dummy in memory SQLite DB
+active.rest.database = 'sqlite://'
+active.rest.section_('model')
+active.rest.model.object = 'RESTModel'
+active.rest.section_('formatter')
+active.rest.formatter.object = 'RESTFormatter'
+# You could override the templates/database here, for instance:
 #active.rest.formatter.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'

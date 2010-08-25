@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMSpecGenerator.py,v 1.2 2010/02/23 17:50:03 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMSpecGenerator.py,v 1.3 2010/02/23 19:06:36 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os
@@ -32,9 +32,9 @@ class WMSpecGenerator(object):
         spec.save(spec.specUrl())
         
         return specFile
-
-    def createProductionSpec(self, specName, returnType="spec"):
-        spec = BasicProductionWorkload(specName)
+    
+    def _selectReturnType(self, spec, returnType):
+        
         if returnType == "file":
             specUrl = self._save(spec)
             return specUrl
@@ -43,16 +43,21 @@ class WMSpecGenerator(object):
         else:
             specUrl = self._save(spec)
             return spec, specUrl
+
+    def createProductionSpec(self, specName, returnType="spec"):
+        spec = BasicProductionWorkload(specName)
+        return self._selectReturnType(spec, returnType)    
     
     def createProcessingSpec(self, specName, returnType="spec"):
+        #spec = BasicProcessingWorkload(specName)
         spec = BasicProcessingWorkload(specName)
-        if returnType != "spec":
-            specUrl = self._save(spec)
-            return spec, specUrl
-        else:
-            spec
-            
-    def createRandomSpecs(self, size=10):
+        return self._selectReturnType(spec, returnType)    
+    
+    def createReRecoSpec(self, specName, returnType="spec"):
+        spec = ReReco.rerecoWorkload(specName) 
+        return self._selectReturnType(spec, returnType)    
+    
+    def createRandomProductionSpecs(self, size=10):
         specNameBase = "FakeSpec"
         specs = {}
         for i in range(size):

@@ -7,8 +7,13 @@ class RequestManager(object):
         self.count = 0
     
     def getAssignment(self, teamName=None, request=None):
-        specName = "FakeProductionSpec_%s" % self.count
-        specUrl =self.specGenerator.createProductionSpec(specName, "file")
+        #specName = "FakeProductionSpec_%s" % self.count
+        #specUrl =self.specGenerator.createProductionSpec(specName, "file")
+        specName = "FakeProcessingSpec_%s" % self.count
+        specUrl =self.specGenerator.createProcessingSpec(specName, "file")
+        #specName = "FakeReRecoSpec_%s" % self.count
+        #specUrl =self.specGenerator.createProcessingSpec(specName, "file")
+        
         self.count += 1
         return {specName:specUrl}
     

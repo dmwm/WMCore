@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.33 2009/12/09 17:51:17 sryu Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: File_t.py,v 1.34 2009/12/15 15:18:22 mnorman Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import unittest
 import logging
@@ -14,7 +14,7 @@ import os
 import commands
 import threading
 import random
-from sets import Set
+#from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
@@ -541,7 +541,7 @@ class FileTest(unittest.TestCase):
         single string instead of a set.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        checksums = {'cksum':1}, locations = Set(["se1.fnal.gov"]))
+                        checksums = {'cksum':1}, locations = set(["se1.fnal.gov"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
@@ -610,12 +610,12 @@ class FileTest(unittest.TestCase):
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         checksums = {'cksum':1}, locations = "se1.fnal.gov")
         testFile.create()
-        runSet = Set()
+        runSet = set()
         runSet.add(Run( 1, *[45]))
         runSet.add(Run( 2, *[67, 68]))
         testFile.addRunSet(runSet)
         
-        assert (runSet - testFile["runs"]) == Set(), \
+        assert (runSet - testFile["runs"]) == set(), \
             "Error: addRunSet is not updating set correctly"
 
         return

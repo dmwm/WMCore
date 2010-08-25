@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest, os, logging, commands, random, threading
-from sets import Set
+#from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
@@ -69,15 +69,15 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow2.create()        
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileA.addRun(Run(1, *[45]))
                                  
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
+                         locations = set(["goodse.cern.ch"]))                         
         testFileB.addRun(Run(1, *[45]))
         
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileC.addRun(Run(2, *[48]))
          
         testFileA.create()
@@ -471,17 +471,17 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -542,21 +542,21 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileD.addRun(Run(1, *[45]))
         testFileD.addRun(Run(2, *[45]))
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileE.addRun(Run(1, *[45]))
         testFileE.addRun(Run(2, *[45]))        
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileF.addRun(Run(1, *[45]))
         testFileF.addRun(Run(2, *[45]))        
         testFileA.create()
@@ -631,17 +631,17 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -1253,19 +1253,19 @@ class SubscriptionTest(unittest.TestCase):
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileA.addRun(Run(1, *[45]))
                                  
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
+                         locations = set(["goodse.cern.ch"]))                         
         testFileB.addRun(Run(1, *[45]))
         
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileC.addRun(Run(2, *[48]))
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
+                         locations = set(["goodse.cern.ch"]))
         testFileD.addRun(Run(2, *[48]))
          
         testFileA.create()

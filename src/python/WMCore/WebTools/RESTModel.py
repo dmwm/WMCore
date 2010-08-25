@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.10 2009/07/24 14:36:40 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: RESTModel.py,v 1.11 2009/08/16 09:04:27 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response
@@ -31,9 +31,15 @@ class RESTModel(WebAPI):
                          }
         
     def ping(self, verb, args, kwargs): 
+        """
+        Return a simple message
+        """
         return 'hello %s' % self.methods[verb][args[0]]['default_data'] 
     
-    def echo(self, verb, args, kwargs): 
+    def echo(self, verb, args, kwargs):
+        """
+        Echo back the arguments sent to the call 
+        """ 
         return {'echo': {'args': args, 'kwargs':kwargs}}
    
     def handler(self, verb, args=[], kwargs={}):

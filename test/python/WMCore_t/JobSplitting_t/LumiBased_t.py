@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.7 2009/12/16 18:55:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.8 2010/06/18 18:09:18 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 
@@ -35,87 +35,8 @@ class EventBasedTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
-        self.multipleFileFileset = Fileset(name = "TestFileset1")
-        for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.addRun(Run(i, *[45+i]))
-            newFile.setLocation('blenheim')
-            self.multipleFileFileset.addFile(newFile)
 
-        self.singleFileFileset = Fileset(name = "TestFileset2")
-        newFile = File("/some/file/name", size = 1000, events = 100)
-        newFile.addRun(Run(1, *[45]))
-        newFile.setLocation('blenheim')
-        self.singleFileFileset.addFile(newFile)
-
-        self.multipleFileLumiset = Fileset(name = "TestFileset3")
-        for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.addRun(Run(1, *[45+i/3]))
-            newFile.setLocation('blenheim')
-            self.multipleFileLumiset.addFile(newFile)
-
-        self.singleLumiFileset = Fileset(name = "TestFileset4")
-        for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.addRun(Run(1, *[45]))
-            newFile.setLocation('blenheim')
-            self.singleLumiFileset.addFile(newFile)
-        self.multipleSiteLumiset = Fileset(name = "TestFileset5")
-        for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.addRun(Run(1, *[45+i/3]))
-            newFile.setLocation('blenheim')
-            self.multipleSiteLumiset.addFile(newFile)
-        for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.addRun(Run(1, *[45+i/3]))
-            newFile.setLocation('malpaquet')
-            self.multipleSiteLumiset.addFile(newFile)
-
-        self.multiRunFileset = Fileset(name = "TestFileset5")
-        for j in range(4):
-            newFile = File(makeUUID(), size = 1000, events = 100)
-            for i in range(5):
-                # Eric's test which splits each run across two files, lumis 45-54 for each run
-                #lumiNum = 45+i*j
-                #if lumiNum > 64:
-                #    lumiNum -= 20
-                #newFile.addRun(Run(1+j/2, *[lumiNum]))
-                run = Run(1+j, 45 + i)
-                newFile.addRun(run)
-            newFile.setLocation('blenheim')
-            self.multiRunFileset.addFile(newFile)
-
-
-
-        testWorkflow = Workflow()
-        self.multipleFileSubscription  = Subscription(fileset = self.multipleFileFileset,
-                                                      workflow = testWorkflow,
-                                                      split_algo = "LumiBased",
-                                                      type = "Processing")
-        self.singleFileSubscription    = Subscription(fileset = self.singleFileFileset,
-                                                      workflow = testWorkflow,
-                                                      split_algo = "LumiBased",
-                                                      type = "Processing")
-        self.multipleLumiSubscription  = Subscription(fileset = self.multipleFileLumiset,
-                                                      workflow = testWorkflow,
-                                                      split_algo = "LumiBased",
-                                                      type = "Processing")
-        self.singleLumiSubscription    = Subscription(fileset = self.singleLumiFileset,
-                                                      workflow = testWorkflow,
-                                                      split_algo = "LumiBased",
-                                                      type = "Processing")
-        self.multipleSiteSubscription  = Subscription(fileset = self.multipleSiteLumiset,
-                                                      workflow = testWorkflow,
-                                                      split_algo = "LumiBased",
-                                                      type = "Processing")
-        self.multiRunSubscription      = Subscription(fileset = self.multiRunFileset,
-                                                      workflow = testWorkflow,
-                                                      split_algo = "LumiBased",
-                                                      type = "Processing")
-
-
+        self.testWorkflow = Workflow()
 
         return
 
@@ -127,182 +48,197 @@ class EventBasedTest(unittest.TestCase):
         """
         pass
 
-    def testExactLumi(self):
-        """
-        _testExactLumi_
 
-        Test lumi based job splitting when the lumi per file is
-        exactly the same as the lumi in the input file.
+    def createSubscription(self, nFiles, lumisPerFile, twoSites = False):
+        """
+        _createSubscription_
+        
+        Create a subscription for testing
+        """
+
+        baseName = makeUUID()
+
+        testFileset = Fileset(name = baseName)
+        for i in range(nFiles):
+            newFile = File(lfn = '%s_%i' % (baseName, i), size = 1000,
+                           events = 100)
+            lumis = []
+            for lumi in range(lumisPerFile):
+                lumis.append((i * 100) + lumi)
+            newFile.addRun(Run(i, *lumis))
+            newFile.setLocation('blenheim')
+            testFileset.addFile(newFile)
+        if twoSites:
+            for i in range(nFiles):
+                newFile = File(lfn = '%s_%i_2' % (baseName, i), size = 1000,
+                               events = 100)
+                lumis = []
+                for lumi in range(lumisPerFile):
+                    lumis.append((i * 100) + lumi)
+                newFile.addRun(Run(i, *lumis))
+                newFile.setLocation('malpaquet')
+                testFileset.addFile(newFile)
+
+
+        testSubscription  = Subscription(fileset = testFileset,
+                                         workflow = self.testWorkflow,
+                                         split_algo = "LumiBased",
+                                         type = "Processing")
+
+        return testSubscription
+
+
+
+    def testA_NoFileSplitting(self):
+        """
+        _NoFileSplitting_
+
+        Test that things work if we do no file splitting
         """
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
 
-        jobGroups = jobFactory(lumis_per_job = 1)
-
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
-
-        assert len(jobGroups[0].jobs) == 1, \
-               "ERROR: JobFactory didn't create a single job."
-
-        job = jobGroups[0].jobs.pop()
-
-        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-               "ERROR: Job contains unknown files."
-
-        return
-
-
-    def testMoreLumi(self):
-        """
-        _testMoreLumi_
-
-        Test lumi based job splitting when the lumi per job is
-        more than the lumis in the input file.
-        """
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
-
-        jobGroups = jobFactory(lumis_per_job = 2)
-
+        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = oneSetSubscription)
+        jobGroups = jobFactory(lumis_per_job = 3)
         self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 1)
-        self.assertEqual(jobGroups[0].jobs[0].getFiles(type = "lfn"), ["/some/file/name"])
+        self.assertEqual(len(jobGroups[0].jobs), 4)
+
+
+        # Do some fairly extensive checking
+        self.assertEqual(len(jobGroups[0].jobs[0]['input_files']), 3)
+        self.assertEqual(jobGroups[0].jobs[0]['mask'],
+                         {'LastRun': 2L, 'FirstRun': 0L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 200L, 'FirstLumi': 0L})
+        self.assertEqual(len(jobGroups[0].jobs[1]['input_files']), 3)
+        self.assertEqual(jobGroups[0].jobs[1]['mask'],
+                         {'LastRun': 5L, 'FirstRun': 3L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 500L, 'FirstLumi': 300L})
+        self.assertEqual(len(jobGroups[0].jobs[2]['input_files']), 3)
+        self.assertEqual(jobGroups[0].jobs[2]['mask'],
+                         {'LastRun': 8L, 'FirstRun': 6L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 800L, 'FirstLumi': 600L})
+        self.assertEqual(len(jobGroups[0].jobs[3]['input_files']), 1)
+        self.assertEqual(jobGroups[0].jobs[3]['mask'],
+                         {'LastRun': None, 'FirstRun': 9L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': None, 'FirstLumi': 900L})
+
+
+
+        # Now do five files with two lumis per file
+        twoLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = twoLumiFiles)
+        jobGroups = jobFactory(lumis_per_job = 3)
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 3)
+        for job in jobGroups[0].jobs:
+            self.assertTrue(len(job['input_files']) in [1, 2])
+
+
+        # Now do five files with two lumis per file
+        tooBigFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = tooBigFiles)
+        jobGroups = jobFactory(lumis_per_job = 1)
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job['input_files']), 1)
+
+
+        # Do it with multiple sites
+        twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 1, twoSites = True)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = twoSiteSubscription)
+        jobGroups = jobFactory(lumis_per_job = 1)
+        self.assertEqual(len(jobGroups), 2)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job['input_files']), 1)
+
 
         return
 
 
 
-
-    def testFileBasedSplitting(self):
+    def testB_FileSplitting(self):
         """
-        _testFileBasedSplitting_
+        _FileSplitting_
 
-        Test lumi based job splitting with multiple files from the
-        same lumi
+        Test that things work if we split files between jobs
         """
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleLumiSubscription)
 
-        jobGroup3 = jobFactory(files_per_job = 8)
-
-        self.assertEqual(len(jobGroup3),                       1)
-        self.assertEqual(len(jobGroup3[0].jobs[0].getFiles()), 8)
-        self.assertEqual(len(jobGroup3[0].jobs[1].getFiles()), 2)
-
-        return
+        oneSetSubscription = self.createSubscription(nFiles = 10, lumisPerFile = 1)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = oneSetSubscription)
 
 
-    def testLumiBasedSplitting(self):
-        """
-        _testLumiBasedSplitting_
-
-        Test lumi based job splitting with multiple files from four different
-        lumis
-        """
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleLumiSubscription)
-
-        jobGroup3 = jobFactory(lumis_per_job = 4)
-
-        self.assertEqual(len(jobGroup3),                       1)
-        self.assertEqual(len(jobGroup3[0].jobs[0].getFiles()), 10)
-
-        return
+        jobGroups = jobFactory(lumis_per_job = 3,
+                               split_files_between_job = True)
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 4)
+        for job in jobGroups[0].jobs:
+            self.assertTrue(len(job['input_files']) in [1, 3])
 
 
 
-    def testEventBasedSplitting(self):
-        """
-        _testEventBasedSplitting_
 
-        Test event based job splitting with multiple files belonging
-        to a single lumi section
-        """
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.singleLumiSubscription)
-
-        jobGroup3 = jobFactory(events_per_job = 800)
-
-        self.assertEqual(len(jobGroup3),                       1)
-        self.assertEqual(len(jobGroup3[0].jobs),               2)
-        self.assertEqual(len(jobGroup3[0].jobs[0].getFiles()), 8)
-
-        return
+        twoLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = twoLumiFiles)
+        jobGroups = jobFactory(lumis_per_job = 1,
+                               split_files_between_job = True)
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job['input_files']), 1)
 
 
 
-    def testMultipleLumi(self):
-        """
-        _testMultipleLumi_
+        wholeLumiFiles = self.createSubscription(nFiles = 5, lumisPerFile = 2)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = wholeLumiFiles)
+        jobGroups = jobFactory(lumis_per_job = 3,
+                               split_files_between_job = True)
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 4)
+        jobList = jobGroups[0].jobs
+        self.assertEqual(len(jobList[0]['input_files']), 2)
+        self.assertEqual(len(jobList[1]['input_files']), 2)
+        self.assertEqual(len(jobList[2]['input_files']), 2)
+        self.assertEqual(len(jobList[3]['input_files']), 1)
+        self.assertEqual(jobList[0]['mask'],
+                         {'LastRun': 1L, 'FirstRun': 0L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 100L, 'FirstLumi': 0L})
+        self.assertEqual(jobList[1]['mask'],
+                         {'LastRun': 2L, 'FirstRun': 1L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 201L, 'FirstLumi': 101L})
+        self.assertEqual(jobList[2]['mask'],
+                         {'LastRun': 4L, 'FirstRun': 3L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': 400L, 'FirstLumi': 300L})
+        self.assertEqual(jobList[3]['mask'],
+                         {'LastRun': None, 'FirstRun': 4L, 'LastEvent': None,
+                          'FirstEvent': None, 'LastLumi': None, 'FirstLumi': 401L})
 
 
-        Test lumi based job splitting with 10 files, split between four different lumi sections
-        but with jobs limited by number of files
 
-
-        """
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleLumiSubscription)
-
-        jobGroup3 = jobFactory(files_per_job = 8)
-
-        self.assertEqual(len(jobGroup3),                       4)
-        self.assertEqual(len(jobGroup3[3].jobs),               1)
-        self.assertEqual(len(jobGroup3[1].jobs[0].getFiles()), 3)
-
+        # Do it with multiple sites
+        twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 2, twoSites = True)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = twoSiteSubscription)
+        jobGroups = jobFactory(lumis_per_job = 1,
+                               split_files_between_job = True)
+        self.assertEqual(len(jobGroups), 2)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job['input_files']), 1)
 
         return
 
-
-    def testMultipleRun(self):
-        """
-        _testMultipleRun_
-
-        Test lumi based job splitting with 4 files with different run #'s but the same lumi numbers
-
-        """
-
-        fileset = self.multiRunSubscription.availableFiles()
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.multiRunSubscription)
-
-        jobGroup2 = jobFactory(files_per_job = 10)
-
-        self.assertEqual(len(jobGroup2),         4)
-        self.assertEqual(len(jobGroup2[1].jobs), 1)
-        self.assertEqual(len(jobGroup2[1].jobs[0].getFiles()), 1)
-
-        return
-
-
-
-    def testMultipleSites(self):
-        """
-        _testMultipleLumi_
-
-        Test lumi based job splitting with 20 files, with 10 each in two different sites
-
-        """
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleSiteSubscription)
-
-        jobGroup3 = jobFactory(events_per_job = 100)
-
-        self.assertEqual(len(jobGroup3),                       8)
-        self.assertEqual(len(jobGroup3[1].jobs),               3)
-        self.assertEqual(len(jobGroup3[0].jobs[0].getFiles()), 1)
-
-
-        return
 
 
 if __name__ == '__main__':

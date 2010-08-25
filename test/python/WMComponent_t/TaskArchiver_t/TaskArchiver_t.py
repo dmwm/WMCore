@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: TaskArchiver_t.py,v 1.1 2009/10/30 13:45:16 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TaskArchiver_t.py,v 1.2 2009/12/14 22:19:33 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import logging
@@ -90,12 +90,13 @@ class TaskArchiverTest(unittest.TestCase):
         config.General.workDir = "."
 
         config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl    = os.getenv("COUCHURL", "cmssrv48.fnal.gov:5984")
+        config.JobStateMachine.couchurl    = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
         config.JobStateMachine.couchDBName = "job_accountant_t"
 
         config.component_("TaskArchiver")
         config.TaskArchiver.pollInterval  = 60
-        config.TaskArchiver.logLevel      = 'INFO'
+        config.TaskArchiver.logLevel      = 'SQLDEBUG'
+        config.TaskArchiver.timeOut       = 0
 
         return config
         
@@ -129,6 +130,7 @@ class TaskArchiverTest(unittest.TestCase):
         testWMBSFileset.addFile(testFileA)
         testWMBSFileset.addFile(testFileB)
         testWMBSFileset.commit()
+        testWMBSFileset.markOpen(0)
         
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow)
@@ -146,6 +148,8 @@ class TaskArchiverTest(unittest.TestCase):
             testJobGroup.add(testJob)
         
         testJobGroup.commit()
+
+        testSubscription.completeFiles([testFileA, testFileB])
 
         return testJobGroup
 
@@ -169,7 +173,7 @@ class TaskArchiverTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'success', 'complete')
         changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
 
-
+        time.sleep(2)
 
         testTaskArchiver = TaskArchiver(config)
         testTaskArchiver.prepareToStart()
@@ -198,6 +202,8 @@ class TaskArchiverTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'success', 'complete')
         changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
+
+        time.sleep(2)
 
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
         self.assertEqual(len(result), 1)

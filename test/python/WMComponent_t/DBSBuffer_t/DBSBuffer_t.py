@@ -3,13 +3,14 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t.py,v 1.8 2009/10/13 20:48:37 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBSBuffer_t.py,v 1.9 2009/10/13 20:57:42 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
 import time
 import unittest
+import os
 
 from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
 

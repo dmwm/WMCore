@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.23 2010/05/07 15:09:23 sryu Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.24 2010/05/12 19:14:54 sryu Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import logging
 
@@ -15,20 +15,19 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.Services.UUID import makeUUID
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.DataStructs.Run import Run
 
 class WMBSHelper:
 
-    def __init__(self, wmSpecName, wmSpecUrl, wmSpecOwner, taskName, 
-                 taskType, whitelist, blacklist,blockName):
+    def __init__(self, wmSpec, wmSpecUrl, wmSpecOwner, taskName, 
+                 taskType, whitelist, blacklist, blockName):
         #TODO: 
         # 1. get the top level task.
         # 2. get the top level step and input
         # 3. generated the spec, owner, name from task
         # 4. get input file list from top level step
         # 5. generate the file set from work flow.
-       	self.wmSpecName = wmSpecName
+       	self.wmSpecName = wmSpec.name()
         self.wmSpecUrl = wmSpecUrl
         self.wmSpecOwner = wmSpecOwner
         self.topLevelTaskName = taskName
@@ -37,14 +36,8 @@ class WMBSHelper:
         self.blacklist = blacklist
         self.block = blockName or None
         self.topLevelFileset = None
-        self.topLevelSubscription = None
-        #TODO: in case there are multiple top level tasks are
-        # exist find the way to avoid loading wmspec multiple times
-        wmspec = WMWorkloadHelper()
-        # the url should be url from cache 
-        # (check whether that is updated correctly in DB)
-        wmspec.load(self.wmSpecUrl)    
-        self.topLevelTask = wmspec.getTask(self.topLevelTaskName)
+        self.topLevelSubscription = None    
+        self.topLevelTask = wmSpec.getTask(self.topLevelTaskName)
 
     def createSubscription(self):
         self.createTopLevelFilesset()

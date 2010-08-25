@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: PhEDEx.py,v 1.4 2010/04/06 20:41:38 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: PhEDEx.py,v 1.5 2010/04/07 17:51:32 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 # need to clean this up at some point
 
@@ -47,7 +47,7 @@ class PhEDEx:
                                                   'subscription' : []})
                 subs = data['phedex']['dataset'][-1]['subscription']
                     #FIXME: Take from self.locations
-                subs.append({'se': 'SiteA', 'custodial': 'n', 'suspend_until': None,
+                subs.append({'node': 'SiteA', 'custodial': 'n', 'suspend_until': None,
                              'level': 'dataset', 'move': 'n', 'request': '47983',
                              'time_created': '1232989000', 'priority': 'low',
                              'time_update': None, 'node_id': '781',
@@ -66,9 +66,9 @@ class PhEDEx:
                 blocks.append({"bytes":"10438786614", "files":"5", "is_open":"n",
                                "name": args['block'],
                                "id":"454370", "subscription"
-                                                  :[ {'se' : x } for x in locations]
+                                                  :[ {'node' : x } for x in locations]
                                                         #{"priority":"normal", "request":"51253", "time_created":"1245165314",
-                                                        #   "move":"n", "suspend_until":None, "se":"SiteA",
+                                                        #   "move":"n", "suspend_until":None, "node":"SiteA",
                                                         #   "time_update":"1228905272", "group":None, "level":"block",
                                                         #   "node_id":"641", "custodial":"n", "suspended":"n"}]
                                                     })

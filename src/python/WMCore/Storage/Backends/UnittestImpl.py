@@ -65,5 +65,46 @@ class FailImpl(StageOutImpl):
         raise StageOutFailure( msg)
 
 
+class LocalCopyImpl(StageOutImpl):
+    """
+    _LocalCopyImp_
+
+    Test plugin that copies to a local directory
+
+    """
+
+    def createOutputDirectory(self, targetPFN):
+        """
+        I guess this masks a directory?
+
+        """
+        
+        dirName = os.path.dirname(targetPFN)
+
+        if not os.path.isdir(dirName):
+            os.makedirs(dirName)
+
+        return
+
+        
+    def createSourceName(self, protocol, pfn):
+        """
+        This should return the same PFN
+        """
+        return pfn
+
+
+    def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
+        command = "cp %s %s" %(sourcePFN, sourcePFN+'2')
+        return command
+
+
+    def removeFile(self, pfnToRemove):
+        command = "rm  %s" %pfnToRemove
+        self.executeCommand(command)
+        return "WIN!!!"
+
+
 registerStageOutImpl("test-win", WinImpl)
 registerStageOutImpl("test-fail", FailImpl)
+registerStageOutImpl("test-copy", LocalCopyImpl)

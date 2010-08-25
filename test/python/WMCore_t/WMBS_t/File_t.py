@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.30 2009/10/22 18:35:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: File_t.py,v 1.31 2009/12/02 19:43:21 mnorman Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import unittest
 import logging
@@ -47,7 +47,10 @@ class FileTest(unittest.TestCase):
 
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "se1.cern.ch")
-        locationAction.execute(siteName = "se1.fnal.gov")        
+        locationAction.execute(siteName = "se1.fnal.gov")
+
+        cktypeAction = daofactory(classname = "Files.AddCKType")
+        cktypeAction.execute(cktype = 'cksum')
         
         return
           
@@ -269,7 +272,7 @@ class FileTest(unittest.TestCase):
         LFN of a file.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksum = 1, first_event = 2, last_event = 3, merged = True)
+                        cksum = 101, first_event = 2, last_event = 3, merged = True, cktype = 'cksum')
         testFileA.create()
                                                         
         testFileB = File(lfn = testFileA["lfn"])
@@ -289,8 +292,8 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileB["events"]) == int, \
                "ERROR: File events is not an integer type."
-        assert type(testFileB["cksum"]) == int, \
-               "ERROR: File cksum is not an integer type."
+        assert type(testFileB["cksum"]) == str, \
+               "ERROR: File cksum is not a string type."
         assert type(testFileB["first_event"]) == int, \
                "ERROR: File first_event is not an integer type."
         assert type(testFileB["last_event"]) == int, \
@@ -302,12 +305,14 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileC["events"]) == int, \
                "ERROR: File events is not an integer type."
-        assert type(testFileC["cksum"]) == int, \
-               "ERROR: File cksum is not an integer type."
+        assert type(testFileC["cksum"]) == str, \
+               "ERROR: File cksum is not an string type."
         assert type(testFileC["first_event"]) == int, \
                "ERROR: File first_event is not an integer type."
         assert type(testFileC["last_event"]) == int, \
                "ERROR: File last_event is not an integer type."
+
+        self.assertEqual(testFileC['cksum'], '101')
 
         testFileA.delete()
         return

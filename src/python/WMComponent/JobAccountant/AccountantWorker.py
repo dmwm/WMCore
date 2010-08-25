@@ -1,26 +1,19 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, E1103
-#E1101 doesn't allow you to define config sections using .section_()
-#E1103 doesn't recognize objects attached to the thread
 """
 _AccountantWorker_
 
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.13 2010/02/10 19:01:24 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.14 2010/02/25 22:44:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import os
 import threading
 import logging
 
 from WMCore.Agent.Configuration import Configuration
-
-from WMCore.FwkJobReport.ReportParser import readJobReport
-from WMCore.FwkJobReport.FwkJobReport import FwkJobReport
-from WMCore.FwkJobReport.Report       import Report
-
+from WMCore.FwkJobReport.Report import Report
 from WMCore.DAOFactory import DAOFactory
 
 from WMCore.DataStructs.Run import Run
@@ -29,7 +22,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
-
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 
@@ -54,7 +46,6 @@ class AccountantWorker:
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)        
 
-        self.newLocationAction = self.daoFactory(classname = "Locations.New")
         self.getOutputMapAction = self.daoFactory(classname = "Jobs.GetOutputMap")
         self.bulkAddToFilesetAction = self.daoFactory(classname = "Fileset.BulkAdd")
         self.bulkParentageAction = self.daoFactory(classname = "Files.AddBulkParentage")
@@ -72,7 +63,6 @@ class AccountantWorker:
         config.JobStateMachine.couchDBName = kwargs["couchDBName"]
 
         self.stateChanger = ChangeState(config)
-                                        #config.JobStateMachine.couchDBName)
         return
 
     def loadJobReport(self, parameters):
@@ -85,10 +75,6 @@ class AccountantWorker:
         """
         # The jobReportPath may be prefixed with "file://" which needs to be
         # removed so it doesn't confuse the FwkJobReport() parser.
-
-        logging.error("In loadJobReport")
-        logging.error(parameters)
-
         jobReportPath = parameters['fwjr_path']
         jobReportPath = jobReportPath.replace("file://","")
 
@@ -104,26 +90,20 @@ class AccountantWorker:
 
         try:
             jobReport.load(jobReportPath)
-            #jobReports = readJobReport(jobReportPath)
         except Exception, msg:
             logging.error("Cannot load %s: %s" % (jobReportPath, msg))
             return self.createMissingFWKJR(parameters, 99997, 'Cannot load jobReport')
 
-        logging.error("Have jobReport from finished job")
-        logging.error(jobReport.data)
-
         return jobReport
-
 
     def didJobSucceed(self, jobReport):
         """
         _getJobReportStatus_
         
-        Get the status of the jobReport.  This will loop through all the steps and make sure the status is 'Success'.
-        If a step does not return 'Success', the job will fail
-        This returns True 
+        Get the status of the jobReport.  This will loop through all the steps
+        and make sure the status is 'Success'.  If a step does not return
+        'Success', the job will fail.
         """
-
         for step in jobReport.data.steps:
             report = getattr(jobReport.data, step)
             if report.status != 'Success' and report.status != 0:
@@ -191,28 +171,28 @@ class AccountantWorker:
 
         Add a file that was output from a job to the DBS buffer.
         """
-        datasetInfo = jobReportFile.dataset[0]
+        datasetInfo = jobReportFile["dataset"]
 
         dbsFile = DBSBufferFile(lfn = jobReportFile["lfn"],
                                 size = jobReportFile["size"],
                                 events = jobReportFile["events"],
-                                checksums = jobReportFile['checksums'],
+                                checksums = jobReportFile["checksums"],
                                 status = "NOTUPLOADED")
-        dbsFile.setAlgorithm(appName = datasetInfo["ApplicationName"],
-                             appVer = datasetInfo["ApplicationVersion"],
-                             appFam = datasetInfo["OutputModuleName"],
+        dbsFile.setAlgorithm(appName = datasetInfo["applicationName"],
+                             appVer = datasetInfo["applicationVersion"],
+                             appFam = jobReportFile["ModuleLabel"],
                              psetHash = "GIBBERISH", configContent = "MOREGIBBERISH")
         
-        dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["PrimaryDataset"],
-                                              datasetInfo["ProcessedDataset"],
-                                              datasetInfo["DataTier"]))
-        for run in jobReportFile.runs.keys():
-            newRun = Run(runNumber = run)
-            newRun.extend(jobReportFile.runs[run])
+        dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
+                                              datasetInfo["processedDataset"],
+                                              datasetInfo["dataTier"]))
+        for run in jobReportFile["runs"]:
+            newRun = Run(runNumber = run.run)
+            newRun.extend(run.lumis)
             dbsFile.addRun(newRun)
 
         dbsFile.create()
-        dbsFile.setLocation(se = jobReportFile["SEName"])
+        dbsFile.setLocation(se = list(jobReportFile["locations"])[0])
         return
 
     def fixupDBSFileStatus(self, redneckChildren):
@@ -376,22 +356,16 @@ class AccountantWorker:
 
         Add a file that was produced in a job to WMBS.  
         """
-        firstEvent = jobMask["FirstEvent"]
-        lastEvent = jobMask["LastEvent"]
+        fwjrFile["first_event"] = jobMask["FirstEvent"]
+        fwjrFile["last_event"] = jobMask["LastEvent"]
 
-        logging.error("In addFileToWMBS")
-        logging.error(jobType)
-        logging.error(fwjrFile)
+        if fwjrFile["first_event"] == None:
+            fwjrFile["first_event"] = 0
+        if fwjrFile["last_event"] == None:
+            fwjrFile["last_event"] = fwjrFile["events"]
 
-        if firstEvent == None:
-            firstEvent = 0
-        if lastEvent == None:
-            lastEvent = int(fwjrFile["events"])            
-
-        if fwjrFile["merged"] == "True" or jobType == "Merge":
-            merged = True
-        else:
-            merged = False
+        if jobType == "Merge":
+            fwjrFile["merged"] = True
 
         if type(fwjrFile["locations"]) == set:
             s = fwjrFile["locations"].copy()
@@ -401,40 +375,22 @@ class AccountantWorker:
         else:
             seName = fwjrFile["locations"]
 
-        self.newLocationAction.execute(siteName = seName,
-                                       conn = self.transaction.conn,
-                                       transaction = True)
-
-        logging.error("About to create wmbsFile")
-
         wmbsFile = File()
         wmbsFile.loadFromDataStructsFile(file = fwjrFile)
 
-        logging.error(wmbsFile)
-        logging.error(inputFiles)
-
         for inputFile in inputFiles:
             if inputFile["lfn"] not in wmbsFile.getParentLFNs():
-                logging.error("About to add parent")
-                logging.error(wmbsFile.getParentLFNs())
-                logging.error(inputFile)
                 try:
                     wmbsFile.addParent(inputFile["lfn"])
                 except Exception, ex:
                     msg = str(ex)
                     logging.error("Exception in adding parents\n%s" %(msg))
                     return None, None, None
-                logging.error(wmbsFile)
 
-        logging.error("Shouldn't be merged")
-
-        if merged:
+        if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile)
 
-        logging.error("About to go home")
-        logging.error(fwjrFile["ModuleLabel"])
-            
-        return (wmbsFile, fwjrFile["ModuleLabel"], merged)
+        return (wmbsFile, fwjrFile["ModuleLabel"], fwjrFile["merged"])
 
     def handleSuccessful(self, jobID, fwkJobReport):
         """
@@ -443,9 +399,6 @@ class AccountantWorker:
         Handle a successful job, parsing the job report and updating the job in
         WMBS.
         """
-
-        logging.error("In handleSuccessful")
-        
         wmbsJob = Job(id = jobID)
         wmbsJob.loadData()
         jobFiles = wmbsJob.getFiles()
@@ -478,8 +431,6 @@ class AccountantWorker:
             self.handleFailed(jobID = jobID, fwkJobReport = fwkJobReport)
             return
 
-        logging.error("Have file list")
-
         for fwjrFile in fileList:
             (wmbsFile, moduleLabel, merged) = \
                      self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"], jobFiles)
@@ -500,18 +451,13 @@ class AccountantWorker:
                 filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputFileset})
 
 
-        logging.error("Went through files")
-
         if len(filesetAssoc) > 0:
             self.bulkAddToFilesetAction.execute(binds = filesetAssoc,
                                                 conn = self.transaction.conn,
                                                 transaction = True)
 
         wmbsJob.completeInputFiles()
-        logging.error("About to propagate job")
-        logging.error(wmbsJob)
         self.stateChanger.propagate([wmbsJob], "success", "complete")
-        logging.error("Propagation done")
 
         for mergedOutputFile in mergedOutputFiles:
             self.setupDBSFileParentage(mergedOutputFile)
@@ -541,16 +487,15 @@ class AccountantWorker:
         return
 
 
-    def createMissingFWKJR(self, parameters, errorCode = 999, errorDescription = 'Failure of unknown type'):
+    def createMissingFWKJR(self, parameters, errorCode = 999,
+                           errorDescription = 'Failure of unknown type'):
         """
         _createMissingFWJR_
         
-        Create a missing FWJR if the report can't be found by the code in the path location
+        Create a missing FWJR if the report can't be found by the code in the
+        path location.
         """
-        report = FwkJobReport()
-        report.addError(errorCode, errorDescription)
-        report.status = 'Failed'
-        report.name   = parameters['id']
-
+        report = Report()
+        report.addError("cmsRun1", 84, errorCode, errorDescription)
+        report.data.cmsRun1.status = "Failed"
         return report
-

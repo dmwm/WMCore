@@ -69,14 +69,11 @@ class DataCollectionService(CouchService):
             task = wmSpec.getTaskByPath(t)
             inpDataset = getattr(task.data.input, "dataset", None)
             inpStep = getattr(task.data.input, "inputStep", None)
-            
-            # create a fileset in the collection for each Task, add extra information
-            # about the input dataset or step to the fileset
-            fileset = CouchFileset(name = t, url = self.url, database = self.database)
-            fileset.setCollection(collection)
+            filesetName = None
             metadata = {}
-
+          
             if inpDataset != None:
+                filesetName = "/%s/%s/%s" % (inpDataset.primary, inpDataset.processed, inpDataset.tier)
                 metadata['input_dataset'] = {}
                 #hmmn, no recursive dictionary conversion for ConfigSection? pretty sure I wrote one somewhere...
                 for key, val in inpDataset.dictionary_().items():
@@ -84,16 +81,75 @@ class DataCollectionService(CouchService):
                         metadata['input_dataset'][key] = val.dictionary_()
                     else:
                         metadata['input_dataset'][key] = val
-                fileset['metadata'] = metadata
+            
             if inpStep != None:
                 step = stepMap[inpStep]
                 if step.stepType() != "CMSSW": continue
                 metadata['input_step'] = {}
                 metadata['input_step']['step_name'] = inpStep
+                outputModule = task.data.input.outputModule
+                metadata['input_step']['module_name'] = outputModule
+                outModConfig = getattr(step.data.output.modules, outputModule, None)
+                if outModConfig == None: continue
+                filesetName = "%s/%s/%s" % (outModConfig.primaryDataset, outModConfig.processedDataset,
+                                            outModConfig.dataTier)
+                metadata['input_dataset'] = {}
+                metadata['input_dataset'].update(outModConfig.dictionary_())
+
                 #anything else to add here that might be useful?
-                                    
+          
+            # create a fileset in the collection for each Task, add extra information
+            # about the input dataset or step to the fileset
+            if filesetName == None: continue
+            fileset = CouchFileset(dataset = filesetName, url = self.url, database = self.database)
+            fileset.setCollection(collection)
+
+                            
             # this isnt doing things in bulk, which may explain turdmuching performance...
+            fileset['metadata'] = metadata
             fileset.create()
+        
+    @CouchUtils.connectToCouch
+    def listDataCollections(self):
+        """
+        _listDataCollections_
+
+        List the collections by type, since for data collections we are looking them up
+        by request/workloadspec ID instead of owner
+
+        """
+        result = self.couchdb.loadView("ACDC", 'data_collections',
+             {}, []
+            )
+
+
+        for row in result[u'rows']:
+            ownerInfo = row[u'value'][u'owner']
+            collId = row[u'value'][u'_id']
+            owner = self.newOwner(ownerInfo[u'group'], ownerInfo[u'user'])
+            coll = CouchCollection(collection_id = collId,
+                                   database = self.database, url = self.url)
+            coll.setOwner(owner)
+            coll.get()
+            yield coll
+    
+    def getDataCollection(self, collName):
+        """
+        _getDataCollection_
+        
+        Get a data collection by name
+        """
+        result = self.couchdb.loadView("ACDC", 'data_collections',
+                 { 'startkey' : collName }, []
+                )
+        print result
+        
+    def getFileset(self, taskName):
+        """
+        _getFileset_
+        """
+        
+        
         
     @CouchUtils.connectToCouch
     def failedJobs(self, *failedJobs):
@@ -102,7 +158,9 @@ class DataCollectionService(CouchService):
         
         Given a list of failed jobs, sort them into Filesets and record them
         """
-        pass
+        for job in failedJobs:
+            print job['task']
+            print job['input_files']
     
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -144,12 +202,13 @@ class CouchAppTestHarness:
 
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.DataStructs.JobPackage import JobPackage
 
 class DataCollectionInterfaceTests(unittest.TestCase):
 
     def setUp(self):
         self.databaseName = u"acdcdatacollinterfacetest"
-        self.harness = CouchAppTestHarness(self.databaseName, 'http://USER:PASS@127.0.0.1:5984')
+        self.harness = CouchAppTestHarness(self.databaseName, 'http://evansde:Gr33nMan@127.0.0.1:5984')
         self.harness.create()
         self.harness.pushCouchapps("/Users/evansde/Documents/AptanaWorkspace/WMCORE/src/couchapps/GroupUser/")
         self.harness.pushCouchapps("/Users/evansde/Documents/AptanaWorkspace/WMCORE/src/couchapps/ACDC/")
@@ -162,13 +221,25 @@ class DataCollectionInterfaceTests(unittest.TestCase):
     def tearDown(self):
         
         self.harness.drop()
-
+        pass
         
     def testA(self):
         
         dcs = DataCollectionService(url = self.harness.couchUrl, database = self.harness.dbName)
         
         dcs.createCollection(self.workload)
+        
+
+        
+        pkg = JobPackage()
+        pkg.load("/Users/evansde/Documents/AptanaWorkspace/WMCORE/test/data/cmsdataops_100806_091657/batch_2177-0/JobPackage.pkl")
+        
+        for c in dcs.listDataCollections():
+            print c, c.owner
+        
+        dcs.getDataCollection('cmsdataops_100806_091657')
+        #dcs.failedJobs(pkg[2212], pkg[2213])
+        
 
 if __name__ == '__main__':
     unittest.main()

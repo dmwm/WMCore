@@ -41,7 +41,8 @@ class CouchCollection(Collection):
             return self.get()
         document    = CMSCouch.Document()
         document['collection'] = self
-        #TODO: prune database and url keys...
+        del document['collection']['database']
+        del document['collection']['url']
         commitInfo = self.couchdb.commitOne( document )
         commitInfo = commitInfo[0]
         self['collection_id'] = str(commitInfo['id'])

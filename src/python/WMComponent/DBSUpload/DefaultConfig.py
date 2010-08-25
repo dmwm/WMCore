@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.5 2009/07/20 18:11:42 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.6 2009/09/02 16:16:10 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -42,4 +42,8 @@ config.DBSUpload.dbsversion = \
 config.DBSUpload.uploadFileMax = 10
 
 config.DBSUpload.pollInterval = 10
+
+#Config variables for block sizes in DBS
+config.DBSUpload.DBSMaxSize  = 999999999
+config.DBSUpload.DBSMaxFiles = 2
 

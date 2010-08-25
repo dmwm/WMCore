@@ -4,8 +4,8 @@
 The DBSUpload algorithm
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadPoller.py,v 1.4 2009/08/12 22:33:18 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.5 2009/09/02 16:16:10 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -57,6 +57,9 @@ class DBSUploadPoller(BaseWorkerThread):
         self.dbsurl     = self.config.DBSUpload.dbsurl
         self.dbsversion = self.config.DBSUpload.dbsversion
         self.uploadFileMax = 10
+
+        self.DBSMaxFiles   = self.config.DBSUpload.DBSMaxFiles
+        self.DBSMaxSize    = self.config.DBSUpload.DBSMaxSize
 
         if dbsconfig == None:
             self.dbsconfig = config
@@ -148,7 +151,8 @@ class DBSUploadPoller(BaseWorkerThread):
             #Now that you have the files, insert them as a list
             if len(files) > 0:
             	affectedBlocks = self.dbswriter.insertFilesForDBSBuffer(files = files, procDataset = dict(dataset), \
-                                                       algos = algos, jobType = "NotMerge", insertDetectorData = False)
+                                                       algos = algos, jobType = "NotMerge", insertDetectorData = False, \
+                                                       maxFiles = self.DBSMaxFiles, maxSize = self.DBSMaxSize)
                 for block in affectedBlocks:
                     info = block['StorageElementList']
                     locations = []

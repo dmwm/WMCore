@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.98 2010/04/09 21:28:56 sryu Exp $"
-__version__ = "$Revision: 1.98 $"
+__revision__ = "$Id: WorkQueue.py,v 1.99 2010/04/14 18:12:52 sryu Exp $"
+__version__ = "$Revision: 1.99 $"
 
 
 import time
@@ -229,8 +229,8 @@ class WorkQueue(WorkQueueBase):
                 self.logger.error(msg % (pullingQueueUrl, str(ex)))
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
 
-        with self.transactionContext():
-            for match in matches:
+        for match in matches:
+            with self.transactionContext():
                 wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
                                         conn = self.getDBConn(),
                                         transaction = self.existingTransaction())

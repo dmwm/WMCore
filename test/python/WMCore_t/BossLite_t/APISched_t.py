@@ -4,12 +4,11 @@ _APISched_t_
 
 """
 
-__revision__ = "$Id: APISched_t.py,v 1.2 2010/05/25 22:15:05 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: APISched_t.py,v 1.3 2010/06/03 11:15:36 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
-import time
-        
+
 # Import key features
 from WMQuality.TestInit import TestInit
 
@@ -41,7 +40,12 @@ def fakeTask(db, numjob):
     # self.assertEqual(tmpId, task.exists(db))
     task.exists(db)
     for j in xrange(numjob):
+        
         jobParams['name'] = 'Fake_job_%s' % str(j)
+        jobParams['standardError'] = 'hostname-%s.err' % str(j)
+        jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
+        jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
+        
         job = Job( parameters = jobParams )
         job.newRunningInstance(db)
         task.addJob(job)
@@ -51,36 +55,11 @@ def fakeTask(db, numjob):
     return
 
 
-def printDebug(task):
-    """
-    printDebug
-    """
-    
-    print '\n >> schedulerParentId: ' + \
-                str(task.jobs[0].runningJob['schedulerId']) + '\n' 
-    print 'schedulerId'.ljust(52), 'status'.ljust(6), \
-                'statusScheduler'.ljust(20), 'destination'.ljust(20)
-    print ('-'*52).ljust(52), ('-'*6).ljust(6), \
-                ('-'*20).ljust(20), ('-'*20).ljust(20)
-    for job in task.jobs :
-        if job.runningJob is None :
-            print str(job.runningJob['schedulerId']).ljust(52), \
-                    'No running job'.rjust(10)
-        else :
-            print str(job.runningJob['schedulerId']).ljust(52), \
-                     str(job.runningJob['status']).ljust(6), \
-                     str(job.runningJob['statusScheduler']).ljust(20), \
-                     str(job.runningJob['destination']).ljust(20)
-        # print '\n'
-
-
 class APISched(unittest.TestCase):
     """
     Unit-test for BossLiteAPISched
     """
     
-    myBossLiteAPI = None
-    mySchedConfig =  {'name' : 'SchedulerGLite' }
     
     def testA_databaseStartup(self):
         """
@@ -95,27 +74,29 @@ class APISched(unittest.TestCase):
                                 useDefault = False)
         
         # populate DB
-        self.myBossLiteAPI = BossLiteAPI()
-        fakeTask(self.myBossLiteAPI.db, numjob= 3)
+        myBossLiteAPI = BossLiteAPI()
+        fakeTask(myBossLiteAPI.db, numjob= 5)
         
         return
-
+    
     
     def testB_Submission(self):
         """
         Simple submission operation
         """
         
-        mySchedAPI = BossLiteAPISched( bossLiteSession = self.myBossLiteAPI, 
-                                       schedulerConfig = self.mySchedConfig )
+        myBossLiteAPI = BossLiteAPI()
+        mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, 
+                                       schedulerConfig = 
+                                            { 'name' : 'SchedulerFake' } )
         
-        task = mySchedAPI.submit( 1 )
+        taskLoaded = mySchedAPI.submit( 1 )
         
-        #### DEBUG ####
-        printDebug(task)
+        for job in taskLoaded.jobs :
+            self.assertEqual(job.runningJob['status'], 'S')
+            self.assertEqual(job.runningJob['closed'], 'N')
         
         return
-    
     
     
     def testC_Status(self):
@@ -123,28 +104,16 @@ class APISched(unittest.TestCase):
         Simple status check operation
         """
         
-        mySchedAPI = BossLiteAPISched( bossLiteSession = self.myBossLiteAPI, 
-                                       schedulerConfig = self.mySchedConfig )
+        myBossLiteAPI = BossLiteAPI()
+        mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, 
+                                       schedulerConfig = 
+                                            { 'name' : 'SchedulerFake' } )
         
-        # polling status... the test ends when all jobs reach the status 'SD'
-        while True:
-            
-            task = mySchedAPI.query( 1 )
-            
-            #### DEBUG ####
-            printDebug(task)
-            
-            exitCondition = True
-            
-            for x in task.jobs :
-                if x.runningJob['status'] != 'SD' :
-                    exitCondition = False
-                    
-            if exitCondition:
-                break
-            
-            # sleeping for a while...
-            time.sleep(60)
+        taskLoaded = mySchedAPI.query( taskId = 1 )
+        
+        for job in taskLoaded.jobs :
+            self.assertEqual(job.runningJob['status'], 'SD')
+            self.assertEqual(job.runningJob['closed'], 'N')
         
         return
     
@@ -154,28 +123,21 @@ class APISched(unittest.TestCase):
         Simple getOutput operation
         """
         
-        mySchedAPI = BossLiteAPISched( bossLiteSession = self.myBossLiteAPI, 
-                                       schedulerConfig = self.mySchedConfig )
+        myBossLiteAPI = BossLiteAPI()
+        mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, 
+                                       schedulerConfig = 
+                                            { 'name' : 'SchedulerFake' } )
         
-        # do something ...
+        taskLoaded = mySchedAPI.getOutput( taskId = 1, outdir = './test' )
         
+        for job in taskLoaded.jobs :
+            self.assertEqual(job.runningJob['status'], 'E')
+            self.assertEqual(job.runningJob['closed'], 'Y')
+             
         return
     
     
-    def testD_Kill(self):
-        """
-        Simple kill operation
-        """
-        
-        mySchedAPI = BossLiteAPISched( bossLiteSession = self.myBossLiteAPI, 
-                                       schedulerConfig = self.mySchedConfig )
-        
-        # do something ...
-        
-        return
-    
-    
-    def testZ_dropDatabase(self):
+    def testE_dropDatabase(self):
         """
         Simple submission through SchedulerGLite
         """
@@ -190,7 +152,12 @@ class APISched(unittest.TestCase):
     
     
 if __name__ == "__main__":
-    APISchedSuite = unittest.TestLoader().loadTestsFromTestCase(APISched)
-
+    # Logging on external text file... not working
+    #LOG_FILENAME = './APISched_t.log'
+    #logging.basicConfig(filename=LOG_FILENAME)
+    #logging.getLogger( "APISched_log" ).setLevel( logging.INFO )
+    
+    suiteSched = unittest.TestLoader().loadTestsFromTestCase(APISched)
+    
     # run the unit-test
-    unittest.TextTestRunner(verbosity=3).run(APISchedSuite)
+    unittest.TextTestRunner(verbosity=3).run(suiteSched)

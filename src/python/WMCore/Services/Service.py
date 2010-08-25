@@ -48,8 +48,8 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
-__revision__ = "$Id: Service.py,v 1.57 2010/07/30 12:14:50 swakef Exp $"
-__version__ = "$Revision: 1.57 $"
+__revision__ = "$Id: Service.py,v 1.58 2010/07/30 12:56:06 swakef Exp $"
+__version__ = "$Revision: 1.58 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -64,6 +64,7 @@ from httplib import HTTPException
 from WMCore.Services.Requests import Requests
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
+import types
 
 class Service(dict):
     
@@ -102,27 +103,28 @@ class Service(dict):
 
         # then update with the incoming dict
         self.update(dict)
-        # Get the request class, to instatiate later
+
+        # we want the request object to cache to a known location
+        dict['req_cache_path'] = self['cachepath'] + '/requests'
+
+        # Get the request class, to instantiate later
+        # either passed as param to __init__, determine via scheme or default
+        if type(self.get('requests')) == types.TypeType:
+            requests = self['requests']
         # Is this a secure service - add other schemes as we need them
-        if not self.get('requests'):
-            if self.get('secure', False) or scheme in SECURE_SERVICES:
-                # only bring in ssl stuff if we really need it
-                from WMCore.Services.Requests import SecureRequests
-                requests = SecureRequests
-            else:
-                requests = Requests
-            # Instantiate a Request
-            self.setdefault("requests", requests(dict['endpoint'], dict))
-
+        elif self.get('secure', False) or scheme in SECURE_SERVICES:
+            # only bring in ssl stuff if we really need it
+            from WMCore.Services.Requests import SecureRequests
+            requests = SecureRequests
+        else:
+            requests = Requests
+        # Instantiate a Request
         try:
-            # we want the request object to cache to a known location
-            dict['req_cache_path'] = self['cachepath'] + '/requests'
-
+            self["requests"] = requests(dict['endpoint'], dict)
         except WMException, ex:
             msg = str(ex)
             self["logger"].exception(msg)
-            raise WMException(msg)
-        
+
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours, max reuse %s hours)""" %
                   (self, self["requests"]["host"], self["endpoint"],

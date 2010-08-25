@@ -5,20 +5,12 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.57 2010/04/26 21:38:29 metson Exp $"
-__version__ = "$Revision: 1.57 $"
-
-try:
-    # Python 2.6
-    import json
-except:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
+__revision__ = "$Id: CMSCouch.py,v 1.58 2010/04/26 22:07:38 metson Exp $"
+__version__ = "$Revision: 1.58 $"
 
 import urllib
 from httplib import BadStatusLine
 import datetime
-import threading
 from WMCore.Services.Requests import BasicAuthJSONRequests
 
 class Document(dict):
@@ -26,12 +18,18 @@ class Document(dict):
     Document class is the instantiation of one document in the CouchDB
     """
     def __init__(self, id=None, dict = {}):
+        """
+        Initialise our Document object - a dictionary which has an id field
+        """
         dict.__init__(self)
         self.update(dict)
         if id:
             self.setdefault("_id", id)
 
     def delete(self):
+        """
+        Mark the document as deleted
+        """
         self['_deleted'] = True
 
     def __to_json__(self, thunker):
@@ -53,6 +51,9 @@ class CouchDBRequests(BasicAuthJSONRequests):
     completeness, and talks to the CouchDB port
     """
     def __init__(self, url = 'localhost:5984'):
+        """
+        Initialise requests
+        """
         BasicAuthJSONRequests.__init__(self, url)
         self.accept_type = "application/json"
         
@@ -76,7 +77,8 @@ class CouchDBRequests(BasicAuthJSONRequests):
         """
         try:
             result, status, reason = BasicAuthJSONRequests.makeRequest(
-                                        self, uri, data, type, encode, decode, contentType)
+                                        self, uri, data, type, encode, decode, 
+                                        contentType)
         except BadStatusLine,e:
             print "BadStatusLine failure: %s" % e
             print "     at uri: %s" % uri
@@ -117,6 +119,9 @@ class Database(CouchDBRequests):
     """
     def __init__(self, dbname = 'database', 
                   url = 'localhost:5984', size = 1000):
+        """
+        A set of queries against a CouchDB database
+        """
         CouchDBRequests.__init__(self, url)
         self._reset_queue()
         self.name = urllib.quote_plus(dbname)
@@ -182,13 +187,16 @@ class Database(CouchDBRequests):
         retval = self.post(uri , data)
         return retval
 
-    def commit(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
+    def commit(self, doc=None, returndocs = False, timestamp = False, 
+               viewlist=[]):
         """
-        Add doc and/or the contents of self._queue to the database. If returndocs
-        is true, return document objects representing what has been committed. If
-        timestamp is true timestamp all documents with a date formatted like:
-        2009/01/30 18:04:11 - this will be the timestamp of when the commit was
-        called, it will not override an existing timestamp field.
+        Add doc and/or the contents of self._queue to the database. If
+        returndocs is true, return document objects representing what has been 
+        committed. If timestamp is true timestamp all documents with a date 
+        formatted like: 2009/01/30 18:04:11 - this will be the timestamp of when
+        the commit was called, it will not override an existing timestamp field.
+        if timestamp is a string that string will be used as the label for the
+        timestamp.
         
         TODO: restore support for returndocs and viewlist
         
@@ -238,7 +246,8 @@ class Database(CouchDBRequests):
         response = self.post('/%s/_compact' % self.name)
         if len(views) > 0:
             for view in views:
-                response[view] = self.post('/%s/_compact/%s' % (self.name, view))
+                response[view] = self.post('/%s/_compact/%s' % (self.name, 
+                                                                view))
         return response
             
     def changes(self, since=-1):
@@ -301,18 +310,30 @@ class Database(CouchDBRequests):
             return retval
             
     def createDesignDoc(self, design='myview', language='javascript'):
+        """
+        Create a document that represents a design document
+        """
         view = Document('_design/%s' % design)
         view['language'] = language
         view['views'] = {}
         return view
 
     def allDocs(self):
+        """
+        Return all the documents in the database
+        """
         return self.get('/%s/_all_docs' % self.name)
 
     def info(self):
+        """
+        Return information about the databaes (size, number of documents etc).
+        """
         return self.get('/%s/' % self.name)
     
     def addAttachment(self, id, rev, value, name=None):
+        """
+        Add an attachment to a document.
+        """
         if (name == None):
             name = "attachment"
         return self.put('/%s/%s/%s?rev=%s' % (self.name, id, name, rev),
@@ -320,9 +341,13 @@ class Database(CouchDBRequests):
                          False)
     
     def getAttachment(self, id, name=None):
+        """
+        Retrieve an attachment
+        """
         if (name == None):
             name = "attachment"
-        attachment = self.get('/%s/%s/%s' % (self.name,id,name),
+        attachment, response, result = self.get('/%s/%s/%s' % (self.name, id, 
+                                                               name),
                          None,
                          False,
                          False)
@@ -345,10 +370,14 @@ class CouchServer(CouchDBRequests):
     """
     
     def __init__(self, dburl='localhost:5984'):
+        """
+        Set up a connection to the CouchDB server
+        """
         CouchDBRequests.__init__(self, dburl)
         self.url = dburl
 
     def listDatabases(self):
+        "List all the databases the server hosts"
         return self.get('/_all_dbs')
 
     def createDatabase(self, db):
@@ -362,19 +391,29 @@ class CouchServer(CouchDBRequests):
         return Database(db, self.url)
 
     def deleteDatabase(self, db):
+        "Delete a database from the server"
         db = urllib.quote_plus(db)
         return self.delete("/%s" % db)
 
-    def connectDatabase(self, db):
-        if db not in self.listDatabases():
+    def connectDatabase(self, db, create=True):
+        """
+        Return a Database instance, pointing to a database in the server. If the
+        database doesn't exist create it if create is True.
+        """ 
+        if create and db not in self.listDatabases():
             self.createDatabase(db)
         db = urllib.quote_plus(db)
         return Database(db, self.url)
 
     def __str__(self):
+        """
+        List all the databases the server has
+        """
         return self.listDatabases().__str__()
     
-    def replicate(self, source, destination, continuous=False, create_target=False):
+    def replicate(self, source, destination, continuous=False, 
+                  create_target=False):
+        "Trigger replication between source and destination"
         #TODO: how to protect from missing http://?
         self.post('/_replicate', 
                   data={"source":source,
@@ -387,7 +426,9 @@ class CouchServer(CouchDBRequests):
 #  http://wiki.apache.org/couchdb/HTTP_status_list
 
 class CouchError(Exception):
+    "An error thrown by CouchDB"
     def __init__(self, reason, data, result, status = None):
+        Exception.__init__()
         self.reason = reason
         self.data = data
         self.result = result
@@ -395,6 +436,7 @@ class CouchError(Exception):
         self.status = status
     
     def __str__(self):
+        "Stringify the error"
         if self.status != None:
             errorMsg = "NEW ERROR STATUS! UPDATE CMSCOUCH.PY!: %s\n" % self.status 
         else:

@@ -2,10 +2,12 @@
 #-*- coding: ISO-8859-1 -*-
 """
 Rest Model abstract implementation
+
+TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.43 2010/01/04 17:04:10 sryu Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: RESTModel.py,v 1.44 2010/01/06 16:00:34 metson Exp $"
+__version__ = "$Revision: 1.44 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError

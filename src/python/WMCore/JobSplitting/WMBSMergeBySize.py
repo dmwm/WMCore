@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.10 2010/05/03 15:58:37 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.11 2010/06/24 18:31:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 
@@ -65,6 +65,12 @@ def sortedFilesFromMergeUnits(mergeUnits):
         for file in mergeUnit["files"]:
             newFile = File(id = file["file_id"], lfn = file["file_lfn"],
                            events = file["file_events"])
+
+            # The WMBS data structure puts locations that are passed in through
+            # the constructor in the "newlocations" attribute.  We want these to
+            # be in the "locations" attribute so that they get picked up by the
+            # job submitter.
+            newFile["locations"] = set([file["se_name"]])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             sortedFiles.append(newFile)
 

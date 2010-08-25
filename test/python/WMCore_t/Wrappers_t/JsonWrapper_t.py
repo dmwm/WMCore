@@ -3,8 +3,8 @@
 Unit tests for json wrapper.
 """
 
-__revision__ = "$Id: JsonWrapper_t.py,v 1.2 2010/01/27 18:45:03 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JsonWrapper_t.py,v 1.3 2010/01/27 19:33:10 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 __test = False
 try:
@@ -20,7 +20,7 @@ except:
     import json
 
 import os
-import WMCore.Wrappers.jsonwrapper as json_wrap
+import WMCore.Wrappers.JsonWrapper as json_wrap
 
 class TestWrapper(unittest.TestCase):
     """

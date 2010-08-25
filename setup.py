@@ -750,7 +750,7 @@ class EnvCommand(Command):
         print 'export PATH=%s' % ':'.join(expath)
         
         #We want the WMCORE root set, too
-        print 'export WMCORE_ROOT=%s' % get_relative_path()
+        print 'export WMCOREBASE=%s' % get_relative_path()
 
 
 def getPackages(package_dirs = []):

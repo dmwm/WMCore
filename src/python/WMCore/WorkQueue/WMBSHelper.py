@@ -1,27 +1,36 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W6501, E1103, C0103
+# E1103: Attach methods to threads
+# W6501: Allow logging messages to have string formatting
+# C0103: Internal method names start with '_'
 """
 _WMBSHelper_
 
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.33 2010/07/22 16:57:05 swakef Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.34 2010/08/10 15:24:22 mnorman Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import logging
+import threading
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMException import WMException
 from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
+# Added to allow bulk commits
+from WMCore.DAOFactory           import DAOFactory
+from WMCore.WMConnectionBase     import WMConnectionBase
+
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
     """
-    from WMCore.DAOFactory import DAOFactory
     action = DAOFactory(package = 'WMBS',
                         logger = logger,
                         dbinterface = dbi)('Monitoring.SubscriptionStatus')
@@ -29,7 +38,25 @@ def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
                           transaction = transaction)
 
 
-class WMBSHelper:
+
+class WorkQueueWMBSException(WMException):
+    """
+    Dummy exception class for exceptions raised
+    in WMBS Helper.
+
+    TODO: Do something useful
+
+    """
+
+    pass
+
+
+class WMBSHelper(WMConnectionBase):
+    """
+    DAO equipped class that interfaces between the WorkQueue (and DBS),
+    and WMBS
+
+    """
 
     def __init__(self, wmSpec, wmSpecUrl, wmSpecOwner, taskName, 
                  taskType, whitelist, blacklist, blockName):
@@ -39,7 +66,7 @@ class WMBSHelper:
         # 3. generated the spec, owner, name from task
         # 4. get input file list from top level step
         # 5. generate the file set from work flow.
-       	self.wmSpecName = wmSpec.name()
+        self.wmSpecName = wmSpec.name()
         self.wmSpecUrl = wmSpecUrl
         self.wmSpecOwner = wmSpecOwner
         self.topLevelTaskName = taskName
@@ -50,6 +77,43 @@ class WMBSHelper:
         self.topLevelFileset = None
         self.topLevelSubscription = None    
         self.topLevelTask = wmSpec.getTask(self.topLevelTaskName)
+
+
+        # Initiate the pieces you need to run your own DAOs
+        WMConnectionBase.__init__(self, "WMCore.WMBS")
+        myThread = threading.currentThread()
+        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                        logger = myThread.logger,
+                                        dbinterface = myThread.dbi)
+        self.uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                        logger = myThread.logger,
+                                        dbinterface = myThread.dbi)
+
+
+        # DAOs from WMBS for file commit
+        self.setParentageByJob       = self.daofactory(classname = "Files.SetParentageByJob")
+        self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
+        self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
+        self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
+        self.addFileAction           = self.daofactory(classname = "Files.Add")
+        self.addToFileset            = self.daofactory(classname = "Files.AddToFileset")
+
+
+
+        # DAOs from DBSBuffer for file commit
+        self.dbsCreateFiles    = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
+        self.dbsSetLocation    = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
+        self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
+        self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
+
+
+        # Added for file creation bookkeeping
+        self.dbsFilesToCreate     = []
+        self.addedLocations       = []
+        self.insertedBogusDataset = -1
+
+
+        return
 
     def createSubscription(self, topLevelFilesetName = None):
         self.createTopLevelFileset(topLevelFilesetName)
@@ -139,14 +203,204 @@ class WMBSHelper:
         as well as run lumi update
         """
 
+
+        self.beginTransaction()
+
         for dbsFile in self.validFiles(dbsBlock['Files']):
             self.topLevelFileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
                                               dbsBlock['StorageElements']))
-                    
-        self.topLevelFileset.commit()
+
+
+        # Add files to WMBS
+        self._addFilesToWMBSInBulk()
+        # Add files to DBSBuffer
+        self._createFilesInDBSBuffer()
+
+        #self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
+
+        self.commitTransaction(existingTransaction = False)
         
         #add to DBSBuffer
+
+
+    def _addFilesToWMBSInBulk(self):
+        """
+        _addFilesToWMBSInBulk
+
+        Do a bulk addition of files into WMBS
+        """
+
+        if len(self.topLevelFileset.newfiles) == 0:
+            # Nothing to do
+            return
+
+
+        parentageBinds = []
+        runLumiBinds   = []
+        fileCksumBinds = []
+        fileLocations  = []
+        fileCreate     = []
+        fileLFNs       = []
+
+        
+        for wmbsFile in self.topLevelFileset.newfiles:
+
+            if wmbsFile.exists():
+                continue
+
+
+            
+            lfn           = wmbsFile['lfn']
+            selfChecksums = wmbsFile['checksums']
+            parentageBinds.append({'child': lfn, 'jobid': wmbsFile['id']})
+            runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
+            fileLFNs.append(lfn)
+
+            if len(wmbsFile['newlocations']) < 1:
+                # Then we're in trouble
+                msg = "File created in WMBS without locations!\n"
+                msg += "File lfn: %s\n" % (lfn)
+                logging.error(msg)
+                raise WorkQueueWMBSException(msg)
+            
+            for loc in wmbsFile['newlocations']:
+                fileLocations.append({'lfn': lfn, 'location': loc})
+
+            if selfChecksums:
+                # If we have checksums we have to create a bind
+                # For each different checksum
+                for entry in selfChecksums.keys():
+                    fileCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
+                                           'cktype' : entry})
+
+            fileCreate.append([lfn,
+                               wmbsFile['size'],
+                               wmbsFile['events'],
+                               None,
+                               wmbsFile["first_event"],
+                               wmbsFile["last_event"],
+                               wmbsFile['merged']])
+
+        if len(fileCreate) < 1:
+            # If we have no files, ditch
+            return
+
+        self.addFileAction.execute(files = fileCreate,
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
+        
+        self.setParentageByJob.execute(binds = parentageBinds,
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+
+        self.setFileRunLumi.execute(file = runLumiBinds,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+
+
+        self.setFileLocation.execute(lfn = fileLocations,
+                                     conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+
+
+        self.addToFileset.execute(file = fileLFNs,
+                                  fileset = self.topLevelFileset.id,
+                                  conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
+
+        return
+
+
+    def _createFilesInDBSBuffer(self):
+        """
+        _createFilesInDBSBuffer_
+        
+        It does the actual job of creating things in DBSBuffer
+        
+        """
+        if len(self.dbsFilesToCreate) == 0:
+            # Whoops, nothing to do!
+            return
+
+        dbsFileTuples  = []
+        dbsFileLoc     = []
+        dbsCksumBinds  = []
+        locationsToAdd = []
+        selfChecksums  = None
+
+
+        # The first thing we need to do is add the datasetAlgo
+        # Assume all files in a pass come from one datasetAlgo?
+        if self.insertedBogusDataset  == -1:
+            self.insertedBogusDataset = self.dbsFilesToCreate[0].insertDatasetAlgo()
+
+
+
+        for dbsFile in self.dbsFilesToCreate:
+            # Append a tuple in the format specified by DBSBufferFiles.Add
+            # Also run insertDatasetAlgo
+
+            lfn           = dbsFile['lfn']
+            selfChecksums = dbsFile['checksums']
+            
+            dbsFileTuples.append((lfn, dbsFile['size'],
+                                  dbsFile['events'], self.insertedBogusDataset,
+                                  dbsFile['status']))
+
+
+            if len(dbsFile['newlocations']) < 1:
+                msg = ''
+                msg += "File created without any locations!\n"
+                msg += "File lfn: %s\n" % (lfn)
+                msg += "Rejecting this group of files in DBS!\n"
+                logging.error(msg)
+                raise WorkQueueWMBSException(msg)
+                
+
+            for jobLocation in dbsFile['newlocations']:
+                if not jobLocation in self.addedLocations:
+                    # If we don't have it, try and add it
+                    locationsToAdd.append(jobLocation)
+                    self.addedLocations.append(jobLocation)
+                dbsFileLoc.append({'lfn': lfn, 'sename' : jobLocation})
+            
+            if selfChecksums:
+                # If we have checksums we have to create a bind
+                # For each different checksum
+                for entry in selfChecksums.keys():
+                    dbsCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
+                                          'cktype' : entry})
+
+        for jobLocation in locationsToAdd:
+            self.dbsInsertLocation.execute(siteName = jobLocation,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+
+        self.dbsCreateFiles.execute(files = dbsFileTuples,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+
+        self.dbsSetLocation.execute(binds = dbsFileLoc,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+
+        # Now that we've created those files, clear the list
+        self.dbsFilesToCreate = []
+        return
+
+
+        
         
     def _addToDBSBuffer(self, dbsFile, checksums, locations):
         """
@@ -163,7 +417,11 @@ class WMBSHelper:
         dbsBuffer.setAlgorithm(appName = "cmsRun", appVer = "Unknown", 
                              appFam = "Unknown", psetHash = "Unknown", 
                              configContent = "Unknown")
-        dbsBuffer.create()
+
+        if not dbsBuffer.exists():        
+            self.dbsFilesToCreate.append(dbsBuffer)
+        #dbsBuffer.create()
+        return
     
     def _convertDBSFileToWMBSFile(self, dbsFile, storageElements):
         """

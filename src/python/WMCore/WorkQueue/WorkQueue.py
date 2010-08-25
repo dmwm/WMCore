@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.56 2010/01/27 11:47:29 swakef Exp $"
-__version__ = "$Revision: 1.56 $"
+__revision__ = "$Id: WorkQueue.py,v 1.57 2010/01/27 12:57:31 swakef Exp $"
+__version__ = "$Revision: 1.57 $"
 
 
 import uuid
@@ -538,11 +538,11 @@ class WorkQueue(WorkQueueBase):
                                    self.params['QueueDepth'] * slots) for _,
                                    name, slots in wmbs_sites if slots > 0]
                 self.logger.info("Pull work for sites %s" % str(sites))
-                _, resources = self.getWork(sites)
+                _, resources = self._match(sites)
 
             if resources:
                 work = self.parent_queue.getWork(resources,
-                                             self.params['QueueURL'])
+                                                 self.params['QueueURL'])
                 if work:
                     trans = self.beginTransaction()
                     for element in work:

@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.31 2010/04/09 21:27:53 sryu Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.32 2010/05/26 14:51:37 sryu Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import unittest
 import os
@@ -19,6 +19,7 @@ from WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
 
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
@@ -32,8 +33,37 @@ class fakeSiteDB:
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
+rerecoArgs = {
+    "CmsPath": "/uscmst1/prod/sw/cms",
+    "AcquisitionEra": "WMAgentCommissioning10",
+    "Requester": "workqueue@fnal.gov",
+    "InputDataset": "/MinimumBias/BeamCommissioning09-v1/RAW",
+    "CMSSWVersion": "CMSSW_3_5_8_patch3",
+    "ScramArch": "slc5_ia32_gcc434",
+    "ProcessingVersion": "v2scf",
+    "SkimInput": "output",
+    "GlobalTag": "GR10_P_v4::All",
+    
+    "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
+    "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
+    
+    "CouchUrl": None,
+    "CouchDBName": None,
+    "Scenario": ""
+#     "scenario": "cosmics",
+#     "processingOutputModules": {"outputRECORECO": {"dataTier": "RECO", "filterName": ""},
+#                                 "outputALCARECOALCARECO": {"dataTier": "ALCARECO", "filterName": ""}},
+#     "skimOutputModules": {},
+#     "processingConfig": "",
+#     "skimConfig": ""
+    
+    }
 
-rerecoArgs = {"InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW"}
+class TestReRecoFactory(ReRecoWorkloadFactory):
+    
+    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
+                            scenarioArgs):
+        return {}
 
 class WorkQueueTest(WorkQueueTestCase):
     """
@@ -51,21 +81,22 @@ class WorkQueueTest(WorkQueueTestCase):
         self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
 
+        rerecoFactory = TestReRecoFactory()
         # Sample Tier1 ReReco spec
-        self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
+        self.processingSpec = rerecoFactory('testProcessing', rerecoArgs)
         self.processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessing.spec'))
         self.processingSpec.save(self.processingSpec.specUrl())
 
         # ReReco spec with blacklist
-        self.blacklistSpec = rerecoWorkload('blacklistSpec', rerecoArgs)
+        self.blacklistSpec = rerecoFactory('blacklistSpec', rerecoArgs)
         self.blacklistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testBlacklist.spec'))
         self.blacklistSpec.taskIterator().next().data.constraints.sites.blacklist = ['SiteA']
         self.blacklistSpec.save(self.blacklistSpec.specUrl())
 
         # ReReco spec with whitelist
-        self.whitelistSpec = rerecoWorkload('whitelistlistSpec', rerecoArgs)
+        self.whitelistSpec = rerecoFactory('whitelistlistSpec', rerecoArgs)
         self.whitelistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testWhitelist.spec'))
         self.whitelistSpec.taskIterator().next().data.constraints.sites.whitelist = ['SiteB']
@@ -228,17 +259,25 @@ class WorkQueueTest(WorkQueueTestCase):
         njobs = [5, 10] # array of jobs per block
         numBlocks = len(njobs)
         total = sum(njobs)
+        
+        fakeDBS = self.queue.dbsHelpers['http://example.com']
+        for block in fakeDBS.locations:
+            if block.endswith('1'):
+                fakeDBS.locations[block] = ['SiteA', 'SiteB', 'SiteAA']
+        self.queue.phedexService.locations.update(fakeDBS.locations)
+        self.queue.updateLocationInfo()
 
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
         self.assertEqual(numBlocks, len(self.queue))
-        self.queue.updateLocationInfo()
 
         # Only SiteB in whitelist
         work = self.queue.getWork({'SiteA' : total})
         self.assertEqual(len(work), 0)
 
-        # Site B can run 
+        # Site B can run
+        #import pdb
+        #pdb.set_trace() 
         work = self.queue.getWork({'SiteB' : total, 'SiteAA' : total})
         self.assertEqual(len(work), 2)
 

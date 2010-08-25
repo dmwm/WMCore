@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: API_t.py,v 1.1 2010/04/09 19:39:20 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: API_t.py,v 1.2 2010/04/15 20:51:55 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import threading
@@ -141,6 +141,8 @@ class APITest(unittest.TestCase):
             self.assertEqual(job4.data[key], job.data[key])
 
 
+        task2 = testAPI.getTaskFromJob(job = job4)
+
 
     def testC_APIRunningJobMethods(self):
         """
@@ -168,6 +170,12 @@ class APITest(unittest.TestCase):
 
         job.runningJob.save()
 
+        # Load the job
+        task.loadJobs()
+
+        job.runningJob['service'] = 'IdesOfMarch'
+        job.updateRunningInstance()
+
 
         # Try this from loading the job
         job2 = testAPI.loadJobByName(jobName = 'Hadrian')
@@ -180,6 +188,7 @@ class APITest(unittest.TestCase):
         self.assertEqual(job2.runningJob['status'], 'Dead')
         self.assertEqual(job2.runningJob['statusReason'], 'WentToTheForum')
         self.assertEqual(job2.runningJob['storage'], None)
+        self.assertEqual(job2.runningJob['service'], 'IdesOfMarch')
 
 
         # Now see if we get a new one with a new job
@@ -204,8 +213,52 @@ class APITest(unittest.TestCase):
         self.assertEqual(job4.runningJob['status'], 'Dead')
         self.assertEqual(job4.runningJob['statusReason'], 'WentToTheForum')
         self.assertEqual(job4.runningJob['storage'], None)
+        self.assertEqual(job4.runningJob['service'], 'IdesOfMarch')
 
         return
+
+
+    def testD_APICombinedMethods(self):
+        """
+
+        Test those methods that depend on the API caling multiple data types.
+
+        """
+
+        testAPI = BossLiteAPI()
+
+        # First create a job
+        task = Task()
+        task.create()
+
+        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists()})
+        job.create()
+        self.assertEqual(job.runningJob, None)
+
+        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status': 'Dead',
+                                                                 'statusReason': 'WentToTheForum'} )
+
+        self.assertEqual(job.runningJob['jobId'], 101)
+        self.assertEqual(job.runningJob['submission'], 1)
+        self.assertEqual(job.runningJob['status'], 'Dead')
+        self.assertEqual(job.runningJob['statusReason'], 'WentToTheForum')
+
+        job.runningJob.save()
+        job.save()
+
+
+        task2 = Task()
+        task2 = testAPI.load(task = task, jobRange = "all")
+        for key in task.data.keys():
+            self.assertEqual(task2.data[key], task.data[key])
+        for jobIter in task.jobs:
+            for key in jobIter.data.keys():
+                self.assertEqual(jobIter.data[key], job[key])
+            for key in ['jobId', 'submission', 'status', 'statusReason']:
+                self.assertEqual(jobIter.runningJob.data[key], job.runningJob.data[key])
+        
+
+        
 
 
 if __name__ == "__main__":

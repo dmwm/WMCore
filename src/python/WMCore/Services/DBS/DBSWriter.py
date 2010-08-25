@@ -607,13 +607,12 @@ class DBSWriter:
             logging.warning(msg)
             # Attempting to migrate to global
             if self.globalDBSUrl:
-                self.dbs.migrateDatasetContents(self.args['url'], 
-                                                self.globalDBSUrl,
-                                                fileblockName.split("#")[0], 
-                                                fileblockName,
-                                                srcVersion = self.version,
-                                                dstVersion = self.globalVersion
-                                                )
+                self.dbs.dbsMigrateBlock(srcURL = self.args['url'], 
+                                         dstURL = self.globalDBSUrl,
+                                         block_name = fileblockName,
+                                         srcVersion = self.version,
+                                         dstVersion = self.globalVersion
+                                         )
                 logging.info("Migrated block %s to global due to pre-closed status" %(fileblockName))
             else:
                 logging.error("Should've migrated block %s because it was already closed, but didn't" % (fileblockName))
@@ -661,13 +660,19 @@ class DBSWriter:
                 DBSWriterObjects.createDBSFileBlock(fileblockName)
                 )
             if self.globalDBSUrl:
-                self.dbs.migrateDatasetContents(self.args['url'], 
-                                                self.globalDBSUrl,
-                                                fileblockName.split("#")[0], 
-                                                fileblockName,
-                                                srcVersion = self.version,
-                                                dstVersion = self.globalVersion
-                                                )
+                self.dbs.dbsMigrateBlock(srcURL = self.args['url'], 
+                                         dstURL = self.globalDBSUrl,
+                                         block_name = fileblockName,
+                                         srcVersion = self.version,
+                                         dstVersion = self.globalVersion
+                                         )
+                #self.dbs.migrateDatasetContents(self.args['url'], 
+                #                                self.globalDBSUrl,
+                #                                fileblockName.split("#")[0], 
+                #                                fileblockName,
+                #                                srcVersion = self.version,
+                #                                dstVersion = self.globalVersion
+                #                                )
                 logging.info("Migrated block %s to global" %(fileblockName))
             else:
                 logging.error("Should've migrated block %s, but didn't" % (fileblockName))

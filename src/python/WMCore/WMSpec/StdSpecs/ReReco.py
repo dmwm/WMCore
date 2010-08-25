@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.47 2010/08/10 20:20:12 meloam Exp $"
-__revision__ = "$Revision: 1.47 $"
+__version__ = "$Id: ReReco.py,v 1.48 2010/08/11 19:12:15 sfoulkes Exp $"
+__revision__ = "$Revision: 1.48 $"
 
 import subprocess
 
@@ -242,7 +242,7 @@ class ReRecoWorkloadFactory(StdBase):
     
         Create a merge task for files produced by the parent task.
         """
-        mergeTask = parentTask.addTask("Merge%s" % parentOutputModule)
+        mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModule))
         #self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
@@ -253,7 +253,7 @@ class ReRecoWorkloadFactory(StdBase):
         mergeTaskLogArch.setStepType("LogArchive")
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)        
-        self.addLogCollectTask(mergeTask, taskName = "%sMergeLogCollect" % parentOutputModule)
+        self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModule))
         
         mergeTask.addGenerator("BasicNaming")
         mergeTask.addGenerator("BasicCounter")
@@ -295,7 +295,7 @@ class ReRecoWorkloadFactory(StdBase):
         
         Create a cleanup task to delete files produces by the parent task.
         """
-        cleanupTask = parentTask.addTask("CleanupUnmerged%s" % parentOutputModuleName)
+        cleanupTask = parentTask.addTask("%sCleanupUnmerged%s" % (parentTask.name(), parentOutputModuleName))
         #self.addDashboardMonitoring(cleanupTask)        
         cleanupTask.setTaskType("Cleanup")
 

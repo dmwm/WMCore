@@ -7,8 +7,8 @@ Unittest for TaskMaker class
 """
 
 
-__revision__ = "$Id: TaskMaker_t.py,v 1.3 2009/10/13 23:06:13 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TaskMaker_t.py,v 1.4 2010/02/03 22:20:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import os.path
@@ -48,10 +48,6 @@ class TaskMakerTest(unittest.TestCase):
     def tearDown(self):
 
         myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
-
         
         factory = WMFactory("WMBS", "WMCore.WMBS")
         destroy = factory.loadObject(myThread.dialect + ".Destroy")

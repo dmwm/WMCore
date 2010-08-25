@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.35 2010/02/02 16:56:11 sryu Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Service.py,v 1.36 2010/02/22 18:36:22 swakef Exp $"
+__version__ = "$Revision: 1.36 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -93,6 +93,8 @@ class Service(dict):
             requests = Requests
 
         try:
+            if path and not path.endswith('/'):
+                path += '/'
             self.setdefault("basepath", path)
             # Instantiate a Request
             self.setdefault("requests", requests(netloc, dict))

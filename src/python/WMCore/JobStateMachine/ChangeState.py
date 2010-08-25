@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.27 2009/09/16 20:14:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: ChangeState.py,v 1.28 2009/09/21 16:35:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -139,6 +139,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 doc = self.database.document(couchRecord)
                 doc["retry_count"] = job["retry_count"]
                 doc["outcome"] = job["outcome"]
+                doc["state"] = job["state"]
 
             doc["state_changes"].append(transDict)
 

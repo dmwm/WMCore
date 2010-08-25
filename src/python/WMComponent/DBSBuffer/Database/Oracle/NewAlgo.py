@@ -3,14 +3,11 @@
 _DBSBuffer.NewAlgo_
 
 Add a new algorithm to DBS Buffer: Oracle version
-
 """
-__revision__ = "$Id: NewAlgo.py,v 1.1 2009/05/15 16:19:13 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "mnorman@fnal.gov"
 
-import threading
-import exceptions
+__revision__ = "$Id: NewAlgo.py,v 1.2 2009/07/14 19:16:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
+
 from WMComponent.DBSBuffer.Database.MySQL.NewAlgo import NewAlgo as MySQLNewAlgo
 
 class NewAlgo(MySQLNewAlgo):
@@ -18,22 +15,5 @@ class NewAlgo(MySQLNewAlgo):
     _DBSBuffer.NewAlgo_
 
     Add a new algorithm to DBS Buffer: Oracle version
-
     """
-
-    def GetNewAlgoDialect(self):
-
-        return 'Oracle'
-
-    def execute(self, dataset=None, conn=None, transaction = False):
-        binds = self.getBinds(dataset)
-
-        try:
-            result = self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
-        except Exception, ex:
-            #Ignore duplicate results
-            if ex.__str__().find("unique") != -1 :
-                return
-            else:
-                raise ex
-        return 
+    pass

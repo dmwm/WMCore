@@ -3,6 +3,7 @@ import logging
 import os
 import pwd
 
+from WMCore.Wrappers import jsonwrapper
 from WMCore.Services.Service import Service
 
 try:
@@ -101,3 +102,17 @@ class WorkQueue(Service):
         
         callname = 'getwork'
         return self._getResult(callname, args = args, verb="POST")
+    
+    def synchronize(self, child_url, child_report):
+        """
+        _synchronize_
+        """
+        encodedChildReport = jsonwrapper.dumps(child_report)
+        args = {}
+        args['child_report'] = encodedChildReport
+        args['child_url'] = child_url
+        
+        callname = 'synchronize'
+        return self._getResult(callname, args = args, verb="PUT")
+    
+        

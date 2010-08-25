@@ -48,8 +48,8 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
-__revision__ = "$Id: Service.py,v 1.58 2010/07/30 12:56:06 swakef Exp $"
-__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: Service.py,v 1.59 2010/07/30 13:24:00 swakef Exp $"
+__version__ = "$Revision: 1.59 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -103,6 +103,16 @@ class Service(dict):
 
         # then update with the incoming dict
         self.update(dict)
+
+        # deal with multiple Services that have the same service running and
+        # with multiple users for a given Service
+        if netloc.find("@") == -1:
+            self["cachepath"] = '%s/%s' % (self["cachepath"], netloc)
+        else:
+            auth, server_url = netloc.split('@')
+            user = auth.split(':')[0]
+            self["cachepath"] = '%s/%s-%s' % (self["cachepath"], user,
+                                              server_url)
 
         # we want the request object to cache to a known location
         dict['req_cache_path'] = self['cachepath'] + '/requests'

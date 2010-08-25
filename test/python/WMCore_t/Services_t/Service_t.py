@@ -32,6 +32,9 @@ class ServiceTest(unittest.TestCase):
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi'}
         
         self.myService = Service(dict)
+
+        dict['endpoint'] = 'http://cmssw-test.cvs.cern.ch/cgi-bin/cmssw.cgi'
+        self.myService2 = Service(dict)
         self.testUrl = 'http://cern.ch'
 
     def tearDown(self):
@@ -163,8 +166,12 @@ class ServiceTest(unittest.TestCase):
                      ]
         for data in inputdata:
             thishash = self.myService.cacheFileName('bob', inputdata = data)
+            thishash2 = self.myService2.cacheFileName('bob', inputdata = data)
+            self.assertNotEqual(thishash, thishash2)
             self.assert_(thishash not in hashes, '%s is not unique' % thishash)
-            hashes[thishash] = None
+            self.assert_(thishash2 not in hashes,
+                         '%s is not unique' % thishash2)
+            hashes[thishash], hashes[thishash2] = None, None
 
 
 if __name__ == '__main__':

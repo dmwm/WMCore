@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.82 2010/03/12 21:05:46 sryu Exp $"
-__version__ = "$Revision: 1.82 $"
+__revision__ = "$Id: WorkQueue.py,v 1.83 2010/03/15 18:24:28 sryu Exp $"
+__version__ = "$Revision: 1.83 $"
 
 
 import time
@@ -277,31 +277,14 @@ class WorkQueue(WorkQueueBase):
             else:
                 dbsBlock = dbs.getFileBlock(block["name"])[block['name']]
 
-            # TODO: parent fileset
-            fileset = sub["fileset"]
-
-            for dbsFile in dbsBlock['Files']:
-                checksums = {}
-                if dbsFile.get('Checksum'):
-                    checksums['cksum'] = dbsFile['Checksum']
-                if dbsFile.get('Adler32'):
-                    checksums['adler32'] = dbsFile['Adler32']
-                wmbsFile = WMBSFile(lfn = dbsFile["LogicalFileName"],
-                        size = dbsFile["FileSize"],
-                        events = dbsFile["NumberOfEvents"],
-                        checksums = checksums,
-                        parents = dbsFile["ParentList"],
-                        locations = set(dbsBlock['StorageElements']))
-                fileset.addFile(wmbsFile)
-
-            fileset.commit()
-            fileset.markOpen(False)
+            wmbsHelper.addFiles(dbsBlock)
+            
             updateSub = self.daofactory(classname = "WorkQueueElement.UpdateSubscription")
             updateSub.execute(match['id'], sub['id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
-        return sub
+        return
 
     def doneWork(self, elementIDs):
         """

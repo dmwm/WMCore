@@ -43,4 +43,4 @@ workqueuemonitor = active.section_('workqueuemonitor')
 workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
 workqueuemonitor.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
 workqueuemonitor.javascript = path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/WMCore/WebTools/')
-workqueuemonitor.html = path.join(WMCore.WMInit.getWMBASE(), 'src/html/WMCore/WebTools/WorkQueue')
+workqueuemonitor.html = path.join(WMCore.WMInit.getWMBASE(), 'src/html/WMCore/WorkQueue')

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.34 2010/08/03 15:13:29 mnorman Exp $"
-__version__  = "$Revision: 1.34 $"
+__revision__ = "$Id: JobFactory.py,v 1.35 2010/08/05 21:29:23 mnorman Exp $"
+__version__  = "$Revision: 1.35 $"
 
 
 import logging
@@ -176,6 +176,7 @@ class JobFactory(WMObject):
         if self.grabByProxy:
             logging.debug("About to load files by proxy")
             fileset = self.loadFiles(size = self.limit)
+            logging.debug("Loaded %i files" % (len(fileset)))
         else:
             fileset = self.subscription.availableFiles(limit = self.limit)
             logging.debug("About to load files by DAO")
@@ -282,7 +283,13 @@ class JobFactory(WMObject):
 
         resultProxy = self.proxies[0]
         rawResults  = []
-        keys        = resultProxy.keys
+        if type(resultProxy.keys) == list:
+            keys  = resultProxy.keys
+        else:
+            keys  = resultProxy.keys()
+            if type(keys) == set:
+                # If it's a set, handle it
+                keys = list(keys)
         files       = set()
 
 
@@ -296,6 +303,7 @@ class JobFactory(WMObject):
             rawResults.extend(newResults)
 
 
+
         fileList = self.formatDict(results = rawResults, keys = keys)
 
 
@@ -305,7 +313,7 @@ class JobFactory(WMObject):
         #Run through all files
         for f in fileList:
             fl = WMBSFile(id = f['file'])
-            fl.loadChecksum()
+            #fl.loadChecksum()
             fl.update(fileInfoDict[f['file']])
             if 'locations' in f.keys():
                 fl.setLocation(f['locations'], immediateSave = False)

@@ -5,8 +5,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.9 2010/04/15 14:50:56 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.10 2010/04/23 18:48:46 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import logging
@@ -198,7 +198,7 @@ class JobArchiverPoller(BaseWorkerThread):
                                mode = 'w')
         for fileName in os.listdir(cacheDir):
             tarball.add(name = os.path.join(cacheDir, fileName),
-                        arcname = fileName)
+                        arcname = 'Job_%i/%s' %(job['id'], fileName))
         tarball.close()
 
 

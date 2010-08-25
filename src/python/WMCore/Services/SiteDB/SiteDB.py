@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.3 2008/10/16 10:56:43 ewv Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SiteDB.py,v 1.4 2009/03/25 14:39:36 ewv Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Services.JSONParser import JSONParser
 import urllib
@@ -25,11 +25,17 @@ class SiteDBJSON:
 
     def dnUserName(self, dn):
         """
-        Convert DN to Hypernews name
+        Convert DN to Hypernews name. Clear cache between trys
+        in case user just registered or fixed an issue with SiteDB
         """
         file = 'dnUserName_%s.json' % str(dn.__hash__())
-        userinfo = self.parser.getJSON("dnUserName", dn=dn, file=file)
-        userName = userinfo['user']
+        try:
+            userinfo = self.parser.getJSON("dnUserName", dn=dn, file=file)
+            userName = userinfo['user']
+        except (KeyError, IndexError):
+            userinfo = self.parser.getJSON("dnUserName", dn=dn,
+                                           file=file, clearCache=True)
+            userName = userinfo['user']
         return userName
 
 

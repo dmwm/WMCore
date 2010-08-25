@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: CondorTracker.py,v 1.1 2010/05/28 16:33:32 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CondorTracker.py,v 1.2 2010/06/03 21:32:04 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import logging
@@ -37,6 +37,7 @@ class CondorTracker(TrackerPlugin):
 
         TrackerPlugin.__init__(self, config)
         self.classAds = None
+        self.config = config
 
         return
 
@@ -62,6 +63,7 @@ class CondorTracker(TrackerPlugin):
         jobInfo = {}
 
         command = ['condor_q', '-constraint', 'WMAgent_JobID =!= UNDEFINED',
+                   '-constraint', 'WMAgent_AgentName =?= %s' % (self.config.Agent.agentName),
                    '-format', '(JobStatus:\%s)  ', 'JobStatus',
                    '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
                    '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']

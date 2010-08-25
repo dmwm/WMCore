@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.7 2009/10/13 22:43:00 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.8 2010/02/10 03:52:28 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import threading
@@ -142,22 +142,22 @@ class WorkerThreadsTest(unittest.TestCase):
         print('add worker')
         manager.addWorker(DummyWorker1(), 1)
         time.sleep(3)
-        assert WorkerThreadsTest._setupCalled == True
+        self.assertEqual( WorkerThreadsTest._setupCalled ,  True )
         # Ensure the algo wasn't called whilst paused
-        assert WorkerThreadsTest._algoCalled == False
+        self.assertEqual( WorkerThreadsTest._algoCalled ,  False )
         
         print('resume workers')
         # Run the workers, pause, and check algo method gets called
         manager.resumeWorkers()
         time.sleep(3)
         manager.pauseWorkers()
-        assert WorkerThreadsTest._algoCalled == True
+        self.assertEqual( WorkerThreadsTest._algoCalled ,  True )
         
         print('terminate workers')
         # Terminate the workers, and check terminate method gets called
         manager.terminateWorkers()
         time.sleep(3)
-        assert WorkerThreadsTest._terminateCalled == True
+        self.assertEqual( WorkerThreadsTest._terminateCalled ,  True )
     
     def testB(self):
         """

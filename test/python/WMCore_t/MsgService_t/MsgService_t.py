@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.12 2010/02/05 21:45:32 meloam Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: MsgService_t.py,v 1.13 2010/02/10 03:52:29 meloam Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import commands
 import unittest
@@ -357,7 +357,7 @@ class MsgServiceTest(unittest.TestCase):
             msgServiceL[0].finish()
             for i in xrange(0, 10):
                 msg = msgServiceL[i].get() 
-                assert msg['payload'] == 'from0_priority_'+str(j)
+                self.assertEqual( msg['payload'] ,  'from0_priority_'+str(j) )
                 # we need to finish the message handling.
                 msgServiceL[i].finish()
 
@@ -370,7 +370,7 @@ class MsgServiceTest(unittest.TestCase):
             msgServiceL[0].finish()
             for i in xrange(0, 10):
                 msg = msgServiceL[i].get() 
-                assert msg['payload'] == 'from0_normal_'+str(j)
+                self.assertEqual( msg['payload'] ,  'from0_normal_'+str(j) )
                 # we need to finish the message handling.
                 msgServiceL[i].finish()
         stop = time.time()
@@ -383,7 +383,7 @@ class MsgServiceTest(unittest.TestCase):
 
         myThread.transaction.begin()
         # we should now have 0 messages left.
-        assert msgServiceL[0].pendingMsgs() == 2*MsgServiceTest._minMsg*10
+        self.assertEqual( msgServiceL[0].pendingMsgs() ,  2*MsgServiceTest._minMsg*10 )
         myThread.transaction.commit()
         # purge everything.
 

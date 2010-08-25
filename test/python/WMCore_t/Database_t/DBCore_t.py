@@ -6,14 +6,15 @@ Unit tests for the DBInterface class
 
 """
 
-__revision__ = "$Id: DBCore_t.py,v 1.4 2010/02/02 20:41:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBCore_t.py,v 1.5 2010/02/10 03:52:27 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import unittest
 import logging
 import threading
 import os
+import nose
 
 from sqlalchemy import create_engine
 from sqlalchemy.exceptions import OperationalError
@@ -44,7 +45,7 @@ class DBCoreTest(unittest.TestCase):
         Test class for the connection functions for DBCore
         
         """
-        assert False
+
         #This function tests for two things:
         # a) Did it actually manage to get one of the tables from the dataset?
         # b) Was the table blank?
@@ -84,7 +85,7 @@ class DBCoreTest(unittest.TestCase):
         Test class for DBCore.buildbinds()
 
         """
-        assert False
+
         #This class may become obselete soon.  There is a TODO stuck onto DBCore.buildbinds()
         #This just checks to see that the sequence properly packages the first value is set
         #So that it sets the key seqname to the proper name in the files list
@@ -124,7 +125,7 @@ class DBCoreTest(unittest.TestCase):
         Test whether we can create and delete a table with processData()
 
         """
-        assert False
+      
         #Putting this in a seperate function allows tearDown to delete the test table
         #in other lines of code, removing the problem of adding the test table multiple times
         #should an error occur
@@ -167,7 +168,7 @@ class DBCoreTest(unittest.TestCase):
         Test function for DBCore.processData
 
         """
-        assert False
+    
         # We have opted to put the main testing functions in here
         # This test creates a test table, inserts and selects elements
         # from that table, inserts and selects elements from a dictionary
@@ -295,7 +296,7 @@ class DBCoreTest(unittest.TestCase):
         Test for inserting and selecting with large numbers of binds using processData()
 
         """
-        assert False
+
         print "testProcessDataMultiple"
                 
 

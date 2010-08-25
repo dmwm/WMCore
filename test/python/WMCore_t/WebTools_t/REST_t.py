@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.21 2010/01/27 20:18:20 meloam Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: REST_t.py,v 1.22 2010/02/10 03:52:29 meloam Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import unittest
 try:
@@ -143,10 +143,10 @@ class RESTTest(unittest.TestCase):
         
         dict = json.loads(data) 
         response_expires = format_date_time(float(dict['response_expires']))
-        assert response_expires == timestp, 'Expires DAS header incorrect (%s)' % response_expires
-        assert response_expires == expires, 'Expires DAS header incorrect (%s)' % response_expires
+        self.assertEqual( response_expires ,  timestp, 'Expires DAS header incorrect (%s)' % response_expires )
+        self.assertEqual( response_expires ,  expires, 'Expires DAS header incorrect (%s)' % response_expires )
         
-        assert dict['results'] == 'ping', 'got unexpected response %s' % dict['results']
+        self.assertEqual( dict['results'] ,  'ping', 'got unexpected response %s' % dict['results'] )
     
     @setUpDummyRESTModel    
     @serverSetup
@@ -293,7 +293,7 @@ class RESTTest(unittest.TestCase):
                 '. Got a return code != 400 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
         
-        assert response[2] == 'text/json', 'type is not text/json : %s' % type         
+        self.assertEqual( response[2] ,  'text/json', 'type is not text/json : %s' % type          )
         # 2 query string args (e.g. url?int=arg1&str=arg2)
         url = self.urlbase + 'list'
         response = makeRequest(url=url, 
@@ -323,16 +323,16 @@ class RESTTest(unittest.TestCase):
         drm = DummyRESTModel(component)
         
         result = drm.methods['GET']['data1']['call']()
-        assert result == 123, 'Error default value is set to 123 but returns %s' % result
+        self.assertEqual( result ,  123, 'Error default value is set to 123 but returns %s' % result )
         
         result =  drm.methods['GET']['data2']['call'](456)
-        assert result['num'] == 456
+        self.assertEqual( result['num'] ,  456 )
         
         result =  drm.methods['GET']['data2']['call'](num = 456)
-        assert result['num'] == 456
+        self.assertEqual( result['num'] ,  456 )
         
         result =  drm.methods['GET']['data3']['call'](num = 456, thing="TEST")
-        assert result['num'] == 456 and result['thing'] == "TEST"
+        self.assertEqual( result['num'] == 456 and result['thing'] ,  "TEST" )
         
     
     @setUpDummyRESTModel
@@ -350,7 +350,7 @@ class RESTTest(unittest.TestCase):
                 'dao without args failed: ' +\
                 '. Got a return code != 200 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
-        assert response[0] == '123', response[0]        
+        self.assertEqual( response[0] ,  '123', response[0]         )
         
         # 2 query string args (e.g. url?int=arg1&str=arg2)
         url = self.urlbase + 'data2'
@@ -362,7 +362,7 @@ class RESTTest(unittest.TestCase):
                 '. Returned data: %s' % response[0] 
         #Warning quotation type matters
         #Should use encoded and decoded format
-        assert response[0] == "{'num': '456'}", "should be {'num': '456'} but got %s" % response[0]         
+        self.assertEqual( response[0] ,  "{'num': '456'}", "should be {'num': '456'} but got %s" % response[0]          )
         
         # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
         url = self.urlbase + 'data3/123'
@@ -374,7 +374,7 @@ class RESTTest(unittest.TestCase):
                 '. Returned data: %s' % response[0]
         #Warning quotation type and order matters
         #Should use encoded and decoded format
-        assert response[0] == "{'thing': 'abc', 'num': '123'}", "should be {'thing': 'abc', 'num': '123'} but got %s" % response[0]
+        self.assertEqual( response[0] ,  "{'thing': 'abc', 'num': '123'}", "should be {'thing': 'abc', 'num': '123'} but got %s" % response[0] )
         
 
 if __name__ == "__main__":

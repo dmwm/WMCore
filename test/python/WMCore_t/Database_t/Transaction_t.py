@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.6 2009/10/13 23:00:08 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Transaction_t.py,v 1.7 2010/02/10 03:52:27 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import commands
 import logging
@@ -77,14 +77,14 @@ class TransactionTest(unittest.TestCase):
         myThread.transaction.processData(self.insert, self.insert_binds)
         result1 = myThread.transaction.processData(self.select)
             
-        assert len(result1) == 1
-        assert len(result1[0].fetchall()) == 3
+        self.assertEqual( len(result1) ,  1 )
+        self.assertEqual( len(result1[0].fetchall()) ,  3 )
             
         myThread.transaction.commit()
         myThread.transaction.begin()
         result2 = myThread.transaction.processData(self.select)
             
-        assert len(result2[0].fetchall()) == 3, "commit failed"
+        self.assertEqual( len(result2[0].fetchall()) ,  3, "commit failed" )
             
     def testBadTransaction(self):
         print('testBadTransaction')
@@ -95,15 +95,15 @@ class TransactionTest(unittest.TestCase):
         myThread.transaction.processData(self.insert, self.insert_binds)
         result1 = myThread.transaction.processData(self.select)
             
-        assert len(result1) == 1
-        assert len(result1[0].fetchall()) == 3
+        self.assertEqual( len(result1) ,  1 )
+        self.assertEqual( len(result1[0].fetchall()) ,  3 )
             
         myThread.transaction.rollback()
         myThread.transaction.begin()
 
         result2 = myThread.transaction.processData(self.select)
             
-        assert len(result2) == 1
+        self.assertEqual( len(result2) ,  1 )
         l = len(result2[0].fetchall())
         self.assertEqual(l,0)
 
@@ -121,7 +121,7 @@ class TransactionTest(unittest.TestCase):
         myThread.transaction.begin()
         myThread.transaction.processData(self.create[myThread.dialect])
         myThread.transaction.commit()
-        assert len(myThread.transaction.sqlBuffer) == 0
+        self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
         myThread.transaction.begin()
         # create some inserts (in batches of three)
         for i in xrange(0, 10):
@@ -131,7 +131,7 @@ class TransactionTest(unittest.TestCase):
         # try to submit something. 
         myThread.transaction.processData(self.insert, self.insert_binds)
         myThread.transaction.commit()
-        assert len(myThread.transaction.sqlBuffer) == 0
+        self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
         myThread.transaction.begin()
        
         result1 = myThread.transaction.processData(self.select)
@@ -143,7 +143,7 @@ class TransactionTest(unittest.TestCase):
 
         myThread.transaction.commit()
         # check if buffer is empty
-        assert len(myThread.transaction.sqlBuffer) == 0
+        self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
     
            
 

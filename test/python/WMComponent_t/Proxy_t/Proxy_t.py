@@ -133,8 +133,8 @@ particular message to the proxy which forwards it.
 
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.14 2010/02/04 22:36:36 meloam Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Proxy_t.py,v 1.15 2010/02/10 03:52:28 meloam Exp $"
+__version__ = "$Revision: 1.15 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -265,15 +265,15 @@ class ProxyTest(unittest.TestCase):
         logging.debug('--Waiting in oldMsgService for 10 messages\n')
         for i in xrange(0, 10):
             type, payload = oldMsgService.get()
-            assert type == 'ATestMessage1'
-            assert payload == 'forOldPA'
+            self.assertEqual( type ,  'ATestMessage1' )
+            self.assertEqual( payload ,  'forOldPA' )
         logging.debug('--Old msgService sends 10 JobSuccess messages')
         for i in xrange(0, 10):
             oldMsgService.publish("JobSuccess","JobSuccess")
         logging.debug('--New msgService waits for it')
         for i in xrange(0, 10):
             msg = newMsgService.get()
-            assert msg['name'] == 'JobSuccess'
+            self.assertEqual( msg['name'] ,  'JobSuccess' )
         logging.debug('--New component is (proxy)subscribed to Stop message\n')
         logging.debug('--Old message service sends Stop message\n')
         # as we are running the component in a thread we want the component to 

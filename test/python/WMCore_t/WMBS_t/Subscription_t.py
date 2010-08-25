@@ -992,23 +992,23 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.create()
         
         files = testSubscription.filesOfStatusByRun("Available", 1)
-        assert len(files) == 2, "2 files should be available for run 1"
+        self.assertEqual( len(files) ,  2, "2 files should be available for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Available", 2)
-        assert len(files) == 1, "1 file should be available for run 2"
-        assert files[0] == testFileC,  "That file shoulb be testFileC"
+        self.assertEqual( len(files) ,  1, "1 file should be available for run 2" )
+        self.assertEqual( files[0] ,  testFileC,  "That file shoulb be testFileC" )
         
         files = testSubscription.filesOfStatusByRun("Completed", 1)
-        assert len(files) == 0, "No files shouldn't be completed for run 1"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be completed for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Completed", 2)
-        assert len(files) == 0, "No files shouldn't be completed for run 2"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be completed for run 2" )
         
         files = testSubscription.filesOfStatusByRun("Failed", 1)
-        assert len(files) == 0, "No files shouldn't be failed for run 1"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be failed for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Failed", 2)
-        assert len(files) == 0, "No files shouldn't be failed for run 2"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be failed for run 2" )
             
         assert testSubscription.isCompleteOnRun(1) == False, \
                "Run 1 shouldn't be completed."
@@ -1019,22 +1019,22 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.completeFiles([testFileA, testFileB])
         
         files = testSubscription.filesOfStatusByRun("Available", 1)
-        assert len(files) == 0, "0 files should be available for run 1"
+        self.assertEqual( len(files) ,  0, "0 files should be available for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Available", 2)
-        assert len(files) == 1, "1 file should be available for run 2"
+        self.assertEqual( len(files) ,  1, "1 file should be available for run 2" )
         
         files = testSubscription.filesOfStatusByRun("Completed", 1)
-        assert len(files) == 2, "2 files should completed for run 1"
+        self.assertEqual( len(files) ,  2, "2 files should completed for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Completed", 2)
-        assert len(files) == 0, "No files shouldn't be completed for run 2"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be completed for run 2" )
         
         files = testSubscription.filesOfStatusByRun("Failed", 1)
-        assert len(files) == 0, "No files shouldn't be failed for run 1"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be failed for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Failed", 2)
-        assert len(files) == 0, "No files shouldn't be failed for run 2"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be failed for run 2" )
         
         assert testSubscription.isCompleteOnRun(1) == True, \
                "Run 1 should be completed."
@@ -1045,23 +1045,23 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.failFiles([testFileA, testFileC])
         
         files = testSubscription.filesOfStatusByRun("Available", 1)
-        assert len(files) == 0, "0 files should be available for run 1"
+        self.assertEqual( len(files) ,  0, "0 files should be available for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Available", 2)
-        assert len(files) == 0, "0 file should be available for run 2"
+        self.assertEqual( len(files) ,  0, "0 file should be available for run 2" )
         
         files = testSubscription.filesOfStatusByRun("Completed", 1)
-        assert len(files) == 1, "1 file should be completed for run 1"
-        assert files[0] == testFileB,  "That file shoulb be testFileB"
+        self.assertEqual( len(files) ,  1, "1 file should be completed for run 1" )
+        self.assertEqual( files[0] ,  testFileB,  "That file shoulb be testFileB" )
         
         files = testSubscription.filesOfStatusByRun("Completed", 2)
-        assert len(files) == 0, "No files shouldn't be completed for run 2"
+        self.assertEqual( len(files) ,  0, "No files shouldn't be completed for run 2" )
         
         files = testSubscription.filesOfStatusByRun("Failed", 1)
-        assert len(files) == 1, "1 file should be failed for run 1"
+        self.assertEqual( len(files) ,  1, "1 file should be failed for run 1" )
         
         files = testSubscription.filesOfStatusByRun("Failed", 2)
-        assert len(files) == 1, "1 files should be failed for run 2"
+        self.assertEqual( len(files) ,  1, "1 files should be failed for run 2" )
         
         
         assert testSubscription.isCompleteOnRun(1) == True, \

@@ -18,8 +18,8 @@ Test that the following dburl's are correctly made:
 """
 
 
-__revision__ = "$Id: DBFactory_t.py,v 1.3 2009/10/13 22:42:59 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBFactory_t.py,v 1.4 2010/02/10 03:52:27 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import logging
@@ -39,7 +39,7 @@ class DBFactoryTest(unittest.TestCase):
         self.logger = logging.getLogger('DBFactoryTest')
         
     def urlTest(self, url, testurl):
-        assert url == testurl, '%s is incorrect should be %s' % (url, testurl)
+        self.asserEqual(url ,testurl, '%s is incorrect should be %s' % (url, testurl))
         return True
     
     def genericTest(self, testname=None, testoptions={}, testurl=None):

@@ -96,7 +96,7 @@ class DummyRESTModel(RESTModel):
             pass
         # Checks its first input contains a int
         try:
-            assert type(input['int']) == type(123) 
+            self.assertEqual( type(input['int']) ,  type(123)  )
         except AssertionError:
             raise AssertionError, 'val_1 failed: %s not int' % type(input['int'])
         return input
@@ -104,7 +104,7 @@ class DummyRESTModel(RESTModel):
     def val_2(self, input):
         # Checks its second input is a string
         try:
-            assert type(input['str']) == type('abc') 
+            self.assertEqual( type(input['str']) ,  type('abc')  )
         except AssertionError:
             raise HTTPError(400, 'val_2 failed: %s not str' % type(input['str']))
         return input
@@ -112,7 +112,7 @@ class DummyRESTModel(RESTModel):
     def val_3(self, input):
         # Checks the int is 123
         try:
-            assert input['int'] == 123
+            self.assertEqual( input['int'] ,  123 )
         except AssertionError:
             raise HTTPError(400, 'val_3 failed: %s != 123' % input['int'])
         
@@ -121,7 +121,7 @@ class DummyRESTModel(RESTModel):
     def val_4(self, input):
         # Checks the str is 'abc'
         try:
-            assert input['str'] == 'abc'
+            self.assertEqual( input['str'] ,  'abc' )
         except AssertionError:
             raise HTTPError(400, 'val_4 failed: %s != "abc"' % input['str'])
         

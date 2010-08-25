@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.3 2010/02/06 01:20:38 maxa Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.4 2010/02/10 03:52:28 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 
@@ -169,7 +169,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
     def _checkHTTPError(self, data):
         expected = "HTTPError"
         got = data["results"]["type"]
-        assert got == expected, "Expected error '%s', got '%s'" % (expected, got)
+        self.assertEqual( got ,  expected, "Expected error '%s', got '%s'" % (expected, got) )
     
 
         
@@ -194,8 +194,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         data, exp = self._tester(testName, "POST", 200, "status")
         
         r = data["results"]
-        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
-        assert r[0]["Id"] == 1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"]  
+        self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
+        self.assertEqual( r[0]["Id"] ,  1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"]   )
         
         
     
@@ -206,7 +206,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
                 
         r = data["results"]
         status = r[0]["Status"]
-        assert status == "Available", "Had 'Available' element but status is '%s'" % status
+        self.assertEqual( status ,  "Available", "Had 'Available' element but status is '%s'" % status )
         
         
 
@@ -215,8 +215,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         data, exp = self._tester(testName, "GET", 200, "elements")
         
         r = data["results"]           
-        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
-        assert data["request_method"] == "GET", "'request_method' not matching"
+        self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
+        self.assertEqual( data["request_method"] ,  "GET", "'request_method' not matching" )
         assert data["request_call"] == "dasjson", "'request_call' not matching" 
 
         
@@ -276,9 +276,9 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
                 
         r = data["results"]
-        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
+        self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
         # now could safely assume only one item in the list
-        assert r[0]["id"] == 1, "Returned element should have id 1, got %s" % r[0]["id"]
+        self.assertEqual( r[0]["id"] ,  1, "Returned element should have id 1, got %s" % r[0]["id"] )
         
         
         
@@ -288,9 +288,9 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
                 
         r = data["results"]
-        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
+        self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
         # now could safely assume only one item in the list
-        assert r[0]["id"] == 1, "Returned element should have id 1, got %s" % r[0]["id"]
+        self.assertEqual( r[0]["id"] ,  1, "Returned element should have id 1, got %s" % r[0]["id"] )
         
         
         
@@ -300,7 +300,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
         
         r = data["results"]
-        assert len(r) == 0, "Expected empty result (0 items), got '%s'" % len(r)
+        self.assertEqual( len(r) ,  0, "Expected empty result (0 items), got '%s'" % len(r) )
         
 
 

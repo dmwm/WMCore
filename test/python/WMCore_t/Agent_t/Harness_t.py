@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.16 2010/02/05 14:17:34 meloam Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Harness_t.py,v 1.17 2010/02/10 03:52:26 meloam Exp $"
+__version__ = "$Revision: 1.17 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -27,6 +27,7 @@ from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
+import nose
 class HarnessTest(unittest.TestCase):
     """
     TestCase for TestComponent module 
@@ -48,7 +49,7 @@ class HarnessTest(unittest.TestCase):
         self.testInit.clearDatabase()
 
     def testB(self):
-        assert False
+        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
@@ -88,10 +89,10 @@ class HarnessTest(unittest.TestCase):
             testComponent.handleMessage('NonExistingMessageType','')
         except Exception,ex:
             errorMsg = str(ex)
-        assert errorMsg.startswith('Message NonExistingMessageType with payload')
+        self.assertTrue(errorMsg.startswith('Message NonExistingMessageType with payload'))
 
     def testC(self):
-        assert False
+        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
@@ -116,7 +117,7 @@ class HarnessTest(unittest.TestCase):
 
 
     def testD(self):
-        assert False
+        raise nose.SkipTest
         config = self.testInit.getConfiguration()
         config.component_("TestComponent")
         config.TestComponent.logLevel = 'INFO'
@@ -149,9 +150,6 @@ class HarnessTest(unittest.TestCase):
         msgService.publish(msg)
         myThread.transaction.commit()
 
-        assert False
-
-        return
 
         msgService.finish()
 

@@ -97,13 +97,13 @@ class CMSCouchTest(unittest.TestCase):
         for row in countdata['rows']:
             print 'there are %s %s documents' % (row['value'], row['key'])
             if row['key'] == 'red':
-                assert row['value'] == reddata['total_rows']
+                self.assertEqual(row['value'] , reddata['total_rows'] )
         print 'now call the double counted red document'
         doublecountdata = db.loadView('demo', 'weightedCountColours', {'group': True})
         for row in doublecountdata['rows']:
             print 'there are %s %s documents' % (row['value'], row['key'])
             if row['key'] == 'red':
-                assert row['value'] == 2 * reddata['total_rows']
+                self.assertEqual(row['value'] , 2 * reddata['total_rows'])
         
         print "Update a document - take the first red document and make it white"
         doc = reddata['rows'][0]['key']
@@ -133,9 +133,9 @@ class CMSCouchTest(unittest.TestCase):
             else:
                 print 'there are %s %s documents' % (row['value'], row['key'])
             if row['key'] == 'red':
-                assert row['value'] == 0
+                self.assertEqual( row['value'] , 0 )
             if row['key'] == 'white':
-                assert row['value'] == 1        
+                self.assertEqual( row['value'] , 1 )    
 
 if __name__ == "__main__":
     unittest.main()

@@ -68,7 +68,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         data, expires = methodTest(verb, url, input=input, contentType=contentType, output=output)
         data = JsonWrapper.loads(data)
         
-        assert len(data) == 1, "only 1 element needs to be back. Got (%s)" % len(data)
+        self.assertEqual( len(data) ,  1, "only 1 element needs to be back. Got (%s)" % len(data) )
         assert data[0]['wmspec_name'] == 'BasicProduction', "spec name is not BasicProduction: %s" \
                                 % data['wmspec_name']
          

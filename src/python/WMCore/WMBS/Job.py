@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.34 2009/08/26 18:28:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Job.py,v 1.35 2009/09/09 21:09:20 mnorman Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import datetime
 from sets import Set
@@ -41,10 +41,11 @@ class Job(WMBSBase, WMJob):
         WMBSBase.__init__(self)
         WMJob.__init__(self, name = name, files = files)
 
-        self["id"] = id
-        self["jobgroup"] = None
+        self["id"]           = id
+        self["jobgroup"]     = None
         self["couch_record"] = None
-        self["attachments"] = {}
+        self["attachments"]  = {}
+        self["cache_dir"]    = None
 
         return
             
@@ -99,7 +100,7 @@ class Job(WMBSBase, WMJob):
         saveAction = self.daofactory(classname = "Jobs.Save")
         saveAction.execute(self["id"], self["jobgroup"], self["name"],
                            self["couch_record"], self["location"], 
-                           self["outcome"], conn = self.getDBConn(),
+                           self["outcome"], self["cache_dir"], conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
         maskAction = self.daofactory(classname = "Masks.Save")
@@ -278,3 +279,28 @@ class Job(WMBSBase, WMJob):
             jobDict["input_files"].append(thunker._thunk(inputFile))
 
         return jobDict
+
+
+    def getCache(self):
+        """
+        _getCache_
+
+        Retrieve the location of the jobCache
+        """
+
+        action = self.daofactory(classname = "Jobs.GetCache")
+        state  = action.execute(self["id"], conn = self.getDBConn(), transaction = self.existingTransaction)
+
+        return state
+
+    def setCache(self, cacheDir):
+        """
+        _setCache_
+        
+        Set the location of the jobCache
+        """
+
+        action = self.daofactory(classname = "Jobs.SetCache")
+        state  = action.execute(ID = self["id"], cacheDir = cacheDir, conn = self.getDBConn(), transaction = self.existingTransaction)       
+
+        return state

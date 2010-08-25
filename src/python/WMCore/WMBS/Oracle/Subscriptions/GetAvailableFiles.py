@@ -8,8 +8,8 @@ Return a list of files that are available for processing.
 Available means not acquired, complete or failed.
 """
 __all__ = []
-__revision__ = "$Id: GetAvailableFiles.py,v 1.13 2009/09/11 16:36:03 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: GetAvailableFiles.py,v 1.14 2009/09/11 19:06:06 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import \
      GetAvailableFiles as GetAvailableFilesMySQL
@@ -36,7 +36,7 @@ class GetAvailableFiles(GetAvailableFilesMySQL):
             elif i[0] > 0 and i[1] == '1':
                 whitelist = True
 
-        sql = """SELECT wff.fileid FROM wmbs_fileset_files wff 
+        sql = """SELECT wff.fileid, wl.site_name FROM wmbs_fileset_files wff 
                   INNER JOIN wmbs_subscription ws ON ws.fileset = wff.fileset 
                   INNER JOIN wmbs_file_location wfl ON wfl.fileid = wff.fileid
                   INNER JOIN wmbs_location wl ON wl.id = wfl.location 

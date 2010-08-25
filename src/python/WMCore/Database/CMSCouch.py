@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.34 2009/07/02 21:57:28 meloam Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: CMSCouch.py,v 1.35 2009/07/02 22:05:32 meloam Exp $"
+__version__ = "$Revision: 1.35 $"
 
 try:
     # Python 2.6
@@ -249,7 +249,12 @@ class Database(CouchDBRequests):
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print 'queue larger than %s records, committing' % self._queue_size
-            self.commit(viewlist=viewlist)
+            goodsub, badsub = self.commitQueued(viewlist=viewlist)
+            if badsub:
+                # some of our enqueued commits didn't go through
+                # TODO: handle this better
+                raise RuntimeError, "Some commits didn't succeed\n %s" % badsub
+            
         self._queue.append(doc)
 
     def queueDelete(self, doc):

@@ -5,6 +5,7 @@ Rest Model for WMBS Monitoring.
 """
 
 import time
+import logging
 
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.DAOFactory import DAOFactory
@@ -99,7 +100,7 @@ class WMBSRESTModel(RESTModel):
     implementing the GET verb.
     """
     def __init__(self, config = {}):
-        self.version = "$Revision: 1.9 $"        
+        self.version = "$Revision: 1.10 $"        
         RESTModel.__init__(self, config)
 
         self.daos = {}
@@ -197,7 +198,7 @@ class WMBSRESTModel(RESTModel):
         startTime = endTime - interval
 
         endKey = 'endkey=["%s",%d]' % (jobState, startTime)
-        startKey = 'startKey=["%s",%d]' % (jobState, endTime)
+        startKey = 'startkey=["%s",%d]' % (jobState, endTime)
         base = '/tier1_skimming/_design/jobdump/_view/jobstate?descending=true&' 
         url = "%s&%s&%s" % (base, endKey, startKey)
 

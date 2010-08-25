@@ -8,8 +8,8 @@ together into one big configuration file that operators can then
 edit.
 """
 
-__revision__ = "$Id: wmcore-new-config,v 1.3 2009/02/06 10:16:45 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: wmcore-new-config,v 1.4 2009/07/17 21:19:44 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -87,6 +87,8 @@ config.section_("CoreDatabase")
 config.CoreDatabase.document_(msg)
 config.CoreDatabase.dialect = 'mysql'
 config.CoreDatabase.socket = '..../mysqldata/mysql.sock'
+config.CoreDatabase.masterUser = 'some_user'
+config.CoreDatabase.masterPasswd = 'some_pass'
 config.CoreDatabase.user = 'some_user'
 config.CoreDatabase.passwd = 'some_pass'
 config.CoreDatabase.hostname = 'localhost'

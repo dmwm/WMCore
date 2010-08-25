@@ -3,9 +3,8 @@
 Unit tests for json wrapper.
 """
 
-__revision__ = "$Id: jsonwrapper_t.py,v 1.3 2010/01/11 14:10:45 metson Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "Valentin Kuznetsov"
+__revision__ = "$Id: jsonwrapper_t.py,v 1.4 2010/01/12 00:22:49 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 __test = False
 try:

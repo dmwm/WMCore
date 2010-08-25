@@ -5,8 +5,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.12 2010/05/07 22:00:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.13 2010/07/01 20:37:09 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 import logging
@@ -14,6 +14,7 @@ import os
 import os.path
 import shutil
 import tarfile
+import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -40,6 +41,8 @@ class JobArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+
+        self.loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
 
         self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
                                              "numberOfJobsToCluster", 1000)
@@ -86,8 +89,19 @@ class JobArchiverPoller(BaseWorkerThread):
         try:
             self.archiveJobs()
             self.pollForClosable()
-        except:
-            raise
+        except Exception, ex:
+            myThread = threading.currentThread()
+            msg = "Caught exception in JobArchiver\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            msg += "\n\n"
+            if hasattr(myThread, 'transaction') \
+                   and myThread.transaction != None \
+                   and hasattr(myThread.transaction, 'transaction') \
+                   and myThread.transaction.transaction != None:
+                myThread.transaction.rollback()
+            raise Exception(msg)
+
 
         return
 
@@ -142,17 +156,18 @@ class JobArchiverPoller(BaseWorkerThread):
             # Then nothing is ready
             return []
 
+        # Put together a list of job IDs
         binds = []
         for jobID in jobList:
             binds.append({"jobid": jobID})
+        
 
-        loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
-        results = loadAction.execute(jobID = binds)
+        results = self.loadAction.execute(jobID = binds)
 
-        doneList = []
-
-        if type(results) != list:
+        if not type(results) == list:
             results = [results]
+        
+        doneList = []
 
         for entry in results:
             # One job per entry

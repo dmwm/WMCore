@@ -25,6 +25,7 @@ class ServiceTest(unittest.TestCase):
     def runTest(self):
         self.testClear()
         self.testCachePath()
+        self.testCacheDuration()
         
     def testClear(self):
         """
@@ -43,6 +44,13 @@ class ServiceTest(unittest.TestCase):
                 'cachepath': '/my/path'}
         service = Service(dict)
         assert service.path == dict['cachepath']
+    
+    def testCacheDuration(self):
+        dict = {'logger': logging.getLogger('JSONParser'), 
+                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
+                'cacheduration': 100}
+        service = Service(dict)
+        assert service.cacheduration == dict['cacheduration']
 
 if __name__ == '__main__':
     unittest.main()

@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.42 2009/07/15 22:29:45 meloam Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Subscription.py,v 1.43 2009/08/03 19:47:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.43 $"
 
 from sets import Set
 import logging
@@ -193,60 +193,38 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return files 
     
-    def acquireFiles(self, files = None, size = 0):
+    def acquireFiles(self, files = None):
         """
-        Acquire size files, activating them for the subscription. If size = 0 
-        acquire all files (default behaviour). Return a list of files objects 
-        for those acquired.
+        _acuireFiles_
+        
+        Mark all files objects that are passed in as acquired for this
+        subscription.  If now files are passed in then all available files
+        will be acquired.
         """
         existingTransaction = self.beginTransaction()
 
         deleteAction = self.daofactory(classname = "Subscriptions.ClearFileStatus")
         action = self.daofactory(classname = "Subscriptions.AcquireFiles")
-        if files:
+
+        if not files:
+            files = self.filesOfStatus("Available")
+        else:
             files = self.makelist(files)
-
-            
-
-            deleteAction.execute(subscription = self["id"],
-                                 file = [x["id"] for x in files],
-                                 conn = self.getDBConn(),
-                                 transaction = self.existingTransaction())
-            
-            action.execute(self['id'], [x['id'] for x in files],
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
-            
-
-            self.commitTransaction(existingTransaction)
-            return files
-        
-        acq = self.acquiredFiles()
-        files = self.filesOfStatus("Available")
 
         if len(files) == 0:
             return
-        
-        l = Set()
-        if len(files) < size or size == 0:
-            size = len(files)
-        i = 0
-        while i < size:
-            l.add(files.pop()['id'])
-            i = i + 1
-        
+
         deleteAction.execute(subscription = self["id"],
                              file = [x["id"] for x in files],
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
-    
-        action.execute(self['id'], [x for x in l], conn = self.getDBConn(),
+            
+        action.execute(self['id'], [x['id'] for x in files],
+                       conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-
-        ret = self.acquiredFiles() - acq
-
+            
         self.commitTransaction(existingTransaction)
-        return ret
+        return
     
     def completeFiles(self, files):
         """

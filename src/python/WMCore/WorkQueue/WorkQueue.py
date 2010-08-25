@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.41 2009/12/09 17:12:44 swakef Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: WorkQueue.py,v 1.42 2009/12/11 15:38:08 swakef Exp $"
+__version__ = "$Revision: 1.42 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -279,10 +279,15 @@ class WorkQueue(WorkQueueBase):
             fileset = sub["fileset"]
 
             for dbsFile in dbsBlock['Files']:
+                checksums = {}
+                if dbsFile.get('Checksum'):
+                    checksums['cksum'] = dbsFile['Checksum']
+                if dbsFile.get('Adler32'):
+                    checksums['adler32'] = dbsFile['Adler32']
                 wmbsFile = WMBSFile(lfn = dbsFile["LogicalFileName"],
                         size = dbsFile["FileSize"],
                         events = dbsFile["NumberOfEvents"],
-                        cksum = dbsFile["Checksum"],
+                        checksums = checksums,
                         parents = dbsFile["ParentList"],
                         locations = set(dbsBlock['StorageElements']))
                 fileset.addFile(wmbsFile)

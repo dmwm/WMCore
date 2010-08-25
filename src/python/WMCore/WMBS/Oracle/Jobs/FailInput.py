@@ -5,8 +5,8 @@ _FailInput_
 Oracle implementation of Jobs.FailInput
 """
 
-__revision__ = "$Id: FailInput.py,v 1.2 2010/04/28 20:43:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FailInput.py,v 1.3 2010/08/10 19:51:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMBS.MySQL.Jobs.FailInput import FailInput as MySQLFailInput
 
@@ -23,7 +23,10 @@ class FailInput(MySQLFailInput):
                         wmbs_job_assoc.job = wmbs_job.id
                       INNER JOIN wmbs_jobgroup ON
                         wmbs_job.jobgroup = wmbs_jobgroup.id
-                    WHERE wmbs_job.id = :jobid"""
+                      LEFT OUTER JOIN wmbs_sub_files_failed ON
+                        wmbs_jobgroup.subscription = wmbs_sub_files_failed.subscription AND
+                        wmbs_job_assoc.fileid = wmbs_sub_files_failed.fileid
+                    WHERE wmbs_job.id = :jobid AND wmbs_sub_files_failed.fileid IS Null"""
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
                         WHERE subscription = :subid AND fileid = :fileid"""

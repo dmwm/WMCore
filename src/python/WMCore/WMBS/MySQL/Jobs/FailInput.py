@@ -5,8 +5,8 @@ _FailInput_
 MySQL implementation of Jobs.FailInput
 """
 
-__revision__ = "$Id: FailInput.py,v 1.3 2010/04/28 20:43:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FailInput.py,v 1.4 2010/08/10 19:51:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -24,7 +24,10 @@ class FailInput(DBFormatter):
                         wmbs_job_assoc.job = wmbs_job.id
                       INNER JOIN wmbs_jobgroup ON
                         wmbs_job.jobgroup = wmbs_jobgroup.id
-                    WHERE wmbs_job.id = :jobid"""
+                      LEFT OUTER JOIN wmbs_sub_files_failed ON
+                        wmbs_jobgroup.subscription = wmbs_sub_files_failed.subscription AND
+                        wmbs_job_assoc.file = wmbs_sub_files_failed.file
+                    WHERE wmbs_job.id = :jobid AND wmbs_sub_files_failed.file IS Null"""
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
                         WHERE subscription = :subid AND file = :fileid"""
@@ -40,10 +43,11 @@ class FailInput(DBFormatter):
                                        transaction = transaction)
         delBinds = self.formatDict(results)
 
-        self.dbi.processData(self.acquiredDelete, delBinds, conn = conn,
-                             transaction = transaction)        
-        self.dbi.processData(self.completeDelete, delBinds, conn = conn,
-                             transaction = transaction)
-        self.dbi.processData(self.sql, delBinds, conn = conn,
-                             transaction = transaction)        
+        if len(delBinds) > 0:
+            self.dbi.processData(self.acquiredDelete, delBinds, conn = conn,
+                                 transaction = transaction)        
+            self.dbi.processData(self.completeDelete, delBinds, conn = conn,
+                                 transaction = transaction)
+            self.dbi.processData(self.sql, delBinds, conn = conn,
+                                 transaction = transaction)        
         return

@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.42 2010/06/28 19:03:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Job_t.py,v 1.43 2010/08/10 19:51:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import unittest
 import logging
@@ -791,12 +791,15 @@ class JobTest(unittest.TestCase):
         testJobGroup.create()
         bogusJobGroup.create()
 
-        testJob = Job(name = "TestJob", files = [testFileA, testFileB, testFileC])
+        testJobA = Job(name = "TestJobA", files = [testFileA, testFileB, testFileC])
+        testJobB = Job(name = "TestJobB", files = [testFileA, testFileB, testFileC])        
         bogusJob = Job(name = "BogusJob", files = [testFileA, testFileB, testFileC])
-        testJob.create(group = testJobGroup)
+        testJobA.create(group = testJobGroup)
+        testJobB.create(group = testJobGroup)        
         bogusJob.create(group = bogusJobGroup)
         
-        testJob.failInputFiles()
+        testJobA.failInputFiles()
+        testJobB.failInputFiles()
 
         availFiles = len(testSubscription.filesOfStatus("Available"))
         assert availFiles == 0, \

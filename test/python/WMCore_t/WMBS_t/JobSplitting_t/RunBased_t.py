@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.5 2010/01/22 13:31:33 riahi Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: RunBased_t.py,v 1.6 2010/01/29 08:49:59 riahi Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -92,30 +92,44 @@ class EventBasedTest(unittest.TestCase):
             self.singleRunFileset.addFile(newFile)
         self.singleRunFileset.commit()
 
+        self.singleRunMultipleLumi = Fileset(name = "TestFileset5")
+        self.singleRunMultipleLumi.create()
+        for i in range(10):
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile.addRun(Run(1, *[45+i]))
+            newFile.create()
+            self.singleRunMultipleLumi.addFile(newFile)
+        self.singleRunMultipleLumi.commit()
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman", name = "wf001", task="Test")
         testWorkflow.create()
-        self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
-                                                     workflow = testWorkflow,
-                                                     split_algo = "RunBased",
-                                                     type = "Processing")
-        self.singleFileSubscription   = Subscription(fileset = self.singleFileFileset,
-                                                     workflow = testWorkflow,
-                                                     split_algo = "RunBased",
-                                                     type = "Processing")
-        self.multipleRunSubscription  = Subscription(fileset = self.multipleFileRunset,
-                                                     workflow = testWorkflow,
-                                                     split_algo = "RunBased",
-                                                     type = "Processing")
-        self.singleRunSubscription    = Subscription(fileset = self.singleRunFileset,
-                                                     workflow = testWorkflow,
-                                                     split_algo = "RunBased",
-                                                     type = "Processing")
+        self.multipleFileSubscription                = Subscription(fileset = self.multipleFileFileset,
+                                                                    workflow = testWorkflow,
+                                                                    split_algo = "RunBased",
+                                                                    type = "Processing")
+        self.singleFileSubscription                  = Subscription(fileset = self.singleFileFileset,
+                                                                    workflow = testWorkflow,
+                                                                    split_algo = "RunBased",
+                                                                    type = "Processing")
+        self.multipleRunSubscription                 = Subscription(fileset = self.multipleFileRunset,
+                                                                    workflow = testWorkflow,
+                                                                    split_algo = "RunBased",
+                                                                    type = "Processing")
+        self.singleRunSubscription                   = Subscription(fileset = self.singleRunFileset,
+                                                                    workflow = testWorkflow,
+                                                                    split_algo = "RunBased",
+                                                                    type = "Processing")
+        self.singleRunMultipleLumiSubscription       = Subscription(fileset = self.singleRunMultipleLumi,
+                                                                    workflow = testWorkflow,
+                                                                    split_algo = "RunBased",
+                                                                    type = "Processing")
 
 
         self.multipleFileSubscription.create()
         self.singleFileSubscription.create()
         self.multipleRunSubscription.create()
         self.singleRunSubscription.create()
+        self.singleRunMultipleLumiSubscription.create()
 
         
         return
@@ -300,6 +314,29 @@ class EventBasedTest(unittest.TestCase):
 
         return
     
+    def testSingleRunsMultipleLumiCombineUneven(self):
+        """
+        _testSingleRunsMultipeLumiCombineUneven_
+
+        Test run based job splitting when the number of jobs is
+        less then and indivisible by the number of files, with multiple files.
+
+        """
+
+        #This should return two jobs, one with 8 and one with 2 files
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleRunMultipleLumiSubscription)
+
+        jobGroups = jobFactory(files_per_job = 8)
+
+        self.assertEqual(len(jobGroups),         1)
+        self.assertEqual(len(jobGroups[0].jobs), 2)
+        self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 2)
+        self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 8)
+
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

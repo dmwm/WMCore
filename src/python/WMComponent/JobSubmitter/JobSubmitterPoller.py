@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.25 2010/06/08 14:47:30 mnorman Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.26 2010/06/16 18:30:18 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -196,12 +196,12 @@ class JobSubmitterPoller(BaseWorkerThread):
             for job in listOfJobs:
                 #job.getMask()
                 job['type']     = jobType
-                job['location'] = self.findSiteForJob(job)
-                if not job['location']:
+                #job['location'] = self.findSiteForJob(job)
+                #if not job['location']:
                     # Then all sites are full for this round
                     # Ignore this job until later
-                    continue
-                job['custom']['location'] = job['location']    #Necessary for JSON
+                #    continue
+                #job['custom']['location'] = job['location']    #Necessary for JSON
                 newList.append(job)
                 
         logging.info("Have %i jobs in JobSubmitter.getJobs()" % len(newList))
@@ -241,9 +241,24 @@ class JobSubmitterPoller(BaseWorkerThread):
         tmpSlots = -999999
         tmpSite  = None
 
+        # Get locations for job
+        # All files SHOULD be alike, this is a prerequisite
+        # of the entire WMAgent system
+        availableSites = []
+        if len(job['input_files']) == 0:
+            # Then it has no files
+            # Can run anywhere?
+            availableSites = self.sites.keys()
+        else:
+            for site in job['input_files'][0]['locations']:
+                availableSites.append(site)
+
         # First look for sites where we have
         # less then the minimum jobs of this type
         for site in self.sites.keys():
+            if not site in availableSites:
+                # Then we can't run there
+                continue
             if not jobType in self.sites[site].keys():
                 # Then we don't actually have this type at this site
                 continue
@@ -257,9 +272,12 @@ class JobSubmitterPoller(BaseWorkerThread):
                 tmpSlots = nSpaces
                 tmpSite  = site
         if tmpSlots < 0:  # Then we didn't have any sites under the minimum
+            tmpSlots = -999999
+            tmpSite  = None
             for site in self.sites.keys():
-                tmpSlots = -999999
-                tmpSite  = None
+                if not site in availableSites:
+                    # Then we can't run there
+                    continue
                 if not jobType in self.sites[site].keys():
                     # Then we don't actually have this type at this site
                     continue
@@ -420,25 +438,21 @@ class JobSubmitterPoller(BaseWorkerThread):
                 continue
             fileHandle = open(jobPickle, "r")
             loadedJob  = cPickle.load(fileHandle)
-            loadedJob['custom'] = job['custom']
-            loadedJob['location'] = job['location']
+            loadedJob['type'] = job['type']
+            loadedJob['location'] = self.findSiteForJob(loadedJob)
+            loadedJob['custom']['location'] = loadedJob['location']
+            # If we didn't get a site, all sites are full
+            if loadedJob['location'] == None:
+                # Ignore this job until the next round
+                failList.append(loadedJob)
+                continue
             loadedJob['retry_count'] = job['retry_count']
             jList2.append(loadedJob)
             if not 'sandbox' in loadedJob.keys() or not 'task' in loadedJob.keys():
                 # You know what?  Just fail the job
-                failList.append(job)
+                failList.append(loadedJob)
                 continue
-                #Then we need to construct a task or a sandbox
-                #if not 'spec' in job.keys():
-                #    #Well, we have no spec
-                #    failList.append(job)
-                #    continue
-                #if not os.path.isfile(job['spec']):
-                #    failList.append(job)
-                #    continue
-                #wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-                #wmWorkload.load(job['spec'])
-                #job['sandbox'] = task.data.input.sandbox
+
 
         for job in jList2:
             if job in failList:

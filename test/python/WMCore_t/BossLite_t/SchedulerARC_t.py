@@ -23,7 +23,7 @@ from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
 
 from WMCore.BossLite.Common.System import executeCommand
-from nose.plugins.attrib import nose
+from nose.plugins.attrib import attr
 
 def fakeTask(db, numjob):
     """

@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.21 2010/04/20 16:04:36 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: WMWorkload.py,v 1.22 2010/04/20 18:28:33 sryu Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import logging
 
@@ -365,7 +365,7 @@ class WMWorkload(ConfigSection):
         # // owner related information
         #//
         self.section_("owner")
-        self.owner.owner = None
+
         #  //
         # // Policies applied to this workload by the processing system
         #//

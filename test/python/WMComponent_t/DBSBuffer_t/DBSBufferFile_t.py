@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.3 2009/09/22 19:49:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.4 2009/10/13 19:56:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import logging
@@ -624,6 +624,48 @@ class FileTest(unittest.TestCase):
         assert blockName[0][0] == "someblockname", \
                "Error: Incorrect block returned: %s" % blockname[0][0]
         return
-    
+
+    def testCountFilesDAO(self):
+        """
+        _testCountFilesDAO_
+
+        Verify that the CountFiles DAO object functions correctly.
+        """
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                                 cksum = 1, locations = "se1.fnal.gov")
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileA.create()
+
+        testFileB = DBSBufferFile(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                                 cksum = 1, locations = "se1.fnal.gov")
+        testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFileB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileB.create()
+
+        testFileC = DBSBufferFile(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
+                                 cksum = 1, locations = "se1.fnal.gov")
+        testFileC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFileC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileC.create()                
+
+        myThread = threading.currentThread()
+        dbsBufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                      logger = myThread.logger,
+                                      dbinterface = myThread.dbi)
+
+        countAction = dbsBufferFactory(classname = "CountFiles")
+
+        assert countAction.execute() == 3, \
+               "Error: Wrong number of files counted in DBS Buffer."
+
+        return
+        
 if __name__ == "__main__":
     unittest.main() 

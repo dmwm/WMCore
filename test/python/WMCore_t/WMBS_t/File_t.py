@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.45 2010/04/08 20:09:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: File_t.py,v 1.46 2010/04/12 21:32:46 sryu Exp $"
+__version__ = "$Revision: 1.46 $"
 
 import unittest
 import logging
@@ -455,6 +455,34 @@ class FileTest(unittest.TestCase):
         
         return
     
+    def testCreateWithLocation(self):
+        """
+        _testCreateWithLocation_
+
+        Create a file and add a couple locations.  Load the file from the
+        database to make sure that the locations were set correctly.
+        """
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                        checksums = {'cksum':1}, 
+                        locations = set(["se1.fnal.gov", "se1.cern.ch"]))
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+
+        
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData()
+
+        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
+
+        for location in testFileB["locations"]:
+            assert location in goldenLocations, \
+                   "ERROR: Unknown file location"
+            goldenLocations.remove(location)
+
+        assert len(goldenLocations) == 0, \
+              "ERROR: Some locations are missing"    
+        return
+
     def testSetLocation(self):
         """
         _testSetLocation_

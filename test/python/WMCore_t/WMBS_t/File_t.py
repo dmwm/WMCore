@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.36 2009/12/17 22:34:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: File_t.py,v 1.37 2009/12/18 17:54:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import unittest
 import logging
@@ -19,6 +19,9 @@ from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
@@ -683,9 +686,6 @@ class FileTest(unittest.TestCase):
 
         return
 
-
-        return
-
     def testGetBulkLocations(self):
         """
         _testGetBulkLocations_
@@ -736,43 +736,6 @@ class FileTest(unittest.TestCase):
         for f in files:
             self.assertEqual(location[f.exists()], list(f['locations']))
 
-        return
-
-    def testBulkParentage(self):
-        """
-        _testBulkParentage_
-
-        Add a child to some parent files and make sure that all the parentage
-        information is loaded/stored correctly from the database.
-        """
-        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, cksum = 1)
-        testFileParentA.addRun(Run( 1, *[45]))
-        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, cksum = 1)
-        testFileParentB.addRun(Run( 1, *[45]))
-        testFileParentA.create()
-        testFileParentB.create()
-
-        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                         cksum = 1)
-        testFileA.addRun(Run( 1, *[45]))
-        testFileA.create()
-
-        testFileParentA.addChild("/this/is/a/lfn")
-        testFileParentB.addChild("/this/is/a/lfn")
-
-        testFileB = File(id = testFileA["id"])
-        testFileB.loadData(parentage = 1)
-
-        goldenFiles = [testFileParentA, testFileParentB]
-        for parentFile in testFileB["parents"]:
-            assert parentFile in goldenFiles, \
-                   "ERROR: Unknown parent file"
-            goldenFiles.remove(parentFile)
-
-        assert len(goldenFiles) == 0, \
-              "ERROR: Some parents are missing"
         return
 
     def testBulkParentage(self):
@@ -833,6 +796,134 @@ class FileTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
               "ERROR: Some parents are missing"        
+        return
+
+    def testGetMergedChildren(self):
+        """
+        _testGetMergedChildren_
+
+        Verify that the GetMergedChildren DAO works correctly.  Given a parent
+        file and an output fileset for the workflow the DAO will find any merged
+        files that resulted from the processing workflow either as a straight to
+        merge file or a file that went through a merge job.
+        """
+        inputFileset = Fileset(name = "inputFileset")
+        outputFilesetA = Fileset(name = "outputFilesetA")
+        outputFilesetB = Fileset(name = "outputFilesetB")
+        mergedFilesetA = Fileset(name = "mergedFilesetA")
+        mergedFilesetB = Fileset(name = "mergedFilesetB")
+
+        inputFileset.create()
+        outputFilesetA.create()
+        outputFilesetB.create()
+        mergedFilesetA.create()
+        mergedFilesetB.create()
+
+        procWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
+                                name = "ProcWF", task = "ProcTask")
+        procWorkflow.create()
+        procWorkflow.addOutput("outputA", outputFilesetA)
+        procWorkflow.addOutput("outputB", outputFilesetB)
+
+        mergeAWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
+                                  name = "MergeWFA", task = "MergeTask")
+        mergeAWorkflow.create()
+        mergeAWorkflow.addOutput("merged", mergedFilesetA)
+        mergeBWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
+                                  name = "MergeWFB", task = "MergeTask")
+        mergeBWorkflow.create()
+        mergeBWorkflow.addOutput("merged", mergedFilesetB)
+
+        procSub = Subscription(fileset = inputFileset, workflow = procWorkflow,
+                               type = "Processing")
+        procSub.create()
+        mergeASub = Subscription(fileset = outputFilesetA,
+                                 workflow = mergeAWorkflow, type = "Merge")
+        mergeASub.create()
+        mergeBSub = Subscription(fileset = outputFilesetB,
+                                 workflow = mergeBWorkflow, type = "Merge")
+        mergeBSub.create()
+
+        inputFileA = File(lfn = "/path/to/some/input/lfn/A", merged = True)
+        inputFileA.create()
+        inputFileB = File(lfn = "/path/to/some/input/lfn/B", merged = True)
+        inputFileB.create()
+        inputFileset.addFile(inputFileA)
+        inputFileset.addFile(inputFileB)
+        inputFileset.commit()
+
+        straightMergeFile = File(lfn = "/some/straight/merged/file/A", merged = True)
+        straightMergeFile.create()
+        straightMergeFile.addParent(inputFileA["lfn"])
+        mergedFilesetA.addFile(straightMergeFile)
+        mergedFilesetA.commit()
+
+        unmergedFileA = File(lfn = "/some/unmerged/file/A", merged = False)
+        unmergedFileA.create()
+        unmergedFileA.addParent(inputFileA["lfn"])
+        outputFilesetA.addFile(unmergedFileA)
+        outputFilesetA.commit()
+
+        unmergedFileB = File(lfn = "/some/unmerged/file/B", merged = False)
+        unmergedFileB.create()
+        unmergedFileB.addParent(inputFileB["lfn"])
+        outputFilesetA.addFile(unmergedFileB)
+        outputFilesetA.commit()
+
+        unmergedFileC = File(lfn = "/some/unmerged/file/C", merged = False)
+        unmergedFileC.create()
+        unmergedFileC.addParent(inputFileB["lfn"])
+        outputFilesetB.addFile(unmergedFileC)
+        outputFilesetB.commit()        
+        
+        mergedFileA = File(lfn = "/some/merged/file/A", merged = True)
+        mergedFileA.create()
+        mergedFileA.addParent(unmergedFileB["lfn"])
+        mergedFilesetA.addFile(mergedFileA)
+        mergedFilesetA.commit()
+
+        mergedFileB = File(lfn = "/some/merged/file/B", merged = True)
+        mergedFileB.create()
+        mergedFileB.addParent(unmergedFileC["lfn"])
+        mergedFilesetB.addFile(mergedFileB)
+        mergedFilesetB.commit()        
+
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)        
+        mergedChildrenAction = daofactory(classname = "Files.GetMergedChildren")
+
+        children = mergedChildrenAction.execute(inputLFN = inputFileA["lfn"],
+                                                parentFileset = outputFilesetA.id)
+
+        assert len(children) == 1, \
+               "Error: Wrong number of merged children."
+        assert list(children)[0] == straightMergeFile["lfn"], \
+               "Error: Wrong merged child."
+
+        children = mergedChildrenAction.execute(inputLFN = inputFileA["lfn"],
+                                                parentFileset = outputFilesetB.id)
+
+        assert len(children) == 0, \
+               "Error: Wrong number of merged children."
+        
+        children = mergedChildrenAction.execute(inputLFN = inputFileB["lfn"],
+                                                parentFileset = outputFilesetA.id)
+
+        assert len(children) == 1, \
+               "Error: Wrong number of merged children."
+        assert list(children)[0] == mergedFileA["lfn"], \
+               "Error: Wrong merged child."
+
+        children = mergedChildrenAction.execute(inputLFN = inputFileB["lfn"],
+                                                parentFileset = outputFilesetB.id)
+
+        assert len(children) == 1, \
+               "Error: Wrong number of merged children."
+        assert list(children)[0] == mergedFileB["lfn"], \
+               "Error: Wrong merged child."        
+
         return
 
 if __name__ == "__main__":

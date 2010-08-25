@@ -138,7 +138,6 @@ def runUnitTests():
     sys.path.append(srcpypath)
     logging.basicConfig(level=logging.DEBUG)
     path = os.path.abspath(os.path.dirname(sys.argv[0]))
-    print "the path is %s" % path   
     files = listFiles(path)
     test = re.compile("_t\.py$", re.IGNORECASE)          
     files = filter(test.search, files)                     
@@ -148,9 +147,6 @@ def runUnitTests():
     moduleNames2 = map( stripBeginning, moduleNames )
     replaceSlashes = lambda f: f.replace('/','.')
     moduleNames3 = map( replaceSlashes, moduleNames2 )
-    print "\n\n\n\n\n\n"
-    print "importing %s" % moduleNames3
-    print "as"
     modules = []
     for oneModule in moduleNames3:
         try:
@@ -159,7 +155,8 @@ def runUnitTests():
             print "ERROR: Can't load %s - %s" % (oneModule, e)    
         else:
             print "Loaded %s" % oneModule
-            print "--Module is %s" % modules[-1]     
+            print "--Module is %s" % modules[-1]   
+            pprint.pprint( modules[-1] )  
     print "modules is %s" % modules               
     load = unittest.defaultTestLoader.loadTestsFromModule  
     globalSuite = unittest.TestSuite(map(load, modules))    

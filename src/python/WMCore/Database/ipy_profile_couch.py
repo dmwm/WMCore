@@ -5,8 +5,8 @@
 Couch DB command line admin tool
 """
 
-__revision__   = "$Id: ipy_profile_couch.py,v 1.2 2009/06/19 15:35:11 valya Exp $"
-__version__    = "$Revision: 1.2 $"
+__revision__   = "$Id: ipy_profile_couch.py,v 1.3 2009/06/22 17:58:56 valya Exp $"
+__version__    = "$Revision: 1.3 $"
 __author__     = "Valentin Kuznetsov"
 __license__    = "GPL"
 __version__    = "1.0.1"
@@ -185,6 +185,8 @@ def db_info():
     host  = URI
     path  = '/%s' % DB
     data  = httplib_request(host, path, {}, 'GET', DEBUG)
+    if  not data:
+        return data
     return json.loads(data)
 
 def couch_views():
@@ -233,6 +235,8 @@ def create_view(view_dict):
     request = 'PUT'
     debug   = DEBUG
     data    = httplib_request(host, path, params, request, debug)
+    if  not data:
+        return data
     return json.loads(data)
 
 def delete_view(view_name):
@@ -245,6 +249,8 @@ def delete_view(view_name):
     host  = URI
     path  = '/%s/_design/%s' % (DB, DESIGN)
     data  = httplib_request(host, path, {}, 'GET', DEBUG)
+    if  not data:
+        return data
     jsondict = json.loads(data)
 
     # delete requested view in view dict document
@@ -269,16 +275,20 @@ def delete_all_views(design):
     host  = URI
     path  = '/%s/_design/%s' % (DB, design)
     data  = httplib_request(host, path, {}, 'DELETE', DEBUG)
+    if  not data:
+        return data
     return json.loads(data)
 
 def create_db(db_name):
     """
     Create a new DB in couch.
-    Parameters: <db_name, e.g. das>
+    Parameters: <db_name>
     """
     host  = URI
     path  = '/%s' % db_name
     data  = httplib_request(host, path, {}, 'PUT', DEBUG)
+    if  not data:
+        return data
     return json.loads(data)
 
 def delete_db(db_name):
@@ -287,8 +297,10 @@ def delete_db(db_name):
     Parameters: <db_name>
     """
     host  = URI
-    path  = '/%s' % DB
+    path  = '/%s' % db_name
     data  = httplib_request(host, path, {}, 'DELETE', DEBUG)
+    if  not data:
+        return data
     return json.loads(data)
 
 def get_all_docs(idx=0, limit=0, pretty_print=False):
@@ -304,6 +316,8 @@ def get_all_docs(idx=0, limit=0, pretty_print=False):
     if  limit:
         kwds['limit'] = limit
     data  = httplib_request(host, path, kwds, 'GET', DEBUG)
+    if  not data:
+        return data
     if  pretty_print:
         print_data(data, lookup='id')
     else:
@@ -318,6 +332,8 @@ def get_doc(id):
     path  = '/%s/%s' % (DB, id)
     kwds  = {}
     data  = httplib_request(host, path, kwds, 'GET', DEBUG)
+    if  not data:
+        return data
     return json.loads(data)
 
 def load_module(arg):

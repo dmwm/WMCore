@@ -410,7 +410,7 @@ class DumbCoverageCommand(Command):
 class EnvCommand(Command):
     description = "Configure the PYTHONPATH, DATABASE and PATH variables to" +\
     "some sensible defaults, if not already set. Call with -q when eval-ing," +\
-    """  e.g.:
+    """ e.g.:
         eval `python setup.py -q env`
     """
     
@@ -436,7 +436,8 @@ class EnvCommand(Command):
         for pth in [tests, source]:
             if pth not in pypath:
                 pypath.append(pth)
-                
+        
+        # We might want to add other executables to PATH
         expath=os.getenv('PATH', '').split(':')
         for pth in [webpth]:
             if pth not in expath:

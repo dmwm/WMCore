@@ -5,14 +5,15 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.11 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.11 2009/05/15 16:50:48 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.12 2009/07/20 18:17:29 mnorman Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
 import os
 import threading
 from WMCore.WMFactory import WMFactory
+from WMCore.DAOFactory import DAOFactory
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 from WMCore.DataStructs.Run import Run
 
@@ -77,23 +78,27 @@ class AddToBuffer:
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
-        factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
-                        myThread.dialect)
-        newDS = factory.loadObject("NewDataset")
-        newDS.execute(dataset=dataset, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+        newDS = factory(classname = "NewDataset")
+        newDS.execute(datasetPath=dataset["Path"], conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
     
-    def addAlgo(self, dataset):
+    def addAlgo(self, algo):
         # Add the algo to the buffer (API Call)
         # dataset object contains the algo information
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
-                        myThread.dialect)
-        newDS = factory.loadObject("NewAlgo")
-        newDS.execute(dataset=dataset, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+        newDS = factory(classname = "NewAlgo")
+        newDS.execute(appName = algo["ApplicationName"], appVer = algo["ApplicationVersion"], appFam = algo["ApplicationName"], \
+                      psetHash = algo["PSetHash"], configContent = algo["PSetContent"], \
+                      conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
 
@@ -109,7 +114,7 @@ class AddToBuffer:
         return
 
 
-    def updateAlgo(self, dataset, psethash):
+    def updateAlgo(self, algo):
         # Add the algo to the buffer (API Call)
         # dataset object contains the algo information
         myThread = threading.currentThread()
@@ -118,7 +123,9 @@ class AddToBuffer:
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("UpdateAlgo")
-        newDS.execute(dataset=dataset, psethash=psethash, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        newDS.execute(appName = algo["ApplicationName"], appVer = algo["ApplicationVersion"], appFam = algo["ApplicationName"], \
+                      psetHash = algo["PSetHash"], configContent = algo["PSetContent"], \
+                      conn = myThread.transaction.conn, transaction=myThread.transaction)
         myThread.transaction.commit()
         return
     

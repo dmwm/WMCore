@@ -19,9 +19,8 @@ class WorkQueueRESTModel(RESTModel):
     def __init__(self, config = {}):
         RESTModel.__init__(self, config)
         
-        self.wq = globalQueue(logger=self, dbi=self.dbi)
+        self.wq = globalQueue(logger=self, dbi=self.dbi, **config.queueParams)
         #only support get for now
-        self.methods = {'GET':{}, 'POST':{}, 'PUT':{}, 'DELETE':{}}
         self.addMethod('POST', 'getwork', self.getWork, args=[])
         self.addMethod('POST', 'status', self.status, args=["status", "before", "after", 
                                         "elementIDs", "subs", "dictKey"])

@@ -1,7 +1,7 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.18 2010/04/13 18:48:31 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.19 2010/04/13 21:20:21 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 #setup emulator for test, this needs to be at top of the file
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
@@ -88,7 +88,7 @@ class JobCreatorTest(unittest.TestCase):
         
         locationAction = daofactory(classname = "Locations.New")
         for site in self.sites:
-            locationAction.execute(siteName = site)
+            locationAction.execute(siteName = site, seName = site)
 
 
 
@@ -362,7 +362,7 @@ class JobCreatorTest(unittest.TestCase):
         config.JobCreator.jobCacheDir               = os.path.join(self.testDir)
         config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
         config.JobCreator.workerThreads             = 2
-        config.JobCreator.componentDir              = self.testDir
+        config.JobCreator.componentDir              = os.path.join(os.getcwd(), 'Components')
         config.JobCreator.useWorkQueue              = True
         config.JobCreator.WorkQueueParams           = {'emulateDBSReader': True}
         

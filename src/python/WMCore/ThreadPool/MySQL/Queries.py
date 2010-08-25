@@ -8,9 +8,9 @@ This module implements the mysql backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.5 2008/12/11 09:06:11 sfoulkes Exp $"
+    "$Id: Queries.py,v 1.6 2009/05/15 19:09:15 mnorman Exp $"
 __version__ = \
-    "$Revision: 1.5 $"
+    "$Revision: 1.6 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -91,7 +91,7 @@ DELETE FROM %s WHERE id = :id
         if pooltable in ['tp_threadpool', 'tp_threadpool_buffer_in', \
             'tp_threadpool_buffer_out']:
             sqlStr = """
-UPDATE %s SET state="queued" WHERE component = :componentName
+UPDATE %s SET state='queued' WHERE component = :componentName
 AND thread_pool_id = :thread_pool_id
         """ % (pooltable)
             self.execute(sqlStr, args)

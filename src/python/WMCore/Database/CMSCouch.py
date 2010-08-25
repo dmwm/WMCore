@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.23 2009/05/27 10:26:25 metson Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: CMSCouch.py,v 1.24 2009/05/29 19:41:35 meloam Exp $"
+__version__ = "$Revision: 1.24 $"
 
 try:
     # Python 2.6
@@ -22,6 +22,9 @@ import time
 import datetime
 
 class Document(dict):
+    """
+    Document class is the instantiation of one document in the CouchDB
+    """
     def __init__(self, id=None):
         dict.__init__(self)
         if id:
@@ -29,7 +32,16 @@ class Document(dict):
 
     def delete(self):
         self['_deleted'] = True
-
+        
+def makeDocument( data ):
+    """
+    helper function to wrap a plain dict (i.e. one returned by couchserver)
+    in a Document instance
+    """
+    document = Document()
+    document.update( data )
+    return document
+    
 class Requests:
     """
     Generic class for sending different types of HTTP Request to a given URL
@@ -41,41 +53,48 @@ class Requests:
         self.url = url
         self.conn = HTTPConnection(self.url)
 
-    def get(self, uri=None, data=None):
+    def get(self, uri=None, data=None, encoder = None, decoder=None):
         """
         Get a document of known id
         """
-        return self.makeRequest(uri, data)
+        return self.makeRequest(uri, data, 'GET', encoder, decoder)
 
-    def post(self, uri=None, data=None):
+    def post(self, uri=None, data=None, encoder = None, decoder=None):
         """
         POST some data
         """
-        return self.makeRequest(uri, data, 'POST')
+        return self.makeRequest(uri, data, 'POST', encoder, decoder)
 
-    def put(self, uri=None, data=None):
+    def put(self, uri=None, data=None, encoder = None, decoder=None):
         """
         PUT some data
         """
-        return self.makeRequest(uri, data, 'PUT')
-
-    def delete(self, uri=None, data=None):
+        return self.makeRequest(uri, data, 'PUT', encoder, decoder)
+       
+    def delete(self, uri=None, data=None, encoder = None, decoder=None):
         """
         DELETE some data
         """
-        return self.makeRequest(uri, data, 'DELETE')
+        return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
 
-    def makeRequest(self, uri=None, data=None, type='GET'):
+    def makeRequest(self, uri=None, data=None, type='GET',
+                     encoder=None, decoder=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
         DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
-        headers = {"Content-type": 'application/x-www-form-urlencoded', #self.accept_type,
+        headers = {"Content-type": 
+                    'application/x-www-form-urlencoded', #self.accept_type,
                     "Accept": self.accept_type}
         encoded_data = ''
+        if (encoder == None):
+            encoder = self.encode
+        if (decoder == None):
+            decoder = self.decode
+            
         if type != 'GET' and data:
-            encoded_data = self.encode(data)
+            encoded_data = encoder(data)
             headers["Content-length"] = len(encoded_data)
         else:
             #encode the data as a get string
@@ -88,7 +107,7 @@ class Requests:
 
         data = response.read()
         self.conn.close()
-        return self.decode(data)
+        return decoder(data)
 
     def encode(self, data):
         """
@@ -148,7 +167,8 @@ class Database(CouchDBRequests):
     TODO: implement COPY and MOVE calls.
     TODO: remove leading whitespace when committing a view
     """
-    def __init__(self, dbname = 'database', url = 'localhost:5984/', size = 5000):
+    def __init__(self, dbname = 'database', 
+                  url = 'localhost:5984/', size = 5000):
         self._queue = []
         self.name = urllib.quote_plus(dbname)
         JSONRequests.__init__(self, url)
@@ -205,7 +225,8 @@ class Database(CouchDBRequests):
                 self.queue(doc)
             if timestamp:
                 self._queue = self.timestamp(self._queue)
-            result = self.post('/%s/_bulk_docs/' % self.name, {'docs': self._queue})
+            result = self.post('/%s/_bulk_docs/' % self.name, 
+                                 {'docs': self._queue})
             self._queue = []
             return result
         elif doc:
@@ -278,6 +299,27 @@ class Database(CouchDBRequests):
 
     def info(self):
         return self.get('/%s/' % self.name)
+    
+    def addAttachment(self, id, rev, value):
+        return self.put('/%s/%s/attachment?rev=%s' % (self.name, id, rev),
+                         value,
+                         self.noop)
+    
+    def getAttachment(self, id):
+        attachment = self.get('/%s/%s/attachment' % (self.name,id),
+                         None,
+                         self.noop,
+                         self.noop)
+        # there has to be a better way to do this but if we're not de-jsoning
+        # the return values, then this is all I can do for error checking,
+        # right?
+        # TODO: MAKE BETTER ERROR HANDLING
+        if (attachment.find('{"error":"not_found","reason":"deleted"}') != -1):
+            raise RuntimeError, "File not found, deleted"
+        return attachment
+       
+    def noop(self, data):
+        return data
 
 class CouchServer(CouchDBRequests):
     """

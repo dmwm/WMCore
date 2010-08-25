@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.8 2009/03/16 12:20:02 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: CMSCouch.py,v 1.9 2009/03/16 12:57:39 metson Exp $"
+__version__ = "$Revision: 1.9 $"
 
 try:
     # Python 2.6
@@ -66,12 +66,6 @@ class Requests:
         DELETE some data
         """
         return self.makeRequest(uri, data, 'DELETE')
-    
-    def update(self, uri=None, data=None):
-        """
-        UPDATE some data
-        """
-        return self.makeRequest(uri, data, 'UPDATE')
         
     def makeRequest(self, uri=None, data=None, type='GET'):
         """
@@ -131,7 +125,8 @@ class JSONRequests(Requests):
         
 class Database(JSONRequests):
     """
-    Object representing a connection to a CouchDB Database instance
+    Object representing a connection to a CouchDB Database instance.
+    TODO: implement COPY and MOVE calls.
     """
     def __init__(self, dbname = 'database', url = 'http://localhost:5984/'):
         self._queue = []

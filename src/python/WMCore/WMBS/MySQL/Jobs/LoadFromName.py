@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFromName.
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.9 2009/11/10 21:55:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: LoadFromName.py,v 1.10 2009/12/22 16:18:15 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -21,7 +21,7 @@ class LoadFromName(DBFormatter):
     sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name, 
                     wmbs_job_state.name AS state, state_time, retry_count,
                     couch_record, cache_dir, wmbs_location.site_name AS location, 
-                    outcome AS bool_outcome
+                    outcome AS bool_outcome, fwjr_path AS fwjr
              FROM wmbs_job
                LEFT OUTER JOIN wmbs_location ON
                  wmbs_job.location = wmbs_location.id

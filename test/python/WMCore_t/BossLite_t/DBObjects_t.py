@@ -17,6 +17,8 @@ from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
 from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
 from WMCore.BossLite.Common.Exceptions  import DbError
 
+from WMCore.BossLite.Common.System import strToTimestamp
+
 class DBObjectsTest(unittest.TestCase):
     
     def setUp(self):
@@ -173,6 +175,11 @@ class DBObjectsTest(unittest.TestCase):
         
         runJob.data['state'] = 'Commodus'
         runJob.data['lfn'] = ['001', '002', '003', '004', '005']
+        
+        tmpTime = time.time()
+        runJob.data['startTime'] = None
+        runJob.data['stopTime'] = tmpTime
+        runJob.data['stageOutTime'] = 0 # 0 -> 1970-01-01 00:00:00
         runJob.save(db)
 
         # Test save() and load() by loading file by ID
@@ -181,14 +188,20 @@ class DBObjectsTest(unittest.TestCase):
         
         for key in ['submission', 'jobId', 'taskId', 'state', 'lfn']:
             self.assertEqual(runJob2.data[key], runJob.data[key])
-
+        self.assertEqual(runJob2.data['startTime'], None )
+        self.assertEqual(runJob2.data['stopTime'], strToTimestamp(tmpTime) )
+        self.assertEqual(runJob2.data['stageOutTime'], "1970-01-01 00:00:00" )
+        
         # Test load by parameters
         runJob3 = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
         runJob3.load(db)
         
         for key in ['submission', 'jobId', 'taskId', 'state', 'lfn']:
             self.assertEqual(runJob3.data[key], runJob.data[key])
-
+        self.assertEqual(runJob3.data['startTime'], None )  
+        self.assertEqual(runJob3.data['stopTime'], strToTimestamp(tmpTime) )
+        self.assertEqual(runJob3.data['stageOutTime'], "1970-01-01 00:00:00" )
+        
         # What happens if you load a non-existant job?
         # Note: This test works, but it makes a mess, so I commented it out
         # Uncomment if you want to check it.
@@ -493,7 +506,6 @@ class DBObjectsPerformance(unittest.TestCase):
         
         numtask = 1
         numjob  = 10
-        numrunningjob = 2
         
         db = BossLiteDBWM()
         log = logging.getLogger( "DBObjectsPerformance" )
@@ -507,32 +519,27 @@ class DBObjectsPerformance(unittest.TestCase):
                 task.create(db)
                 tmpId = task['id']
                 # self.assertEqual(tmpId, task.exists(db))
-                
+                task.exists(db)
                 for j in xrange(numjob):
                     parameters = {'name': '%s_job_%s'%(str(t),str(j)), 
                                   'jobId': j, 
                                   'taskId': tmpId }
                     job = Job(parameters)
-                    job.data['submissionNumber'] = 1
                     job.data['closed'] = 'N'
                     
-                    """
-                    parameters = {'jobId': job.data['jobId'], 
-                                  'taskId': tmpId,
-                                  'submission' : job.data['submissionNumber']}
-                    runJob = RunningJob(parameters)
+                    # job.save(db, deep= False)
+                    
+                    runJob = RunningJob()
                     runJob.data['state'] = 'Commodus'
                     runJob.data['closed'] = 'N'
                     runJob.data['process_status'] = 'not_handled'
                     
-                    job.setRunningInstance(runJob)
-                    """
+                    job.newRunningInstance(db)
                     
-                    for rj in xrange(numrunningjob):
-                        job.newRunningInstance(db)
-                        
                     task.addJob(job)
+                    
                 task.save(db)
+                
             except DbError, ex:
                 # useless...
                 print str(ex)
@@ -540,8 +547,8 @@ class DBObjectsPerformance(unittest.TestCase):
         
         end_time = time.time()
         
-        log.info("task= %3d, jobs/task= %3d, runJobs/Job= %3d, Time= %f" % \
-            (numtask, numjob, numrunningjob, (end_time-start_time)))
+        log.info("task= %3d, jobs/task= %3d, Time= %f" % \
+            (numtask, numjob, (end_time-start_time)))
         
         return
     

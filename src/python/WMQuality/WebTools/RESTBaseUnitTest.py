@@ -13,29 +13,29 @@ class RESTBaseUnitTest(unittest.TestCase):
         self.schemaModules = []
         self.initialize()
         if self.schemaModules:
-            print"Initializing schema : %s" % self.schemaModules
+            print "Initializing schema : %s" % self.schemaModules
             self.testInit = TestInit(__file__)
             self.testInit.setLogging() # logLevel = logging.SQLDEBUG
-            print self.config.getDBUrl()
-            print self.config.getDBSocket()
+            print "Database URL: %s" % self.config.getDBUrl()
+            print "Database socket: %s" % self.config.getDBSocket()
             self.testInit.setDatabaseConnection(self.config.getDBUrl(), 
                                                 self.config.getDBSocket())
             #self.testInit.setDatabaseConnection()
             self.testInit.setSchema(customModules = self.schemaModules,
                                     useDefault = False)
         
-        print "start cherrypy server"
+        print "Starting Cherrypy server ..."
         self.rt = configureServer(config = self.config)
         self.rt.start(blocking=False)
         cherrypy.log.error_log.setLevel(logging.WARNING)
         cherrypy.log.access_log.setLevel(logging.WARNING)
         
     def tearDown(self):
-        print "stpoping server"
+        print "Stopping Cherrypy server ..."
         self.rt.stop()
         
         if self.schemaModules:
-            print "clean up db"
+            print "Cleaning up database ..."
             self.testInit.clearDatabase()
         self.config = None
         

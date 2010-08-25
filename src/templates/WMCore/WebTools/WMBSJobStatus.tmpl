@@ -67,9 +67,9 @@ function displayHelpWindow() {
 
 function generateJobStatusRequest() {
     // Generate the request string for the jobstatechanges call.  The request
-    // string needs to set the return_type to "application/json" and include
+    // string needs to set the return_type to "text/json+das" and include
     // the job state as well as the display interval.
-    var request = 'return_type=application/json&jobState=' + currentJobState;
+    var request = 'return_type=text/json%2Bdas&jobState=' + currentJobState;
     request += '&interval=' + currentInterval;
     return request;
 }

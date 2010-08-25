@@ -40,7 +40,7 @@ var myColumnDefs = [
     {key:"percent_complete", label:"Complete", sortable:true, resizable:true},
     {key:"percent_success", label:"Successful", sortable:true, resizable:true}]
 
-var sUrl = "/wmbs/subscriptionstatus/?return_type=application/json;subType=$subType";
+var sUrl = "/wmbs/subscriptionstatus/?return_type=text/json%2Bdas;subType=$subType";
 
 var myDataSource = new YAHOO.util.DataSource(sUrl);
 myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;

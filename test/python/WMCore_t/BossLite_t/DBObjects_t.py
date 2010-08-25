@@ -4,6 +4,7 @@ import unittest
 import threading
 import string
 import time
+from datetime import date
 import logging
 
 # Import key features
@@ -16,8 +17,6 @@ from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
 
 from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
 from WMCore.BossLite.Common.Exceptions  import DbError
-
-from WMCore.BossLite.Common.System import strToTimestamp
 
 class DBObjectsTest(unittest.TestCase):
     
@@ -158,7 +157,6 @@ class DBObjectsTest(unittest.TestCase):
 
         """
         
-        myThread = threading.currentThread()
         db = BossLiteDBWM()
         
         task = Task()
@@ -176,11 +174,16 @@ class DBObjectsTest(unittest.TestCase):
         runJob.data['state'] = 'Commodus'
         runJob.data['lfn'] = ['001', '002', '003', '004', '005']
         
-        tmpTime = time.time()
-        runJob.data['startTime'] = None
+        # rounding!
+        tmpTime = int(time.time())
+        runJob.data['startTime'] = None # 0 -> 1970-01-01 00:00:00
         runJob.data['stopTime'] = tmpTime
-        runJob.data['stageOutTime'] = 0 # 0 -> 1970-01-01 00:00:00
         runJob.save(db)
+        
+        # DEBUG
+        # queryResult = db.executeSQL(query = "SELECT * FROM bl_runningjob")
+        # runjobInfo = queryResult[0].fetchall()[0].values()
+        # print runjobInfo
 
         # Test save() and load() by loading file by ID
         runJob2 = RunningJob(parameters = {'id': 1})
@@ -188,9 +191,9 @@ class DBObjectsTest(unittest.TestCase):
         
         for key in ['submission', 'jobId', 'taskId', 'state', 'lfn']:
             self.assertEqual(runJob2.data[key], runJob.data[key])
-        self.assertEqual(runJob2.data['startTime'], None )
-        self.assertEqual(runJob2.data['stopTime'], strToTimestamp(tmpTime) )
-        self.assertEqual(runJob2.data['stageOutTime'], "1970-01-01 00:00:00" )
+        
+        self.assertEqual(runJob2.data['startTime'], 0 ) # 0 -> None
+        self.assertEqual(runJob2.data['stopTime'], tmpTime )
         
         # Test load by parameters
         runJob3 = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
@@ -198,9 +201,8 @@ class DBObjectsTest(unittest.TestCase):
         
         for key in ['submission', 'jobId', 'taskId', 'state', 'lfn']:
             self.assertEqual(runJob3.data[key], runJob.data[key])
-        self.assertEqual(runJob3.data['startTime'], None )  
-        self.assertEqual(runJob3.data['stopTime'], strToTimestamp(tmpTime) )
-        self.assertEqual(runJob3.data['stageOutTime'], "1970-01-01 00:00:00" )
+        self.assertEqual(runJob3.data['startTime'], 0 ) 
+        self.assertEqual(runJob3.data['stopTime'], tmpTime )
         
         # What happens if you load a non-existant job?
         # Note: This test works, but it makes a mess, so I commented it out

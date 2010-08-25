@@ -5,13 +5,25 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.8 2009/11/24 21:38:49 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.9 2009/12/07 19:01:59 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
+import os
 
 from WMCore.Agent.Configuration import Configuration
 
+
 config = Configuration()
+
+config.section_("CoreDatabase")
+if (os.getenv('DATABASE') == None):
+    raise RuntimeError, \
+          "You must set the DATABASE environment variable to run tests"
+config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+config.CoreDatabase.dialect = os.getenv('DIALECT', None)
+config.CoreDatabase.socket = os.getenv("DBSOCK")
+
+
 config.component_("DBSUpload")
 #The log level of the component. 
 config.DBSUpload.logLevel = 'DEBUG'

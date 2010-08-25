@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.36 2009/09/29 15:39:07 mnorman Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.37 2009/10/05 18:08:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import threading
 
@@ -16,7 +16,7 @@ from WMCore.WMExceptions import WMEXCEPTION
 from WMCore.JobStateMachine.Transitions import Transitions
 
 class CreateWMBSBase(DBCreator):
-    def __init__(self, logger = None, dbi = None):
+    def __init__(self, logger = None, dbi = None, params = None):
         """
         _init_
 
@@ -217,7 +217,7 @@ class CreateWMBSBase(DBCreator):
              couch_record VARCHAR(255),
              location     INTEGER,
              outcome      INTEGER       DEFAULT 0,
-             cache_dir    VARCHAR(255)  DEFAULT 'None', 
+             cache_dir    VARCHAR(255)  DEFAULT 'None',
              UNIQUE(name),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE,

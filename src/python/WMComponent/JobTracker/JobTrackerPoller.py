@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.10 2010/05/28 16:32:47 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.11 2010/06/01 16:13:02 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 import logging
@@ -110,14 +110,15 @@ class JobTrackerPoller(BaseWorkerThread):
         
         jobDictList = []
         for job in jobList:
-            jobDictList.append({'jobid': job})
+            jobDictList.append({'id': job})
 
-        locListAction = self.daoFactory(classname = "Jobs.GetLocation")
-        locDict = locListAction.execute(jobid = jobDictList)
+        #locListAction = self.daoFactory(classname = "Jobs.GetLocation")
+        #locDict = locListAction.execute(jobid = jobDictList)
         #logging.error("Have locations in trackJobs")
         #logging.error(locDict)
 
-        trackDict = self.getInfo(locDict)
+        #trackDict = self.getInfo(locDict)
+        trackDict = self.getInfo(jobDictList)
 
         #logging.error("Have info")
         #logging.info(trackDict)
@@ -193,16 +194,40 @@ class JobTrackerPoller(BaseWorkerThread):
         #Kill them on the system
         self.trackerInst.kill(failedJobs)
 
+        # Load DAOs
+        setFWJRAction = self.daoFactory(classname = "Jobs.SetFWJRPath")
+        loadAction    = self.daoFactory(classname = "Jobs.LoadFromID")
+
         #Mark 'em as failed
         listOfJobs = []
+        binds      = []
+        jrBinds    = []
         for jobID in failedJobs:
-            job = Job(id = jobID)
-            job.load()
-            listOfJobs.append(job)
-            job.setFWJRPath(os.path.join(job.getCache(),
-                                         'Report.%i.pkl' % (job['retry_count'])))
+            binds.append({"jobid": jobID})
+            
+        results = loadAction.execute(jobID = binds)
 
+        for entry in results:
+            # One job per entry
+            tmpJob = Job(id = entry['id'])
+            tmpJob.update(entry)
+            listOfJobs.append(tmpJob)
+
+
+        for job in listOfJobs:
+            jrPath = os.path.join(job.getCache(),
+                                  'Report.%i.pkl' % (job['retry_count']))
+            jrBinds.append({'jobid': jobID, 'fwjrpath': jrPath})
+            #job.setFWJRPath(os.path.join(job.getCache(),
+            #                             'Report.%i.pkl' % (job['retry_count'])))
+
+        
+        # Set all paths at once
+        myThread.transaction.begin()
+        setFWJRAction.execute(binds = jrBinds)
+        
         self.changeState.propagate(listOfJobs, 'jobfailed', 'executing')
+        myThread.transaction.commit()
 
 
         return
@@ -223,19 +248,34 @@ class JobTrackerPoller(BaseWorkerThread):
         #I've got no idea how we want to do this.
         
         #Mark 'em as complete
-        listOfJobs = []
+        loadAction    = self.daoFactory(classname = "Jobs.LoadFromID")
+        setFWJRAction = self.daoFactory(classname = "Jobs.SetFWJRPath")
+
+        binds = []
         for jobID in passedJobs:
-            job = Job(id = jobID)
-            job.load()
-            listOfJobs.append(job)
-            job.setFWJRPath(os.path.join(job.getCache(),
-                                         'Report.%i.pkl' % (job['retry_count'])))
+            binds.append({"jobid": jobID})
+            
+        results = loadAction.execute(jobID = binds)
+        
+        listOfJobs = []
+        jrBinds    = []
+        for entry in results:
+            # One job per entry
+            tmpJob = Job(id = entry['id'])
+            tmpJob.update(entry)
+            listOfJobs.append(tmpJob)
 
-            #logging.error("Job %i has finished on site" %(jobID))
+        for job in listOfJobs:
+            jrPath = os.path.join(job.getCache(),
+                                  'Report.%i.pkl' % (job['retry_count']))
+            jrBinds.append({'jobid': jobID, 'fwjrpath': jrPath})
 
+        # Set all binds at once
         myThread.transaction.begin()
+        setFWJRAction.execute(binds = jrBinds)
+
+
         logging.info("Propagating jobs in jobTracker")
-        #logging.error(listOfJobs)
         self.changeState.propagate(listOfJobs, 'complete', 'executing')
         myThread.transaction.commit()
 

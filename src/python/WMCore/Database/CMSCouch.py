@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.56 2010/04/22 15:58:00 metson Exp $"
-__version__ = "$Revision: 1.56 $"
+__revision__ = "$Id: CMSCouch.py,v 1.57 2010/04/26 21:38:29 metson Exp $"
+__version__ = "$Revision: 1.57 $"
 
 try:
     # Python 2.6
@@ -130,16 +130,19 @@ class Database(CouchDBRequests):
         """
         self._queue = []
 
-    def timestamp(self, data):
+    def timestamp(self, data, label=''):
         """
         Time stamp each doc in a list 
         """
+        if label == True:
+            label = 'timestamp'
+        
         if type(data) == type({}):
-            data['timestamp'] = str(datetime.datetime.now())
+            data[label] = str(datetime.datetime.now())
         else:
             for doc in data:
-                if 'timestamp' not in doc.keys():
-                    doc['timestamp'] = str(datetime.datetime.now())
+                if label not in doc.keys():
+                    doc[label] = str(datetime.datetime.now())
         return data
 
     def queue(self, doc, timestamp = False, viewlist=[]):
@@ -150,14 +153,14 @@ class Database(CouchDBRequests):
         it was committed
         """
         if timestamp:
-            self.timestamp(doc)
+            self.timestamp(doc, timestamp)
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print 'queue larger than %s records, committing' % self._queue_size
             self.commit(viewlist=viewlist)
         self._queue.append(doc)
 
-    def queueDelete(self, doc):
+    def queueDelete(self, doc, viewlist=[]):
         """
         Queue up a document for deletion
         """
@@ -173,7 +176,7 @@ class Database(CouchDBRequests):
         """
         uri  = '/%s/_bulk_docs/' % self.name
         if timestamp:
-            self.timestamp(doc)
+            self.timestamp(doc, timestamp)
             
         data = {'docs': [doc]}
         retval = self.post(uri , data)
@@ -196,13 +199,16 @@ class Database(CouchDBRequests):
             self.queue(doc, timestamp, viewlist)
             
         if timestamp:
-            self.timestamp(self._queue)
+            self.timestamp(self._queue, timestamp)
         # commit in thread to avoid blocking others
         uri  = '/%s/_bulk_docs/' % self.name
         
         data = {'docs': list(self._queue)}
         retval = self.post(uri , data)
         self._reset_queue()
+        for v in viewlist:
+            design, view = v.split('/')
+            self.loadView(design, view)
         return retval
 
     def document(self, id):

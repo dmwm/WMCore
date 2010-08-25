@@ -25,26 +25,23 @@ class Requests(dict):
         self.setdefault("host", url)
         self.setdefault("conn", self._getURLOpener())
 
-    def get(self, uri=None, data=None, encode = True, decode=True):
-        """
-        Get a document of known id
-        """
+    def get(self, uri=None, data={}, encode = True, decode=True):
         data = self.makeRequest(uri, data, 'GET', encode, decode)
         return data
 
-    def post(self, uri=None, data=None, encode = True, decode=True):
+    def post(self, uri=None, data={}, encode = True, decode=True):
         """
         POST some data
         """
         return self.makeRequest(uri, data, 'POST', encode, decode)
 
-    def put(self, uri=None, data=None, encode = True, decode=True):
+    def put(self, uri=None, data={}, encode = True, decode=True):
         """
         PUT some data
         """
         return self.makeRequest(uri, data, 'PUT', encode, decode)
        
-    def delete(self, uri=None, data=None, encode = True, decode=True):
+    def delete(self, uri=None, data={}, encode = True, decode=True):
         """
         DELETE some data
         """
@@ -87,7 +84,7 @@ class Requests(dict):
                 # self.encode
                 encoded_data = self.encode(data)
             headers["Content-length"] = len(encoded_data)
-        elif verb == 'GET' and lendata:
+        elif verb == 'GET' and data:
             #encode the data as a get string
             uri = "%s?%s" % (uri, urllib.urlencode(data))
             

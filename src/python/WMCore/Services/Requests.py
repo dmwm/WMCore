@@ -25,30 +25,30 @@ class Requests(dict):
         self.setdefault("host", url)
         self.setdefault("conn", self._getURLOpener())
 
-    def get(self, uri=None, data=None, encoder = None, decoder=None):
+    def get(self, uri=None, data=None, encode = True, decode=True):
         """
         Get a document of known id
         """
-        data = self.makeRequest(uri, data, 'GET', encoder, decoder)
+        data = self.makeRequest(uri, data, 'GET', encode, decode)
         return data
 
-    def post(self, uri=None, data=None, encoder = None, decoder=None):
+    def post(self, uri=None, data=None, encode = True, decode=True):
         """
         POST some data
         """
-        return self.makeRequest(uri, data, 'POST', encoder, decoder)
+        return self.makeRequest(uri, data, 'POST', encode, decode)
 
-    def put(self, uri=None, data=None, encoder = None, decoder=None):
+    def put(self, uri=None, data=None, encode = True, decode=True):
         """
         PUT some data
         """
-        return self.makeRequest(uri, data, 'PUT', encoder, decoder)
+        return self.makeRequest(uri, data, 'PUT', encode, decode)
        
-    def delete(self, uri=None, data=None, encoder = None, decoder=None):
+    def delete(self, uri=None, data=None, encode = True, decode=True):
         """
         DELETE some data
         """
-        return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
+        return self.makeRequest(uri, data, 'DELETE', encode, decode)
 
     def makeRequest(self, uri=None, data=None, type='GET',
                      encode=True, decode=True):

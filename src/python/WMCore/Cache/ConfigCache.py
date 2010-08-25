@@ -8,10 +8,11 @@
 
 
 import WMCore.Database.CMSCouch as CMSCouch
+#import WMCore.Database.CMSCouch.Document as Document
 import urllib
 import md5
-__revision__ = "$Id: ConfigCache.py,v 1.7 2009/07/09 23:57:32 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ConfigCache.py,v 1.8 2009/07/13 18:59:12 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 
 class WMConfigCache:
     ''' 
@@ -66,7 +67,7 @@ class WMConfigCache:
         if (len(viewresult[u'rows']) == 0):
             # the config we want doesn't exist in the database, create it
 
-            document    = CMSCouch.makeDocument({ "md5_hash": configMD5 })
+            document    = CMSCouch.Document(None,{ "md5_hash": configMD5 })
             commitInfo = self.database.commitOne( document )
             if (commitInfo[u'ok'] != True):
                 raise RuntimeError
@@ -179,8 +180,10 @@ class WMConfigCache:
     
     def wrapView(self, viewdata):
         '''converts the view return values into Document objects'''
+        print viewdata
+        print viewdata.__class__
         for row in viewdata[u'rows']:
-            row = CMSCouch.makeDocument(row)
+            row = CMSCouch.Document(None,row)
         return viewdata
     
     def searchByMD5(self, md5hash):

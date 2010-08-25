@@ -5,9 +5,10 @@ _BulkNewReturn_
 MySQL implementation of JobGroup.BulkNewReturn
 """
 
-__all__ = []
-__revision__ = "$Id: BulkNewReturn.py,v 1.2 2010/03/08 16:31:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: BulkNewReturn.py,v 1.3 2010/03/11 19:27:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
+
+import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,7 +19,7 @@ class BulkNewReturn(DBFormatter):
     """
     sql = """INSERT INTO wmbs_jobgroup (subscription, uid, output,
              last_update) VALUES (:subscription, :guid, :output,
-             unix_timestamp())"""
+             :timestamp)"""
 
     returnSQL = """SELECT id AS id, uid AS guid FROM wmbs_jobgroup
                    WHERE subscription = :subscription
@@ -31,16 +32,22 @@ class BulkNewReturn(DBFormatter):
         instead of the original inputs
 
         """
-
-        binds = []
+        timestamp = int(time.time())
+        insertBinds = []
+        returnBinds = []
         for entry in bulkInput:
-            binds.append({'subscription': entry['subscription'],
-                          'guid': entry['uid'],
-                          'output': entry['output']})
+            insertBinds.append({'subscription': entry['subscription'],
+                                'guid': entry['uid'],
+                                'output': entry['output'],
+                                'timestamp': timestamp})
+            returnBinds.append({'subscription': entry['subscription'],
+                                'guid': entry['uid'],
+                                'output': entry['output']})
 
-        self.dbi.processData(self.sql, binds, conn = conn,
+                                
+        self.dbi.processData(self.sql, insertBinds, conn = conn,
                              transaction = transaction)
-        result = self.dbi.processData(self.returnSQL, binds,
+        result = self.dbi.processData(self.returnSQL, returnBinds,
                                       conn = conn,
                                       transaction = transaction)
 

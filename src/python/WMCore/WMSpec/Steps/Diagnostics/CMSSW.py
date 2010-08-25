@@ -69,13 +69,13 @@ class CMSRunHandler(DiagnosticHandler):
             reportStep.status = self.code
 
 
-        errLog = os.path.join(os.path.basename(jobRepXml),
+        errLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stderr.log' % (executor.step.name()))
 
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
             msg += '\n Adding last ten lines of error report\n'
-            msg += logTail
+            msg += "".join(logTail)
                 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
@@ -110,6 +110,16 @@ class EDMExceptionHandler(DiagnosticHandler):
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)
 
+
+        addOn = '\n'
+        if os.path.exists(errLog):
+            logTail = BasicAlgos.tail(errLog, 10)
+            addOn += '\nAdding last ten lines of error report\n'
+            addOn += "".join(logTail)
+        else:
+            logging.error("No stderr from CMSSW")
+            logging.error(os.listdir(os.path.basename(jobRepXml)))
+
         if not os.path.exists(jobRepXml):
             # no report => Error
             msg = "No Job Report Found: %s" % jobRepXml
@@ -129,6 +139,7 @@ class EDMExceptionHandler(DiagnosticHandler):
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
             msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
+            msg += addOn
             executor.report.addError(executor.step._internal_name,
                                      50116, "MissingErrorReport", msg)
             return
@@ -137,8 +148,15 @@ class EDMExceptionHandler(DiagnosticHandler):
             #check exit code in report is non zero
             if executor.report.report.status == 0:
                 msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
+                msg += addOn
                 executor.report.addError(executor.step._internal_name,
                                          50116, "MissingErrorReport", msg)
+
+            else:
+                msg = "Adding extra error in order to hold error report"
+                msg += addOn
+                executor.report.addError(executor.step._internal_name,
+                                         99999, "ErrorLoggingAddition", msg)
         return
 
 

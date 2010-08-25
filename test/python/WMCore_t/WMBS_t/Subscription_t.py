@@ -1327,8 +1327,36 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(testFileC.exists(), False)
         self.assertEqual(testFileD.exists(), 4)
         
+    def testIsFileCompleted(self):
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         
+        testSubscription.create()
 
-    
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+        
+        testSubscription.completeFiles([testFileA, testFileC])
+        
+        assert testSubscription.isFileCompleted(testFileA) == True,\
+            "ERROR: file A should be completed"
+        assert testSubscription.isFileCompleted([testFileA, testFileC]) == True,\
+            "ERROR: file A, C should be completed"
+        assert testSubscription.isFileCompleted([testFileA, 
+                                                 testFileB, 
+                                                 testFileC]) == False, \
+            "ERROR: file A, B, C shouldn't be completed"
+        
+        assert testSubscription.isFileCompleted(testFileB) == False, \
+            "ERROR: file B shouldn't be completed"
+
+        testSubscription.delete()
+        testWorkflow.delete()
+        testFileset.delete()
+        testFileA.delete()
+        testFileB.delete()
+        testFileC.delete()        
+        return    
 
 if __name__ == "__main__":
     unittest.main()

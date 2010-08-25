@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.20 2010/07/30 19:58:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.21 2010/07/30 20:37:00 sryu Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import re
 import os
@@ -91,11 +91,18 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         retrieve list of url for workloads.
         """
         results = []
-
-        for team in [x.strip() for x in self.wq.params['Teams'].split(',')]:
+        for team in self.wq.params['Teams']:
             temp = self.reqMgr.getAssignment(team)
             results.extend([(team, y, z) for y, z in temp.items()])
         return results
+
+    # Reuse this when bulk updates supported
+#    def sendConfirmationToReqMgr(self, requestNames):
+#        """
+#        """
+#        #TODO: allow bulk post
+#        for requestName in requestNames:
+#            result = self.reqMgr.postAssignment(requestName)
 
     def reportToReqMgr(self):
         """Report request status to ReqMgr"""

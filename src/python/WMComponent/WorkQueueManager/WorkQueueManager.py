@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: WorkQueueManager.py,v 1.6 2010/03/03 17:53:51 swakef Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkQueueManager.py,v 1.7 2010/03/24 14:27:45 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import logging
 import threading
@@ -104,17 +104,33 @@ class WorkQueueManager(Harness):
         pollInterval = self.config.WorkQueueManager.pollInterval
 
         # Update Locations 
-        myThread.workerThreadManager.addWorker(WorkQueueManagerLocationPoller(self.wq), self.wq.params['LocationRefreshInterval'])
+        self.wq.params.setdefault('LocationRefreshInterval', pollInterval)
+        myThread.workerThreadManager.addWorker(
+                                    WorkQueueManagerLocationPoller(self.wq), 
+                                    self.wq.params['LocationRefreshInterval'])
         # Get work from ReqMgr & flush expired negotiations
         if self.config.WorkQueueManager.level == 'GlobalQueue':
-            myThread.workerThreadManager.addWorker(WorkQueueManagerFlushPoller(self.wq), self.wq.params['NegotiationTimeout'])
-            myThread.workerThreadManager.addWorker(WorkQueueManagerReqMgrPoller(self.reqMgr, self.wq, getattr(self.config.WorkQueueManager, 'reqMgrConfig', {})), pollInterval)
+            myThread.workerThreadManager.addWorker(
+                                WorkQueueManagerFlushPoller(self.wq), 
+                                self.wq.params['NegotiationTimeout'])
+            myThread.workerThreadManager.addWorker(
+                                WorkQueueManagerReqMgrPoller(
+                                        self.reqMgr, 
+                                        self.wq, 
+                                        getattr(self.config.WorkQueueManager, 
+                                                'reqMgrConfig', {})
+                                        ),
+                                 pollInterval)
         # If we have a parent we need to get work and report back
         if self.wq.params['ParentQueue']:
             # Get work from RequestManager or parent
-            myThread.workerThreadManager.addWorker(WorkQueueManagerWorkPoller(self.wq), pollInterval)
+            myThread.workerThreadManager.addWorker(
+                             WorkQueueManagerWorkPoller(self.wq), 
+                             pollInterval)
             # Report to parent queue
-            myThread.workerThreadManager.addWorker(WorkQueueManagerReportPoller(self.wq), self.wq.params['ReportInterval'])
+            myThread.workerThreadManager.addWorker(
+                            WorkQueueManagerReportPoller(self.wq),
+                            self.wq.params['ReportInterval'])
 
         return
 

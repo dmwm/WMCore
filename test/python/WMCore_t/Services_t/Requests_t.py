@@ -7,6 +7,7 @@ import unittest
 import WMCore.Services.Requests as Requests
 import os
 import threading
+import time
 import pprint
 import tempfile
 import shutil
@@ -24,6 +25,9 @@ from WMCore.WMBS.Job import Job as WMBSJob
 from WMQuality.TestInit import TestInit
 import WMCore.Database.CMSCouch as CMSCouch
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
+from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+
 
 def runboth(testcase):
     """
@@ -89,11 +93,11 @@ class testRequestExceptions(unittest.TestCase):
         req = Requests.Requests(endp, self.request_dict)
         for v in ['GET', 'POST']:
             self.assertRaises(HTTPException, req.makeRequest, url, verb=v)
-            try:
-                req.makeRequest(url, verb='GET')
-            except HTTPException, e:
-                #print e
-                self.assertEqual(e.status, 404)
+        try:
+            req.makeRequest(url, verb='GET')
+        except HTTPException, e:
+            #print e
+            self.assertEqual(e.status, 404)
 
 # comment out so we don't ddos someone else's server
 #    def test408Error(self):
@@ -105,6 +109,34 @@ class testRequestExceptions(unittest.TestCase):
 #                          incoming_headers = {'cache-control': 'no-cache'})
 
 
+        
+class testRepeatCalls(RESTBaseUnitTest):
+    def initialize(self):
+        self.config = DefaultConfig()
+        self.config.UnitTests.templates = os.environ['WMCORE_ROOT'] + '/src/templates/WMCore/WebTools'
+        self.urlbase = self.config.getServerUrl()
+        
+    def test10Calls(self):
+        fail_count = 0
+        req = Requests.Requests(self.urlbase)
+        
+        for i in range(0, 10):
+            print 'test %s starting at %s' % (i, time.time())
+            try:
+                result = req.get('/', incoming_headers={'Cache-Control':'no-cache'})
+                assert False == result[3]
+                assert 200 == result[1]
+                time.sleep(i*5)
+            except HTTPException, he:
+                print 'test %s raised a %s error' % (i, he.status)
+                fail_count += 1
+            except Exception, e:
+                print 'test %s raised an unexpected exception of type %s' % (i,type(e))
+                print e
+                fail_count += 1
+        if fail_count > 0:
+            raise Exception('Test did not pass!')
+            
 class testJSONRequests(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)

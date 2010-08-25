@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 
                                                                                                                                                                                                                                                                                                                                                                                                           """
-__revision__ = "$Id: SetBlockStatus.py,v 1.2 2009/09/03 15:23:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.3 2009/09/03 16:55:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -17,7 +17,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 
 class SetBlockStatus(DBFormatter):
-    sql = """INSERT INTO dbsbuffer_block (blockname, location) VALUES
+    sql = """INSERT INTO dbsbuffer_block (blockname, location) 
                SELECT :block, id AS location FROM dbsbuffer_location
                WHERE se_name = :location AND NOT EXISTS
                  (SELECT * FROM dbsbuffer_block WHERE blockname = :block AND

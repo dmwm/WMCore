@@ -6,10 +6,11 @@ MySQL implementation of BossLite.Job.SelectJob
 """
 
 __all__ = []
-__revision__ = "$Id: SelectJob.py,v 1.1 2010/04/09 19:49:09 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SelectJob.py,v 1.2 2010/05/09 14:57:14 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.BossLite.Common.System import strToList, listToStr
 
 class SelectJob(DBFormatter):
     sql = """SELECT id as id, job_id as jobId, task_id as taskId,
@@ -20,10 +21,10 @@ class SelectJob(DBFormatter):
                 dls_destination as dlsDestination, submission_number as submissionNumber,
                 closed as closed
                 FROM bl_job
-                WHERE %s = :value
+                WHERE %s
                 """
 
-    def format(self, res):
+    def postFormat(self, res):
         """
         Format the results into the right output
         """
@@ -42,9 +43,9 @@ class SelectJob(DBFormatter):
             result['standardInput']    = entry['standardinput']
             result['standardOutput']   = entry['standardoutput']
             result['standardError']    = entry['standarderror']
-            result['inputFiles']       = entry['inputfiles']
-            result['outputFiles']      = entry['outputfiles']
-            result['dlsDestination']   = entry['dlsdestination']
+            result['inputFiles']       = strToList(entry['inputfiles'])
+            result['outputFiles']      = strToList(entry['outputfiles'])
+            result['dlsDestination']   = strToList(entry['dlsdestination'])
             result['submissionNumber'] = entry['submissionnumber']
             result['closed']           = entry['closed']
 
@@ -52,17 +53,23 @@ class SelectJob(DBFormatter):
 
         return final
 
-    def execute(self, column, value, conn = None, transaction = False):
+    def execute(self, binds, conn = None, transaction = False):
         """
         Load everything using the database ID
         """
-        if type(value) == list:
-            binds = value
-        else:
-            binds = {'value': value}
-
-        sql = self.sql %(column)
         
-        result = self.dbi.processData(sql, binds, conn = conn,
+        whereStatement = []
+        
+        for x in binds:
+            if type(binds[x]) == str :
+                whereStatement.append( "%s = '%s'" % (x, binds[x]) )
+            else:
+                whereStatement.append( "%s = %s" % (x, binds[x]) )
+                
+        whereClause = ' AND '.join(whereStatement)
+
+        sqlFilled = self.sql % (whereClause)
+        
+        result = self.dbi.processData(sqlFilled, {}, conn = conn,
                                       transaction = transaction)
-        return self.format(result)
+        return self.postFormat(result)

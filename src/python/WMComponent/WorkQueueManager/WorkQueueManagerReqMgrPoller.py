@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.23 2010/08/04 21:35:59 sryu Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.24 2010/08/05 15:06:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import re
 import os
@@ -49,14 +49,15 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     self.wq.logger.info("Processing request %s" % reqName)
                     wmspec = WMWorkloadHelper()
                     wmspec.load(workLoadUrl)
-                    units = self.wq._splitWork(wmspec)
-                    
+
                     if self.wq._insertWMSpec(wmspec):
                         # check whether there is duplicate wmspec. 
                         # If there is, log the error message and continue 
                         self.wq.logger.error("Error: There are duplicate wmspec: %s" 
                                              % wmspec.name())
                         continue
+
+                    units = self.wq._splitWork(wmspec)
                     
                     # Process each request in a transaction - isolate bad req's
                     with self.wq.transactionContext():

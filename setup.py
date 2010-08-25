@@ -56,7 +56,7 @@ def runUnitTests():
     # todo: not portable
     testspypath = os.path.join([mydir, 'test','python'])
     srcpypath = os.path.join([mydir, 'src','python']) 
-    print "src path %s test: %s" % (srcpypath, testpypath)
+    print "src path %s test: %s" % (srcpypath, testspypath)
     sys.path.append(testspypath)
     sys.path.append(srcpypath)
     

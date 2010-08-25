@@ -5,10 +5,9 @@ _FileAndEventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FileAndEventBased_t.py,v 1.8 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: FileAndEventBased_t.py,v 1.9 2009/12/16 17:45:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from sets import Set
 import unittest
 import os
 import threading
@@ -58,7 +57,7 @@ class FileAndEventBasedTest(unittest.TestCase):
         self.multipleFileFileset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 150,
-                           locations = Set(["somese.cern.ch"]))
+                           locations = set(["somese.cern.ch"]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
@@ -66,7 +65,7 @@ class FileAndEventBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/single/file/name", size = 1000, events = 100,
-                       locations = Set(["somese.cern.ch"]))
+                       locations = set(["somese.cern.ch"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -74,7 +73,7 @@ class FileAndEventBasedTest(unittest.TestCase):
         self.zeroEventFileset = Fileset(name = "TestFileset3")
         self.zeroEventFileset.create()
         zeroEventFile = File("/some/file/name", size = 1000, events = 0,
-                             locations = Set(["somese.cern.ch"]))
+                             locations = set(["somese.cern.ch"]))
         zeroEventFile.create()
         self.zeroEventFileset.addFile(zeroEventFile)
         self.zeroEventFileset.commit()        

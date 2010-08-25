@@ -1,8 +1,14 @@
+#!/usr/bin/env python
 """
+_GetRunLumiFile_
+
 MySQL implementation of GetRunLumiFile
 """
+
+__revision__ = "$Id: GetRunLumiFile.py,v 1.3 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
-from sets import Set
 
 class GetRunLumiFile(DBFormatter):
     sql = """select flr.run as run, flr.lumi as lumi

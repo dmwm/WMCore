@@ -10,7 +10,6 @@ import threading
 import pprint
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
-from sets import Set
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.JobPackage import JobPackage
@@ -34,13 +33,13 @@ class testJSONRequests(unittest.TestCase):
         self.assertEqual( data, decoded )
     
     def testSet1(self):
-        self.roundTrip(Set([]))
+        self.roundTrip(set([]))
     def testSet2(self):
-        self.roundTrip(Set([1,2,3,4,Run(1)]))
+        self.roundTrip(set([1,2,3,4,Run(1)]))
     def testSet3(self):
-        self.roundTrip(Set(['a','b','c','d']))
+        self.roundTrip(set(['a','b','c','d']))
     def testSet4(self):
-        self.roundTrip(Set([1,2,3,4,'a','b']))
+        self.roundTrip(set([1,2,3,4,'a','b']))
     def testRun1(self):
         self.roundTrip(Run(1))
     def testRun2(self):

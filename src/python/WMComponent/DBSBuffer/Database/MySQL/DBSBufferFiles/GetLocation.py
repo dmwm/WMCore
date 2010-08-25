@@ -1,8 +1,14 @@
+#!/usr/bin/env python
 """
+_GetLocation_
+
 MySQL implementation of File.GetLocation
 """
+
+__revision__ = "$Id: GetLocation.py,v 1.3 2009/12/16 17:45:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
-from sets import Set
 
 class GetLocation(DBFormatter):
     sql = """select se_name from dbsbuffer_location 
@@ -19,7 +25,7 @@ class GetLocation(DBFormatter):
     
     def format(self, result):
         "Return a list of SE FQDN's"
-        out = Set()
+        out = set()
         for r in result:
             for i in r.fetchall():
                 out.add(i[0])

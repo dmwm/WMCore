@@ -5,10 +5,9 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.7 2009/10/13 22:42:55 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: FileBased_t.py,v 1.8 2009/12/16 17:45:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
-from sets import Set
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -138,7 +137,7 @@ class FileBasedTest(unittest.TestCase):
         assert len(jobGroups[0].jobs) == 5, \
                "ERROR: JobFactory didn't create two jobs."
 
-        fileSet = Set()
+        fileSet = set()
         for job in jobGroups[0].jobs:
             assert len(job.getFiles(type = "set")) == 2, \
                    "ERROR: Job contains incorrect number of files."

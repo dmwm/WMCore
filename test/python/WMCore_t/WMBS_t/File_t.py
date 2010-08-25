@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.34 2009/12/15 15:18:22 mnorman Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: File_t.py,v 1.35 2009/12/16 17:45:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import unittest
 import logging
@@ -14,7 +14,6 @@ import os
 import commands
 import threading
 import random
-#from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory

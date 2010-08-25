@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.33 2009/11/05 15:17:40 sryu Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: JobGroup.py,v 1.34 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -52,7 +52,6 @@ from WMCore.WMBS.Subscription import Subscription
 
 from WMCore.Services.UUID import makeUUID
 
-from sets import Set
 import logging
 import threading
 

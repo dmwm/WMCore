@@ -6,7 +6,6 @@ Testcase for the Job class.
 """
 
 import unittest, logging, random, time
-from sets import Set
 
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.Fileset import Fileset
@@ -43,7 +42,7 @@ class JobTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn = lfn, size = size, events = events, cksum = 1)
+            file = File(lfn = lfn, size = size, events = events, checksums = {"cksum": "1"})
             file.addRun(Run(run, *[lumi]))
             self.inputFiles.append(file)
 
@@ -75,7 +74,7 @@ class JobTest(unittest.TestCase):
         Verify that the Job::getFiles(type = "set") method returns the correct
         input files in the form of a set.
         """
-        assert self.dummyJob.getFiles(type = "set") == Set(self.inputFiles), \
+        assert self.dummyJob.getFiles(type = "set") == set(self.inputFiles), \
             "ERROR: getFiles(type = 'set') does not work correctly."
 
         return

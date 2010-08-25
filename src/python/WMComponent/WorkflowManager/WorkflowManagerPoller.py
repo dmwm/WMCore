@@ -6,12 +6,11 @@ The actual subscription creation algorithm
 __all__ = []
 __revision__ = "$Id: WorkflowManagerPoller.py,v 1.6 \
             2009/07/27 23:21:44 riahi Exp $"
-__version__ = "$Revision: 1.6 $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
 import re
-#from sets import Set
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 

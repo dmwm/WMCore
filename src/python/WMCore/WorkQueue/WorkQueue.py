@@ -9,14 +9,10 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.46 2009/12/15 22:00:51 sryu Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: WorkQueue.py,v 1.47 2009/12/16 17:45:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.47 $"
 
 # pylint: disable-msg = W0104, W0622
-try:
-    set
-except NameError:
-    from sets import Set as set
 # pylint: enable-msg = W0104, W0622
 
 import uuid

@@ -1,9 +1,11 @@
-'''
-Created on Jul 15, 2009
+#!/usr/bin/env python
+"""
+_Transitions_
 
-@author: meloam
-'''
-from sets import Set
+Controls what state transitions are allowed.
+"""
+
+
 class Transitions(dict):
     """
     All allowed state transitions in the JSM.
@@ -29,7 +31,7 @@ class Transitions(dict):
         Return a list of all known states, derive it in case we add new final
         states other than cleanout.
         """
-        knownstates = Set(self.keys())
+        knownstates = set(self.keys())
         for possiblestates in self.values():
             for i in possiblestates:
                 knownstates.add(i)

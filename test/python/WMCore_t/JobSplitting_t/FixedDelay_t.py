@@ -5,10 +5,9 @@ _FixedDelay_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FixedDelay_t.py,v 1.2 2009/10/13 22:42:55 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FixedDelay_t.py,v 1.3 2009/12/16 17:45:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
-from sets import Set
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -173,7 +172,7 @@ class FixedDelayTest(unittest.TestCase):
                            self.singleFileSubscription.availableFiles())
         jobFactory = splitter(self.singleFileSubscription)
         jobGroups = jobFactory(trigger_time = 1)
-        self.assertEquals(jobGroups, [], "Should have returned a null set")
+        self.assertEquals(jobGroups, [], "Should have returned a null set: %s" % jobGroups)
         
         self.multipleFileSubscription.acquireFiles(
                            self.multipleFileSubscription.availableFiles())

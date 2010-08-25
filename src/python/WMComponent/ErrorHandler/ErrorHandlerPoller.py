@@ -4,13 +4,12 @@
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.4 2009/10/15 20:24:27 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ErrorHandlerPoller.py,v 1.5 2009/12/16 17:45:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
 import re
-from sets import Set
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 

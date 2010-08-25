@@ -5,10 +5,9 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.8 2009/10/27 09:02:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: EventBased_t.py,v 1.9 2009/12/16 17:45:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from sets import Set
 import unittest
 import os
 import threading
@@ -57,7 +56,7 @@ class EventBasedTest(unittest.TestCase):
         self.multipleFileFileset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = Set(["somese.cern.ch"]))
+                           locations = set(["somese.cern.ch"]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
@@ -65,7 +64,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = Set(["somese.cern.ch"]))
+                       locations = set(["somese.cern.ch"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()

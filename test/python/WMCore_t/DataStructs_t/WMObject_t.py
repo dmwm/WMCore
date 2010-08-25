@@ -8,7 +8,6 @@ Testcase for the WMObject class
 
 import unittest
 from WMCore.DataStructs.WMObject import WMObject
-from sets import Set
 from unittest import TestCase
 
 class WMObjectTest(unittest.TestCase):
@@ -59,13 +58,13 @@ class WMObjectTest(unittest.TestCase):
         """
         dummyWMObject = WMObject()                
         #First case: Argument is already a Set
-        s = Set('1,2,3')
+        s = set('1,2,3')
         assert dummyWMObject.makeset(s) == s, \
                 'method makeset return value doesn\'t match ' \
                 '- list argument test'
         #Second case: Argument is not a list
         b = [1,2,3]
-        assert dummyWMObject.makeset(b) == Set(b), \
+        assert dummyWMObject.makeset(b) == set(b), \
             'method makeset return value doesn\'t match ' \
             '- common argument test'
 

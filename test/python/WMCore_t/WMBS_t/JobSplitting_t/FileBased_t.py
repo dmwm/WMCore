@@ -5,10 +5,9 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.7 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: FileBased_t.py,v 1.8 2009/12/16 17:45:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
-from sets import Set
 import unittest
 import os
 import threading
@@ -59,7 +58,7 @@ class FileBasedTest(unittest.TestCase):
         self.multipleFileFileset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = Set(["somese.cern.ch"]))
+                           locations = set(["somese.cern.ch"]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
@@ -67,7 +66,7 @@ class FileBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = Set(["somese.cern.ch"]))
+                       locations = set(["somese.cern.ch"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -77,12 +76,12 @@ class FileBasedTest(unittest.TestCase):
         self.multipleSiteFileset.create()
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = Set(["somese.cern.ch"]))
+                           locations = set(["somese.cern.ch"]))
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = Set(["otherse.cern.ch", "somese.cern.ch"]))
+                           locations = set(["otherse.cern.ch", "somese.cern.ch"]))
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()
@@ -141,7 +140,7 @@ class FileBasedTest(unittest.TestCase):
         testFileset.create()
         for i in range(1000):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = Set(["somese.cern.ch"]))
+                           locations = set(["somese.cern.ch"]))
             newFile.create()
             testFileset.addFile(newFile)
         testFileset.commit()
@@ -303,13 +302,6 @@ class FileBasedTest(unittest.TestCase):
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 500)
-
-        stats = hotshot.stats.load("hotshot.stats")
-        stats.strip_dirs()
-        stats.sort_stats('time', 'calls')
-        stats.print_stats(40)
-
-
 
         return
 

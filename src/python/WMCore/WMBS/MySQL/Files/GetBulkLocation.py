@@ -1,17 +1,20 @@
+#!/usr/bin/env python
 """
+_GetBulkLocation_
+
 MySQL implementation of File.GetBulkLocation
 """
+
+__revision__ = "$Id: GetBulkLocation.py,v 1.2 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
-from sets import Set
 
 class GetBulkLocation(DBFormatter):
-
     sql = """SELECT wmbs_location.site_name as site_name, :id as id  
                FROM wmbs_location
                WHERE wmbs_location.id IN (SELECT location FROM wmbs_file_location WHERE file = :id)
     """
-
-                    
     
     def getBinds(self, files=None):
         binds = []

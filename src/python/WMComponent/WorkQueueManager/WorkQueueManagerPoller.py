@@ -3,15 +3,14 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.1 2009/12/01 21:55:21 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.2 2009/12/16 17:45:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
 import re
 import os
 import os.path
-from sets import Set
 
 from subprocess import Popen, PIPE
 

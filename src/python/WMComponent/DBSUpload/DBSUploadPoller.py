@@ -3,15 +3,14 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.16 2009/12/15 15:37:26 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.17 2009/12/16 17:45:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import threading
 import logging
 import re
 import os
 import time
-#from sets import Set
 
 import inspect
 

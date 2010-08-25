@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import unittest, os, logging, commands, random, threading
-#from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
@@ -1078,8 +1077,6 @@ class SubscriptionTest(unittest.TestCase):
         
         """
         
-        #print "testGetNumberOfJobsPerSite"
-
         myThread = threading.currentThread()
 
         testSubscription, testFileset, testWorkflow, testFileA, testFileB, testFileC = self.createSubscriptionWithFileABC()

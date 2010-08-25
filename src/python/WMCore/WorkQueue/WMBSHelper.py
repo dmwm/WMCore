@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """
+_WMBSHelper_
+
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
-__revision__ = "$Id: WMBSHelper.py,v 1.12 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.12 $"
-from sets import Set
+
+__revision__ = "$Id: WMBSHelper.py,v 1.13 2009/12/16 17:45:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
@@ -91,7 +93,7 @@ class WMBSHelper:
                             events = dbsFile["NumberOfEvents"],
                             cksum = dbsFile["Checksum"],
                             parents = dbsFile["ParentList"],
-                            locations = Set(locations))
+                            locations = set(locations))
             wmbsFile.create()
             fileset.addFile(wmbsFile)
         fileset.commit()

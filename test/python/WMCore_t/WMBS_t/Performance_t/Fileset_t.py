@@ -22,8 +22,6 @@ import threading
 import random
 import time
 
-
-from sets import Set
 from WMCore.WMFactory import WMFactory
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase

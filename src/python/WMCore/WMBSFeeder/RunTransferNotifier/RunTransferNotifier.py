@@ -29,12 +29,10 @@ TODO:   * Make parent relations condition on actually requiring parent relation
         * DQ flags from DBS?
         * Finish tracking down DBS problems
 """
-__revision__ = "$Id: RunTransferNotifier.py,v 1.11 2008/11/04 11:02:10 jacksonj Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: RunTransferNotifier.py,v 1.12 2009/12/16 17:45:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import logging
-
-from sets import Set
 
 from WMCore.WMBSFeeder.RunTransferNotifier.DbsQueryHelper import DbsQueryHelper
 from WMCore.WMBSFeeder.RunTransferNotifier.PhEDExQueryHelper import PhEDExQueryHelper
@@ -64,7 +62,7 @@ class RunTransferNotifier(FeederImpl):
             Adds an entry to Dataset : CompleteLocation tracking
             """
             if not self.datasetCompletion.has_key(dataset):
-                self.datasetCompletion[dataset] = Set()
+                self.datasetCompletion[dataset] = set()
                 self.accessTime = int(time())
         
         def addCompletedNodes(self, dataset, nodes):
@@ -140,7 +138,7 @@ class RunTransferNotifier(FeederImpl):
                         self.dbsHelper.getFileInfo(watch.run, ds)
                         
                     # Now determine all required parent blocks
-                    parentBlocks = Set()
+                    parentBlocks = set()
                     if fileset.requireParents:
                         parentDs = self.dbsHelper.getParentDataset(ds)
                         parentBlocks = self.dbsHelper.getBlockInfo(watch.run,

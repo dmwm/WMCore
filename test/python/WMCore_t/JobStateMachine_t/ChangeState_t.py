@@ -19,7 +19,6 @@ from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
-from sets import Set
 import time
 import urllib
 

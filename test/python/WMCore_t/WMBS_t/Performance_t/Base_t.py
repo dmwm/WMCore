@@ -9,7 +9,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
-from sets import Set
 
 class BaseTest:
     """
@@ -109,7 +108,7 @@ class BaseTest:
         self.testJob = Job(name='TestJob',files=self.testFileset, logger=self.logger, dbfactory=self.dbf)
 
         #Creating mySQL JobGroup
-        testSet = Set()
+        testSet = set()
         testSet.add(self.testJob)
         self.testJobGroup = JobGroup(subscription=self.testSubscription, jobs=testSet)
 

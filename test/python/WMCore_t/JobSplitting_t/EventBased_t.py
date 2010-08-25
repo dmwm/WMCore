@@ -5,10 +5,9 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.8 2009/10/13 22:42:55 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: EventBased_t.py,v 1.9 2009/12/16 17:45:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from sets import Set
 import unittest
 
 from WMCore.DataStructs.File import File

@@ -23,12 +23,11 @@ from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 from WMCore.WMFactory import WMFactory
-from sets import Set
 
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.20 2009/10/13 23:00:07 meloam Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.21 2009/12/16 17:45:45 sfoulkes Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -76,7 +75,7 @@ class WMBSBase(Performance):
         filelist = self.genFileObjects(number)
 
 
-        setfiles = Set(filelist)
+        setfiles = set(filelist)
 
         fileset = Fileset(name = name+'Files',
                             files = setfiles)

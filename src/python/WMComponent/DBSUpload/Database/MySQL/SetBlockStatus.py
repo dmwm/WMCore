@@ -4,19 +4,15 @@ _DBSBuffer.SetBlockStatus_
 
 Create new block in dbsbuffer_block
 Update file to reflect block information
+"""
 
-                                                                                                                                                                                                                                                                                                                                                                                                          """
-__revision__ = "$Id: SetBlockStatus.py,v 1.9 2009/12/07 18:57:21 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
-__author__ = "mnorman@fnal.gov"
+__revision__ = "$Id: SetBlockStatus.py,v 1.10 2009/12/16 17:45:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import exceptions
 
-from sets import Set
-
 from WMCore.Database.DBFormatter import DBFormatter
-
 
 class SetBlockStatus(DBFormatter):
 
@@ -51,7 +47,7 @@ class SetBlockStatus(DBFormatter):
         """
         bindVars = []
 
-        locations = list(Set(locations))
+        locations = list(set(locations))
 
         
         #It gets a bit weird here.

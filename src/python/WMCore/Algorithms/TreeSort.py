@@ -12,15 +12,8 @@ Caveats:
   - Items declaring each other as parents are unsorteable
 """
 
-__revision__ = "$Id: TreeSort.py,v 1.3 2009/06/19 12:37:13 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
-
-# pylint: disable-msg=W0104,W0622
-try:
-    set
-except NameError:
-    from sets import Set as set
-# pylint: enable-msg=W0104,W0622
+__revision__ = "$Id: TreeSort.py,v 1.4 2009/12/16 17:45:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 class _SearchOp:
     """

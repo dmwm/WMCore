@@ -5,11 +5,10 @@ _SetLocation_
 MySQL implementation of Files.SetLocation
 """
 
-__revision__ = "$Id: SetLocation.py,v 1.11 2009/10/22 18:40:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: SetLocation.py,v 1.12 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
-from sets import Set
 
 class SetLocation(DBFormatter):
     sql = """INSERT INTO wmbs_file_location (file, location) 
@@ -20,7 +19,7 @@ class SetLocation(DBFormatter):
         if type(location) == type('string'):
             return self.dbi.buildbinds(self.dbi.makelist(file), 'fileid', 
                    self.dbi.buildbinds(self.dbi.makelist(location), 'location'))
-        elif isinstance(location, (list, Set, set)):
+        elif isinstance(location, (list, set)):
             binds = []
             for l in location:
                 binds.extend(self.dbi.buildbinds(self.dbi.makelist(file), 'fileid', 

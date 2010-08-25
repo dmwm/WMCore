@@ -1,8 +1,14 @@
+#!/usr/bin/env python
 """
+_AddRunLumi_
+
 MySQL implementation of AddRunLumi
 """
+
+__revision__ = "$Id: AddRunLumi.py,v 1.8 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
-from sets import Set
 
 class AddRunLumi(DBFormatter):
 
@@ -23,7 +29,7 @@ class AddRunLumi(DBFormatter):
 	    raise Exception, "Type of file argument is not allowed: %s" \
                                 % type(file)
 
-	if isinstance(runs, (Set, set)):
+	if isinstance(runs, set):
 		for run in runs:
 			for lumi in run: 
 				binds.append({'lfn': lfn,

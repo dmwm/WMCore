@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.33 2009/10/26 16:53:38 sryu Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Job_t.py,v 1.34 2009/12/16 17:45:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import unittest
 import logging
@@ -15,7 +15,6 @@ import commands
 import threading
 import random
 import time
-from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory

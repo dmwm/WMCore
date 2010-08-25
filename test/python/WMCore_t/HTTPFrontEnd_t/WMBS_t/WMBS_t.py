@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import unittest, os, logging, commands, random, threading
-from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
@@ -91,15 +90,15 @@ class WMBSServiceTest(unittest.TestCase):
         testWorkflow2.create()        
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["test.site.ch"]))
+                         locations = set(["test.site.ch"]))
         testFileA.addRun(Run(1, *[45]))
                                  
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["test.site.ch"]))                         
+                         locations = set(["test.site.ch"]))                         
         testFileB.addRun(Run(1, *[46]))
         
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["test.site.ch"]))
+                         locations = set(["test.site.ch"]))
         testFileC.addRun(Run(2, *[48]))
          
         testFileA.create()

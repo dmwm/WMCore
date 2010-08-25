@@ -20,7 +20,6 @@ import commands
 import threading
 import random
 import time
-from sets import Set
 
 from WMCore.WMFactory import WMFactory
 from ConfigParser import ConfigParser
@@ -155,7 +154,7 @@ class PerformanceFileTest(TestCase, WMBSBase):
 
         list = self.genFiles(number=times)
 
-        runSet = Set()
+        runSet = set()
         runSet.add(Run( 1, *[45]))
         runSet.add(Run( 2, *[67, 68]))
 

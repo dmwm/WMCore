@@ -14,10 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.44 2009/07/22 19:40:46 meloam Exp $"
-__version__ = "$Revision: 1.44 $"
-
-from sets import Set
+__revision__ = "$Id: Fileset.py,v 1.45 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.45 $"
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -39,7 +37,7 @@ class Fileset(WMBSBase, WMFileset):
         WMFileset.__init__(self, name = name, files=files)
 
         if parents == None:
-            parents = Set()
+            parents = set()
         
         # Create a new fileset
         self.id = id
@@ -158,8 +156,8 @@ class Fileset(WMBSBase, WMFileset):
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
 
-        self.files = Set()
-        self.newfiles = Set()
+        self.files = set()
+        self.newfiles = set()
 
         for result in results:
             file = File(id = result["fileid"])

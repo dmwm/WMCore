@@ -5,14 +5,12 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.10 2009/12/15 15:32:46 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.11 2009/12/16 17:45:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
-#from sets import Set
 import time
 import threading
 import logging
-
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.DAOFactory import DAOFactory

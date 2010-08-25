@@ -1,9 +1,15 @@
+#!/usr/bin/env python
 """
+_GetParentIDsByID_
+
 MySQL implementation of File.GetParentIDsByID
 
 Return a list of ids which are parents for a file with a given id(s).
 """
-from sets import Set
+
+__revision__ = "$Id: GetParentIDsByID.py,v 1.5 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetParentIDsByID(DBFormatter):
@@ -17,7 +23,7 @@ class GetParentIDsByID(DBFormatter):
         return binds
         
     def format(self, result):        
-        out = Set() 
+        out = set() 
         for r in result:
             if type(1L) == type(r):
                 # deal with crappy mysql implementation
@@ -30,7 +36,6 @@ class GetParentIDsByID(DBFormatter):
   
     def execute(self, ids=None, conn = None, transaction = False):
         binds = self.getBinds(ids)
-        #print "Bind %s" % binds
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
         return self.format(result)

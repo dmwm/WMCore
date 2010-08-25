@@ -4,8 +4,8 @@
 The actual retry algorithm(s)
 """
 __all__ = []
-__revision__ = "$Id: RetryManagerPoller.py,v 1.3 2009/10/15 20:25:01 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: RetryManagerPoller.py,v 1.4 2009/12/16 17:45:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -15,7 +15,6 @@ import datetime
 import time
 import os
 import os.path
-from sets import Set
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 

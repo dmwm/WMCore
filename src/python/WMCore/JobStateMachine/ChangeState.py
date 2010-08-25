@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.33 2009/11/10 21:39:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: ChangeState.py,v 1.34 2009/12/16 17:45:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -18,7 +18,6 @@ from WMCore.WMConnectionBase import WMConnectionBase
 
 import base64
 import urllib
-from sets import Set
 import threading
 import time
 import logging

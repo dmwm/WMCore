@@ -5,10 +5,9 @@ _EndOfRun_t_
 End of run splitting test
 """
 
-__revision__ = "$Id: FixedDelay_t.py,v 1.3 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FixedDelay_t.py,v 1.4 2009/12/16 17:45:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from sets import Set
 import unittest
 import os
 import threading

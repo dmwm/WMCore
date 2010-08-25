@@ -1,9 +1,15 @@
+#!/usr/bin/env python
 """
+_GetChildIDsByID_
+
 MySQL implementation of File.GetChildIDsByID
 
 Return a list of ids which are children for a file(s) with a given id(s).
 """
-from sets import Set
+
+__revision__ = "$Id: GetChildIDsByID.py,v 1.4 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetChildIDsByID(DBFormatter):
@@ -17,7 +23,7 @@ class GetChildIDsByID(DBFormatter):
         return binds
     
     def format(self, result):
-        out = Set() 
+        out = set() 
         for r in result:
             if type(1L) == type(r):
                 # deal with crappy mysql implementation

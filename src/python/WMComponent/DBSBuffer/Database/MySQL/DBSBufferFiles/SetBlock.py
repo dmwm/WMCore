@@ -6,7 +6,6 @@ MySQL implementation of DBSBufferFiles.SetBlock
 """
 
 from WMCore.Database.DBFormatter import DBFormatter
-from sets import Set
 
 class SetBlock(DBFormatter):
     sql = """UPDATE dbsbuffer_file SET block_id =

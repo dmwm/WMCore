@@ -14,11 +14,10 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.40 2009/12/02 19:38:36 mnorman Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Job.py,v 1.41 2009/12/16 17:45:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import datetime
-from sets import Set
 
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset

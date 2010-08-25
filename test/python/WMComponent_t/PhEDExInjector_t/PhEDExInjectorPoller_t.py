@@ -7,16 +7,14 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.7 2009/12/10 19:53:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.8 2009/12/16 17:45:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import time
 import os
 import unittest
 import logging
-
-from sets import Set
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
@@ -91,7 +89,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         checksums = {"adler32": "1234", "cksum": "5678"}
         testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
-                                  locations = Set(["srm.cern.ch"]))
+                                  locations = set(["srm.cern.ch"]))
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -101,7 +99,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         testFileB = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
-                                  locations = Set(["srm.cern.ch"]))
+                                  locations = set(["srm.cern.ch"]))
         testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -111,7 +109,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         testFileC = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
-                                  locations = Set(["srm.cern.ch"]))
+                                  locations = set(["srm.cern.ch"]))
         testFileC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -125,7 +123,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         testFileD = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
-                                  locations = Set(["srm.cern.ch"]))
+                                  locations = set(["srm.cern.ch"]))
         testFileD.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -135,7 +133,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         testFileE = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
-                                  locations = Set(["srm.cern.ch"]))
+                                  locations = set(["srm.cern.ch"]))
         testFileE.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")

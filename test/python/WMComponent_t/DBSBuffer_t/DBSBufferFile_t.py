@@ -5,13 +5,12 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.11 2009/12/15 15:32:14 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.12 2009/12/16 17:45:43 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import os
 import threading
-#from sets import Set
 
 from WMCore.DAOFactory import DAOFactory
 

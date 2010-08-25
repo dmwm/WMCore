@@ -5,10 +5,9 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.1 2009/06/03 18:58:00 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RunBased_t.py,v 1.2 2009/12/16 17:45:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from sets import Set
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -97,9 +96,6 @@ class EventBasedTest(unittest.TestCase):
         exactly the same as the number of events in the input file.
         """
 
-        print "testExactRuns"
-        
-        
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
 
@@ -127,8 +123,6 @@ class EventBasedTest(unittest.TestCase):
         greater than the number of runs in the input file.
         """
 
-        print "testMoreRuns"
-        
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
         
@@ -156,8 +150,6 @@ class EventBasedTest(unittest.TestCase):
 
         """
 
-        print "testMultipleRuns"
-
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
         
@@ -182,8 +174,6 @@ class EventBasedTest(unittest.TestCase):
         less then the number of files, with multiple files
 
         """
-
-        print "testMultipleRunsCombine"
 
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleRunSubscription)
@@ -213,8 +203,6 @@ class EventBasedTest(unittest.TestCase):
         less then and indivisible by the number of files, with multiple files.
 
         """
-
-        print "testSingleRunsCombineUneven"
 
         #This should return two jobs, one with 8 and one with 2 files
 

@@ -2,8 +2,6 @@
 
 from DbsQueryHelper import DbsQueryHelper
 
-from sets import Set
-
 qh = DbsQueryHelper("cmsweb.cern.ch/dbs_discovery/", 443, "cms_dbs_prod_global")
 #qh = DbsQueryHelper("cmsweb.cern.ch/dbs_discovery_test/", 443, "cms_dbs_prod_global")
 

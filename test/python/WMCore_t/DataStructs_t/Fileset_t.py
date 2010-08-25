@@ -6,7 +6,6 @@ Testcase for Fileset
 
 """
 import unittest, logging, random
-from sets import Set
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
@@ -33,7 +32,7 @@ class FilesetTest (unittest.TestCase):
         
         #Setup the initial testcase environment:
         initialfile = File('/tmp/lfn1',1000,1,1,1)
-        self.initialSet = Set()
+        self.initialSet = set()
         self.initialSet.add(initialfile)
         
         #Create a Fileset, containing a initial file on it.
@@ -47,7 +46,7 @@ class FilesetTest (unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file = File(lfn=lfn, size=size, events=events, checksums = {"cksum": "1"})
             file.addRun(Run(run, *[lumi]))
             self.fileset.addFile(file)
         
@@ -70,7 +69,7 @@ class FilesetTest (unittest.TestCase):
         #Second test - Add file that was already at Fileset.files , 
         # and check if it gets updated
         testFileSame = File('/tmp/lfntest',9999,9,9)
-        testFileSame.setLocation(Set('dummyse.dummy.com'))
+        testFileSame.setLocation(set('dummyse.dummy.com'))
         self.fileset.addFile(testFileSame)
         assert(testFileSame in  self.fileset.getFiles(),'Same file copy ' +
                'failed - fileset.addFile not updating location of already ' +
@@ -175,7 +174,7 @@ class FilesetTest (unittest.TestCase):
                 'present at fileset.files - fileset.commit ' \
                 'not working properly' 
         #Second, testing if the newfile set object attribute is empty
-        assert localTestFileSet.newfiles == Set(), \
+        assert localTestFileSet.newfiles == set(), \
                 'Test file not present at fileset.newfiles ' \
                 '- fileset.commit not working properly'
      

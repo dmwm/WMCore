@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from sets import Set
 from xml.dom.minidom import parseString
 from DbsCli import sendMessage as callDbs
 
@@ -66,7 +65,7 @@ class DbsQueryHelper:
                 for valKey in nodelist[0][1:]:
                     valNodes = xml.getElementsByTagName(valKey)
                     val = self.getText(valNodes[0].childNodes)
-                    vals[valKey] = Set([val])
+                    vals[valKey] = set([val])
                 return {key:vals}
         else:
             # Traverse the node structure until we come to the top level in the
@@ -110,7 +109,7 @@ class DbsQueryHelper:
         fileList = self.getXmlNodeValues(ret, ["output","row","file"])
         blockList = self.getXmlNodeValues(ret, ["output","row","block"])
         fileInfoMap = self.getXmlNodeValues(ret, ["ddresponse","output","row",["file","file.parent","file.numevents","file.size","lumi"]])
-        return (Set(fileList), Set(blockList), fileInfoMap)
+        return (set(fileList), set(blockList), fileInfoMap)
     
     def queryBlockInfo(self, query):
         """
@@ -137,7 +136,7 @@ class DbsQueryHelper:
         """
         Returns all parent files for the given primary files
         """
-        parentFiles = Set()
+        parentFiles = set()
         for f in files:
             pars = self.queryFileInfo("find file.parent where file = %s" % f)
             parentFiles.update(pars)
@@ -147,7 +146,7 @@ class DbsQueryHelper:
         """
         Queries DBS to get the blocks containing all the passed files
         """
-        allBlocks = Set()
+        allBlocks = set()
         for f in files:
             blocks = self.queryBlockInfo("find block where file = %s" % f)
             allBlocks.update(blocks)

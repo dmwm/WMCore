@@ -5,9 +5,10 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.17 2010/03/30 17:40:28 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.18 2010/03/30 20:04:46 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
 
+import logging
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
@@ -152,4 +153,7 @@ class WMBSHelper:
                         #TODO: need to get list of parent lfn
                         parents = wmbsParents,
                         locations = set(storageElements))
+        
+        logging.info("WMBS File: %s\n on Location: %s" 
+                     % (wmbsFile['lfn'], wmbsFile['locations']))
         return wmbsFile

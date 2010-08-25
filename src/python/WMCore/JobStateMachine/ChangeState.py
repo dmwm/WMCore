@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.11 2009/07/15 22:28:35 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: ChangeState.py,v 1.12 2009/07/21 19:08:12 meloam Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -27,12 +27,15 @@ class ChangeState(WMObject):
         self.logger = self.myThread.logger
         self.dialect = self.myThread.dialect
         self.dbi = self.myThread.dbi
+        self.dbname = couchDbName
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self.logger,
                                      dbinterface = self.dbi)
 
-        server = CouchServer(self.config.JobStateMachine.couchurl)
-        self.couchdb = server.connectDatabase(couchDbName)
+        self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
+        if self.dbname not in self.couchdb.listDatabases():
+            self.createDatabase()
+        self.database = self.couchdb.connectDatabase(couchDbName)
 
     def propagate(self, jobs, newstate, oldstate):
         """
@@ -58,6 +61,9 @@ class ChangeState(WMObject):
         # TODO: decide if I should update the doc created in step 2 after
         # completing step 3.
 
+    def getCouchByParentID(self, id):
+        return self.database.loadView('jobs','get_parent_by_couch_id',{},[id])
+
     def check(self, newstate, oldstate):
         """
         check that the transition is allowed. return a tuple of the transition
@@ -82,8 +88,8 @@ class ChangeState(WMObject):
             if 'couch_record' in job:
                 doc['parent'] = job['couch_record']
             doc['job'] = job
-            self.couchdb.queue(doc, timestamp=True)
-        goodresult = self.couchdb.commit()
+            self.database.queue(doc, timestamp=True)
+        goodresult = self.database.commit()
         
         assert len(jobs) == len(goodresult), \
                     "Got less than I was expecting from CouchDB: \n %s" %\
@@ -95,6 +101,25 @@ class ChangeState(WMObject):
             jobs = map(function, jobs, goodresult)
         return jobs
 
+    def createDatabase(self):
+        ''' initializes a non-existant database'''
+        database = self.couchdb.createDatabase(self.dbname)
+        hashViewDoc = database.createDesignDoc('jobs')
+        hashViewDoc['views'] = {'get_by_parent_couch_id': {"map": \
+                              """function(doc) {
+                                    if (doc.parent) {
+                                      log(doc.parent);
+                                      emit(doc.parent, doc);
+                                    } else {
+                                      log(doc._id);
+                                      emit(doc._id, doc);
+                                    }
+                                 } 
+                     """ }}
+     
+        database.queue( hashViewDoc )
+        database.commit()
+        return database
 
     def persist(self, jobs, newstate, oldstate):
         """

@@ -69,8 +69,10 @@ def registerStageOutImplVersionTwo(name, classRef):
 
     Register a StageOutImpl subclass with the name provided
         This is for new plugins based on a rewrite on June 30
+        
+    FIXME: Hey FutureMelo, this is PastMelo. This needs to use WMFactory instead of all this mess with __init__ and friends
 
-    """
+    """ 
     if name in Registry.StageOutImplV2.keys() and\
         Registry.StageOutImplV2[name] != classRef:
         msg = "Duplicate StageOutImplV2 registered for name: %s\n" % name

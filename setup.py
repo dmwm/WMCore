@@ -54,7 +54,9 @@ import logging
 import os
 import unittest
 
-MODULE_EXTENSIONS = set('.py .pyc .pyo'.split())
+MODULE_EXTENSIONS = set('.py'.split())
+## bad bad bad global variable, FIXME
+all_test_suites = []
 
 def unit_test_extractor(tup, path, filenames):
     """Pull ``unittest.TestSuite``s from modules in path
@@ -69,32 +71,40 @@ def unit_test_extractor(tup, path, filenames):
 
     if relpath_pieces[0] == '.': # Base directory.
         relpath_pieces.pop(0) # Otherwise, screws up module name.
-    elif not any(os.path.exists(os.path.join(path, '__init__' + ext))
-            for ext in MODULE_EXTENSIONS):
-        return # Not a package directory and not the base directory, reject.
+    #elif not any(os.path.exists(os.path.join(path, '__init__' + ext))
+    #        for ext in MODULE_EXTENSIONS):
+    #    return # Not a package directory and not the base directory, reject.
 
     logging.info('Base: %s', '.'.join(relpath_pieces))
     for filename in filenames:
-        base, ext = os.path.splitext(filename)
-        if ext not in MODULE_EXTENSIONS: # Not a Python module.
-            continue
-        logging.info('Module: %s', base)
-        module_name = '.'.join(relpath_pieces + [base])
-        logging.info('Importing from %s', module_name)
-        module = __import__(module_name)
-        module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
-        logging.info('Got suites: %s', module_suites)
-        suites += module_suites
+        # try:
+            #logging.debug("BIGLOOP")
+            base, ext = os.path.splitext(filename)
+            if ext not in MODULE_EXTENSIONS: # Not a Python module.
+                continue
+            logging.info('Module: %s', base)
+            module_name = '.'.join(relpath_pieces + [base])
+            logging.debug("Got %s from %s and %s" % (module_name, relpath_pieces, base))
+            logging.info('Importing from %s', module_name)
+            module = __import__(module_name)
+            module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
+            logging.info('Got suites: %s', module_suites)
+            
+            #suites += module_suites
+            all_test_suites.append(module_suites)
+        #except Exception, e:
+        #    print("LoadFail: %s %s" % (filename, e))
+
 
 def get_test_suites(path):
     """:return: Iterable of suites for the packages/modules
     present under :param:`path`.
     """
-    logging.info('Base path: %s', package_path)
+    logging.info('Base path: %s', path)
     suites = []
-    os.path.walk(package_path, unit_test_extractor, (package_path, suites))
-    logging.info('Got suites: %s', suites)
-    return suites
+    os.path.walk(path, unit_test_extractor, (path, suites))
+    logging.info('Got suites: %s', all_test_suites)
+    return all_test_suites
 
 
 def runUnitTests():
@@ -107,20 +117,23 @@ def runUnitTests():
     srcpypath = '/'.join([mydir, 'src/python/']) 
     sys.path.append(testspypath)
     sys.path.append(srcpypath)
+    logging.basicConfig(level=logging.DEBUG)
     
-    
-    logging.basicConfig(level=logging.WARN)
-    package_path = os.path.dirname(mydir)
+  #  logging.basicConfig(level=logging.WARN)
+    package_path = os.path.dirname(mydir + '/test/python/')
+    print "path: %s " % package_path
     suites = get_test_suites(package_path)
     testCaseCount = 0
-    for suite in suites:
-        testCaseCount += testsuite.countTestCases()
-        unittest.TextTestRunner(verbosity=2).run(suite)
+    totallySuite = unittest.TestSuite()
+    totallySuite.addTests(suites)
+    print suites     
+    result = unittest.TextTestRunner(verbosity=2).run(totallySuite)
+
     #sys.stdout = sys.__stdout__
     #sys.stderr = sys.__stderr__
     
     print sys.path
-    return (result, 0, testsuite.countTestCases())
+    return (result, [], totallySuite.countTestCases())
 
 
 class TestCommand(Command):

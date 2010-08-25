@@ -1,6 +1,7 @@
 #!/bin/env python
 
-
+__revision__ = "$Id: JobCreator_t.py,v 1.12 2010/02/26 18:45:39 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import random
@@ -9,6 +10,8 @@ import time
 import os
 import shutil
 import logging
+import cProfile
+import pstats
 
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
@@ -21,13 +24,14 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Job import Job
 
-from WMCore.Agent.Configuration             import loadConfigurationFile, Configuration
-from WMComponent.JobCreator.JobCreator      import JobCreator
+from WMCore.Agent.Configuration              import loadConfigurationFile, Configuration
+from WMComponent.JobCreator.JobCreator       import JobCreator
+from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
 
-from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
+from WMCore.WMSpec.WMWorkload                import WMWorkload, WMWorkloadHelper
 
-from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
-from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.WMSpec.WMTask                    import WMTask, WMTaskHelper
+from WMCore.ResourceControl.ResourceControl  import ResourceControl
 
 #Workload stuff
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -77,11 +81,16 @@ class JobCreatorTest(unittest.TestCase):
 
 
         #Create sites in resourceControl
-        #resourceControl = ResourceControl()
-        #for site in self.sites:
-        #    resourceControl.insertSite(siteName = site, seName = site, ceName = site)
-        #    resourceControl.insertThreshold(thresholdName = 'ProcessingThreshold', \
-        #                                    thresholdValue = 1000, siteNames = site)
+
+        resourceControl = ResourceControl()
+        for site in self.sites:
+            resourceControl.insertSite(siteName = site, seName = site, ceName = site)
+            resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
+                                            minSlots = 1000, maxSlots = 10000)
+
+        self.resourceControl = resourceControl
+
+
 
         self._setup = True
         self._teardown = False
@@ -105,6 +114,7 @@ class JobCreatorTest(unittest.TestCase):
         
         myThread = threading.currentThread()
 
+        #self.testInit.clearDatabase(modules = ['WMCore.ThreadPool'])
         self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ThreadPool', 'WMCore.ResourceControl'])
         #self.testInit.clearDatabase()
         
@@ -335,7 +345,7 @@ class JobCreatorTest(unittest.TestCase):
         config.JobCreator.maxThreads                = 1
         config.JobCreator.UpdateFromResourceControl = True
         config.JobCreator.pollInterval              = 10
-        config.JobCreator.jobCacheDir               = os.path.join(self.testDir, 'test')
+        config.JobCreator.jobCacheDir               = os.path.join(self.testDir)
         config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
         config.JobCreator.workerThreads             = 2
         config.JobCreator.componentDir              = self.testDir
@@ -450,6 +460,12 @@ class JobCreatorTest(unittest.TestCase):
         nSubs = 5
 
         self.createBigJobCollection("first", nSubs)
+
+        print "Should have database by now"
+        print myThread.dbi.processData("SELECT * FROM rc_threshold")[0].fetchall()
+        print self.resourceControl.listThresholdsForCreate()
+
+
 
         
         config = self.getConfig()
@@ -648,7 +664,7 @@ class JobCreatorTest(unittest.TestCase):
 
         self.assertEqual(len(result[0].fetchall()), nSubs * 10)
 
-        self.assertEqual(os.listdir('%s/test/BasicProduction/Merge/JobCollection_1_0/job_1' %self.testDir), ['job.pkl'])
+        self.assertEqual(os.listdir('%s/BasicProduction/Merge/JobCollection_1_0/job_1' %self.testDir), ['job.pkl'])
 
         while (threading.activeCount() > 1):
             #We should never trigger this, but something weird is going on
@@ -657,6 +673,37 @@ class JobCreatorTest(unittest.TestCase):
 
 
         return
+
+
+    def testE_Profile(self):
+        """
+        Profile your performance
+        You shouldn't be running this normally because it doesn't do anything
+
+        """
+
+        #return
+
+        wmWorkload = self.createTestWorkload()
+
+        myThread = threading.currentThread()
+
+        nSubs = 5
+
+        self.createSingleSiteCollection("first", nSubs, self.testDir + "/basicWorkload.pcl")
+        
+
+        config = self.getConfig()
+
+        testJobCreator = JobCreatorPoller(config = config)
+        cProfile.runctx("testJobCreator.algorithm()", globals(), locals(), filename = "testStats.stat")
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('time')
+        p.print_stats()
+
+        return
+        
 
 
     def testAbsoFuckingLoutelyHugeJob(self):
@@ -685,6 +732,10 @@ class JobCreatorTest(unittest.TestCase):
 
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
+        while (threading.activeCount() > 1):
+            #We should never trigger this, but something weird is going on
+            #print "Waiting for threads to finish"
+            time.sleep(0.1)
         stopTime = time.clock()
 
         #time.sleep(90)
@@ -692,9 +743,17 @@ class JobCreatorTest(unittest.TestCase):
         print "Time taken: "
         print stopTime - startTime
 
+        if os.path.exists('tmpDir'):
+            shutil.rmtree('tmpDir')
+        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'tmpDir'))
+
         dirs = os.listdir(os.path.join(self.testDir, 'BasicProduction/Merge'))
 
         self.assertEqual(len(dirs), (nSubs*500)/500)
+
+        result = myThread.dbi.processData('SELECT id FROM wmbs_job')[0].fetchall()
+        print "Have wmbs_job results"
+        print len(result)
         
         for dir in dirs:
             self.assertEqual(len(os.listdir('%s/BasicProduction/Merge/%s' %(self.testDir, dir))), 500)

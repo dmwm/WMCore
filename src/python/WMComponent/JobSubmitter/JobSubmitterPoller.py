@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.35 2010/07/21 21:58:24 mnorman Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.36 2010/07/22 15:41:53 mnorman Exp $"
+__version__ = "$Revision: 1.36 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -450,7 +450,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 # First get them ready to run
                 jobList = sortedJobList[sandbox]
                 packagePath = os.path.join(os.path.dirname(sandbox),
-                                           'batch_%i_%i' % (jobList[0]['id'],  jobList[-1]['id']))
+                                           'batch_%i_%i' % (jobList[0]['id'],  jobList[0]['retry_count']))
                                            #'batch_%i' %(jobList[0]['id']))
                 index = submitIndex.get(packagePath, 0)
                 
@@ -498,7 +498,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 # Then we have to submit them.
                 jobList = sortedJobList[sandbox]
                 packagePath = os.path.join(os.path.dirname(sandbox),
-                                           'batch_%i_%i' %(jobList[0]['id'],  jobList[-1]['id']))
+                                           'batch_%i_%i' %(jobList[0]['id'],  jobList[0]['retry_count']))
                                            #'batch_%i' %(jobList[0]['id']))
                 index = submitIndex.get(packagePath, 0)
                 jobsReady = self.prepForSubmit(jobList = jobList,

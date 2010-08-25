@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.22 2010/07/21 21:57:36 mnorman Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.23 2010/07/22 15:41:33 mnorman Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 import threading
@@ -396,7 +396,7 @@ class JobSubmitterTest(unittest.TestCase):
         return workload
 
 
-    def checkJDL(self, config, cacheDir, submitFile, site = None, indexFlag = False, nJobs = 10):
+    def checkJDL(self, config, cacheDir, submitFile, site = None, indexFlag = False):
         """
         _checkJDL_
 
@@ -407,8 +407,6 @@ class JobSubmitterTest(unittest.TestCase):
                                                          submitFile))
 
         batch = 1
-        end   = nJobs
-
 
         # Check each job entry in the JDL
         for job in jobs:
@@ -424,10 +422,9 @@ class JobSubmitterTest(unittest.TestCase):
             if indexFlag:
                 batch    = index - 1
                 argValue = 0
-                end      = batch
             
             inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'Tier1ReReco-Sandbox.tar.bz2'),
-                                              os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'batch_%i_%i/JobPackage.pkl' % (batch, end)),
+                                              os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'batch_%i_0/JobPackage.pkl' % (batch)),
                                               os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
             self.assertEqual(job.get('transfer_input_files', None),
                              inputFileString)
@@ -511,7 +508,7 @@ class JobSubmitterTest(unittest.TestCase):
         # Check on the JDL
         submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
         self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD', nJobs = nJobs * nSubs)
+                      submitFile = submitFile, site = 'T2_US_UCSD')
 
         if os.path.exists('CacheDir'):
             shutil.rmtree('CacheDir')
@@ -850,7 +847,7 @@ class JobSubmitterTest(unittest.TestCase):
         # All jobs should be at UCSD
         submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
         self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD', nJobs = nJobs * nSubs)
+                      submitFile = submitFile, site = 'T2_US_UCSD')
 
 
         # Now clean-up
@@ -899,7 +896,7 @@ class JobSubmitterTest(unittest.TestCase):
         # All jobs should be at UCSD
         submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
         self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD', nJobs = nJobs * nSubs)
+                      submitFile = submitFile, site = 'T2_US_UCSD')
 
 
         # Now clean-up
@@ -1131,7 +1128,7 @@ class JobSubmitterTest(unittest.TestCase):
         # Check on the JDL
         submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
         self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD', indexFlag = True, nJobs = nJobs * nSubs)
+                      submitFile = submitFile, site = 'T2_US_UCSD', indexFlag = True)
 
 
 

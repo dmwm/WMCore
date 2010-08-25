@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.22 2010/07/19 16:48:59 mnorman Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.23 2010/08/11 18:52:46 mnorman Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import threading
 import traceback
@@ -101,7 +101,9 @@ class ExecuteMaster:
             executor.saveReport()
             self.toTaskDirectory()
         try:
+            executor.report.setStepStartTime(stepName = executor.stepName)
             executionObject.execute()
+            executor.report.setStepStopTime(stepName = executor.stepName)
         except WMExecutionFailure, ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
             error = True

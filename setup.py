@@ -4,7 +4,6 @@ from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 import os, sys
-from pylint import lint
 try:
     from pylint import lint
 except:

@@ -7,7 +7,7 @@ from sets import Set
 class GetRunLumiFile(DBFormatter):
     sql = """select flr.run as run, flr.lumi as lumi
 		from dbsbuffer_file_runlumi_map flr 
-			where flr.file in (select id from dbsbuffer_file where lfn=:lfn)"""
+			where flr.filename in (select id from dbsbuffer_file where lfn=:lfn)"""
 
     def getBinds(self, file=None):
         binds = []

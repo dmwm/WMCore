@@ -5,7 +5,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class Add(DBFormatter):
 
-    sql = """insert into dbsbuffer_file(lfn, size, events, cksum, dataset, status) 
+    sql = """insert into dbsbuffer_file(lfn, filesize, events, cksum, dataset, status) 
                 values (:lfn, :filesize, :events, :cksum, (select ID from dbsbuffer_dataset where Path=:dataset), :status)"""
                 
     def getBinds(self, files=None, size=0, events=0, cksum=0, dataset=0):

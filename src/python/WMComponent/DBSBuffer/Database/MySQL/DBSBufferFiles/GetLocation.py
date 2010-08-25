@@ -7,7 +7,7 @@ from sets import Set
 class GetLocation(DBFormatter):
     sql = """select se_name from dbsbuffer_location 
                 where id in (select location from dbsbuffer_file_location 
-                    where file in (select id from dbsbuffer_file where lfn=:lfn))"""
+                    where filename in (select id from dbsbuffer_file where lfn=:lfn))"""
                     
     
     def getBinds(self, file=None):

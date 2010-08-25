@@ -9,7 +9,7 @@ from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddRunLumi import AddRu
 
 class AddRunLumi(MySQLAddRunLumi):
 
-    sql = """INSERT INTO dbsbuffer_file_runlumi_map ("file", run, lumi) 
+    sql = """INSERT INTO dbsbuffer_file_runlumi_map (filename, run, lumi) 
             select id, :run, :lumi from dbsbuffer_file
             where lfn = :lfn"""
 

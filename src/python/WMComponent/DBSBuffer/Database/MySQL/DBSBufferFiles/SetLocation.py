@@ -5,7 +5,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 from sets import Set
 
 class SetLocation(DBFormatter):
-    sql = """insert dbsbuffer_file_location (file, location) 
+    sql = """insert dbsbuffer_file_location (filename, location) 
              select dbsbuffer_file.id, dbsbuffer_location.id from dbsbuffer_file, dbsbuffer_location 
              where dbsbuffer_file.lfn = :lfn
              and dbsbuffer_location.se_name = :location"""

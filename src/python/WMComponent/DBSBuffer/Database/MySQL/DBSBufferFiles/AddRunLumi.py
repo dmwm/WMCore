@@ -6,7 +6,7 @@ from sets import Set
 
 class AddRunLumi(DBFormatter):
 
-    sql = """insert dbsbuffer_file_runlumi_map (file, run, lumi) 
+    sql = """insert dbsbuffer_file_runlumi_map (filename, run, lumi) 
             select id, :run, :lumi from dbsbuffer_file
             where lfn = :lfn"""
 

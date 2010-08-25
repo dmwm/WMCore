@@ -4,10 +4,10 @@ MySQL implementation of File.Get
 from WMCore.WMBS.MySQL.Files.GetByID import GetByID
 
 class GetByLFN(GetByID):
-    sql = """select file.id, file.lfn, file.size, file.events, file.cksum, ds.Path, file.status
-             from dbsbuffer_file as file
+    sql = """select files.id, files.lfn, files.filesize, files.events, files.cksum, ds.Path, files.status
+             from dbsbuffer_file as files
 		join dbsbuffer_dataset ds
-			on file.dataset=ds.ID
+			on files.dataset=ds.ID
              where lfn = :lfn"""
 
     def getBinds(self, files=None):

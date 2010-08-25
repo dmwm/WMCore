@@ -82,33 +82,12 @@ class TestRecoveryCode(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
+        self.testInit = TestInit()
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
 
-        config = Configuration()
-
-        #First the general stuff
-        config.section_("General")
-        config.General.workDir = os.getenv("TESTDIR", os.getcwd())
-
-        #Now the CoreDatabase information
-        #This should be the dialect, dburl, etc
-        config.section_("CoreDatabase")
-        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.dbsock     = os.getenv("DBSOCK")
-
-        if not config.CoreDatabase.dialect or not config.CoreDatabase.connectUrl:
-            msg1 = "No database or dialect in environment!"
-            msg2 = "Database set to %s" %(config.CoreDatabase.connectUrl)
-            msg3 = "Dialect set to %s" %(config.CoreDatabase.dialect)
-            print msg1
-            print msg2
-            print msg3
-            raise Exception (msg1)
-
-
-        #General config options
-        config.section_("WMAgent")
-        config.WMAgent.WMSpecDirectory    = os.getcwd()  #Where are the WMSpecs by default?
-
+        config = self.testInit.getConfiguration()
+        self.tempDir = self.testInit.generateWorkDir( config = config )
 
         #Now we go by component
 

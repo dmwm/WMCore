@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2009/06/15 20:57:02 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2009/06/19 22:15:16 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -31,15 +31,8 @@ class Create(CreateWorkQueueBase):
              id          INTEGER      NOT NULL AUTO_INCREMENT, 
              name        VARCHAR(255) NOT NULL,
              PRIMARY KEY(id))"""
-             
-        self.create["02wq_site"] = \
-          """CREATE TABLE wq_site (
-             id          INTEGER      NOT NULL AUTO_INCREMENT, 
-             name        VARCHAR(255) NOT NULL,
-             PRIMARY KEY(id)
-             )"""
-                               
-        self.create["03wq_block"] = \
+                                    
+        self.create["02wq_block"] = \
           """CREATE TABLE wq_block (
              id             INTEGER      NOT NULL AUTO_INCREMENT,
              name           VARCHAR(500) NOT NULL,
@@ -49,7 +42,7 @@ class Create(CreateWorkQueueBase):
              PRIMARY KEY(id)
              )"""
              
-        self.create["05wq_element"] = \
+        self.create["04wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL AUTO_INCREMENT,
              wmspec_id        INTEGER    NOT NULL,
@@ -58,7 +51,7 @@ class Create(CreateWorkQueueBase):
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
              status           INTEGER    DEFAULT 0,
-             last_update      INTEGER    NOT NULL,
+             insert_time      INTEGER    NOT NULL,
              PRIMARY KEY (id),
              UNIQUE (wmspec_id, block_id)
              ) """

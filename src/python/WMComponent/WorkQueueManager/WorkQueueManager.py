@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: WorkQueueManager.py,v 1.12 2010/06/24 20:29:47 sryu Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WorkQueueManager.py,v 1.13 2010/06/24 20:33:18 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import logging
 import threading
@@ -73,9 +73,9 @@ class WorkQueueManager(Harness):
             for webapp in config.listWebapps_():
                 webapp = config.webapp_(webapp)
                 for page in webapp.section_('views').section_('active'):
-                    if not hasattr(page, "model"):
-                        continue
-                    if not queueFlag and page.section_('model').object == WORKQUEUE_REST_NAMESPACE:
+                    
+                    if not queueFlag and hasattr(page, "model") \
+                       and page.section_('model').object == WORKQUEUE_REST_NAMESPACE:
                         qConfig['QueueURL'] = 'http://%s:%s/%s' % (webapp.server.host,
                                                                   webapp.server.port,
                                                                   page._internal_name)

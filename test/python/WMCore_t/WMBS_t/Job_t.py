@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.23 2009/08/21 10:00:31 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Job_t.py,v 1.24 2009/08/21 10:45:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import unittest
 import logging
@@ -620,6 +620,8 @@ class JobTest(unittest.TestCase):
         """
         _testGetOutputParentLFNs_
 
+        Verify that the getOutputDBSParentLFNs() method returns the correct
+        parent LFNs.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
@@ -654,8 +656,8 @@ class JobTest(unittest.TestCase):
         testFileE.create()
         testFileF.create()
 
-        testFileC.addChild(testFileE["lfn"])
-        testFileD.addChild(testFileF["lfn"])
+        testFileE.addChild(testFileC["lfn"])
+        testFileF.addChild(testFileD["lfn"])
 
         testJobA = Job(name = "TestJob", files = [testFileA, testFileB])
         testJobA["couch_record"] = "somecouchrecord"
@@ -678,7 +680,7 @@ class JobTest(unittest.TestCase):
             goldenLFNs.remove(parentLFN)
 
         assert len(goldenLFNs) == 0, \
-            "ERROR: LFNs are missing..."
+            "ERROR: LFNs are missing: %s" % goldenLFNs
 
         goldenLFNs = ["/this/is/a/lfnE", "/this/is/a/lfnF"]
         

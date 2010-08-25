@@ -75,10 +75,6 @@ python2.6 WMCore/WMRuntime/Startup.py
 jobrc=$?
 echo "WMAgent finished the job, is copying the pickled report"
 cp WMTaskSpace/Report.pkl ../
-echo "WMAgent's gonna take a nap to waste some time"
-echo "WMAgent wonders if norman, foulkes or evans are responsible for this behavior"
-sleep 90
-
 ls -l WMTaskSpace
 ls -l WMTaskSpace/*
 echo "WMAgent is finished. The job had an exit code of $jobrc "

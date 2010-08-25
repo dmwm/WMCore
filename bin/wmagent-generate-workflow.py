@@ -21,18 +21,30 @@ from WMCore.WMBS.Subscription import Subscription
 from DBSAPI.dbsApi import DbsApi
 
 cmsPath = "/uscmst1/prod/sw/cms"
-scramArch = "slc5_ia32_gcc434"
+
+
 processingConfig = "/uscms/home/sfoulkes/rereco_FirstCollisions_MinimumBias_35X.py"
+skimConfig = "/uscms/home/sfoulkes/prescaleskimmer.py"
+
+-or-
+
+scenario
+
+globaltag
+scramArch = "slc5_ia32_gcc434"
+skimInput = "output"
 frameworkVersion = "CMSSW_3_5_8_patch3"
-mergedLFNBase = "/store/temp/WMAgent/merged/"
-unmergedLFNBase = "/store/temp/WMAgent/unmerged/"
+mergedLFNBase = "/store/temp/WMAgent/merged"
+unmergedLFNBase = "/store/temp/WMAgent/unmerged"
 acquisitionEra = "WMAgentCommissioning10"
 processingVersion = "v1scf"
 primaryDatasetName = "MinimumBias"
 minMergeSize = 500000000
 maxMergeSize = 4294967296
-workloadName = "ReReco"
+maxMergeEvents = 100000
+workloadName = "ReReco-v1scf"
 inputDatasetName = "/MinimumBias/Commissioning10-v4/RAW"
+
 
 def createWorkload(workloadName):
     """
@@ -45,12 +57,14 @@ def createWorkload(workloadName):
     workload.setEndPolicy('SingleShot')
     return workload
 
-def addProcessingTask(workload, taskName, inputDataset, couchUrl, couchDBName, configDoc):
+def setupProcessingTask(procTask, inputDataset = None, inputStep = None,
+                        inputModule = None, scenarioName = None,
+                        scenarioFunc = None, scenarioArgs = None, couchUrl = None,
+                        couchDBName = None, configDoc = None):
     """
-    _addProcessingTask_
+    _setupProcessingTask_
 
     """
-    procTask = workload.newTask(taskName)
     procTaskCmssw = procTask.makeStep("cmsRun1")
     procTaskCmssw.setStepType("CMSSW")
     procTaskStageOut = procTaskCmssw.addStep("stageOut1")
@@ -63,13 +77,21 @@ def addProcessingTask(workload, taskName, inputDataset, couchUrl, couchDBName, c
     procTask.addGenerator("BasicCounter")
     procTask.setTaskType("Processing")
 
-    (primary, processed, tier) = inputDataset[1:].split("/")
-    procTask.addInputDataset(primary = primary, processed = processed, tier = tier)
+    if inputDataset != None:
+        (primary, processed, tier) = inputDataset[1:].split("/")
+        procTask.addInputDataset(primary = primary, processed = processed, tier = tier)
+    else:
+        procTask.setInputReference(inputStep, outputModule = inputModule)
 
     procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
     procTaskCmsswHelper.cmsswSetup(frameworkVersion, softwareEnvironment = "",
-                                   scramArch = scramArch)
-    procTaskCmsswHelper.setConfigCache(couchUrl, configDoc, couchDBName)
+                                   scramArch = scramArch)    
+    if configDoc != None:
+        procTaskCmsswHelper.setConfigCache(couchUrl, configDoc, couchDBName)
+    else:
+        procTaskCmsswHelper.setDataProcessingConfig(scenarionName, scenarioFunc,
+                                                    **scenarioArgs)
+        
     return procTask
 
 def addLogCollectTask(parentTask):
@@ -99,7 +121,7 @@ def addOutputModule(parentTask, outputModuleName, dataTier, filterName):
     Add an output module and merge task for files produced by the parent
     task.
     """
-    if filterName != None:
+    if filterName != None and filterName != "":
         processedDatasetName = "%s-%s-%s" % (acquisitionEra, filterName, processingVersion)
     else:
         processedDatasetName = "%s-%s" % (acquisitionEra, processingVersion)
@@ -212,7 +234,7 @@ def setupCMSSWEnv(frameworkVersion):
                                                         
     return
 
-def loadConfig(configPath, workloadSandbox):
+def loadConfig(configPath):
     """
     _loadConfig_
 
@@ -345,21 +367,37 @@ if __name__ == "__main__":
 
     print "Loading config..."
     setupCMSSWEnv("CMSSW_3_5_8_patch3")
-    configHandle = loadConfig(processingConfig, workloadSandbox)
+    configHandle = loadConfig(processingConfig)
+    skimHandle = loadConfig(skimConfig)
 
     print "Adding config to cache..."
     myConfigCache = WMConfigCache(dbname2 = configCacheDBName, dburl = couchUrl)    
     (configDoc, revision) = myConfigCache.addConfig(processingConfig)
+    (skimDoc, revision) = myConfigCache.addConfig(skimConfig)
     
     outputModuleInfo = outputModulesFromConfig(configHandle)
+    skimModuleInfo = outputModulesFromConfig(skimHandle)
 
     print "Building workload..."
     workload = createWorkload(workloadName)
-    procTask = addProcessingTask(workload, "ReReco", inputDatasetName, couchUrl, configCacheDBName, configDoc) 
+    procTask = workload.newTask("ReReco")
+    setupProcessingTask(procTask, inputDatasetName, couchUrl = couchUrl,
+                        couchDBName = configCacheDBName, configDoc = configDoc) 
     addLogCollectTask(procTask)
 
     for (outputModuleName, datasetInfo) in outputModuleInfo.iteritems():
         addOutputModule(procTask, outputModuleName, datasetInfo["dataTier"],
+                        datasetInfo["filterName"])
+
+    skimTask = procTask.addTask("Skims")
+    parentCmsswStep = procTask.getStep("cmsRun1")    
+    setupProcessingTask(skimTask, inputStep = parentCmsswStep, inputModule = skimInput,
+                        couchUrl = couchUrl, couchDBName = configCacheDBName,
+                        configDoc = skimDoc)
+    #addLogCollectTask(skimTask)
+
+    for (outputModuleName, datasetInfo) in skimModuleInfo.iteritems():
+        addOutputModule(skimTask, outputModuleName, datasetInfo["dataTier"],
                         datasetInfo["filterName"])
 
     print "Creating sandbox..."

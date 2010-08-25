@@ -6,6 +6,7 @@ import os.path
 import logging
 import threading
 import shutil
+from nose.plugins.attrib import attr
 
 from WMCore.Agent.Configuration import Configuration
 from WMQuality.TestInit         import TestInit
@@ -15,6 +16,7 @@ from WMCore.Operations.RecoveryCode import PurgeJobs
 from subprocess import Popen, PIPE
 import WMCore.WMInit
 
+@attr('integration')
 class TestRecoveryCode(unittest.TestCase):
     """
     Test for recoveryCode; disaster recovery system
@@ -90,12 +92,6 @@ class TestRecoveryCode(unittest.TestCase):
         #Now the CoreDatabase information
         #This should be the dialect, dburl, etc
         config.section_("CoreDatabase")
-        config.CoreDatabase.dialect    = os.getenv("DIALECT")
-        myThread.dialect               = os.getenv('DIALECT')
-        config.CoreDatabase.user       = os.getenv("DBUSER", os.getenv("USER"))
-        config.CoreDatabase.hostname   = os.getenv("DBHOST", os.getenv("HOSTNAME"))
-        config.CoreDatabase.passwd     = os.getenv("DBPASS")
-        config.CoreDatabase.name       = os.getenv("DBNAME", os.getenv("DATABASE"))
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.dbsock     = os.getenv("DBSOCK")
 

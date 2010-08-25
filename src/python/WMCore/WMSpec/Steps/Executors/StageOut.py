@@ -45,8 +45,9 @@ class StageOut(Executor):
         manager.retryPauseTime  = step.retryDelay
         
         for currFile in step.files:
+            print currFile
             try:
-                manager(LFN = 'lfn', PFN = 'pfn')
+                manager(LFN = currFile.output, PFN = currFile.input)
             except:
                 print "Exception raised in stageout executor, how do we handle that?"
                 raise

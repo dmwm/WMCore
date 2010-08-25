@@ -76,12 +76,13 @@ class CPImpl(StageOutImpl):
         """
         original_size = os.stat(sourcePFN)[6]
         print "Local File Size is: %s" % original_size
-        result = "/bin/cp "
+        result = " /bin/cp "
         if options != None:
             result += " %s " % options
         result += " %s " % sourcePFN
         result += " %s " % targetPFN
-        result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+        result += "; DEST_SIZE=`/bin/ls -l %s | awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' -eq $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+        print result
         return result
 
     

@@ -21,6 +21,8 @@ class StageOutStepHelper(CoreHelper):
     def addFile(self, infile, outfile):
         """
             Enqueues(sp?) a file to the StageOut step
+            infile must be a PFN
+            outfile must be a LFN
         """
         target = self.data.files.section_("file%i" % self.data.filecount)
         target.input  = infile

@@ -9,6 +9,8 @@ import WMCore.WMSpec.Steps.Executors.StageOut as StageOutExecutor
 import WMCore.Storage.StageOutError as StageOutError
 import unittest
 import os
+import tempfile
+import time
 
 class StageOutTest(unittest.TestCase):
         
@@ -19,13 +21,12 @@ class StageOutTest(unittest.TestCase):
         task = workload.getTask("Production")
         step = task.getStep("stageOut1")
         realstep = StageOutTemplate.StageOutStepHelper(step.data)
-        realstep.addFile("testin1", "testout1")
         realstep.disableRetries()
         self.realstep = realstep
         
-    def testUnitTestBackend(self):
+    def atestUnitTestBackend(self):
         executor = StageOutExecutor.StageOut()
-        
+        self.realstep.addFile("testin1", "testout1")
         # let's ride the win-train
         testOverrides = { "command" : "test-win",
             "option"  : "",
@@ -40,6 +41,20 @@ class StageOutTest(unittest.TestCase):
                           self.realstep.data,
                            None,
                             **testOverrides)
+    
+    def testCPBackend(self):
+        executor = StageOutExecutor.StageOut()
+        testOverrides = { "command" : "cp",
+            "option"  : "",
+            "se-name" : "se-name",
+            "lfn-prefix" : ""}
+        
+        pfn = "/etc/hosts"
+        lfn = "/tmp/stageOutTest-%s" % int(time.time())
+        self.realstep.addFile(pfn, lfn)
+        executor.execute( self.realstep.data, None,**testOverrides)
+        os.remove(lfn)
+            
     def testName(self):
         pass
 

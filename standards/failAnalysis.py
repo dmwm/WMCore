@@ -23,7 +23,7 @@ couchURL = buildslave.conf['failTarget']
 #                                                WithProperties("%s", 'got_revision'),
 #                                                x['db']],
 #                                                description="Analyzing fail", descriptionDone="Fail Being Analyzed"))
-
+print "confused .. %s" % sys.argv
 myname, xmlfile, buildername, buildnumber, revision, db = sys.argv[1:7]
 timestamp = time.time()
 #(myname, xmlfile, buildername, buildnumber, revision, db ) = ('dum', '../nosetests.xml',1,2,3,4)

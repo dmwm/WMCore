@@ -10,17 +10,10 @@ May also add some interactive monitoring as time goes on.
 Introduces a dependency on the cherrypy package
 
 """
-import socket
 import os
 import cherrypy
 from WMCore.Configuration import loadConfigurationFile
-from MessageService.MessageService import MessageService
-
-import ProdAgentCore.LoggingUtils as LoggingUtils
-# harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
-# we do not import failure handlers as they are dynamicly
-# loaded from the config file.
 from WMCore.WMFactory import WMFactory
 from WMCore.HTTPFrontEnd import Downloader
 from WMCore.WebTools.Root import Root

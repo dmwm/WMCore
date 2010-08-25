@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.13 2010/05/28 15:01:10 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.14 2010/06/03 21:32:53 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import threading
@@ -16,25 +16,35 @@ import pstats
 import copy
 import getpass
 
+from subprocess import Popen, PIPE
+
+
 import WMCore.WMInit
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import getWMBASE
 
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.File         import File
+from WMCore.WMBS.Fileset      import Fileset
+from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup     import JobGroup
+from WMCore.WMBS.Job          import Job
+
+
+
 from WMComponent.JobSubmitter.JobSubmitter       import JobSubmitter
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
+from WMComponent.JobSubmitter.Plugins.CondorGlobusPlugin import CondorGlobusPlugin
+
+
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from subprocess import Popen, PIPE
+
 from WMCore.Services.UUID import makeUUID
 
 from WMCore.Agent.Configuration             import loadConfigurationFile, Configuration
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.DataStructs.JobPackage          import JobPackage
 
 
 #Workload stuff
@@ -294,8 +304,9 @@ class JobSubmitterTest(unittest.TestCase):
 
         config = Configuration()
 
-        config.component_("WMAgent")
-        config.WMAgent.WMSpecDirectory = self.testDir
+        config.component_("Agent")
+        config.Agent.WMSpecDirectory = self.testDir
+        config.Agent.agentName       = 'testAgent'
 
 
         #First the general stuff
@@ -505,6 +516,9 @@ class JobSubmitterTest(unittest.TestCase):
         """
 
 
+        #return
+
+
         workloadName = "basicWorkload"
         myThread     = threading.currentThread()
         workload     = self.createTestWorkload()
@@ -532,8 +546,8 @@ class JobSubmitterTest(unittest.TestCase):
 
         # Actually run it
         startTime = time.time()
-        cProfile.runctx("jobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat")
-        #jobSubmitter.algorithm()
+        #cProfile.runctx("jobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat")
+        jobSubmitter.algorithm()
         stopTime  = time.time()
 
         if os.path.isdir('CacheDir'):
@@ -561,6 +575,103 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
+
+
+    def testC_TestPlugin(self):
+        """
+        Run the plugin directly.
+
+        This one is a bit weird...
+        """
+
+
+        return
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+        workloadName = "basicWorkload"
+
+        myThread = threading.currentThread()
+
+        workload = self.createTestWorkload()
+
+        config   = self.getConfig()
+
+        changeState = ChangeState(config)
+
+        nSubs = 5
+        nJobs = 5000
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName))
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+
+        # Do pre-submit check
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+
+        # Now create subscription bundles
+        subBundle = []
+        for jobGroup in jobGroupList:
+            jobList = []
+
+            sandbox = jobGroup.jobs[0]['sandbox']
+            
+            # Create job package
+            package = JobPackage()
+            for job in jobGroup.jobs:
+                tmpJob = Job(id = job['id'])
+                tmpJob['custom']      = {'location': 'T2_US_UCSD'}
+                tmpJob['name']        = job['name']
+                tmpJob['cache_dir']   = job['cache_dir']
+                tmpJob['retry_count'] = job['retry_count']
+                jobList.append(tmpJob)
+                package.append(job.getDataStructsJob())
+            package.save(os.path.join(self.testDir, 'JobPackage.pkl'))
+
+                
+            subDict = {}
+            subDict['packageDir'] = self.testDir
+            subDict['index']      = 0
+            subDict['sandbox']    = sandbox
+            subDict['jobs']       = jobList
+            subBundle.append(subDict)
+
+
+        # Now we submit them
+        plugin = CondorGlobusPlugin(submitDir    = config.JobSubmitter.submitDir,
+                                    submitScript = config.JobSubmitter.submitScript)
+
+        cProfile.runctx("plugin(parameters = subBundle)", globals(), locals(), filename = "profStats.stat")
+        #plugin(parameters = subBundle)
+
+
+        # Check to make sure we have running jobs
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nJobs * nSubs)
+
+
+
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+
+        p = pstats.Stats('profStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats()
+
+        return
 
         
 

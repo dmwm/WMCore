@@ -9,16 +9,34 @@
 <a href="../showTweakFile/$docId" >TweakFile</a><br><br>
 #end if
 
+<FORM ACTION="../modifyWorkload" METHOD="POST">
 <hr><table>
 #for $key, $value in $requestSchema.items()
      ## make a hyperlink to workflow
      #if $key == 'RequestWorkflow'
          <tr><td> $key </td><td>  <a href="../showWorkload?filepath=$workloadDir/$value">$value</a> </td></tr>
+         <INPUT TYPE="HIDDEN" NAME="workload" VALUE=$workloadDir/$value>
+     #elif $key == 'RequestType'
+         <tr><td> $key </td><td> $value </td></tr>
+         <INPUT TYPE="HIDDEN" NAME="requestType" VALUE=$value>
+     #elif $key == 'RequestName'
+         <tr><td> $key </td><td> $value </td></tr>
+         <INPUT TYPE="HIDDEN" NAME="requestName" VALUE=$value>
+     #elif $key == 'RunWhitelist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="runWhitelist"></INPUT>
+     #elif $key == 'RunBlacklist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="runBlacklist"></INPUT>
+     #elif $key == 'BlockWhitelist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockWhitelist"></INPUT>
+     #elif $key == 'BlockBlacklist'
+         <tr><td> $key </td><td>   $value <INPUT TYPE="TEXT" NAME="blockBlacklist"></INPUT>
      #else
          <tr><td> $key </td><td> $value </td></tr>
      #end if
 #end for
 </table>
+<INPUT TYPE=submit VALUE="Modify">
+</FORM>
 
 <br>Assignments<br><hr>
 <table>

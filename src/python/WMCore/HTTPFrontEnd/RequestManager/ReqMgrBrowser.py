@@ -18,7 +18,7 @@ class ReqMgrBrowser(TemplatedPage):
         self.templatedir = __file__.rsplit('/', 1)[0]
         print self.templatedir
         self.urlPrefix = 'http://%s/download/?filepath=' % config.reqMgrHost
-        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'RequestStatus', 'Complete', 'Success']
+        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'ReqMgrRequestBasePriority', 'ReqMgrRequestorBasePriority', 'ReqMgrGroupBasePriority', 'RequestStatus', 'Complete', 'Success']
         self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         self.linkedFields = {'RequestName':'requestDetails'}
         self.adminMode = True
@@ -229,6 +229,9 @@ class ReqMgrBrowser(TemplatedPage):
         return message
     doAdmin.exposed = True
 
+    def detailsBackLink(self, requestName):
+        return  ' <A HREF=requestDetails/%s>Details</A> <A HREF=".">Back</A><BR>' % requestName
+
     def updateRequest(self, requestName, status, priority):
         urd = '/reqMgr/request/' + requestName + '?'
         message = "Changed " + requestName
@@ -244,7 +247,7 @@ class ReqMgrBrowser(TemplatedPage):
         if status == "assigned":
            # make a page to choose teams
            return self.assign(requestName)
-        return message + ' <A HREF=requestDetails/%s>Details</A> <A HREF=".">Back</A><BR>' % requestName
+        return message + self.detailsBackLink(requestName)
 
     def assign(self, requestName):
         allTeams = self.jsonSender.get('/reqMgr/team')[0]
@@ -278,3 +281,34 @@ class ReqMgrBrowser(TemplatedPage):
         raise cherrypy.HTTPRedirect('.')
     assignToTeams.exposed = True
 
+    def modifyWorkload(self, requestName, workload, requestType, runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
+        if workload == None or not os.path.exists(workload):
+            raise RuntimeError, "Cannot find workload " + workload
+        helper = WMWorkloadHelper()
+        helper.load(workload)
+        schema = helper.data.request.schema
+        message = ""
+        inputTask = helper.getTask(requestType).data.input.dataset
+        if runWhitelist != "" and runWhitelist != None:
+           l = eval("[%s]"%runWhitelist)
+           schema.RunWhitelist = l
+           inputTask.runs.whitelist = l
+           message += 'Changed runWhiteList to ' + str(l)
+        if runBlacklist != "" and runBlacklist != None:
+           l = eval("[%s]"%runBlacklist)
+           schema.RunBlacklist = l
+           inputTask.runs.blacklist = l
+           message += 'Changed runBlackList to ' + str(l)
+        if blockWhitelist != "" and blockWhitelist != None:
+           l = eval("[%s]"%blockWhitelist)
+           schema.BlockWhitelist = l
+           inputTask.blocks.whitelist = l
+           message += 'Changed blockWhiteList to ' + str(l)
+        if blockBlacklist != "" and blockBlacklist != None:
+           l = eval("[%s]"%blockBlacklist)
+           schema.BlockBlacklist = l
+           inputTask.blocks.blacklist = l
+           message += 'Changed blockBlackList to ' + str(l)
+        helper.save(workload)
+        return message + self.detailsBackLink(requestName)
+    modifyWorkload.exposed = True

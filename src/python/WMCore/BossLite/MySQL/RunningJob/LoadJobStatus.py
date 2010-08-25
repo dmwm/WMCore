@@ -6,16 +6,16 @@ MySQL implementation of BossLite.RunningJob.Load
 """
 
 __all__ = []
-__revision__ = "$Id: LoadJobStatus.py,v 1.1 2010/07/29 19:43:06 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadJobStatus.py,v 1.2 2010/08/11 15:37:10 mcinquil Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 from WMCore.BossLite.DbObjects.RunningJob import RunningJobDBFormatter
 
-class Load(DBFormatter):
+class LoadJobStatus(DBFormatter):
     """
-    BossLite.RunningJob.Load
+    BossLite.RunningJob.LoadJobStatus
     """
     
     sql = """SELECT id AS id, 

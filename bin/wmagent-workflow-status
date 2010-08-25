@@ -24,6 +24,10 @@ def connectToDB():
         print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
         sys.exit(1)
 
+    if not os.path.exists(os.environ["WMAGENT_CONFIG"]):
+        print "Can't find config: %s" % os.environ["WMAGENT_CONFIG"]
+        sys.exit(1)
+
     wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
         
     if not hasattr(wmAgentConfig, "CoreDatabase"):

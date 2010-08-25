@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.15 2010/03/17 15:24:40 maxa Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: wmcoreD,v 1.16 2010/05/26 21:09:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -142,7 +142,11 @@ if config == None:
         msg += "provide one with the --config option"
         print(msg)
         usage()
-        sys.exit(0)
+        sys.exit(1)
+
+if not os.path.exists(config):
+    print "Can't find config: %s" % config
+    sys.exit(1)
 
 # load the config file here.
 cfgObject = loadConfigurationFile(config)

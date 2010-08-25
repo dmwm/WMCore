@@ -83,7 +83,8 @@ def runUnitTests():
         try:
             testsuite.addTest(TestLoader().loadTestsFromName(test))
         except Exception, e:
-            failedTestFiles.append(test)
+            print "LoadFail: %s Exception: %s" % (test,e)
+            failedTestFiles.append("%s - %s" % (test, e))
             
     
     t = TextTestRunner(verbosity=0)

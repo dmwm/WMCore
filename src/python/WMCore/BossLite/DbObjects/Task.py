@@ -4,12 +4,12 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.11 2010/04/26 12:20:14 spigafi Exp $"
-__revision__ = "$Revision: 1.11 $"
+__version__ = "$Id: Task.py,v 1.12 2010/04/27 14:35:56 spigafi Exp $"
+__revision__ = "$Revision: 1.12 $"
 
 import os.path
 # import threading # seems unused
-import logging
+# import logging
 
 from WMCore.Services.UUID import makeUUID
 
@@ -86,6 +86,9 @@ class Task(DbObject):
         self.jobLoaded = 0
         self.jobIndex = []
         self.warnings = []
+        
+        # object not in database
+        self.existsInDataBase = False
 
 
     ##########################################################################
@@ -122,21 +125,20 @@ class Task(DbObject):
         """
         
         status = 0
-
-        if self.exists():
+        
+        if self.existsInDataBase : 
             action = self.daofactory(classname = "Task.Save")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
         else:
             self.create()
-
-        # self.data['id'] = self.exists()
         
         if deep :
             for job in self.jobs:
                 job['taskId'] = self.data['id']
                 job.save()
+                job.existsInDataBase = True
                 status += 1
         
         return status
@@ -154,8 +156,10 @@ class Task(DbObject):
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction)
 
-        return self.exists()
-
+        # update ID & check... necessary call!
+        if self.exists() : 
+            self.existsInDataBase = True
+        
     ###########################################################################
 
     @dbTransaction
@@ -181,22 +185,27 @@ class Task(DbObject):
             return
                 
         if result == []:
-            # Then we have nothing
-            logging.error(
-                'Attempted to load non-existant task with parameters:\n %s' 
-                    % (self.data) ) 
-            return
+            raise TaskError("No task instances corresponds to the," + \
+                     " template specified: %s" % self)
+        
+        
+        if len(result) > 1 :
+            # bad message, I would like to change it...
+            raise TaskError("Multiple task instances corresponds to the" + \
+                     " template specified: %s" % self)
+        
         
         # If we're calling this internally, we only care about the first task
         self.data.update(result[0])
         
         if deep :
             self.loadJobs()
-            
-            # to check
-            for job in self.jobs:
-                job.getRunningInstance()
-            
+
+        # is this method necessary?
+        self.updateInternalData()
+        
+        self.existsInDataBase = True
+        
         return
 
     ###################################################################
@@ -214,12 +223,14 @@ class Task(DbObject):
         jobList = action.execute(id = self.data['id'],
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction)
-
-
-        # update the jobs information, no runninJob associated (?)...
+        
+        # update the jobs information
         for job in jobList:
             tmp = Job()
             tmp.data.update(job)
+            tmp.getRunningInstance()
+            tmp.existsInDataBase = True
+            
             self.jobs.append(tmp)
             
             # fill structure to use 'getJob' method
@@ -236,10 +247,8 @@ class Task(DbObject):
         update task object from database (with all jobs)       
         """
         
-        status = self.save(deep)
-        
         # return number of entries updated
-        return status
+        return self.save(deep)
 
     ##########################################################################
 
@@ -249,8 +258,12 @@ class Task(DbObject):
         remove task object from database (with all jobs)
         """
         
+        if not self.exists():
+            raise TaskError("The following task instance cannot be removed" + \
+                      " since it is not in the database: %s" % self)
+        
         action = self.daofactory(classname = 'Task.Delete')
-
+        
         # verify data is complete
         if not self.valid(['id']):
             # We can delete by name without an ID
@@ -263,6 +276,7 @@ class Task(DbObject):
                            value = self.data['id'],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
+                
         # update status
         self.existsInDataBase = False
 
@@ -364,33 +378,23 @@ class Task(DbObject):
         """
         update private information on it and on its jobs
         """
-
+        
         # update job status and private information
         for job in self.jobs:
 
-            # comput full path for output files
+            # compute full path for output files
             job['fullPathOutputFiles'] = [
                 self.joinPath( self.data['outputDirectory'],  ofile)
                 for ofile in job['outputFiles']
                 if ofile != '']
-
-        # get input directory
-        if self.data['globalSandbox'] is not None:
-            inputDirectory = self.data['globalSandbox']
-        else:
-            inputDirectory = ""
-
-        # update job status and private information
-        for job in self.jobs:
-
-            # comput full path for output files
+            
+            # compute full path for output files
             job['fullPathInputFiles'] = [
                 self.joinPath( self.data['startDirectory'],  ofile)
                 for ifile in job['inputFiles']
                 if ifile != '']
-
-
-
+        
+        
    ##########################################################################
 
     def joinPath(self, path, name):
@@ -403,4 +407,4 @@ class Task(DbObject):
         if name.find( 'file:/' ) == 0:
             return name
 
-        return os.path.join(dir, name)
+        return os.path.join(path, name)

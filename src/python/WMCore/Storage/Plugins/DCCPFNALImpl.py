@@ -55,9 +55,10 @@ class DCCPFNALImpl(StageOutImplV2):
     def doWrapped(self, commandArgs):
         wrapperPath = os.path.join(getWMBASE(),'src','python','WMCore','Storage','Plugins','DDCPFNAL','wrapenv.sh')
         commandArgs.insert(0,wrapperPath)
-        return runCommand(commandArgs)
+        exitCode, output = runCommand(commandArgs)
+        return (exitCode, output)
     
-    def doTransfer(self, sourcePFN, targetPFN, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, sourcePFN, targetPFN, stageOut, seName, command, options = None, protocol = None  ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -72,24 +73,26 @@ class DCCPFNALImpl(StageOutImplV2):
         self.createOutputDirectory(os.path.dirname(targetPFN))
         
         if targetPFN.find('lustre') == -1:
-            if options != None:
-                optionsStr = str(options)
-            if optionsStr:
-                # FIXME this prob. won't work if you have more than one option. Need to do a thing like accepting options
-                # as a list
-                logging.info("Options used in DCCPFNAL transfer. might not work. danger.")
-                if stageOut:
-                    copyCommand = ["dccp", "-o", "86400",  "-d", "0", "-X", "-role=cmsprod", optionsStr, sourcePFN, targetPFN]
-                else:
-                    copyCommand = ["dccp", optionsStr, pnfsPfn(sourcePFN), targetPFN]          
+            if not options:
+                options = ""
+            
+            if stageOut:
+                copyCommand =   \
+                    self.generateCommandFromPreAndPostParts(\
+                                                            ["dccp", "-o", "86400",  "-d", "0", "-X", "-role=cmsprod"],
+                                                            [sourcePFN, targetPFN],
+                                                            options)
             else:
-                if stageOut:
-                    copyCommand = ["dccp", "-o", "86400",  "-d", "0", "-X", "-role=cmsprod", sourcePFN, targetPFN]
-                else:
-                    copyCommand = ["dccp", pnfsPfn(sourcePFN), targetPFN]
+                copyCommand =   \
+                    self.generateCommandFromPreAndPostParts(\
+                                                            ["dccp"],
+                                                            [pnfsPfn(sourcePFN), targetPFN],
+                                                            options)
+   
 
             logging.info("Staging out with DCCPFNAL")
             logging.info("  commandline: %s" % copyCommand)
+            print "command is %s" % copyCommand
             (exitCode, output) = self.doWrapped(copyCommand)
             if not exitCode:
                 logging.error("Transfer failed")
@@ -101,9 +104,9 @@ class DCCPFNALImpl(StageOutImplV2):
             logging.info("  complete. #" )#exit code" is %s" % exitCode)
         
             logging.info("Verifying file")
-            (exitCode, output) = self.doWrapped('/opt/d-cache/dcap/bin/check_dCachefilecksum.sh',
+            (exitCode, output) = self.doWrapped(['/opt/d-cache/dcap/bin/check_dCachefilecksum.sh',
                                                     pnfsPfn(targetPFN),
-                                                    sourcePFN)
+                                                    sourcePFN])
             if not exitCode:
                 logging.error("Checksum verify failed")
                 try:

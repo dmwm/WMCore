@@ -5,8 +5,8 @@ MySQL implementation of File.SetParentageByJob
 Make the parentage link between a file and all the inputs of a given job
 """
 
-__revision__ = "$Id: SetParentageByJob.py,v 1.3 2010/03/09 18:31:04 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SetParentageByJob.py,v 1.4 2010/03/09 19:58:39 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
 
@@ -21,8 +21,8 @@ class SetParentageByJob(DBFormatter):
     sql = """INSERT INTO wmbs_file_parent (child, parent)
              SELECT DISTINCT wmbs_file_details.id, wmbs_job_assoc.file
              FROM wmbs_file_details, wmbs_job_assoc
-             WHERE wmbs_job_assoc.job = :jobid
-             AND wmbs_file_details.id = :child
+             WHERE wmbs_job_assoc.job  = :jobid
+             AND wmbs_file_details.lfn = :child
     """
     
     

@@ -3,12 +3,16 @@
 _Periodic_
 
 Periodically create jobs to process all files in a fileset.  A job will not be
-created unless the previous job has been completed.  This algorithm will create
-one final job containing all files once the input fileset has been closed.
+created until the previous job has been completed and new data has arrived.
+This algorithm will create one final job containing all files once the input
+fileset has been closed.
+
+Note that the period here refers to the amount of time between the end of a job
+and the creation of a new job.
 """
 
-__revision__ = "$Id: Periodic.py,v 1.3 2009/08/10 21:01:27 sfoulkes Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: Periodic.py,v 1.4 2009/08/13 19:44:19 sfoulkes Exp $"
+__version__  = "$Revision: 1.4 $"
 
 import time
 import threading
@@ -22,15 +26,20 @@ class Periodic(JobFactory):
     _Periodic_
 
     Periodically create jobs to process all files in a fileset.  A job will not
-    be created unless the previous job has been completed.  This algorithm will
-    create one final job containing all files once the input fileset has been
-    closed.
+    be created until the previous job has been completed and new data has
+    arrived. This algorithm will create one final job containing all files once
+    the input fileset has been closed.
+
+    Note that the period here refers to the amount of time between the end of a
+    job and the creation of a new job.
     """
     def outstandingJobs(self, jobPeriod, inputOpen):
         """
         _outstandingJobs_
 
-        Determine whether or not there are outstanding jobs.
+        Determine whether or not there are outstanding jobs and whether or not
+        enough time has elapsed from the previous job to warrant creating a new
+        job.
         """
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS",
@@ -42,15 +51,20 @@ class Periodic(JobFactory):
         if len(results) > 0:
             for result in results:
                 if result["name"] not in ["closeout", "cleanout", "exhausted"]:
+                    myThread.logger.debug("Periodic: Outstanding jobs, returning...")
                     return True
 
-            # If the query results multiple states they will all have the same
-            # state_time.
+            # If the fileset is closed we don't care about the period.  No new
+            # files will be showing up and we want to send out the final job as
+            # soon as possible.
             if not inputOpen:
+                myThread.logger.debug("Periodic: fileset closed, returning...")
                 return False
             
             stateTime = int(results[0]["state_time"])
             if stateTime + jobPeriod > time.time():
+                myThread.logger.debug("Periodic: %s seconds remaining." % \
+                                      ((stateTime + jobPeriod) - time.time()))
                 return True
 
         return False
@@ -60,7 +74,8 @@ class Periodic(JobFactory):
         """
         _algorithm_
 
-        Do some periodic job splitting.
+        Preform periodic job splitting.  Generate a new job only if conditions
+        are right.
         """
         jobPeriod = int(kwargs.get("job_period", 60))
        
@@ -70,17 +85,23 @@ class Periodic(JobFactory):
         if self.outstandingJobs(jobPeriod, fileset.open):
             return []
 
-        if not fileset.open:
-            availableFiles = self.subscription.availableFiles()
-
-            if len(availableFiles) == 0:
-                return []
-            
-            self.subscription.completeFiles(self.subscription.availableFiles())
+        availableFiles = self.subscription.availableFiles()
+        if len(availableFiles) == 0:
+            myThread = threading.currentThread()
+            myThread.logger.debug("Periodic: No available files...")
+            return []
 
         fileset.loadData()
+        allFiles = fileset.getFiles()
+
+        if not fileset.open:
+            self.subscription.completeFiles(allFiles)
+        else:
+            self.subscription.acquireFiles(availableFiles)
+
+
         newJob = jobInstance(name = makeUUID())
-        newJob.addFile(fileset.getFiles())
+        newJob.addFile(allFiles)
         newJobGroup = groupInstance(subscription = self.subscription)
         newJobGroup.add(newJob)
         newJobGroup.commit()

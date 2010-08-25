@@ -5,8 +5,8 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-__revision__ = "$Id: Periodic_t.py,v 1.2 2009/08/10 16:10:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Periodic_t.py,v 1.3 2009/08/13 19:44:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -64,16 +64,6 @@ class PeriodicTest(unittest.TestCase):
         self.testFileset = Fileset(name = "TestFileset1")
         self.testFileset.create()
         
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1000, events = 100,
-                         locations = Set(["somese.cern.ch"]))
-        testFileA.create()
-        self.testFileset.addFile(testFileA)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1000, events = 100,
-                         locations = Set(["somese.cern.ch"]))
-        testFileB.create()
-        self.testFileset.addFile(testFileB)    
-        self.testFileset.commit()
-
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task="Test" )
         testWorkflow.create()
@@ -107,6 +97,40 @@ class PeriodicTest(unittest.TestCase):
         myThread.transaction.commit()
         return            
 
+    def injectFile(self):
+        """
+        _injectFile_
+
+        Inject a file into the periodic splitting input fileset.
+        """
+        testFile = File(lfn = "/this/is/a/lfn%s" % time.time(), size = 1000,
+                        events = 100, locations = Set(["somese.cern.ch"]))
+        testFile.create()
+        self.testFileset.addFile(testFile)    
+        self.testFileset.commit()
+
+        return
+
+    def verifyFiles(self, wmbsJob):
+        """
+        _verifyFiles_
+
+        Verify that the input files for the job are the same as the files in the
+        input fileset.
+        """
+        inputFiles = wmbsJob.getFiles()
+        filesetFiles = self.testFileset.getFiles()
+
+        for inputFile in inputFiles:
+            assert inputFile in filesetFiles, \
+                   "ERROR: Unknown file: %s" % inputFile
+            filesetFiles.remove(inputFile)
+
+        assert len(filesetFiles) == 0, \
+               "ERROR: Not all files included in job."
+                
+        return
+    
     def testPeriodicSplitting(self):
         """
         _testPeriodiciSplitting_
@@ -119,7 +143,8 @@ class PeriodicTest(unittest.TestCase):
 
         # First pass: no jobs exist.  The algorithm should create a job
         # containing all available files.
-        jobGroups = jobFactory(job_period = 60)
+        self.injectFile()
+        jobGroups = jobFactory(job_period = 99999999999)
 
         assert len(jobGroups) == 1, \
                "ERROR: Wrong number of job groups returned: %s" % len(jobGroups)
@@ -128,22 +153,13 @@ class PeriodicTest(unittest.TestCase):
                "ERROR: Jobgroup has wrong number of jobs: %s" % len(jobGroups[0].jobs)
 
         wmbsJob = jobGroups[0].jobs.pop()
+        self.verifyFiles(wmbsJob)
 
-        assert len(wmbsJob["input_files"]) == 2, \
-               "ERROR: Job has wrong number of files: %s" % len(wmbsJob["files"])
-
-        goldenFiles = ["/this/is/a/lfnA", "/this/is/a/lfnB"]
-        for file in wmbsJob["input_files"]:
-            assert file["lfn"] in goldenFiles, \
-                   "ERROR: Unknown lfn: %s" % file["lfn"]
-            goldenFiles.remove(file["lfn"])
-
-        assert len(goldenFiles) == 0, \
-               "ERROR: Files are missing from the job."
-
-        # No jobs should be generated as there are outstanding jobs.
+        # Verify that no jobs are generated as the previously issued job has not
+        # completed yet.
         time.sleep(5)
-        moreJobGroups = jobFactory(job_period = 1)        
+        self.injectFile()
+        moreJobGroups = jobFactory(job_period = 1)    
 
         assert len(moreJobGroups) == 0, \
                "ERROR: No jobgroups should be returned."
@@ -157,16 +173,17 @@ class PeriodicTest(unittest.TestCase):
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
         changeStateDAO.execute([wmbsJob])
 
-        # All jobs complete, but our period is not up yet.  Should get back
-        # no jobs.
+        # Verify that no jobs will be generated if the period has not yet
+        # expried.
+        self.injectFile()
         moreJobGroups = jobFactory(job_period = 999999999999)
 
         assert len(moreJobGroups) == 0, \
                "ERROR: No jobgroups should be returned."
 
-        # Call the job splitting code with a short period, we should get a job
-        # back.  Sleep for a little bit just in case.
+        # Verify that a job will be generated if the period has expired.
         time.sleep(5)
+        self.injectFile()
         jobGroups = jobFactory(job_period = 1)
 
         assert len(jobGroups) == 1, \
@@ -175,31 +192,30 @@ class PeriodicTest(unittest.TestCase):
         assert len(jobGroups[0].jobs) == 1, \
                "ERROR: Jobgroup has wrong number of jobs: %s" % len(jobGroups[0].jobs)
 
-        wmbsJob = jobGroups[0].jobs.pop()
+        self.verifyFiles(jobGroups[0].jobs.pop())
 
-        assert len(wmbsJob["input_files"]) == 2, \
-               "ERROR: Job has wrong number of files: %s" % len(wmbsJob["input_files"])
-
-        goldenFiles = ["/this/is/a/lfnA", "/this/is/a/lfnB"]
-        for file in wmbsJob["input_files"]:
-            assert file["lfn"] in goldenFiles, \
-                   "ERROR: Unknown lfn: %s" % file["lfn"]
-            goldenFiles.remove(file["lfn"])
-
-        assert len(goldenFiles) == 0, \
-               "ERROR: Files are missing from the job."
-
-        # The job splitting code should create one and only one job once the
-        # fileset has been closed.
+        # Verify that no jobs will be generated in the case that a periodic job
+        # is still running and the fileset has been closed.
         self.testFileset.markOpen(False)
+        time.sleep(5)
+        self.injectFile()
+        jobGroups = jobFactory(job_period = 1)
+
+        assert len(jobGroups) == 0, \
+               "ERROR: Wrong number of job groups returned: %s" % len(jobGroups)
+
+        # Complete the outstanding job.
         wmbsJob["state"] = "closeout"
         wmbsJob["oldstate"] = "new"
         wmbsJob["couch_record"] = "somejive"
         wmbsJob["retry_count"] = 0
         changeStateDAO.execute([wmbsJob])
 
-        time.sleep(5)
-        jobGroups = jobFactory(job_period = 1)
+        # Verify that when the input fileset is closed and all periodic jobs
+        # are complete a job will be generated even if the period has not yet
+        # expired.
+        self.injectFile()
+        jobGroups = jobFactory(job_period = 99999999999)
 
         assert len(jobGroups) == 1, \
                "ERROR: Wrong number of job groups returned: %s" % len(jobGroups)
@@ -207,27 +223,17 @@ class PeriodicTest(unittest.TestCase):
         assert len(jobGroups[0].jobs) == 1, \
                "ERROR: Jobgroup has wrong number of jobs: %s" % len(jobGroups[0].jobs)
 
-        wmbsJob = jobGroups[0].jobs.pop()
+        self.verifyFiles(jobGroups[0].jobs.pop())
 
-        assert len(wmbsJob["input_files"]) == 2, \
-               "ERROR: Job has wrong number of files: %s" % len(wmbsJob["input_files"])
-
-        goldenFiles = ["/this/is/a/lfnA", "/this/is/a/lfnB"]
-        for file in wmbsJob["input_files"]:
-            assert file["lfn"] in goldenFiles, \
-                   "ERROR: Unknown lfn: %s" % file["lfn"]
-            goldenFiles.remove(file["lfn"])
-
-        assert len(goldenFiles) == 0, \
-               "ERROR: Files are missing from the job."
-
-        # We should not get anymore jobs.
+        # Verify that after the final job is complete no more jobs are generated.
         wmbsJob["state"] = "closeout"
         wmbsJob["oldstate"] = "new"
         wmbsJob["couch_record"] = "somejive"
         wmbsJob["retry_count"] = 0
         changeStateDAO.execute([wmbsJob])
 
+        time.sleep(5)
+        self.injectFile()
         moreJobGroups = jobFactory(job_period = 1)
 
         assert len(moreJobGroups) == 0, \

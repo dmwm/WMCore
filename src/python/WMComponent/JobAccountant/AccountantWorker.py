@@ -9,13 +9,14 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.29 2010/05/07 22:09:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.30 2010/05/24 19:33:09 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import os
 import threading
 import logging
 import gc
+import pdb
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.FwkJobReport.Report import Report
@@ -86,6 +87,7 @@ class AccountantWorker:
         self.mergedOutputFiles = []
         self.listOfJobsToSave  = []
         self.filesetAssoc      = []
+        self.count = 0
 
         
         return
@@ -191,6 +193,10 @@ class AccountantWorker:
                 
 
             returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
+            self.count += 1
+            #if self.count%1000 == 0:
+            #    pdb.set_trace()
+            #break
 
         # Now things done at the end of the job
 
@@ -282,76 +288,6 @@ class AccountantWorker:
 
         return
 
-    def fixupDBSFileStatus(self, redneckChildren):
-        """
-        _fixupDBSFileStatus_
-
-        Fixup file status in DBS for redneck children.  Given a list of redneck
-        children this method will determine if the redneck parents for the given
-        child have been merged and update the file status in DBS accordingly.
-        If a redneck child has it's status changed from 'WaitingForParents' to
-        'NOTUPLOADED' all of it's redneck children will be checked as well to
-        determine if their status can be updated.
-        """
-        while len(redneckChildren) > 0:
-            redneckChild = redneckChildren.pop()
-
-            # Find all the redneck parents for this redneck child and iterate
-            # through them.  For each redneck parent we check to see if it has
-            # a merged child.  If it doesn't, we bail out of the loop and update
-            # the child's status to be "WaitingForParents".  If all of the
-            # redneck parents have merged children we can safely change the
-            # status of the redneck child to "NOTUPLOADED" so that it is picked
-            # up by the DBSUpload component.
-            parentsInfo = self.getParentInfoAction.execute([redneckChild],
-                                                           conn = self.transaction.conn,
-                                                           transaction = True)
-            for parentInfo in parentsInfo:
-                if parentInfo["redneck_parent_fileset"] != None:
-                    # We need to determine the correct input LFN for the
-                    # GetMergedChildren DAO.  The GetParentInfo DAO will return
-                    # the file's parent and grand parent LFN but does not state
-                    # which was the input to the processing job, which is what
-                    # we're really after.  Here, I'm going to assume that if the
-                    # parent file is merged than it was the input to the
-                    # processing job.  This assumption prevents us from running
-                    # redneck workflows over unmerged files, but that seems like
-                    # a reasonable compromise.
-                    if int(parentInfo["merged"]) == 1:
-                        inputLFN = parentInfo["lfn"]
-                    else:
-                        inputLFN = parentInfo["gplfn"]
-                        
-                    children = self.getMergedChildrenAction.execute(inputLFN = inputLFN,
-                                                                    parentFileset = parentInfo["redneck_parent_fileset"],
-                                                                    conn = self.transaction.conn,
-                                                                    transaction = True)
-
-                    if len(children) == 0:
-                        self.dbsStatusAction.execute([redneckChild], "WaitingForParents",
-                                                     conn = self.transaction.conn,
-                                                     transaction = True)
-                        break
-            else:
-                # All of the redneck parents for this file have been merged but
-                # we still need to verify that the parents themselves are not
-                # waiting for their parents to be merged.  This will check the
-                # status of all parents to verify that they aren't waiting for
-                # parents.
-                parentStatus = self.dbsParentStatusAction.execute(lfn = redneckChild,
-                                                                  conn = self.transaction.conn,
-                                                                  transaction = True)
-
-                if "WaitingForParents" not in parentStatus:
-                    children = self.dbsChildrenAction.execute(redneckChild,
-                                                              conn = self.transaction.conn,
-                                                              transaction = True)
-                    for child in children:
-                        redneckChildren.add(child)
-                    self.dbsStatusAction.execute([redneckChild], "NOTUPLOADED",
-                                                 conn = self.transaction.conn, transaction = True)
-
-        return
 
 
     def findDBSParents(self, lfn):
@@ -400,12 +336,12 @@ class AccountantWorker:
         Setup file parentage inside DBSBuffer, properly handling redneck
         parentage.
         """
+        myThread = threading.currentThread()
 
         newParents = self.findDBSParents(lfn = outputFile['lfn'])
 
         if len(newParents) > 0:
             dbsFile = DBSBufferFile(lfn = outputFile["lfn"])
-            dbsFile.load()
             dbsFile.addParents(list(newParents))
 
         return
@@ -525,7 +461,6 @@ class AccountantWorker:
     def createFilesInDBSBuffer(self):
         """
         _createFilesInDBSBuffer_
-
         It does the actual job of creating things in DBSBuffer
         WARNING: This assumes all files in a job have the same final location
         """

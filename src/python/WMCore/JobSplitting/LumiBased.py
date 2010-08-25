@@ -7,8 +7,10 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.15 2010/06/17 21:00:22 mnorman Exp $"
-__version__  = "$Revision: 1.15 $"
+__revision__ = "$Id: LumiBased.py,v 1.16 2010/06/18 18:10:22 mnorman Exp $"
+__version__  = "$Revision: 1.16 $"
+
+import operator
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
@@ -21,184 +23,160 @@ class LumiBased(JobFactory):
 
     locations = []
 
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
-        Implement lumi based splitting algorithm.  By default splits into JobGroups by lumi
-        section, and then each job has one file.
+        Split files into a number of lumis per job
+        Allow a flag to determine if we split files between jobs
         """
 
-        #lumisPerJob = kwargs['lumis_per_job']
-        filesPerJob  = kwargs.get('files_per_job', 1)
-        eventsPerJob = kwargs.get('events_per_job', None)
+
         lumisPerJob  = kwargs.get('lumis_per_job', None)
+        splitFiles   = kwargs.get('split_files_between_job', False)
 
-        #Default behavior
-        #Splits into one JobGroup per lumi section
-        # and one file per job in jobGroup
+        lDict = self.sortByLocation()
+        locationDict = {}
 
-        lumiDict = {}
-        self.locations = []
-
-        #Get a dictionary of sites, files
-        locationDict = self.sortByLocation()
-        for location in locationDict.keys():
-            lumiDict = {}
-            for f in locationDict[location]:
-                if hasattr(f, "loadData"):
+        for key in lDict.keys():
+            newlist = []
+            for f in lDict[key]:
+                if hasattr(f, 'loadData'):
                     f.loadData()
-
-                if sum([ len(run) for run in f['runs']]) == 0:
+                if len(f['runs']) == 0:
                     continue
-                fileLumi     = None
-                fileLumiList = []
-                #Let's grab all the Lumi sections in the file
-                for run in f['runs']:
-                    for i in run:
-                        fileLumiList.append('%i_%i' % (run.run, i))
+                f['lowestRun'] = sorted(f['runs'])[0]
+                newlist.append(f)
+            locationDict[key] = sorted(newlist, key=operator.itemgetter('lowestRun'))
 
-                for fileLumi in fileLumiList:
-                    if not lumiDict.has_key(fileLumi):
-                        lumiDict[fileLumi] = []
-                    lumiDict[fileLumi].append(f)
-                    
-                
-            if not lumisPerJob == None:
-                self.LumiBasedJobSplitting(lumiDict, lumisPerJob, location)
-            elif not eventsPerJob == None:
-                self.EventBasedJobSplitting(lumiDict, eventsPerJob, location)
-            else:
-                self.FileBasedJobSplitting(lumiDict, filesPerJob, location)
+
+
+
+        if splitFiles:
+            self.withFileSplitting(lumisPerJob = lumisPerJob,
+                                   locationDict = locationDict)
+        else:
+            self.noFileSplitting(lumisPerJob = lumisPerJob,
+                                 locationDict = locationDict)
 
         return
-            
-
-    def FileBasedJobSplitting(self, lumiDict, filesPerJob, location):
-        """
-        Split jobs based on files
-
-        """
-        assignedFiles = []
         
-        for lumi in lumiDict.keys():
-            self.newGroup()
-            jobFiles = Fileset()
-            
-            #Now split them into sections according to files per job
-            for f in lumiDict[lumi]:
-                if f['lfn'] in assignedFiles:
-                    continue
-                assignedFiles.append(f['lfn'])
 
-                #Is it too big (should never be)
-                if len(jobFiles) < filesPerJob:
-                    jobFiles.addFile(f)
-                #Now is it too big?
-                if len(jobFiles) == filesPerJob:
-                    self.newJob(name = makeUUID(), files = jobFiles)
-                    self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
-                    jobFiles = Fileset()
-
-            #If we've run out of files before completing a job
-            if len(jobFiles) != 0:
                 
-                self.newJob(name = makeUUID(), files = jobFiles)
-                self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
-                jobFiles = Fileset()
 
-    def LumiBasedJobSplitting(self, lumiDict, lumisPerJob, location):
+
+    def noFileSplitting(self, lumisPerJob, locationDict):
         """
-        Split simply, based on lumis
+        Split files into jobs by lumi without splitting files
 
+        Will create jobs with AT LEAST that number of lumis
+
+        if lumisPerJob = 3:
+        2 files of 3 lumis each  = 2 jobs
+        2 files of 2 lumis each  = 1 job
+        2 files of 1 lumi each   = 1 job
+        10 files of 1 lumi each  = 4 jobs
         """
 
-        currentLumis  = 0
-        currentRuns   = 0
-        currentRun    = 0
-        jobFiles      = Fileset()
+        totalJobs    = 0
+        for location in locationDict.keys():
 
-        assignedFiles = []
-        # We only make a single JobGroup for all the lumi's
-        self.newGroup()
-
-        for lumi in lumiDict.keys():
-            if currentLumis < lumisPerJob:
-                lumisInJob = []
-                for f in lumiDict[lumi]:
-                    if f['lfn'] in assignedFiles:
-                        continue
-                    jobFiles.addFile(f)
-                    assignedFiles.append(f['lfn'])
-                    for run in list(f['runs']):
-                        for l in run:
-                            lumiID = int(str(run.run) + str(l))
-                            if not lumiID in lumisInJob:
-                                lumisInJob.append(lumiID)
-                        currentRuns += 1
-                        currentRun = run
-                #Now increment
-                currentLumis += len(lumisInJob)
-
-            #If we now have enough lumis, we end.
-            if currentLumis >= lumisPerJob:
-                self.newJob(name = makeUUID(), files = jobFiles)
-                self.currentJob["mask"].setMaxAndSkipLumis(currentLumis - 1, int(lumi.split('_')[1]))
-                self.currentJob["mask"].setMaxAndSkipRuns(currentRuns - 1, currentRun.run)
-                #Wipe clean
-                currentLumis = 0
-                currentRuns  = 0
-                jobFiles = Fileset()
-
-        if not len(jobFiles.getFiles()) == 0:
-            #Then we have files we need to check in because we ran out of lumis before filling the last job
-            self.newJob(name = makeUUID(), files = jobFiles)
-            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob - 1, int(lumi.split('_')[1]))
-            self.currentJob["mask"].setMaxAndSkipRuns(currentRuns - 1, currentRun.run)
-            
-
-    def EventBasedJobSplitting(self, lumiDict, eventsPerJob, location):
-        """
-        Split jobs in lumi based on event
-
-        """
-        
-        currentEvents = 0
-        assignedFiles = []
-        
-        for lumi in lumiDict.keys():
+            # Create a new jobGroup
             self.newGroup()
-            jobFiles = Fileset()
-            for file in lumiDict[lumi]:
-                if file['lfn'] in assignedFiles:
+
+            # Start this out high so we immediately create a new job
+            lumisInJob  = lumisPerJob + 100
+
+            for f in locationDict[location]:
+                fileLength = sum([ len(run) for run in f['runs']])
+                if fileLength == 0:
+                    # Then we have no lumis
+                    # BORING.  Go home
                     continue
-                assignedFiles.append(file['lfn'])
 
-                eventsInFile = file['events']
+                fileRuns = list(f['runs'])
+                if lumisInJob >= lumisPerJob:
+                    # Then we need to close out this job
+                    # And start a new job
+                    self.newJob(name = self.getJobName(length=totalJobs))
+                    firstRun = fileRuns[0]
+                    self.currentJob['mask']['FirstRun']  = firstRun.run
+                    self.currentJob['mask']['FirstLumi'] = firstRun.lumis[0]
+                    lumisInJob = 0
+                    totalJobs += 1
 
-                if eventsInFile > eventsPerJob:
-                    #Push the panic button
-                    print "File %s is too big to be processed.  Skipping" % (file['lfn'])
-                    continue
-                #If we don't have enough events, add the file to the job
-                if eventsPerJob - currentEvents >= eventsInFile:
-                    currentEvents = currentEvents + eventsInFile
-                    jobFiles.addFile(file)
-                #If you have enough events, end the job and start a new one
-                else:
-                    self.newJob(name = makeUUID(), files = jobFiles)
-                    self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
+
+                # Actually add the file to the job
+                self.currentJob.addFile(f)
+                lumisInJob += fileLength
+
+                
+                if lumisInJob >= lumisPerJob:
+                    # Write down the ending info from this job
+                    # Do not close job until you get the
+                    # start info from the next file
+                    # This simplifies things
+                    lastRun = fileRuns[-1]
+                    self.currentJob["mask"]['LastRun']   = lastRun.run
+                    self.currentJob["mask"]['LastLumi']  = lastRun.lumis[-1]
+
+        return
+
+
+    def withFileSplitting(self, lumisPerJob, locationDict):
+        """
+        Split files into jobs allowing one file to be in multiple jobs
+
+        Creates jobs with EXACTLY lumisPerJob lumis
+        """
+
+
+        totalJobs = 0
+        for location in locationDict.keys():
+
+            # Create a new jobGroup
+            self.newGroup()
+
+            # Start this out so we immediately create a new job
+            lumisInJob  = lumisPerJob
+
+            for f in locationDict[location]:
+
+                if self.currentJob and not lumisInJob == lumisPerJob:
+                        # Add a new file to the job
+                        # When starting a new file
+                        self.currentJob.addFile(f)
+
+                for run in f['runs']:
                     
-                    #Clear Fileset
-                    jobFiles = Fileset()
+                    for lumi in run:
+                        # Now we're running through lumis
+                        
+                        if lumisInJob == lumisPerJob:
+                            # Then we need to close out this job
+                            # And start a new job
+                            self.newJob(name = self.getJobName(length=totalJobs))
+                            self.currentJob['mask']['FirstRun']  = run.run
+                            self.currentJob['mask']['FirstLumi'] = lumi
+                            lumisInJob = 0
+                            totalJobs += 1
 
-                    #Now add next file into the next job
-                    currentEvents = eventsInFile
-                    jobFiles.addFile(file)
-                    
-            #If we have excess events, make a final job
-            if not currentEvents == 0:
-                self.newJob(name = makeUUID(), files = jobFiles)
-                self.currentJob["mask"].setMaxAndSkipLumis(1, int(lumi.split('_')[1]))
-                jobFiles = Fileset()
-                currentEvents = 0
+                            # Add the file to new jobs
+                            self.currentJob.addFile(f)
+
+                        lumisInJob += 1
+
+                        if lumisInJob == lumisPerJob:
+                            # Then this will be closed next round
+                            # Set things here
+                            self.currentJob["mask"]['LastRun']   = run.run
+                            self.currentJob["mask"]['LastLumi']  = lumi
+
+                        
+
+
+        return
+
+    
+

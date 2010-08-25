@@ -6,10 +6,11 @@ Launch jobs to run over a file once all other subscriptions that process the fil
 have completed processing it.
 """
 
-__revision__ = "$Id: SiblingProcessingBased.py,v 1.1 2010/04/22 15:42:40 sfoulkes Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: SiblingProcessingBased.py,v 1.2 2010/04/22 21:27:32 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 import threading
+import logging
 
 from WMCore.WMBS.File import File
 
@@ -45,9 +46,8 @@ class SiblingProcessingBased(JobFactory):
         else:
             filesetClosed = True
 
-        if len(completeFiles) < filesPerJob:
-            if not filesetClosed:
-                return
+        if len(completeFiles) < filesPerJob and not filesetClosed:
+            return
 
         self.newGroup()
         while len(completeFiles) >= filesPerJob:

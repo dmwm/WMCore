@@ -37,7 +37,8 @@ class ReqMgrRESTModel(RESTModel):
                                'group' :  {'call':self.getGroup, 'args':['group', 'user']},
                                'version' :  {'call':self.getVersion, 'args':[]},
                                'team' :  {'call':self.getTeam, 'args':[]},
-                               'workQueue' : {'call':self.getWorkQueue, 'args':['request', 'workQueue']}
+                               'workQueue' : {'call':self.getWorkQueue, 'args':['request', 'workQueue']},
+                               'message' : {'call':self.getMessage, 'args':['request']}
                               },
                         'PUT':{'request' : {'call':self.putRequest, 
                                             'args':['requestName', 'status', 'priority']},
@@ -48,7 +49,8 @@ class ReqMgrRESTModel(RESTModel):
                                'group' :  {'call':self.putGroup, 'args':['group', 'user']},
                                'version' :  {'call':self.putVersion, 'args':['version']},
                                'team' :  {'call':self.putTeam, 'args':['team']},
-                               'workQueue' : {'call':self.putWorkQueue, 'args':['request', 'url']}
+                               'workQueue' : {'call':self.putWorkQueue, 'args':['request', 'url']},
+                               'message' : {'call':self.putMessage, 'args':['request']}
                               },
                         'POST':{'request' : {'call':self.postRequest,
                                              'args':['requestName', 'events_written', 
@@ -107,11 +109,7 @@ class ReqMgrRESTModel(RESTModel):
                         request['Assignments'].append(assignment['TeamName'])
 
                     # show the status and messages
-                    messages = ChangeState.getMessages(requestName)
-                    if messages == []:
-                        request['RequestMessages'] = []
-                    for message in messages:
-                        request['RequestMessages'].append(message)
+                    request['RequestMessages'] = self.getMessage(requestName)
                     # updates
                     request['RequestUpdates'] = ChangeState.getProgress(requestName)
                     # it returns a datetime object, which I can't pass through
@@ -182,11 +180,14 @@ class ReqMgrRESTModel(RESTModel):
 
     def getWorkQueue(self, request=None, workQueue=None):
         self.initThread()
-        print "GETWORKQUEE " + str(request)
         if workQueue != None:
             return ProdMgrRetrieve.findAssignedRequests(workQueue)
         if request != None:
             return ProdManagement.getProdMgr(request)
+
+    def getMessage(self, request=None):
+        self.initThread()
+        return ChangeState.getMessages(request)
 
     def putWorkQueue(self, request, url):
         self.initThread()
@@ -292,6 +293,12 @@ class ReqMgrRESTModel(RESTModel):
     def putTeam(self, team):
         self.initThread()
         return ProdManagement.addTeam(team)
+
+    def putMessage(self, request):
+        self.initThread()
+        message = json.loads( cherrypy.request.body.read() )
+        print "PUTMESAGE " + str(message)
+        return ChangeState.putMessage(request, message)
 
 #    def postRequest(self, requestName, events_written=None, events_merged=None, 
 #                    files_written=None, files_merged = None, dataset=None):

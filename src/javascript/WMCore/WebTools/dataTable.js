@@ -1,13 +1,8 @@
-WMCore.WebTools.dataSchema = function () {
-	
-	var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-	            elCell.innerHTML = "<a href='" + oRecord.getData("ChildQueueUrl") + "' target='_blank'>" + sData + "</a>"; 
-	};
-	
-	var dataSchema =  {
-        fields: [{key: "Status", sortable:true}, {key: "ChildQueueUrl", label: "Child Queue Url", sortable:true, formatter:formatUrl}]
-    };
-}
+/*
+ * Provide default values for datasource and table.
+ * 
+ */
+
 
 WMCore.WebTools.createDataSource = function (dataUrl, dataSchema) {
 	
@@ -16,31 +11,32 @@ WMCore.WebTools.createDataSource = function (dataUrl, dataSchema) {
 	var myDataSource = new YAHOO.util.XHRDataSource(dataUrl);
 	//var myDataSource = YAHOO.util.ScriptNodeDataSource(dataUrl);
     myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
-    myDataSource.responseSchema = dataSchema
+    myDataSource.responseSchema = dataSchema;
 	
-	return myDataSource
-}
+	return myDataSource;
+};
 
 WMCore.WebTools.createDefaultTableDef = function (tableDef) {
 	var defaultDef = new Array();
 	for (var i in tableDef) {
 		defaultDef[i] = YAHOO.lang.merge(tableDef[i], {
-			sortable: true
-			//resizeable: true
-		})
+			sortable: true,
+			resizeable: true
+		});
 	}
-    return defaultDef
-}
+    return defaultDef;
+};
 
 WMCore.WebTools.defaultTableConfig = {
     // Set up pagination
     paginator : new YAHOO.widget.Paginator({
-        rowsPerPage : 50
+        rowsPerPage : 25
     }),
     // Set up initial sort state
     sortedBy: {
         key: "id"
 	}
+	
     // Sorting and pagination will be routed to the server via generateRequest
     //dynamicData: true
 };
@@ -61,12 +57,18 @@ WMCore.WebTools.createDataTable = function (container, dataSource, columnDefs,
                 YAHOO.log("Polling failure", "error");
             },
          scope: myDataTable
+    };
+
+    /*
+    myDataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) {
+        oPayload.totalRecords = oResponse.meta.totalRecords;
+        return oPayload;
     }
-	
-	dataSource.setInterval(pollingCycle, null, myCallback)
+	*/	
+	dataSource.setInterval(pollingCycle, null, myCallback);
 	 
-	return myDataTable
-}
+	return myDataTable;
+};
 
 WMCore.WebTools.createChart = function (dataSource, container, pollingCycle) {
 	
@@ -77,7 +79,8 @@ WMCore.WebTools.createChart = function (dataSource, container, pollingCycle) {
 	yAxis.maximum = 100;
 
 	var mychart = new YAHOO.widget.ColumnChart( "chart", dataSource, dataSource.responseShema);
-	return mychart
-}
+	return mychart;
+};
+
 
 YAHOO.util.Connect.initHeader("Accept", "text/json", true)

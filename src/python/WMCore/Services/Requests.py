@@ -6,8 +6,8 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 """
 
-__revision__ = "$Id: Requests.py,v 1.29 2010/01/09 09:17:08 metson Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Requests.py,v 1.30 2010/01/09 17:20:32 metson Exp $"
+__version__ = "$Revision: 1.30 $"
 
 try:
     # Python 2.6
@@ -127,7 +127,7 @@ class Requests(dict):
             headers["Content-length"] = len(encoded_data)
         elif verb == 'GET' and data:
             #encode the data as a get string
-            uri = "%s?%s" % (uri, urllib.urlencode(data))
+            uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
             
         headers["Content-length"] = len(encoded_data)
         self['conn'].connect()

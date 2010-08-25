@@ -1256,6 +1256,8 @@ class SubscriptionTest(unittest.TestCase):
         Tests the delete function that should delete all component of a subscription
         """
 
+        myThread = threading.currentThread()
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task = "Test")
         testWorkflow.create()
@@ -1300,6 +1302,12 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(testWorkflow.exists(), 1)
         self.assertEqual(testFileset.exists(),  False)
         self.assertEqual(testFileset2.exists(), 2)
+
+        result = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
+        self.assertEqual(len(result), 0)
+        result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
+        self.assertEqual(len(result), 0)
+
     
 
 if __name__ == "__main__":

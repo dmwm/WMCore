@@ -10,8 +10,8 @@ _CondorVanillaPlugin_
 A plug-in that should submit directly to vanilla condor CEs
 """
 
-__revision__ = "$Id: CondorVanillaPlugin.py,v 1.1 2010/06/14 18:53:58 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CondorVanillaPlugin.py,v 1.2 2010/07/12 21:04:21 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -80,6 +80,9 @@ class CondorVanillaPlugin(PluginBase):
 
         result = {'Success': []}
 
+        successList = []
+        failList    = []
+
         for entry in parameters:
             jobList         = entry.get('jobs')
             self.packageDir = entry.get('packageDir', None)
@@ -138,9 +141,15 @@ class CondorVanillaPlugin(PluginBase):
                     if job == {}:
                         continue
                     result['Success'].append(job['id'])
+                    job['couch_record'] = None
+                    successList.append(job)
             else:
                 logging.error("JobSubmission failed due to error")
 
+        if len(successList) > 0:
+            self.passJobs(jobList = successList)
+        if len(failList) > 0:
+            self.failJobs(jobList = failList)
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
         return result

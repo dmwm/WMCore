@@ -103,6 +103,8 @@ class SRMV2Impl(StageOutImplV2):
             logging.info("pfn: %s" % pfn)
                  
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+        toPfn   = self.createSourceName(protocol, toPfn)
+        fromPfn = self.createSourceName(protocol, fromPfn)
         # TODO tee the output to another file
         # attempt copy
         for x in range(self.numRetries):

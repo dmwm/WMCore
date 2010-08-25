@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.42 2010/04/26 19:45:27 sryu Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Page.py,v 1.43 2010/04/26 21:58:19 sryu Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import urllib
 import cherrypy
@@ -9,11 +9,7 @@ from cherrypy import log as cplog
 from cherrypy import request
 from Cheetah.Template import Template
 from Cheetah import Version
-try:
-    from json import JSONEncoder
-except:
-    # Prior python 2.6 json comes from simplejson
-    from simplejson import JSONEncoder
+from WMCore.Wrappers import JsonWrapper
 
 try:
     # with python 2.5
@@ -213,11 +209,10 @@ def exposetext (func):
 
 def exposejson (func):
     def wrapper (self, data, expires, contentType = "application/json"):
-        encoder = JSONEncoder()
         data = func (self, data)
         try:
 #            jsondata = encoder.iterencode(data)
-            jsondata = encoder.encode(data)
+            jsondata = JsonWrapper.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
@@ -230,12 +225,11 @@ def exposejson (func):
 
 def exposejsonthunker (func):
     def wrapper (self, data, expires, contentType = "application/json+thunk"):
-        thunker = JSONThunker()
-        encoder = JSONEncoder()
         data = func (self, data)
         try:
+            thunker = JSONThunker()
             data = thunker.thunk(data)
-            jsondata = encoder.encode(data)
+            jsondata = JsonWrapper.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
@@ -257,12 +251,11 @@ def exposedasjson (func):
     TODO: "inherit" from the exposejson
     """
     def wrapper (self, data, expires, contentType = "application/json"):
-        encoder = JSONEncoder()
         data = runDas(self, func, data, expires)
         
         try:
 #            jsondata = encoder.iterencode(data)
-            jsondata = encoder.encode(data)
+            jsondata = JsonWrapper.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:

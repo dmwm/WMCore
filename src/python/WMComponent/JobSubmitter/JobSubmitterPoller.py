@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.42 2010/07/29 21:26:07 mnorman Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.43 2010/08/05 18:46:51 mnorman Exp $"
+__version__ = "$Revision: 1.43 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -132,7 +132,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         if hasattr(self.config.JobSubmitter, 'inputFile'):
             configDict['inputFile'] = self.config.JobSubmitter.inputFile
 
-        
 
         workerName = "%s.%s" % (self.config.JobSubmitter.pluginDir, \
                                 self.config.JobSubmitter.pluginName)
@@ -261,6 +260,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             pickledJobPath = os.path.join(newJob["cache_dir"], "job.pkl")
             jobHandle = open(pickledJobPath, "r")
             loadedJob = cPickle.load(jobHandle)
+
+            loadedJob['retry_count'] = newJob['retry_count']
 
             # Grab the possible locations
             # This should be in terms of siteNames

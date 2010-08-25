@@ -1,0 +1,275 @@
+#!/bin/env python
+
+"""
+=============
+matcherclient
+=============
+Command Line Wrapper for a TaskQueue matchmaker plugin
+------------------------------------------------------
+
+Creates an interface object for the TQComp component (i.e. acquires
+an interface to its database) and translates given commands to calls
+to a matchmaker object.
+
+Acceptable commands are those named like any of the methods of the 
+matchmaker plugin class. 
+
+Arguments to the commands should be those expected by the methods, 
+and provided in the appropriate order. Every argument will be evaluated
+as a python expression, so that e.g. dicts can be passed to the
+methods. Notice that this means that strings should be quoted twice
+(as indicated by the examples below).
+
+
+SYNOPSIS
+========
+matcherclient [-v] -c <conf-file> <command> ["<arg>" ..]
+
+matcherclient [-u | -h]
+
+
+OPTIONS
+=======
+-c, --config <conf-file>   Indicates configuration file for TQComp
+
+-v, --verbose   Print of extra informative messages in the run
+                of the command. 
+
+-u, --usage   Usage information is displayed.
+
+-h, --help    Help information is displayed.
+
+
+EXAMPLE
+=======
+
+$> matcherclient -c $TQCONF  TQComp.FlexPyMatchmaker matchTask "{'id': 25, \
+'se': 'srm.cern.ch', 'cache': ['f1']}"
+
+{'state': 0L, 'creat_time': datetime.datetime(2009, 6, 1, 11, 31, 33), 'spec':
+'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_T
+estPA01/0000/5/Test-QCDpt_0_15-IDEAL_V9_TestPA01-5-JobSpec.xml',
+'reqs': "se=='srm.cern.ch' and 'f1' in cache", 'sandbox':
+'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_T
+estPA01/Processing/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
+'wkflow': 'prod_A', 'current_state_time': None, 'type': 5L, 'id': 2692L,
+'pilot': None}
+
+"""
+
+####   IMPORTS ####
+
+import TQComp.FlexPyMatchmaker
+from WMCore import Configuration
+import logging
+import getopt
+import sys
+import TQComp.Apis.TQApi
+from TQComp.CommonUtil import commasLB
+
+
+####   FUNCTIONS   ####
+
+def err(msg):
+    """
+    Prints the specified string msg to standard error (with an added trailing newline)
+    """
+    sys.stderr.write(msg+'\n')
+
+
+def help():
+    """
+    Provides some information regarding this script functionality.
+   
+    """
+    print globals()['__doc__']
+   
+
+def usage():
+    """
+    Describes usage of the script.
+    
+    """
+    v = globals()['__doc__'].split('\n')
+    start = end = 0
+    for i in xrange(len(v)):
+        if(v[i].startswith("SYNOPSIS")):
+            start = i + 2
+        if(start and (i > start+1)):
+            if(v[i].startswith("====")):
+                end = i-2
+                break
+    print 'Usage:  '+reduce(lambda x,y: x+ '\n        '+y, v[start:end])
+
+
+def setLogging(verb = False):
+    logHandler = logging.StreamHandler(sys.stdout)
+    logFormatter = \
+        logging.Formatter("%(asctime)s:%(levelname)s:%(filename)s:%(message)s")
+    logHandler.setFormatter(logFormatter)
+    mylogger = logging.getLogger("matcherclient")
+    mylogger.addHandler(logHandler)
+    if verb:
+        mylogger.setLevel(logging.DEBUG)
+    else:
+        mylogger.setLevel(logging.WARNING)
+
+    return mylogger
+
+
+def parseLine(s, skipComments = False):
+    """
+    Splits passed string s using blank as separator, but joining
+    together those tokens enclosed within double commas (""). 
+    The double commas themselves are eliminated.
+
+    If skipComments is set to True, for strings starting with '#', 
+    returns an empty list.
+    """
+    if not s: 
+        return []
+    if skipComments:
+        s = s.strip()
+        if not s:
+           return []
+        if s[0] == '#':
+            return []
+    tokens = s.split()
+    to_del = []
+    vals = range(len(tokens))
+    for i in vals:
+        if tokens[i][0] == '"':
+             for j in vals[i+1:]:
+                 if tokens[j][-1] == '"':
+                     tokens[i] = tokens[i][1:]
+                     for k in vals[i+1:j]:
+                         tokens[i] += " "+tokens[k]
+                         to_del.insert(0, k)
+                     tokens[i] += " "+tokens[j][:-1]
+                     to_del.insert(0, j)
+                     vals = range(len(tokens))
+                     break
+
+    for item in to_del:
+       tokens.pop(item)
+
+    return tokens
+
+
+
+####   MAIN   ####
+def main():
+    """
+    Performes the main task of the script (invoked directly).
+    For information on its functionality, please call the help function.
+    """
+
+
+    # Options
+    longoptions=["help", "usage", "verbose", "config=", \
+                 "from-file="]
+    try:
+        # For options with args, just add ':' after the option letter here
+        optlist, args = getopt.getopt(sys.argv[1:], 'huvc:f:', longoptions)
+    except getopt.GetoptError, inst:
+        err ("Bad usage: %s" % inst)
+        usage()
+        return 1
+    
+    verb = False
+    confFile = None   
+    fname = None
+    for opt, val in optlist:
+        if opt in ("-h", "--help"):
+            help()
+            sys.exit(0)
+        elif opt in ("-u", "--usage"):
+            usage()
+            sys.exit(0)
+        elif opt in ("-v", "--verbose"):
+            verb = True
+        elif opt in ("-c", "--config"):
+            confFile = val
+        elif opt in ("-f", "--from-file"):
+            fname = val
+
+           
+    # Option checking
+    if not confFile:
+        err("Option --config is compulsory\n")
+        usage()
+        return 2
+
+    # Args           
+    if  (len(args)<1) or ((len(args)<2) and (not fname)):
+        err("Not enough input arguments!")
+        usage()
+        return 2
+    modname = args[0]
+
+
+
+    #### REAL MAIN ####
+
+    # Build command (from arguments or fname)
+    if fname:
+        myfile = open(fname, 'r')
+        lines = myfile.readlines()
+    else:
+        lines = [args[1]]
+        args = args[2:]
+ 
+
+    mylogger = setLogging(verb)
+    myconfig = Configuration.loadConfigurationFile(confFile)
+
+
+    # Now run once per specified command
+    for line in lines:
+        tokens = parseLine(line, True)
+        if not tokens:
+            continue
+        thecmd = tokens[0]
+        if not args:
+            args = tokens[1:]
+
+        for i in xrange(len(args)):
+            args[i] = eval(args[i])
+
+        if verb:
+            print "\n--Command: %s %s\n" % (thecmd, args)
+
+        # Instantiate API
+        api = TQComp.Apis.TQApi.TQApi(mylogger, myconfig, None)
+
+        # Load matcher 
+        classname = modname.split('.')[-1]
+        mymod = __import__(modname, globals(), locals(), classname)
+        myclass = getattr(mymod, classname)
+
+        # Instantiate matcher
+        matcher = myclass({'queries': api.queries, 'logger': mylogger})
+
+        # Call indicated method
+        mymethod = getattr(matcher, thecmd)
+        out = mymethod(*args)
+
+        args = None
+
+        if out:
+            if verb:
+                print "\n--Command output follows:"
+            if isinstance(out, list):
+                print '['
+                print reduce(commasLB, out)
+                print ']'
+            else:
+                print out
+
+    # Exit successfully
+    return 0
+
+
+###    SCRIPT    ####
+if __name__=="__main__":
+    sys.exit(main())

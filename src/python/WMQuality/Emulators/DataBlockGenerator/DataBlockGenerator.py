@@ -34,7 +34,7 @@ class DataBlockGenerator(object):
                 fileName =  "/store/data/%s/file%s" % (blockName, fileID)
                 parentFileName = "/store/data/%s_parent/file%s_parent" % (blockName, fileID)
                 dbsFile = {'LogicalFileName': fileName, 
-                           'ParentList' : [self.createDBSFile({'LogicalFileName':parentFileName})]
+                           'ParentList' : [self.createDBSFile({'LogicalFileName':parentFileName})],
                           }
                 self.files[blockName].append(self.createDBSFile(dbsFile))
         
@@ -44,7 +44,9 @@ class DataBlockGenerator(object):
         defaultDBSFile = {'Checksum': "123456",
                           'NumberOfEvents': Globals.NUM_OF_EVENTS_PER_FILE,
                           'FileSize': Globals.SIZE_OF_FILE,
-                          'ParentList': []
+                          'ParentList': [],
+                          'LumiList': [{'RunNumber': 1, 'LumiSectionNumber': 1}, 
+                                       {'RunNumber': 1, 'LumiSectionNumber': 2}]
                           }
         defaultDBSFile.update(dbsFile)
         return defaultDBSFile

@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.12 2010/05/21 12:19:33 spigafi Exp $"
-__revision__ = "$Revision: 1.12 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.13 2010/05/25 12:26:15 spigafi Exp $"
+__revision__ = "$Revision: 1.13 $"
 
 import threading
 
@@ -33,15 +33,9 @@ def dbTransaction(func):
             res = func(self, *args, **kwargs)
             self.engine.commitTransaction(self.existingTransaction)
         except Exception, ex:
-            msg = "Failure in TrackingDB class"
+            msg = "Failure in BossLiteDBWM class"
             msg += str(ex)
-            # Is this correct?
             myThread = threading.currentThread()
-            """
-            ---> pylint error: 
-            E:42:dbTransaction.wrapper: Instance of '_DummyThread' has no 
-               'transaction' member (but some types could not be inferred)
-            """
             myThread.transaction.rollback()
             raise DbError(msg)        
         return res
@@ -76,7 +70,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def objExists(self, obj):
         """
-        put your description here
+        Check if an object exists into the db
         """
 
         if type(obj) == Task :
@@ -106,7 +100,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def objSave(self, obj):
         """
-        put your description here
+        Save/update the object into the db
         """
 
         if type(obj) == Task :
@@ -131,7 +125,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def objCreate(self, obj):
         """
-        put your description here
+        Create a new entry for a specific object into the db
         """
 
         if type(obj) == Task :
@@ -156,12 +150,13 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def objLoad(self, obj, classname = None):
         """
-        put your description here
+        Retrieve from the db all the information of a specific object. 
         """
 
         if type(obj) == Task :
             
             if classname == 'Task.GetJobs' :
+                # load all the Jobs associated to the Task
                 binds = {'taskId' : obj.data['id'] }
                 
                 action = self.engine.daofactory( classname = classname )
@@ -172,11 +167,9 @@ class BossLiteDBWM(BossLiteDBInterface):
                 return result
             
             elif obj.data['id'] > 0:
-                classname = "Task.Load"
                 binds = {'id' : obj.data['id'] }
                 
             elif obj.data['name']:
-                classname = "Task.Load"
                 binds = {'name' : obj.data['name'] }
                 
             else:
@@ -189,8 +182,8 @@ class BossLiteDBWM(BossLiteDBInterface):
                 binds = { 'id' : obj.data['id'] }
             
             elif obj.data['jobId'] > 0 and obj.data['taskId'] > 0:
-                binds = { 'job_id' : obj.data['jobId'],
-                          'task_id' : obj.data['taskId'] }
+                binds = { 'jobId' : obj.data['jobId'],
+                          'taskId' : obj.data['taskId'] }
                 
             elif obj.data['name']:
                 binds = { 'name' : obj.data['name'] }
@@ -204,8 +197,8 @@ class BossLiteDBWM(BossLiteDBInterface):
             
             if (obj.data['jobId'] and obj.data['taskId'] and \
                                                 obj.data['submission']) :
-                binds = {'task_id' : obj.data['taskId'],
-                         'job_id' : obj.data['jobId'],
+                binds = {'taskId' : obj.data['taskId'],
+                         'jobId' : obj.data['jobId'],
                          'submission' : obj.data['submission'] }
                 
             elif obj.data['id'] > 0:
@@ -224,7 +217,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def objUpdate(self, obj):
         """
-        put your description here
+        Not Implemented! This operation is performed using objSave
         """
 
         if type(obj) == Task :
@@ -245,7 +238,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def objRemove(self, obj):
         """
-        put your description here
+        Remove an instance of the object from the db
         """
 
         if type(obj) == Task :
@@ -294,7 +287,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def objAdvancedLoad(self, obj, binds):
         """
-        put your description here
+        Retrieve from the db all the information of a specific object.
         """
         
         if type(obj) == Task : 
@@ -322,7 +315,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     @dbTransaction
     def jobLoadByRunningAttr(self,  binds, limit = None):
         """
-        put your description here
+        Load Jobs informations by associated RunningJob attributes
         """
         
         action = self.engine.daofactory(classname = "Job.LoadByRunningJobAttr")

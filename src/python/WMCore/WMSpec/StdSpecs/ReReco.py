@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.30 2010/06/11 20:48:21 sryu Exp $"
-__revision__ = "$Revision: 1.30 $"
+__version__ = "$Id: ReReco.py,v 1.31 2010/06/18 19:39:50 sfoulkes Exp $"
+__revision__ = "$Revision: 1.31 $"
 
 import subprocess
 
@@ -246,7 +246,7 @@ class ReRecoWorkloadFactory(object):
         Create a merge task for files produced by the parent task.
         """
         mergeTask = parentTask.addTask("Merge%s" % parentOutputModule)
-        self.addDashboardMonitoring(mergeTask)        
+        self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
         
@@ -254,6 +254,7 @@ class ReRecoWorkloadFactory(object):
         mergeTaskStageOut.setStepType("StageOut")
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
+        self.addLogCollectTask(mergeTask)        
         mergeTask.addGenerator("BasicNaming")
         mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")  
@@ -390,7 +391,7 @@ class ReRecoWorkloadFactory(object):
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
                                  configDoc = skimConfigDoc, splitAlgo = self.skimJobSplitAlgo,
                                  splitArgs = self.skimJobSplitArgs)
-        #addLogCollectTask(skimTask)
+        self.addLogCollectTask(skimTask)
 
         skimOutputModules = self.getOutputModuleInfo(self.skimConfig,
                                                      self.scenario, "promptReco",

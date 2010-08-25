@@ -12,11 +12,32 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
 
 #  //
+# // Arguments along the lines 
+#//
+writeDataTiers = ['RECO', 'ALCA', 'AOD']
+acquisitionEra = "Teatime09"
+globalTagSetting = "GR09_P_V7::All"
+lfnCategory = "/store/data"
+processingVersion = "v99"
+scenario = "cosmics"
+cmsswVersion = "CMSSW_3_3_5_patch3"
+softwareInitCommand = " . /uscmst1/prod/sw/cms/shrc prod"
+scramArchitecture = "slc5_ia32_gcc434",
+
+inputPrimaryDataset = "MinimumBias"
+inputProcessedDataset = "BeamCommissioning09-v1"
+inputDataTier = "RAW"
+
+emulationMode = True
+
+#  //
 # // Set up the basic workload task and step structure
 #//
 workload = newWorkload("Tier1ReReco")
 workload.setStartPolicy('DatasetBlock')
 workload.setEndPolicy('SingleShot')
+workload.data.properties.acquisitionEra = acquisitionEra
+
 
 #  //
 # // set up the production task
@@ -24,20 +45,14 @@ workload.setEndPolicy('SingleShot')
 rereco = workload.newTask("ReReco")
 rerecoCmssw = rereco.makeStep("cmsRun1")
 rerecoCmssw.setStepType("CMSSW")
-skimStageOut = rerecoCmssw.addStep("stageOut1")
-skimStageOut.setStepType("StageOut")
-skimLogArch = rerecoCmssw.addStep("logArch1")
-skimLogArch.setStepType("LogArchive")
+rerecoStageOut = rerecoCmssw.addStep("stageOut1")
+rerecoStageOut.setStepType("StageOut")
+rerecoLogArch = rerecoCmssw.addStep("logArch1")
+rerecoLogArch.setStepType("LogArchive")
 rereco.applyTemplates()
 rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
-#MinimumBias/BeamCommissioning09-v1/RAW
-rereco.addInputDataset(
-    primary = "MinimumBias",
-    processed = "BeamCommissioning09-v1",
-    tier = "RAW",
-    dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-    )
-
+rereco.addGenerator("BasicNaming")
+rereco.addGenerator("BasicCounter")
 
 
 
@@ -48,44 +63,170 @@ rereco.addInputDataset(
 # TODO: Anywhere helper.data is accessed means we need a method added to the
 # type based helper class to provide a clear API.
 rerecoCmsswHelper = rerecoCmssw.getTypeHelper()
-
+rereco.addInputDataset(
+    primary = inputPrimaryDataset,
+    processed = inputProcessedDataset,
+    tier = inputDataTier,
+    dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+    )
 
 rerecoCmsswHelper.cmsswSetup(
-    "CMSSW_3_3_5_patch3",
-    softwareEnvironment = " . /uscmst1/prod/sw/cms/shrc prod",
-    scramArch = "slc5_ia32_gcc434",
+    cmsswVersion,
+    softwareEnvironment = softwareInitCommand ,
+	scramArch = scramArchitecture
     )
 
 rerecoCmsswHelper.setDataProcessingConfig(
-    "cosmics", "promptReco", globalTag = "GR09_P_V7::All",
-    writeTiers = ['RECO'])
-
-rerecoCmsswHelper.addOutputModule(
-    "outputRECO", primaryDataset = "MinimumBias",
-    processedDataset = "rereco_GR09_P_V7_v99",
-    dataTier = "RECO",
-    lfnBase = "/store/data/BeamCommissioning09/MinimumBias/RECO/rereco_GR09_P_V7_v99"
-    )
-
-#Add a stageOut step
-skimStageOutHelper = skimStageOut.getTypeHelper()
-skimLogArchHelper  = skimLogArch.getTypeHelper()
+    scenario, "promptReco", globalTag = globalTagSetting,
+    writeTiers = writeDataTiers)
 
 
-rereco.addGenerator("BasicNaming")
-rereco.addGenerator("BasicCounter")
+processedDatasetName = "rereco_%s_%s" % (globalTagSetting.replace("::","_"), processingVersion)
+commonLfnBase = lfnCategory
+commonLfnBase += "/%s" % acquisitionEra
+commonLfnBase += "/%s" % inputPrimaryDataset
 
+if "RECO" in writeDataTiers:
+    rerecoCmsswHelper.addOutputModule(
+        "outputRECO", primaryDataset = inputPrimaryDataset,
+        processedDataset = processedDatasetName,
+        dataTier = "RECO",
+        lfnBase = "%s/RECO/%s" % ( commonLfnBase, processedDatasetName)
+    )   
+    
+if "ALCA" in writeDataTiers:
+    rerecoCmsswHelper.addOutputModule(
+        "outputALCA", primaryDataset = inputPrimaryDataset,
+        processedDataset = processedDatasetName,
+        dataTier = "ALCA",
+        lfnBase = "%s/ALCA/%s" % ( commonLfnBase, processedDatasetName)
+    )  
 
+if "AOD" in writeDataTiers:
+    rerecoCmsswHelper.addOutputModule(
+        "outputAOD", primaryDataset = inputPrimaryDataset,
+        processedDataset = processedDatasetName,
+        dataTier = "AOD",
+        lfnBase = "%s/AOD/%s" % ( commonLfnBase, processedDatasetName)
+    )  
+    
+                               
 
-#  //TODO
-# // rereco stage out step
-#//
-#skimStageOutHelper =skimStageOut.getTypeHelper()
+# manipulate stage out and log archive if needed via type specific helper
+rerecoStageOutHelper = rerecoStageOut.getTypeHelper()
+rerecoLogArchHelper  = rerecoLogArch.getTypeHelper()
+
+# Emulation
+if emulationMode:
+	rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
+	rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
+	rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
+
 
 
 #  //
-# // TODO: Add merge for ReReco outputs
+# // Merges for each output module
 #//
+if "RECO" in writeDataTiers:
+    mergeReco = rereco.addTask("MergeReco")
+    mergeRecoCmssw = mergeReco.makeStep("mergeReco")    
+    mergeRecoCmssw.setStepType("CMSSW")
+    mergeRecoStageOut = mergeRecoCmssw.addStep("stageOut1")
+    mergeRecoStageOut.setStepType("StageOut")
+    mergeRecoLogArch = mergeRecoCmssw.addStep("logArch1")
+    mergeRecoLogArch.setStepType("LogArchive")
+
+    mergeReco.applyTemplates()
+    mergeReco.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)  
+    mergeReco.addGenerator("BasicNaming")
+    mergeReco.addGenerator("BasicCounter")
+    mergeRecoCmsswHelper = mergeRecoCmssw.getTypeHelper()
+    mergeRecoCmsswHelper.cmsswSetup(
+        cmsswVersion,
+        softwareEnvironment = softwareInitCommand,
+        scramArch = scramArchitecture,
+    )
+
+    mergeRecoCmsswHelper.setDataProcessingConfig(scenario, "merge")
+    mergeReco.setInputReference(rerecoCmssw, outputModule = "outputRECO")
+    if emulationMode:
+		mergeRecoStageOutHelper = mergeRecoStageOut.getTypeHelper()
+		mergeRecoLogArchHelper  = mergeRecoLogArch.getTypeHelper()
+		mergeRecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
+		mergeRecoStageOutHelper.data.emulator.emulatorName = "StageOut"
+		mergeRecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
+
+if "ALCA" in writeDataTiers:
+	mergeAlca = rereco.addTask("mergeAlca")
+	mergeAlcaCmssw = mergeAlca.makeStep("mergeAlca")    
+	mergeAlcaCmssw.setStepType("CMSSW")
+	mergeAlcaStageOut = mergeAlcaCmssw.addStep("stageOut1")
+	mergeAlcaStageOut.setStepType("StageOut")
+	mergeAlcaLogArch = mergeAlcaCmssw.addStep("logArch1")
+	mergeAlcaLogArch.setStepType("LogArchive")
+
+	mergeAlca.addGenerator("BasicNaming")
+	mergeAlca.addGenerator("BasicCounter")
+	mergeAlca.applyTemplates()
+	mergeAlca.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)  
+
+	mergeAlcaCmsswHelper = mergeAlcaCmssw.getTypeHelper()
+	mergeAlcaCmsswHelper.cmsswSetup(
+		cmsswVersion,
+	    softwareEnvironment = softwareInitCommand,
+	    scramArch = scramArchitecture,
+    )
+
+	mergeAlcaCmsswHelper.setDataProcessingConfig(scenario, "merge")
+	mergeAlca.setInputReference(rerecoCmssw, outputModule = "outputALCA")
+	if emulationMode:
+		mergeAlcaStageOutHelper = mergeAlcaStageOut.getTypeHelper()
+		mergeAlcaLogArchHelper  = mergeAlcaLogArch.getTypeHelper()
+		mergeAlcaCmsswHelper.data.emulator.emulatorName = "CMSSW"
+		mergeAlcaStageOutHelper.data.emulator.emulatorName = "StageOut"
+		mergeAlcaLogArchHelper.data.emulator.emulatorName = "LogArchive"
+    
+
+
+
+if "AOD" in writeDataTiers:
+	mergeAod = rereco.addTask("MergeAod")
+	mergeAodCmssw = mergeAod.makeStep("mergeAod")    
+	mergeAodCmssw.setStepType("CMSSW")
+	mergeAodStageOut = mergeAodCmssw.addStep("stageOut1")
+	mergeAodStageOut.setStepType("StageOut")
+	mergeAodLogArch = mergeAodCmssw.addStep("logArch1")
+	mergeAodLogArch.setStepType("LogArchive")
+
+	mergeAod.addGenerator("BasicNaming")
+	mergeAod.addGenerator("BasicCounter")
+	mergeAod.applyTemplates()
+	mergeAod.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)  
+
+	mergeAodCmsswHelper = mergeAodCmssw.getTypeHelper()
+	mergeAodCmsswHelper.cmsswSetup(
+		cmsswVersion,
+	    softwareEnvironment = softwareInitCommand,
+	    scramArch = scramArchitecture,
+    )
+
+	mergeAodCmsswHelper.setDataProcessingConfig(scenario, "merge")
+	mergeAod.setInputReference(rerecoCmssw, outputModule = "outputAOD")
+	if emulationMode:
+		mergeAodStageOutHelper = mergeAodStageOut.getTypeHelper()
+		mergeAodLogArchHelper  = mergeAodLogArch.getTypeHelper()
+		mergeAodCmsswHelper.data.emulator.emulatorName = "CMSSW"
+		mergeAodStageOutHelper.data.emulator.emulatorName = "StageOut"
+		mergeAodLogArchHelper.data.emulator.emulatorName = "LogArchive"
+		
+
+
+
+
+
+
+
+
 
 
 """

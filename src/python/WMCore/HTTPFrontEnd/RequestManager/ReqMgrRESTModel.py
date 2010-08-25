@@ -56,6 +56,8 @@ class ReqMgrRESTModel(RESTModel):
                                              'args':['requestName', 'events_written', 
                                                      'events_merged', 'files_written',
                                                      'files_merged', 'dataset']},
+                                'user' : {'call':self.postUser, 'args':['user', 'priority']},
+                                'group' : {'call':self.postUser, 'args':['group', 'priority']} 
                                },
                         'DELETE':{'request' : {'call':self.deleteRequest, 'args':['requestName']},
                                   'user' :  {'call':self.deleteUser, 'args':['user']},
@@ -70,7 +72,7 @@ class ReqMgrRESTModel(RESTModel):
         myThread = threading.currentThread()
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
-        #myThread.dialect = 'oracle'
+        #myThread.dialect = self.dialect
 
     def findRequest(self, requestName):
         """ Either returns the request object, or None """
@@ -164,11 +166,10 @@ class ReqMgrRESTModel(RESTModel):
                    return "Cannot find user " + user + ".  Please add one using PUT user."
                 return GroupInfo.groupsForUser(user).keys()
         else:
-            #try:
+            try:
                 return GroupInfo.usersInGroup(group)
-            #except Exception, ex:
-                cherrypy.response.status = 400
-                return "Error finding group " + group
+            except Exception, ex:
+                raise RuntimeError, "Error finding group " + group
 
     def getVersion(self):
         self.initThread()
@@ -214,14 +215,11 @@ class ReqMgrRESTModel(RESTModel):
 
             if status != None:
                 if not status in RequestStatus.StatusList:
-                    cherrypy.response.status = 400
-                    return "Bad status code " + status
+                    raise RuntimeError, "Bad status code " + status
                 if not request.has_key('RequestStatus'):
-                    cherrypy.response.status = 400
-                    return "Cannot find status for request " + requestName
+                    raise RuntimeError, "Cannot find status for request " + requestName
                 if not status in RequestStatus.NextStatus[oldStatus]:
-                    cherrypy.response.status = 400
-                    return "Cannot change status from %s to %s.  Allowed values are %s" % (
+                    raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
                            oldStatus, status,  RequestStatus.NextStatus[oldStatus])
                 if priority != None:
                     ChangeState.changeRequestStatus(requestName, status, priority)
@@ -320,6 +318,14 @@ class ReqMgrRESTModel(RESTModel):
 #        kwargs = self.sanitise_input(requestName, events_written, events_merged, 
 #                                     files_written,  files_merged, dataset)
         return ChangeState.updateRequest(requestName, kwargs)
+
+    def postUser(self, user, priority):
+        # Change the user's priority
+        pass
+
+    def postGroup(self, group, priority):
+        # Change the group's priority
+        pass
 
     def deleteRequest(self, requestName):
         self.initThread()

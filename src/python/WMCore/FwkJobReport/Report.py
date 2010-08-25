@@ -7,8 +7,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.33 $"
-__revision__ = "$Id: Report.py,v 1.33 2010/08/11 16:57:01 mnorman Exp $"
+__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Report.py,v 1.34 2010/08/16 14:51:59 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -95,7 +95,7 @@ class Report:
     """
     def __init__(self, reportname = None):
         self.data = ConfigSection("FrameworkJobReport")
-        self.data.steps         = []
+        self.data.steps = []
         self.data.workload = "Unknown"
 
         if reportname:
@@ -140,8 +140,6 @@ class Report:
             for stackFrame in stackTrace:
                 crashMessage += stackFrame
                 
-            print msg
-            print crashMessage
             self.addError("cmsRun1", 50115, "BadFWJRXML", msg)
 
     def __to_json__(self, thunker):
@@ -152,8 +150,9 @@ class Report:
         """
         def jsonizeFiles(reportModule):
             """
-            Put individual files in JSON format
-
+            _jsonizeFiles_
+            
+            Put individual files in JSON format.
             """
             jsonFiles = []
             fileCount = getattr(reportModule.files, "fileCount", 0)
@@ -179,6 +178,10 @@ class Report:
             reportStep = self.retrieveStep(stepName)
             jsonStep = {}
             jsonStep["status"] = reportStep.status
+
+            stepTimes = self.getTimes(stepName)
+            jsonStep["start"] = stepTimes["startTime"]
+            jsonStep["end"] = stepTimes["stopTime"]
 
             jsonStep["output"] = {}
             for outputModule in reportStep.outputModules:
@@ -211,6 +214,7 @@ class Report:
         """
         _stepSuccessful_
 
+        Determine if the given step was successful.
         """
         reportStep = self.retrieveStep(stepName)
 
@@ -223,7 +227,7 @@ class Report:
         """
         _persist_
 
-
+        Pickle this object and save it to disk.
         """
         handle = open(filename, 'w')
         cPickle.dump(self.data, handle)
@@ -234,28 +238,20 @@ class Report:
         """
         _unpersist_
 
-        load object from file
-
+        Load a pickled FWJR from disk.
         """
-
         handle = open(filename, 'r')
         self.data = cPickle.load(handle)
         handle.close()
         return
-
-
-
 
     def addOutputModule(self, moduleName):
         """
         _addOutputModule_
 
         Add an entry for an output module.
-
         """
-
         self.report.outputModules.append(moduleName)
-        
         self.report.output.section_(moduleName)
 
         outMod = getattr(self.report.output, moduleName)
@@ -265,20 +261,16 @@ class Report:
 
         return outMod
 
-
     def addOutputFile(self, outputModule, file = {}):
         """
         _addFile_
 
-        Add an output file to the outputModule provided
-
+        Add an output file to the outputModule provided.
         """
-
         if not checkFileForCompletion(file):
             # Then the file is not complete, and should not be added
             print "ERROR"
             return None
-
 
         # Now load the output module and create the file object
         outMod = getattr(self.report.output, outputModule, None)
@@ -336,8 +328,7 @@ class Report:
         """
         _addInputFile_
 
-        Add an input file to the source named
-
+        Add an input file to the given source.
         """
         srcMod = getattr(self.report.input, sourceName, None)
         if srcMod == None:
@@ -353,15 +344,11 @@ class Report:
 
         return fileRef
 
-
-
-
     def addAnalysisFile(self, filename, **attrs):
         """
         _addAnalysisFile_
 
-        Add and Analysis File
-
+        Add and Analysis File.
         """
         analysisFiles = self.report.analysis
         count = self.report.analysis.fileCount
@@ -376,15 +363,12 @@ class Report:
         self.report.analysis.fileCount += 1
         return
 
-
-
     def addRemovedCleanupFile(self, **attrs):
         """
         _addRemovedCleanupFile_
         
         Add a file to the cleanup.removed file
         """
-
         removedFiles = self.report.cleanup.removed
         count = self.report.cleanup.removed.fileCount
         label = 'file%s' % count
@@ -395,9 +379,7 @@ class Report:
         [ setattr(newFile, x, y) for x, y in attrs.items() ]
 
         self.report.cleanup.removed.fileCount += 1
-
         return
-
 
     def addError(self, stepName, exitCode, errorType, errorDetails):
         """
@@ -424,15 +406,12 @@ class Report:
         setattr(stepSection.errors, "errorCount", errorCount +1)
         return
 
-
     def addSkippedFile(self, lfn, pfn):
         """
         _addSkippedFile_
 
-        report a skipped input file
-
+        Report a skipped input file
         """
-
         count = self.report.skipped.files.fileCount
         entry = "file%s" % count
         self.report.skipped.files.section_(entry)
@@ -442,13 +421,11 @@ class Report:
         self.report.skipped.files.fileCount += 1
         return
 
-
-
     def addSkippedEvent(self, run, event):
         """
         _addSkippedEvent_
 
-
+        Add a skipped event.
         """
         self.report.skipped.events.section_(str(run))
         runsect = getattr(self.report.skipped.events, str(run))
@@ -457,21 +434,18 @@ class Report:
         runsect.eventList.append(event)
         return
 
-
     def addStep(self, reportname, status = 1):
         """
         _addStep_
         
         This creates a report section into self.report
         """
-
         if hasattr(self.data, reportname):
             msg = "Attempted to create pre-existing report section %s" % (reportname)
             logging.error(msg)
             return
 
         self.data.steps.append(reportname)
-
         
         self.reportname = reportname
         self.data.section_(reportname)
@@ -528,9 +502,8 @@ class Report:
         
         This just maps to unpersist
         """
-
         self.unpersist(filename)
-
+        return
 
     def save(self, filename):
         """
@@ -538,9 +511,8 @@ class Report:
         
         This just maps to persist
         """
-
         self.persist(filename)
-
+        return
 
     def getOutputModule(self, step, outputModule):
         """
@@ -548,7 +520,6 @@ class Report:
         
         Get the output module from a particular step
         """
-
         stepReport = self.retrieveStep(step = step)
 
         if not stepReport:
@@ -815,7 +786,6 @@ class Report:
 
         return
 
-
     def setStepStartTime(self, stepName):
         """
         _setStepStatus_
@@ -825,7 +795,6 @@ class Report:
         reportStep = self.retrieveStep(stepName)        
         reportStep.startTime = time.time()
         return
-
 
     def setStepStopTime(self, stepName):
         """
@@ -843,7 +812,6 @@ class Report:
 
         Return a dictionary with the start and stop times
         """
-
         reportStep = self.retrieveStep(stepName)
 
         startTime = getattr(reportStep, 'startTime', None)

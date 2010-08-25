@@ -8,8 +8,8 @@ cms-sleepgw.fnal.gov
 
 """
 
-__revision__ = "$Id: ShadowPoolPlugin.py,v 1.2 2010/01/20 17:30:19 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ShadowPoolPlugin.py,v 1.3 2010/02/10 17:04:33 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import os.path
@@ -42,6 +42,8 @@ class ShadowPoolPlugin(PluginBase):
             return {'NoResult': [0]}
 
         jobList = parameters.get('jobs')
+        self.packageDir = parameters.get('packageDir', None)
+        self.unpacker   = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/WMRuntime/Unpacker.py')
 
         if type(jobList) == dict:
             #We only got one of them
@@ -56,18 +58,24 @@ class ShadowPoolPlugin(PluginBase):
         baseConfig = self.initSubmit()
 
         jobSubmitFiles = []
+        index = 0
         for job in jobList:
+
             logging.error('Have job separated out')
             logging.error(job)
             if job == {}:
                 continue
             tmpList = []
             tmpList.extend(baseConfig)
-            tmpList.extend(self.makeSubmit(job))
+            tmpList.extend(self.makeSubmit(job, index))
             jdlFile = "%s/submit_%i.jdl" % (self.config['submitDir'], job['id'])
             handle = open(jdlFile, 'w')
             handle.writelines(tmpList)
             handle.close()
+
+            #Increment the index after the job
+            index += 1
+
 
             jobSubmitFiles.append(jdlFile)
 
@@ -101,7 +109,8 @@ class ShadowPoolPlugin(PluginBase):
         jdl.append("universe = globus\n")
         jdl.append("globusscheduler = cms-sleepgw.fnal.gov/jobmanager-condor\n" )
         jdl.append("should_transfer_executable = TRUE\n")
-        jdl.append("transfer_output_files = FrameworkJobReport.xml\n")
+        #jdl.append("transfer_output_files = FrameworkJobReport.xml\n")
+        jdl.append("transfer_output_files = Report.pkl\n")
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")
         jdl.append("log_xml = True\n" )
@@ -113,7 +122,7 @@ class ShadowPoolPlugin(PluginBase):
         return jdl
     
         
-    def makeSubmit(self, job):
+    def makeSubmit(self, job, index):
         """
         _makeJobJDL_
 
@@ -130,9 +139,8 @@ class ShadowPoolPlugin(PluginBase):
         jdl = []
         jdl.append("Executable = %s\n" % scriptFile)
         jdl.append("initialdir = %s\n" % job['cache_dir'])
-        if self.config.has_key("inputFile"):
-            jdl.append("transfer_input_files = %s\n" % (self.config['inputFile']))
-        argString = "arguments = %i %s %s\n" % (job['id'], self.config['submitNode'], job['sandbox'])
+        jdl.append("transfer_input_files = %s, %s/%s, %s\n" % (job['sandbox'], self.packageDir, 'JobPackage.pkl', self.unpacker))
+        argString = "arguments = %s %i\n" % (os.path.basename(job['sandbox']), index)
         jdl.append(argString)
 
 

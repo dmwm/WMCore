@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.11 2009/12/16 17:45:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.12 2010/03/01 15:19:10 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import time
 import threading
@@ -261,6 +261,12 @@ class DBSBufferFile(WMBSBase, WMFile):
         assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")      
         existsAction = self.daoFactory(classname = "DBSBufferFiles.Exists")
 
+        uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                                   logger = self.logger,
+                                   dbinterface = self.dbi)
+        setDatasetAlgoAction = uploadFactory(classname = "SetDatasetAlgo")
+        
+
         toBeCreated = []
         for parentLFN in parentLFNs:
             self["parents"].add(DBSBufferFile(lfn = parentLFN))
@@ -272,7 +278,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         if len(toBeCreated) > 0:
             myThread = threading.currentThread()
             localTransaction = Transaction(myThread.dbi)
-            localTransaction.begin()            
+            localTransaction.begin()
             newAlgoAction.execute(appName = "cmsRun", appVer = "UNKNOWN",
                                   appFam = "UNKNOWN", psetHash = "GIBBERISH",
                                   configContent = "MOREBIGGERISH",
@@ -288,6 +294,10 @@ class DBSBufferFile(WMBSBase, WMFile):
                                           datasetPath = "/bogus/dataset/path",
                                           conn = localTransaction.conn,
                                           transaction = True)
+
+            setDatasetAlgoAction.execute(datasetAlgo = assocID, inDBS = 1,
+                                         conn = localTransaction.conn,
+                                         transaction = True)
 
             action = self.daoFactory(classname = "DBSBufferFiles.AddIgnore")
             action.execute(lfns = toBeCreated, datasetAlgo = assocID,

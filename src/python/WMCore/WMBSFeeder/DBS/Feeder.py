@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.5 2009/09/30 09:56:21 riahi Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Feeder.py,v 1.6 2009/10/13 16:20:16 riahi Exp $"
+__version__ = "$Revision: 1.6 $"
 
 # DBS
 from WMCore.Services.DBS.DBSReader import DBSReader
@@ -56,7 +56,6 @@ class Feeder(FeederImpl):
         self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
               logger = self.myThread.logger, \
               dbinterface = self.myThread.dbi)
-        self.locationExist = self.daofactory(classname = "Locations.Exists")
         self.locationNew = self.daofactory(classname = "Locations.New")
 
 
@@ -112,7 +111,6 @@ class Feeder(FeederImpl):
             logging.debug("DBS: Empty blocks - %s" %filesetToProcess.name)  
             return filesetToProcess 
   
-  
         # get all file blocks
         blockList = blocks.keys()
     
@@ -121,7 +119,7 @@ class Feeder(FeederImpl):
     
             # get fileBlockId SE information
             seList = blocks[fileBlock]['StorageElements']
-            
+
             # add files for non blocked SE
             if seList is None or seList == []:
                 logging.info("fileblock %s - no SE's associated" % \
@@ -131,9 +129,7 @@ class Feeder(FeederImpl):
             else:
 
                 for loc in seList:
-                    if not self.locationExist.execute(site_name = loc):
-                        self.locationNew.execute(sename = loc)
-  
+                    self.locationNew.execute(siteName = loc)
      
             for files in blocks[fileBlock]['Files']:
                 

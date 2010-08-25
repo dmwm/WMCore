@@ -3,8 +3,8 @@
 
 """
 
-__revision__ = "$Id: Alerts_t.py,v 1.2 2008/11/17 12:59:27 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Alerts_t.py,v 1.3 2009/07/10 21:46:06 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import commands
 import unittest
@@ -26,8 +26,8 @@ class AlertsTest(unittest.TestCase):
     
     """
 
-    _setup = False
-    _teardown = False
+    _setup = True
+    _teardown = True
     # values for testing various sizes
     _triggers = 2
     _jobspecs = 5
@@ -37,14 +37,16 @@ class AlertsTest(unittest.TestCase):
         """
         _setUp_
         
+
         """
-        if not AlertsTest._setup:
-            self.testInit = TestInit(__file__)
+        if AlertsTest._setup:
+            self.testInit = TestInit(__file__, os.getenv("DIALECT"))
             self.testInit.setLogging()
             self.testInit.setDatabaseConnection()
-            self.testInit.clearDatabase()
             self.testInit.setSchema(customModules = ['WMCore.Alerts'], useDefault = False)
-
+            
+            #AlertTest._setup = False
+            
     def tearDown(self):
         """
         Database deletion 
@@ -52,9 +54,10 @@ class AlertsTest(unittest.TestCase):
         myThread = threading.currentThread()
         if AlertsTest._teardown :
             # call the script we use for cleaning:
-            self.testInit.clearDatabase()
-        AlertsTest._teardown = False
-
+            self.testInit.clearDatabase(modules = ["WMCore.Alerts"])
+            #AlertsTest._teardown = False
+            
+    
     def testPublish(self):
         """
         __testPublish__

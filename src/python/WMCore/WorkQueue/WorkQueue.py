@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.61 2010/02/08 17:36:51 sryu Exp $"
-__version__ = "$Revision: 1.61 $"
+__revision__ = "$Id: WorkQueue.py,v 1.62 2010/02/08 19:05:45 sryu Exp $"
+__version__ = "$Revision: 1.62 $"
 
 
 import uuid
@@ -248,6 +248,7 @@ class WorkQueue(WorkQueueBase):
         if not match['input_id']:
             wmbsHelper = WMBSHelper(wmSpecInfo['wmspec_name'], wmSpecInfo['url'],
                                     wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
+                                    wmSpecInfo['wmtask_type'],
                                     whitelist, blacklist, None)
             sub = wmbsHelper.createSubscription()
         else:
@@ -263,6 +264,7 @@ class WorkQueue(WorkQueueBase):
 
             wmbsHelper = WMBSHelper(wmSpecInfo['wmspec_name'], wmSpecInfo['url'],
                                     wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
+                                    wmSpecInfo['wmtask_type'],
                                     whitelist, blacklist, block['name'])
             sub = wmbsHelper.createSubscription()
 
@@ -344,6 +346,9 @@ class WorkQueue(WorkQueueBase):
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
         totalUnits = []
+        #TODO this might be too long transaction period. 
+        #It might better 
+        trans = self.beginTransaction()
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
             wmspec = getWorkloadFromTask(topLevelTask)
@@ -357,7 +362,6 @@ class WorkQueue(WorkQueueBase):
             units = policy(wmspec, topLevelTask, self.dbsHelpers)
             totalUnits.extend(units)
             
-            trans = self.beginTransaction()
             for unit in units:
                 primaryBlock = unit['Data']
                 blocks = unit['ParentData']
@@ -375,9 +379,9 @@ class WorkQueue(WorkQueueBase):
                 self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
                                                  blocks, parentQueueId,
                                                  topLevelTask)
-            self.commitTransaction(trans)
-            self.logger.info("Queued %s unit(s) for %s" % (len(units),
-                                                           wmspec.name()))
+            self.logger.info("Queued %s: task: %s unit(s) for %s" % (
+                             len(units), wmspec.name(), topLevelTask.name()))
+        self.commitTransaction(trans)
         return len(totalUnits)
 
 
@@ -659,7 +663,7 @@ class WorkQueue(WorkQueueBase):
         """
         taskAction = self.daofactory(classname = "WMSpec.AddTask")
 
-        taskAction.execute(wmSpecName, task.name(), task.dbsUrl(),
+        taskAction.execute(wmSpecName, task.name(), task.dbsUrl(), task.taskType(),
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 

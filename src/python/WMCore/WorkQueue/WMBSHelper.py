@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.13 2009/12/16 17:45:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.14 2010/02/08 19:05:45 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
@@ -17,7 +17,7 @@ from WMCore.Services.UUID import makeUUID
 class WMBSHelper:
 
     def __init__(self, wmSpecName, wmSpecUrl, wmSpecOwner, taskName, 
-                 whitelist, blacklist,blockName):
+                 taskType, whitelist, blacklist,blockName):
         #TODO: 
         # 1. get the top level task.
         # 2. get the top level step and input
@@ -28,6 +28,7 @@ class WMBSHelper:
         self.wmSpecUrl = wmSpecUrl
         self.wmSpecOwner = wmSpecOwner
         self.topLevelTaskName = taskName
+        self.topLevelTaskType = taskType
         self.whitelist = whitelist
         self.blacklist = blacklist
         self.block = blockName or None
@@ -71,7 +72,8 @@ class WMBSHelper:
         self.createWorkflow()
         self.subscription = Subscription(self.fileset, self.workflow,
                                          whitelist = self.whitelist,
-                                         blacklist = self.blacklist)
+                                         blacklist = self.blacklist,
+                                         type = self.topLevelTaskType)
         self.subscription.create()
         return self.subscription
 

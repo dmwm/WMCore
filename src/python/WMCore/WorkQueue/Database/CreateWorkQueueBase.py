@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.21 2010/01/25 19:30:18 sryu Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.22 2010/02/08 19:05:45 sryu Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import threading
 
@@ -63,6 +63,7 @@ class CreateWorkQueueBase(DBCreator):
              id          INTEGER      NOT NULL, 
              wmspec_id  INTEGER NOT NULL,
              name       VARCHAR(500) NOT NULL,
+             type       VARCHAR(255) NOT NULL,
              dbs_url    VARCHAR(500), 
              PRIMARY KEY(id),
              UNIQUE (wmspec_id, name)

@@ -4,7 +4,7 @@ from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser
-import os, sys
+import os, sys, os.sys.path
 #PyLinter and coverage aren't standard, but aren't strictly necessary
 can_lint = False
 can_coverage = False
@@ -54,8 +54,8 @@ def runUnitTests():
     # Add the test and src directory to the python path
     mydir = os.getcwd()
     # todo: not portable
-    testspypath = '/'.join([mydir, 'test/python/'])
-    srcpypath = '/'.join([mydir, 'src/python/']) 
+    testspypath = os.path.join([mydir, 'test','python'])
+    srcpypath = os.path.join([mydir, 'src','python']) 
     sys.path.append(testspypath)
     sys.path.append(srcpypath)
     

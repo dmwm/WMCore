@@ -1,33 +1,44 @@
+#!/usr/bin/env python
+'''
+    _WMConfigCache_
+    
+    A simple API for adding/retrieving configurations
+    
+'''
+
+
 import WMCore.Database.CMSCouch as CMSCouch
-import time
 import urllib
 import md5
-import cherrypy
+__revision__ = "$Id: ConfigCache.py,v 1.4 2009/06/09 20:45:12 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 class WMConfigCache:
+    ''' 
+        __WMConfigCache__
+        
+        API for add/retrieving configuration files to/from a CouchDB instance
+        
+    '''
     
-    def pullConfig(self, url, dbname, id, revision = None):
-        ''' TODO: pulls a document from another WMConfigCache to this one '''
+    def pullConfig(self, url, dbname, docid, revision = None):
+        ''' pulls a document from another WMConfigCache to this one '''
 
         # get the document
-        remote_couch = CMSCouch.CouchServer(database, url)
-        if dbname not in remote_couch.listDatabases():
-            raise RuntimeError, ("Remote database %s doesn't exist at url %s" %
-                                  (database, url))
-        remote_database = self.couch.connectDatabase(database)
-        document = remote_database.getDocumentByDocID(id, revision)
+        remoteCache = WMConfigCache(dbname, url)
+        document = remoteCache.getDocumentByDocID(docid, revision)
         
         # add the document to the database
         del document[u'_rev']
         (newid, newrev) = self.database.commit( document )
         
         # now we have the document, get the attachments
-        for attachment_name in document[u'_attachments'].keys():
-            attachment_value = remote_database.getAttachment(newid,
-                                                             attachment_name)
+        for attachmentName in document[u'_attachments'].keys():
+            attachmentValue = remoteCache.database.getAttachment(newid,
+                                                             attachmentName)
             (newid, newrev) = self.database.addAttachment(newid, newrev,
-                                                             attachment_value,
-                                                             attachment_name)
+                                                             attachmentValue,
+                                                             attachmentName)
         return (newid, newrev)
     
     def deleteConfig(self, docid):
@@ -38,7 +49,7 @@ class WMConfigCache:
         self.database.queueDelete(document)
         self.database.commit()
         
-    def addConfig(self, new_config ):
+    def addConfig(self, newConfig ):
         '''
             injects a configuration into the cache, returning a tuple with the
             docid and the current revision, in that order. This
@@ -47,22 +58,22 @@ class WMConfigCache:
             duplicating the rows
         '''
         # new_config is a URL suitable for passing to urlopen
-        config_string = urllib.urlopen( new_config ).read(-1)
-        config_md5    = md5.new( config_string ).hexdigest()
+        configString = urllib.urlopen( newConfig ).read(-1)
+        configMD5    = md5.new( configString ).hexdigest()
         # check and see if this file is already in the DB
-        viewresult = self.searchByMD5( config_md5 )
+        viewresult = self.searchByMD5( configMD5 )
 
         if (len(viewresult[u'rows']) == 0):
             # the config we want doesn't exist in the database, create it
 
-            document    = CMSCouch.makeDocument({ "md5_hash": config_md5 })
-            commit_info = self.database.commit( document )
-            if (commit_info[u'ok'] != True):
+            document    = CMSCouch.makeDocument({ "md5_hash": configMD5 })
+            commitInfo = self.database.commit( document )
+            if (commitInfo[u'ok'] != True):
                 raise RuntimeError
             
-            retval2 = self.database.addAttachment( commit_info[u'id'], 
-                                         commit_info[u'rev'], 
-                                         config_string,
+            retval2 = self.database.addAttachment( commitInfo[u'id'], 
+                                         commitInfo[u'rev'], 
+                                         configString,
                                          'pickled_script')
             return ( retval2['id'],
                      retval2['rev'])
@@ -74,18 +85,18 @@ class WMConfigCache:
         else:
             raise IndexError, "More than one record has the same MD5"
             
-    def addOriginalConfig(self, id, rev, config_path):
+    def addOriginalConfig(self, docid, rev, configPath):
         ''' Adds the human-readable script to the given id
             Makes it easy to see what you're doing since
             the pickled version isn't legible
         '''
-        config_string = urllib.urlopen( config_path ).read(-1)
-        retval2 = self.database.addAttachment( id,
+        configString = urllib.urlopen( configPath ).read(-1)
+        retval = self.database.addAttachment( docid,
                                          rev, 
-                                         config_string,
+                                         configString,
                                          'original_script')
-        return ( retval2['id'],
-                 retval2['rev'])
+        return ( retval['id'],
+                 retval['rev'])
         
     
     def getOriginalConfigByDocID(self, docid):
@@ -106,10 +117,7 @@ class WMConfigCache:
                                 ( len(searchResult), dochash) )      
     
     def getDocumentByDocID(self, docid, revid=None):
-        revision_string = None
-        if (revid):
-            revision_string = "rev=%s" % revid
-            
+        '''retrieves a document by its id'''
         return self.database.get("/%s/%s" % (self.dbname, docid), revid)
     
                
@@ -154,10 +162,10 @@ class WMConfigCache:
         return self.wrapView( \
                     self.database.loadView( 'documents','by_psethash' , \
                                             {'key': dochash } ))    
-    def modifyHash(self, docid, hash):
+    def modifyHash(self, docid, newhash):
         '''changes the hash in an existing document'''
         ourdoc = self.database.document(docid)
-        ourdoc[u'pset_hash'] = hash
+        ourdoc[u'pset_hash'] = newhash
         return self.database.commit(ourdoc)
     
     def __init__(self, dbname2 = 'config_cache', dburl = None):
@@ -165,21 +173,20 @@ class WMConfigCache:
             TODO: add support for different database URLs 
         """  
         self.dbname = dbname2
-        self.couch = CMSCouch.CouchServer()
+        self.couch = CMSCouch.CouchServer(dbname2, dburl)
         if self.dbname not in self.couch.listDatabases():
             self.createDatabase()
         self.database = self.couch.connectDatabase(self.dbname)
-        pass
     
     def createDatabase(self):
         ''' initializes a non-existant database'''
         database = self.couch.createDatabase(self.dbname)
-        hash_view_doc = database.createDesignDoc('documents')
-        hash_view_doc['views'] = {'by_md5hash': 
+        hashViewDoc = database.createDesignDoc('documents')
+        hashViewDoc['views'] = {'by_md5hash': 
                     { "map": \
                      """function(doc) {
                         if (doc.md5_hash) {
-                            emit(doc.md5_hash,{'_id': doc._id, '_rev': doc._rev});
+                        emit(doc.md5_hash,{'_id': doc._id, '_rev': doc._rev});
                         } 
                         }
                      """ },\
@@ -187,27 +194,18 @@ class WMConfigCache:
                     { "map": \
                      """function(doc) {
                         if (doc.pset_hash) {
-                            emit(doc.pset_hash,{'_id': doc._id, '_rev': doc._rev});
+                        emit(doc.pset_hash,{'_id': doc._id, '_rev': doc._rev});
                         } 
                         }
                      """ }}
-        database.queue( hash_view_doc )
+        database.queue( hashViewDoc )
         database.commit()
         return database
     def deleteDatabase(self):
         '''deletes an existing database (be careful!)'''
         self.couch.deleteDatabase(self.dbname)
         
-"""class WMConfigCacheServer
-    def index(self):
-        return "Hello world!"
-    index.exposed = True
-"""        
 
  
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
-    import WMCore_t.Cache_t.ConfigCache_t
-    unittest.main()       
-        
+
     

@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.3 2009/11/24 22:44:30 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.4 2009/12/04 15:11:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 
@@ -40,10 +40,8 @@ class WMConnectionBase:
                                      logger = self.logger,
                                      dbinterface = self.dbi)
 
-        try:
-            getattr(myThread, "transaction")
-        except AttributeError:
-            myThread.transaction = Transaction()
+        if "transaction" not in dir(myThread):
+            myThread.transaction = Transaction(self.dbi)
             myThread.transaction.commit()
             
         return
@@ -60,13 +58,10 @@ class WMConnectionBase:
         None. 
         """
         myThread = threading.currentThread()
-        
-        try:
-            getattr(myThread, "transaction")
-        except AttributeError:
-            print "no transaction"
+
+        if "transaction" not in dir(myThread):
             return None
-        #if transaction is created properly conn attribute should exist
+
         return myThread.transaction.conn
             
     def beginTransaction(self):
@@ -76,11 +71,8 @@ class WMConnectionBase:
         Begin a database transaction if one does not already exist.
         """
         myThread = threading.currentThread()
-        
-        try:
-            getattr(myThread, "transaction")
-        except AttributeError:
-            #This creates and begins a new transaction 
+
+        if "transaction" not in dir(myThread):
             myThread.transaction = Transaction(self.dbi)
             return False
         
@@ -97,12 +89,10 @@ class WMConnectionBase:
         Return True if there is an open transaction, False otherwise.
         """
         myThread = threading.currentThread()
-        try:
-            getattr(myThread, "transaction")
-        except AttributeError:
+
+        if "transaction" not in dir(myThread):
             return False
-        
-        if myThread.transaction.transaction != None:
+        elif myThread.transaction.transaction != None:
             return True
 
         return False

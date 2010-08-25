@@ -5,17 +5,17 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.14 2010/04/01 19:46:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.15 2010/04/23 16:33:17 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import threading
 import logging
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
+from WMCore.Services.DBS import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
-from WMCore.Services.Requests import JSONRequests
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -81,7 +81,26 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             self.nodeNames.append(node["name"])
 
         return
+    
+    def convertDataToXML(self, injectionData):
+                
+        injectionSpec = XMLDrop.XMLInjectionSpec(self.dbsUrl)
 
+        for datasetPath in injectionData:
+            datasetSpec = injectionSpec.getDataset(datasetPath)
+
+            for fileBlockName, fileBlock in injectionData[datasetPath].iteritems():
+                blockSpec = datasetSpec.getFileblock(fileBlockName,
+                                                     fileBlock["is-open"])
+
+                for file in fileBlock["files"]:
+                    blockSpec.addFile(file["lfn"], file["checksum"],
+                                      file["size"])
+
+        improv = injectionSpec.save()
+        xmlData = improv.makeDOMElement().toprettyxml()
+        return xmlData
+    
     def injectFiles(self):
         """
         _injectFiles_
@@ -116,9 +135,10 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                               siteName)
                 continue
 
-            injectRes = self.phedex.injectBlocksFromDB(self.dbsUrl,
-                                                       uninjectedFiles[siteName],
-                                                       location, 1, 0)
+
+            injectRes = self.phedex.injectBlocks(location,
+                                                 uninjectedFiles[siteName],
+                                                 1, 0)
 
             if not injectRes.has_key("error"):
                 for datasetName in uninjectedFiles[siteName]:
@@ -168,9 +188,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                               siteName)
                 continue
 
-            injectRes = self.phedex.injectBlocksFromDB(self.dbsUrl,
-                                                       migratedBlocks[siteName],
-                                                       location, 1, 0)
+            injectRes = self.phedex.injectBlocks(location,
+                                                 migratedBlocks[siteName],
+                                                 1, 0)
 
             if not injectRes.has_key("error"):
                 for datasetName in migratedBlocks[siteName]:
@@ -214,7 +234,12 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
             newSubscription = PhEDExSubscription(datasetPath, seName, "DataOps",
                                                  custodial = "y", requestOnly = "n")
-            self.phedex.subscribe(self.dbsUrl, newSubscription)
+            
+            xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, 
+                                    newSubscription.getDatasetPaths())
+            
+            self.phedex.subscribe(newSubscription, xmlData)
+            
             self.markSubscribed(datasetPath, conn = myThread.transaction.conn,
                                 transaction = True)
 

@@ -98,27 +98,28 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
     mySubscription.create()
     mySubscription.markLocation("T1_US_FNAL")
 
-    outputModules =  task.getOutputModulesForStep(task.getTopStepName())
-    for outputModuleName in outputModules.listSections_():
-        print "%s  configuring output module: %s" % (doIndent(indent), outputModuleName)
-        if task.taskType() == "Merge":
-            outputFilesetName = "%s/merged-%s" % (task.getPathName(),
-                                                  outputModuleName)
-        else:
-            outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
-                                                    outputModuleName)
+    outputModules = task.getOutputModulesForTask()
+    for outputModule in outputModules:
+        for outputModuleName in outputModule.listSections_():
+            print "%s  configuring output module: %s" % (doIndent(indent), outputModuleName)
+            if task.taskType() == "Merge":
+                outputFilesetName = "%s/merged-%s" % (task.getPathName(),
+                                                      outputModuleName)
+            else:
+                outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
+                                                        outputModuleName)
 
-        print "%s    output fileset: %s" % (doIndent(indent), outputFilesetName)
-        outputFileset = Fileset(name = outputFilesetName)
-        outputFileset.create()
+            print "%s    output fileset: %s" % (doIndent(indent), outputFilesetName)
+            outputFileset = Fileset(name = outputFilesetName)
+            outputFileset.create()
 
-        myWorkflow.addOutput(outputModuleName, outputFileset)
+            myWorkflow.addOutput(outputModuleName, outputFileset)
 
-        # See if any other steps run over this output.
-        print "%s    searching for child tasks..." % (doIndent(indent))
-        for childTask in task.childTaskIterator():
-            if childTask.data.input.outputModule == outputModuleName:
-                injectTaskIntoWMBS(specUrl, workflowName, childTask, outputFileset, indent + 4)                
+            # See if any other steps run over this output.
+            print "%s    searching for child tasks..." % (doIndent(indent))
+            for childTask in task.childTaskIterator():
+                if childTask.data.input.outputModule == outputModuleName:
+                    injectTaskIntoWMBS(specUrl, workflowName, childTask, outputFileset, indent + 4)                
 
 def injectFilesFromDBS(inputFileset, datasetPath):
     """
@@ -132,6 +133,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
     dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
+    dbsResults = dbsResults[0:10]
     print "  found %d files, inserting into wmbs..." % (len(dbsResults))
 
     for dbsResult in dbsResults:

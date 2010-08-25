@@ -120,8 +120,8 @@ class SetupCMSSWPset(ScriptInterface):
             self.process.GlobalTag.globaltag = cms.string("")
         if not hasattr(self.process.source, "firstRun"):
             self.process.source.firstRun = cms.untracked.uint32(0)
-        if not hasattr(self.process.source, "firstLuminosityBlock"):
-            self.process.source.firstLuminosityBlock = cms.untracked.uint32(0)            
+        if not hasattr(self.process.source, "lumisToProcess"):
+            self.process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
         if not hasattr(self.process.source, "skipEvents"):
             self.process.source.skipEvents = cms.untracked.uint32(0)
         if not hasattr(self.process, "maxEvents"):

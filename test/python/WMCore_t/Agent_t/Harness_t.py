@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.11 2009/09/30 23:36:51 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Harness_t.py,v 1.12 2009/10/13 22:30:08 meloam Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -40,26 +40,25 @@ class HarnessTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema() 
-        self.tempDir = tempfile.mkdtemp()
 
     def tearDown(self):
         """
         Delete database 
         """
         self.testInit.clearDatabase()
-        shutil.rmtree( self.tempDir, True )
 
     def testB(self):
 
         config = self.testInit.getConfiguration()
+        self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
         config.TestComponent.logLevel = 'INFO'
         config.section_("General")
         config.TestComponent.componentDir = os.path.join( \
-        self.tempDir, "Components/TestComponent1")
+                                self.tempDir, "Components/TestComponent1")
         config.General.workDir = config.TestComponent.componentDir
+        
         os.makedirs( config.TestComponent.componentDir )
-        config.General.workDir = os.getenv( self.tempDir )
         # as this is a test we build the string from our global environment
         # parameters normally you put this straight into the DefaultConfig.py file:
         # testInit.getConfiguration returns from the environment variable by default
@@ -93,13 +92,13 @@ class HarnessTest(unittest.TestCase):
 
     def testC(self):
         config = self.testInit.getConfiguration()
+        self.tempDir = self.testInit.generateWorkDir(config)
         config.component_("TestComponent")
         config.TestComponent.logLevel = 'INFO'
         config.section_("General")
         # try starting a component as a deamon:
         config.TestComponent.componentDir = os.path.join( \
                     self.tempDir, "Components/TestComponent1")
-        config.General.workDir = config.TestComponent.componentDir
         os.makedirs( config.TestComponent.componentDir )
         testComponent = TestComponent(config)
         # we set the parent to true as we are testing
@@ -120,7 +119,7 @@ class HarnessTest(unittest.TestCase):
         config.component_("TestComponent")
         config.TestComponent.logLevel = 'INFO'
         config.section_("General")
-        config.General.workDir = os.getenv( self.tempDir )
+        self.tempDir = self.testInit.generateWorkDir(config)
         # try starting a component as a deamon:
         config.TestComponent.componentDir = os.path.join( \
                     self.tempDir, "Components/TestComponent2")

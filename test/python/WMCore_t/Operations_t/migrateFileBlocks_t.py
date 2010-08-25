@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.1 $"
+__version__ = "$Revision: 1.2 $"
 
 
 import os
@@ -162,6 +162,55 @@ class MigrateFileBlocksTest(unittest.TestCase):
         return
 
 
+    def testMigrationInCode(self):
+        """
+        Test migration by loading the files
+
+        """
+
+        myThread = threading.currentThread()
+        
+        countDAO = self.bufferFactory(classname = "CountBlocks")
+        randomDataset = makeUUID()
+
+        blockCount = countDAO.execute()
+        assert blockCount == 0, \
+               "Error: Blocks in buffer before test started."
+
+        config = self.createConfig()
+        config.DBSUpload.DBSMaxFiles     = 40
+
+        poller = DBSUploadPoller(config)
+        poller.setup(parameters = None)
+        
+        for i in range(10):
+            self.addToBuffer(randomDataset)
+            poller.algorithm(parameters = None)
+            blockCount = countDAO.execute()
+
+        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
+        dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
+
+        primaries = dbsReader.listPrimaryDatasets()
+        self.assertEqual(randomDataset in primaries, False, 'Dataset %s already migrated!' %(randomDataset))
+
+        datasetPath = "/%s/%s/RECO" % (randomDataset, randomDataset)
+        filePath = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/Operations/MigrateFileBlocks.py')
+        configLocation = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/DBSUpload/DefaultConfig.py')
+
+        migrator = MigrateFileBlocks(config)
+        migrator.migrateDataset(datasetPath)
+
+
+
+        primaries = dbsReader.listPrimaryDatasets()
+        self.assertEqual(randomDataset in primaries, True, 'Dataset %s could not be found!' %(randomDataset))
+        processed = dbsReader.listProcessedDatasets(primary = randomDataset)
+        self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
+        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
+        self.assertEqual(len(datasetFiles), 30)
+
+        #print myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
 
 
 
@@ -200,10 +249,6 @@ class MigrateFileBlocksTest(unittest.TestCase):
 
         primaries = dbsReader.listPrimaryDatasets()
         self.assertEqual(randomDataset in primaries, False, 'Dataset %s already migrated!' %(randomDataset))
-        #processed = dbsReader.listProcessedDatasets(primary = randomDataset)
-        #self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
-        #datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
-        #self.assertEqual(len(datasetFiles), 0)
 
         datasetPath = "/%s/%s/RECO" % (randomDataset, randomDataset)
         filePath = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/Operations/MigrateFileBlocks.py')
@@ -213,7 +258,6 @@ class MigrateFileBlocksTest(unittest.TestCase):
 
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
         pipe.wait()
-        
 
         primaries = dbsReader.listPrimaryDatasets()
         self.assertEqual(randomDataset in primaries, True, 'Dataset %s could not be found!' %(randomDataset))
@@ -222,7 +266,14 @@ class MigrateFileBlocksTest(unittest.TestCase):
         datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
         self.assertEqual(len(datasetFiles), 30)
 
-        print myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
+        statuses =  myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
+        results = []
+        for result in statuses:
+            results.append(result.values()[0])
+
+        #There should be one open, one closed block
+        self.assertEqual('InGlobalDBS' in results, True, "Could not find closed block")
+        self.assertEqual('Open' in results, True, "Could not find remaining open block")
         
 
         return

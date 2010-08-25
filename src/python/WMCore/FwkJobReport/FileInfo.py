@@ -9,8 +9,8 @@ Not in the Framework XML
 
 """
 
-__version__ = "$Revision: 1.7 $"
-__revision__ = "$Id: FileInfo.py,v 1.7 2010/03/23 22:03:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: FileInfo.py,v 1.8 2010/03/24 16:35:52 sfoulkes Exp $"
 
 
 
@@ -136,9 +136,6 @@ class FileInfo:
         primaryDataset   = output.primaryDataset
         processedDataset = output.processedDataset
         dataTier         = output.dataTier
-        datasetPath      = '/%s/%s/%s' %(primaryDataset,
-                                        processedDataset,
-                                        dataTier)
 
         # Get other file information
         size = os.stat(filename)[6]
@@ -174,10 +171,11 @@ class FileInfo:
         # Attach values
         setattr(fileReport, 'checksums', {'adler32': adler32, 'cksum': cksum})
         setattr(fileReport, 'size', size)
-        setattr(fileReport, 'primaryDataset', primaryDataset)
-        setattr(fileReport, 'processedDataset', processedDataset)
-        setattr(fileReport, 'dataTier', dataTier)
-        setattr(fileReport, 'datasetPath', datasetPath)
+        setattr(fileReport, "dataset", {"applicationName": "cmsRun",
+                                        "applicationVersion": step.application.setup.cmsswVersion,
+                                        "primaryDataset": primaryDataset,
+                                        "processedDataset": processedDataset,
+                                        "dataTier": dataTier})
 
         return fileReport
 

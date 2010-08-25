@@ -5,6 +5,8 @@ _ReReco_
 Standard ReReco workflow.
 """
 
+import subprocess
+
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
@@ -17,6 +19,22 @@ class ReRecoWorkloadFactory():
 
     Stamp out ReReco workfloads.
     """
+    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
+                            scenarioArgs):
+        """
+        _getOutputModuleInfo_
+
+        """
+        config = {"cmsPath": self.cmsPath, "scramArch": self.scramArch,
+                  "frameworkVersion": self.frameworkVersion,
+                  "configUrl": configUrl, "scenarioName": scenarioName,
+                  "scenarioFunc": scenarioFunc, "scenarioArgs": scenarioArgs}
+
+        outmodProcess = subprocess.Popen(["outputmodules-from-config"],
+                                         stdin = subprocess.PIPE,
+                                         stdout = subprocess.PIPE)
+        
+    
     def addDashboardMonitoring(self, task):
         """
         _addDashboardMonitoring_
@@ -226,38 +244,37 @@ class ReRecoWorkloadFactory():
         Create a ReReco workload with the given parameters.
         """
         # Required parameters.
-        self.acquisitionEra = arguments["acquisitionEra"]
-        self.owner = arguments["owner"]
-        self.inputDataset = arguments["inputDataset"]
-        self.frameworkVersion = arguments["frameworkVersion"]
-        self.scramArch = arguments["scramArch"]
-        self.processingVersion = arguments["processingVersion"]
-        self.skimInput = arguments["skimInput"]
-        self.globalTag = arguments["globalTag"]        
-        self.processingOutputModules = arguments["processingOutputModules"]
-        self.skimOutputModules = arguments["skimOutputModules"]
+        self.acquisitionEra = arguments["AcquisitionEra"]
+        self.owner = arguments["Owner"]
+        self.inputDataset = arguments["InputDataset"]
+        self.frameworkVersion = arguments["FrameworkVersion"]
+        self.scramArch = arguments["ScramArch"]
+        self.processingVersion = arguments["ProcessingVersion"]
+        self.skimInput = arguments["SkimInput"]
+        self.globalTag = arguments["GlobalTag"]        
+        self.cmsPath = arguments["CmsPath"]
 
         # Required parameters that can be empty.
-        self.processingConfig = arguments["processingConfig"]
-        self.skimConfig = arguments["skimConfig"]
-        self.scenario = arguments["scenario"]
-        self.couchUrl = arguments.get("couchUrl", "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984")
-        self.couchDBName = arguments.get("couchDBName", "wmagent_config_cache")        
+        self.processingConfig = arguments["ProcessingConfig"]
+        self.skimConfig = arguments["SkimConfig"]
+        self.scenario = arguments["Scenario"]
+        self.couchUrl = arguments.get("CouchUrl", "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984")
+        self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")        
         
         # Optional arguments.
-        self.dbsUrl = arguments.get("dbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.blockBlackList = arguments.get("blockBlackList", [])
-        self.blockWhiteList = arguments.get("blockWhiteList", [])
-        self.runBlackList = arguments.get("runBlackList", [])
-        self.runWhiteList = arguments.get("runWhiteList", [])
-        self.siteBlackList = arguments.get("siteBlackList", [])
-        self.siteWhiteList = arguments.get("siteWhiteList", [])
-        self.unmergedLFNBase = arguments.get("unmergedLFNBase", "/store/temp/WMAgent/unmerged")
-        self.mergedLFNBase = arguments.get("mergedLFNBase", "/store/temp/WMAgent/merged")
-        self.minMergeSize = arguments.get("minMergeSize", 500000000)
-        self.maxMergeSize = arguments.get("maxMergeSize", 4294967296)
-        self.maxMergeEvents = arguments.get("maxMergeEvents", 100000)
-        self.emulation = arguments.get("emulation", False)
+        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+        self.blockBlackList = arguments.get("BlockBlackList", [])
+        self.blockWhiteList = arguments.get("BlockWhiteList", [])
+        self.runBlackList = arguments.get("RunBlackList", [])
+        self.runWhiteList = arguments.get("RunWhiteList", [])
+        self.siteBlackList = arguments.get("SiteBlackList", [])
+        self.siteWhiteList = arguments.get("SiteWhiteList", [])
+        self.unmergedLFNBase = arguments.get("UnmergedLFNBase", "/store/temp/WMAgent/unmerged")
+        self.mergedLFNBase = arguments.get("MergedLFNBase", "/store/temp/WMAgent/merged")
+        self.minMergeSize = arguments.get("MinMergeSize", 500000000)
+        self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
+        self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
+        self.emulation = arguments.get("Emulation", False)
 
         # Derived parameters.
         self.workloadName = "ReReco-%s" % self.processingVersion
@@ -282,6 +299,8 @@ class ReRecoWorkloadFactory():
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
                                  configDoc = procConfigDoc) 
         self.addLogCollectTask(procTask)
+
+        
 
         procOutput = {}
         for (outputModuleName, datasetInfo) in self.processingOutputModules.iteritems():

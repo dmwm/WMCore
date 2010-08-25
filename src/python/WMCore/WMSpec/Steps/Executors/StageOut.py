@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.17 2010/04/27 17:52:26 mnorman Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: StageOut.py,v 1.18 2010/04/29 14:58:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import os
 import os.path
@@ -137,7 +137,7 @@ class StageOut(Executor):
                     except Exception, ex:
                         stepReport.addError(self.stepName, 1, "StageOutFailure", str(ex))
                         stepReport.setStepStatus(self.stepName, 1)
-                        stepReport.persist(reportLocation)                        
+                        stepReport.persist("Report.pkl")                        
                         raise
                         
                     signal.alarm(0)

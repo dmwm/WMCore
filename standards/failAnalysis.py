@@ -11,7 +11,7 @@ except:
 sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
 import buildslaveconfig as buildslave
 
-couchURL = buildslave['failTarget']
+couchURL = buildslave.conf['failTarget']
 
 
 # what the slave does to us

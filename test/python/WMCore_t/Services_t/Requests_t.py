@@ -1,4 +1,4 @@
-'''
+'''n
 Created on Aug 6, 2009
 
 @author: meloam
@@ -9,7 +9,9 @@ from sets import Set
 from WMCore.DataStructs.Run import Run
 class testJSONRequests(unittest.TestCase):
     def roundTrip(self,data):
-        self.assertEqual( data, self.request.decode(self.request.encode(data)) )
+        encoded = self.request.encode(data)
+        decoded = self.request.decode(encoded)
+        self.assertEqual( data, decoded )
         
     def setUp(self):
         self.request = Requests.JSONRequests()

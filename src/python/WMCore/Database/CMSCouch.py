@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.43 2009/08/04 20:37:15 rpw Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: CMSCouch.py,v 1.44 2009/08/11 15:53:34 meloam Exp $"
+__version__ = "$Revision: 1.44 $"
 
 try:
     # Python 2.6
@@ -96,7 +96,20 @@ class Document(dict):
 
     def delete(self):
         self['_deleted'] = True
-        
+    
+    def __to_json__(self, thunker):
+        tmpDict = {}
+        for k,v in self.iteritems():
+            tmpDict[k] = v
+        return tmpDict
+    
+    def __from_json__(self, input, thunker):
+        if ('json_hack_mod_' in input):
+            del input['json_hack_mod']
+        if ('json_hack_name_' in input):
+            del input['json_hack_name']
+        return Document( dict = input )
+    
 class CouchDBRequests(JSONRequests):
     """
     CouchDB has two non-standard HTTP calls, implement them here for
@@ -205,7 +218,7 @@ class Database(CouchDBRequests):
         """
         Queue up a document for deletion
         """
-        assert type(doc) == type({}), "document not a dictionary"
+        assert isinstance(doc, type({})), "document not a dictionary"
         doc['_deleted'] = True
         self.queue(doc)
     
@@ -365,8 +378,6 @@ class Database(CouchDBRequests):
         # right?
         # TODO: MAKE BETTER ERROR HANDLING
         if (attachment.find('{"error":"not_found","reason":"deleted"}') != -1):
-            raise RuntimeError, "File not found, deleted"
-        if (attachment.find('{"error":"not_found","reason":"missing"}') != -1):
             raise RuntimeError, "File not found, deleted"
         if (id == "nonexistantid"):
             print attachment

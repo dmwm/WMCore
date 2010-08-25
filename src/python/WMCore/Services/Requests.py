@@ -6,6 +6,7 @@ except:
     import simplejson as json
 import urllib
 import os
+import sys
 from httplib import HTTPConnection
 from httplib import HTTPSConnection
 from sets import Set
@@ -142,34 +143,207 @@ class Requests(dict):
         """
         return HTTPConnection(self['host'])
 
-class JSONSetEncoder(json.JSONEncoder):
+class _EmptyClass:
+    pass
+
+
+class JSONThunker:
     """
-    Subclass of the json stuff to handle sets
+    _JSONThunker_
+    Converts an arbitrary object to <-> from a jsonable object.
+    
+    Will, for the most part "do the right thing" about various instance objects
+    by storing their class information along with their data in a dict. Handles
+    a recursion limit to prevent infinite recursion.
+    
+    self.passThroughTypes - stores a list of types that should be passed
+      through unchanged to the JSON parser
+      
+    self.blackListedModules - a list of modules that should not be stored in
+      the JSON.
+    
     """
-    def default(self, toEncode):
-        if (type(toEncode) == type(Set())):
-            tempDict = {'_hack_to_encode_a_set_in_json':True}
-            counter = 0
-            for item in toEncode:
-                tempDict[counter] = item
-                counter += 1
-            return tempDict
-        elif (isinstance(toEncode, object)):
-            ourdict = toEncode.__dict__
-            ourdict['_json_hack_type'] = "%s" % toEncode.__class__
-            return ourdict
+    def __init__(self):
+        self.passThroughTypes = (types.NoneType,
+                                 types.BooleanType,
+                                 types.IntType,
+                                 types.LongType,
+                                 types.ComplexType,
+                                 types.StringTypes,
+                                 types.StringType,
+                                 types.UnicodeType
+                                 )
+        
+        self.foundIDs = {}
+        # modules we don't want JSONed
+        self.blackListedModules = ('sqlalchemy.engine.threadlocal',
+                                   'WMCore.Database.DBCore',
+                                   'logging',
+                                   'WMCore.DAOFactory',
+                                   'WMCore.WMFactory',
+                                   'WMFactory',
+                                   'datetime')
+        
+    def checkRecursion(self, data):
+        """
+        handles checking for infinite recursion
+        """
+        if (id(data) in self.foundIDs):
+            if (self.foundIDs[id(data)] > 5):
+                self.unrecurse(data)
+                return "**RECURSION**"
+            else:
+                self.foundIDs[id(data)] += 1
+                return data
         else:
-            return "**PLACEHOLDER** NEED TO FIX"
-                
-def JSONDecodeSetCallback(toDecode):
-    if '_hack_to_encode_a_set_in_json' in toDecode:
-        del toDecode['_hack_to_encode_a_set_in_json']
+            self.foundIDs[id(data)] = 1
+            return data
+           
+    def unrecurse(self, data):
+        """
+        backs off the recursion counter if we're returning from _thunk
+        """
+        self.foundIDs[id(data)] = self.foundIDs[id(data)] -1
+         
+    def checkBlackListed(self, data):
+        """
+        checks to see if a given object is from a blacklisted module
+        """
         try:
-            return Set(toDecode.values())
+            # special case
+            if ((data.__class__.__module__ == 'WMCore.Database.CMSCouch') and
+                (data.__class__.__name__ == 'Document')):
+                data.__class__ = type({})
+                return data
+            if (data.__class__.__module__ in self.blackListedModules):
+                return "Blacklisted JSON object: module %s, name %s, str() %s" %\
+                    (data.__class__.__module__,data.__class__.__name__ , str(data))
+            else:
+                return data
         except:
-            return "setfail in requests.py"
-    else:
-        return toDecode
+            return data
+
+    
+    def thunk(self, toThunk):
+        """
+        Thunk - turns an arbitrary object into a JSONable object
+        """
+        self.foundIDs = {}
+        return self._thunk(toThunk)
+    
+    def _thunk(self, toThunk):
+        """
+        helper function for thunk, does the actual work
+        """
+        toThunk = self.checkRecursion( toThunk )
+        if (type(toThunk) in self.passThroughTypes):
+            self.unrecurse(toThunk)
+            return toThunk
+        elif (type(toThunk) == type([])):
+            for k,v in enumerate(toThunk):
+                toThunk[k] = self._thunk(v)
+            self.unrecurse(toThunk)
+            return toThunk
+        
+        elif (type(toThunk) == type({})):
+            for k,v in toThunk.iteritems():
+                toThunk[k] = self._thunk(v)
+            self.unrecurse(toThunk)
+            return toThunk
+        
+        elif ((type(toThunk) == type(Set()))):
+            tempDict = {'hack_to_encode_a_set_in_json_':True}
+            counter = 0
+            for val in toThunk:
+                tempDict[counter] = self._thunk(val)
+                counter = counter + 1
+            self.unrecurse(toThunk)
+            return tempDict
+        elif (type(toThunk) == types.FunctionType):
+            self.unrecurse(toThunk)
+            return "function reference"
+        elif (isinstance(toThunk, object)):
+            toThunk = self.checkBlackListed(toThunk)
+            
+            if (type(toThunk) == type("")):
+                # things that got blacklisted
+                return toThunk
+            if (hasattr(toThunk, '__to_json__')):
+                self.unrecurse(toThunk)
+                return toThunk.__to_json__(self)
+            else:
+                try:
+                    tempDict = {'json_hack_mod_' : toThunk.__class__.__module__,
+                                'json_hack_name_': toThunk.__class__.__name__, }
+                    for idx in toThunk.__dict__:
+                        tempDict[idx] = self._thunk(toThunk.__dict__[idx])
+                    self.unrecurse(toThunk)
+                    return tempDict
+                except Exception, e:
+                    tempDict = {'json_thunk_exception_' : "%s" % e }
+                    self.unrecurse(toThunk)
+                    return tempDict
+        else:
+            self.unrecurse(toThunk)
+            raise RuntimeError, type(toThunk)
+     
+    def unthunk(self, data):
+        """
+        unthunk - turns a previously 'thunked' object back into a python object
+        """
+        return self._unthunk(data)
+    
+    def _unthunk(self, data):
+        """
+        _unthunk - does the actual work for unthunk
+        """
+        if (type(data) == types.UnicodeType):
+            return str(data)
+        if (type(data) == type({})):
+            if ('hack_to_encode_a_set_in_json_' in data):
+                del data['hack_to_encode_a_set_in_json_']
+                newSet = Set()
+                for k,v in data.iteritems():
+                    newSet.add( self._unthunk(v) )
+                return newSet
+            elif ( ('json_hack_mod_' in data) and ('json_hack_name_' in data) ):
+                # spawn up an instance.. good luck
+                #   here be monsters
+                #   inspired from python's pickle code
+                module = data['json_hack_mod_']
+                name   = data['json_hack_name_']
+                __import__(module)
+                mod = sys.modules[module]
+                try:
+                    ourClass = getattr(mod, name)
+                except:
+                    print "failed to get %s from %s" % (mod, name)
+                    raise
+                
+                value = _EmptyClass()
+                del data['json_hack_mod_']
+                del data['json_hack_name_']
+                if (hasattr(ourClass, '__from_json__')):
+                    try:
+                        value.__class__ = ourClass
+                    except:
+                        value = ourClass()
+                    value = ourClass.__from_json__(value, data, self)
+                else:
+                    if (type(ourClass) == types.ClassType):
+                        value.__class__ = ourClass
+                        value.__dict__ = data
+                    else:
+                        value = ourClass()
+                        value.__dict__ = data
+                return value
+            else:
+                for k,v in data.iteritems():
+                    data[k] = self._unthunk(v)
+                return data
+ 
+        else:
+            return data
 
 
 class JSONRequests(Requests):
@@ -185,8 +359,10 @@ class JSONRequests(Requests):
         """
         encode data as json
         """
-        encoder = JSONSetEncoder()
-        return encoder.encode(data)
+        encoder = json.JSONEncoder()
+        thunker = JSONThunker()
+        thunked = thunker.thunk(data)
+        return encoder.encode(thunked)
     
 
     def decode(self, data):
@@ -194,8 +370,11 @@ class JSONRequests(Requests):
         decode the data to python from json
         """
         if data:
-            decoder = json.JSONDecoder(object_hook = JSONDecodeSetCallback)
-            return decoder.decode(data)
+            thunker = JSONThunker()
+            decoder = json.JSONDecoder()
+            data =  decoder.decode(data)
+            thunked = thunker.unthunk(data)
+            return thunked
         else:
             return {}      
         

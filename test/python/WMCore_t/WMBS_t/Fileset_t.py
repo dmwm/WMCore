@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.13 2009/04/28 13:57:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Fileset_t.py,v 1.14 2009/05/08 16:01:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import logging
@@ -454,8 +454,8 @@ class FilesetTest(unittest.TestCase):
 
         myThread.transaction.rollback()
 
-        testFilesetB.load()
-        testFilesetC.load()
+        testFilesetB.loadData()
+        testFilesetC.loadData()
 
         assert len(testFilesetB.files) == 0, \
                "ERROR: Fileset B has too many files"

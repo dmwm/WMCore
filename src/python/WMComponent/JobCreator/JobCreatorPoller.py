@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.12 2010/03/22 15:04:18 mnorman Exp $"
-__version__  = "$Revision: 1.12 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.13 2010/03/22 15:39:25 mnorman Exp $"
+__version__  = "$Revision: 1.13 $"
 
 import threading
 import logging
@@ -256,8 +256,8 @@ init jobCreator
         for location in self.sites.keys():
             #This is the number of free slots
             # - the number of Created but not Exectuing jobs
-            freeSlots = (self.slots[location]['Processing'] * self.topOffFactor) \
-                        - self.sites[location]['Processing']
+            freeSlots = (self.slots[location] * self.topOffFactor) \
+                        - self.sites[location]
 
             #I need freeSlots jobs on site location
             logging.info('I need %s jobs on site %s' %(freeSlots, location))

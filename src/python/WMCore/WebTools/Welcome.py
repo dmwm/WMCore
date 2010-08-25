@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+"""
+A sane default welcome page
+"""
+
+
+__revision__ = "$Id: Welcome.py,v 1.10 2010/01/28 16:37:19 metson Exp $"
+__version__ = "$Revision: 1.10 $"
+
 import time
 from cherrypy import expose
 from cherrypy import __version__ as cherrypy_version
@@ -5,14 +14,22 @@ from Cheetah import Version as cheetah_version
 from WMCore.WebTools.Page import Page
 
 class Welcome(Page):
+    """
+    A sane default welcome page
+    """
     def __init__(self, namesAndDocstrings):
+        Page.__init__(self, {})
         self.namesAndDocstrings = namesAndDocstrings
  
     @expose
     def index(self):
+        """
+        Return an index page of all the pages in the web app.
+        """
         html = '<html>'
         html += '<head>'
-        html += '<link rel="stylesheet" type="text/css" href="/controllers/css/reset/style.css"/>'
+        html += '<link rel="stylesheet" type="text/css" '
+        html += 'href="/controllers/css/reset/style.css"/>'
         html += '</head>'
         html += '<body>'
         html += '<h1>Welcome to the DMWM web framework</h1>'
@@ -27,7 +44,8 @@ class Welcome(Page):
             html += '<td><p>%s</p></td></tr>\n' % docstring
         html += '</table><br />'
         html += '<hr style="width:100%;border-top: 1px dotted #CCCCCC;" />'
-        html += '<div style="font-size: 12px;font-weight: normal;font-family: helvetica;">'
+        html += '<div style="font-size: 12px; '
+        html += 'font-weight: normal;font-family: helvetica;">'
         timestamp = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         html += '<b>Server info:</b> CherryPy v%s, Cheetah: v%s, %s' \
                 % (cherrypy_version, cheetah_version, timestamp)
@@ -38,4 +56,7 @@ class Welcome(Page):
     
     @expose
     def default(self, *args, **kwargs):
+        """
+        Return the index.
+        """
         return self.index()

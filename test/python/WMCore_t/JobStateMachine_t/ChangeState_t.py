@@ -280,7 +280,48 @@ class TestChangeState(unittest.TestCase):
         return
 
 
+    def testAddAttachment(self):
 
+
+        (testSubscription, testFileset, testWorkflow, testFileA,\
+            testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        
+
+        self.assertFalse(testSubscription.exists() , \
+               "ERROR: Subscription exists before it was created")
+
+        testSubscription.create()
+        
+        assert testSubscription.exists() >= 0, \
+               "ERROR: Subscription does not exist after it was created"
+               
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.create(testJobGroupA)
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB")
+        testJobB.create(testJobGroupA)
+        testJobB.addFile(testFileB)
+        
+        testJobC = Job(name = "TestJobC")
+        testJobC.create(testJobGroupA)
+        
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.add(testJobC)
+        
+        testJobGroupA.commit()
+        
+        self.change.addAttachment('hosts', testJobA['id'], '/etc/hosts')
+        self.change.addAttachment('hosts', testJobB['id'], '/etc/hosts')
+        self.change.addAttachment('hosts', testJobC['id'], '/etc/hosts')
+        self.change.addAttachment('passwd', testJobA['id'], '/etc/passwd')
+        self.change.addAttachment('passwd', testJobB['id'], '/etc/passwd')
+        self.change.propagate([testJobA,testJobB,testJobC], 'created', 'new')
+        return
 
     def testStates(self):
     	"""

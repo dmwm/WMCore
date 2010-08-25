@@ -5,15 +5,17 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.19 2009/08/03 15:49:57 meloam Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: ChangeState.py,v 1.20 2009/08/03 17:02:43 meloam Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
-from WMCore.Services.UUID import makeUUID 
+from WMCore.Services.UUID import makeUUID
+import base64
+import urllib
 from sets import Set
 import threading
 
@@ -25,6 +27,7 @@ class ChangeState(WMObject):
     def __init__(self, config={}, couchDbName = 'jsm_job_history'):
         WMObject.__init__(self, config)
         self.myThread = threading.currentThread()
+        self.attachmentList = {}
         self.logger = self.myThread.logger
         self.dialect = self.myThread.dialect
         self.dbi = self.myThread.dbi
@@ -53,7 +56,19 @@ class ChangeState(WMObject):
         self.persist(jobs, newstate, oldstate)
 
         return jobs
-
+    
+    def addAttachment(self,name,jobid,url):
+        """
+            addAttachment(name, jobid, url)
+        enqueues an attachment to be stuck onto the couchrecord at the
+        next recordInCouch() call
+        """
+        if (not jobid in self.attachmentList):
+            self.attachmentList[jobid] = {}
+        self.attachmentList[jobid][name] = url
+        return
+    
+    
     def getCouchByHeadID(self, id):
         if (type(id) == type([])):
             return self.database.loadView('jobs','get_by_head_couch_id',{},id)
@@ -119,6 +134,21 @@ class ChangeState(WMObject):
             
             job['couch_record'] = newCouchID
             doc['job'] = job
+            
+            # it's gross, but we have to base64 encode the attachments to use the bulk api
+            if job['id'] in self.attachmentList:
+                if not '_attachments' in doc:
+                    doc['_attachments'] = {}
+                for attachmentName in self.attachmentList[job['id']]:
+                    url = self.attachmentList[job['id']][attachmentName]
+                    attachmentString = urllib.urlopen( url ).read(-1)
+                    base64Attachment = base64.b64encode(attachmentString)
+                    doc['_attachments'][attachmentName] = {
+                                        "content_type":"test\/plain",
+                                        "data": base64Attachment}
+                                                           
+                
+            
             self.database.queue(doc, timestamp=True)
             
         goodresult = self.database.commit()

@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.29 2009/05/12 16:19:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Job.py,v 1.30 2009/07/10 20:04:22 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import datetime
 from sets import Set
@@ -228,3 +228,17 @@ class Job(WMBSBase, WMJob):
                               transaction = self.existingTransaction())
 
         return
+
+
+    def getState(self):
+        """
+        _getState_
+
+        Retrieve the state that the job is currently in.
+
+        """
+
+        action = self.daofactory(classname = "Jobs.GetState")
+        state = action.execute(self["id"], conn = self.getDBConn(), transaction = self.existingTransaction)
+
+        return state

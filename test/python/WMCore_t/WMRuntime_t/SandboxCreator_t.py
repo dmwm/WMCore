@@ -11,13 +11,12 @@ import WMCore_t.WMSpec_t.TestWorkloads as TestWorkloads
 import os.path
 import tarfile
 import pickle
+import shutil
 
 class SandboxCreator_t(unittest.TestCase):
     
     def testMakeSandbox(self):
         creator = SandboxCreator.SandboxCreator()
-        tempdir = tempfile.mkdtemp()
-        print "using %s as tempdir" % tempdir
         workload = TestWorkloads.oneTaskTwoStep()
         task     = workload.getTask("FirstTask")
         boxpath = creator.makeSandbox(tempdir, workload, task)
@@ -43,6 +42,8 @@ class SandboxCreator_t(unittest.TestCase):
         
         pickledWorkload.section_("test_section")
         self.assertNotEqual( workload.data, pickledWorkload )
+        shutil.rmtree( extractDir )
+        shutil.rmtree( tempdir )
 
         
         

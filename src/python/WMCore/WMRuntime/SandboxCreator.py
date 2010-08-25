@@ -10,6 +10,8 @@ import tarfile
 import pickle
 import tempfile
 import WMCore.WMSpec.WMStep as WMStep
+
+
 class SandboxCreator:
     
     def __init__(self):
@@ -59,12 +61,14 @@ class SandboxCreator:
         # now, tar everything up and put it somewhere special
         (archiveHandle,archivePath) = tempfile.mkstemp('.tar.bz2','sbox',
                                                       buildItHere)
+        task.data.sandboxArchivePath = archivePath
         pythonHandle = os.fdopen(archiveHandle,'w+b')
         archive = tarfile.open(None,'w:bz2', pythonHandle)
         archive.add("%s/%s/%s/" % (buildItHere, workloadName, taskName),'/')
         archive.close()
         pythonHandle.close()
 
+        
         
         return archivePath
         

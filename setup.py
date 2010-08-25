@@ -92,11 +92,11 @@ if can_nose:
                 time.sleep(4)
             
             if not self.buildBotMode:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)','-w','test'])
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)'])
             else:    
                 print "### We are in buildbot mode ###"
                 sys.stdout.flush()
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a','!integration,!performance,!__integration__,!__performance__','-w','test'],
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a','!integration,!performance,!__integration__,!__performance__'],
                                     addplugins=[DetailedOutputter()])
                 
             if retval:

@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.41 2010/07/21 13:54:57 sfoulkes Exp $"
-__revision__ = "$Revision: 1.41 $"
+__version__ = "$Id: ReReco.py,v 1.42 2010/08/06 21:30:00 sryu Exp $"
+__revision__ = "$Revision: 1.42 $"
 
 import subprocess
 
@@ -23,7 +23,7 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.Services.Requests import JSONRequests
 
 from WMCore.Cache.ConfigCache import WMConfigCache
-
+from WMCore.WMSpec.StdSpecs import SplitAlgoStartPolicyMap
 
 def getTestArguments():
     """
@@ -121,11 +121,19 @@ class ReRecoWorkloadFactory(object):
         """
         workload = newWorkload(self.workloadName)
         workload.setOwner(self.owner)
-        workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
-        workload.setEndPolicy("SingleShot")
         workload.data.properties.acquisitionEra = self.acquisitionEra        
         return workload
-
+    
+    def setReRecoPolicy(self, workload, splitAlgo, splitAgrs):
+        """
+        set rereco policy according to the top level task job splitting algorithm
+        """
+        workload.setStartPolicy("DatasetBlock", 
+                                SliceType = SplitAlgoStartPolicyMap.getSliceType(splitAlgo), 
+                                SliceSize = SplitAlgoStartPolicyMap.getSliceSize(splitAlgo, splitAgrs))
+        
+        workload.setEndPolicy("SingleShot")
+        
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchUrl = None,
@@ -375,6 +383,9 @@ class ReRecoWorkloadFactory(object):
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
                                  configDoc = procConfigDoc, splitAlgo = self.stdJobSplitAlgo,
                                  splitArgs = self.stdJobSplitArgs) 
+        
+        #set the startPolicy according to the to level task
+        self.setReRecoPolicy(workload, self.stdJobSplitAlgo, self.stdJobSplitArgs)
         self.addLogCollectTask(procTask)
 
         procOutput = {}

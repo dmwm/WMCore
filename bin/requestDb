@@ -89,15 +89,12 @@ def getList():
     return [GetRequest.getRequest(id) for id in ids]
 
 def doDelete():
-    #requests = getList()
+    requests = getList()
     print str(args)
-    if len(opts) == 0:
-        print "Why do you want to delete the entire request DB?  Would that really make you feel better?"
-        return
-    for request in args:
-        print repr(request)
-        print type(request).__name__
-        RequestAdmin.deleteRequest(request["RequestID"])
+    for request in requests:
+        if request['RequestName'] in args:
+            print "Deleting " + request['RequestName']
+            RequestAdmin.deleteRequest(request["RequestID"])
 
 if sys.argv[1] == 'list':
     for request in getList():

@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: RESTFormat_t.py,v 1.6 2010/01/14 22:20:08 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: RESTFormat_t.py,v 1.7 2010/01/22 17:50:44 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import json
@@ -21,6 +21,7 @@ from DummyRESTModel import DummyRESTModel
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+from WMCore.Wrappers import jsonwrapper
 
 class RESTFormatTest(RESTBaseUnitTest):
     
@@ -59,12 +60,15 @@ class RESTFormatTest(RESTBaseUnitTest):
         methodTest('GET', url, accept=type, input=input, 
                          output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
         
-        
+       
         # fix this
-#        methodTest('POST', '/rest/list3', accept=type, input=input,
-#                         contentType="application/json",
-#                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"}
-#                         )
+        url = self.urlbase +'list3'
+        data = jsonwrapper.dumps(input)
+        methodTest('POST', url, accept=type, input=data,
+                         contentType="text/json",
+                         output={'code':200, 'data':"{'a': '%', 'b': 'b'}"}
+                         )
+       
         
         input={'a':'%', 'b':'b'}
         url = self.urlbase +'list3'  

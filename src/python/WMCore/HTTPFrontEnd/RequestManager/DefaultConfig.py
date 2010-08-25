@@ -4,8 +4,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.1 2010/07/01 03:51:05 rpw Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2010/08/05 01:41:31 rpw Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 
@@ -14,21 +14,18 @@ from WMCore.Configuration import Configuration
 cmsswInstallation =  '/uscmst1/prod/sw/cms'
 
 config = Configuration()
-connectUrl = "mysql://rpw@localhost/reqmgr_rpw"
+#connectUrl = "mysql://rpw@localhost/reqmgr_rpw"
+connectUrl = "oracle://rpw:changeme_2009@cmscald"
 dbsock = '/var/lib/mysql/mysql.sock'
-
+dbsock = ""
 config.section_("CoreDatabase")
 #config.CoreDatabase.dialect = 'mysql'
-config.CoreDatabase.socket = dbsock
-#config.CoreDatabase.user = 'rpw'
-#config.CoreDatabase.passwd = 'XXXXXXX'
-#config.CoreDatabase.hostname = 'localhost'
-#config.CoreDatabase.name = 'reqmgr_rpw'
-#config.CoreDatabase.dialect = os.getenv("DIALECT")
+#config.CoreDatabase.socket = dbsock
 
 config.CoreDatabase.connectUrl = connectUrl
-config.CoreDatabase.dbsock = dbsock
-host = "cmssrv49.fnal.gov"
+#config.CoreDatabase.dbsock = dbsock
+basehost = "cmssrv49.fnal.gov"
+host = "http://"+basehost
 port = 8585
 
 config.component_('ReqMgr')
@@ -39,16 +36,15 @@ config.ReqMgr.description = 'CMS Request manager'
 
 config.webapp_("ReqMgr")
 config.ReqMgr.componentDir = "/home/rpw/ReqMgr"
-config.ReqMgr.server.host = host
+config.ReqMgr.server.host = basehost
 config.ReqMgr.server.port = port
-#config.ReqMgr.database.connectUrl = "oracle://rpw:changeme_2009@cmscald"
-config.ReqMgr.database.connectUrl = "mysql://rpw@localhost/reqmgr_rpw"
-config.ReqMgr.database.socket = config.CoreDatabase.socket
+config.ReqMgr.database.connectUrl = connectUrl
+#config.ReqMgr.database.socket = config.CoreDatabase.socket
 config.ReqMgr.templates = os.environ['WTBASE'] + '/src/templates/WMCore/WebTools'
 config.ReqMgr.admin = 'rickw@caltech.edu'
 config.ReqMgr.title = 'CMS Request Manager'
 config.ReqMgr.description = 'CMS Request manager'
-config.ReqMgr.couchURL = 'cmssrv52.fnal.gov:5984'
+config.ReqMgr.couchURL = 'http://cmssrv52.fnal.gov:5984'
 
 
 reqMgrHost = '%s:%s' % (host, port)
@@ -57,7 +53,7 @@ reqMgrHost = '%s:%s' % (host, port)
 
 # This component has all the configuration of CherryPy
 config.component_('Webtools')
-config.Webtools.host = host
+config.Webtools.host = basehost
 config.Webtools.port = port
 # This is the application
 config.Webtools.application = 'ReqMgr'

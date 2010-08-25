@@ -44,7 +44,7 @@ class InstallScenario(ScriptInterface):
         for outMod in process.outputModules_():
             outModRef = getattr(process, outMod)
             if not hasattr(outModRef, "dataset"):
-                outModRef.dataset = cms.untracked.Pset()
+                outModRef.dataset = cms.untracked.PSet()
             if not hasattr(outModRef.dataset, "dataTier"):
                 outModRef.dataset.dataTier = cms.untracked.string("")
             if not hasattr(outModRef.dataset, "filterName"):
@@ -60,7 +60,7 @@ class InstallScenario(ScriptInterface):
         #    source.firstRun
         #    source.firstLuminosityBlock
         #    source.skipEvents
-        #    source.maxEvents.input
+        #    maxEvents.input
         #    source.fileNames
         #    source.secondaryFileNames
         #    The AdaptorConfig service
@@ -76,10 +76,10 @@ class InstallScenario(ScriptInterface):
             process.source.firstLuminosityBlock = cms.untracked.uint32(0)            
         if not hasattr(process.source, "skipEvents"):
             process.source.skipEvents = cms.untracked.uint32(0)
-        if not hasattr(process.source, "maxEvents"):
-            process.source.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
-        if not hasattr(process.source.maxEvents, "input"):
-            process.source.maxEvents.input = cms.untracked.int32(-1)
+        if not hasattr(process, "maxEvents"):
+            process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+        if not hasattr(process.maxEvents, "input"):
+            process.maxEvents.input = cms.untracked.int32(-1)
         if not hasattr(process.source, "fileNames"):
             process.source.fileNames = cms.untracked.vstring()
         if not hasattr(process.source, "secondaryFileNames"):

@@ -36,7 +36,7 @@ class PhEDEx(AuthorisedService):
                                 self.responseType
         
         #PhEDEx Service default is using POST 
-        self.setdefault("method", 'GET')    
+        self.setdefault("method", 'POST')    
         #if self.responseType == 'json':
             #self.parser = JSONParser()
         #elif self.responseType == 'xml':

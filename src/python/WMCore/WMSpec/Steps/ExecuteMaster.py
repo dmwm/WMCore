@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.15 2010/05/18 20:17:57 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.16 2010/05/19 17:37:11 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import threading
 import traceback
@@ -55,7 +55,6 @@ class ExecuteMaster:
                 stepName = helper.name()
                 executor = StepFactory.getStepExecutor(stepType)
                 self.doExecution(executor, step, wmbsJob)
-                myThread.watchdogMonitor.notifyStepEnd(step)
             except Exception, ex:
                 msg = "Encountered error while running ExecuteMaster"
                 msg += str(ex)

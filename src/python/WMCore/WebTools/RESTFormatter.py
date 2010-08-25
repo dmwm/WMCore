@@ -11,7 +11,8 @@ from WMCore.WebTools.Page import exposejson, exposexml, exposeatom
 from WMCore.WebTools.Page import DEFAULT_EXPIRE
 from cherrypy import response, HTTPError
 
-
+__revision__ = "$Id: RESTFormatter.py,v 1.15 2009/12/27 11:57:18 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):

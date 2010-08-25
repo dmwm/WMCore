@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.11 2009/10/13 21:14:39 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.12 2010/01/27 20:53:57 meloam Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "fvlingen@caltech.edu"
 
 import os
@@ -67,9 +67,10 @@ class ErrorHandlerTest(unittest.TestCase):
 
 
 
-    def getConfig(self, configPath=os.path.join(os.getenv('WMCOREBASE'), \
-                                                'src/python/WMComponent/ErrorHandler/DefaultConfig.py')):
-
+    def getConfig(self, configPath=None):
+        if configPath == None:
+            configPath = os.path.join(os.getenv('WMCOREBASE'), \
+                                                'src/python/WMComponent/ErrorHandler/DefaultConfig.py')
 
         config = self.testInit.getConfiguration()
         config.component_("JobAccountant")

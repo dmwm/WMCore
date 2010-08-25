@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.19 2010/07/06 15:56:05 sfoulkes Exp $"
-__version__  = "$Revision: 1.19 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.20 2010/08/02 21:34:45 mnorman Exp $"
+__version__  = "$Revision: 1.20 $"
 
 import threading
 import logging
@@ -62,7 +62,8 @@ class JobCreatorPoller(BaseWorkerThread):
                       'defaultJobType': config.JobCreator.defaultJobType, 
                       'couchURL': self.config.JobStateMachine.couchurl, 
                       'defaultRetries': self.config.JobStateMachine.default_retries,
-                      'couchDBName': self.config.JobStateMachine.couchDBName}
+                      'couchDBName': self.config.JobStateMachine.couchDBName,
+                      'fileLoadLimit': getattr(self.config.JobCreator, 'fileLoadLimit', 500)}
 
         self.processPool = ProcessPool("JobCreator.JobCreatorWorker",
                                        totalSlaves = self.config.JobCreator.workerThreads,
@@ -76,6 +77,9 @@ class JobCreatorPoller(BaseWorkerThread):
         self.timing = {'pollSites': 0, 'pollSubscriptions': 0, 'pollJobs': 0,
                        'askWorkQueue': 0, 'pollSubList': 0, 'pollSubJG': 0, 
                        'pollSubSplit': 0, 'baggage': 0, 'createWorkArea': 0}
+
+
+        self.check()
 
         return
 
@@ -122,7 +126,7 @@ class JobCreatorPoller(BaseWorkerThread):
         #This should do three tasks:
         #Poll current subscriptions and create jobs.
         
-        self.check()
+        #self.check()
 
         self.pollSubscriptions()
     

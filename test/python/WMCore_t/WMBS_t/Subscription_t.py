@@ -13,6 +13,8 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
+from WMCore.WMBS.Job      import Job
+from WMCore.WMBS.JobGroup import JobGroup
 
 class SubscriptionTest(unittest.TestCase):
     _setup = False
@@ -999,6 +1001,58 @@ class SubscriptionTest(unittest.TestCase):
         assert testSubscription.isCompleteOnRun(2) == True, \
                "Run 2 should be completed."
 
+
+
+    def testGetNumberOfJobsPerSite(self):
+        """
+        Test for a JobCreator specific function
+        
+        """
+        
+        #print "testGetNumberOfJobsPerSite"
+
+        myThread = threading.currentThread()
+
+        testSubscription, testFileset, testWorkflow, testFileA, testFileB, testFileC = self.createSubscriptionWithFileABC()
+
+        testSubscription.create()
+        
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        jobA = Job(name = 'testA')
+        jobA.addFile(testFileA)
+        jobA["location"] = testFileA.getLocations()[0]
+        jobA.create(testJobGroup)
+        
+        jobB = Job(name = 'testB')
+        jobB.addFile(testFileB)
+        jobB["location"] = testFileB.getLocations()[0]
+        jobB.create(testJobGroup)
+        
+        jobC = Job(name = 'testC')
+        jobC.addFile(testFileC)
+        jobC["location"] = testFileC.getLocations()[0]
+        jobC.create(testJobGroup)
+        
+        testJobGroup.add(jobA)
+        testJobGroup.add(jobB)
+        testJobGroup.add(jobC)
+        
+        testJobGroup.commit()
+
+        nJobs = testSubscription.getNumberOfJobsPerSite('goodse.cern.ch', 'new', testSubscription['id'])
+        
+        self.assertEqual(nJobs, 3)
+        
+        nZero = testSubscription.getNumberOfJobsPerSite('badse.cern.ch', 'New', testSubscription['id'])
+        
+        self.assertEqual(nZero, 0)
+        
+        return
+            
+        
+            
     def testListIncompleteDAO(self):
         """
         _testListIncompeteDAO_
@@ -1038,6 +1092,7 @@ class SubscriptionTest(unittest.TestCase):
                "ERROR: Wrong subscription ID returned."
 
         return
+
                
 if __name__ == "__main__":
     unittest.main()

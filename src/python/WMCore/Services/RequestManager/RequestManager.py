@@ -53,7 +53,7 @@ class RequestManager(Service):
 
         Service.__init__(self, dict)
 
-    def _getResult(self, callname, clearCache = True,
+    def _getResult(self, callname, clearCache = False,
                    args = None, verb = "GET"):
         """
         _getResult_

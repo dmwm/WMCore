@@ -53,7 +53,7 @@ class WorkQueue(Service):
         else:
             return {}
         
-    def _getResult(self, callname, clearCache = True,
+    def _getResult(self, callname, clearCache = False,
                    args = None, verb="POST", contentType = None):
         """
         _getResult_
@@ -70,8 +70,7 @@ class WorkQueue(Service):
             self.clearCache(file, args, verb)
 
         # can't pass the decoder here since refreshCache wright to file
-        #f = self.refreshCache(file, callname, args, encoder = self.encoder)
-        f = self.forceRefresh(file, callname, args, encoder = self.encoder,
+        f = self.refreshCache(file, callname, args, encoder = self.encoder,
                               verb = verb)
         result = f.read()
         f.close()

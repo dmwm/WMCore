@@ -3,7 +3,8 @@
 import unittest
 import logging
 
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.DBS import XMLDrop
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList
 
@@ -36,16 +37,19 @@ class PhEDExTest(unittest.TestCase):
         dict['method'] = 'POST'
         phedexApi = PhEDEx(dict)
 
-        print phedexApi.injectBlocks(self.dbsTestUrl, self.testNode, "/Cosmics/Sryu_Test/RAW")
+        xmlData = XMLDrop.makePhEDExDrop(self.dbsTestUrl, "/Cosmics/Sryu_Test/RAW")
+        print phedexApi.injectBlocks(self.testNode, xmlData)
 
     def testSubscription(self):
         dict = {}
         dict['endpoint'] = self.phedexTestDS
         dict['method'] = 'POST'
         phedexApi = PhEDEx(dict)
-        print phedexApi.injectBlocks(self.dbsTestUrl, self.testNode, "/Cosmics/Sryu_Test/RAW")
-        print phedexApi.injectBlocks(self.dbsTestUrl, self.testNode, "/Cosmics/Sryu_Test/RECO")
-
+        xmlData = XMLDrop.makePhEDExDrop(self.dbsTestUrl, "/Cosmics/Sryu_Test/RAW")
+        print phedexApi.injectBlocks(self.testNode, xmlData)
+        xmlData = XMLDrop.makePhEDExDrop(self.dbsTestUrl, "/Cosmics/Sryu_Test/RECO")
+        print phedexApi.injectBlocks(self.testNode, xmlData)
+        
         sub1 = PhEDExSubscription("/Cosmics/Sryu_Test/RAW", self.testNode2, "TestOperator")
         sub2 = PhEDExSubscription("/Cosmics/Sryu_Test/RECO", self.testNode2, "TestOperator")
         subList = SubscriptionList()
@@ -54,7 +58,9 @@ class PhEDExTest(unittest.TestCase):
         print subList
         for sub in subList.getSubscriptionList():
             print sub
-            print phedexApi.subscribe(self.dbsTestUrl, sub)
+            xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl, 
+                                    newSubscription.getDatasetPaths())
+            print phedexApi.subscribe(sub, xmlData)
 
     def testNodeMap(self):
 

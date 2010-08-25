@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.25 2010/04/26 21:57:58 sryu Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: REST_t.py,v 1.26 2010/04/26 22:03:57 sryu Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import unittest
 from WMCore.Wrappers import JsonWrapper
@@ -136,7 +136,7 @@ class RESTTest(unittest.TestCase):
         
         timestp = make_rfc_timestamp(expireTime)
         
-        dict = JasonWrapper.loads(data) 
+        dict = JsonWrapper.loads(data) 
         response_expires = format_date_time(float(dict['response_expires']))
         self.assertEqual( response_expires ,  timestp, 'Expires DAS header incorrect (%s)' % response_expires )
         self.assertEqual( response_expires ,  expires, 'Expires DAS header incorrect (%s)' % response_expires )

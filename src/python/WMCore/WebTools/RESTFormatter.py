@@ -7,7 +7,7 @@ A basic REST formatter.
 Could add YAML via http://pyyaml.org/
 """
 from WMCore.WebTools.Page import TemplatedPage, exposejson, exposexml, exposeatom
-
+from cherrypy import response, HTTPError
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
         TemplatedPage.__init__(self, config)
@@ -36,12 +36,12 @@ class RESTFormatter(TemplatedPage):
         try:
             return self.supporttypes[datatype](data)
         except HTTPError, h:
-            cherrypy.response.status = h[0]
+            response.status = h[0]
             return self.supporttypes[datatype]({'exception': h[0],
                                                 'type': 'HTTPError',
                                                 'message': h[1]})
         except Exception, e:
-            cherrypy.response.status = 500
+            response.status = 500
             return self.supporttypes[datatype]({'exception': 500,
                                                 'type': type(e),
                                                 'message': e.message})

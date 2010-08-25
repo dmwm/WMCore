@@ -5,7 +5,7 @@ import os
 import pickle
 import tempfile
 #from ProdCommon.MCPayloads.WorkflowTools import createPSetHash
-from ReqMgr.RequestMaker.ConfigUpload import uploadConfigText
+from WMCore.RequestManager.RequestMaker.ConfigUpload import uploadConfigText
 
 # first argument is CMSSW installation.  Add it to path
 sys.path.reverse()

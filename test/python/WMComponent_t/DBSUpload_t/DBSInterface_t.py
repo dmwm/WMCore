@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101, W6501, W0142, C0103, W0401
+# W0401: I am not going to import all those functions by hand
 
 """
 
@@ -6,8 +8,8 @@ Test for the DBSInterface
 
 """
 
-__revision__ = "$Id: DBSInterface_t.py,v 1.1 2010/05/19 20:44:13 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBSInterface_t.py,v 1.2 2010/05/21 21:32:33 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import os
@@ -346,6 +348,9 @@ class DBSInterfaceTest(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]['OpenForWriting'], '0')
         self.assertEqual(result[0]['NumberOfFiles'], 10)
+
+
+        return
 
         
         

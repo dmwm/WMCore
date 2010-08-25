@@ -6,11 +6,11 @@ Oracle implementation of Workflow.LoadFromTask
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromTask.py,v 1.1 2010/06/01 17:21:53 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadFromTask.py,v 1.2 2010/06/01 21:21:36 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Workflow.LoadFromTask import LoadFromTask as LoadFromTaskMySQL
 
-class LoadFromName(LoadFromTaskMySQL):
+class LoadFromTask(LoadFromTaskMySQL):
     sql = LoadFromTaskMySQL.sql
 

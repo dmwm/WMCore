@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.19 2010/05/24 09:55:58 spigafi Exp $"
-__revision__ = "$Revision: 1.19 $"
+__version__ = "$Id: Job.py,v 1.20 2010/06/02 16:02:27 spigafi Exp $"
+__revision__ = "$Revision: 1.20 $"
 
 from WMCore.Services.UUID import makeUUID
 
@@ -62,7 +62,7 @@ class Job(DbObject):
                  'outputFiles' : [],
                  'dlsDestination' : [],
                  'submissionNumber' : 0,
-                 'closed' : None
+                 'closed' : 'N'
               }
     
     # exception class
@@ -138,7 +138,7 @@ class Job(DbObject):
         
         # create entry for runningJob
         if deep and self.runningJob is not None:
-            # consistency
+            # consistency - needed everytime?
             self.runningJob['jobId']      = self.data['jobId']
             self.runningJob['taskId']     = self.data['taskId']
             self.runningJob['submission'] = self.data['submissionNumber']

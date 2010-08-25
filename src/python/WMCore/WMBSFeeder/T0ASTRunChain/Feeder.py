@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.1 2010/06/02 01:47:56 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Feeder.py,v 1.2 2010/06/04 09:32:03 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -69,16 +69,13 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
 
         # Get the start Run if asked
         startRun = (filesetToProcess.name).split(":")[3]
-
         logging.debug("the T0Feeder is processing %s" % \
                  filesetToProcess.name) 
         logging.debug("the fileset name %s" % \
          (filesetToProcess.name).split(":")[0])
 
         fileType = (filesetToProcess.name).split(":")[2]
-
         crabTask = filesetToProcess.name.split(":")[0]
- 
         LASTIME = filesetToProcess.lastUpdate
 
         tries = 1
@@ -107,15 +104,16 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
 
         for listRun in requestResult[0]:
 
-            if int(listRun['run']) >= int(startRun):             
+            
+            if startRun != 'None' and int(listRun['run']) >= int(startRun):             
                 if listRun['status'] =='CloseOutExport' or listRun\
         ['status']=='Complete' or listRun['status']=='CloseOutT1Skimming':
 
                     crabWorkflow = lastWorkflow.execute(task=crabTask)
  
-
                     crabFileset = lastFileset.execute\
                                 (task=crabTask)                  
+
                     crabrunFileset = Fileset(\
     name = crabFileset[0]["name"].split(':')[0].split\
    ('-Run')[0]+ '-Run' + str(listRun['run']) + ":" + \
@@ -123,34 +121,36 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
 
                     if crabrunFileset.exists() > 0: 
 
-                            
                         crabrunFileset.load()
                         currSubs = subsRun.execute\
            (crabrunFileset.id, crabWorkflow[0]['id'])         
 
                         if currSubs:                         
+
                             listsuccessJob = successJob.execute(\
                                  subscription=currSubs['id'])
                             listallJob = allJob.execute(\
                                 subscription=currSubs['id'])  
 
-
                             if len(listsuccessJob) == len(listallJob): 
-                                for currid in listallJob:
-                                    currjob = Job( id = currid['id'] )
+
+                                for currid in listsuccessJob:
+                                    currjob = Job( id = currid )
                                     currjob.load()
 
-                                    jobReport = readJobReport(currjob['fwjr'])
+                                    logging.debug("Reading FJR %s" %currjob['fwjr_path'])
+        
+                                    jobReport = readJobReport(currjob['fwjr_path'])
 
                                     if len(jobReport) > 0:
 
+                                        
                                         if jobReport[0].files:
 
                                             for newFile in jobReport[0].files:
-
                          
                                                 logging.debug(\
-                               "Output path in files %s" %newFile['LFN'])
+                               "Output path %s" %newFile['LFN'])
                                                 newFileToAdd = File(\
                              lfn=newFile['LFN'], locations ='caf.cern.ch')
 
@@ -176,7 +176,7 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
                                                     .setLastUpdate(now)
                                                     filesetToProcess.commit()
                                                     logging.debug(\
-                                                     "new file added...")
+                                                     "new file created/loaded and added by T0ASTRunChain...")
                                     
                                         elif jobReport[0].analysisFiles:
 
@@ -185,7 +185,7 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
 
 
                                                 logging.debug(\
-                             "Ouput path %s in analysisFiles" %newFile['LFN'])
+                             "Ouput path %s " %newFile['LFN'])
                                                 newFileToAdd = File(\
                                lfn=newFile['LFN'], locations ='caf.cern.ch')
 
@@ -198,7 +198,6 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
                                                     newFileToAdd.loadData()
 
                                                 LOCK.release()
-
   
                                                 listFile = \
                               fileInFileset.execute(filesetToProcess.id)
@@ -206,19 +205,17 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
                                                   ['id']} not in listFile:
 
                                                     logging.debug\
-                                             ("%s added" %newFile['LFN'])
+                                             ("%s loaded and added by T0ASTRunChain" %newFile['LFN'])
                                                     filesetToProcess.addFile\
                                                          (newFileToAdd)
                                                     filesetToProcess.\
                                                        setLastUpdate(now)
                                                     filesetToProcess.commit()
                                                     logging.debug(\
-                                                      "new file added...")
+                                                      "new file created/loaded added by T0ASTRunChain...")
                              
                                         else: break #Missed fjr - Try next time 
                                         
-
-
 
         # Commit the fileset
         logging.debug("Test purge in T0ASTRunChain ...")
@@ -243,6 +240,4 @@ classname = "Subscriptions.LoadFromFilesetWorkflow")
         To overwrite
         """ 
         pass
-
-
 

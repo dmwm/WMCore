@@ -21,7 +21,6 @@ class RESTModel(WebAPI):
     know what you're doing.
     """
     def __init__(self, config = {}):
-        self.version = __version__
         WebAPI.__init__(self, config)
         self.methods = {'GET':{
                                'ping': {'default_data':1234, 

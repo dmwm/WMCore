@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.8 2009/11/30 20:13:33 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: GetWork.py,v 1.9 2009/11/30 21:43:00 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import random
 import time
@@ -19,18 +19,29 @@ from WMCore.WorkQueue.Database import States
 class GetWork(DBFormatter):
     # get elements that match each site resource ordered by priority
     # elements which do not process any data have their input_id set to NULL
-    sql = """SELECT we.id, we.wmtask_id, we.subscription_id, wsite.name site_name,
-                    we.num_jobs, we.input_id, we.parent_flag
+    sql = """SELECT we.id, we.wmtask_id, we.subscription_id, wsite.name site_name, 
+                    valid, we.num_jobs, we.input_id, we.parent_flag
             FROM wq_element we
-            LEFT JOIN wq_data_site_assoc wbmap ON
-                    wbmap.data_id = we.input_id
-            LEFT JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
+            LEFT JOIN 
+             (wq_data_site_assoc wbmap 
+                 INNER JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
+              ) ON wbmap.data_id = we.input_id
+              
+            LEFT JOIN wq_element_site_validation wsv ON
+                    (we.id = wsv.element_id AND
+                     wbmap.site_id = wsv.site_id)
             WHERE we.status = :available AND
                   we.num_jobs <= :jobs AND
                   -- If have input data release to site with that data,
                   -- else can release to any site
                   (wsite.name = :site OR
-                          (wsite.name IS NULL AND we.input_id is NULL))
+                          (wsite.name IS NULL AND we.input_id is NULL)) AND
+                  -- can release if white listed,
+                  -- or not in black list and no white list for subscription
+                  (wsv.valid = 1 OR (wsv.valid IS NULL AND we.id NOT IN
+                                                 (SELECT DISTINCT element_id 
+                                                  FROM wq_element_site_validation
+                                                  WHERE valid = 1)))
             ORDER BY (we.priority +
                     :weight * (:current_time - we.insert_time)) DESC
             """

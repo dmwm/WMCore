@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.36 2009/11/30 20:13:34 sryu Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: WorkQueue.py,v 1.37 2009/11/30 21:43:00 sryu Exp $"
+__version__ = "$Revision: 1.37 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -306,6 +306,33 @@ class WorkQueue(WorkQueueBase):
         """Mark work as canceled"""
         self.setStatus('Canceled', subscriptions)
 
+    def gotWork(self, *subscriptions):
+        """
+        _gotWork_
+
+        this is called by JSM
+        update the WorkQueue status table and remove from further consideration
+        """
+        self.setStatus('Acquired', *subscriptions)
+        
+
+    def successWork(self, *subscriptions):
+        """
+        _successWork_
+
+        this is called by JSM
+        update the WorkQueue status table
+        """
+        self.setStatus('Success', *subscriptions)
+    
+    def deleteWork(self, *subscriptions):
+        """
+        _deleteWork_
+
+        this is called by JSM
+        update the WorkQueue status table
+        """
+        pass
 
     def queueWork(self, wmspecUrl, parentQueueId = None):
         """
@@ -643,15 +670,6 @@ class WorkQueue(WorkQueueBase):
         siteAction.execute(sites,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-
-    def _checkValidityOfSite(self, elementID, site):
-        
-        #TODO this DAO can be included in WorkQueueElement.GetWork
-        action = self.daofactory(classname = "Site.CheckValidity")
-        flag = action.execute(elementID, site,
-                              conn = self.getDBConn(),
-                              transaction = self.existingTransaction())
-        return flag
     
     def _match(self, conditions):
         """
@@ -661,12 +679,7 @@ class WorkQueue(WorkQueueBase):
         elements = matchAction.execute(conditions, self.params['ItemWeight'],
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
-        availableElemnents = []
-        
-        for element in elements:
-            if self._checkValidityOfSite(element['id'], element['site_name']):
-                availableElemnents.append(element)
-        return availableElemnents
+        return elements
 
 
     def _getLocations(self, dataNames, fullRefresh):
@@ -752,37 +765,6 @@ class WorkQueue(WorkQueueBase):
                             result[block['name']] = [x['node'] for x in block['subscription']]
 
         return result
-
-
-    def gotWork(self, *subscriptions):
-        """
-        _gotWork_
-
-        this is called by JSM
-        update the WorkQueue status table and remove from further consideration
-        """
-        self.setStatus('Acquired', *subscriptions)
-        
-        return "Work Acquired"
-
-    def successWork(self, *subscriptions):
-        """
-        _successWork_
-
-        this is called by JSM
-        update the WorkQueue status table
-        """
-        self.setStatus('Success', *subscriptions)
-        return "Work_successful"
-    
-    def deleteWork(self, *subscriptions):
-        """
-        _deleteWork_
-
-        this is called by JSM
-        update the WorkQueue status table
-        """
-        pass
 
     def _get_remote_queue(self, queue):
         """

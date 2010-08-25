@@ -4,31 +4,26 @@ _SubscriptionStatus_
 
 Retrieve status information about subscriptions in WMBS.  This will return a
 list of disctionaries with the following keys:
-    success
-    failure
-    running
-    filesetName
-    workflowName
-    subscriptionId
+    percent_success
+    percent_complete
+    fileset_name
+    workflow_name
+    subscription_id
 
-The success, failure and running keys will hold information about the percentage
-of successful, failed and running jobs.  The workflowName, filesetName and
-subscriptionId keys will contain the workflow name, fileset name and WMBS
-subscription IDs.
 """
 
-__revision__ = "$Id: SubscriptionStatus.py,v 1.1 2009/11/17 18:33:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SubscriptionStatus.py,v 1.2 2009/12/17 21:53:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class SubscriptionStatus(DBFormatter):
-    sql = """SELECT wmbs_subscription.id AS subscriptionid,
-                    wmbs_workflow.name AS workflowname,
-                    wmbs_fileset.name AS filesetname,
-                    job_info.job_state AS jobstate,
-                    job_info.job_count AS jobcount,
-                    job_info.num_success AS successCount FROM wmbs_subscription
+    sql = """SELECT wmbs_subscription.id AS subscription_id,
+                    wmbs_workflow.name AS workflow_name,
+                    wmbs_fileset.name AS fileset_name,
+                    job_info.job_state AS job_state,
+                    job_info.job_count AS job_count,
+                    job_info.num_success AS success_count FROM wmbs_subscription
                INNER JOIN wmbs_workflow ON
                  wmbs_subscription.workflow = wmbs_workflow.id
                INNER JOIN wmbs_fileset ON
@@ -45,12 +40,12 @@ class SubscriptionStatus(DBFormatter):
                   GROUP BY wmbs_jobgroup.subscription, wmbs_job_state.name) job_info ON
                  wmbs_subscription.id = job_info.subscription"""
 
-    typeSql = """SELECT wmbs_subscription.id AS subscriptionId,
-                        wmbs_workflow.name AS workflowName,
-                        wmbs_fileset.name AS filesetName,
-                        job_info.job_state AS jobState,
-                        job_info.job_count AS jobCount,
-                        job_info.num_success AS successCount FROM wmbs_subscription
+    typeSql = """SELECT wmbs_subscription.id AS subscription_id,
+                        wmbs_workflow.name AS workflow_name,
+                        wmbs_fileset.name AS fileset_name,
+                        job_info.job_state AS job_state,
+                        job_info.job_count AS job_count,
+                        job_info.num_success AS success_count FROM wmbs_subscription
                    INNER JOIN wmbs_workflow ON
                      wmbs_subscription.workflow = wmbs_workflow.id
                    INNER JOIN wmbs_fileset ON
@@ -83,52 +78,48 @@ class SubscriptionStatus(DBFormatter):
 
         workflows = {}
         for result in results:
-            if not workflows.has_key(result["workflowname"]):
-                workflows[result["workflowname"]] = {}
+            if not workflows.has_key(result["workflow_name"]):
+                workflows[result["workflow_name"]] = {}
 
-            workflowDict = workflows[result["workflowname"]]
-            if not workflowDict.has_key(result["filesetname"]):
-                workflowDict[result["filesetname"]] = {"success": 0, "running": 0,
+            workflowDict = workflows[result["workflow_name"]]
+            if not workflowDict.has_key(result["fileset_name"]):
+                workflowDict[result["fileset_name"]] = {"success": 0, "running": 0,
                                                        "failure": 0,
-                                                       "subId": result["subscriptionid"]}
+                                                       "subId": result["subscription_id"]}
 
-            filesetDict = workflowDict[result["filesetname"]]
-            if result["jobstate"] in ("exhausted", "cleanout", "success"):
-                if result["successcount"] != None:
-                    filesetDict["success"] += result["successcount"]
-                    filesetDict["failure"] += result["jobcount"] - result["successcount"]
+            filesetDict = workflowDict[result["fileset_name"]]
+            if result["job_state"] in ("exhausted", "cleanout", "success", "jobfailed"):
+                if result["success_count"] != None:
+                    filesetDict["success"] += result["success_count"]
+                    filesetDict["failure"] += result["job_count"] - result["success_count"]
             else:
-                if result["successcount"] != None:
-                    filesetDict["running"] += result["successcount"]
+                if result["success_count"] != None:
+                    filesetDict["running"] += result["job_count"]
                     
         results = []
         for workflowName in workflows.keys():
             for filesetName in workflows[workflowName].keys():
-                totalSuccess = workflows[workflowName][filesetName]["success"]
-                totalFailure = workflows[workflowName][filesetName]["failure"]
-                totalRunning = workflows[workflowName][filesetName]["running"]
-                subId = workflows[workflowName][filesetName]["subId"]                
-                totalJobs = totalSuccess + totalFailure + totalRunning
+                success = workflows[workflowName][filesetName]["success"]
+                failure = workflows[workflowName][filesetName]["failure"]
+                running = workflows[workflowName][filesetName]["running"]
 
-                if totalJobs == 0:
-                    success = "No jobs defined."
-                    failure = "No jobs defined."
-                    running = "No jobs defined."
+                if success + failure + running == 0:
+                    percentComplete = 0
+                    percentSuccess = 0
+                elif success + failure == 0:
+                    percentComplete = int((success + failure) / (success + failure + running) * 1000)
+                    percentSuccess = 0
                 else:
-                    success = "%.2f%% (%d / %d)" % (100.0 * (totalSuccess / totalJobs),
-                                                    totalSuccess, totalJobs)
-                    failure = "%.2f%% (%d / %d)" % (100.0 * (totalFailure / totalJobs),
-                                                    totalFailure, totalJobs)
-                    running = "%.2f%% (%d / %d)" % (100.0 * (totalRunning / totalJobs),
-                                                    totalRunning, totalJobs)
+                    percentComplete = int((success + failure) / (success + failure + running) * 1000)
+                    percentSuccess = int(success / (success + failure) * 1000)
+
+                subId = workflows[workflowName][filesetName]["subId"]                
                     
-                results.append({"subscriptionId": subId,
-                                "workflowName": workflowName,
-                                "filesetName": filesetName,
-                                "success": success,
-                                "failure": failure,
-                                "running": running})
-                                
+                results.append({"subscription_id": subId,
+                                "workflow_name": workflowName,
+                                "fileset_name": filesetName,
+                                "percent_complete": percentComplete,
+                                "percent_success": percentSuccess})
         return results
         
     def execute(self, subscriptionType = None, conn = None,

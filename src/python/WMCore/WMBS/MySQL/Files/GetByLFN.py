@@ -1,5 +1,5 @@
 """
-MySQL implementation of File.Get
+MySQL implementation of File.GetByLFN
 """
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,20 +16,28 @@ class GetByLFN(DBFormatter):
         """
         formattedResult = DBFormatter.formatDict(self, result)[0]
         formattedResult["id"] = int(formattedResult["id"])
-        formattedResult["events"] = int(formattedResult["events"])
-        formattedResult["cksum"] = int(formattedResult["cksum"])
-        formattedResult["first_event"] = int(formattedResult["first_event"])
-        formattedResult["last_event"] = int(formattedResult["last_event"])
+
+        if formattedResult["events"] != None:
+            formattedResult["events"] = int(formattedResult["events"])
+        if formattedResult["cksum"] != None:
+            formattedResult["cksum"] = int(formattedResult["cksum"])
+        if formattedResult["first_event"] != None:
+            formattedResult["first_event"] = int(formattedResult["first_event"])
+        if formattedResult["last_event"] != None:
+            formattedResult["last_event"] = int(formattedResult["last_event"])
 
         if "size" in formattedResult.keys():
-            formattedResult["size"] = int(formattedResult["size"])
+            formattedResult["size"] = formattedResult["size"]
         else:
             # The size column is named "filesize" in Oracle as size is
             # as reserved word.  We'll handle this here to make things
             # easier in the Oracle version of this object.
-            formattedResult["size"] = int(formattedResult["filesize"])
+            formattedResult["size"] = formattedResult["filesize"]
             del formattedResult["filesize"]
-        
+
+        if formattedResult["size"] != None:
+            formattedResult["size"] = int(formattedResult["size"])
+            
         return formattedResult
 
     def execute(self, lfn = None, conn = None, transaction = False):

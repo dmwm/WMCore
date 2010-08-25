@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.23 2009/04/07 09:42:04 metson Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Root.py,v 1.24 2009/06/09 13:30:31 valya Exp $"
+__version__ = "$Revision: 1.24 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log, tree, engine, dispatch
@@ -49,6 +49,10 @@ class Root(WMObject):
             cpconfig.update ({"server.socket_port": int(self.config.port)})
         except:
             cpconfig.update ({"server.socket_port": 8080})
+        try:
+            cpconfig.update ({"server.socket_host": self.config.host})
+        except:
+            cpconfig.update ({"server.socket_host": 'localhost'})
         try:
             cpconfig.update ({'tools.expires.secs': int(self.config.expires)})
         except:

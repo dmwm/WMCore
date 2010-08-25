@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.31 2010/02/05 21:08:53 meloam Exp $"
+    "$Id: TestInit.py,v 1.32 2010/02/08 16:53:07 meloam Exp $"
 __version__ = \
-    "$Revision: 1.31 $"
+    "$Revision: 1.32 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -27,7 +27,7 @@ import shutil
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
-
+from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.WMInit import WMInit
 
 # Sorry for the global, but I think this should go here
@@ -40,8 +40,8 @@ def deleteDatabaseAfterEveryTest( areYouSerious ):
         trashDatabases = True
     else:
         #"I'm glad you weren't serious"
-        pass
-
+        trashDatabases = False
+        
 class TestInit:
     """
     A set of initialization steps used in many tests.
@@ -105,17 +105,54 @@ class TestInit:
         else:
             raise RuntimeError, "Unrecognized dialect"
         
+    def eraseEverythingInDatabase(self):
+        if trashDatabases:
+            dbi = self.getDBInterface()
+            dialect = self.coreConfig.CoreDatabase.dialect
+            formatter = DBFormatter(self.logger, dbi)
+            if (dialect == 'MySQL'):
+                result = formatter.execute("SHOW TABLES")
+                
+                formatter.execute("SET foreign_key_checks = 0")
+                tableNames = []
+                for oneTable in result:
+                    tableNames.append( oneTable(0) )
+                tableList = ",".join( tableNames )
+                query = "DROP TABLE IF EXISTS %s" % tableList
+                formatter.execute(query)
+                formatter.execute("SET foreign_key_checks = 1")
+            elif (dialect == 'SQLite'):
+                result = formatter.execute("SHOW TABLES")
+                tableNames = []
+                for oneTable in result:
+                    tableNames.append( oneTable(0) )
+                tableList = ",".join( tableNames )
+                query = "DROP TABLE IF EXISTS %s" % tableList
+                formatter.execute(query)
+            elif (dialect == 'Oracle'):
+                pass
+            else:
+                raise RuntimeError, "This dialect is unsupported by trashDatabases"
+            pass
+        else:
+            pass
+        
     def setDatabaseConnection(self, connectUrl=None, socket=None):
         """
         Set up the database connection by retrieving the environment
         parameters.
         """        
         config = self.getConfiguration(connectUrl=connectUrl, socket=socket)
-    
+        self.coreConfig = config
         self.init.setDatabaseConnection(
                                         config.CoreDatabase.connectUrl,
                                         config.CoreDatabase.dialect,
                                         config.CoreDatabase.socket)
+        if trashDatabases:
+            # we are going to own ths database.
+            #  ...but the code isn't ready yet
+            pass
+        
 
     def setSchema(self, customModules = [], useDefault = True, params = None):
         """
@@ -138,11 +175,6 @@ class TestInit:
         for module in (defaultModules + customModules):
             modules[module] = 'done'
             
-        if trashDatabases:
-            # we are going to own ths database.
-            #  ...but the code isn't ready yet
-            pass
-        
         try:
             self.init.setSchema(modules.keys(), params = params)
         except Exception, ex:

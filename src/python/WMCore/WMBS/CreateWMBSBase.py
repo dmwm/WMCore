@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.40 2009/12/02 19:39:55 mnorman Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.41 2009/12/03 17:40:21 mnorman Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import threading
 
@@ -80,12 +80,15 @@ class CreateWMBSBase(DBCreator):
              fileset     INTEGER   NOT NULL,
              insert_time INTEGER   NOT NULL,
              UNIQUE (file, fileset),
+             INDEX  (fileset),
              FOREIGN KEY(fileset) references wmbs_fileset(id))"""
 
         self.create["04wmbs_file_parent"] = \
           """CREATE TABLE wmbs_file_parent (
              child  INTEGER NOT NULL,
              parent INTEGER NOT NULL,
+             INDEX (child),
+             INDEX (parent),
              FOREIGN KEY (child)  references wmbs_file_details(id)
                ON DELETE CASCADE,
              FOREIGN KEY (parent) references wmbs_file_details(id),
@@ -96,6 +99,7 @@ class CreateWMBSBase(DBCreator):
              file    INTEGER NOT NULL,
              run     INTEGER NOT NULL,
              lumi    INTEGER NOT NULL,
+             INDEX (file),
              FOREIGN KEY (file) references wmbs_file_details(id)
                ON DELETE CASCADE)"""
 
@@ -111,6 +115,8 @@ class CreateWMBSBase(DBCreator):
              file     INTEGER NOT NULL,
              location INTEGER NOT NULL,
              UNIQUE(file, location),
+             INDEX (file),
+             INDEX (location),
              FOREIGN KEY(file)     REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE,
              FOREIGN KEY(location) REFERENCES wmbs_location(id)
@@ -130,6 +136,8 @@ class CreateWMBSBase(DBCreator):
              workflow_id       INTEGER NOT NULL,
              output_identifier VARCHAR(255) NOT NULL,
              output_fileset    INTEGER NOT NULL,
+             INDEX (workflow_id),
+             INDEX (output_fileset),
              FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE,
              FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)
@@ -150,6 +158,9 @@ class CreateWMBSBase(DBCreator):
              split_algo  VARCHAR(255) NOT NULL DEFAULT 'File',
              subtype     INTEGER      NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
+             INDEX (fileset),
+             INDEX (workflow),
+             INDEX (subtype),
              FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE,
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
@@ -163,6 +174,8 @@ class CreateWMBSBase(DBCreator):
              subscription     INTEGER      NOT NULL,
              location         INTEGER      NOT NULL,
              valid            BOOLEAN      NOT NULL DEFAULT TRUE,
+             INDEX (subscription),
+             INDEX (location),
              FOREIGN KEY(subscription)  REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY(location)     REFERENCES wmbs_location(id)
@@ -172,6 +185,8 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_acquired (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
+             INDEX (subscription),
+             INDEX (file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -182,6 +197,8 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_failed (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
+             INDEX (subscription),
+             INDEX (file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -191,6 +208,8 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_complete (
           subscription INTEGER NOT NULL,
           file         INTEGER NOT NULL,
+          INDEX (subscription),
+          INDEX (file),
           FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
             ON DELETE CASCADE,
           FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -205,6 +224,8 @@ class CreateWMBSBase(DBCreator):
              last_update  INTEGER      NOT NULL,
              location     INTEGER,
              UNIQUE(uid),
+             INDEX (subscription),
+             INDEX (output),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
@@ -229,7 +250,10 @@ class CreateWMBSBase(DBCreator):
              outcome      INTEGER       DEFAULT 0,
              cache_dir    VARCHAR(255)  DEFAULT 'None',
              fwjr_path    VARCHAR(255),
-             UNIQUE(name),
+             UNIQUE (name),
+             INDEX (jobgroup),
+             INDEX (state),
+             INDEX (location),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE,
              FOREIGN KEY (state) REFERENCES wmbs_job_state(id),
@@ -239,6 +263,8 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_job_assoc (
              job    INTEGER NOT NULL,
              file   INTEGER NOT NULL,
+             INDEX (job),
+             INDEX (file),
              FOREIGN KEY (job)  REFERENCES wmbs_job(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file) REFERENCES wmbs_file_details(id)
@@ -254,6 +280,7 @@ class CreateWMBSBase(DBCreator):
               FirstRun      INTEGER,
               LastRun       INTEGER,
               inclusivemask BOOLEAN DEFAULT TRUE,
+              INDEX (job),
               FOREIGN KEY (job)       REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
 
@@ -269,7 +296,9 @@ class CreateWMBSBase(DBCreator):
               fileid        INTEGER,
               typeid        INTEGER,
               cksum         VARCHAR(100),
-              UNIQUE (fileid, typeid), 
+              UNIQUE (fileid, typeid),
+              INDEX (fileid),
+              INDEX (typeid),
               FOREIGN KEY (typeid) REFERENCES wmbs_checksum_type(id)
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
@@ -289,6 +318,14 @@ class CreateWMBSBase(DBCreator):
             subTypeQuery = """INSERT INTO wmbs_sub_types (id, name)
                                 VALUES (%s, '%s')""" % (i, subTypes[i])
             self.inserts["wmbs_sub_types_%s" % subTypes[i]] = subTypeQuery
+
+
+        checksumTypes = ['cksum', 'adler32', 'md5']
+        for i in checksumTypes:
+            checksumTypeQuery = """INSERT INTO wmbs_checksum_type (type) VALUES ('%s')
+            """ % (i)
+            self.inserts["wmbs_checksum_type_%s" % (i)] = checksumTypeQuery
+                         
 
         return
 

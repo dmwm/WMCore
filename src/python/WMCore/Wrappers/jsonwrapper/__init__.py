@@ -7,8 +7,8 @@ So far we use simplejson (json) and cjson, other modules can be
 added in addition.
 """
 
-__revision__ = "$Id: __init__.py,v 1.3 2010/01/10 16:36:32 valya Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: __init__.py,v 1.4 2010/01/11 14:00:42 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "Valentin Kuznetsov"
 __all__ = ['loads', 'dumps']
 
@@ -39,7 +39,11 @@ def load(source):
     provide this method. The load method works on file-descriptor
     objects.
     """
-    return json.load(source)
+    if  _module == 'json':
+        return json.load(source)
+    elif _module == 'cjson':
+        data = source.read()
+        return cjson.decode(data)
 
 def dumps(idict, **kwargs):
     """
@@ -56,8 +60,11 @@ def dump(doc, source):
     provide this method. The dump method works on file-descriptor
     objects.
     """
-    return json.dump(doc, source)
-
+    if  _module == 'json':
+        return json.dump(doc, source)
+    elif _module == 'cjson':
+        stj = cjson.encode(doc)
+        return source.write(stj)
 
 class JSONEncoder(object):
     def __init__(self):

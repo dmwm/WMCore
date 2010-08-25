@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.36 2010/07/22 15:41:53 mnorman Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.37 2010/07/28 15:47:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -33,62 +33,24 @@ from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
-
 from WMCore.WMBase        import getWMBASE
 
-
-class BadJobError(Exception):
+def siteListCompare(a, b):
     """
-    Silly exception that doesn't do anything
-    except signal
+    _siteListCompare_
 
+    Sites are stored as a tuple where the first element is the SE name and the
+    second element is the number of free slots.  We'll sort based on the second
+    element.
     """
-    pass
+    if a[1] > b[1]:
+        return 1
+    elif a[1] == b[1]:
+        return 0
 
-
-class FullSitesError(Exception):
-    """
-    Another signal passing exception
-
-    """
-
-    def __init__(self, jobType):
-        self.jobType = jobType
-
-    pass
-
-
-class BadJobCacheError(Exception):
-    """
-    Yet another signal passing exception
-
-    """
-
-    pass
-
-def sortListOfDictsByKey(inList, key):
-    """
-    Sorts a list of dictionaries into a dictionary by keys
-
-    """
-
-    finalList = {}
-
-    for entry in inList:
-        value = entry.get(key, '__NoKey__')
-        if not value in finalList.keys():
-            finalList[value] = []
-        finalList[value].append(entry)
-
-    return finalList
-
-
+    return -1
 
 class JobSubmitterPoller(BaseWorkerThread):
-    """
-    Handles job submission
-
-    """
     def __init__(self, config):
 
         myThread = threading.currentThread()
@@ -131,10 +93,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         if hasattr(self.config, 'BossAir'):
             configDict['pluginName'] = config.BossAir.pluginName
-            configDict['pluginDir']  = config.BossAir.pluginDir
-
-        if hasattr(self.config.JobSubmitter, 'gLiteConf'):
-            configDict['gLiteConf'] = self.config.JobSubmitter.gLiteConf
+            configDict['pluginName'] = config.BossAir.pluginDir 
 
         workerName = "%s.%s" % (self.config.JobSubmitter.pluginDir, \
                                 self.config.JobSubmitter.pluginName)
@@ -146,487 +105,270 @@ class JobSubmitterPoller(BaseWorkerThread):
 
 
         self.changeState = ChangeState(self.config)
-
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
 
+        # Steve additions
+        self.cachedJobIDs = set()
+        self.cachedJobs = {}
+        self.jobsToPackage = {}
+
+        self.packageDir = os.path.join(self.config.JobSubmitter.submitDir, "packages")
+        if not os.path.exists(self.packageDir):
+            os.makedirs(self.packageDir)
+
+        self.listJobsAction = self.daoFactory(classname = "Jobs.ListForSubmitter")
+        self.setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")        
         return
+
+    def addJobsToPackage(self, loadedJob):
+        """
+        _addJobsToPackage_
+
+        Add a job to a job package and then return the batch ID for the job.
+        Packages are only written out to disk when they contain 100 jobs.  The
+        flushJobsPackages() method must be called after all jobs have been added
+        to the cache and before they are actually submitted to make sure all the
+        job packages have been written to disk.
+
+        Path to the batch file:
+          firstLevelHash = int(batchid.split("-", 1)[0]) % 1000000
+          secondLevelHash = int(batchid.split("-", 1)[0]) % 1000
+          batchPath = os.path.join(self.packageDir, str(firstLevelHash),
+                                   str(secondLevelHash), "batch-%s.pkl" % batchid)
+        """
+        if not self.jobsToPackage.has_key(loadedJob["workflow"]):
+            batchid = "%s-%s" % (loadedJob["id"], loadedJob["retry_count"])
+            self.jobsToPackage[loadedJob["workflow"]] = {"batchid": batchid,
+                                                         "package": JobPackage()}
+
+        jobPackage = self.jobsToPackage[loadedJob["workflow"]]["package"]
+        jobPackage[loadedJob["id"]] = loadedJob
+
+        batchID = self.jobsToPackage[loadedJob["workflow"]]["batchid"]
+        
+        if len(jobPackage.keys()) == 100:
+            firstLevelHash = int(batchID.split("-", 1)[0]) % 1000000
+            secondLevelHash = int(batchID.split("-", 1)[0]) % 1000
+            batchDir = os.path.join(self.packageDir, str(firstLevelHash),
+                                     str(secondLevelHash))
+
+            if not os.path.exists(batchDir):
+                os.makedirs(batchDir)
+                
+            batchPath = os.path.join(batchDir, "batch-%s.pkl" % batchID)
+            jobPackage.save(batchPath)
+            del self.jobsToPackage[loadedJob["workflow"]]
+
+        return batchID
+
+    def flushJobPackages(self):
+        """
+        _flushJobPackages_
+
+        Write any jobs packages to disk that haven't been written out already.
+        """
+        workflowNames = self.jobsToPackage.keys()
+        for workflowName in workflowNames:
+            batchID = self.jobsToPackage[workflowName]["batchid"]
+            jobPackage = self.jobsToPackage[workflowName]["package"]
+
+            firstLevelHash = int(batchID.split("-", 1)[0]) % 1000000
+            secondLevelHash = int(batchID.split("-", 1)[0]) % 1000
+            batchDir = os.path.join(self.packageDir, str(firstLevelHash),
+                                     str(secondLevelHash))
+
+            if not os.path.exists(batchDir):
+                os.makedirs(batchDir)
+                
+            batchPath = os.path.join(batchDir, "batch-%s.pkl" % batchID)
+            jobPackage.save(batchPath)
+            del self.jobsToPackage[workflowName]
+
+        return
+
+    def refreshCache(self):
+        """
+        _refreshCache_
+
+        Query WMBS for all jobs in the "created" state.  For all jobs returned
+        from the query, check if they already exist in the cache.  If they
+        don't unpickle them and combine their site white and black list with
+        the list of locations they can run at.  Add them to the cache.
+
+        Each entry in the cache is a tuple with five items:
+          - WMBS Job ID
+          - Retry count
+          - Batch ID
+          - Path to sanbox
+          - Path to cache directory
+        """
+        badJobs = []
+
+        logging.info("Querying WMBS for jobs to be submitted...")
+        newJobs = self.listJobsAction.execute()
+        logging.info("Found %s new jobs to be submitted." % len(newJobs))
+
+        logging.info("Determining possible sites for new jobs...")
+        jobCount = 0
+        processedCount = 0
+        for newJob in newJobs:
+            jobCount += 1            
+            if newJob["id"] in self.cachedJobIDs:
+                continue
+
+            processedCount += 1
+            if processedCount % 5000 == 0:
+                logging.info("Processed %d/%d new jobs." % (jobCount, len(newJobs)))
+
+            pickledJobPath = os.path.join(newJob["cache_dir"], "job.pkl")
+            jobHandle = open(pickledJobPath, "r")
+            loadedJob = cPickle.load(jobHandle)
+
+            possibleLocations = set(loadedJob["input_files"][0]["locations"])
+
+            if len(loadedJob["siteWhitelist"]) > 0:
+                possibleLocations = possibleLocations & set(loadedJob["siteWhitelist"])
+            if len(loadedJob["siteBlacklist"]) > 0:
+                possibleLocations = possibleLocations - set(loadedJob["siteBlacklist"])
+
+            if len(possibleLocations) == 0:
+                badJobs.append(newJob)
+                continue
+
+            batchID = self.addJobsToPackage(loadedJob)
+            self.cachedJobIDs.add(newJob["id"])
+
+            for possibleLocation in possibleLocations:
+                if not self.cachedJobs.has_key(possibleLocation):
+                    self.cachedJobs[possibleLocation] = {}
+                if not self.cachedJobs[possibleLocation].has_key(newJob["type"]):
+                    self.cachedJobs[possibleLocation][newJob["type"]] = set()
+                    
+                self.cachedJobs[possibleLocation][newJob["type"]].add((newJob["id"],
+                                                                       newJob["retry_count"],
+                                                                       batchID,                                                                       
+                                                                       loadedJob["sandbox"],
+                                                                       loadedJob["cache_dir"]))
+
+        if len(badJobs) > 0:
+            logging.error("The following jobs have no possible sites to run at: %s" % badJobs)
+            self.changeState(badJobs, "submitfailed", "created")
+
+        self.flushJobPackages()
+        logging.info("Done.")
+        return
+
+    def getThresholds(self):
+        """
+        _getThresholds_
+
+        Reformat the submit thresholds.  This will return a dictionary keyed by
+        task type.  Each task type will contain a list of tuples where each
+        tuple contains teh site name and the number of running jobs.
+        """
+        rcThresholds = self.resourceControl.listThresholdsForSubmit()
+
+        submitThresholds = {}
+        for siteName in rcThresholds.keys():
+            for taskType in rcThresholds[siteName].keys():
+                if not submitThresholds.has_key(taskType):
+                    submitThresholds[taskType]= []
+
+                maxSlots = rcThresholds[siteName][taskType]["max_slots"]
+                runningJobs = rcThresholds[siteName][taskType]["task_running_jobs"]                
+
+                if runningJobs < maxSlots:
+                    submitThresholds[taskType].append((rcThresholds[siteName][taskType]["se_name"],
+                                                       maxSlots - runningJobs))
+
+        return submitThresholds
+
+    def assignJobLocations(self):
+        """
+        _assignJobLocations_
+
+        Loop through the submit thresholds and pull sites out of the job cache
+        as we discover open slots.  This will return a list of tuple where each
+        tuple will have six elements:
+          - WMBS Job ID
+          - Retry count
+          - Batch ID
+          - Path to sanbox
+          - Path to cache directory
+          - SE name of the site to run at
+        """
+        submitThresholds = self.getThresholds()
+
+        jobsToSubmit = set()
+        jobsToPrune = set()
+
+        for taskType in submitThresholds.keys():
+            logging.info("Assigning locations for task %s" % taskType)
+
+            siteList = submitThresholds[taskType]
+            while len(siteList) > 0:
+                # Sort the list of sites that have open slots for this task type
+                # and task the one that has the most free slots.
+                siteList.sort(siteListCompare)
+                emptySite = siteList.pop(0)
+
+                # If we don't have any jobs for this site then move on.
+                if not self.cachedJobs.has_key(emptySite[0]):
+                    continue
+                if not self.cachedJobs[emptySite[0]].has_key(taskType):
+                    continue
+
+                # Pull a job out of the cache for the task/site.  Verify that we
+                # haven't already used this job in this polling cycle.
+                cachedJob = None
+                while len(self.cachedJobs[emptySite[0]][taskType]) > 0:
+                    cachedJob = self.cachedJobs[emptySite[0]][taskType].pop()
+
+                    if cachedJob not in jobsToPrune:
+                        self.cachedJobIDs.remove(cachedJob[0])                            
+                        jobsToPrune.add(cachedJob)
+                        jobsToSubmit.add((cachedJob[0], cachedJob[1], cachedJob[2],
+                                          cachedJob[3], cachedJob[4], emptySite[0]))
+                        break
+                    else:
+                        cachedJob = None
+
+                # If we were able to pull down a job for the task/site and the
+                # site it not full we'll still add more jobs to it.
+                if emptySite[1] - 1 > 0 and cachedJob != None:
+                    siteList.append((emptySite[0], emptySite[1] - 1))
+
+        # Remove the jobs that we're going to submit from the cache.
+        for siteName in self.cachedJobs.keys():
+            for taskType in self.cachedJobs[siteName].keys():
+                self.cachedJobs[siteName][taskType] -= jobsToPrune
+
+        logging.info("Have %s jobs to submit." % len(jobsToSubmit))
+        logging.info("Done assigning site locations.")
+        return jobsToSubmit
 
     def algorithm(self, parameters = None):
         """
-        Actually runs the code
+        _algorithm_
+
         """
-        logging.debug("Running JSM.JobSubmitter")
-
-        myThread = threading.currentThread()
-        
-        try:
-            self.runSubmitter()
-        except Exception, ex:
-            msg = "Caught exception in JobSubmitter\n"
-            msg += str(ex)
-            msg += str(traceback.format_exc())
-            msg += "\n\n"
-            logging.error(msg)
-            if hasattr(myThread, 'transaction') and myThread.transaction != None \
-                   and hasattr(myThread.transaction, 'transaction') \
-                   and myThread.transaction.transaction != None:
-                myThread.transaction.rollback()
-            raise Exception(msg)
-
-
-    def runSubmitter(self):
-        """
-        _runSubmitter_
-
-        Keeps track of, and does, everything
-        """
-
-        logging.info("About to call JobSubmitter.pollJobs()")
-        self.pollJobs()
-        if not len(self.sites.keys()) > 0:
-            # Then we have no active sites?
-            # Return!
-            return
-        jobList = self.getJobs()
-        jobList = self.submitJobs(jobList)
-
+        self.refreshCache()
+        jobsToSubmit = self.assignJobLocations()
 
         idList = []
-        for job in jobList:
-            idList.append({'jobid': job['id'], 'location': job['location']})
-        setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
-        setLocationAction.execute(bulkList = idList)
+        for job in jobsToSubmit:
+            idList.append({'jobid': job[0], 'location': job[5]})
+        self.setLocationAction.execute(bulkList = idList)
 
         return
 
-
-    def getJobs(self):
-        """
-        _getJobs_
-
-        This uses WMBS to extract a list of jobs in the 'Created' state
-        """
-        newList = []
-
-        loadAction = self.daoFactory(classname = "Jobs.LoadForSubmitter")
-        for jobType in self.types:
-
-
-            results = loadAction.execute(type = jobType)
-
-            if len(results) == 0:
-                # Then we have no jobs of this type
-                # Ignore!
-                continue
-
-            # You have to have a list
-            if type(results) == dict:
-                results = [results]
-
-            listOfJobs = []
-            for entry in results:
-                # One job per entry
-                tmpJob = Job(id = entry['id'])
-                tmpJob.update(entry)
-                listOfJobs.append(tmpJob)
-
-            for job in listOfJobs:
-                job['type']     = jobType
-                newList.append(job)
-                
-        logging.info("Have %i jobs in JobSubmitter.getJobs()" % len(newList))
-
-        return newList
-
-
-    def pollJobs(self):
-        """
-        _pollJobs_
-        
-        Find the occupancy level of all sites
-        """
-
-        # Find types, we'll need them later
-        logging.info("About to go find Subscription types in JobSubmitter.pollJobs()")
-        typeFinder = self.daoFactory(classname = "Subscriptions.GetSubTypes")
-        self.types = typeFinder.execute()
-        logging.info("Found types in JobSubmitter.pollJobs()")
-
-        self.sites = self.resourceControl.listThresholdsForSubmit()
-        logging.info(self.sites)
-
-        return
-
-
-    def findSiteForJob(self, job):
-        """
-        _findSiteForJob_
-        
-        Find a site for the job to run at based on information from ResourceControl
-        This is the most complicated portion of the code
-        """
-
-        jobType = job['type']
-
-        tmpSlots = -999999
-        tmpSite  = None
-
-        # Get locations for job
-        # All files SHOULD be alike, this is a prerequisite
-        # of the entire WMAgent system
-        availableSites = []
-        if len(job['input_files']) == 0:
-            # Then it has no files
-            # Can run anywhere?
-            for site in self.sites.keys():
-                if jobType in self.sites[site].keys():
-                    availableSites.append(self.sites[site][jobType]['se_name'])
-        else:
-            for site in job['input_files'][0]['locations']:
-                availableSites.append(site)
-
-
-        # You want only sites that are BOTH in keys and availableSites
-        # and that allow that jobType
-        possibleSites = []
-        for site in self.sites.keys():
-            if not jobType in self.sites[site].keys():
-                continue
-            if not self.sites[site][jobType]['se_name'] in availableSites:
-                continue
-            possibleSites.append(site)
-
-        if len(possibleSites) == 0:
-            logging.error("Job %i has NO possible sites" % (job['id']))
-            raise BadJobError
-
-
-        # Now do the blacklist/whitelist magic
-        # First we check the whitelist and if it has sites,
-        # remove all sites now on whiteList
-        whiteList = job.get('siteWhiteList', [])
-        if len(whiteList) > 0:
-            badList   = []
-            for site in possibleSites:
-                if not site in whiteList:
-                    badList.append(site)
-            if len(badList) > 0:
-                for site in badList:
-                    possibleSites.remove(site)
-            if len(possibleSites) == 0:
-                logging.error("Job %i has NO sites possible in whitelist" % (job['id']))
-                raise BadJobError
-
-        
-        else:
-            # If we don't have a whiteList, check for a blackList
-            # Remove all blackList jobs
-            for site in job.get('siteBlackList', []):
-                if site in possibleSites:
-                    possibleSites.remove(site)
-            if len(possibleSites) == 0:
-                logging.error("Job %i eliminated all sites in blacklist" % (job['id']))
-                raise BadJobError
-
-        tmpSlots = -999999
-        tmpSite  = None
-        for site in possibleSites:
-            siteDict = self.sites[site][jobType]
-            if not siteDict['task_running_jobs'] < siteDict['max_slots']:
-                # Then we have too many jobs for this task
-                # Ignore this site
-                continue
-            nSpaces = siteDict['total_slots'] - siteDict['total_running_jobs']
-            if nSpaces > tmpSlots:
-                tmpSlots = nSpaces
-                tmpSite  = site
-
-        # Having chosen a site, account for it
-        if tmpSite:
-            self.sites[tmpSite][jobType]['task_running_jobs'] += 1
-            for key in self.sites[tmpSite].keys():
-                self.sites[tmpSite][key]['total_running_jobs'] += 1
-        else:
-            #logging.error("Could not find site for job %i; all sites may be full" % (job['id']))
-            sitesFull = True
-            for siteName in self.sites.keys():
-                site = self.sites[siteName][jobType]
-                if site['task_running_jobs'] < site['max_slots']:
-                    # Then at least one site has space...
-                    sitesFull = False
-                if sitesFull:
-                    raise FullSitesError(jobType)
-
-        return tmpSite
-
-
-
-    def submitJobs(self, jobList):
-        """
-        _submitJobs_
-
-        Grabs the task, sandbox, etc for each job by loading the pickled job
-        from the JobCreator
-        Then it submits them, splitting them into units and sending them to
-        the plugins
-        """
-
-        failList = []
-        jList2   = []
-        killList = []
-        fullList = []
-        skippedJobs = 0
-        noSiteJobs  = 0
-
-        sortedJobList = {}
-        submitIndex   = {}
-        lenWork       = 0
-        count         = 0
-
-        for job in jobList:
-            count += 1
-            
-            if job['type'] in fullList:
-                # Then the sites are all full for that type
-                # Skip that job
-                skippedJobs += 1
-                continue
-            try:    
-                loadedJob = self.loadJobFromPkl(job = job)
-            except BadJobCacheError:
-                killList.append(job)
-                continue
-
-            try:
-                loadedJob['location'] = self.findSiteForJob(loadedJob)
-                
-            except BadJobError:
-                # Really fail this job!  This means that something's
-                # gone wrong in how sites were enabled.
-                msg = ''
-                msg += "Failing job %i: Encountered a job with no possible sites\n" % (job['id'])
-                msg += "Job should enter submitFailed\n"
-                logging.error(msg)
-                killList.append(job)
-                continue
-            
-            except FullSitesError as e:
-                # If we've gotten here, we're in it deep
-                # This means that all the sites are over their max limit
-                msg = ''
-                msg += 'All sites are full for type %s.\n' % (e.jobType)
-                msg += 'No further jobs of that type will run this cycle\n'
-                logging.error(msg)
-                fullList.append(e.jobType)
-                continue
-
-            # If we didn't get a site, all sites are full
-            if loadedJob['location'] == None:
-                # Ignore this job until the next round
-                noSiteJobs += 1
-                continue
-
-            
-            loadedJob['custom']['location'] = loadedJob['location']
-            loadedJob['retry_count'] = job['retry_count']
-            if not 'sandbox' in loadedJob.keys() or not 'task' in loadedJob.keys():
-                # You know what?  Just fail the job
-                failList.append(loadedJob)
-                continue
-
-            # Sort jobs by sandbox
-            sandbox = loadedJob['sandbox']
-            if not sandbox in sortedJobList.keys():
-                sortedJobList[sandbox] = []
-            sortedJobList[sandbox].append(loadedJob)
-
-
-            
-
-
-
-            # Enqueue jobs
-            if len(sortedJobList[sandbox]) >= self.config.JobSubmitter.jobsPerWorker:
-                # First get them ready to run
-                jobList = sortedJobList[sandbox]
-                packagePath = os.path.join(os.path.dirname(sandbox),
-                                           'batch_%i_%i' % (jobList[0]['id'],  jobList[0]['retry_count']))
-                                           #'batch_%i' %(jobList[0]['id']))
-                index = submitIndex.get(packagePath, 0)
-                
-                jobsReady = self.prepForSubmit(jobList = jobList,
-                                               sandbox = sandbox,
-                                               packagePath = packagePath)
-                self.processPool.enqueue([{'jobs': jobsReady,
-                                           'packageDir': packagePath,
-                                           'index': index,
-                                           'sandbox': sandbox,
-                                           'agentName': self.config.Agent.agentName}])
-
-
-                # Increment our counters
-                lenWork += 1
-                if not packagePath in submitIndex.keys():
-                    submitIndex[packagePath] = 0
-                submitIndex[packagePath] += len(jobList)
-
-                # We've submitted them, let's dump them
-                sortedJobList[sandbox] = []
-
-
-            jList2.append(loadedJob)
-
-            # If we've run over enough jobs, repoll ResourceControl
-            # This is to allow updated information during long polling cycles
-            if count % self.repollCount == 0:
-                self.pollJobs()
-                # Now we have to fill the sites with
-                # jobs that have not yet been submitted
-                for sandbox in sortedJobList.keys():
-                    for j in sortedJobList[sandbox]:
-                        site = j['location']
-                        self.sites[site][job['type']]['task_running_jobs'] += 1
-                        for type in self.sites[site].keys():
-                            self.sites[site][type]['total_running_jobs'] += 1
-
-            
-
-        # What happens we get to the end of the road?
-        # Submit all unsubmitted jobs
-        for sandbox in sortedJobList.keys():
-            if len(sortedJobList[sandbox]) > 0:
-                # Then we have to submit them.
-                jobList = sortedJobList[sandbox]
-                packagePath = os.path.join(os.path.dirname(sandbox),
-                                           'batch_%i_%i' %(jobList[0]['id'],  jobList[0]['retry_count']))
-                                           #'batch_%i' %(jobList[0]['id']))
-                index = submitIndex.get(packagePath, 0)
-                jobsReady = self.prepForSubmit(jobList = jobList,
-                                               sandbox = sandbox,
-                                               packagePath = packagePath)
-                self.processPool.enqueue([{'jobs': jobsReady,
-                                           'packageDir': packagePath,
-                                           'index': index,
-                                           'sandbox': sandbox,
-                                           'agentName': self.config.Agent.agentName}])
-                lenWork += 1
-
-
-
-
-        if skippedJobs > 0:
-            logging.error("Skipped %i jobs because all sites were full." % (skippedJobs) )
-        if noSiteJobs > 0:
-            logging.error("Skipped %i jobs because we couldn't find a site for them" % (noSiteJobs) )
-
-
-        # And then, at the end of the day, we have to dequeue them.
-        result = []
-        result = self.processPool.dequeue(lenWork)
-
-
-
-
-        for job in failList:
-            if job in jList2:
-                jList2.remove(job)
-
-        
-
-
-
-        # Now dump the killed jobs
-        # These are the jobs where it's impossible to run
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        self.changeState.propagate(killList, 'submitfailed', 'created')
-        myThread.transaction.commit()
-
-
-        
-        return jList2
-
-
-    def loadJobFromPkl(self, job):
-        """
-        _loadJobFromPkl_
-
-        Load the job from the Pickle file and attach the right info
-        """
-
-
-        if not os.path.isdir(job['cache_dir']):
-            # Well, then we're in trouble, because we need that info
-            # Kill this job
-            logging.error("Job %i has no cache directory." % (job['id']))
-            raise BadJobCacheError
-
-        jobPickle  = os.path.join(job['cache_dir'], 'job.pkl')
-        if not os.path.isfile(jobPickle):
-            # Then we don't have a pickle file, and we're screwed
-            # Kill this job
-            logging.error("Job %i has no pickled job file." % (job['id']))
-            raise BadJobCacheError
-
-        fileHandle = open(jobPickle, "r")
-        loadedJob  = cPickle.load(fileHandle)
-        loadedJob['type'] = job['type']
-
-        return loadedJob
-
-
-    def prepForSubmit(self, jobList, sandbox, packagePath):
-        """
-        _prepForSubmit_
-
-        Prep a group of jobs for submission.  Get everything ready for ProcessPool
-        """
-
-
-        
-
-        if not os.path.exists(packagePath):
-            os.makedirs(packagePath)
-        package = JobPackage()
-        for job in jobList:
-            package.append(job.getDataStructsJob())
-            
-        package.save(os.path.join(packagePath, 'JobPackage.pkl'))
-
-        logging.info('About to repack jobs for Plugin')
-        logging.info(len(jobList))
-
-
-        # Now repack the jobs into a second list with only
-        # Essential components
-        finalList = []
-        for job in jobList:
-            tmpJob = Job(id = job['id'])
-            tmpJob['custom']      = job['custom']
-            #tmpJob['sandbox']     = job['sandbox']
-            tmpJob['name']        = job['name']
-            tmpJob['cache_dir']   = job['cache_dir']
-            tmpJob['retry_count'] = job['retry_count']
-            finalList.append(tmpJob)
-
-
-        return finalList
-
-    def terminate(self, params):
-        """
-        _terminate_
-        
-        Terminate code after final pass.
-        """
-        logging.debug("terminating. doing one more pass before we die")
-        self.algorithm(params)
-
-
-        
-
-
-        
-
+#        # Group the jobs by sandbox and then submit.
+#             if len(sortedJobList[sandbox]) >= self.config.JobSubmitter.jobsPerWorker:
+#                 self.processPool.enqueue([{'jobs': jobsReady,
+#                                            'packageDir': packagePath,
+#                                            'index': index,
+#                                            'sandbox': sandbox,
+#                                            'agentName': self.config.Agent.agentName}])
 
 
 

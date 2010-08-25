@@ -106,6 +106,7 @@ class Requests(dict):
             #encode the data as a get string
             uri = "%s?%s" % (uri, urllib.urlencode(data))
             
+        headers["Content-length"] = len(encoded_data)
         self['conn'].connect()
         assert type(encoded_data) == type('string'), \
                     "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)

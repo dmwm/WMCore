@@ -18,15 +18,16 @@ class StageOutStepHelper(CoreHelper):
     for StageOut tasks
 
     """
-    def addFile(self, infile, outfile):
+    def addFile(self, infile, outfile, stageOut = True):
         """
             Enqueues(sp?) a file to the StageOut step
-            infile must be a PFN
-            outfile must be a LFN
+            infile must be a LOCAL FILENAME. No file:/// in front
+            outfile must be a LFN which will be mapped to the remote
         """
         target = self.data.files.section_("file%i" % self.data.filecount)
-        target.input  = infile
-        target.output = outfile
+        target.input         = infile
+        target.output        = outfile
+        target.stageOut      = stageOut
         self.data.filecount += 1 
     
     def disableRetries(self):

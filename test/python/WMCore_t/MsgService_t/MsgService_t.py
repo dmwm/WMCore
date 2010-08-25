@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: MsgService_t.py,v 1.7 2009/02/27 22:19:22 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: MsgService_t.py,v 1.8 2009/07/17 15:58:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import commands
 import unittest
@@ -49,7 +49,7 @@ class MsgServiceTest(unittest.TestCase):
         "make a logger instance and create tables"
        
         if not MsgServiceTest._setup:
-            self.testInit = TestInit(__file__)
+            self.testInit = TestInit(__file__, os.getenv("DIALECT"))
             self.testInit.setLogging()
             self.testInit.setDatabaseConnection()
             self.testInit.setSchema()
@@ -59,11 +59,11 @@ class MsgServiceTest(unittest.TestCase):
         """
         Deletion of the databases 
         """
-        myThread = threading.currentThread()
-        if MsgServiceTest._teardown :
-            # call the script we use for cleaning:
-            self.testInit.clearDatabase()
-        MsgServiceTest._teardown = False
+        #myThread = threading.currentThread()
+        #if MsgServiceTest._teardown :
+        #    # call the script we use for cleaning:
+        #    self.testInit.clearDatabase()
+        #MsgServiceTest._teardown = False
 
                
     def testA(self):
@@ -311,8 +311,8 @@ class MsgServiceTest(unittest.TestCase):
         # we should now have 0 messages left.
         assert msgServiceL[0].pendingMsgs() == 0
         myThread.transaction.commit()
-
         # purge everything.
+        
     def testE(self):
         """
         __testE__

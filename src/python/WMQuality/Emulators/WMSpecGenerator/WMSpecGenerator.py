@@ -3,12 +3,13 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMSpecGenerator.py,v 1.6 2010/04/07 15:16:37 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMSpecGenerator.py,v 1.7 2010/08/09 20:52:54 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
 import shutil
+import tempfile
 
 from WMCore.WMSpec.StdSpecs import ReReco
 from Samples.BasicProductionWorkload import createWorkload as BasicProductionWorkload
@@ -19,8 +20,9 @@ from Samples import ReRecoParams
 
 class WMSpecGenerator(object):
     
-    def __init__(self, dirLocation="/tmp/WorkloadSpec/"):
-        
+    def __init__(self, dirLocation=None):
+        if not dirLocation:
+            dirLocation = tempfile.mkdtemp() 
         if not os.path.exists(dirLocation):
             os.makedirs(dirLocation)
         self.dir = dirLocation

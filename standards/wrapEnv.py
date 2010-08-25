@@ -26,8 +26,14 @@ if ( not (requestedPython in buildslave.conf) ):
     print "Requested python version isn't in the slave configuration"
     sys.exit(1)
 
-os.environ['PYTHONPATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PYTHONPATH'], os.environ['PYTHONPATH'])
-os.environ['PATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PATH'], os.environ['PATH'])
+if 'PYTHONPATH' in buildslave.conf[requestedPython]:
+    os.environ['PYTHONPATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PYTHONPATH'], os.environ['PYTHONPATH'])
+
+if 'PATH' in buildslave.conf[requestedPython]:
+    os.environ['PATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PATH'], os.environ['PATH'])
+
+if 'PYTHONHOME' in buildslave.conf[requestedPython]:
+    os.environ['PYTHONHOME'] = buildslave.conf[requestedPython]['PYTHONHOME']
 
 if ( not (requestedDB in buildslave.conf) ):
     if ( requestedDB == 'sqlite'):

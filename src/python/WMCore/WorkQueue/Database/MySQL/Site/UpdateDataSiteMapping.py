@@ -3,8 +3,8 @@ MySQL implementation of Site.UpdateBlockSiteMapping
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateDataSiteMapping.py,v 1.2 2009/10/12 15:07:51 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: UpdateDataSiteMapping.py,v 1.3 2010/03/19 17:30:39 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -31,6 +31,7 @@ class UpdateDataSiteMapping(DBFormatter):
         if fullResync:
             self.dbi.processData(self.deleteSql, data, conn = conn,
                              transaction = transaction)
-        self.dbi.processData(self.insertSQL, binds, conn = conn,
-                             transaction = transaction)
+        if binds:
+            self.dbi.processData(self.insertSQL, binds, conn = conn,
+                                 transaction = transaction)
         return

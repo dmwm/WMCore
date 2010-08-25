@@ -9,7 +9,7 @@ to run the test
 
 
 """
-import random, os, threading
+import random, os, threading, os.path
 
 from ConfigParser import ConfigParser
 
@@ -21,12 +21,14 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.DataStructs.Run import Run
+from WMCore.WMFactory import WMFactory
 from sets import Set
 
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.15 2008/12/10 20:08:14 jcgon Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.16 2009/04/30 20:54:03 mnorman Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -61,10 +63,8 @@ class WMBSBase(Performance):
         for x in range(rangemax):
             file = File(lfn = '/store/data/'+name+'test'+str(x)+'.root',
                         size = random.randint(1000, 2000),
-                        events = 1000,
-                        run = random.randint(0, 2000),
-                        lumi = random.randint(0, 8))
-            
+                        events = 1000)
+
             filelist.append(file)
         return filelist
 
@@ -73,15 +73,19 @@ class WMBSBase(Performance):
         Generate dummy WMBS File Objects for testing,
         creating them at the DB
 
-        """    
+        """
+        
+        
         filelist = self.genFileObjects(number)
 
-        setfiles = set(filelist)
 
-        fileset = Fileset(name = name+'Files', 
+        setfiles = Set(filelist)
+
+        fileset = Fileset(name = name+'Files',
                             files = setfiles)
+
         fileset.create()
-    
+
         filelist = list(fileset.getFiles())
 
         return filelist
@@ -290,19 +294,43 @@ class WMBSBase(Performance):
             for j in jobs:
                 set.add(j)
 
-            jobgroup = JobGroup(subscription = subscription, jobs = set)
+            jobgroup = JobGroup(subscription = subscription, jobs = set, id = 1)
             list.append(jobgroup)
 
         return list
 
-    def setUp(self, dbf):
+    def setUp(self):
         """
         Common setUp for all WMBS Performance tests
 
         """
 
+        if self._setup:
+            return
+
+        self.config_path = 'test.ini'
+
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
+
+        myThread = threading.currentThread()
+        self.dao = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        locationAction = self.dao(classname = "Locations.New")
+        locationAction.execute(sename = "se1.cern.ch")
+        locationAction.execute(sename = "se1.fnal.gov")
+
+
         #Total time counter for Performance tests
         self.totaltime = 0
+
+        #verbose definition.  I don't know why it has to be here.
+        #self.verbose = "True"
         
         #Number of times each test method will run.
         #Can be overriden at the specific testcases
@@ -312,47 +340,23 @@ class WMBSBase(Performance):
         Performance.setUp(self)
 
         #Parsing threshold values
-        cfg = ConfigParser()
 
-        cfg.read('test.ini')
+        if os.path.exists(self.config_path):
+            cfg = ConfigParser()
+            
+            cfg.read(self.config_path)
 
-        self.threshold = float(cfg.get('settings', 'threshold'))
-        self.totalthreshold = float(cfg.get('settings', 'total_threshold'))
-        self.testtimes = int(cfg.get('settings', 'times'))
-        #Place common execute method arguments here        
-        #TODO -Still to be implemented
-        self.baseexec = ''
+            self.verbose   = cfg.get('output', 'verbose')
+            self.threshold = float(cfg.get('settings', 'threshold'))
+            self.totalthreshold = float(cfg.get('settings', 'total_threshold'))
+            self.testtimes = int(cfg.get('settings', 'times'))
+        else:
+            print "WARNING! Config File (default test.ini) not found.  Using default values"
+            self.verbose        = "False"
+            self.threshold      = 1
+            self.totalthreshold = 5
+            self.testtimes      = 1
 
-        #possibly deprecated, need to use selist instead
-        self.sename = 'localhost'        
-        
-        self.tearDown()
-
-        self.dbf = dbf
-
-        self.dao = DAOFactory(package = 'WMCore.WMBS', logger = self.logger, 
-                        dbinterface = self.dbf.connect())
-
-        #WMBS Database tables creation
-        try:
-            assert self.dao(classname = 'Create').execute()
-        except:
-            pass
-
-        #Creating the Locations at the Database
-        self.selist = ['localhost']        
-        for se in self.selist:
-            self.dao(classname = 'Locations.New').execute(sename=se)      
-
-        #TestUnit Settings
-        if self._setup:
-            return
-
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
-        self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-
-        myThread = threading.currentThread()
 
         self._setup = True
         return
@@ -362,6 +366,26 @@ class WMBSBase(Performance):
         Common tearDown for all WMBS Performance tests
 
         """
+        myThread = threading.currentThread()
+        
+        if self._teardown:
+            return
+
+        if myThread.transaction == None:
+            myThread.transaction = Transaction(self.dbi)
+        
+        myThread.transaction.begin()
+
+        factory = WMFactory("WMBS", "WMCore.WMBS")        
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+
+        if not destroyworked:
+            raise Exception("Could not complete WMBS tear down.")
+        
+        myThread.transaction.commit()    
+        self._teardown = True
+        
         #Post-Testing report        
         if self.totaltime != 0:
             avgtime = self.totaltime/self.testtimes
@@ -374,5 +398,14 @@ class WMBSBase(Performance):
 
         #Base tearDown method for the DB Performance test
         Performance.tearDown(self)
+
+    def runTest(self):
+        """
+        _runTest_
+
+        Run all the unit tests.
+        """
+        unittest.main()
+
 
     

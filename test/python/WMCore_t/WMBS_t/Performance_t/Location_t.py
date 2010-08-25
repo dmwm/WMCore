@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import logging
+import unittest
+import time
 from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.Database.DBFactory import DBFactory
 
-class LocationTest(WMBSBase):
+class LocationTest(unittest.TestCase, WMBSBase):
     """
     __LocationTest__
 
@@ -16,14 +18,10 @@ class LocationTest(WMBSBase):
 
     """
     
-    def setUp(self, sqlURI='', logarg=''):
+    def setUp(self):
         #Call common setUp method from WMBSBase
                 
-        self.logger = logging.getLogger(logarg + 'FilePerformanceTest')
-        
-        dbf = DBFactory(self.logger, sqlURI)
-        
-        WMBSBase.setUp(self,dbf=dbf)
+        WMBSBase.setUp(self)
 
     def tearDown(self):
         #Call superclass tearDown method
@@ -39,9 +37,20 @@ class LocationTest(WMBSBase):
 
         locations = self.genLocationObjects(number=times)
 
-        for i in range(times):     
-            time = self.perfTest(dao=self.dao, action='Locations.New', sename=locations[i])
-            assert self.totaltime <= self.totalthreshold, 'New DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'   
+        for i in range(times):
+            startTime = time.time()    
+            locationNew = self.dao(classname = "Locations.New")
+            for location in locations:
+                locationNew.execute(sename = location)
+            endTime = time.time()
+            elapsedTime = endTime - startTime
+            self.totaltime = self.totaltime + elapsedTime
+            assert self.totaltime <= self.totalthreshold, 'CompleteFiles DAO '+\
+                    'class - Operation too slow ( '+str(i+1)+' times, total '+\
+                    'elapsed time:'+str(self.totaltime)+ \
+                    ', threshold:'+str(self.totalthreshold)+' )'
+
+
 
     def testList(self, times=1):         
         print "testList"
@@ -51,9 +60,15 @@ class LocationTest(WMBSBase):
         if self.testtimes != 0:
             times=self.testtimes
 
-        for i in range(times):     
-            time = self.perfTest(dao=self.dao, action='Locations.List')
-            assert self.totaltime <= self.totalthreshold, 'List DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'   
+        for i in range(times):
+            startTime = time.time()    
+            locationList = self.dao(classname = "Locations.List")
+            currentLocations = locationList.execute()
+            endTime = time.time()
+            elapsedTime = endTime - startTime
+            self.totaltime = self.totaltime + elapsedTime
+            assert self.totaltime <= self.totalthreshold, 'List DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'  
+                
 
     def testDelete(self, times=1):         
         print "testDelete"
@@ -66,12 +81,18 @@ class LocationTest(WMBSBase):
         locations = self.genLocation(number=times)
 
         for i in range(times):
-            time = self.perfTest(dao=self.dao, action='Locations.Delete', sename=locations[i])
-            assert self.totaltime <= self.totalthreshold, 'Delete DAO class - Operation too slow ( '+str(i+1)+' times, total elapsed time:'+str(self.totaltime)+', threshold:'+str(self.totalthreshold)+' )'   
+            startTime = time.time()    
+            locationDel = self.dao(classname = "Locations.Delete")
+            for location in locations:
+                locationDel.execute(sename = location)
+            endTime = time.time()
+            elapsedTime = endTime - startTime   
+            self.totaltime = self.totaltime + elapsedTime
+            assert self.totaltime <= self.totalthreshold, 'CompleteFiles DAO '+\
+                    'class - Operation too slow ( '+str(i+1)+' times, total '+\
+                    'elapsed time:'+str(self.totaltime)+ \
+                    ', threshold:'+str(self.totalthreshold)+' )'
 
 
-#    def testFiles(self):         
-#        print "testFiles"
-#        
-#        time = self.perfTest(dao=self.mysqldao, action='Locations.Files', execinput=['sename="TestLocation"'])
-#        assert time <= self.threshold, 'Files DAO class - Operation too slow ( elapsed time:'+str(time)+', threshold:'+str(self.threshold)+' )'
+if __name__ == "__main__":
+    unittest.main()

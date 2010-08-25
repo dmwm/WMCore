@@ -50,40 +50,59 @@ class Requests(dict):
         """
         return self.makeRequest(uri, data, 'DELETE', encode, decode)
 
-    def makeRequest(self, uri=None, data=None, type='GET',
-                     encode=True, decode=True):
+    def makeRequest(self, uri=None, data={}, verb='GET',
+                     encoder=True, decoder=True):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
-        DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
+        DELETE!). Data should be a dictionary of {dataname: datavalue}.
         
         Returns a tuple of the data from the server, decoded using the 
         appropriate method the response status and the response reason, to be 
         used in error handling. 
+        
+        You can override the method to encode/decode your data by passing in an 
+        encoding/decoding function to this method. Your encoded data must end up 
+        as a string.
+        
         """
         headers = {"Content-type": 'application/x-www-form-urlencoded', 
                    "Accept": self['accept_type']}
         encoded_data = ''
         
-        if type != 'GET' and data:
-            if (encode == False):
-                encoded_data = data
+        assert type(data) == type({}), \
+                "makeRequest input data must be a dict (key/value pairs)"
+        
+        # There must be a better way to do this...
+        def f(): pass
+        
+        if verb != 'GET' and data:
+            if type(encoder) == type(self.get) or type(encoder) == type(f):
+                encoded_data = encoder(data)
+            elif encoder == False:
+                # Don't encode the data more than we have to
+                encoded_data = urllib.urlencode(data)
             else:
+                # Either the encoder is set to True or it's junk, so use 
+                # self.encode
                 encoded_data = self.encode(data)
             headers["Content-length"] = len(encoded_data)
-        else:
+        elif verb == 'GET' and lendata:
             #encode the data as a get string
-            if not data:
-                data = {}
-            else:
-                uri = "%s?%s" % (uri, self.encode(data))
+            uri = "%s?%s" % (uri, urllib.urlencode(data))
+            
         self['conn'].connect()
-        self['conn'].request(type, uri, encoded_data, headers)
-        response = self['conn'].getresponse() 
+        assert type(encoded_data) == type('string'), \
+                    "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
+        
+        self['conn'].request(verb, uri, encoded_data, headers)
+        response = self['conn'].getresponse()
         data = response.read()
         self['conn'].close()
         
-        if decode:
+        if type(decoder) == type(self.makeRequest) or type(decoder) == type(f):
+            data = decoder(data)
+        elif decoder != False:
             data = self.decode(data)
         return data, response.status, response.reason
 

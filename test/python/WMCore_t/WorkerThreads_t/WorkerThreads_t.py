@@ -101,7 +101,7 @@ class WorkerThreadsTest(unittest.TestCase):
         myThread.transaction = None
         myThread.dbFactory = None
         
-        self.testInit = TestInit()
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
             

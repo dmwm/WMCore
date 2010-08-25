@@ -87,5 +87,15 @@ class MySQLInterface(DBInterface):
         Transform the bind variables into the format that MySQL expects.        
         """
         newsql, bind_list = self.substitute(s, b)
+
+        if newsql.lower().endswith('select', 0, 6):
+            """
+            Trying to select many
+            """
+            result = []
+            for bind in bind_list:
+                result.append(connection.execute(newsql, bind))
+            return self.makelist(result)
+
         result = connection.execute(newsql, bind_list)
         return self.makelist(result)

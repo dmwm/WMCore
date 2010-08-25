@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.84 2010/03/15 18:54:00 sryu Exp $"
-__version__ = "$Revision: 1.84 $"
+__revision__ = "$Id: WorkQueue.py,v 1.85 2010/03/19 17:29:47 swakef Exp $"
+__version__ = "$Revision: 1.85 $"
 
 
 import time
@@ -762,7 +762,9 @@ class WorkQueue(WorkQueueBase):
         Return mapping of block/dataset to subscribed locations
         """
         args = {}
-        args['suspended'] = 'n' # require subscription to be active
+        # TODO: Bug in which this option causes no results to be returned
+        # uncomment when https://savannah.cern.ch/bugs/index.php?64617 fixed
+        # args['suspended'] = 'n' # require subscription to be active
         if not fullRefresh:
             args['update_since'] = self.lastLocationUpdate
         args['block'], args['dataset'] = [], []
@@ -784,7 +786,7 @@ class WorkQueue(WorkQueueBase):
                 # we have work for the dataset
                 if dset['subscription']:
                     # dataset level subscription
-                    result[dset['name']] = [x['node'] for x in dset['subscription']]
+                    result[dset['name']] = [x['node'] for x in dset['subscription'] if x['suspended'] == 'n']
                 else:
                     # block level subscription
                     # Create dataset level subscription from ensemble
@@ -799,7 +801,7 @@ class WorkQueue(WorkQueueBase):
                 # have work for some blocks in this dataset
                 if dset.has_key('subscription'):
                     # work for block and have dataset level subscription
-                    subs = [x['node'] for x in dset['subscription']]
+                    subs = [x['node'] for x in dset['subscription'] if x['suspended'] == 'n']
                     for block in dset['block']:
                         if block['name'] in args['block']:
                             result[block['name']] = subs
@@ -808,7 +810,7 @@ class WorkQueue(WorkQueueBase):
                     for block in dset['block']:
                         # record blocks we have work for
                         if block['name'] in args['block']:
-                            result[block['name']] = [x['node'] for x in block['subscription']]
+                            result[block['name']] = [x['node'] for x in block['subscription'] if x['suspended'] == 'n']
 
         return result
 

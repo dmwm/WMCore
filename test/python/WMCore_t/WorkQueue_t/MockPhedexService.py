@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: MockPhedexService.py,v 1.1 2009/12/14 13:56:40 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MockPhedexService.py,v 1.2 2010/03/19 17:29:47 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 # need to clean this up at some point
 
@@ -62,7 +62,8 @@ class MockPhedexService:
                 blocks.append({"bytes":"10438786614", "files":"5", "is_open":"n",
                                                     "name": dataset + '#1',
                                                     "id":"454370", "subscription"
-                                                                                :[ {'node' : x } for x in self.locations[dataset + '#1']]
+                                                                                :[ {'node' : x,
+                                                                                    "suspended" : "n"} for x in self.locations[dataset + '#1']]
                                                                                 #{"priority":"normal", "request":"51253", "time_created":"1245165314",
                                                                                 #   "move":"n", "suspend_until":None, "node":"SiteA",
                                                                                 #   "time_update":"1228905272", "group":None, "level":"block",
@@ -71,7 +72,8 @@ class MockPhedexService:
                 blocks.append({"bytes":"10438786614", "files":"10", "is_open":"n",
                                                     "name": dataset + '#2',
                                                     "id":"454370", "subscription"
-                                                                                :[ {'node' : x } for x in self.locations[dataset + '#2']]
+                                                                                :[ {'node' : x,
+                                                                                    "suspended" : "n" } for x in self.locations[dataset + '#2']]
                                                                                 #{"priority":"normal", "request":"51253", "time_created":"1245165314",
                                                                                 #   "move":"n", "suspend_until":None, "node":"SiteA",
                                                                                 #   "time_update":"1228905272", "group":None, "level":"block",

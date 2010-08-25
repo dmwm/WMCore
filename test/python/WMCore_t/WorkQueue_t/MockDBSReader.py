@@ -3,8 +3,8 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
-__revision__ = "$Id: MockDBSReader.py,v 1.1 2009/12/14 13:56:40 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MockDBSReader.py,v 1.2 2010/03/15 18:22:10 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
@@ -41,7 +41,7 @@ class MockDBSReader:
                         'LogicalFileName': "/store/data/fake_parent/file2",
                         'NumberOfEvents': 1001,
                         'FileSize': 103400,
-                        'ParentList': ["/store/data/fake/file1"]
+                        'ParentList': [dbsFile1]
                         }
 
             self.files = {dataset + "#1" : [dbsFile1],

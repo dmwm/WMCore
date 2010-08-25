@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.21 2009/08/31 18:57:47 sfoulkes Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Create.py,v 1.22 2009/08/31 21:06:42 dmason Exp $"
+__version__ = "$Revision: 1.22 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -37,7 +37,7 @@ class Create(CreateWMBSBase):
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """
-        CreateWMBSBase.__init__(self, logger, dbi, params)
+        CreateWMBSBase.__init__(self, logger, dbi)
         self.requiredTables.append('09wmbs_subs_type')
 
         tablespaceTable = ""

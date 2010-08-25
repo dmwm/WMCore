@@ -4,8 +4,8 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.15 2010/06/03 11:26:33 spigafi Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: API_t.py,v 1.16 2010/06/07 11:35:34 spigafi Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import os
@@ -48,7 +48,7 @@ def populateDb(db, numtask, numjob):
             runJob = RunningJob()
             runJob.data['state'] = 'Commodus'
             runJob.data['closed'] = 'N'
-            runJob.data['process_status'] = 'not_handled'
+            runJob.data['processStatus'] = 'not_handled'
             
             job.newRunningInstance(db)
             

@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.28 2009/06/24 13:59:24 valya Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: CMSCouch.py,v 1.29 2009/06/26 08:59:40 metson Exp $"
+__version__ = "$Revision: 1.29 $"
 
 try:
     # Python 2.6
@@ -65,6 +65,9 @@ def httpRequest(url, path, data, method='POST', viewlist=[]):
     return response.status, data
 
 class HttpRequestThread(threading.Thread):
+    """
+    TODO: Replace with a thread pool
+    """
     def __init__(self, url, path, data, method):
         threading.Thread.__init__(self)
         self.url = url

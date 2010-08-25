@@ -142,7 +142,7 @@ class Requests(dict):
         that a sub class can override it to have different type of connection
         i.e. - if it needs authentication, or some fancy handler 
         """
-        return HTTPConnection(self['host'])
+        return HTTPConnection(self['host'], 443)
 
 class _EmptyClass:
     pass
@@ -451,11 +451,21 @@ class JSONRequests(Requests):
         else:
             return {}      
         
+class SSLRequests(Requests):
+    """
+    Implementation of Requests using HTTPS to send requests to a given URL, 
+    without authenticating via a key/cert pair.
+    """ 
+    def _getURLOpener(self):
+        """
+        method getting a secure (HTTPS) connection
+        """
+        return HTTPSConnection(self['host'])
+    
 class SecureRequests(Requests):
     """
-    Example implementation of Requests using a different connection type, e.g. 
-    use HTTPS to send requests to a given URL, authenticating via a key/cert 
-    pair
+    Implementation of Requests using a different connection type, e.g. use HTTPS
+    to send requests to a given URL, authenticating via a key/cert pair
     """ 
     def _getURLOpener(self):
         """

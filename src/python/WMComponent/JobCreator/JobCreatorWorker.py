@@ -3,8 +3,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.1 2009/10/15 19:51:27 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.2 2009/11/06 19:50:04 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
@@ -77,6 +77,7 @@ class JobCreatorWorker:
         config.section_("JobStateMachine")
         config.JobStateMachine.couchurl      = configDict["couchURL"]
         config.JobStateMachine.couch_retries = configDict["defaultRetries"]
+        config.JobStateMachine.couchDBName   = configDict["couchDBName"]
 
         self.config = config
 
@@ -100,6 +101,9 @@ class JobCreatorWorker:
         myThread = threading.currentThread()
 
         subscriptionID = parameters.get('subscription')
+
+        if subscriptionID == -1:
+            return subscriptionID
 
         myThread.transaction.commit()
 

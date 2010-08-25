@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.5 2009/10/15 19:50:38 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.6 2009/11/06 19:50:04 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
@@ -101,7 +101,8 @@ init jobCreator
         self.resourceControl = ResourceControl()
 
         configDict = {'jobCacheDir': self.config.JobCreator.jobCacheDir, 'defaultJobType': config.JobCreator.defaultJobType, \
-                      'couchURL': self.config.JobStateMachine.couchurl, 'defaultRetries': self.config.JobStateMachine.default_retries}
+                      'couchURL': self.config.JobStateMachine.couchurl, 'defaultRetries': self.config.JobStateMachine.default_retries, \
+                      'couchDBName': self.config.JobStateMachine.couchDBName}
 
         self.processPool = ProcessPool("JobCreator.JobCreatorWorker",
                                        totalSlaves = self.config.JobCreator.workerThreads,
@@ -160,8 +161,8 @@ init jobCreator
             msg = "Failed to execute JobCreator \n%s" %(ex)
             raise Exception(msg)
 
-        print self.timing
-        print "Job took %f seconds" %(time.clock()-startTime)
+        #print self.timing
+        #print "Job took %f seconds" %(time.clock()-startTime)
 
         
 

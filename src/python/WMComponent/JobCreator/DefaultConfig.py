@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/10/15 19:52:03 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.4 2009/11/06 19:50:04 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -47,3 +47,4 @@ else:
 
 jsm.couchurl = couchurl
 jsm.default_retries = 1
+jsm.couchDBName     = "mnorman_test"

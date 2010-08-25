@@ -131,7 +131,7 @@ class WorkQueue(WMObject):
         # set the status of give subscription and status
         pass
     
-    def SetPriority(self, idnumber, newpriority):
+    def setPriority(self, idnumber, newpriority):
         found = 0
         count = 0
         while (len(self.elements) < count or found):

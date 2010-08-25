@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.35 2009/09/09 21:25:24 mnorman Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.36 2009/09/29 15:39:07 mnorman Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import threading
 
@@ -164,7 +164,8 @@ class CreateWMBSBase(DBCreator):
              file         INTEGER NOT NULL,
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
-             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id))
+             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE)
              """
 
         self.create["11wmbs_sub_files_failed"] = \
@@ -173,7 +174,8 @@ class CreateWMBSBase(DBCreator):
              file         INTEGER NOT NULL,
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
-             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id))"""
+             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE)"""
 
         self.create["12wmbs_sub_files_complete"] = \
           """CREATE TABLE wmbs_sub_files_complete (
@@ -181,7 +183,8 @@ class CreateWMBSBase(DBCreator):
           file         INTEGER NOT NULL,
           FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
             ON DELETE CASCADE,
-          FOREIGN KEY (file)         REFERENCES wmbs_file_details(id))"""
+          FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
+            ON DELETE CASCADE)"""
 
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (

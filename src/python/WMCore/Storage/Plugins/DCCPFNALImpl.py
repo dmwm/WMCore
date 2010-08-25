@@ -57,6 +57,7 @@ class DCCPFNALImpl(StageOutImplV2):
         exitCode, output = runCommand(commandArgs)
         if exitCode != 0:
             logging.info("Non zero exit code: %s" % repr(exitCode))
+
         return (exitCode, output)
     
     def doTransfer(self, sourcePFN, targetPFN, stageOut, seName, command, options = None, protocol = None  ):
@@ -68,7 +69,7 @@ class DCCPFNALImpl(StageOutImplV2):
         """
         # munge filenames
         if stageOut:
-            sourcePFN = self.createSourceName(protocol, sourcePFN)
+            targetPFN = self.createSourceName(protocol, targetPFN)
         
         # make directories
         self.createOutputDirectory(os.path.dirname(targetPFN))

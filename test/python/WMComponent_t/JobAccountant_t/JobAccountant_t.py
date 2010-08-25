@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.25 2010/04/07 18:56:31 mnorman Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.26 2010/04/08 20:09:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import logging
 import os.path
@@ -16,7 +16,7 @@ import time
 import copy
 import random
 import tempfile
-import cProfile, pstats
+#import cProfile, pstats
 
 import WMCore.WMInit
 from WMCore.FwkJobReport.Report import Report
@@ -68,10 +68,9 @@ class JobAccountantTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "cmssrm.fnal.gov")
-        locationAction.execute(siteName = "srm.cern.ch")        
-        locationAction.execute(siteName = "srm-cms.cern.ch")
-        
+        locationAction.execute(siteName = "site1", seName = "cmssrm.fnal.gov")
+        locationAction.execute(siteName = "site2", seName = "srm.cern.ch")        
+        locationAction.execute(siteName = "site3", seName = "srm-cms.cern.ch")
 
         self.stateChangeAction = self.daofactory(classname = "Jobs.ChangeState")
         self.setFWJRAction = self.daofactory(classname = "Jobs.SetFWJRPath")

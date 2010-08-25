@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.26 2009/12/17 21:41:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.27 2010/04/08 20:09:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import unittest
 import logging
@@ -54,9 +54,9 @@ class JobGroupTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "goodse.cern.ch")
-        locationAction.execute(siteName = "malpaquet")
-        locationAction.execute(siteName = "badse.cern.ch")
+        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
+        locationAction.execute(siteName = "site2", seName = "malpaquet")
+        locationAction.execute(siteName = "site3", seName = "badse.cern.ch")
     
                
     def tearDown(self):        
@@ -465,23 +465,17 @@ class JobGroupTest(unittest.TestCase):
 
         For the JobCreator we have to be able to specify the site for a JobGroup.
         This function tests the accessors for that information.
-
         """
-
         myThread = threading.currentThread()
 
 
         testJobGroup = self.createTestJobGroup()
-
-
-        testJobGroup.setSite("goodse.cern.ch")
+        testJobGroup.setSite("site1")
         result = testJobGroup.getSite()
 
-        self.assertEqual(result, "goodse.cern.ch")
+        self.assertEqual(result, "site1")
 
         return
-
-
 
     def testCommitBulk(self):
         """
@@ -533,16 +527,16 @@ class JobGroupTest(unittest.TestCase):
         result = testJobGroup.getLocationsForJobs()
 
         self.assertEqual(len(result), 2)
-        self.assertEqual('goodse.cern.ch' in result, True)
-        self.assertEqual('malpaquet' in result, True)
+        self.assertEqual("site1" in result, True)
+        self.assertEqual("site2" in result, True)
 
         testJobGroupA = self.createLargerTestJobGroup(commitFlag = True)
 
         result = testJobGroupA.getLocationsForJobs()
 
         self.assertEqual(len(result), 2)
-        self.assertEqual('goodse.cern.ch' in result, True)
-        self.assertEqual('malpaquet' in result, True)
+        self.assertEqual("site1" in result, True)
+        self.assertEqual("site2" in result, True)
 
         return
 

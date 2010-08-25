@@ -5,13 +5,13 @@ _GetBulkLocation_
 MySQL implementation of File.GetBulkLocation
 """
 
-__revision__ = "$Id: GetBulkLocation.py,v 1.2 2009/12/16 17:45:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetBulkLocation.py,v 1.3 2010/04/08 20:09:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetBulkLocation(DBFormatter):
-    sql = """SELECT wmbs_location.site_name as site_name, :id as id  
+    sql = """SELECT wmbs_location.se_name as site_name, :id as id  
                FROM wmbs_location
                WHERE wmbs_location.id IN (SELECT location FROM wmbs_file_location WHERE file = :id)
     """

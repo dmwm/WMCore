@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.39 2010/02/26 21:24:33 mnorman Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Job_t.py,v 1.40 2010/04/08 20:09:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import unittest
 import logging
@@ -34,9 +34,6 @@ from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
 class JobTest(unittest.TestCase):
-
-
-    
     def setUp(self):
         """
         _setUp_
@@ -44,8 +41,6 @@ class JobTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
-
-
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -58,8 +53,8 @@ class JobTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationNew = self.daoFactory(classname = "Locations.New")
-        locationNew.execute(siteName = "test.site.ch", jobSlots = 300)
-        locationNew.execute(siteName = "test2.site.ch", jobSlots = 300)
+        locationNew.execute(siteName = "test.site.ch", seName = "setest.site.ch", jobSlots = 300)
+        locationNew.execute(siteName = "test2.site.ch", seName = "setest2.site.ch", jobSlots = 300)
 
         return
           
@@ -776,9 +771,9 @@ class JobTest(unittest.TestCase):
         testSubscription.create()
         bogusSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
-        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
-        testFileC = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA = File(lfn = makeUUID(), locations = "setest.site.ch")
+        testFileB = File(lfn = makeUUID(), locations = "setest.site.ch")
+        testFileC = File(lfn = makeUUID(), locations = "setest.site.ch")
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -864,8 +859,8 @@ class JobTest(unittest.TestCase):
         testSubscription.create()
         bogusSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
-        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA = File(lfn = makeUUID(), locations = "setest.site.ch")
+        testFileB = File(lfn = makeUUID(), locations = "setest.site.ch")
         testFileA.create()
         testFileB.create()
                          
@@ -1099,8 +1094,6 @@ class JobTest(unittest.TestCase):
         
         Test setting and getting locations using DAO objects
         """
-
-
         testJob = self.createTestJob()
 
         jobGetLocation = self.daoFactory(classname = "Jobs.GetLocation")

@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.13 2010/02/25 19:34:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Locations_t.py,v 1.14 2010/04/08 20:09:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import os
 import unittest
@@ -129,9 +129,10 @@ class LocationsTest(unittest.TestCase):
         Verify that select behave appropriately when dealing with transactions.
         """
         myThread = threading.currentThread()
-        myThread.transaction.begin()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
+        
+        myThread.transaction.begin()
 
         locationNew = daoFactory(classname = "Locations.New")
 

@@ -18,8 +18,6 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine import DefaultConfig
 
 class SubscriptionTest(unittest.TestCase):
-
-    
     def setUp(self):
         """
         _setUp_
@@ -40,9 +38,9 @@ class SubscriptionTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "goodse.cern.ch")
-        locationAction.execute(siteName = "testse.cern.ch")
-        locationAction.execute(siteName = "badse.cern.ch")
+        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
+        locationAction.execute(siteName = "site2", seName = "testse.cern.ch")
+        locationAction.execute(siteName = "site3", seName = "badse.cern.ch")
         
         return
 
@@ -748,7 +746,7 @@ class SubscriptionTest(unittest.TestCase):
             testFileset.addFile(testFile)
             
         testFileset.commit()
-        testSubscription.markLocation("goodse.cern.ch")
+        testSubscription.markLocation("site1")
         
         assert count == len(testSubscription.availableFiles()), \
         "Subscription has %s files available, should have %s" % \
@@ -793,7 +791,7 @@ class SubscriptionTest(unittest.TestCase):
             testFileset.addFile(testFile)
         testFileset.commit()
         
-        testSubscription.markLocation("badse.cern.ch", whitelist = False)
+        testSubscription.markLocation("site3", whitelist = False)
         assert 100 - count == len(testSubscription.availableFiles()), \
         "Subscription has %s files available, should have %s" %\
         (len(testSubscription.availableFiles()), 100 - count) 
@@ -838,8 +836,8 @@ class SubscriptionTest(unittest.TestCase):
             testFileset.addFile(testFile)
            
         testFileset.commit()   
-        testSubscription.markLocation("badse.cern.ch", whitelist = False)
-        testSubscription.markLocation("goodse.cern.ch")
+        testSubscription.markLocation("site3", whitelist = False)
+        testSubscription.markLocation("site1")
         
         assert count == len(testSubscription.availableFiles()), \
         "Subscription has %s files available, should have %s" %\
@@ -1089,17 +1087,17 @@ class SubscriptionTest(unittest.TestCase):
         
         jobA = Job(name = 'testA')
         jobA.addFile(testFileA)
-        jobA["location"] = testFileA.getLocations()[0]
+        jobA["location"] = "site1"
         jobA.create(testJobGroup)
         
         jobB = Job(name = 'testB')
         jobB.addFile(testFileB)
-        jobB["location"] = testFileB.getLocations()[0]
+        jobB["location"] = "site1"
         jobB.create(testJobGroup)
         
         jobC = Job(name = 'testC')
         jobC.addFile(testFileC)
-        jobC["location"] = testFileC.getLocations()[0]
+        jobC["location"] = "site1"
         jobC.create(testJobGroup)
         
         testJobGroup.add(jobA)
@@ -1108,11 +1106,11 @@ class SubscriptionTest(unittest.TestCase):
         
         testJobGroup.commit()
 
-        nJobs = testSubscription.getNumberOfJobsPerSite('goodse.cern.ch', 'new')
+        nJobs = testSubscription.getNumberOfJobsPerSite('site1', 'new')
         
         self.assertEqual(nJobs, 3)
         
-        nZero = testSubscription.getNumberOfJobsPerSite('badse.cern.ch', 'new')
+        nZero = testSubscription.getNumberOfJobsPerSite('site3', 'new')
         
         self.assertEqual(nZero, 0)
         
@@ -1492,7 +1490,7 @@ class SubscriptionTest(unittest.TestCase):
 
     def testFilesOfStatusByLimit(self):
         """
-        _testAvailableFiles_
+        _testFilesOfstatusByLimit_
 
         Create a subscription and mark a couple files as failed, complete and
         acquired.  Test to make sure that the remainder of the files show up

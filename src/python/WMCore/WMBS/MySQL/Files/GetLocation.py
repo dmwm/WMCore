@@ -5,13 +5,13 @@ _GetLocation_
 MySQL implementation of File.GetLocation
 """
 
-__revision__ = "$Id: GetLocation.py,v 1.8 2009/12/16 17:45:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: GetLocation.py,v 1.9 2010/04/08 20:09:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetLocation(DBFormatter):
-    sql = """select site_name from wmbs_location 
+    sql = """select se_name from wmbs_location 
                 where id in (select location from wmbs_file_location 
                     where file in (select id from wmbs_file_details where lfn=:lfn))"""
                     

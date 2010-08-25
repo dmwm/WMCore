@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.25 2009/12/16 17:45:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.26 2009/12/17 21:41:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import unittest
 import logging
@@ -536,9 +536,6 @@ class JobGroupTest(unittest.TestCase):
         self.assertEqual('goodse.cern.ch' in result, True)
         self.assertEqual('malpaquet' in result, True)
 
-
-
-
         testJobGroupA = self.createLargerTestJobGroup(commitFlag = True)
 
         result = testJobGroupA.getLocationsForJobs()
@@ -549,5 +546,56 @@ class JobGroupTest(unittest.TestCase):
 
         return
 
+    def testGetGroupsByJobStateDAO(self):
+        """
+        _testGetGroupsByJobStateDAO_
+
+        Verify that the GetGrounsByJobState DAO does what it is supposed to do.
+        """
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001", task="Test")
+        testWorkflow.create()
+        
+        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset.create()
+        
+        testSubscription = Subscription(fileset = testWMBSFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+        testJobGroupB = JobGroup(subscription = testSubscription)
+        testJobGroupB.create()        
+
+        testJobA = Job(name = "TestJobA")
+        testJobB = Job(name = "TestJobB")
+        
+        testJobGroupA.add(testJobA)
+        testJobGroupB.add(testJobB)
+
+        testJobGroupA.commit()
+        testJobGroupB.commit()
+
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        stateChangeAction = daofactory(classname = "Jobs.ChangeState")
+        testJobA["state"] = "complete"
+        testJobB["state"] = "executing"        
+        stateChangeAction.execute(jobs = [testJobA, testJobB])
+
+        jobGroupAction = daofactory(classname = "JobGroup.GetGroupsByJobState")
+        jobGroups = jobGroupAction.execute(jobState = "complete")
+
+        assert len(jobGroups) == 1, \
+               "Error: Wrong number of job groups returned."
+        assert jobGroups[0] == testJobGroupA.id, \
+               "Error: Wrong job group returned."
+
+        return
+    
 if __name__ == "__main__":
     unittest.main() 

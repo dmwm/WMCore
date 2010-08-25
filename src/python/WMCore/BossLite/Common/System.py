@@ -12,8 +12,8 @@ import os
 import logging
 import select, signal, fcntl
 
-__version__ = "$Id: System.py,v 1.3 2010/05/09 14:52:34 spigafi Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: System.py,v 1.4 2010/05/10 12:31:40 spigafi Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 
 def setPgid():
@@ -78,8 +78,9 @@ def executeCommand( command, timeout=None ):
         p.wait()
         p.stdout.close()
     except OSError, err:
-        logging.warning( 'Warning: an error occurred closing subprocess [%s] %s  %s' \
-                         % (str(err), ''.join(outc), p.returncode ))
+        logging.warning( 'Warning: an error occurred closing ' + \
+                            'subprocess [%s] %s  %s' % 
+                            (str(err), ''.join(outc), p.returncode ))
 
     returncode = p.returncode
     if returncode is None :
@@ -111,6 +112,7 @@ def listToStr( tmp ) :
         
     # return '"' + str(tmp).replace('"','""') + '"'
     return output
+
     
 def evalStdList( strList ) :
     """

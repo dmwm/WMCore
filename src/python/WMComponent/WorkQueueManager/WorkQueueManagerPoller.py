@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.6 2010/01/26 20:50:06 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.7 2010/01/26 21:52:48 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -75,11 +75,12 @@ class WorkQueueManagerPoller(BaseWorkerThread):
                 if self.wqManagerConfig.level == "GlobalQueue":
                     
                     workLoads = self.retrieveWorkLoadFromReqMgr()
-                    logging.debug("work load url list %s" % workLoads.__class__.__name__)
-                    logging.debug(workLoads)
+                    logging.info("work load url list %s" % workLoads.__class__.__name__)
+                    logging.info(workLoads)
                     parentQueueId = None
                     myThread.transaction.begin()
                     for workLoadUrl in workLoads.values():
+                        logging.info("workLoadUrl %s" % workLoadUrl)
                         self.workQueue.queueWork(workLoadUrl, parentQueueId)
                         #requestManagner state update call
                     myThread.transaction.commit()
@@ -122,8 +123,8 @@ class WorkQueueManagerPoller(BaseWorkerThread):
         #result = self.jsonSender.post('/reqMgr/assignment/%s/%s' % (requestName, wmAgentUrl))
         #TODO:hard coded for the test remove this
         self.agentConfig.teamName = 'Dodgers'
-        result = self.jsonSender.get('/reqMgr/assignment/%s' % self.agentConfig.teamName)
-        #result = self.rqMgrDS.getAssignment(self.agentConfig.teamName)
+        #result = self.jsonSender.get('/reqMgr/assignment/%s' % self.agentConfig.teamName)
+        result = self.rqMgrDS.getAssignment(self.agentConfig.teamName)
         return result
         
         
@@ -132,6 +133,6 @@ class WorkQueueManagerPoller(BaseWorkerThread):
         """
         #TODO: allow bulk post
         for requestName in requestNames:
-            result = self.jsonSender.get('/reqMgr/assignment/%s' % requestName)
-            #result = self.rqMgrDS.postAssignment(requestName)
+            #result = self.jsonSender.get('/reqMgr/assignment/%s' % requestName)
+            result = self.rqMgrDS.postAssignment(requestName)
         

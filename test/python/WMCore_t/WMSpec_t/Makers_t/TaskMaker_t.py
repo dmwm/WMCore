@@ -7,8 +7,8 @@ Unittest for TaskMaker class
 """
 
 
-__revision__ = "$Id: TaskMaker_t.py,v 1.4 2010/02/03 22:20:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TaskMaker_t.py,v 1.5 2010/02/04 14:51:15 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import os.path
@@ -40,7 +40,9 @@ class TaskMakerTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
-        self.testFileName = 'dummyfile.pkl'
+        self.testDir = self.testInit.generateWorkDir()
+
+        self.testFileName = os.path.join(self.testDir, 'dummyfile.pkl')
 
         return
 
@@ -48,20 +50,11 @@ class TaskMakerTest(unittest.TestCase):
     def tearDown(self):
 
         myThread = threading.currentThread()
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-        
-        self._teardown = True
 
-        if os.path.exists(self.testFileName):
-            os.remove(self.testFileName)
+        self.testInit.clearDatabase(modules = ['WMCore.WMBS'])
 
+        self.testInit.delWorkDir()
+        
         return
 
 

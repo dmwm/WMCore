@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.86 2010/03/22 13:17:44 swakef Exp $"
-__version__ = "$Revision: 1.86 $"
+__revision__ = "$Id: WorkQueue.py,v 1.87 2010/03/22 18:42:52 sryu Exp $"
+__version__ = "$Revision: 1.87 $"
 
 
 import time
@@ -73,6 +73,7 @@ class WorkQueue(WorkQueueBase):
     and injector
     """
     def __init__(self, logger = None, dbi = None, **params):
+            
         WorkQueueBase.__init__(self, logger, dbi)
         self.dbsHelpers = {}
         self.remote_queues = {}
@@ -291,24 +292,24 @@ class WorkQueue(WorkQueueBase):
 
         return
 
-    def doneWork(self, elementIDs):
+    def doneWork(self, elementIDs, id_type = 'id'):
         """
         _doneWork_
 
         this is called by JSM
         update the WorkQueue status table
         """
-        self.setStatus('Done', elementIDs)
+        self.setStatus('Done', elementIDs, id_type)
         return elementIDs
 
-    def failWork(self, elementIDs):
+    def failWork(self, elementIDs, id_type = 'id'):
         """Mark work as failed"""
-        self.setStatus('Failed', elementIDs)
+        self.setStatus('Failed', elementIDs, id_type)
         return elementIDs
 
-    def cancelWork(self, elementIDs):
+    def cancelWork(self, elementIDs, id_type = 'id'):
         """Mark work as canceled"""
-        self.setStatus('Canceled', elementIDs)
+        self.setStatus('Canceled', elementIDs, id_type)
         return elementIDs
 
     def gotWork(self, elementIDs):
@@ -322,7 +323,7 @@ class WorkQueue(WorkQueueBase):
         return elementIDs
 
 
-    def deleteWork(self, elementIDs):
+    def deleteWork(self, elementIDs, id_type = 'id'):
         """
         _deleteWork_
 

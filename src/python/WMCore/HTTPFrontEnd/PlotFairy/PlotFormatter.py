@@ -24,12 +24,12 @@ class PlotFormatter(RESTFormatter):
     def png(self, figure):
         return self.plot(figure, 'png')
 
-    def plot(self, figure, format):
+    def plot(self, data, format):
         if hasattr(self.config, "cache"):
             # Write the figure to a file (use the tempfile module:
             # http://docs.python.org/library/tempfile.html) and return that file
             pass
         else:
             buffer = StringIO()
-            figure.savefig(buffer, dpi = 300, format=format)
+            data['figure'].savefig(buffer, dpi = 300, format=format)
             return buffer.getvalue()

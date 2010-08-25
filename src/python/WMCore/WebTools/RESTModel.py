@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.18 2009/08/31 18:36:02 metson Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: RESTModel.py,v 1.19 2009/08/31 18:42:08 metson Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -97,4 +97,8 @@ class RESTModel(WebAPI):
         return input
     
     def validate_input(self, input):
+        """
+        Apply some checks to the input data. This needs to be over ridden by any
+        subclass. You should throw exceptions if the data is invalid. 
+        """
         return input

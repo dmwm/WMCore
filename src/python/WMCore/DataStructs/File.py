@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.20 2009/12/02 19:52:22 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: File.py,v 1.21 2009/12/09 17:26:11 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 from sets import Set
 import datetime
 from WMCore.DataStructs.WMObject import WMObject
@@ -18,17 +18,16 @@ class File(WMObject, dict):
     _File_
     Data object that contains details for a single file
     """
-    def __init__(self, lfn = "", size = 0, events = 0, cksum = 0, 
-                 parents = None, merged = False, cktype = 'cksum'):
+    def __init__(self, lfn = "", size = 0, events = 0, cksums = {}, 
+                 parents = None, merged = False):
         dict.__init__(self)
         self.setdefault("lfn", lfn)
         self.setdefault("size", size)
         self.setdefault("events", events)
-        self.setdefault("cksum", cksum)
+        self.setdefault("cksums", cksums)
         self.setdefault('runs', Set())
         self.setdefault('locations', Set())
         self.setdefault('merged', merged)
-        self.setdefault('cktype', cktype)
 
         if parents == None:
             self.setdefault("parents", Set())
@@ -79,9 +78,6 @@ class File(WMObject, dict):
 
     def setLocation(self, se):
         self['locations'] = self['locations'] | Set(self.makelist(se))
-
-    def setCKType(self, cktype):
-        self['cktype'] = cktype
 
     def __cmp__(self, rhs):
         """

@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.55 2009/12/02 19:39:06 mnorman Exp $"
-__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: File.py,v 1.56 2009/12/09 17:25:39 mnorman Exp $"
+__version__ = "$Revision: 1.56 $"
 
 import threading
 import time
@@ -22,12 +22,12 @@ class File(WMBSBase, WMFile):
     """
     A simple object representing a file in WMBS
     """
-    def __init__(self, lfn = "", id = -1, size = 0, events = 0, cksum = 0,
+    def __init__(self, lfn = "", id = -1, size = 0, events = 0, cksums = {},
                  parents = None, locations = None, first_event = 0,
-                 last_event = 0, merged = True, cktype = 'cksum'):
+                 last_event = 0, merged = True):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events, 
-                        cksum = cksum, parents = parents, merged = merged, cktype = cktype)
+                        cksums = cksums, parents = parents, merged = merged)
 
         if locations == None:
             self.setdefault("newlocations", Set())
@@ -66,8 +66,8 @@ class File(WMBSBase, WMFile):
         Return the files attributes as a tuple
         """
         return self['lfn'], self['id'], self['size'], self['events'], \
-               self['cksum'], list(self['runs']), list(self['locations']), \
-               list(self['parents']), self['cktype']
+               self['cksums'], list(self['runs']), list(self['locations']), \
+               list(self['parents'])
 
     def getLocations(self):
         """
@@ -199,12 +199,14 @@ class File(WMBSBase, WMFile):
 
         self.update(result)
 
+        self.loadChecksum()
+        
         #Now get the checksum
-        action = self.daofactory(classname = 'Files.GetChecksum')
-        result = action.execute(fileid = self['id'], conn = self.getDBConn(),
-                                transaction = self.existingTransaction())
-        if result:
-            self.update(result)
+        #action = self.daofactory(classname = 'Files.GetChecksum')
+        #result = action.execute(fileid = self['id'], conn = self.getDBConn(),
+        #                        transaction = self.existingTransaction())
+        #if result:
+        #    self.update(result)
         return
 
     def loadData(self, parentage = 0):
@@ -282,9 +284,10 @@ class File(WMBSBase, WMFile):
         self.updateLocations()
         self.load()
         self.commitTransaction(existingTransaction)
-        if self['cksum'] and self['cktype']:
+        if self['cksums']:
             #Add a checksum
-            self.setCksum(cksum = self['cksum'], cktype = self['cktype'])
+            for entry in self['cksums'].keys():
+                self.setCksum(cksum = self['cksums'][entry], cktype = entry)
         return
     
     def delete(self):
@@ -430,7 +433,7 @@ class File(WMBSBase, WMFile):
                     "lfn": self["lfn"],
                     "locations": list(self["locations"]),
                     "id": self["id"],
-                    "cksum": self["cksum"],
+                    "cksums": self["cksums"],
                     "cktype": self["cktype"],
                     "events": self["events"],
                     "merged": self["merged"],
@@ -469,6 +472,23 @@ class File(WMBSBase, WMFile):
                        conn = self.getDBConn(), transaction = existingTransaction)
 
         self.commitTransaction(existingTransaction)
+
+        return
+
+
+    def loadChecksum(self):
+        """
+        _loadChecksum_
+        
+        Grab checksums.  If plural, put a list of dictionaries of type
+        {'cktype', 'cksum'} in both self['cktype'] and self['cksum']
+        """
+                #Now get the checksum
+        action = self.daofactory(classname = 'Files.GetChecksum')
+        result = action.execute(fileid = self['id'], conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+        if result:
+            self.update(result)
 
         return
 

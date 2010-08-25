@@ -400,14 +400,10 @@ def makeJobTweak(job):
         result.addParameter("process.source.firstEvent", firstEvent)
 
     # lumi limits
-    firstLumi = mask['FirstLumi']
-    if firstLumi != None:
-        result.addParameter("process.source.firstLuminosityBlock", firstLumi)
-
-    # run limits
-    firstRun = mask['FirstRun']
-    if firstRun != None:
-        result.addParameter("process.source.firstRun", firstRun)
+    if mask["FirstLumi"]:
+        result.addParameter("process.source.lumisToProcess",
+                            "%s:%s-%s:%s" % (mask["FirstRun"], mask["FirstLumi"],
+                                             mask["LastRun"], mask["LastLumi"]))
 
     # install any settings from the per job baggage
     baggage = job.getBaggage()

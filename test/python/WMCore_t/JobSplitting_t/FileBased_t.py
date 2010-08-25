@@ -5,8 +5,8 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.5 2009/02/19 19:51:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: FileBased_t.py,v 1.6 2009/08/05 19:43:39 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from sets import Set
 import unittest
@@ -44,10 +44,13 @@ class FileBasedTest(unittest.TestCase):
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile.setLocation('blenheim')
+            newFile.setLocation('malpaquet')
             self.multipleFileFileset.addFile(newFile)
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         newFile = File("/some/file/name", size = 1000, events = 100)
+        newFile.setLocation('blenheim')
         self.singleFileFileset.addFile(newFile)
 
         testWorkflow = Workflow()
@@ -59,6 +62,10 @@ class FileBasedTest(unittest.TestCase):
                                                    workflow = testWorkflow,
                                                    split_algo = "FileBased",
                                                    type = "Processing")
+
+        #self.multipleFileSubscription.create()
+        #self.singleFileSubscription.create()
+        
         return
 
     def tearDown(self):
@@ -162,22 +169,21 @@ class FileBasedTest(unittest.TestCase):
         
         jobGroups = jobFactory(files_per_job = 3)
         
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
+        self.assertEqual(len(jobGroups), 1)
 
-        assert len(jobGroups[0].jobs) == 4, \
-               "ERROR: JobFactory didn't create four jobs."
+        self.assertEqual(len(jobGroups[0].jobs), 4)
 
-        fileSet = Set()
+        fileList = []
         for job in jobGroups[0].jobs:
-            assert len(job.getFiles(type = "set")) in [3, 1], \
+            assert len(job.getFiles(type = "list")) in [3, 1], \
                    "ERROR: Job contains incorrect number of files."
 
             for file in job.getFiles(type = "lfn"):
-                fileSet.add(file)
+                assert file not in fileList, \
+                       "ERROR: File duplicated!"
+                fileList.append(file)
 
-        assert len(fileSet) == 10, \
-               "ERROR: Not all files assinged to job."
+        self.assertEqual(len(fileList), 10)
 
         return    
 

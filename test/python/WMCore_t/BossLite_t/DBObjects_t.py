@@ -209,23 +209,33 @@ class DBObjectsTest(unittest.TestCase):
         task = Task()
         task.create(db)
         job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        # WFT??? Yes, it is necessary for consistency... orrible!!!
+        job.data['submissionNumber'] = 1
         job.create(db)
-        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 0})
+        runJob = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
         runJob.create(db)
         
         self.assertTrue(job.exists(db))
         self.assertTrue(runJob.exists(db))
-
-        # Everything should be there
-        # Test loading runningJob from job
         self.assertEqual(job.runningJob, None)
         
-        job.getRunningInstance(db)   # Load from database
+        # WFT??? Yes, it is necessary for consistency... orrible!!!
+        job.data['submissionNumber'] = runJob['submission']
+        job.setRunningInstance(runJob)
+
+        self.assertTrue(job.runningJob != None)
+        
+        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
+        
+         # WFT??? Yes, it is necessary for consistency... orrible!!!
+        job2.data['submissionNumber'] = runJob.data['submission']
+        job2.getRunningInstance(db)   # Load from database
         
         self.assertTrue(job.runningJob != None)
         self.assertEqual(job.runningJob.data['id'], runJob.exists(db))
         
         job.runningJob.data['status'] = 'deceased'
+                
         job.updateRunningInstance(db)
         runJob.load(db)
         

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from cherrypy import expose
 import cherrypy
-import urllib
+#import urllib
 
 DEFAULT_SESSION_NAME = 'SecurityModule'
 DEFAULT_OID_SERVER = 'https://cmsweb.cern.ch/security/'
@@ -43,12 +43,8 @@ class OidDefaultHandler:
     def authz(self):
         return "Authorization failed: %s"  % self.getSessionInfo()
 
-#    @expose
-#    def dummy(self):
-#        return self.getSessionInfo()
-
     def getSessionInfo(self):
         sessreg = cherrypy.session.get(self.session_name,None)
         if sessreg:
-            return cherrypy.session[self.session_name].get('info',None)
+            return cherrypy.session[self.session_name].get('debug_info',None)
         return None

@@ -7,83 +7,36 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.11 2009/12/29 12:48:42 metson Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: REST_t.py,v 1.12 2009/12/29 19:44:09 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
-import os
-import threading
-import logging 
-import cherrypy
 import json
-import urllib, urllib2
-from httplib import HTTPConnection
 from cherrypy import HTTPError
 from wsgiref.handlers import format_date_time
 from WMQuality.TestInit import TestInit
 from WMCore.Configuration import Configuration
-from WMCore.WebTools.Root import Root
 from WMCore.WebTools.Page import make_rfc_timestamp
 from DummyRESTModel import DummyRESTModel
-        
+#decorator import for RESTServer setup
+from RESTServerSetup import setUpDummyRESTModel, setUpDAS, serverSetup 
+from RESTServerSetup import makeRequest
+
 class RESTTest(unittest.TestCase):
     
-    def configureServer(self, restModel='WMCore.WebTools.RESTModel', das=False):
-        dummycfg = Configuration()
-        dummycfg.component_('Webtools')
-        dummycfg.Webtools.application = 'UnitTests'
-        dummycfg.Webtools.log_screen = False
-        dummycfg.Webtools.access_file = '/dev/null'
-        dummycfg.Webtools.error_file = '/dev/null'
-        dummycfg.component_('UnitTests')
-        dummycfg.UnitTests.title = 'CMS WMCore/WebTools Unit Tests'
-        dummycfg.UnitTests.description = 'Dummy server for the running of unit tests' 
-        dummycfg.UnitTests.section_('views')
-        
-        active = dummycfg.UnitTests.views.section_('active')
-        active.section_('rest')
-        active.rest.object = 'WMCore.WebTools.RESTApi'
-        active.rest.templates = '/tmp'
-        active.rest.database = 'sqlite://'
-        active.rest.section_('model')
-        active.rest.model.object = restModel
-        active.rest.section_('formatter')
-        if das:
-            active.rest.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
-        else:
-            active.rest.formatter.object = 'WMCore.WebTools.RESTFormatter'
-        active.rest.formatter.templates = '/tmp'
-        
-        rt = Root(dummycfg)
-        return rt
+    def setUp(self):
+        self.dasFlag = False
+        self.restModel = 'WMCore.WebTools.RESTModel'
     
-    def makeRequest(self, uri='/rest/', values=None, type='GET', accept="text/plain"):
-        headers = {}
-        headers = {"Content-type": "application/x-www-form-urlencoded",
-                   "Accept": accept}
-        data = None
-        if values:
-            data = urllib.urlencode(values)
-        if type != 'POST' and data != None:
-            uri = '%s?%s' % (uri, data)
-        conn = HTTPConnection('localhost:8080')
-        conn.connect()
-        conn.request(type, uri, data, headers)
-        response = conn.getresponse()
-        
-        data = response.read()
-        conn.close()
-        type = response.getheader('content-type').split(';')[0]
-        return data, response.status, type, response
+    def tearDown(self):
+        self.dasFlag = None
+        self.restModel = None
     
+    @serverSetup
     def testGoodEcho(self):
-        rt = self.configureServer()
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
         
         for method in ['POST']:
-            data, code, type, response = self.makeRequest('/rest/echo', 
+            data, code, type, response = makeRequest('/rest/echo', 
                                                    {'data': 'unit test'}, 
                                                    method, 'text/json')
             assert code == 200, \
@@ -93,13 +46,11 @@ class RESTTest(unittest.TestCase):
             assert type == 'text/json'
             assert data == '{"args": [], "kwargs": {"data": "unit test"}}', 'got unexpected response %s' % data
     
+    @serverSetup
     def testGoodEchoWithPosArg(self):
-        rt = self.configureServer()
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
+        
         for method in ['POST']:
-            data, code, type, response = self.makeRequest('/rest/echo/stuff', 
+            data, code, type, response = makeRequest('/rest/echo/stuff', 
                                                 {'data': 'unit test'},
                                                 method, 
                                                 'text/json')
@@ -109,72 +60,55 @@ class RESTTest(unittest.TestCase):
             assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
             assert type == 'text/json'
             assert data == '{"args": ["stuff"], "kwargs": {"data": "unit test"}}', 'got unexpected response %s' % data
-            
+    
+    @serverSetup        
     def testBadMethodEcho(self):
-        rt = self.configureServer()
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
         
         for method in ['GET']:
-            data, code, type, response = self.makeRequest('/rest/echo', {'data': 'unit test'}, 
+            data, code, type, response = makeRequest('/rest/echo', {'data': 'unit test'}, 
                                           method, 'text/json')
             assert int(code) == 405, "Didn't get a 'Method Not Allowed' response for %s (got %s)" % (method, code)
             expires = response.getheader('Expires')
             assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
             assert type == 'text/json' 
-        rt.stop()
-          
+    
+    @serverSetup      
     def testBadVerbEcho(self):
-        rt = self.configureServer()
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
-        
+    
         for method in ['DELETE', 'PUT']:
-            data, code, type, response = self.makeRequest('/rest/echo', {'data': 'unit test'}, 
+            data, code, type, response = makeRequest('/rest/echo', {'data': 'unit test'}, 
                                           method, 'text/json')
             assert int(code) == 501, "Didn't get a 'Not Implemented' response for %s (got %s), message: %s" % (method, code, data)
             expires = response.getheader('Expires')
             assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
             assert type == 'text/json'
-        rt.stop()
     
+    @serverSetup
     def testPing(self):
-        rt = self.configureServer()
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
-        data, code, type, response = self.makeRequest('/rest/ping/',
+        
+        data, code, type, response = makeRequest('/rest/ping/',
                                           type='GET', accept='text/json')
         assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
         assert type == 'text/json'
         expires = response.getheader('Expires')
         assert expires == make_rfc_timestamp(3600), 'Expires header incorrect (%s)' % expires 
         assert data == '"ping"', 'got unexpected response %s' % data
-        
-        rt.stop()
-        
+
+    @serverSetup
     def testBadPing(self):
-        rt = self.configureServer()
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
-        data, code, type, response = self.makeRequest('/rest/ping/wrong/',
+
+        data, code, type, response = makeRequest('/rest/ping/wrong/',
                                           type='GET', accept='text/json')
         assert code == 400, 'Got a return code != 400 (got %s), message: %s' % (code, data)
         assert type == 'text/json'
         expires = response.getheader('Expires')
         assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires 
-
-        rt.stop()
+    
+    @setUpDAS
+    @serverSetup    
+    def testDasPing(self, das=True):
         
-    def testDasPing(self):
-        rt = self.configureServer(das=True)
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
-        data, code, type, response = self.makeRequest('/rest/ping',
+        data, code, type, response = makeRequest('/rest/ping',
                                           type='GET', accept='text/json+das')
         assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
         assert type == 'text/json+das'
@@ -187,34 +121,25 @@ class RESTTest(unittest.TestCase):
         assert response_expires == expires, 'Expires DAS header incorrect (%s)' % response_expires
         
         assert dict['results'] == 'ping', 'got unexpected response %s' % dict['results']
-        
-        rt.stop()
     
-    def testList(self):
-        rt = self.configureServer(restModel='DummyRESTModel')
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
-        data, code, type, response = self.makeRequest('/rest/list/', {'int':123, 'str':'abc'},
+    @setUpDummyRESTModel    
+    @serverSetup
+    def testList(self, restModel='DummyRESTModel'):
+        data, code, type, response = makeRequest('/rest/list/', {'int':123, 'str':'abc'},
                                           type='GET', accept='text/json')
         assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
         assert type == 'text/json'
         expires = response.getheader('Expires')
         assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
         assert data == '{"int": 123, "str": "abc"}', 'data is not correct %s' % data
-        
+    
+    @serverSetup    
     def testA(self):
-        rt = self.configureServer()
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
         for t in ['GET', 'POST', 'PUT', 'DELETE', 'UPDATE']:
-                response = self.makeRequest(values={'value':1234})
+                response = makeRequest(values={'value':1234})
                 assert response[1] == 200, \
                  'Got a return code != 200 (got %s)' % response[1]
-        
-        rt.stop()
-        
+    
     def testSanitisePass(self):
         """
         Emulate how CherryPy passes arguments to a method, check that the data
@@ -241,25 +166,23 @@ class RESTTest(unittest.TestCase):
         assert result == {'int':123, 'str':'abc'},\
                 'list with 1 positional, 1 keyword failed: %s' % result
     
+    @setUpDummyRESTModel
+    @serverSetup
     def testSanitisePassHTTP(self):
         """
         Same as testSanitisePass but do it over http and check the returned http
         codes.
         """
-        rt = self.configureServer(restModel='DummyRESTModel')
-        rt.start(blocking=False)
-        cherrypy.log.error_log.setLevel(logging.WARNING)
-        cherrypy.log.access_log.setLevel(logging.WARNING)
         
         # 2 positional args (e.g. url/arg1/arg2)
-        response = self.makeRequest(uri='/list/123/abc')
+        response = makeRequest(uri='/list/123/abc')
         assert response[1] == 200, \
                 'list with 2 positional args failed: ' +\
                 '. Got a return code != 200 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
                  
         # 2 query string args (e.g. url?int=arg1&str=arg2)
-        response = self.makeRequest(uri='/list', 
+        response = makeRequest(uri='/list', 
                                     values={'int':'123', 'str':'abc'})
         assert response[1] == 200, \
                 'list with 2 query string args failed: ' +\
@@ -267,7 +190,7 @@ class RESTTest(unittest.TestCase):
                 '. Returned data: %s' % response[0] 
         
         # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
-        response = self.makeRequest(uri='/list/123/', 
+        response = makeRequest(uri='/list/123/', 
                                     values={'str':'abc'})
         assert response[1] == 200, \
                 'list with 1 positional, 1 keyword failed: ' +\

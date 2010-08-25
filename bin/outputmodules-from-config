@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+"""
+_outputmodules-from-config_
+
+Pull output module metadata from a CMSSW config.
+"""
+
+import sys
+import tempfile
+import os
+import urllib
+
+from WMCore.Services.Requests import JSONRequests
+from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+
+def setupCMSSWEnv(cmsPath, scramArch, frameworkVersion):
+    """
+    _setupCMSSWEnv_
+
+    Setup the CMSSW python environment for the given cmsPath, scramArch and
+    frameworkVersion.
+    """
+    patchRelease = False
+    cmsswDir = "cmssw"
+    if frameworkVersion.find("patch") > -1:
+        patchRelease = True
+        cmsswDir = "cmssw-patch"
+        
+    releaseBase = os.path.join(cmsPath, scramArch, "cms", cmsswDir,
+                               frameworkVersion)
+    pythonLib = "%s/python" % releaseBase
+    envFile = "%s/cmsswPaths.py" % pythonLib
+    
+    if not os.path.exists(pythonLib):
+        print "Unable to locate python libs for release: %s" % pythonLib
+        sys.exit(1)
+
+    sys.path.append(pythonLib)
+    
+    if not patchRelease:
+        return
+
+    if not os.path.exists(envFile):
+        print "Unable to locate env file for patch release: %s" % envFile
+        sys.exit(1)
+        
+    fp, pathname, description = imp.find_module(
+        os.path.basename(envFile).replace(".py", ""),
+        [os.path.dirname(envFile)])
+    modRef = imp.load_module("AutoLoadCMSSWPathDefinition", fp, pathname, description)
+    pythonPaths = getattr(modRef, "cmsswPythonPaths", None)
+    if pythonPaths != None:
+        sys.path.extend(pythonPaths)
+        
+    return
+
+def loadConfig(configPath):
+    """
+    _loadConfig_
+
+    Import a config.
+    """
+    cfgBaseName = os.path.basename(configPath).replace(".py", "")
+    cfgDirName = os.path.dirname(configPath)
+    modPath = imp.find_module(cfgBaseName, [cfgDirName])
+    
+    loadedConfig = imp.load_module(cfgBaseName, modPath[0],
+                                   modPath[1], modPath[2])
+    
+    return loadedConfig
+
+def outputModulesFromConfig(configHandle):
+    """
+    _outputModulesFromConfig_
+
+    Go through all the output modules in a config and extract the meta data.
+    """
+    outputModules = {}
+    for outputModuleName in configHandle.process.outputModules.keys():
+        outputModule = getattr(configHandle.process, outputModuleName)
+        if hasattr(outputModule, "dataset"):
+            outputModules[outputModuleName] = {"dataTier": str(getattr(outputModule.dataset, "dataTier", None).value()),
+                                               "filterName": str(getattr(outputModule.dataset, "filterName", None).value())}
+            
+    return outputModules
+
+if __name__ == "__main__":
+   jsonHandler = JSONRequests()
+
+   encodedConfig = sys.stdin.readline()
+   config = jsonHandler.decode(encodedConfig)
+
+   setupCMSSWEnv(config["cmsPath"], config["scramArch"],
+                        config["frameworkVersion"])
+
+   if config.get("configUrl", None):
+       tempDir = tempfile.mkdtemp()
+       configPath = os.path.join(tempDir, "cmsswConfig.py")
+       configString = urllib.urlopen(newConfig).read(-1)
+       configFile = open(configPath)
+       configFile.write(configString)
+       configFile.close()
+       process = loadConfig(configPath)
+       os.remove(configPath)
+       os.rmdir(tempDir)
+   else:
+       mySetup = SetupCMSSWPset()
+       mySetup.creatProcess(config["scenarioName"], config["scenarioFunc"],
+                            config["scenarioArgs"])
+       process = mySetup.process
+
+   outputModules = outputModulesFromConfig(process)
+   outputModulesJSON = jsonHandler.encode(outputModules)
+
+   sys.stdout.write("%s\n" % outputModulesJSON)
+   sys.stdout.flush()

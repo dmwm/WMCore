@@ -6,34 +6,19 @@ MySQL implementation of Subscription.GetAcquiredFiles
 """
 
 __all__ = []
-__revision__ = "$Id: GetAcquiredFiles.py,v 1.8 2009/03/18 13:21:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: GetAcquiredFiles.py,v 1.9 2009/09/11 19:07:30 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.WMBS.MySQL.Subscriptions.GetAvailableFiles import GetAvailableFiles
 
-class GetAcquiredFiles(DBFormatter):
-    sql = """SELECT file FROM wmbs_sub_files_acquired
-             WHERE subscription = :subscription
+class GetAcquiredFiles(GetAvailableFiles):
+    sql = """SELECT wmsfa.file, wl.site_name FROM wmbs_sub_files_acquired wmsfa
+             INNER JOIN wmbs_file_location wfl ON wfl.file = wmsfa.file
+             INNER JOIN wmbs_location wl ON wl.id = wfl.location
+             WHERE wmsfa.subscription = :subscription
              """
 
-    def formatDict(self, results):
-        """
-        _formatDict_
-
-        Cast the file column to an integer as the DBFormatter's formatDict()
-        method turns everything into strings.  Also, fixup the results of the
-        Oracle query by renaming "fileid" to file.
-        """
-        formattedResults = DBFormatter.formatDict(self, results)
-
-        for formattedResult in formattedResults:
-            if "file" in formattedResult.keys():
-                formattedResult["file"] = int(formattedResult["file"])
-            else:
-                formattedResult["file"] = int(formattedResult["fileid"])
-
-        return formattedResults
-    
+        
     def execute(self, subscription = None, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {"subscription": subscription},
                                        conn = conn, transaction = transaction)

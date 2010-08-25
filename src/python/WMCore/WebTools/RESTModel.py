@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.17 2009/08/31 18:29:51 metson Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: RESTModel.py,v 1.18 2009/08/31 18:36:02 metson Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -93,4 +93,8 @@ class RESTModel(WebAPI):
                 input[a] = kwargs[a]
             else:
                 input[a] = args.pop(0)
+        self.validate_input(input)
+        return input
+    
+    def validate_input(self, input):
         return input

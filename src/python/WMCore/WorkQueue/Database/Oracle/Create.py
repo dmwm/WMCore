@@ -7,8 +7,8 @@ Inherit from CreateWorkQueue, and add Oracle specific substitutions (e.g.
 use trigger and sequence to mimic auto increment in MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.5 2009/08/18 23:18:14 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Create.py,v 1.6 2009/09/03 15:44:17 swakef Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -17,7 +17,7 @@ class Create(CreateWorkQueueBase):
     Class to set up the WMBS schema in a MySQL database
     """
     sequenceTables = ["wq_wmspec",
-                      "wq_block",
+                      "wq_data",
                       "wq_element",
                       "wq_site"]
     seqStartNum = 40
@@ -27,15 +27,15 @@ class Create(CreateWorkQueueBase):
 
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
-        """        
+        """
         CreateWorkQueueBase.__init__(self, logger, dbi)
-        
+
         for tableName in self.sequenceTables:
             seqname = '%s_SEQ' % tableName
             self.create["%s%s" % (self.seqStartNum, seqname)] = """
             CREATE SEQUENCE %s start with 1 
             increment by 1 nomaxvalue cache 100""" % seqname
-            
+
             triggerName = '%s_TRG' % tableName
             self.create["%s%s" % (self.seqStartNum, triggerName)] = """
                     CREATE TRIGGER %s

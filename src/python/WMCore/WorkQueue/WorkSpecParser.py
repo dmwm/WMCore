@@ -6,8 +6,8 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.10 2009/08/24 16:33:52 sryu Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.11 2009/09/03 15:44:19 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from ProdCommon.MCPayloads.UUID import makeUUID
@@ -75,12 +75,7 @@ class WorkSpecParser:
         if not self.inputDatasets:
             # we don't have any input data - divide into one block
             jobs = self.__estimateJobs(self.splitSize, self.totalEvents)
-            block = Block()
-            block["Name"] = "ProductionBlock-%s" % makeUUID()
-            block["NumFiles"] = 0
-            block["NumEvents"] = self.totalEvents
-            block["Size"] = 0
-            results.append((block, [], jobs))
+            results.append((None, [], jobs))
             return results
 
         # data processing - assume blocks are reasonable size
@@ -111,7 +106,7 @@ class WorkSpecParser:
                         raise RuntimeError, msg % block['Name']
                 else:
                     parentBlocks = []
-                results.append((block, parentBlocks, jobs))
+                results.append((block['Name'], parentBlocks, jobs))
         return results
 
 

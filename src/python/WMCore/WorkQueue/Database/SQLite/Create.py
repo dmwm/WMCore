@@ -5,8 +5,8 @@ Implementation of CreateWorkQueue for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2009/08/27 18:40:44 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Create.py,v 1.5 2009/09/03 15:44:21 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -28,7 +28,7 @@ class Create(CreateWorkQueueBase):
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL REFERENCES wq_wmspec(id),
-             block_id         INTEGER             REFERENCES wq_block(id),
+             input_id         INTEGER             REFERENCES wq_data(id),
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
@@ -36,22 +36,22 @@ class Create(CreateWorkQueueBase):
              subscription_id  INTEGER    NOT NULL REFERENCES wmbs_subscription(id),
              insert_time      INTEGER    NOT NULL,
              PRIMARY KEY (id),
-             UNIQUE (wmspec_id, block_id)
+             UNIQUE (wmspec_id, input_id)
              ) """
 
-        self.create["04wq_block_parentage"] = \
-          """CREATE TABLE wq_block_parentage (
-             child        INTEGER    NOT NULL REFERENCES wq_block(id),
-             parent       INTEGER    NOT NULL REFERENCES wq_block(id),
+        self.create["04wq_data_parentage"] = \
+          """CREATE TABLE wq_data_parentage (
+             child        INTEGER    NOT NULL REFERENCES wq_data(id),
+             parent       INTEGER    NOT NULL REFERENCES wq_data(id),
              PRIMARY KEY (child, parent)
              )"""
 
-        self.create["06wq_block_site_assoc"] = \
-          """CREATE TABLE wq_block_site_assoc (
-             block_id     INTEGER    NOT NULL REFERENCES wq_block(id),
+        self.create["06wq_data_site_assoc"] = \
+          """CREATE TABLE wq_data_site_assoc (
+             data_id     INTEGER    NOT NULL REFERENCES wq_data(id),
              site_id      INTEGER    NOT NULL REFERENCES wq_site(id),
              -- online BOOL DEFAULT FALSE, -- for when we track staging
-             PRIMARY KEY (block_id, site_id)
+             PRIMARY KEY (data_id, site_id)
              )""" #-- PRIMARY KEY (block_id, site_id) #-- online BOOL DEFAULT FALSE, -- for when we track staging
 
         # constraints added in table definition

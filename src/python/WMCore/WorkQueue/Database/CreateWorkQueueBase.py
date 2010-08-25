@@ -7,26 +7,25 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.13 2009/08/27 21:05:24 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.14 2009/09/03 15:44:21 swakef Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import threading
 
 from WMCore.Database.DBCreator import DBCreator
 
 from WMCore.WMException import WMException
-from WMCore.WMExceptions import WMEXCEPTION
 
 class CreateWorkQueueBase(DBCreator):
     """
     Class to set up the WMBS schema in a MySQL database
     """
     requiredTables = ["01wq_wmspec",
-                      "02wq_block",
+                      "02wq_data",
                       "03wq_element",
-                      "04wq_block_parentage",
+                      "04wq_data_parentage",
                       "05wq_site",
-                      "06wq_block_site_assoc"
+                      "06wq_data_site_assoc"
                       ]
 
 
@@ -55,22 +54,19 @@ class CreateWorkQueueBase(DBCreator):
              UNIQUE (name)
              )"""
 
-        self.create["02wq_block"] = \
-          """CREATE TABLE wq_block (
+        self.create["02wq_data"] = \
+          """CREATE TABLE wq_data (
              id             INTEGER      NOT NULL,
              name           VARCHAR(500) NOT NULL,
-             block_size     INTEGER      NOT NULL,
-             num_files      INTEGER      NOT NULL,
-             num_events      INTEGER      NOT NULL,
              PRIMARY KEY(id),
              UNIQUE (name)
              )"""
-                          
+
         self.create["03wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL,
-             block_id         INTEGER    NOT NULL,
+             input_id         INTEGER    NOT NULL,
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
@@ -78,11 +74,11 @@ class CreateWorkQueueBase(DBCreator):
              subscription_id  INTEGER    NOT NULL,
              insert_time      INTEGER    NOT NULL,
              PRIMARY KEY (id),
-             UNIQUE (wmspec_id, block_id)
+             UNIQUE (wmspec_id, input_id)
              ) """
 
-        self.create["04wq_block_parentage"] = \
-          """CREATE TABLE wq_block_parentage (
+        self.create["04wq_data_parentage"] = \
+          """CREATE TABLE wq_data_parentage (
              child        INTEGER    NOT NULL,
              parent       INTEGER    NOT NULL,
              PRIMARY KEY (child, parent)
@@ -94,40 +90,40 @@ class CreateWorkQueueBase(DBCreator):
              name        VARCHAR(255) NOT NULL,
              PRIMARY KEY(id)
              )"""
-             
+
         #-- oracle doesn have BOOL needs some other datatype --
         #-- online BOOL DEFAULT FALSE, -- for when we track staging
-        self.create["06wq_block_site_assoc"] = \
-          """CREATE TABLE wq_block_site_assoc (
-             block_id     INTEGER    NOT NULL,
+        self.create["06wq_data_site_assoc"] = \
+          """CREATE TABLE wq_data_site_assoc (
+             data_id     INTEGER    NOT NULL,
              site_id      INTEGER    NOT NULL,
-             PRIMARY KEY (block_id, site_id)
+             PRIMARY KEY (data_id, site_id)
              )"""
 
-        self.constraints["FK_wq_block_assoc"] = \
-              """ALTER TABLE wq_block_site_assoc ADD CONSTRAINT FK_wq_block_assoc
-                 FOREIGN KEY(block_id) REFERENCES wq_block(id)"""
+        self.constraints["FK_wq_data_assoc"] = \
+              """ALTER TABLE wq_data_site_assoc ADD CONSTRAINT FK_wq_data_assoc
+                 FOREIGN KEY(data_id) REFERENCES wq_data(id)"""
 
         self.constraints["FK_wq_site_assoc"] = \
-              """ALTER TABLE wq_block_site_assoc ADD CONSTRAINT FK_wq_site_assoc
+              """ALTER TABLE wq_data_site_assoc ADD CONSTRAINT FK_wq_site_assoc
                  FOREIGN KEY(site_id) REFERENCES wq_site(id)"""
 
-        self.constraints["FK_wq_block_child"] = \
-              """ALTER TABLE wq_block_parentage ADD CONSTRAINT FK_wq_block_child
-                 FOREIGN KEY(child) REFERENCES wq_block(id)"""
+        self.constraints["FK_wq_data_child"] = \
+              """ALTER TABLE wq_data_parentage ADD CONSTRAINT FK_wq_data_child
+                 FOREIGN KEY(child) REFERENCES wq_data(id)"""
 
-        self.constraints["FK_wq_block_parent"] = \
-              """ALTER TABLE wq_block_parentage ADD CONSTRAINT FK_wq_block_parent
-                 FOREIGN KEY(parent) REFERENCES wq_block(id)"""
+        self.constraints["FK_wq_data_parent"] = \
+              """ALTER TABLE wq_data_parentage ADD CONSTRAINT FK_wq_data_parent
+                 FOREIGN KEY(parent) REFERENCES wq_data(id)"""
 
         self.constraints["FK_wq_wmspec_element"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_wmspec_element
                  FOREIGN KEY(wmspec_id) REFERENCES wq_wmspec(id)"""
 
-        self.constraints["FK_wq_block_element"] = \
-              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_block_element
-                 FOREIGN KEY(block_id) REFERENCES wq_block(id)"""
-		
+        self.constraints["FK_wq_input_element"] = \
+              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_input_element
+                 FOREIGN KEY(input_id) REFERENCES wq_data(id)"""
+
         self.constraints["FK_wq_element_sub"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_sub
                  FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.25 2009/09/03 13:27:17 swakef Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: WorkQueue.py,v 1.26 2009/09/03 15:44:19 swakef Exp $"
+__version__ = "$Revision: 1.26 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -56,19 +56,20 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction()))
 
 
-    def _insertWorkQueueElement(self, wmspec, nJobs, primaryBlock,
-                                parentBlocks, subscription):
+    def _insertWorkQueueElement(self, wmspec, nJobs, primaryInput,
+                                parentInputs, subscription):
         """
         Persist a block to the database
         """
         self._insertWMSpec(wmspec)
         #still need to insert fack block for production job
         #if primaryBlock['NumFiles'] != 0: #TODO: change this
-        self._insertBlock(primaryBlock, parentBlocks)
+        if primaryInput:
+            self._insertInputs(primaryInput, parentInputs)
 
         wqAction = self.daofactory(classname = "WorkQueueElement.New")
-        parentFlag = parentBlocks and 1 or 0
-        wqAction.execute(wmspec.name, primaryBlock['Name'], nJobs,
+        parentFlag = parentInputs and 1 or 0
+        wqAction.execute(wmspec.name, primaryInput, nJobs,
                              wmspec.priority, parentFlag, subscription,
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
@@ -88,27 +89,25 @@ class WorkQueue(WorkQueueBase):
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
 
-    def _insertBlock(self, primaryBlock, parentBlocks):
+    def _insertInputs(self, primary, parents):
         """
         Insert blocks and record parentage info
         """
-        def _blockCreation(blockInfo):
+        def _inputCreation(data):
             """
-            Internal function to insert a block
+            Internal function to insert an input
             """
-            blockAction.execute(blockInfo["Name"], blockInfo["Size"],
-                                blockInfo["NumEvents"], blockInfo["NumFiles"],
-                                conn = self.getDBConn(),
+            dataAction.execute(data, conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
 
-        blockAction = self.daofactory(classname = "Block.New")
-        blockParentageAct = self.daofactory(classname = "Block.AddParent")
+        dataAction = self.daofactory(classname = "Data.New")
+        dataParentageAct = self.daofactory(classname = "Data.AddParent")
 
-        _blockCreation(primaryBlock)
-        for block in parentBlocks:
-            _blockCreation(block)
-            blockParentageAct.execute(primaryBlock["Name"],
-                                      block["Name"],
+        _inputCreation(primary)
+        for parent in parents:
+            _inputCreation(parent)
+            dataParentageAct.execute(primary,
+                                      parent,
                                       conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
 
@@ -165,8 +164,8 @@ class WorkQueue(WorkQueueBase):
         """
         #self.beginTransaction()
         #get blocks and dbsurls (for no assume global!)
-        blocksAction = self.daofactory(classname = "Block.GetActiveBlocks")
-        mappingAct = self.daofactory(classname = "Site.UpdateBlockSiteMapping")
+        blocksAction = self.daofactory(classname = "Data.GetActiveData")
+        mappingAct = self.daofactory(classname = "Site.UpdateDataSiteMapping")
         blocks = blocksAction.execute(conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
         result = {}
@@ -212,9 +211,9 @@ class WorkQueue(WorkQueueBase):
            of subscription
         """
         results = []
-        blockLoader = self.daofactory(classname = "Block.LoadByID")
+        blockLoader = self.daofactory(classname = "Data.LoadByID")
         parentBlockLoader = \
-                    self.daofactory(classname = "Block.GetParentsByChildID")
+                    self.daofactory(classname = "Data.GetParentsByChildID")
         matches = self.match(siteJobs)
         for match in matches:
             #wmbsHelper = WMBSHelper(wqElement.wmSpec)
@@ -239,8 +238,9 @@ class WorkQueue(WorkQueueBase):
             sub.load()
 
             dbs = self.dbsHelpers.values()[0] #FIXME!!!
-            if match['block_id']:
-                block = blockLoader.execute(match['block_id'],
+
+            if match['input_id']:
+                block = blockLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
                 if match['parent_flag']:
@@ -300,7 +300,7 @@ class WorkQueue(WorkQueueBase):
         self.beginTransaction()
 
         for primaryBlock, blocks, jobs in units:
-            wmbsHelper = WMBSHelper(spec, primaryBlock['Name'])
+            wmbsHelper = WMBSHelper(spec, primaryBlock)
             sub = wmbsHelper.createSubscription()
 
             self._insertWorkQueueElement(spec, jobs, primaryBlock,

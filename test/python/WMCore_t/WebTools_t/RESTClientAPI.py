@@ -2,9 +2,10 @@ import urllib
 from httplib import HTTPConnection
 from WMCore.WebTools.Page import make_rfc_timestamp
 
-def makeRequest(uri='/rest/', values=None, type='GET', accept="text/plain"):
+def makeRequest(uri='/rest/', values=None, type='GET', accept="text/plain", 
+                contentType = "application/x-www-form-urlencoded"):
     headers = {}
-    headers = {"Content-type": "application/x-www-form-urlencoded",
+    headers = {"Content-type": contentType,
                "Accept": accept}
     data = None
     if values:

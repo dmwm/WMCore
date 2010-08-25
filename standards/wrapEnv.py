@@ -49,6 +49,12 @@ commandLine = sys.argv[3:]
 
 # actually run
 print "Commandline: %s" % commandLine
+print "PATH: %s" % os.environ['PATH']
+if 'PYTHONHOME' in os.environ:
+    print "PYTHONHOME: %s" % os.environ['PYTHONHOME']
+if 'PYTHONPATH' in os.environ:
+    print "PYTHONPATH: %s" % os.environ['PYTHONPATH']
+    
 os.execvp( commandLine[0], commandLine[0:] )
 
         

@@ -165,8 +165,6 @@ def setParameter(process, param, value):
     params.pop(0) # first is process object
     lastPSet = process
     for pset in params:
-        if pset == "firstEvent":
-            continue
         lastPSet = getattr(lastPSet, pset, None)
         if lastPSet == None:
             msg = "Cannot find attribute named: %s\n" % pset
@@ -174,8 +172,7 @@ def setParameter(process, param, value):
             print msg
             return
 
-    if "setValue" in dir(lastPSet):
-        lastPSet.setValue(value)
+    lastPSet.setValue(value)
     return
 
 

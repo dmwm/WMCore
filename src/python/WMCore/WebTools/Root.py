@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.51 2010/03/25 21:04:38 sryu Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: Root.py,v 1.52 2010/04/26 21:16:09 sryu Exp $"
+__version__ = "$Revision: 1.52 $"
 
 # CherryPy
 import cherrypy
@@ -84,6 +84,9 @@ class Root(WMObject, Harness):
         cpconfig["log.access_file"] = configDict.get("access_log_file", None)
         cpconfig["log.error_file"] = configDict.get("error_log_file", None)
         
+        #A little hacky way to pass the expire second to config
+        self.appconfig.default_expires = cpconfig["tools.expires.secs"]
+        
         log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
         log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
 
@@ -155,6 +158,7 @@ class Root(WMObject, Harness):
         config = Configuration()
         component = config.component_(view._internal_name)
         component.application = self.app
+        
         for k in globalconf.keys():
             # Add the global config to the view
             component.__setattr__(k, globalconf[k])

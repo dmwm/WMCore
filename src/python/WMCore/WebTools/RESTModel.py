@@ -6,14 +6,13 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.60 2010/04/26 19:45:27 sryu Exp $"
-__version__ = "$Revision: 1.60 $"
+__revision__ = "$Id: RESTModel.py,v 1.61 2010/04/26 21:16:09 sryu Exp $"
+__version__ = "$Revision: 1.61 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
 import sys
 import traceback
-from WMCore.WebTools.Page import DEFAULT_EXPIRE
 
 class RESTModel(WebAPI):
     """
@@ -39,6 +38,8 @@ class RESTModel(WebAPI):
                                         'validation': []},
                                }
                          }
+        
+        self.defaultExpires = config.default_expires
         
     def ping(self): 
         """
@@ -122,11 +123,11 @@ class RESTModel(WebAPI):
         if 'expires' in self.methods[verb][method].keys():
             return data, self.methods[verb][method]['expires']
         else:
-            return data, DEFAULT_EXPIRE
+            return data, self.defaultExpires
                 
     def addDAO(self, verb, methodKey, daoStr, args=[], 
                validation=[], version=1, daoFactory = None,
-               expires = DEFAULT_EXPIRE):
+               expires = None):
         """
         add dao in self.methods and wrap it with sanitise_input. Assumes that a 
         DAOFactory instance is available from self.
@@ -142,12 +143,14 @@ class RESTModel(WebAPI):
                 dao = self.daofactory(classname=daoStr)
             # execute the requested input, now a list of keywords
             return dao.execute(**input)
-                  
+        
+        if expires == None:
+            expires = self.defaultExpires          
         self.addMethod(verb, methodKey, function, args, validation, 
                        version, expires)
         
     def addMethod(self, verb, methodKey, function, args=[], 
-                  validation=[], version=1, expires = DEFAULT_EXPIRE):
+                  validation=[], version=1, expires = None):
         """
         add a method handler to self.methods self.methods need to be initialize 
         if sub class hasn't done this already.
@@ -168,7 +171,9 @@ class RESTModel(WebAPI):
             funcRef = wrapper
         else:
             funcRef = function
-            
+        
+        if expires == None:
+            expires = self.defaultExpires    
         self.methods[verb][methodKey] = {'args': args,
                                          'call': funcRef,
                                          'validation': validation,

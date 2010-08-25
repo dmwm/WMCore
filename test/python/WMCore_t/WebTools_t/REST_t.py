@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.15 2010/01/04 17:04:49 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: REST_t.py,v 1.16 2010/01/05 20:53:36 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import json
@@ -32,113 +32,112 @@ class RESTTest(unittest.TestCase):
         self.dasFlag = None
         self.restModel = None
     
+    def methodTest(self, verb, url, input={}, accept='text/json', output={} , expireTime=300):
+        
+        data, code, type, response = makeRequest(url, input, verb, accept)
+        
+        keyMap = {'code': code, 'data': data, 'type': type, 'response': response}
+        for key, value in output.items():
+            assert keyMap[key] == value, \
+                'Got a return %s != %s (got %s) (data %s)' % (key, value, code, data)
+        
+        expires = response.getheader('Expires')        
+        assert expires == make_rfc_timestamp(expireTime), 'Expires header incorrect (%s)' % expires
+        
+        return data, expires
+            
     @serverSetup
     def testUnsupportedFormat(self):
         
-        for method in ['GET']:
-            data, code, type, response = makeRequest('/rest/ping/', 
-                                                   {}, 
-                                                   method, 'text/das')
-            assert code == 406, \
-                'Got a return code != 406 (got %s) (data %s)' % (code, data)
+        # test not accepted type should return 406 error
+        self.methodTest('GET', '/rest/ping/', accept='text/das', output={'code':406})
                 
     @serverSetup
     def testGoodEcho(self):
         
-        for method in ['POST']:
-            data, code, type, response = makeRequest('/rest/echo', 
-                                                   {'data': 'unit test'}, 
-                                                   method, 'text/json')
-            assert code == 200, \
-                'Got a return code != 200 (got %s)' % code
-            expires = response.getheader('Expires')
-            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
-            assert type == 'text/json'
-            assert data == '{"args": [], "kwargs": {"data": "unit test"}}', 'got unexpected response %s' % data
-    
+        verb ='POST'
+        url ='/rest/echo'
+        input={'data': 'unit test'}
+        output={'code':200, 'type':'text/json',
+                'data':'{"args": [], "kwargs": {"data": "unit test"}}'}
+        
+        self.methodTest(verb, url, input, output=output)
+        
     @serverSetup
     def testGoodEchoWithPosArg(self):
         
-        for method in ['POST']:
-            data, code, type, response = makeRequest('/rest/echo/stuff', 
-                                                {'data': 'unit test'},
-                                                method, 
-                                                'text/json')
-            assert code == 200, \
-                'Got a return code != 200 (got %s)' % code
-            expires = response.getheader('Expires')
-            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
-            assert type == 'text/json'
-            assert data == '{"args": ["stuff"], "kwargs": {"data": "unit test"}}', 'got unexpected response %s' % data
-    
+        verb ='POST'
+        url ='/rest/echo/stuff'
+        input={'data': 'unit test'}
+        output={'code':200, 'type':'text/json',
+                'data':'{"args": ["stuff"], "kwargs": {"data": "unit test"}}'}
+        
+        self.methodTest(verb, url, input, output=output)
+        
     @serverSetup        
     def testBadMethodEcho(self):
         
-        for method in ['GET']:
-            data, code, type, response = makeRequest('/rest/echo', {'data': 'unit test'}, 
-                                          method, 'text/json')
-            assert int(code) == 405, "Didn't get a 'Method Not Allowed' response for %s (got %s)" % (method, code)
-            expires = response.getheader('Expires')
-            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
-            assert type == 'text/json' 
-    
+        verb ='GET'
+        url ='/rest/echo'
+        input={'data': 'unit test'}
+        output={'code':405, 'type':'text/json'}
+        
+        self.methodTest(verb, url, input, output=output)
+        
     @serverSetup      
     def testBadVerbEcho(self):
-    
-        for method in ['DELETE', 'PUT']:
-            data, code, type, response = makeRequest('/rest/echo', {'data': 'unit test'}, 
-                                          method, 'text/json')
-            assert int(code) == 501, "Didn't get a 'Not Implemented' response for %s (got %s), message: %s" % (method, code, data)
-            expires = response.getheader('Expires')
-            assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
-            assert type == 'text/json'
-    
+        url ='/rest/echo'
+        input={'data': 'unit test'}
+        output={'code':501, 'type':'text/json'}
+        
+        for verb in ['DELETE', 'PUT']:
+            self.methodTest(verb, url, input, output=output)
+        
     @serverSetup
     def testPing(self):
         
-        data, code, type, response = makeRequest('/rest/ping/',
-                                          type='GET', accept='text/json')
-        assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
-        assert type == 'text/json'
-        expires = response.getheader('Expires')
-        assert expires == make_rfc_timestamp(3600), 'Expires header incorrect (%s)' % expires 
-        assert data == '"ping"', 'got unexpected response %s' % data
-
+        verb ='GET'
+        url ='/rest/ping'
+        output={'code':200, 'type':'text/json', 'data':'"ping"'}
+        expireTime =3600
+        
+        self.methodTest(verb, url, output=output, expireTime=expireTime)
+        
     @serverSetup
     def testBadPing(self):
        
-        #data, code, type, response = makeRequest('/wrong/',
-        #                                  type='GET', accept='text/json')
-        #assert code == 405, 'Got a return code != 405 (got %s), message: %s' % (code, data)
-        data, code, type, response = makeRequest('/rest/wrong/',
-                                          type='GET', accept='text/json')
-        assert code == 404, 'Got a return code != 404 (got %s), message: %s' % (code, data)
+        verb ='GET'
         
-        data, code, type, response = makeRequest('/rest/echo/',
-                                          type='GET', accept='text/json')
-        assert code == 405, 'Got a return code != 405 (got %s), message: %s' % (code, data)
+        url ='/rest/wrong'
+        output={'code':404}
+        self.methodTest(verb, url, output=output)
         
-        data, code, type, response = makeRequest('/rest/ping/wrong/',
-                                          type='GET', accept='text/json')
+        url ='/rest/echo'
+        output={'code':405}
+        self.methodTest(verb, url, output=output)
         
-        assert code == 400, 'Got a return code != 400 (got %s), message: %s' % (code, data)
-        assert type == 'text/json'
-        expires = response.getheader('Expires')
-        assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires 
-    
+        
+        url ='/rest/ping/wrong'
+        output={'code':400}
+        self.methodTest(verb, url, output=output)
+        
+        
     @setUpDAS
     @serverSetup    
     def testDasPing(self, das=True):
         
-        data, code, type, response = makeRequest('/rest/ping',
-                                          type='GET', accept='text/json+das')
-        assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
-        assert type == 'text/json+das'
-        expires = response.getheader('Expires')
-        timestp = make_rfc_timestamp(3600)
+        verb ='GET'
+        url ='/rest/ping'
+        accept = 'text/json+das'
+        output={'code':200, 'type':accept}
+        expireTime =3600 
+        
+        data, expires = self.methodTest(verb, url, accept=accept, output=output, expireTime=expireTime)
+        
+        timestp = make_rfc_timestamp(expireTime)
+        
         dict = json.loads(data) 
         response_expires = format_date_time(float(dict['response_expires']))
-        assert expires == timestp, 'Expires header incorrect (%s)' % expires
         assert response_expires == timestp, 'Expires DAS header incorrect (%s)' % response_expires
         assert response_expires == expires, 'Expires DAS header incorrect (%s)' % response_expires
         
@@ -148,14 +147,13 @@ class RESTTest(unittest.TestCase):
     @serverSetup
     def testList(self):
         
-        data, code, type, response = makeRequest('/rest/list/', {'int':123, 'str':'abc'},
-                                          type='GET', accept='text/json')
-        assert code == 200, 'Got a return code != 200 (got %s), message: %s' % (code, data)
-        assert type == 'text/json', 'type is not text/json : %s' % type
-        expires = response.getheader('Expires')
-        assert expires == make_rfc_timestamp(300), 'Expires header incorrect (%s)' % expires
-        assert data == '{"int": 123, "str": "abc"}', 'data is not correct %s' % data
-    
+        verb ='GET'
+        url ='/rest/list/'
+        input = {'int':123, 'str':'abc'}
+        output={'code':200, 'type':'text/json', 'data':'{"int": 123, "str": "abc"}'}
+        self.methodTest(verb, url, input=input, output=output)
+        
+        
     @serverSetup    
     def testA(self):
         for t in ['GET', 'POST', 'PUT', 'DELETE', 'UPDATE']:
@@ -276,8 +274,6 @@ class RESTTest(unittest.TestCase):
                 '. Got a return code != 400 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
         
-        print '**********'
-        print response[2]
         assert response[2] == 'text/json', 'type is not text/json : %s' % type         
         # 2 query string args (e.g. url?int=arg1&str=arg2)
         response = makeRequest(uri='/rest/list', 
@@ -332,6 +328,7 @@ class RESTTest(unittest.TestCase):
                 '. Got a return code != 200 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
         assert response[0] == '123', response[0]        
+        
         # 2 query string args (e.g. url?int=arg1&str=arg2)
         response = makeRequest(uri='/rest/data2', 
                                     values={'num':456})

@@ -69,8 +69,8 @@ class PhEDEx(Service):
             argString = ''
         else:
             # rely on str() sorts dictionary by keys.
-            argString = str(args).replace('{', '_').replace('}', '_').replace(':', '-').replace(',', '_')
-            argString = re.sub('\s+', '', argString)
+            #TODO: it is not guaranteed to generate unique hash for the different args
+            argString = str(hash(str(args)))
         file = callname + argString + '.cache'
         if clearCache:
             self.clearCache(file, args)
@@ -78,6 +78,9 @@ class PhEDEx(Service):
             # overwrite original self['method']
             # this is only place used self['method'], it is safe to overwrite
             # If that changes keep the reset to original self['method']
+            print "TEST"
+            print file
+            file = "result"
             self["method"] = verb
             f = self.refreshCache(file, callname, args)
             result = f.read()

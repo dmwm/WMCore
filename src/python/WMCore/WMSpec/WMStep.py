@@ -8,8 +8,8 @@ Equivalent of a PayloadNode in the old production system WorkflowSpec
 
 """
 
-__revision__ = "$Id: WMStep.py,v 1.7 2010/03/18 15:12:22 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMStep.py,v 1.8 2010/05/11 15:24:30 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper, nodeMap, getNode
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
@@ -103,6 +103,20 @@ class WMStepHelper(TreeHelper):
         """
 
         return self.data.override.dictionary_()
+
+    def getOutputModule(self, moduleName):
+        """
+        _getOutputModule_
+
+        Get an output module from the step
+        Return None if non-existant
+        """
+
+        if hasattr(self.data.output, 'modules'):
+            if hasattr(self.data.output.modules, moduleName):
+                return getattr(self.data.output.modules, moduleName)
+
+        return None
     
 
 

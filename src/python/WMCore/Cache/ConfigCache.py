@@ -13,8 +13,8 @@ import md5
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.11 2009/08/28 15:58:13 evansde Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: ConfigCache.py,v 1.12 2009/08/31 20:06:23 evansde Exp $"
+__version__ = "$Revision: 1.12 $"
 
 class WMConfigCache:
     '''
@@ -231,11 +231,18 @@ class WMConfigCache:
         """get output module info for doc ID"""
         result = \
                self.database.loadView('tweaks', 'outputmodules', {}, [docId])
-        print result
+        output = {}
+
+        for row in result['rows']:
+            rowValue = row['value']
+            module = rowValue['module']
+            content = rowValue['data']
+            output[module] = content
+        return output
 
 
-    def __init__(self, dbname2 = 'config_cache', dburl = None):
-        """ attempts to connect to DB, creates if nonexistant
+    def __init__(self, dbname2 = 'config_cache', dburl = "127.0.0.1:5984"):
+        """ attempts to connect to DB, creates if nonexistant:
             TODO: add support for different database URLs
         """
         self.dbname = dbname2
@@ -305,22 +312,21 @@ class WMConfigCache:
             "outputmodules" :{
             "map" :\
             """
-            function(doc) {
-              if (doc.pset_tweak_details){
-                  if (doc.pset_tweak_details.process){
-                       var process = doc.pset_tweak_details.process;
-                       var results = Array();
-                       for (var i in process){
-                           var module = process[i];
-                           if (module.dataset){
-                               results.push(module);
-                           }
-                       }
+function(doc) {
+  if (doc.pset_tweak_details){
+      if (doc.pset_tweak_details.process){
+           var process = doc.pset_tweak_details.process;
+           for (var i in process){
+               var module = process[i];
+               if (module.dataset){
+                   emit(doc._id, {"module" : i, "data" : module});
 
-                       emit(doc._id, results);
-                  }
                }
-            }
+           }
+
+      }
+   }
+}
             """
             },
 

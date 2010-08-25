@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-import cherrypy
+from cherrypy import expose 
+
+DEFAULT_SESSION_NAME = 'CernOpenIdTool'
 
 class CernOidDefaultHandler:
-    def __init__(self,session_name=DEFAULT_SESSION_NAME):
+    def __init__(self, session_name=DEFAULT_SESSION_NAME):
         self.session_name=session_name
 
-    @cherrypy.expose
+    @expose
     def login(self):
         return """\
 <html>
@@ -20,24 +22,24 @@ class CernOidDefaultHandler:
 </html>
 """
 
-    @cherrypy.expose
+    @expose
     def logout(self):
         if cherrypy.session.has_key(self.session_name):
             del cherrypy.session[self.session_name]
         return "Disconnected"
 
-    @cherrypy.expose
+    @expose
     def failure(self):
         info = self.getSessionInfo()
         if info:            
             return "Verification of %s failed." % info
         return "Verification failed for an unknown reason"
 
-    @cherrypy.expose
+    @expose
     def cancelled(self):
         return "Verification cancelled: %s" % self.getSessionInfo()
 
-    @cherrypy.expose
+    @expose
     def error(self):
         return "An error happened during the authentication: %s" \
                % self.getSessionInfo()

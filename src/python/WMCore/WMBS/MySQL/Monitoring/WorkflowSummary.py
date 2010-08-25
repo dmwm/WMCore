@@ -7,8 +7,6 @@ type.
 """
 
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.JobStateMachine.Transitions import Transitions
 
@@ -28,7 +26,27 @@ class WorkflowSummary(DBFormatter):
                  wmbs_job.state = wmbs_job_state.id
             GROUP BY wmbs_workflow.name, wmbs_job_state.name 
             ORDER BY id DESC"""
-
+    
+    def failCount(self, result):
+        if  result["state"] == 'success' or result["state"] == 'cleanout' \
+            or result["state"] == 'exhausted':
+            return (result["num_job"] - int(result["success"]))
+        return 0
+    
+    def pendingCount(self, result):
+        if  result["state"] == 'none' or result["state"] == 'new':
+            return (result["num_job"] - int(result["success"]))
+        return 0
+    
+    def processingCount(self, result):
+        
+        if  result["state"] != 'success' and result["state"] != 'cleanout' \
+            and result["state"] != 'exhausted' and result['state'] != 'none' \
+            and result["state"] != 'new':
+            return result["num_job"]
+        else:
+            return 0
+        
     def formatWorkflow(self, results):
         workflow = {}
         tran = Transitions()
@@ -39,14 +57,22 @@ class WorkflowSummary(DBFormatter):
                     workflow[result["wmspec"]][state] = 0
                     
                 workflow[result["wmspec"]][result["state"]] = result["num_job"]
+                workflow[result["wmspec"]]['total_jobs'] = result["num_job"]
                 workflow[result["wmspec"]]["num_task"] = result["num_task"]
                 workflow[result["wmspec"]]["real_success"] = int(result["success"])
                 workflow[result["wmspec"]]["id"] = result["id"]
-                workflow[result["wmspec"]]["wmspec"] = result["wmspec"] 
+                workflow[result["wmspec"]]["wmspec"] = result["wmspec"]
+                workflow[result["wmspec"]]["pending"] = self.pendingCount(result)
+                workflow[result["wmspec"]]["real_fail"] = self.failCount(result)
+                workflow[result["wmspec"]]['processing'] = self.processingCount(result)
             else:
                 workflow[result["wmspec"]][result["state"]] = result["num_job"]
+                workflow[result["wmspec"]]['total_jobs'] += result["num_job"]
                 workflow[result["wmspec"]]["num_task"] += result["num_task"]
                 workflow[result["wmspec"]]["real_success"] += int(result["success"])
+                workflow[result["wmspec"]]["pending"] = self.pendingCount(result)
+                workflow[result["wmspec"]]["real_fail"] = self.failCount(result)
+                workflow[result["wmspec"]]['processing'] = self.processingCount(result)
         
         # need to order by id (client side)        
         return workflow.values()

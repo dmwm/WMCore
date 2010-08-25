@@ -5,15 +5,13 @@ _TaskSummary_
 List the summary of job numbers by task given a workflow 
 """
 
-
-
-
 from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.JobStateMachine.Transitions import Transitions
 
 class TaskSummaryByWorkflow(DBFormatter):
-    sql = """SELECT wmbs_workflow.id, wmbs_workflow.name AS wm_spec, 
+    sql = """SELECT wmbs_workflow.id, wmbs_workflow.name AS wmspec, 
                     wmbs_workflow.task, 
-                    COUNT(wmbs_job.id) AS num_job, wmbs_job_state.name,
+                    COUNT(wmbs_job.id) AS num_job, wmbs_job_state.name AS state,
                     SUM(wmbs_job.outcome) AS success 
              FROM wmbs_workflow
                INNER JOIN wmbs_subscription ON
@@ -28,6 +26,26 @@ class TaskSummaryByWorkflow(DBFormatter):
             GROUP BY wmbs_workflow.task, wmbs_job_state.name 
             ORDER BY wmbs_workflow.id DESC"""
             
+    def failCount(self, result):
+        if  result["state"] == 'success' or result["state"] == 'cleanout' \
+            or result["state"] == 'exhausted':
+            return (result["num_job"] - int(result["success"]))
+        return 0
+    
+    def pendingCount(self, result):
+        if  result["state"] == 'none' or result["state"] == 'new':
+            return (result["num_job"] - int(result["success"]))
+        return 0
+    
+    def processingCount(self, result):
+        
+        if  result["state"] != 'success' and result["state"] != 'cleanout' \
+            and result["state"] != 'exhausted' and result['state'] != 'none' \
+            and result["state"] != 'new':
+            return result["num_job"]
+        else:
+            return 0
+                
     def formatWorkflow(self, results):
         workflow = {}
         tran = Transitions()
@@ -38,14 +56,19 @@ class TaskSummaryByWorkflow(DBFormatter):
                     workflow[result["task"]][state] = 0
                     
                 workflow[result["task"]][result["state"]] = result["num_job"]
-                workflow[result["task"]]["num_task"] = result["num_task"]
+                workflow[result["task"]]['total_jobs'] = result["num_job"]
                 workflow[result["task"]]["real_success"] = int(result["success"])
                 workflow[result["task"]]["id"] = result["id"]
-                workflow[result["task"]]["wmspec"] = result["wmspec"] 
+                workflow[result["task"]]["wmspec"] = result["wmspec"]
+                workflow[result["task"]]["task"] = result["task"]
+                workflow[result["task"]]["real_fail"] = self.failCount(result)
+                workflow[result["task"]]['processing'] = self.processingCount(result) 
             else:
                 workflow[result["task"]][result["state"]] = result["num_job"]
-                workflow[result["task"]]["num_task"] += result["num_task"]
+                workflow[result["task"]]['total_jobs'] += result["num_job"]
                 workflow[result["task"]]["real_success"] += int(result["success"])
+                workflow[result["task"]]["real_fail"] += self.failCount(result)
+                workflow[result["task"]]['processing'] += self.processingCount(result)
         
         # need to order by id (client side)        
         return workflow.values()
@@ -53,4 +76,4 @@ class TaskSummaryByWorkflow(DBFormatter):
     def execute(self, workflowName, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, {'workflow_name': workflowName},
                                        conn = conn, transaction = transaction)
-        return self.formatDict(results)
+        return self.formatWorkflow(self.formatDict(results))

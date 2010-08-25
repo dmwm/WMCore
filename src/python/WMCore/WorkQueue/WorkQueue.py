@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.83 2010/03/15 18:24:28 sryu Exp $"
-__version__ = "$Revision: 1.83 $"
+__revision__ = "$Id: WorkQueue.py,v 1.84 2010/03/15 18:54:00 sryu Exp $"
+__version__ = "$Revision: 1.84 $"
 
 
 import time
@@ -254,13 +254,14 @@ class WorkQueue(WorkQueueBase):
                                     wmSpecInfo['wmtask_type'],
                                     whitelist, blacklist, None)
             sub = wmbsHelper.createSubscription()
+            
+            # add MC fake files for each subscription.
+            # this is needed for JobCreator trigger: commented out for now.
+            #wmbsHelper.addMCFakeFile()
         else:
             #TODO : not to create dao multiple times
             blockLoader = self.daofactory(classname = "Data.LoadByID")
-            #TODO: need to populate parent block
-            #parentBlockLoader = \
-            #        self.daofactory(classname = "Data.GetParentsByChildID")
-
+            
             block = blockLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())

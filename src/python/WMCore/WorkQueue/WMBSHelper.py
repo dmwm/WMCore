@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.15 2010/03/15 18:26:39 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.16 2010/03/15 18:53:48 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
@@ -96,6 +96,17 @@ class WMBSHelper:
         return self.topLevelFileset
 
 
+    def addMCFakeFile(self):
+        mcFakeFileName = "MCFakeFile-%s" % makeUUID()
+        wmbsFile = File(lfn = mcFakeFileName,
+                        size = 0,
+                        events = 0,
+                        checksums = 0
+                        )
+        
+        self.topLevelFileset.addFile(wmbsFile)
+        self.topLevelFileset.commit()
+        self.topLevelFileset.markOpen(False)
     
     def addFiles(self, dbsBlock):
         """
@@ -105,13 +116,12 @@ class WMBSHelper:
         as well as run lumi update
         """
 
-        fileset = self.topLevelFileset
         for dbsFile in dbsBlock['Files']:
-            fileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
+            self.topLevelFileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
                                             dbsBlock['StorageElements']))
                     
-        fileset.commit()
-        fileset.markOpen(False)
+        self.topLevelFileset.commit()
+        self.topLevelFileset.markOpen(False)
         
 
     def _convertDBSFileToWMBSFile(self, dbsFile, storageElements):

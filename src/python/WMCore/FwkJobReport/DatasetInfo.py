@@ -6,8 +6,8 @@ Serialisable container for information about a dataset
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: DatasetInfo.py,v 1.1 2008/10/08 15:34:15 fvlingen Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DatasetInfo.py,v 1.2 2009/09/28 19:35:37 sfoulkes Exp $"
 __author__ = "evansde@fnal.gov"
 
 
@@ -24,28 +24,29 @@ class DatasetInfo(dict):
     to match the dataset to CMSSW objects
 
     Inherit from dict, assume all values are strings.
-    
+
     """
-    
+
     def __init__(self):
         dict.__init__(self)
         self.setdefault("PrimaryDataset", None)
         self.setdefault("ProcessedDataset", None)
+        self.setdefault("AnalysisDataset", None)
         self.setdefault("ParentDataset", None)
-        
+
         self.setdefault("ApplicationName",  None)
         self.setdefault("ApplicationProject" , None)
         self.setdefault("ApplicationVersion" , None)
         self.setdefault("ApplicationFamily", None)
-        
+
         self.setdefault("DataTier" , None)
-        
+
         self.setdefault("Conditions" , None)
         self.setdefault("PSetHash", None)
 
         self.setdefault("InputModuleName" , None)
         self.setdefault("OutputModuleName" , None)
-        
+
 
     def __str__(self):
         """string rep as XML for printouts"""
@@ -59,17 +60,18 @@ class DatasetInfo(dict):
         using /<PrimaryDataset>/<DataTier>/<ProcessedDataset>
 
         ParentDataset will be a string of this format
-        
+
         """
         result = "/%s" % self['PrimaryDataset']
         result += "/%s" % self['ProcessedDataset']
         if self['DataTier'] != None:
             result += "/%s" % self['DataTier']
-            
-        # NOTE: Include AnalysisDataset in this object in future???
+
+        if self['AnalysisDataset'] != None:
+            result += "/%s" % self['AnalysisDataset']
 
         return result
-        
+
 
     def save(self):
         """
@@ -110,13 +112,24 @@ class DatasetInfo(dict):
             value = str(entry.chardata)
             self[key] = value
         return
-    
-        
-        
-        
 
+    def __to_json__(self, thunker):
+        """
+        __to_json__
 
-
-    
-
-        
+        Pull all the meta data out of this and stuff it into a dict.
+        """
+        datasetDict = {"PrimaryDataset": self["PrimaryDataset"],
+                       "ProcessedDataset": self["ProcessedDataset"],
+                       "AnalysisDataset": self["AnalysisDataset"],
+                       "ParentDataset": self["ParentDataset"],
+                       "ApplicationName": self["ApplicationName"],
+                       "ApplicationProject": self["ApplicationProject"],
+                       "ApplicationVersion": self["ApplicationVersion"],
+                       "ApplicationFamily": self["ApplicationFamily"],
+                       "DataTier": self["DataTier"],
+                       "Conditions": self["Conditions"],
+                       "PSetHash": self["PSetHash"],
+                       "InputModuleName": self["InputModuleName"],
+                       "OutputModuleName": self["OutputModuleName"]}
+        return datasetDict

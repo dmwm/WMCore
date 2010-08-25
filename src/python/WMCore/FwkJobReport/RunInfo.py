@@ -6,11 +6,6 @@ Run container, contains run number and list of lumi sections contained
 therin
 
 """
-
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: RunInfo.py,v 1.1 2008/10/08 15:34:16 fvlingen Exp $"
-__author__ = "evansde@fnal.gov"
-
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvQuery import IMProvQuery
 
@@ -54,9 +49,14 @@ class RunInfo(list):
         self.extend([int(x) for x in lumiInfo])
         return
 
+    def __to_json__(self, thunker):
+        """
+        __to_json__
 
-
-
-
-
-
+        Pull all the lumis out of this and return them as a list.  We don't need
+        the run number as that is stored in the fwkjr and used as a key to
+        access this object.
+        """
+        lumis = []
+        lumis.extend(self)
+        return lumis

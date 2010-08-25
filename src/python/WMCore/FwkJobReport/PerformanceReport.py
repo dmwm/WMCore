@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_PerfInfo
+_PerformanceReport_
 
 Performance Report object that can be embedded in a job report
 
@@ -16,11 +16,6 @@ timing
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: PerfInfo.py,v 1.1 2008/10/08 15:34:15 fvlingen Exp $"
-__author__ = "evansde@fnal.gov"
-
-
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvQuery import IMProvQuery
 
@@ -28,9 +23,9 @@ import WMCore.FwkJobReport.PerfUtils as PerfUtils
 
 
 
-class PerfInfo:
+class PerformanceReport:
     """
-    _PerfInfo_
+    _PerformanceReport_
 
     Standardized object for storing/parsing/persisting
     performance reports as part of a job report
@@ -214,4 +209,12 @@ class PerfInfo:
 
         return
 
+    def __to_json__(self, thunker):
+        """
+        __to_json__
 
+        Pull all the meta data out of this and stuff it into a dict.
+        """
+        perfDict = {"cpus": self.cpus, "memory": self.memory,
+                    "modules": self.modules, "summaries": self.summaries}
+        return perfDict

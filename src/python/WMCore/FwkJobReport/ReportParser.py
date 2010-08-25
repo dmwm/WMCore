@@ -8,18 +8,13 @@ instances and supporting objects.
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: FJRParser.py,v 1.1 2008/10/08 15:34:15 fvlingen Exp $"
-__author__ = "evansde@fnal.gov"
-
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
 from xml.sax import SAXParseException
 
+from WMCore.FwkJobReport.FwkJobReport import FwkJobReport
 from IMProv.IMProvLoader import loadIMProvFile
 from IMProv.IMProvQuery import IMProvQuery
-
-from WMCore.FwkJobReport.FJR import FJR 
 
 
 class FwkJobRepHandler(ContentHandler):
@@ -40,7 +35,7 @@ class FwkJobRepHandler(ContentHandler):
         #  //
         # // State containers used during parsing
         #//
-        self.currentReport = FJR()
+        self.currentReport = FwkJobReport()
         self.currentFile = None
         self.currentDict = None
 
@@ -171,7 +166,7 @@ class FwkJobRepHandler(ContentHandler):
         Handler method for a new FrameworkJobReport
 
         """
-        self.currentReport = FJR()
+        self.currentReport = FwkJobReport()
         name =  attrs.get("Name", None)
         status = attrs.get("Status", None)
         jobSpec = attrs.get("JobSpecID", None)
@@ -529,7 +524,7 @@ def readJobReport(filename):
     reportQ = IMProvQuery("FrameworkJobReport")
     reportInstances = reportQ(improvDoc)
     for reportInstance in reportInstances:
-        newReport = FJR()
+        newReport = FwkJobReport()
         newReport.load(reportInstance)
         result.append(newReport)
     return result

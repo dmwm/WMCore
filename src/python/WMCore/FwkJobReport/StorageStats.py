@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 """
-_StorageInfo_
+_StorageStats_
 
 Interim converter to turn the storage stats into a perf report
 
 """
-
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: StorageInfo.py,v 1.1 2008/10/08 15:34:16 fvlingen Exp $"
-__author__ = "evansde@fnal.gov"
-
 
 
 from IMProv.IMProvQuery import IMProvQuery

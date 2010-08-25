@@ -8,22 +8,15 @@ manipulating the bits and pieces of it.
 
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: FJR.py,v 1.1 2008/10/08 15:34:15 fvlingen Exp $"
-__author__ = "evansde@fnal.gov"
-__all__ = []
-
-
 from WMCore.FwkJobReport.FileInfo import FileInfo, AnalysisFile
-from WMCore.FwkJobReport.PerfInfo import PerfInfo
-import WMCore.FwkJobReport.StorageInfo as StorageInfo
+from WMCore.FwkJobReport.PerformanceReport import PerformanceReport
+import WMCore.FwkJobReport.StorageStats as StorageStats
 
-#FIXME: need to get rid of this eventually
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvQuery import IMProvQuery
 
 
-class FJR:
+class FwkJobReport:
     """
     _FwkJobReport_
 
@@ -41,6 +34,8 @@ class FJR:
         self.errors = []
         self.skippedEvents = []
         self.skippedFiles = []
+        self.psetHash = None
+
         #  Set inital exitCode to an error code, it will be updated with
         #    the correct value if the post job steps run correctly
         self.exitCode = 50117
@@ -49,7 +44,7 @@ class FJR:
         self.storageStatistics = None
         self.generatorInfo = {}
         self.dashboardId = None
-        self.performance = PerfInfo()
+        self.performance = PerformanceReport()
         self.removedFiles = {}
         self.logFiles = {}
         self.unremovedFiles = {}
@@ -72,6 +67,18 @@ class FJR:
         """
         return (self.exitCode == 0) and (self.status == "Success")
 
+
+    def sortFiles(self):
+        """
+        _sortFiles_
+
+        Return a list of output files for this job ordered based on parentage dependencies
+
+        """
+        from WMCore.Algorithms.TreeSort import TreeSort
+        name = lambda x: x['LFN']
+        parents = lambda x: x.parentLFNs()
+        return TreeSort(name, parents, self.files).sort()
 
 
     def newFile(self):
@@ -165,13 +172,13 @@ class FJR:
         return
 
     def addUnremovedFile (self, lfn, seName):
-        """
-        _addUnRemovedFile_
-        """
+       """
+       _addUnRemovedFile_
+       """
 
-        self.unremovedFiles[lfn] = seName
+       self.unremovedFiles[lfn] = seName
 
-        return
+       return
 
     def addLogFile(self, lfn, seName):
         """
@@ -222,6 +229,11 @@ class FJR:
                                     Value = str(value))
 
             result.addNode(siteDetail)
+        #  //
+        # // Save PSetHash
+        #//
+        if self.psetHash != None:
+            result.addNode(IMProvNode("PSetHash", str(self.psetHash)))
 
         #  //
         # // Save Files
@@ -266,8 +278,7 @@ class FJR:
         #//
         for unremLfn, unremSE in self.unremovedFiles.items():
 
-            result.addNode(IMProvNode("UnremovedFile", \
-            unremLfn, SEName=unremSE))
+            result.addNode(IMProvNode("UnremovedFile", unremLfn, SEName=unremSE))
 
 
         #  //
@@ -344,8 +355,8 @@ class FJR:
         self.status = improvNode.attrs.get("Status", None)
         self.jobSpecId = improvNode.attrs.get("JobSpecID", None)
         self.jobType = improvNode.attrs.get("JobType", None)
-        self.workflowSpecId = improvNode.attrs.get("WorkflowSpecID", None)
-        self.dashboardId = improvNode.attrs.get("DashboardId", None)
+        self.workflowSpecId =improvNode.attrs.get("WorkflowSpecID", None)
+        self.dashboardId =improvNode.attrs.get("DashboardId", None)
 
         exitQ = IMProvQuery(
             "/FrameworkJobReport/ExitCode[attribute(\"Value\")]")
@@ -359,6 +370,16 @@ class FJR:
         siteQ = IMProvQuery("/FrameworkJobReport/SiteDetail")
         [ self.siteDetails.__setitem__(x.attrs['Parameter'], x.attrs['Value'])
           for x in siteQ(improvNode) ]
+
+        #  //
+        # // PSetHash
+        #//
+        hashQ = IMProvQuery("/FrameworkJobReport/PSetHash[text()]")
+        hashVals = hashQ(improvNode)
+        if len(hashVals) > 0:
+            hashData = hashVals[-1]
+            self.psetHash = str(hashData)
+
 
         #  //
         # // output files
@@ -431,7 +452,7 @@ class FJR:
         storageInfo = storageQ(improvNode)
         if len(storageInfo) > 0:
             #self.storageStatistics = storageInfo[-1]
-            StorageInfo.handleStorageStats(storageInfo[-1], self)
+            StorageStats.handleStorageStats(storageInfo[-1], self)
 
         genQ = IMProvQuery("/FrameworkJobReport/GeneratorInfo/Data")
         [ self.generatorInfo.__setitem__(x.attrs['Name'], x.attrs['Value'])
@@ -452,7 +473,33 @@ class FJR:
 
         return
 
+    def __to_json__(self, thunker):
+        """
+        __to_json__
 
+        Pull all the meta data out of this and stuff it into a dict.  Pass any
+        complex objects to the thunker so that they can be serialized.
+        """
+        fwkjrDict = {"name": self.name, "status": self.status,
+                     "jobSpecId": self.jobSpecId, "jobType": self.jobType,
+                     "workflowSpecId": self.workflowSpecId,
+                     "errors": self.errors, "skippedEvents": self.skippedEvents,
+                     "skippedFiles": self.skippedFiles,
+                     "psetHash": self.psetHash, "exitCode": self.exitCode,
+                     "siteDetails": self.siteDetails, "timing": self.timing,
+                     "generatorInfo": self.generatorInfo,
+                     "dashboardId": self.dashboardId,
+                     "removedFiles": self.removedFiles,
+                     "unremovedFiles": self.unremovedFiles,
+                     "logFiles": self.logFiles}
 
+        fwkjrDict["files"] = []
+        for file in self.files:
+            fwkjrDict["files"].append(thunker._thunk(file))
 
+        fwkjrDict["input_files"] = []
+        for file in self.inputFiles:
+            fwkjrDict["input_files"].append(thunker._thunk(file))            
 
+        fwkjrDict["performance"] = thunker._thunk(self.performance)
+        return fwkjrDict

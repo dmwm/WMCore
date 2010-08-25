@@ -7,12 +7,6 @@ Contains information about a single file as a dictionary
 
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: FileInfo.py,v 1.2 2009/08/21 13:44:41 evansde Exp $"
-__author__ = "evansde@fnal.gov"
-__all__ = []
-
-#FIXME: need to get rid of this dependency
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvQuery import IMProvQuery
 
@@ -32,10 +26,13 @@ class FileInfo(dict):
 
     def __init__(self):
         dict.__init__(self)
+        self.setdefault("Stream", None)
         self.setdefault("LFN", None)
         self.setdefault("PFN", None)
         self.setdefault("GUID", None)
         self.setdefault("Size", None)
+        self.setdefault("DataType", None)
+        self.setdefault("BranchHash", None)
         self.setdefault("TotalEvents", None)
         self.setdefault("EventsRead", None)
         self.setdefault("SEName", None)
@@ -44,6 +41,8 @@ class FileInfo(dict):
         self.setdefault("OutputModuleClass", None)
         self.setdefault("Checksum", None)
         self.setdefault("MergedBySize", "False")
+        self.setdefault("FileType", "EDM")
+        self.setdefault("StreamerIndexFile", None)
 
         #  //
         # // Is this an input or output file?
@@ -80,26 +79,7 @@ class FileInfo(dict):
         #//  checksum alg was used.
         self.checksums = {}
 
-    def json(self):
-        """
-        _json_
 
-        return nested dictionary representation of this file to assist
-        with usage in json structures
-
-        """
-        result = dict()
-        result.update(self)
-        result['runs'] = self.runs
-        result['checksums'] = self.checksums
-        result['input_files'] = [ x['LFN'] for x in self.inputFiles]
-        if len(self.dataset) == 0:
-            dataset = {}
-        else:
-            dataset = self.dataset[0]
-        result['dataset'] = dataset
-
-        return result
 
     def addInputFile(self, pfn, lfn):
         """
@@ -116,6 +96,15 @@ class FileInfo(dict):
         self.inputFiles.append({"PFN" : pfn,
                                 "LFN" : lfn})
         return
+
+    def parentLFNs(self):
+        """
+        _parentLFNs_
+
+        Util to get all parent LFNs
+
+        """
+        return [ x['LFN'] for x in self.inputFiles ]
 
     def newDataset(self):
         """
@@ -290,8 +279,7 @@ class FileInfo(dict):
         cksumQ = IMProvQuery("/%s/Checksum" % queryBase)
         for cksum in cksumQ(improvNode):
             algo = cksum.attrs.get('Algorithm', None)
-            if algo == None:
-                continue
+            if algo == None: continue
             self.addChecksum(str(algo), str(cksum.chardata))
 
 
@@ -366,8 +354,43 @@ class FileInfo(dict):
             runInfo.append(lumi)
         return
 
+    def __to_json__(self, thunker):
+        """
+        __to_json__
 
+        Pull all the meta data out of this and stuff it into a dict.  Pass
+        any other objects to the thunker so that they can be serialized.
+        """
+        fileInfoDict = {"Stream": self["Stream"], "LFN": self["LFN"],
+                        "PFN": self["PFN"], "GUID": self["GUID"],
+                        "Size": self["Size"], "DataType": self["DataType"],
+                        "BranchHash": self["BranchHash"],
+                        "TotalEvents": self["TotalEvents"],
+                        "EventsRead": self["EventsRead"],
+                        "SEName": self["SEName"],
+                        "ModuleLabel": self["ModuleLabel"],
+                        "Catalog": self["Catalog"],
+                        "OutputModuleClass": self["OutputModuleClass"],
+                        "Checksum": self["Checksum"],
+                        "MergedBySize": self["MergedBySize"],
+                        "FileType": self["FileType"],
+                        "StreamerIndexFile": self["StreamerIndexFile"],
+                        "Branches": self.branches,
+                        "Checksums": self.checksums}
 
+        fileInfoDict["inputFiles"] = []
+        for inputFile in self.inputFiles:
+            fileInfoDict["inputFiles"].append(thunker._thunk(inputFile))
+            
+        fileInfoDict["runs"] = {}
+        for runNumber in self.runs.keys():
+            fileInfoDict["runs"][runNumber] = thunker._thunk(self.runs[runNumber])
+
+        fileInfoDict["datasets"] = []
+        for dataset in self.dataset:
+            fileInfoDict["datasets"].append(thunker._thunk(dataset))
+
+        return fileInfoDict
 
 class AnalysisFile(dict):
     """
@@ -380,6 +403,11 @@ class AnalysisFile(dict):
     def __init__(self):
         dict.__init__(self)
         self.setdefault("FileName", None)
+        ### FEDE ###
+        self.setdefault("LFN", None)
+        self.setdefault("PFN", None)
+        self.setdefault("SEName", None)
+        ############                                                                
 
 
     def save(self):
@@ -416,3 +444,23 @@ class AnalysisFile(dict):
                 self[str(child.name)] = attr
 
         return
+
+
+
+if __name__ == '__main__':
+
+    f = FileInfo()
+    f.addRunAndLumi(2, 1,2,3,4,5)
+    print f.getLumiSections()
+
+    f2 = FileInfo()
+    f2.load(f.save())
+    print f2.getLumiSections()
+
+    f3 = FileInfo()
+    f3.addRunAndLumi(1)
+
+
+    f4 = FileInfo()
+    f4.load(f3.save())
+    print f4.getLumiSections()

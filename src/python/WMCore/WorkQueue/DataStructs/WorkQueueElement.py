@@ -4,8 +4,8 @@ WorkQueueElement
 A dictionary based object meant to represent a WorkQueue element
 """
 
-__revision__ = "$Id: WorkQueueElement.py,v 1.2 2009/12/09 17:12:44 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueElement.py,v 1.3 2010/02/12 14:49:26 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 STATES = ('Available', 'Negotiating', 'Acquired',
             'Done', 'Failed', 'Canceled')
@@ -26,6 +26,7 @@ class WorkQueueElement(dict):
         self.setdefault('Jobs', None)
         self.setdefault('WMSpecUrl', None)
         self.setdefault('WMSpec', None)
+        self.setdefault('Task', None)
         self.setdefault('Id', None)
         self.setdefault('ChildQueueUrl', None)
         self.setdefault('ParentQueueId', None)

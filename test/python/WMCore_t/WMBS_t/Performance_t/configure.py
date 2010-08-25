@@ -56,6 +56,13 @@ def config(options):
     config.add_section("sqlite")
     config.add_section("oracle")
 
+    if options.threshold == None:
+        print "You must set the threshold in test.ini to a real value to run"
+    if options.total_threshold == None:
+        print "You must set the total_threshold in test.ini to a real value to run"
+    if options.times == None:
+        print "You must set the times in test.ini to a real value to run"
+
     #Verbose Mode ON/OFF
     config.set("output", "verbose", options.verbose)
 

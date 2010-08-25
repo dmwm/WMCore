@@ -4,8 +4,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: WorkQueueTestCase.py,v 1.9 2010/04/13 18:49:25 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WorkQueueTestCase.py,v 1.10 2010/05/25 21:27:37 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 from WMQuality.TestInit import TestInit
@@ -24,10 +24,11 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging() # logLevel = logging.SQLDEBUG
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",
+                                                 "WMComponent.DBSBuffer.Database",
+                                                 "WMCore.WorkQueue.Database"],
                                 useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database"],
-                                useDefault = False)
+        
         self.workDir = self.testInit.generateWorkDir()
 
     def tearDown(self):

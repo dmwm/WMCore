@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.19 2009/05/12 16:16:25 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Job_t.py,v 1.20 2009/05/18 16:51:32 sfoulkes Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import unittest
 import logging
@@ -327,22 +327,28 @@ class JobTest(unittest.TestCase):
         testJobB.load()
         testJobC.load()
 
-        assert type(testJobB["id"]) == int, \
+        assert type(testJobB["id"]) == int or \
+               type(testJobB["id"]) == long, \
                "ERROR: Job id is not an int."
 
-        assert type(testJobC["id"]) == int, \
+        assert type(testJobC["id"]) == int or \
+               type(testJobC["id"]) == long, \
                "ERROR: Job id is not an int."
 
-        assert type(testJobB["jobgroup"]) == int, \
+        assert type(testJobB["jobgroup"]) == int or \
+               type(testJobB["jobgroup"]) == long, \
                "ERROR: Job group id is not an int."
 
-        assert type(testJobC["jobgroup"]) == int, \
+        assert type(testJobC["jobgroup"]) == int or \
+               type(testJobC["jobgroup"]) == long, \
                "ERROR: Job group id is not an int."        
 
-        assert type(testJobB["retry_count"]) == int, \
+        assert type(testJobB["retry_count"]) == int or \
+               type(testJobB["retry_count"]) == long, \
                "ERROR: retry_count is not an int."
 
-        assert type(testJobC["retry_count"]) == int, \
+        assert type(testJobC["retry_count"]) == int or \
+               type(testJobC["retry_count"]) == long, \
                "ERROR: retry_count is not an int."
 
         assert (testJobA["id"] == testJobB["id"]) and \
@@ -385,16 +391,20 @@ class JobTest(unittest.TestCase):
         testJobB.loadData()
         testJobC.loadData()
 
-        assert type(testJobB["id"]) == int, \
+        assert type(testJobB["id"]) == int or \
+               type(testJobB["id"]) == long, \
                "ERROR: Job id is not an int."
 
-        assert type(testJobC["id"]) == int, \
+        assert type(testJobC["id"]) == int or \
+               type(testJobC["id"]) == long, \
                "ERROR: Job id is not an int."        
 
-        assert type(testJobB["jobgroup"]) == int, \
+        assert type(testJobB["jobgroup"]) == int or \
+               type(testJobB["jobgroup"]) == long, \
                "ERROR: Job group id is not an int."
 
-        assert type(testJobC["jobgroup"]) == int, \
+        assert type(testJobC["jobgroup"]) == int or \
+               type(testJobC["jobgroup"]) == long, \
                "ERROR: Job group id is not an int."        
 
         assert (testJobA["id"] == testJobB["id"]) and \

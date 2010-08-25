@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.8 2010/04/23 18:48:21 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.9 2010/05/03 14:00:24 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import logging
@@ -13,6 +13,7 @@ import threading
 import unittest
 import time
 import shutil
+import cProfile, pstats
 
 from subprocess import Popen, PIPE
 
@@ -33,7 +34,8 @@ from WMCore.WMBS.Job          import Job
 
 from WMCore.DataStructs.Run   import Run
 
-from WMComponent.JobArchiver.JobArchiver import JobArchiver
+from WMComponent.JobArchiver.JobArchiver       import JobArchiver
+from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
@@ -195,6 +197,9 @@ class JobArchiverTest(unittest.TestCase):
         return
 
 
+    
+
+
     def testB_BasicFunctionTest(self):
         """
         Tests the components, by seeing if they can process a simple set of closeouts
@@ -266,6 +271,56 @@ class JobArchiverTest(unittest.TestCase):
             shutil.rmtree('Job_%i' %(job['id']))
             if os.path.isfile('Job_%i.tar' %(job['id'])):
                 os.remove('Job_%i.tar' %(job['id']))
+
+        return
+
+
+    def testC_SpeedTest(self):
+        """
+        Tests the components, as in sees if they load.
+        Otherwise does nothing.
+        """
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+
+        self.nJobs = 2000
+
+        testJobGroup = self.createTestJobGroup()
+
+        changer = ChangeState(config)
+
+        cacheDir = os.path.join(self.testDir, 'test')
+
+        for job in testJobGroup.jobs:
+            job["outcome"] = "success"
+            job.save()
+            path = os.path.join(cacheDir, job['name'])
+            os.makedirs(path)
+            f = open('%s/%s.out' %(path, job['name']),'w')
+            f.write(job['name'])
+            f.close()
+            job.setCache(path)
+
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'success', 'complete')
+
+
+
+
+        testJobArchiver = JobArchiverPoller(config = config)
+        cProfile.runctx("testJobArchiver.algorithm()", globals(), locals(), filename = "testStats.stat") 
+
+        logging.debug("Killing")
+        myThread.workerThreadManager.terminateWorkers()
+
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats(.2)
 
         return
 

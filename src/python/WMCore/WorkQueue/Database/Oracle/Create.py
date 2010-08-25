@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/06/05 17:04:32 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/06/10 21:05:54 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -30,8 +30,18 @@ class Create(CreateWorkQueueBase):
         """        
         CreateWorkQueueBase.__init__(self, logger, dbi)
         
-        for i in self.sequenceTables:
-            seqname = '%s_SEQ' % i
-            self.create["%s%s" % (self.seqStartNum, seqname)] = \
-            "CREATE SEQUENCE %s start with 1 increment by 1 nomaxvalue cache 100" \
-                    % seqname
+        for tableName in self.sequenceTables:
+            seqname = '%s_SEQ' % tableName
+            self.create["%s%s" % (self.seqStartNum, seqname)] = """
+            CREATE SEQUENCE %s start with 1 
+            increment by 1 nomaxvalue cache 100""" % seqname
+            
+            triggerName = '%s_TRG' % tableName
+            self.create["%s%s" % (self.seqStartNum, triggerName)] = """
+                    CREATE TRIGGER %s
+                        BEFORE INSERT ON %s
+                        REFERENCING NEW AS newRow
+                        FOR EACH ROW
+                        BEGIN
+                            SELECT %s.nextval INTO :newRow.id FROM dual;
+                        END; """ % (triggerName, tableName, seqname)

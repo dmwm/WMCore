@@ -7,8 +7,8 @@ Unittest for JobMaker class
 """
 
 
-__revision__ = "$Id: JobMaker_t.py,v 1.3 2009/09/10 18:48:40 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobMaker_t.py,v 1.4 2009/10/13 22:20:07 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import os.path
@@ -36,81 +36,39 @@ from WMCore.WMSpec.Makers.Interface.CreateWorkArea import CreateWorkArea
 from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
-from WMCore.WMBS.MySQL.Jobs.SetBulkCache import SetBulkCache
+#from WMCore.WMBS.MySQL.Jobs.SetBulkCache import SetBulkCache
 
 class JobMakerTest(unittest.TestCase):
     """
     JobMaker test class
 
     """
-    _setup = False
-    _teardown = False
+
     lock = threading.Condition()
 
     def setUp(self):
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        self.testInit.setSchema(customModules = 
+                                ["WMCore.WMBS",
+                                 "WMCore.MsgService",
+                                 "WMCore.ThreadPool"],
                                 useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.MsgService"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.ThreadPool"],
-                                useDefault = False)
-
-
         self.cwd = os.getcwd()
 
-        myThread = threading.currentThread()
 
-        self._teardown = False
-
-        return
 
 
     def tearDown(self):
+        self.testInit.clearDatabase()
 
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("WMBS", "WMCore.ThreadPool")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ThreadPool tear down.")
-        myThread.transaction.commit()
-
-
-        factory = WMFactory("WMBS", "WMCore.MsgService")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-
-        os.popen3('rm -r test/Test*')
-        os.popen3('rm -r test/Basic*')
-        
-        self._teardown = True
-
-
-        return
-
-
+    def getConfig(self, configPath):
+        config = self.testInit.getConfiguration(configPath)
+        self.testInit.generateWorkDir(config)
+        return config
+    
     def createSingleJobGroup(self, nameStr = ''):
 
         myThread = threading.currentThread()
@@ -196,77 +154,14 @@ class JobMakerTest(unittest.TestCase):
         Test for creation of single job groups and threading
 
         """
-
-        return
-
-        print "testASingleJobGroup"
-
-        #self._teardown = True
-
-        myThread = threading.currentThread()
-
-        os.chdir('test')
+        config = self.getConfig()
+        os.chdir(config.General.workDir)
 
         testJobGroupList = [] 
 
-        # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
-            'src/python/WMCore/WMSpec/Makers/DefaultConfig.py'))
-
-        config.Agent.contact = "mnorman@fnal.gov"
-        config.Agent.teamName = "WMSpec"
-        config.Agent.agentName = "JobMaker"
-
-        config.section_("General")
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql'
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database              = os.getenv("DATABASE")
-        else:
-            print "ERROR: Could not find database setting in environment!"
-            print "ABORT: Cannot start without a database"
-            raise 'Exception'
-
-
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        myThread.logger = logging.getLogger('DBSBufferTest')
-        myThread.dialect = os.getenv("DIALECT")
-
-        options = {}
-        if not os.getenv("DBSOCK") == None:
-            options['unix_socket'] = os.getenv("DBSOCK")
-        dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-
         testJobMaker = JobMaker(config)
         testJobMaker.prepareToStart()
-        
-        dbFactory = DBFactory(myThread.logger, myThread.database, options)
-        myThread.dbi = dbFactory.connect()
-        myThread.transaction = Transaction(myThread.dbi)
+
 
         for i in range(0,100):
             testJobGroup = self.createSingleJobGroup(str(i))
@@ -302,79 +197,13 @@ class JobMakerTest(unittest.TestCase):
         Test for creation of huge job groups and threading
 
         """
-
-        print "testMultipleJobGroups"
-
-        return
-
-        #self._teardown = True
-
-        myThread = threading.currentThread()
-
-        os.chdir('test')
-
+        config = self.getConfig()
+        os.chdir(config.General.workDir)
         currDir = os.getcwd()
-
         testJobGroupList = [] 
-
-        # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
-            'src/python/WMCore/WMSpec/Makers/DefaultConfig.py'))
-
-        config.Agent.contact = "mnorman@fnal.gov"
-        config.Agent.teamName = "WMSpec"
-        config.Agent.agentName = "JobMaker"
-
-        config.section_("General")
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql'
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database              = os.getenv("DATABASE")
-        else:
-            print "ERROR: Could not find database setting in environment!"
-            print "ABORT: Cannot start without a database"
-            raise 'Exception'
-
-
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        myThread.logger = logging.getLogger('DBSBufferTest')
-        myThread.dialect = os.getenv("DIALECT")
-
-        options = {}
-        if not os.getenv("DBSOCK") == None:
-            options['unix_socket'] = os.getenv("DBSOCK")
-        dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
 
         testJobMaker = JobMaker(config)
         testJobMaker.prepareToStart()
-        
-        dbFactory = DBFactory(myThread.logger, myThread.database, options)
-        myThread.dbi = dbFactory.connect()
-        myThread.transaction = Transaction(myThread.dbi)
 
         for i in range(0,5):
             testJobGroup = self.createHugeJobGroup(str(i))
@@ -410,7 +239,7 @@ class JobMakerTest(unittest.TestCase):
         for coll in listOfCollections:
             assert coll in os.listdir('TestHugeWorkload/TestHugeTask'), "Failed to create TestHugeWorkload/TestHugeTask/%s" %(coll)
             self.assertEqual(len(os.listdir('TestHugeWorkload/TestHugeTask/%s' %(coll))), 1000)
-
+        myThread = threading.currentThread()
         result = myThread.dbi.processData("SELECT cache_dir FROM wmbs_job WHERE id = 1")[0].fetchall()[0].values()[0]
 
         self.assertEqual(result, os.path.join(os.getcwd(),'TestHugeWorkload/TestHugeTask/JobCollection_1_0/job_1'))
@@ -428,89 +257,23 @@ class JobMakerTest(unittest.TestCase):
         Test for creation of huge job groups and threading
 
         """
-
-        print "testUnthreadedHuge"
-
-        #return
-
-        #self._teardown = True
-
-        myThread = threading.currentThread()
-
-        os.chdir('test')
-
-        currDir = os.getcwd()
+        config = self.getConfig()
+        os.chdir(config.General.workDir)
 
         testJobGroupList = [] 
 
-        # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
-            'src/python/WMCore/WMSpec/Makers/DefaultConfig.py'))
-
-        config.Agent.contact = "mnorman@fnal.gov"
-        config.Agent.teamName = "WMSpec"
-        config.Agent.agentName = "JobMaker"
-
-        config.section_("General")
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql'
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database              = os.getenv("DATABASE")
-        else:
-            print "ERROR: Could not find database setting in environment!"
-            print "ABORT: Cannot start without a database"
-            raise 'Exception'
-
-
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        myThread.logger = logging.getLogger('DBSBufferTest')
-        myThread.dialect = os.getenv("DIALECT")
-
-        options = {}
-        if not os.getenv("DBSOCK") == None:
-            options['unix_socket'] = os.getenv("DBSOCK")
-        dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-
-        testJobMaker = CreateWorkArea()
-        #testJobMaker.prepareToStart()
-        
-        dbFactory = DBFactory(myThread.logger, myThread.database, options)
-        myThread.dbi = dbFactory.connect()
-        myThread.transaction = Transaction(myThread.dbi)
+        testJobMaker = JobMaker(config)
+        testJobMaker.prepareToStart()
 
         for i in range(0,5):
             testJobGroup = self.createHugeJobGroup(str(i))
             testJobGroupList.append(testJobGroup)
 
         starttime = time.time()
-
+        
         for job in testJobGroupList:
             if job.exists():
-                testJobMaker.processJobs(job.exists(), currDir)
+                testJobMaker.processJobs(job.exists(), os.getcwd())
 
         print "The number of threads is %i" %(threading.activeCount())
 
@@ -532,7 +295,7 @@ class JobMakerTest(unittest.TestCase):
         for coll in listOfCollections:
             assert coll in os.listdir('BasicProduction/Test'), "Failed to create TestHugeWorkload/TestHugeTask/%s" %(coll)
             self.assertEqual(len(os.listdir('BasicProduction/Test/%s' %(coll))), 1000)
-
+        myThread = threading.currentThread()
         result = myThread.dbi.processData("SELECT cache_dir FROM wmbs_job WHERE id = 1")[0].fetchall()[0].values()[0]
 
         self.assertEqual(result, os.path.join(os.getcwd(),'BasicProduction/Test/JobCollection_1_0/job_1'))

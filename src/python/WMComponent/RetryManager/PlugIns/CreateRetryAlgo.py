@@ -12,16 +12,23 @@ import datetime
 import logging
 import threading
 
-from WMCore.WMBS.Job import Job
+from WMComponent.RetryManager.PlugIns.RetryAlgoBase import RetryAlgoBase
 
-class RetryAlgo(object):
+class CreateRetryAlgo(RetryAlgoBase):
     """
     A RetryAlgo plugin for jobs in the Create state
 
     """
 
-    def __init__(self, config):
+    def __init__(self):
         object.__init__(self)
+        self.config = None
+
+    def setup(self, config):
+        """
+        Pass in config (WMFactory too stupid to do so on init)
+
+        """
         self.config = config
 
     def isReady(self, job):
@@ -46,12 +53,3 @@ class RetryAlgo(object):
 
 
 
-    def convertdatetime(self, t):
-        return int(time.mktime(t.timetuple()))
-          
-    def timestamp(self):
-        """
-        generate a timestamp
-        """
-        t = datetime.datetime.now()
-        return self.convertdatetime(t)

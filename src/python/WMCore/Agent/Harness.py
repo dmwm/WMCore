@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.33 2010/02/11 17:22:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Harness.py,v 1.34 2010/02/15 21:13:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -61,7 +61,7 @@ class Harness:
         self.config = config
         if not compName:
             compName = self.__class__.__name__
-        if not compName in self.config.listComponents_():
+        if not compName in (self.config.listComponents_() + self.config.listWebapps_()):
             raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
         if not hasattr(self.config, "Agrent"):
             self.config.section_("Agent")
@@ -371,6 +371,7 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
 
         logging.info('>>>Committing default transaction')
         logging.info(">>>Flushing messages")
+
         myThread.msgService.finish()
 
         logging.info('>>>Committing possible other transactions')

@@ -95,9 +95,9 @@ class InstallScenario(ScriptInterface):
             process.GlobalTag.globaltag = ""
 
         # revlimiter for testing
-        if hasattr(process, "maxEvents"):
-            if hasattr(process.maxEvents, "input"):
-                process.maxEvents.input = 2
+        #if hasattr(process, "maxEvents"):
+        #    if hasattr(process.maxEvents, "input"):
+        #        process.maxEvents.input = 2
 
         if not process.services.has_key("AdaptorConfig"):
             process.add_(cms.Service("AdaptorConfig"))

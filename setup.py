@@ -3,13 +3,20 @@ from distutils.core import setup, Command
 from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, NoOptionError
 import os, sys, os.path
+import logging
+import unittest
 #PyLinter and coverage aren't standard, but aren't strictly necessary
 can_lint = False
 can_coverage = False
 try:
-    from pylint import lint
+    from pylint.lint import Run
+    from pylint.lint import report_total_messages_stats
+    from pylint.lint import report_messages_by_module_stats
+    from pylint.lint import report_messages_stats 
+    from pylint.lint import preprocess_options, cb_init_hook
+    from pylint import checkers
     can_lint = True
 except:
     pass
@@ -19,40 +26,203 @@ try:
 except:
     pass
 
+class LinterRun(Run):
+    def __init__(self, args, reporter=None):
+        self._rcfile = None
+        self._plugins = []
+        preprocess_options(args, {
+            # option: (callback, takearg)
+            'rcfile':       (self.cb_set_rcfile, True),
+            'load-plugins': (self.cb_add_plugins, True),
+            })
+        self.linter = linter = self.LinterClass((
+            ('rcfile',
+             {'action' : 'callback', 'callback' : lambda *args: 1,
+              'type': 'string', 'metavar': '<file>',
+              'help' : 'Specify a configuration file.'}),
+
+            ('init-hook',
+             {'action' : 'callback', 'type' : 'string', 'metavar': '<code>',
+              'callback' : cb_init_hook,
+              'help' : 'Python code to execute, usually for sys.path \
+manipulation such as pygtk.require().'}),
+
+            ('help-msg',
+             {'action' : 'callback', 'type' : 'string', 'metavar': '<msg-id>',
+              'callback' : self.cb_help_message,
+              'group': 'Commands',
+              'help' : '''Display a help message for the given message id and \
+exit. The value may be a comma separated list of message ids.'''}),
+
+            ('list-msgs',
+             {'action' : 'callback', 'metavar': '<msg-id>',
+              'callback' : self.cb_list_messages,
+              'group': 'Commands',
+              'help' : "Generate pylint's full documentation."}),
+
+            ('generate-rcfile',
+             {'action' : 'callback', 'callback' : self.cb_generate_config,
+              'group': 'Commands',
+              'help' : '''Generate a sample configuration file according to \
+the current configuration. You can put other options before this one to get \
+them in the generated configuration.'''}),
+
+            ('generate-man',
+             {'action' : 'callback', 'callback' : self.cb_generate_manpage,
+              'group': 'Commands',
+              'help' : "Generate pylint's man page.",'hide': 'True'}),
+
+            ('errors-only',
+             {'action' : 'callback', 'callback' : self.cb_error_mode,
+              'short': 'e',
+              'help' : '''In error mode, checkers without error messages are \
+disabled and for others, only the ERROR messages are displayed, and no reports \
+are done by default'''}),
+
+            ('profile',
+             {'type' : 'yn', 'metavar' : '<y_or_n>',
+              'default': False,
+              'help' : 'Profiled execution.'}),
+
+            ), option_groups=self.option_groups,
+               reporter=reporter, pylintrc=self._rcfile)
+        # register standard checkers
+        from pylint import checkers
+        checkers.initialize(linter)
+        # load command line plugins
+        linter.load_plugin_modules(self._plugins)
+        # read configuration
+        linter.disable_message('W0704')
+        linter.read_config_file()
+        # is there some additional plugins in the file configuration, in
+        config_parser = linter._config_parser
+        if config_parser.has_option('MASTER', 'load-plugins'):
+            plugins = splitstrip(config_parser.get('MASTER', 'load-plugins'))
+            linter.load_plugin_modules(plugins)
+        # now we can load file config and command line, plugins (which can
+        # provide options) have been registered
+        linter.load_config_file()
+        if reporter:
+            # if a custom reporter is provided as argument, it may be overriden
+            # by file parameters, so re-set it here, but before command line
+            # parsing so it's still overrideable by command line option
+            linter.set_reporter(reporter)
+        args = linter.load_command_line_configuration(args)
+        # insert current working directory to the python path to have a correct
+        # behaviour
+        sys.path.insert(0, os.getcwd())
+        if self.linter.config.profile:
+            print >> sys.stderr, '** profiled run'
+            from hotshot import Profile, stats
+            prof = Profile('stones.prof')
+            prof.runcall(linter.check, args)
+            prof.close()
+            data = stats.load('stones.prof')
+            data.strip_dirs()
+            data.sort_stats('time', 'calls')
+            data.print_stats(30)
+        sys.path.pop(0)
+    
+    def cb_set_rcfile(self, name, value):
+        """callback for option preprocessing (ie before optik parsing)"""
+        self._rcfile = value
+
+    def cb_add_plugins(self, name, value):
+        """callback for option preprocessing (ie before optik parsing)"""
+        self._plugins.extend(splitstrip(value))
+
+    def cb_error_mode(self, *args, **kwargs):
+        """error mode:
+        * checkers without error messages are disabled
+        * for others, only the ERROR messages are displayed
+        * disable reports
+        * do not save execution information
+        """
+        self.linter.disable_noerror_checkers()
+        self.linter.set_option('disable-msg-cat', 'WCRFI')
+        self.linter.set_option('reports', False)
+        self.linter.set_option('persistent', False)
+
+    def cb_generate_config(self, *args, **kwargs):
+        """optik callback for sample config file generation"""
+        self.linter.generate_config(skipsections=('COMMANDS',))
+        
+    def cb_generate_manpage(self, *args, **kwargs):
+        """optik callback for sample config file generation"""
+        from pylint import __pkginfo__
+        self.linter.generate_manpage(__pkginfo__)
+        
+    def cb_help_message(self, option, opt_name, value, parser):
+        """optik callback for printing some help about a particular message"""
+        self.linter.help_message(splitstrip(value))
+
+    def cb_list_messages(self, option, opt_name, value, parser):
+        """optik callback for printing available messages"""
+        self.linter.list_messages()
+        
+
 """
 Build, clean and test the WMCore package.
 """
 
-def generate_filelist():
+def generate_filelist(basepath=None, recurse=True):
+    if basepath:
+        walkpath = os.path.join(get_relative_path(), 'src/python', basepath)
+    else:
+        walkpath = os.path.join(get_relative_path(), 'src/python')
+    
     files = []
-    for dirpath, dirnames, filenames in os.walk('src/python/'):
-        # skipping CVS directories and their contents
-        pathelements = dirpath.split('/')
-        result = []
-        if not 'CVS' in pathelements:
-            # to build up a list of file names which contain tests
-            for file in filenames:
-                if file.endswith('.py'):
-                    filepath = '/'.join([dirpath, file]) 
-                    files.append(filepath)
+    
+    if walkpath.endswith('.py'):
+        files.append(walkpath)
+    else:
+        for dirpath, dirnames, filenames in os.walk(walkpath):
+            # skipping CVS directories and their contents
+            pathelements = dirpath.split('/')
+            result = []
+            if not 'CVS' in pathelements:
+                # to build up a list of file names which contain tests
+                for file in filenames:
+                    if file.endswith('.py'):
+                        filepath = '/'.join([dirpath, file]) 
+                        files.append(filepath)
+
+    if len(files) == 0 and recurse:
+        files = generate_filelist(basepath + '.py', not recurse)
+
     return files
 
-def lint_files(files):
+def lint_score(stats, evaluation):
+    return eval(evaluation, {}, stats)
+
+def lint_files(files, reports=False):
     """
-    lint a (list of) file(s) and return the results 
+    lint a (list of) file(s) and return the results as a dictionary containing
+    filename : result_dict
     """
-    input = ['--rcfile=standards/.pylintrc', 
-              '--output-format=parseable', 
-              '--reports=n', ]
-    input.extend(files)
-    lint_result = lint.Run(input)
-    return lint_result.linter.stats
+    
+    rcfile=os.path.join(get_relative_path(),'standards/.pylintrc')
+    
+    arguements = ['-rn', '--rcfile=%s' % rcfile]
+    arguements.extend(files)
+    
+    lntr = LinterRun(arguements)
+    
+    results = {}
+    for file in files:
+        lntr.linter.check(file)
+        results[file] = {'stats': lntr.linter.stats,
+                         'score': lint_score(lntr.linter.stats, 
+                                             lntr.linter.config.evaluation)
+                         }
+        if reports:
+            print '----------------------------------'
+            print 'Your code has been rated at %.2f/10' % \
+                    lint_score(lntr.linter.stats, lntr.linter.config.evaluation)
+
+    return results, lntr.linter.config.evaluation
 
 
-
-import logging
-import os, os.path
-import unittest
 
 MODULE_EXTENSIONS = set('.py'.split())
 ## bad bad bad global variable, FIXME
@@ -133,6 +303,9 @@ def runUnitTests():
     print sys.path
     return (result, loadFail, globalSuite.countTestCases())
 
+def get_relative_path():
+    return os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), sys.argv[0])))
+
 
 class TestCommand(Command):
     description = "Handle setup.py test with this class - walk through the " + \
@@ -151,7 +324,7 @@ class TestCommand(Command):
     user_options = [ ]
 
     def initialize_options(self):
-        self._dir = os.getcwd()
+        self._dir = get_relative_path()
 
     def finalize_options(self):
         pass
@@ -177,7 +350,7 @@ class TestCommand(Command):
         
         ## FIXME: make this more portable
         if 'WMCOREBASE' not in os.environ:
-            os.environ['WMCOREBASE'] = os.getcwd()
+            os.environ['WMCOREBASE'] = get_relative_path()
         
         result, failedTestFiles, totalTests = runUnitTests()
         
@@ -244,11 +417,12 @@ class LintCommand(Command):
     more buildbot friendly.    
     """
     
-    user_options = [ ]
+    user_options = [ ('package=', 'p', 'package to lint, default to None')]
     
     def initialize_options(self):
-        self._dir = os.getcwd()
-
+        self._dir = get_relative_path()
+        self.package = None
+        
     def finalize_options(self):
         pass
     
@@ -257,12 +431,33 @@ class LintCommand(Command):
         Find the code and run lint on it
         '''
         if can_lint:
-            srcpypath = '/'.join([self._dir, 'src/python/'])
+            srcpypath = os.path.join(self._dir, 'src/python/')
+            
             sys.path.append(srcpypath) 
             
-            result = []
-            for filepath in generate_filelist(): 
-                result.append(lint_files([filepath]))
+            files_to_lint = []
+            
+            if self.package:
+                if self.package.endswith('.py'):
+                    cnt = self.package.count('.') - 1
+                    files_to_lint = generate_filelist(self.package.replace('.', '/', cnt))
+                else:
+                    files_to_lint = generate_filelist(self.package.replace('.', '/'))
+            else:
+                files_to_lint = generate_filelist()
+                
+            results, evaluation = lint_files(files_to_lint)
+            ln = len(results)
+            scr = 0
+            print
+            for k, v in results.items():
+                print "%s: %.2f/10" % (k.replace('src/python/', ''), v['score'])
+                scr += v['score']
+            if ln > 1:
+                print '--------------------------------------------------------'
+                print 'Average pylint score for %s is: %.2f/10' % (self.package,
+                                                                  scr/ln)
+                
         else:
             print 'You need to install pylint before using the lint command'
             
@@ -297,7 +492,7 @@ class ReportCommand(Command):
         convention = 0 
         statement = 0
         
-        srcpypath = '/'.join([os.getcwd(), 'src/python/'])
+        srcpypath = '/'.join([get_relative_path(), 'src/python/'])
         sys.path.append(srcpypath)
 
         cfg = ConfigParser()
@@ -437,7 +632,7 @@ class DumbCoverageCommand(Command):
         tests = 0
         files = 0
         pkgcnt = 0
-        dir = os.getcwd()
+        dir = get_relative_path()
         pkg = {'name': '', 'files': 0, 'tests': 0}
         for f in filelist:
             testpath = '/'.join([dir, f])
@@ -510,6 +705,10 @@ class EnvCommand(Command):
               
         print 'export PYTHONPATH=%s' % ':'.join(pypath)
         print 'export PATH=%s' % ':'.join(expath)
+        
+        #We want the WMCORE root set, too
+        print 'export WMCORE_ROOT=%s' % get_relative_path()
+
 
 def getPackages(package_dirs = []):
     packages = []

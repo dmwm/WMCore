@@ -4,8 +4,8 @@ WorkQueue EndPolicyInterface
 
 """
 
-__revision__ = "$Id: EndPolicyInterface.py,v 1.2 2009/12/09 17:12:44 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: EndPolicyInterface.py,v 1.3 2010/03/02 13:39:43 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElementResult import WorkQueueElementResult as WQEResult
@@ -23,15 +23,6 @@ class EndPolicyInterface(PolicyInterface):
         self.result = WQEResult(ParentQueueId = elements[0]['ParentQueueId'],
                            WMSpec = elements[0]['WMSpec'],
                            Elements = elements)
-        if self.result.availableItems():
-            self.result['Status'] = "Available"
-        elif self.result.runningItems():
-            self.result['Status'] = "Acquired"
-        elif self.result.failedItems():
-            self.result['Status'] = "Failed"
-        else:
-            self.result['Status'] = 'Done'
-
         self.applyPolicy()
         return self.result
 

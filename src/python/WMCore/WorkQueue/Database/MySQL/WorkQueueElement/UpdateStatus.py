@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdateStatus
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateStatus.py,v 1.7 2010/04/23 18:51:47 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: UpdateStatus.py,v 1.8 2010/05/20 15:12:09 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -23,6 +23,10 @@ class UpdateStatus(DBFormatter):
     def execute(self, status, ids, id_type = 'id',
                 child_queue = None,
                 conn = None, transaction = False):
+        if len(ids) == 0:
+            # if ids are not passed just declare success  
+            return 1
+        
         if status not in States:
             raise RuntimeError, "Invalid state: %s" % status
         if id_type not in ('parent_queue_id', 'id', 'subscription_id'):

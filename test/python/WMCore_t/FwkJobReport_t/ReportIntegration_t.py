@@ -6,8 +6,8 @@ Verify that the whole FWJR chain works correctly:
   CMSSW XML -> XMLParser -> Report -> Pickle -> UnPickle -> Accountant
 """
 
-__revision__ = "$Id: ReportIntegration_t.py,v 1.1 2010/03/23 21:26:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ReportIntegration_t.py,v 1.2 2010/03/30 20:48:12 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import os
@@ -61,32 +61,52 @@ class ReportIntegrationTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                  "WMCore.WMBS"],
                                 useDefault = False)
-        
-        testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
-                                name = "TestWF", task = "None")
-        testWorkflow.create()
-        
+
         inputFile = File(lfn = "/path/to/some/lfn", size = 10, events = 10,
                          locations = "cmssrm.fnal.gov")
         inputFile.create()
+                             
+        inputFileset = Fileset(name = "InputFileset")
+        inputFileset.create()
+        inputFileset.addFile(inputFile)
+        inputFileset.commit()
 
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        testFileset.addFile(inputFile)
-        testFileset.commit()
-                                                                
-        self.testSubscription = Subscription(fileset = testFileset,
-                                             workflow = testWorkflow,
+        unmergedFileset = Fileset(name = "UnmergedFileset")
+        unmergedFileset.create()
+
+        mergedFileset = Fileset(name = "MergedFileset")
+        mergedFileset.create()
+        
+        procWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
+                                name = "TestWF", task = "None")
+        procWorkflow.create()
+        procWorkflow.addOutput("outputRECORECO", unmergedFileset)
+
+        mergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
+                                 name = "MergeWF", task = "None")
+        mergeWorkflow.create()
+        mergeWorkflow.addOutput("Merged", mergedFileset)
+        
+        self.procSubscription = Subscription(fileset = inputFileset,
+                                             workflow = procWorkflow,
                                              split_algo = "FileBased",
                                              type = "Processing")
-        self.testSubscription.create()
-        self.testSubscription.acquireFiles()
+        self.procSubscription.create()
+        self.procSubscription.acquireFiles()
 
-        testJobGroup = JobGroup(subscription = self.testSubscription)
-        testJobGroup.create()
+        self.mergeSubscription = Subscription(fileset = unmergedFileset,
+                                             workflow = mergeWorkflow,
+                                             split_algo = "WMBSMergeBySize",
+                                             type = "Merge")
+        self.mergeSubscription.create()
+
+        self.procJobGroup = JobGroup(subscription = self.procSubscription)
+        self.procJobGroup.create()
+        self.mergeJobGroup = JobGroup(subscription = self.mergeSubscription)
+        self.mergeJobGroup.create()        
 
         self.testJob = Job(name = "testJob", files = [inputFile])
-        self.testJob.create(group = testJobGroup)
+        self.testJob.create(group = self.procJobGroup)
         self.testJob["state"] = "complete"
 
         myThread = threading.currentThread()
@@ -113,7 +133,8 @@ class ReportIntegrationTest(unittest.TestCase):
         self.testInit.clearDatabase()
 
         try:
-            os.remove(os.path.join(self.tempDir, "Report.pkl"))
+            os.remove(os.path.join(self.tempDir, "ProcReport.pkl"))
+            os.remove(os.path.join(self.tempDir, "MergeReport.pkl"))            
         except Exception, ex:
             pass
 
@@ -281,20 +302,18 @@ class ReportIntegrationTest(unittest.TestCase):
         Verify that we're able to parse a CMSSW report, convert it to a Report()
         style report, pickle it and then have the accountant process it.
         """
-        self.xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWReport.xml")
+        self.procPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                    "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         
         myReport = Report("cmsRun1")
-        myReport.parse(self.xmlPath)
+        myReport.parse(self.procPath)
 
         # Fake some metadata that should be added by the stageout scripts.
         for fileRef in myReport.getAllFileRefsFromStep("cmsRun1"):
             fileRef.size = 1024
             fileRef.location = "cmssrm.fnal.gov"
 
-        myReport.getAllFiles()
-
-        fwjrPath = os.path.join(self.tempDir, "Report.pkl")
+        fwjrPath = os.path.join(self.tempDir, "ProcReport.pkl")
         myReport.persist(fwjrPath)
 
         self.setFWJRAction.execute(jobID = self.testJob["id"], fwjrPath = fwjrPath)
@@ -306,6 +325,36 @@ class ReportIntegrationTest(unittest.TestCase):
 
         self.verifyJobSuccess(self.testJob["id"])
         self.verifyFileMetaData(self.testJob["id"], myReport.getAllFilesFromStep("cmsRun1"))
+
+        inputFile = File(lfn = "/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR09_R_34X_V5_All_v1/0000/outputRECORECO.root")
+        inputFile.load()
+        self.testMergeJob = Job(name = "testMergeJob", files = [inputFile])
+        self.testMergeJob.create(group = self.mergeJobGroup)
+        self.testMergeJob["state"] = "complete"
+        self.stateChangeAction.execute(jobs = [self.testMergeJob])
+
+        self.mergePath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                         "test/python/WMCore_t/FwkJobReport_t/CMSSWMergeReport.xml")
+        
+        myReport = Report("mergeReco")
+        myReport.parse(self.mergePath)
+
+        # Fake some metadata that should be added by the stageout scripts.
+        for fileRef in myReport.getAllFileRefsFromStep("mergeReco"):
+            fileRef.size = 1024
+            fileRef.location = "cmssrm.fnal.gov"
+            fileRef.dataset = {"applicationName": "cmsRun", "applicationVersion": "CMSSW_3_4_2_patch1",
+                               "primaryDataset": "MinimumBias", "processedDataset": "Rereco-v1",
+                               "dataTier": "RECO"}
+
+        fwjrPath = os.path.join(self.tempDir, "MergeReport.pkl")
+        myReport.persist(fwjrPath)
+
+        self.setFWJRAction.execute(jobID = self.testMergeJob["id"], fwjrPath = fwjrPath)
+        accountant.algorithm()
+
+        self.verifyJobSuccess(self.testMergeJob["id"])
+        self.verifyFileMetaData(self.testMergeJob["id"], myReport.getAllFilesFromStep("mergeReco"))
 
         return
         

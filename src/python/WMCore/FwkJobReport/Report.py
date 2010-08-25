@@ -1,12 +1,14 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0142
+# W0142: Dave likes himself some **
 """
 _Report_
 
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.28 $"
-__revision__ = "$Id: Report.py,v 1.28 2010/06/22 19:47:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Report.py,v 1.29 2010/07/06 15:44:47 mnorman Exp $"
 
 import cPickle
 import logging
@@ -86,6 +88,10 @@ def addAttributesToFile(fileSection, **attributes):
     return
 
 class Report:
+    """
+    The base class for the new jobReport
+
+    """
     def __init__(self, reportname = None):
         self.data = ConfigSection("FrameworkJobReport")
         self.data.steps         = []
@@ -144,6 +150,10 @@ class Report:
         Create a JSON version of the Report.
         """
         def jsonizeFiles(reportModule):
+            """
+            Put individual files in JSON format
+
+            """
             jsonFiles = []
             fileCount = getattr(reportModule.files, "fileCount", 0)
 
@@ -359,7 +369,7 @@ class Report:
         newFile = getattr(analysisFiles, label)
         newFile.fileName = filename
 
-        [ setattr(newFile, x, y) for x,y in attrs.items() ]
+        [ setattr(newFile, x, y) for x, y in attrs.items() ]
 
         self.report.analysis.fileCount += 1
         return
@@ -380,7 +390,7 @@ class Report:
         removedFiles.section_(label)
         newFile = getattr(removedFiles, label)
 
-        [ setattr(newFile, x, y) for x,y in attrs.items() ]
+        [ setattr(newFile, x, y) for x, y in attrs.items() ]
 
         self.report.cleanup.removed.fileCount += 1
 
@@ -452,7 +462,7 @@ class Report:
         """
 
         if hasattr(self.data, reportname):
-            msg = "Attempted to create pre-existing report section %s" %(reportname)
+            msg = "Attempted to create pre-existing report section %s" % (reportname)
             logging.error(msg)
             return
 
@@ -555,34 +565,34 @@ class Report:
             return None
 
         fileRef = getattr(outputMod.files, fileName, None)
-        file = File()
+        newFile = File(locations = set())
 
         #Locations
-        file.setLocation(getattr(fileRef, "location", None))
+        newFile.setLocation(getattr(fileRef, "location", None))
 
         #Runs
         runList = fileRef.runs.listSections_()
         for run in runList:
             lumis  = getattr(fileRef.runs, run)
             newRun = Run(int(run), *lumis)
-            file.addRun(newRun)
+            newFile.addRun(newRun)
 
-        file["lfn"]          = getattr(fileRef, "lfn", None)
-        file["pfn"]          = getattr(fileRef, "pfn", None)
-        file["events"]       = int(getattr(fileRef, "events", 0))
-        file["size"]         = int(getattr(fileRef, "size", 0))
-        file["branches"]     = getattr(fileRef, "branches", [])
-        file["input"]        = getattr(fileRef, "input", [])
-        file["branch_hash"]  = getattr(fileRef, "branch_hash", None)
-        file["catalog"]      = getattr(fileRef, "catalog", "")
-        file["guid"]         = getattr(fileRef, "guid", "")
-        file["module_label"] = getattr(fileRef, "module_label", "")
-        file["checksums"]    = getattr(fileRef, "checksums", {})
-        file["merged"]       = bool(getattr(fileRef, "merged", False))
-        file["dataset"]      = getattr(fileRef, "dataset", {})
-        file["outputModule"] = outputModule
+        newFile["lfn"]          = getattr(fileRef, "lfn", None)
+        newFile["pfn"]          = getattr(fileRef, "pfn", None)
+        newFile["events"]       = int(getattr(fileRef, "events", 0))
+        newFile["size"]         = int(getattr(fileRef, "size", 0))
+        newFile["branches"]     = getattr(fileRef, "branches", [])
+        newFile["input"]        = getattr(fileRef, "input", [])
+        newFile["branch_hash"]  = getattr(fileRef, "branch_hash", None)
+        newFile["catalog"]      = getattr(fileRef, "catalog", "")
+        newFile["guid"]         = getattr(fileRef, "guid", "")
+        newFile["module_label"] = getattr(fileRef, "module_label", "")
+        newFile["checksums"]    = getattr(fileRef, "checksums", {})
+        newFile["merged"]       = bool(getattr(fileRef, "merged", False))
+        newFile["dataset"]      = getattr(fileRef, "dataset", {})
+        newFile["outputModule"] = outputModule
 
-        return file
+        return newFile
 
     def getAllFilesFromStep(self, step):
         """
@@ -711,7 +721,7 @@ class Report:
         for n in range(outputMod.files.fileCount):
             file = self.getOutputFile(fileName = 'file%i' %(n), outputModule = outputModule, step = step)
             if not file:
-                msg = "Could not find file%i in module" %(n)
+                msg = "Could not find file%i in module" % (n)
                 logging.error(msg)
                 return None
             
@@ -793,7 +803,7 @@ class Report:
             for n in range(outputMod.files.fileCount):
                 file = getattr(outputMod.files, 'file%i' %(n), None)
                 if not file:
-                    msg = "Could not find file%i in module" %(n)
+                    msg = "Could not find file%i in module" % (n)
                     logging.error(msg)
                     return None
                 fileInfo(fileReport = file, step = step, outputModule = module)

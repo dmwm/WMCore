@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.52 2010/02/11 20:17:25 meloam Exp $"
+    "$Id: TestInit.py,v 1.53 2010/02/11 21:05:47 sryu Exp $"
 __version__ = \
-    "$Revision: 1.52 $"
+    "$Revision: 1.53 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -292,13 +292,21 @@ class TestInit:
         print "Closing DB"
         
         try:
-            myThread.dbi.close()
+            if not myThread.transaction \
+                 and not myThread.transaction.conn \
+                 and not myThread.transaction.conn.closed:
+                
+                myThread.transaction.conn.close()
+                myThread.transaction.conn = None
+                print "Connection Closed"
         except Exception, e:
-            print "tried to close DBI %s" % e
+            print "tried to close DBI but failed: %s" % e
         
         try:
-            del myThread.dbFactory
+            if hasattr(myThread, "dbFactory"):
+                del myThread.dbFactory
+                print "dbFactory removed"
         except Exception, e:
-            print "tried to delete factory %s" % e
+            print "tried to delete factory but failed %s" % e
         
         

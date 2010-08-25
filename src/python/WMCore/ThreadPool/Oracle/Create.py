@@ -7,8 +7,8 @@ Class for creating Oracle specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/05/15 15:52:22 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/06/16 14:44:06 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -21,6 +21,16 @@ class Create(DBCreator):
     
     Class for creating Oracle specific schema for persistent messages.
     """
+
+    sequence_tables = []
+    sequence_tables.append('tp_threadpool_seq')
+    sequence_tables.append('tp_buffer_in_seq')
+    sequence_tables.append('tp_buffer_out_seq')
+
+    trigger_tables = []
+    trigger_tables.append('tp_threadpool_trg')
+    trigger_tables.append('tp_buffer_in_trg')
+    trigger_tables.append('tp_buffer_out_trg')
     
     
     
@@ -29,6 +39,8 @@ class Create(DBCreator):
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}
         self.constraints = {}
+
+
 #Disabled for now: Oracle doesn't seem to support SET AUTOCOMMIT on non-interactive runs.
 #        self.create['a_transaction'] = """
 #SET AUTOCOMMIT OFF; """
@@ -122,7 +134,7 @@ CREATE SEQUENCE tp_buffer_out_seq
 """
 
         self.create['threadpool_buffer_out_trg'] = """
-CREATE TRIGGER tp_threadpool_buffer_out_trg
+CREATE TRIGGER tp_buffer_out_trg
 BEFORE INSERT ON tp_threadpool_buffer_out
 FOR EACH ROW
      BEGIN

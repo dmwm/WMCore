@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.45 2010/08/10 16:28:48 swakef Exp $"
-__revision__ = "$Revision: 1.45 $"
+__version__ = "$Id: ReReco.py,v 1.46 2010/08/10 19:22:23 sfoulkes Exp $"
+__revision__ = "$Revision: 1.46 $"
 
 import subprocess
 
@@ -134,7 +134,7 @@ class ReRecoWorkloadFactory(StdBase):
             scenarioName, scenarioFunc and scenarioArgs parameters must not be
             empty.
         """
-        self.addDashboardMonitoring(procTask)
+        #self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
         procTaskCmssw.setStepType("CMSSW")
         procTaskStageOut = procTaskCmssw.addStep("stageOut1")
@@ -190,7 +190,7 @@ class ReRecoWorkloadFactory(StdBase):
         parent task.
         """
         logCollectTask = parentTask.addTask(taskName)
-        self.addDashboardMonitoring(logCollectTask)        
+        #self.addDashboardMonitoring(logCollectTask)        
         logCollectStep = logCollectTask.makeStep("logCollect1")
         logCollectStep.setStepType("LogCollect")
         logCollectTask.applyTemplates()
@@ -203,8 +203,8 @@ class ReRecoWorkloadFactory(StdBase):
         logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
         return
 
-    def addOutputModule(self, parentTask, outputModuleName, dataTier,
-                        filterName):
+    def addOutputModule(self, parentTask, parentTaskSplitting, outputModuleName,
+                        dataTier, filterName):
         """
         _addOutputModule_
         
@@ -232,16 +232,18 @@ class ReRecoWorkloadFactory(StdBase):
                                         dataTier = dataTier,
                                         lfnBase = unmergedLFN,
                                         mergedLFNBase = mergedLFN)
-        return self.addMergeTask(parentTask, outputModuleName, dataTier, processedDatasetName)
+        return self.addMergeTask(parentTask, parentTaskSplitting,
+                                 outputModuleName, dataTier, processedDatasetName)
 
-    def addMergeTask(self, parentTask, parentOutputModule, dataTier, processedDatasetName):
+    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModule,
+                     dataTier, processedDatasetName):
         """
         _addMergeTask_
     
         Create a merge task for files produced by the parent task.
         """
         mergeTask = parentTask.addTask("Merge%s" % parentOutputModule)
-        self.addDashboardMonitoring(mergeTask)
+        #self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
         
@@ -257,7 +259,13 @@ class ReRecoWorkloadFactory(StdBase):
         mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")  
         mergeTask.applyTemplates()
-        mergeTask.setSplittingAlgorithm("WMBSMergeBySize",
+
+        if parentTaskSplitting == "EventBased":
+            splitAlgo = "WMBSMergeBySize"
+        else:
+            splitAlgo = "ParentlessMergeBySize"
+            
+        mergeTask.setSplittingAlgorithm(splitAlgo,
                                         max_merge_size = self.maxMergeSize,
                                         min_merge_size = self.minMergeSize,
                                         max_merge_events = self.maxMergeEvents,
@@ -288,7 +296,7 @@ class ReRecoWorkloadFactory(StdBase):
         Create a cleanup task to delete files produces by the parent task.
         """
         cleanupTask = parentTask.addTask("CleanupUnmerged%s" % parentOutputModuleName)
-        self.addDashboardMonitoring(cleanupTask)        
+        #self.addDashboardMonitoring(cleanupTask)        
         cleanupTask.setTaskType("Cleanup")
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
@@ -377,7 +385,8 @@ class ReRecoWorkloadFactory(StdBase):
                                                            scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]})
         
         for (outputModuleName, datasetInfo) in processingOutputModules.iteritems():
-            mergeTask = self.addOutputModule(procTask, outputModuleName, datasetInfo["dataTier"],
+            mergeTask = self.addOutputModule(procTask, self.stdJobSplitAlgo,
+                                             outputModuleName, datasetInfo["dataTier"],
                                              datasetInfo["filterName"])
             procOutput[outputModuleName] = mergeTask
 
@@ -398,7 +407,8 @@ class ReRecoWorkloadFactory(StdBase):
                                                      scenarioArgs = {})
 
         for (outputModuleName, datasetInfo) in skimOutputModules.iteritems():
-            self.addOutputModule(skimTask, outputModuleName, datasetInfo["dataTier"],
+            self.addOutputModule(skimTask, self.skimJobSplitAlgo,
+                                 outputModuleName, datasetInfo["dataTier"],
                                  datasetInfo["filterName"])
             
         return workload

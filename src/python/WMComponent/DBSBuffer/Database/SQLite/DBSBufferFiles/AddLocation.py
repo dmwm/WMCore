@@ -1,27 +1,25 @@
+#!/usr/bin/env python
 """
-SQLite implementation of AddLocation,
-Adds a Location to database if it doesn't exists already
+_AddLocation_
+
+SQLite implementation of DBSBufferFiles.AddLocation
 """
 
-__revision__ = "$Id: AddLocation.py,v 1.1 2009/05/14 16:21:50 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "mnorman@fnal.gov"
+from WMCore.Database.DBFormatter import DBFormatter
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddLocation import AddLocation as MySQLAddLocation
+class AddLocation(DBFormatter):
+    sql = """INSERT INTO dbsbuffer_location (se_name) 
+               SELECT :location AS se_name WHERE NOT EXISTS
+                (SELECT se_name FROM dbsbuffer_location WHERE se_name = :location)"""
+    
+    def execute(self, siteName, conn = None, transaction = False):
+        if type(siteName) == str:
+            binds = {"location": siteName}
+        else:
+            binds = []
+            for aLocation in siteName:
+                binds.append({"location": aLocation})
 
-class AddLocation(MySQLAddLocation):
-
-    sql = """INSERT INTO dbsbuffer_location(se_name) VALUES (:location)""" 
-
-
-    def execute(self, location, conn = None, transaction = None):
-        binds = self.getBinds(location)
-	try:
-	        result = self.dbi.processData(self.sql, binds, conn = conn,
-                                      transaction = transaction)
-        except Exception, ex:
-            if ex.__str__().find("unique") != -1 :
-                return
-            else:
-                raise ex
+        self.dbi.processData(self.sql, binds, conn = conn, 
+                             transaction = transaction)
         return

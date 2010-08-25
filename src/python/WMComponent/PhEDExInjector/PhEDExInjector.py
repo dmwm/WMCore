@@ -4,28 +4,30 @@ from WMCore.Agent.Harness import Harness
 # we do not import failure handlers as they are dynamicly 
 # loaded from the config file.
 from WMCore.WMFactory import WMFactory
-from WMComponent.PhEDExInjectorPoller import PhEDExInjectorPoller
+import os
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.Agent.Harness import Harness
+from WMCore.WMFactory import WMFactory
+from WMCore.HTTPFrontEnd import Downloader
+from WMCore.WebTools.Root import Root
+
+factory = WMFactory('generic')
+
 
 class PhEDExInjector(Harness):
-   
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-        self.pollTime = 1
-        
+        #self.start()
+
 
     def preInitialization(self):
-    print "PhEDExInjector.preInitialization"
+        """
+        Initializes plugins for different messages
+        """
+        self.messages['PhEDExInjectorNewInjection'] = \
+            factory.loadObject('WMComponent.PhEDExInjector.NewInjectionHandler', self) 
 
-        # use a factory to dynamically load handlers.
-        factory = WMFactory('generic')
+    def inject(self, event, payload):
+        print "event is %s, payload is %s " % (event, payload)
         
-
-        # Add event loop to worker manager
-        myThread = threading.currentThread()
-        
-        pollInterval = self.config.DBSUpload.pollInterval
-        logging.info("Setting poll interval to %s seconds" % pollInterval)
-        myThread.workerThreadManager.addWorker(DBSUploadPoller(self.config), pollInterval)
-
-        return

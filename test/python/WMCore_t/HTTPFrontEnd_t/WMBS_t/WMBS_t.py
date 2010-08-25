@@ -19,6 +19,7 @@ from WMCore.JobStateMachine import DefaultConfig
 
 from WMCore.Services.Requests import Requests, JSONRequests
 import urllib
+from nose.plugins.attrib import attr
 
 class WMBSServiceTest(unittest.TestCase):
     
@@ -152,24 +153,28 @@ class WMBSServiceTest(unittest.TestCase):
         results = request.get("/wmbs/%s/" % argstring, kargs)
         
         return results
-    
+    @attr('integration')
     def testAllMethods(self):
         pass
-        
+    
+    @attr('integration')
     def testJobs(self):
         print "\nTesting jobs service: Should return all the job id and state of jobs" 
         print self.wmbsServiceSetup('jobs')
-        
+    
+    @attr('integration')    
     def testJobCount(self):
         print "\nTesting job count service: Should return the job count by and state of jobs" 
         
         print self.wmbsServiceSetup('jobcount')
     
+    @attr('integration')
     def testJobsBySubs(self):
         print "\nTesting jobsbysubs service: Should return the jobs by given fileset and workflow and specified time" 
         param = {"fileset_name": 'TestFileset', 'workflow_name':'wf001', 'state_time': 0}
         print self.wmbsServiceSetup('jobsbysubs', param)
     
+    @attr('integration')
     def testJobCountBySubsAndRun(self):
         print "\nTesting jobcountbysubs service: Should return the job count by given subscription and run" 
         param = {"fileset_name": 'TestFileset', 'workflow_name':'wf001', 'run':1 }

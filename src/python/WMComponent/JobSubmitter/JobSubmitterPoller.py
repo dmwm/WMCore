@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.21 2010/05/20 16:45:14 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.22 2010/05/21 15:55:54 mnorman Exp $"
+__version__ = "$Revision: 1.22 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -311,16 +311,24 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             logging.error('About to send jobs to Plugin')
             logging.error(len(listOfJobs))
+
+
+            # We need to increment an index so we know what
+            # number job we're submitting
+            index = 0
             
             while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
                 listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]
                 listOfJobs = listOfJobs[self.config.JobSubmitter.jobsPerWorker:]
                 self.processPool.enqueue([{'jobs': listForSub,
-                                           'packageDir': packagePath}])
+                                           'packageDir': packagePath,
+                                           'index': index}])
                 count += 1
+                index += len(listForSub)
             if len(listOfJobs) > 0:
                 self.processPool.enqueue([{'jobs': listOfJobs,
-                                           'packageDir': packagePath}])
+                                           'packageDir': packagePath,
+                                           'index': index}])
                 count += 1
 
         #result = self.processPool.dequeue(len(jobList))

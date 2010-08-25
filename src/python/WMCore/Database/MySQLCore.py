@@ -19,6 +19,19 @@ def bindVarCompare(a, b):
     else:
         return -1
 
+def stringLengthCompare(a, b):
+    """
+    _stringLengthCompare_
+
+    Sort comparison function to sort strings by length from longest to shortest.
+    """
+    if len(a) > len(b):
+        return -1
+    if len(a) == len(b):
+        return 0
+    else:
+        return 1
+
 class MySQLInterface(DBInterface):
     def substitute(self, origSQL, origBindsList):
         """
@@ -48,7 +61,17 @@ class MySQLInterface(DBInterface):
 
         bindVarPositionList = []
         updatedSQL = copy.copy(origSQL)
-        for bindName in origBind.keys():
+
+        # We process bind variables from longest to shortest to avoid a shorter
+        # bind variable matching a longer one.  For example if we have two bind
+        # variables: RELEASE_VERSION and RELEASE_VERSION_ID the former will
+        # match against the latter, causing problems.  We'll sort the variable
+        # names by length to guard against this.
+        bindVarNames = origBind.keys()
+        bindVarNames.sort(stringLengthCompare)
+
+        bindPositions = {}        
+        for bindName in bindVarNames:
             searchPosition = 0
 
             while True:
@@ -56,7 +79,9 @@ class MySQLInterface(DBInterface):
                 if bindPosition == -1:
                     break
 
-                bindVarPositionList.append((bindName, bindPosition))
+                if not bindPositions.has_key(bindPosition):
+                    bindPositions[bindPosition] = 0
+                    bindVarPositionList.append((bindName, bindPosition))
                 searchPosition = bindPosition + 1
 
             updatedSQL = updatedSQL.replace(":%s" % bindName, "%s")

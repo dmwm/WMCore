@@ -5,18 +5,24 @@ _NewDataset_
 MySQL implementation of DBSBuffer.NewDataset
 """
 
-__revision__ = "$Id: NewDataset.py,v 1.9 2009/07/13 19:53:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: NewDataset.py,v 1.10 2009/10/22 15:08:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class NewDataset(DBFormatter):
-    sql = """INSERT INTO dbsbuffer_dataset (path)
-               SELECT :path FROM DUAL WHERE NOT EXISTS
-                 (SELECT * FROM dbsbuffer_dataset WHERE path = :path)"""
+    existsSQL = "SELECT id FROM dbsbuffer_dataset WHERE path = :path FOR UPDATE"
+    sql = "INSERT IGNORE INTO dbsbuffer_dataset (path) VALUES (:path)"
 
     def execute(self, datasetPath, conn = None, transaction = False):
         binds = {"path": datasetPath}
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
+
+        result = self.dbi.processData(self.existsSQL, binds, conn = conn,
+                                      transaction = transaction)
+        result = self.format(result)
+
+        if len(result) == 0:
+            self.dbi.processData(self.sql, binds, conn = conn,
+                                 transaction = transaction)
+
         return 

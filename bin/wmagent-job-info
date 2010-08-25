@@ -157,7 +157,9 @@ def printFWJRInfo():
                     print "  Exit Code: %s" % error["exitCode"]
             if stepName == "logArch1":
                 logArchStep = fwjrDocs[retryNumber]["steps"][stepName]
-                logArchiveLFNs[retryNumber] = logArchStep["output"]["logArchive"][0]["lfn"]
+                if logArchStep["output"].has_key("logArchive"):
+                    if len(logArchStep["output"]["logArchive"]) > 0:
+                        logArchiveLFNs[retryNumber] = logArchStep["output"]["logArchive"][0]["lfn"]
 
     logArchiveRetries = logArchiveLFNs.keys()
     logArchiveRetries.sort()

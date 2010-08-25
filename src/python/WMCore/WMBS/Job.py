@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.39 2009/10/26 16:52:37 sryu Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Job.py,v 1.40 2009/12/02 19:38:36 mnorman Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import datetime
 from sets import Set
@@ -46,6 +46,7 @@ class Job(WMBSBase, WMJob):
         self["couch_record"] = None
         self["attachments"]  = {}
         self["cache_dir"]    = None
+        self["sandbox"]      = None
 
         return
             
@@ -287,7 +288,8 @@ class Job(WMBSBase, WMJob):
         jobDict = {"name": self["name"], "mask": self["mask"],
                    "retry_count": self["retry_count"], "state": self["state"],
                    "jobgroup": self["jobgroup"], "outcome": self["outcome"],
-                   "id": self["id"], "input_files": []}
+                   "id": self["id"], "input_files": [], "cache_dir": self["cache_dir"],
+                   "sandbox": self["sandbox"]}
 
         for inputFile in self["input_files"]:
             jobDict["input_files"].append(thunker._thunk(inputFile))
@@ -305,12 +307,15 @@ class Job(WMBSBase, WMJob):
 
         return jobDict
 
-    def getCache(self):
+    def getCache(self, refreshFlag = False):
         """
         _getCache_
 
         Retrieve the location of the jobCache
         """
+
+        if not refreshFlag and self['cache_dir']:
+            return self['cache_dir']
 
         action = self.daofactory(classname = "Jobs.GetCache")
         state  = action.execute(self["id"], conn = self.getDBConn(), 
@@ -355,5 +360,27 @@ class Job(WMBSBase, WMJob):
         action = self.daofactory(classname = "Jobs.FailInput")
         state  = action.execute(self["id"], conn = self.getDBConn(), 
                                 transaction = self.existingTransaction)       
+
+        return state
+
+
+    def setFWJRPath(self, fwjrPath = None):
+        """
+        _setFWJRPath_
+
+        Sets the path for the fwjr in the WMBS database
+        """
+
+        if not fwjrPath:
+            if 'fwjr' in self.keys():
+                fwjrPath = self['fwjr']
+            else:
+                return None
+
+
+        action = self.daofactory(classname = "Jobs.SetFWJRPath")
+        state  = action.execute(self['id'], fwjrPath, conn = self.getDBConn(),
+                                transaction = self.existingTransaction)
+
 
         return state

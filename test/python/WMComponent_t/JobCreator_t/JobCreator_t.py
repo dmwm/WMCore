@@ -1,7 +1,7 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.15 2010/03/22 16:03:55 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.16 2010/03/22 17:41:48 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import random
@@ -155,7 +155,7 @@ class JobCreatorTest(EmulatorUnitTestBase):
         myThread = threading.currentThread()
 
         testWorkflow = Workflow(spec = "TestHugeWorkload/TestHugeTask", owner = "mnorman",
-                                name = "wf001", task="Merge")
+                                name = "wf001", task="/BasicProduction/Merge")
         testWorkflow.create()
 
         for i in range(0, nSubs):
@@ -198,7 +198,7 @@ class JobCreatorTest(EmulatorUnitTestBase):
             workloadSpec = "TestSingleWorkload/TestHugeTask"
 
 
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman", name = "wf001", task="Merge")
+        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman", name = "wf001", task="/BasicProduction/Merge")
         testWorkflow.create()
 
         for i in range(0, nSubs):
@@ -363,7 +363,7 @@ class JobCreatorTest(EmulatorUnitTestBase):
         config.JobCreator.workerThreads             = 2
         config.JobCreator.componentDir              = self.testDir
         config.JobCreator.useWorkQueue              = True
-        config.JobCreator.WorkQueueParam            = {}
+        config.JobCreator.WorkQueueParam            = {'emulateDBSReader': True}
         
         # We now call the JobMaker from here
         config.component_('JobMaker')
@@ -612,6 +612,11 @@ class JobCreatorTest(EmulatorUnitTestBase):
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
 
+        if os.path.exists('tmpDir'):
+            shutil.rmtree('tmpDir')
+
+        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'tmpDir'))
+
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
 
         self.assertEqual(len(result[0].fetchall()), nSubs*100)
@@ -630,6 +635,9 @@ class JobCreatorTest(EmulatorUnitTestBase):
             #We should never trigger this, but something weird is going on
             print "Waiting for threads to finish"
             time.sleep(1)
+
+        
+        
 
         return
 

@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.2 2010/05/04 15:33:58 spigafi Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.3 2010/05/05 14:51:48 spigafi Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 from copy import deepcopy
 import threading
@@ -39,11 +39,15 @@ def dbTransaction(func):
             msg += str(ex)
             # Is this correct?
             myThread = threading.currentThread()
+            """
+            ---> pylint error: 
+            E:42:dbTransaction.wrapper: Instance of '_DummyThread' has no 
+               'transaction' member (but some types could not be inferred)
+            """
             myThread.transaction.rollback()
             raise DbError(msg)        
         return res
     return wrapper
-
 
 class BossLiteDBWM(BossLiteDBInterface):
     """
@@ -59,56 +63,46 @@ class BossLiteDBWM(BossLiteDBInterface):
         __init__
         """
 
+        # call super class init method
+        super(BossLiteDBWM, self).__init__()
+                                  
         # Initialize WMCore database ...
         self.engine = WMConnectionBase(daoPackage = "WMCore.BossLite")
 
+        self.existingTransaction = None
+
+        
     ##########################################################################
     # Methods for BossLiteAPI
     ##########################################################################
     
-    @dbTransaction
     def insert(self, obj):
         """
         Uses default values for non specified parameters. Note that all
         parameters can be default, a useful method to book an ID.
         """
 
-        """
-        # check for valid type insertion
-        #if type(obj) not in self.__class__.validObjects:
-        #    raise DbError("insertJob: cannot insert an object of type %s." % \
-        #                   str(type(obj)))
-
         # get field information
         fields = self.getFields(obj)
         fieldList = ','.join([x[0] for x in fields])
         valueList = ','.join([x[1] for x in fields])
 
-        # prepare query
         query = 'insert into ' + obj.tableName + '(' + fieldList + ') ' + \
                        'values(' + valueList + ')'
 
-        # execute query
-        try:
-            rows = self.session.modify(query)
-        except Exception, msg:
-            raise DbError(msg)
+        # execute query 
+        rows = self.executeSQL(query)
 
-        # done, return number of updated rows
+        # done, return number of updated rows - is this true?
         return rows
-        """
-        
-        raise NotImplementedError
 
     ##########################################################################
 
-    @dbTransaction
     def select(self, template, strict = True):
         """
         _select_
         """
-
-        """
+        
         # get template information
         mapping = template.__class__.fields.items()
         tableName = template.__class__.tableName
@@ -134,18 +128,15 @@ class BossLiteDBWM(BossLiteDBInterface):
         if listOfFields != "":
             listOfFields = " where " + listOfFields
 
-        # prepare query
         query = 'select ' + ', '.join(dbFields) + ' from ' +  tableName + \
                 ' ' + listOfFields
 
-        # execute query
         results = None
         theList = []
-        try:
-            results = self.session.select(query)
-        except Exception, msg:
-            raise DbError(msg)
-
+        
+        # execute query
+        results = self.executeSQL(query)
+        
         if results is None :
             return theList
 
@@ -160,19 +151,14 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         # return the list
         return theList
-        """
-        
-        raise NotImplementedError
 
     ##########################################################################
 
-    @dbTransaction
     def selectDistinct(self, template, distinctAttr, strict = True):
         """
         _select_
         """
-
-        """
+        
         # get template information
         mapping = template.__class__.fields.items()
         tableName = template.__class__.tableName
@@ -198,19 +184,16 @@ class BossLiteDBWM(BossLiteDBInterface):
         if listOfFields != "":
             listOfFields = " where " + listOfFields
 
-        # prepare query
         query = 'select distinct (' + ', '.join(distFields) + ')' + \
                 ' from ' +  tableName + \
                 ' ' + listOfFields
 
-        # execute query
         results = None
         theList = []
-        try:
-            results = self.session.select(query)
-        except Exception, msg:
-            raise DbError(msg)
-
+        
+        # execute query
+        results = self.executeSQL(query)
+        
         if results is None :
             return theList
 
@@ -225,20 +208,16 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         # return the list
         return theList
-        """
-        
-        raise NotImplementedError
-
+    
     ##########################################################################
 
-    @dbTransaction
     def selectJoin(self, template, jTemplate, 
                    jMap=None, less=None, more=None, options=None ):
         """
         select from template and jTemplate, using join condition from jMap
+        -> long, complex, useful (?)
         """
 
-        """
         # evaluate options
         opt = { 'strict' : True,
                 'jType'  : '',
@@ -287,7 +266,8 @@ class BossLiteDBWM(BossLiteDBInterface):
             for key in opt['inList'].keys() :
                 k = template.__class__.fields[key]
                 listOfFields = 't1.' + k + ' in (' + \
-                                ','.join( str(val ) for val in opt['inList'][key]) + ') ' 
+                    ','.join( str(val ) for val in opt['inList'][key]) + ') ' 
+        
         if listOfFields != "" :
             listOfFields += ' and '
 
@@ -370,11 +350,10 @@ class BossLiteDBWM(BossLiteDBInterface):
         # execute query
         results = None
         theList = []
-        try:
-            results = self.session.select(query)
-        except Exception, msg:
-            raise DbError(msg)
-
+        
+        # execute query
+        results = self.executeSQL(query)
+        
         if results is None :
             return theList
 
@@ -391,19 +370,14 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         # return the list
         return theList
-        """
-        
-        raise NotImplementedError
 
     ##########################################################################
-
-    @dbTransaction
+    
     def update(self, template, skipAttributes = None):
         """
         _update_
         """
         
-        """
         # get template information
         tableName = template.__class__.tableName
         tableIndex = template.__class__.tableIndex
@@ -445,30 +419,22 @@ class BossLiteDBWM(BossLiteDBInterface):
         if listOfFields == "":
             return 0
 
-        # prepare query
         query = 'update ' + tableName + ' set  ' + listOfFields + \
                 keysSpec
+        
         # execute query
-        try:
-            rows = self.session.modify(query)
-        except Exception, msg:
-            raise DbError(msg)
-
-        # return number of modified rows
+        rows = self.executeSQL(query)
+        
+        # return number of modified rows - is this true?
         return rows
-        """
-
-        raise NotImplementedError
 
     ##########################################################################
-
-    @dbTransaction
+    
     def delete(self, template):
         """
         _delete_
         """
-
-        """
+        
         # get template information
         tableName = template.__class__.tableName
 
@@ -482,45 +448,33 @@ class BossLiteDBWM(BossLiteDBInterface):
         if listOfFields != "":
             listOfFields = " where " + listOfFields
 
-        # prepare query
         query = 'delete from ' +  tableName + \
                 ' ' + listOfFields
 
         # execute query
-        try:
-            rows = self.session.modify(query)
-        except Exception, msg:
-            raise DbError(msg)
-
-        # return number of rows removed
-        return rows
-        """
+        rows = self.executeSQL(query)
         
-        raise NotImplementedError
-
+        # return number of rows removed - is this true?
+        return rows
+        
     ##########################################################################
 
     def getFields(self, obj):
         """
         prepare field sections in query
         """
-
-        """
+        
         # get access to default values and mappings
         defaults = obj.__class__.defaults
         mapping = obj.__class__.fields
 
         # build list of fields and values with non default values
-        fields = [(mapping[key], '"' + str(value).replace('"','""') + '"') \
+        fields = [ (mapping[key], '"' + str(value).replace('"','""') + '"')
                   for key, value in obj.data.items()
-                  if value != defaults[key]
-        ]
+                  if value != defaults[key] ]
 
         # return it
         return fields
-        """
-        
-        raise NotImplementedError
     
     ##########################################################################
 
@@ -529,7 +483,6 @@ class BossLiteDBWM(BossLiteDBInterface):
         fillObject method
         """
         
-        """
         # create a single object
         obj = type(template)()
  
@@ -555,19 +508,14 @@ class BossLiteDBWM(BossLiteDBInterface):
             obj.existsInDataBase = True
  
         return obj
-        """
-        
-        raise NotImplementedError
 
     ##########################################################################
     
-    @dbTransaction
-    def distinctAttr(self, template, value_1 , value_2, alist ,  strict = True):
+    def distinctAttr(self, template, value1 , value2, alist ,  strict = True):
         """
         _distinctAttr_
         """
-
-        """
+        
         # get template information
         mapping = template.__class__.fields.items()
         tableName = template.__class__.tableName
@@ -579,14 +527,16 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         #DanieleS
         for key, val in fieldMapping:
-            if key == value_1:
+            if key == value1:
                 dbFields = [val]
                 objectFields = [key]
-            if key == value_2:
+            if key == value2:
                 field = val
         #        break
+        
         # get matching information from template
-     #   fields = self.getFields(template)
+        # fields = self.getFields(template)
+        
         # determine if comparison is strict or not
         if strict:
             operator = '='
@@ -601,17 +551,15 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         # DanieleS.
         # prepare query
-        query = 'select distinct (' + ', '.join(dbFields) + ') from ' +  tableName + \
-                ' ' + listOfFields
+        query = 'select distinct (' + ', '.join(dbFields) + ') from ' + \
+                    tableName + ' ' + listOfFields
 
-        # execute query
         results = None
         theList = []
-        try:
-            results = self.session.select(query)
-        except Exception, msg:
-            raise DbError(msg)
-
+        
+        # execute query
+        results = self.executeSQL(query)
+        
         if results is None :
             return theList
 
@@ -648,19 +596,14 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         # return the list
         return theList
-        """
-        
-        raise NotImplementedError
 
     ##########################################################################
-
-    @dbTransaction
-    def distinct(self, template, value_1 , strict = True):
+    
+    def distinct(self, template, value1 , strict = True):
         """
         _distinct_
         """
         
-        """
         # get template information
         mapping = template.__class__.fields.items()
         tableName = template.__class__.tableName
@@ -672,7 +615,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         #DanieleS
         for key, val in fieldMapping:
-            if key == value_1:
+            if key == value1:
                 dbFields = [val]
                 objectFields = [key]
                 break
@@ -694,17 +637,15 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         # DanieleS.
         # prepare query
-        query = 'select distinct (' + ', '.join(dbFields) + ') from ' +  tableName + \
-                ' ' + listOfFields
+        query = 'select distinct (' + ', '.join(dbFields) + ') from ' + \
+                tableName + ' ' + listOfFields
 
-        # execute query
         results = None
         theList = []
-        try:
-            results = self.session.select(query)
-        except Exception, msg:
-            raise DbError(msg)
-
+        
+        # execute query
+        results = self.executeSQL(query)
+        
         if results is None :
             return theList
 
@@ -741,16 +682,13 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         # return the list
         return theList
-        """
-        
-        raise NotImplementedError
     
     ##########################################################################
     # Methods for DbObjects
     ##########################################################################
     
     @dbTransaction
-    def objExists(self, obj, classname = None):
+    def objExists(self, obj):
         """
         put your description here
         """
@@ -784,7 +722,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     ##########################################################################
     
     @dbTransaction
-    def objSave(self, obj, classname = None):
+    def objSave(self, obj):
         """
         put your description here
         """
@@ -808,36 +746,31 @@ class BossLiteDBWM(BossLiteDBInterface):
     ##########################################################################
     
     @dbTransaction
-    def objCreate(self, obj, classname = None):
+    def objCreate(self, obj):
         """
         put your description here
         """
 
         if type(obj) == Task :
             action = self.engine.daofactory(classname = 'Task.New')
-            action.execute(binds = obj.data,
-                           conn = self.engine.getDBConn(),
-                           transaction = self.existingTransaction)
         
         elif type(obj) == Job :
             action = self.engine.daofactory(classname = "Job.New")
-            action.execute(binds = obj.data,
-                           conn = self.engine.getDBConn(),
-                           transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
             action = self.engine.daofactory(classname = "RunningJob.New")
-            action.execute(binds = obj.data,
-                           conn = self.engine.getDBConn(),
-                           transaction = self.existingTransaction)
         
         else :
-            raise NotImplementedError        
+            raise NotImplementedError 
+        
+        action.execute(binds = obj.data,
+               conn = self.engine.getDBConn(),
+               transaction = self.existingTransaction)
         
     ##########################################################################
     
     @dbTransaction
-    def objLoad(self, obj, classname = None):
+    def objLoad(self, obj, classname= None):
         """
         put your description here
         """
@@ -901,14 +834,16 @@ class BossLiteDBWM(BossLiteDBInterface):
             
             # I think 'LoadByID' is useless...
             if obj.data['id'] > 0:
-                action = self.engine.daofactory(classname = "RunningJob.LoadByID")
+                action = self.engine.daofactory(
+                                    classname = "RunningJob.LoadByID" )
                 result = action.execute(id = obj.data['id'], 
                                         conn = self.engine.getDBConn(),
                                         transaction = self.existingTransaction)
             
             elif (obj.data['jobId'] and obj.data['taskId'] and \
                                                 obj.data['submission']) :
-                action = self.engine.daofactory(classname = "RunningJob.LoadByParameters")
+                action = self.engine.daofactory(
+                                    classname = "RunningJob.LoadByParameters" )
                 result = action.execute(jobID = obj.data['jobId'], 
                                         taskID = obj.data['taskId'],
                                         submission = obj.data['submission'],
@@ -927,7 +862,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     ##########################################################################
     
     @dbTransaction
-    def objUpdate(self, obj, classname = None):
+    def objUpdate(self, obj):
         """
         put your description here
         """
@@ -947,7 +882,7 @@ class BossLiteDBWM(BossLiteDBInterface):
     ##########################################################################
     
     @dbTransaction
-    def objRemove(self, obj, classname = None):
+    def objRemove(self, obj):
         """
         put your description here
         """

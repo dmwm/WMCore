@@ -30,14 +30,15 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         self.config = DefaultConfig('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
         
         # set up database
-        dbUrl = os.environ["DATABASE"] or "sqlite:////tmp/resttest.db"
+        dbUrl = "sqlite:////tmp/resttest.db"
         self.config.setDBUrl(dbUrl)
+        # mysql example
         #self.config.setDBUrl('mysql://username@host.fnal.gov:3306/TestDB')
+        #self.config.setDBSocket('/var/lib/mysql/mysql.sock')
         self.urlbase = self.config.getServerUrl()
-        
         self.schemaModules = ["WMCore.WorkQueue.Database"]
         wqConfig = self.config.getModelConfig()
-        wqConfig.queueParams = {}
+        wqConfig.queueParams = {'PopulateFilesets' : False}
         wqConfig.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
         
     def setUp(self):

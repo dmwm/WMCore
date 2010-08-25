@@ -3,15 +3,8 @@ import logging
 import os
 import pwd
 
-from WMCore.Services.PhEDEx import PhEDExXMLDrop
 from WMCore.Services.Service import Service
-
-try:
-    # Python 2.6
-    import json
-except ImportError:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
+from WMCore.Wrappers import JsonWrapper
 
 class PhEDEx(Service):
 
@@ -79,18 +72,17 @@ class PhEDEx(Service):
             raise RuntimeError("URL not available: %s" % callname)
 
         if self.responseType == "json":
-            decoder = json.JSONDecoder()
-            return decoder.decode(result)
+            return JsonWrapper.loads(result)
 
         return result
 
-    def injectBlocks(self, dbsUrl, node, datasetPath = None,
-                     verbose = 0, strict = 1, *blockNames):
+    def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
 
         """
         _injectBlocksToPhedex_
 
-        dbsUrl is global dbs url
+        xmlData = XMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
+
         node: node name for injection
         verbose: 1 for being verbose, 0 for not
         strict: throw an error if it can't insert the data exactly as
@@ -102,65 +94,17 @@ class PhEDEx(Service):
         args = {}
 
         args['node'] = node
-
-        xml = PhEDExXMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
-
-        args['data'] = xml
+        args['data'] = xmlData
         args['verbose'] = verbose
         args['strict'] = strict
 
         return self._getResult(callname, args = args, verb="POST")
 
-    def injectBlocksFromDB(self, dbsUrl, injectionData, nodeName, verbose = 0,
-                           strict = 0):
-        """
-        _injectBlocksFromDB_
-
-        Inject blocks into PhEDEx without querying local DBS.  The injectionData
-        parameter must be a dictionary keyed by dataset path.  Each dataset path
-        will map to a list of blocks, each block being a dict.  The block dicts
-        will have three keys: name, is-open and files.  The files key will be a
-        list of dicts, each of which have the following keys: lfn, size and
-        checksum.  The following is an example object:
-
-        {"dataset1":
-          {"block1": {"is-open": "y", "files":
-              [{"lfn": "lfn1", "size": 10, "checksum": {"cksum": "1234"}},
-               {"lfn": "lfn2", "size": 20, "checksum": {"cksum": "4321"}}]}}}
-
-        The verbose and strict parameters are passed to the PhEDEx data service.
-        A verbose setting of 1 will enable verbose output, a strict setting 1 of
-        will cause the data service to throw an error if it can't insert the
-        data exactly as requested.
-        """
-        injectionSpec = PhEDExXMLDrop.XMLInjectionSpec(dbsUrl)
-
-        for datasetPath in injectionData:
-            datasetSpec = injectionSpec.getDataset(datasetPath)
-
-            for fileBlockName, fileBlock in injectionData[datasetPath].iteritems():
-                blockSpec = datasetSpec.getFileblock(fileBlockName,
-                                                     fileBlock["is-open"])
-
-                for file in fileBlock["files"]:
-                    blockSpec.addFile(file["lfn"], file["checksum"],
-                                      file["size"])
-
-        improv = injectionSpec.save()
-        xmlString = improv.makeDOMElement().toprettyxml()
-
-        args = {}
-        args["node"] = nodeName
-        args["data"] = xmlString
-        args["verbose"] = verbose
-        args["strict"] = strict
-
-        return self._getResult("inject", args = args, verb = "POST")
-
-    def subscribe(self, dbsUrl, subscription):
+    def subscribe(self, subscription, xmlData):
         """
         _subscribe_
 
+        xmlData = XMLDrop.makePhEDExXMLForDatasets(dbsUrl, subscription.getDatasetPaths())
         Subscription is PhEDEX subscription structure
         """
 
@@ -170,10 +114,8 @@ class PhEDEx(Service):
         args['node'] = []
         for node in subscription.nodes:
             args['node'].append(node)
-
-        xml = PhEDExXMLDrop.makePhEDExXMLForDatasets(dbsUrl, subscription.getDatasetPaths())
-
-        args['data'] = xml
+        
+        args['data'] = xmlData
         args['level'] = subscription.level
         args['priority'] = subscription.priority
         args['move'] = subscription.move

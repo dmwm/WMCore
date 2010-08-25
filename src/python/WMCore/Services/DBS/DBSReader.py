@@ -25,7 +25,7 @@ class DBSReader:
 
     """
     def __init__(self, url, **contact):
-        args = { "url" : url, "level" : 'ERROR'}
+        args = { "url" : url, "level" : 'ERROR', "version" : ''}
         args.update(contact)
         try:
             self.dbs = DbsApi(args)

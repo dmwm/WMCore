@@ -10,8 +10,8 @@ from WMCore.WebTools.Page import TemplatedPage
 from WMCore.WebTools.Page import exposejson, exposexml, exposeatom, exposetext
 from cherrypy import response, HTTPError, expose
 
-__revision__ = "$Id: RESTFormatter.py,v 1.22 2010/04/26 19:45:27 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: RESTFormatter.py,v 1.23 2010/05/05 19:36:40 afaq Exp $"
+__version__ = "$Revision: 1.23 $"
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
@@ -55,9 +55,9 @@ class RESTFormatter(TemplatedPage):
             response.status = h[0]
             return self.supporttypes[datatype]({'exception': h[0],
                                                 'type': 'HTTPError',
-                                                'message': h[1]})
+                                                'message': h[1]}, expires=0)
         except Exception, e:
             response.status = 500
             return self.supporttypes[datatype]({'exception': 500,
                                                 'type': e.__class__.__name__,
-                                                'message': str(e)})
+                                                'message': str(e)}, expires=0)

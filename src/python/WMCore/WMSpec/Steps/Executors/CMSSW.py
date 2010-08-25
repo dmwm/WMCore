@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.5 2009/10/19 18:43:51 evansde Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: CMSSW.py,v 1.6 2009/10/19 20:32:05 evansde Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 import WMCore.WMException as WMException
@@ -44,6 +44,7 @@ class CMSSW(Executor):
             stepSpace = self.stepSpace(stepName)
             stepSpace.getFromSandbox(psetFile)
             stepSpace.getFromSandbox(psetTweak)
+        #TODO: Handle case where we have a config library instead
 
 
         print "Steps.Executors.CMSSW.pre called"

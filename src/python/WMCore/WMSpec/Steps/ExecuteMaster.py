@@ -7,11 +7,12 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.3 2009/05/08 16:22:35 evansde Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.4 2009/10/19 20:32:03 evansde Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
+import inspect, os
 
 class ExecuteMaster:
     """
@@ -62,20 +63,48 @@ class ExecuteMaster:
               ensure that this happens
 
         """
-
+        self.toStepDirectory(step)
         preOutcome = executor.pre(step)
         if preOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
             print "TODO: Implement Me!!!"
-
+            self.toTaskDirectory()
         executor.execute(step, job)
 
         postOutcome = executor.post(step)
         if postOutcome != None:
             print "Pre Executor Task Change: %s" % preOutcome
             print "TODO: Implement Me!!!"
+            self.toTaskDirectory()
+        self.toTaskDirectory()
+
+    def toStepDirectory(self, step):
+        """
+        _toStepDirectory_
+
+        Switch current working directory to the step location
+        within WMTaskSpace
+
+        """
+        stepName = WMStepHelper(step).name()
+        from WMTaskSpace import taskSpace
+        stepSpace = taskSpace.stepSpace(stepName)
+
+        os.chdir(stepSpace.location)
 
 
+
+    def toTaskDirectory(self):
+        """
+        _toTaskDirectory_
+
+        Switch to current working directory to the task location
+        within WMTaskSpace
+
+        """
+        from WMTaskSpace import taskSpace
+        os.chdir(taskSpace.location)
+        return
 
 
 

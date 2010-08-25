@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.21 2010/02/04 22:17:47 meloam Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: WMInit.py,v 1.22 2010/04/20 20:56:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.22 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -76,7 +76,6 @@ class WMInit:
                         myThread.transaction.commit()
 
                 myThread.transaction = Transaction(myThread.dbi)
-                myThread.transaction.commit()
                 return
 
         options = {}            

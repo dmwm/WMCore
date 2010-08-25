@@ -30,7 +30,7 @@ class CMSSW(Executor):
         return None
 
 
-    def execute(self, step, emulator = None):
+    def execute(self, step, wmbsJob, emulator = None):
         """
         _execute_
 

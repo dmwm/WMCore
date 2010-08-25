@@ -1,63 +1,38 @@
 #!/usr/bin/env python
 """
-_DBSBuffer.UpdateAlgo_
+_UpdateAlgo_
 
-Add PSetHash to Algo in DBS Buffer
-
+MySQL implementation of DBSBuffer.UpdateAlgo
 """
-__revision__ = "$Id: UpdateAlgo.py,v 1.1 2008/11/18 23:25:29 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "anzar@fnal.gov"
 
-import threading
-import base64
+__revision__ = "$Id: UpdateAlgo.py,v 1.2 2009/07/13 19:53:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
+
 from WMCore.Database.DBFormatter import DBFormatter
-import exceptions
 
 class UpdateAlgo(DBFormatter):
-
-    sql = """UPDATE dbsbuffer_algo
-                SET PSetHash=:psetHash 
-                WHERE
-                AppName=:exeName
-                AND AppVer=:appVersion
-                AND AppFam=:appFamily
-                AND ID = 
-                    (select Algo FROM dbsbuffer_dataset WHERE Path = :path)
-                """
+    sql = """UPDATE dbsbuffer_algo SET in_dbs = :in_dbs
+             WHERE app_name = :app_name AND app_ver = :app_ver AND
+                   app_fam = :app_fam AND pset_hash = :pset_hash"""
     
-    def __init__(self):
-            myThread = threading.currentThread()
-            DBFormatter.__init__(self, myThread.logger, myThread.dbi)
-        
-    def getBinds(self, datasetInfo=None, psethash=None):
-        # binds a list of dictionaries
-        binds =  { 
-                  'exeName' : datasetInfo['ApplicationName'],
-                  'appVersion' : datasetInfo['ApplicationVersion'],
-                  'appFamily' : datasetInfo['ApplicationFamily'],
-                  'psetHash' : psethash,
-                  'path' :      "/"+datasetInfo['PrimaryDataset']+ \
-                                "/"+datasetInfo['ProcessedDataset']+ \
-                                "/"+datasetInfo['DataTier']
-                  }
-        return binds
-       
-    def format(self, result):
-        return True
+    sqlID = """UPDATE dbsbuffer_algo SET in_dbs = :in_dbs
+               WHERE id = :algoID"""
 
-    def execute(self, dataset=None, psethash=None, conn=None, transaction = False):
-        binds = self.getBinds(dataset, psethash)
-        try:
-            result = self.dbi.processData(self.sql, binds, 
-                         conn = conn, transaction = transaction)
-        except Exception, ex:
-            if ex.__str__().find("Duplicate entry") != -1 :
-                #print "DUPLICATE: so what !!"
-                return
-            else:
-                raise ex
+    def execute(self, inDBS, algoID = None, appName = None, appVer = None,
+                appFam = None, psetHash = None, conn = None,
+                transaction = False):
+        binds = {"in_dbs": inDBS}
+        
+        if algoID == None:
+            binds["app_name"] = appName
+            binds["app_ver"] = appVer
+            binds["app_fam"] = appFam
+            binds["pset_hash"] = psetHash
+            self.dbi.processData(self.sql, binds, conn = conn,
+                                 transaction = transaction)
+        else:
+            binds["algoID"] = algoID
+            self.dbi.processData(self.sqlID, binds, conn = conn,
+                                 transaction = transaction)            
 
         return 
-        #return self.format(result)
-

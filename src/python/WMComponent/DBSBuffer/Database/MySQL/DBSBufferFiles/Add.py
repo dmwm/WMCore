@@ -5,10 +5,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class Add(DBFormatter):
 
-    sql = """insert into dbsbuffer_file(lfn, filesize, events, cksum, dataset, status) 
-                values (:lfn, :filesize, :events, :cksum, (select ID from dbsbuffer_dataset where Path=:dataset), :status)"""
+    sql = """insert into dbsbuffer_file(lfn, filesize, events, cksum, dataset_algo, status) 
+                values (:lfn, :filesize, :events, :cksum, :dataset_algo, :status)"""
                 
-    def getBinds(self, files=None, size=0, events=0, cksum=0, dataset=0):
+    def getBinds(self, files=None, size=0, events=0, cksum=0, dataset_algo=0):
         # Can't use self.dbi.buildbinds here...
         binds = {}
         if type(files) == type('string'):
@@ -16,7 +16,7 @@ class Add(DBFormatter):
                      'filesize': size, 
                      'events': events,
 		     'cksum' : cksum,
-			'dataset': dataset,
+			'dataset_algo': dataset_algo,
 			'status' : 'NOTUPLOADED'}
         elif type(files) == type([]):
         # files is a list of tuples containing lfn, size, events, cksum, dataset, status
@@ -26,18 +26,15 @@ class Add(DBFormatter):
                               'filesize': f[1], 
                               'events': f[2],
 				'cksum' : f[3],
-				'dataset': dataset,
+				'dataset_algo': dataset_algo,
 				'status' : 'NOTUPLOADED'
 				})
         return binds
     
-    def format(self, result):
-        return True
-    
-    def execute(self, files=None, size=0, events=0, cksum=0, dataset=0, conn = None, transaction = False):
+    def execute(self, files=None, size=0, events=0, cksum=0, datasetAlgo=0, conn = None, transaction = False):
 
-        binds = self.getBinds(files, size, events, cksum, dataset)
+        binds = self.getBinds(files, size, events, cksum, datasetAlgo)
         
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
-        return self.format(result)
+        return

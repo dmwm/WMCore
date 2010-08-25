@@ -51,7 +51,7 @@ class DBSHelper(object):
         NumberOfFiles and NumerOfEvent can be used to estimate number of jobs.
         than use getBlockInfo function instead
         """
-        blockInfo = self.getBlockInfo()
+        blockInfo = self.getBlockInfo(blockName)
         if blockInfo != None:
             return blockInfo['StorageElementList']
         else:

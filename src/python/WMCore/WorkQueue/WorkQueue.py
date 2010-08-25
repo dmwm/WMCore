@@ -1,20 +1,22 @@
-from WMCore.DataStructs.WMObject import WMObject
 import time
+from sets import Set
+from WMCore.DataStructs.WMObject import WMObject
 
-class WQElement(WMObject):
+class _WQElement(WMObject):
     """
     _WQElement_
 
     WQElement container
 
     """
-    def __init__(self, idnumber = None, blocks = [ ], locations = [ ], priority = 0, 
+    def __init__(self, specUrl = None, primaryBlock=None, blockLocations={}, priority = 0, 
                  online = 0, njobs = 0, whiteList=[], blackList=[]):
         WMObject.__init__(self)
-        self.idnumber = idnumber
-        self.blocks = blocks
+        self.specUrl = specUrl
+        # blockLocations is dict format of {blockName:[location List], ...}
+        self.blockLocations = blockLocations
         #self.locations = locations
-        self.block = block
+        self.primaryBlock = primaryBlock
         self.whiteList = whiteList
         self.blackList = blackList
         self.priority = priority
@@ -22,6 +24,7 @@ class WQElement(WMObject):
         self.njobs = njobs
         self.time = time.time()
         self.status = "Available"
+        self.wmSpec = WorkSpecParser(specUrl).getwmSpec()
 
     def __cmp__(x, y):
         tfactor = x.time
@@ -29,7 +32,12 @@ class WQElement(WMObject):
         weight = 0.01
         return (x.priority + weight*(current - x.time)) - (y.priority + weight*(current - y.time))
         
-
+    def _sites(self):
+        return [] #sites that contain all blocks
+    
+    def _online(self):
+        return True #are all blocks staged?
+    
     def match(self, conditions):
         """
         Function to match a unit of work to a condition
@@ -47,44 +55,78 @@ class WQElement(WMObject):
             if site in self._sites:
                 return condition
         return None 
-        
-    def _sites(self):
-        return [] #sites that contain all blocks
     
-    def _online(self):
-        return True #are all blocks staged?
+    def getLocations(self):
+        """
+        _getLocations_
         
+        return list of locations in the WQElement only if there is some common location
+        in a primary block and its parent block
+        """
+        commonLocation = Set(self.blockLocations[self.primaryBlock])
+        for locations in self.blockLocations.values():
+            commonLocation = commonLocation.interSection(Set(locations))
+        return list(commonLocation)
+    
+            
+    def updateLocations(self, dbsHelper):
+        """
+        _updateLocations_
+        
+        update all the block locations in the WQElement 
+        """
+        for block in self.blockLocations.keys():
+            locations = dbsHelper.getBlockLocations(block)
+            # just replace the location since the previous location might be
+            # deleted 
+            self.blockLocations[block] = locations    
+            
 class WorkQueue(WMObject):
-    def __init__(self):
+    """
+    _WorkQueue_
+    
+    collection of work queue elements, 
+    
+    This  provide API for JSM (WorkQueuePool) - getWork(), gotWork()
+    and injector
+    """
+    def __init__(self, dbsUrl):
         self.elements = [ ]
+        self.dbsHelper = DBSHelper(dbsUrl)
 
-    def AddElement(self, idnumber = None, blocks = [ ],  priority = 0,  njobs = 0):
-        locations = [ ] # Should be automated 
-        online = 1 # Should be automated 
-        x = WQElement(idnumber, blocks, locations, priority, online, njobs)
-        self.elements = self.elements + [ x ] 
+    def addElement(self, specUrl = None, primaryBlock = None, parentBlocks=[], priority = 0, 
+                   whiteList, blackList):
+        """
+        _addElement_
+        
+        TODO: eventually this will be the database update for WorkQueue table set
+        """
+        blockLocations = {} # TODO: Should be automated contains both primaryBlock and parentBlock 
+        online = 1 # TODO: Should be automated 
+        newElem = _WQElement(specUrl, primaryBlock, blockLocations, priority, online, njobs, 
+                             whiteList, blackList)
+        self.elements.add[newElem] 
 
     def match(self, conditions):
         """
         Loop over internal queue, matching WQElements to resources available
         """
         results = []
-        self.reOrderList()
+        self.reorderList()
         for element in self.elements:
-            #Act of mathcing returns the matched requirement
+            #Act of matching returns the matched requirement
             matched = element.match(conditions)
             if matched:
                 results.append(element)
                 conditions.pop(matched) #Remove used resource from further matches
         
 
-    def ReorderList(self):
+    def reorderList(self):
         self.elements.sort()    
     
     def setStatus(self, subscription, status):
         """
         _setStatus_
-        
         """
         # set the status of give subscription and status
         pass
@@ -101,19 +143,34 @@ class WorkQueue(WMObject):
             else:
                 self.ReorderList
                 
+    def updateLocationInfo(self):
+        
+        for element in self.elements:
+            element.updateLocations(self.dbsHelper)
+            
     def getWork(self, siteJobs):
         """
         _getWork_
         siteJob is dict format of {site: estimateJobSlot}
         """
-        
+        # udate the location information in WorkQueue
+        # if this is too much overhead use separate component
+        self.uplateLocationInfo()
+        subList = []
         for site in siteJobs.key():
             # might just return one  block
             blocks = self.getTopPriorityBlocks(site, siteJobs[site])
             # create fileset workflow and subscription
-            for block in blocks:
-                WMBSHelper.createFileset(block)
-            
+            #generate fileset name from multiple blocks
+            #generate workflow name from multiple blocks
+            filesetName = "Fileset"
+            workflowName = "Workflow"
+            wmbsHelper = WMBSHelper(self.wmSpec)
+            subscription = wmbsHelper.createSubscription(fileName=workflowName,
+                                                    workflowName=workflowName)
+            subList.append(subscription)
+                
+        return subList
     
     def gotWork(self, subscription):
         """
@@ -122,6 +179,10 @@ class WorkQueue(WMObject):
         this is called by JSM
         update the WorkQueue status form table
         """
-        self.
+        try:
+            self.setStatus(subscription, "Acquired")
+            return True
+        except:
+            return False
         
 

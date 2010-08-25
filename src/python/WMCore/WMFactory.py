@@ -6,8 +6,8 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.8 2009/02/06 10:15:37 fvlingen Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMFactory.py,v 1.9 2009/07/15 22:31:03 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -15,7 +15,7 @@ import threading
 
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION 
-
+from sets import Set
 class WMFactory:
     """
     A factory Class that is 'not thread safe' but is intended to work in 
@@ -58,25 +58,26 @@ namespace (package): %s """ % (name, str(namespace))
                 return self.objectList[classname]
             logging.debug("Not in cache")
         logging.debug("Searching class name: "+ classname)
-        try:
-            # check if we need to include the namespace 
-            if self.namespace == '':
-                module = classname
-                #FIXME: hoky way of doing this! Change this please!
-                errModule = classname
-            else:
-                module = "%s.%s" % (self.namespace, classname)
-                errModule = "%s.%s" % (self.namespace, classname)
-            logging.debug("Trying to load: "+module)
-            module = __import__(module, globals(), locals(), [classname])
-            obj = getattr(module, classname.split('.')[-1])
-            if args == None:
-                classinstance = obj()
-            else:  
-                classinstance = obj(args)
-            if storeInCache:
-                self.objectList[classname] = classinstance
-            logging.debug("Created instance for class: "+classname)
-            return classinstance
-        except Exception,ex:
-            raise WMException(WMEXCEPTION['WMCORE-4']+' '+errModule+' : '+ str(ex), 'WMCORE-4')
+        #try:
+        # check if we need to include the namespace 
+        if self.namespace == '':
+            module = classname
+            #FIXME: hoky way of doing this! Change this please!
+            errModule = classname
+        else:
+            module = "%s.%s" % (self.namespace, classname)
+            errModule = "%s.%s" % (self.namespace, classname)
+        logging.debug("Trying to load: "+module)
+        module = __import__(module, globals(), locals(), [classname])
+        obj = getattr(module, classname.split('.')[-1])
+        if args == None:
+            classinstance = obj()
+        else:  
+            classinstance = obj(args)
+        if storeInCache:
+            self.objectList[classname] = classinstance
+        logging.debug("Created instance for class: "+classname)
+        return classinstance
+        #except Exception,ex:
+        #    raise ex
+            #raise WMException(WMEXCEPTION['WMCORE-4']+' '+errModule+' : '+ str(ex), 'WMCORE-4')

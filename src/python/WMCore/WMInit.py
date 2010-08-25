@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.8 2009/04/27 21:30:23 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMInit.py,v 1.9 2009/07/15 22:31:03 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -16,7 +16,7 @@ import threading
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
-
+from sets import Set
 class WMInit:
 
     def __init__(self):

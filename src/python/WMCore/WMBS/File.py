@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.62 2010/03/05 19:00:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.62 $"
+__revision__ = "$Id: File.py,v 1.63 2010/03/15 15:33:43 sryu Exp $"
+__version__ = "$Revision: 1.63 $"
 
 import threading
 import time
@@ -252,6 +252,8 @@ class File(WMBSBase, WMFile):
         if self.exists() != False:
             self.commitTransaction(existingTransaction)
             self.load()
+            # assume if the file already exist, parentage is already set.
+            # or not exist yet 
             return
 
         addAction = self.daofactory(classname = "Files.Add")
@@ -267,10 +269,18 @@ class File(WMBSBase, WMFile):
             lumiAction = self.daofactory(classname="Files.AddRunLumi")
             lumiAction.execute(file = self["lfn"], runs = self["runs"],
                                    conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())
-
+                                   transaction = self.existingTransaction())        
         self.updateLocations()
         self.load()
+        # call it here to make sure self["id"] exist 
+        if self["parents"]:
+            for parent in self['parents']:
+                parent.create()
+                action = self.daofactory(classname = "Files.Heritage")
+                action.execute(child = self["id"], parent = parent["id"],
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
+        
         self.commitTransaction(existingTransaction)
         if self['checksums']:
             #Add a checksum
@@ -485,6 +495,10 @@ class File(WMBSBase, WMFile):
         This function will create a WMBS File given a DataStructs file
         """
         self.update(file)
+        #Clear the parents since update 
+        # will update the parents with set of lfns,
+        # parents should be set of wmbs files in WMBS File class
+        self["parents"] = set()
 
         if type(file["locations"]) == set:
             s = file["locations"].copy()
@@ -497,9 +511,7 @@ class File(WMBSBase, WMFile):
         self.setLocation(se = seName, immediateSave = False)
 
         self.create()
-        #I don't know why I need this...
-        self["parents"] = set()
-
+        
         for parent in file['parents']:
             self.addParent(parent)
 

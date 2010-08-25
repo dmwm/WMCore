@@ -7,8 +7,8 @@ has a cache (though this may not be used), an endpoint (the url the service
 exists on) a logger and a type (json, xml etc).
 """
 
-__revision__ = "$Id: Service.py,v 1.5 2009/03/25 14:15:35 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Service.py,v 1.6 2009/03/25 14:20:48 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import datetime
 import os
@@ -82,6 +82,6 @@ class Service:
             raise e
         return open(cachefile, 'r')
     
-    def clearCache(self, cachefile, url):
+    def clearCache(self, cachefile):
         cachefile = "%s/%s" % (self.path, cachefile)
         os.remove(cachefile)

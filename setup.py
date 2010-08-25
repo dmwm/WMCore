@@ -81,6 +81,7 @@ def runUnitTests():
     failedTestFiles = []
     for test in testfiles:
         loadedTests = None
+        print "LoadTest %s" % test
         try:
             loadedTests = TestLoader().loadTestsFromName(test)
         except Exception, e:
@@ -92,6 +93,7 @@ def runUnitTests():
         
         for oneTest in loadedTests:
             try:
+                print "--AddTest %s" % oneTest.id()
                 testsuite.addTest( oneTest )
             except Exception, e:
                 print "AddTestFail: %s Exception %s" % (oneTest.id(), e)

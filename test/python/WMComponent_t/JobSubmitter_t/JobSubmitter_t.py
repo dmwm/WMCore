@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.18 2010/07/08 15:43:01 mnorman Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.19 2010/07/08 19:46:43 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import unittest
 import threading
@@ -546,7 +546,7 @@ class JobSubmitterTest(unittest.TestCase):
         changeState  = ChangeState(config)
 
         nSubs = 5
-        nJobs = 100
+        nJobs = 150
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -671,7 +671,10 @@ class JobSubmitterTest(unittest.TestCase):
         # Now we submit them
         #plugin = BossLiteCondorPlugin(submitDir    = config.JobSubmitter.submitDir,
         plugin = CondorGlideInPlugin(submitDir    = config.JobSubmitter.submitDir,
-                                     submitScript = config.JobSubmitter.submitScript)
+                                     submitScript = config.JobSubmitter.submitScript,
+                                     couchURL = config.JobStateMachine.couchurl, 
+                                     defaultRetries = config.JobStateMachine.default_retries,
+                                     couchDBName = config.JobStateMachine.couchDBName)
 
         startTime = time.time()
         #cProfile.runctx("plugin(parameters = subBundle)", globals(), locals(), filename = "profStats.stat")
@@ -789,6 +792,8 @@ class JobSubmitterTest(unittest.TestCase):
         Test the whitelist/blacklist implementation
         Trust the jobCreator to get this in the job right
         """
+
+        #return
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
@@ -988,9 +993,13 @@ class JobSubmitterTest(unittest.TestCase):
 
     def testF_OverloadTest(self):
         """
-
-
+        _OverloadTest_
+        
+        Test and see what happens if you put in more jobs
+        Then the sites can handle
         """
+
+        #return
 
         resourceControl = ResourceControl()
         for site in self.sites:

@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.7 2009/11/24 16:34:45 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.8 2009/11/24 21:38:49 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -47,6 +47,7 @@ config.DBSUpload.globalDBSUrl = 'http://cmssrv49.fnal.gov:8989/DBS209/servlet/DB
 config.DBSUpload.globalDBSVer = 'DBS_2_0_8'
 
 #Config variables for block sizes in DBS
-config.DBSUpload.DBSMaxSize  = 999999999
-config.DBSUpload.DBSMaxFiles = 2
+config.DBSUpload.DBSMaxSize      = 999999999
+config.DBSUpload.DBSMaxFiles     = 2
+config.DBSUpload.DBSBlockTimeout = 10000000
 

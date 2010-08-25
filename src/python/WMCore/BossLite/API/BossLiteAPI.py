@@ -4,9 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.3 2010/04/19 20:44:41 mnorman Exp $"
-__revision__ = "$Revision: 1.3 $"
-__author__ = "Giuseppe.Codispoti@bo.infn.it"
+__version__ = "$Id: BossLiteAPI.py,v 1.4 2010/04/28 21:34:19 spigafi Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 import logging
 import copy
@@ -18,8 +17,9 @@ from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 from WMCore.BossLite.Common.Exceptions    import TaskError, JobError, DbError
 from WMCore.BossLite.DbObjects.DbObject   import dbTransaction
 
-# WMCore framework
-from WMCore.WMConnectionBase              import WMConnectionBase
+# database engine
+from WMCore.WMConnectionBase import WMConnectionBase
+# from ProdCommon.BossLite.DbObjects.TrackingDB import TrackingDB
 
 
 ##########################################################################
@@ -58,56 +58,16 @@ class BossLiteAPI(WMConnectionBase):
     def __init__(self, database = None, dbConfig=None, pool=None, makePool=False):
         """
         initialize the API instance
-        - database can be both MySQl or SQLite
-
-        - dbConfig can be a dictionary with the format
-           {'dbName':'BossLiteDB',
-               'host':'localhost',
-               'user':'BossLiteUser',
-               'passwd':'BossLitePass',
-               'socketFileLocation':'/var/run/mysql/mysql.sock',
-               'portNr':'',
-               'refreshPeriod' : 4*3600 ,
-               'maxConnectionAttempts' : 5,
-               'dbWaitingTime' : 10
-              }
-
-        Passing only dbConfig, a SafeSession will be used for db connection.
-        Passing a pool or setting makePool, a pool of SafeSession (SafePool)
-        will be used, enabling a better multithread usage
         """
-
-        #if database == "WMCore":
-        #    from ProdCommon.BossLite.API.BossLiteDBWMCore import BossLiteDBWMCore
-        #    self.bossLiteDB = BossLiteDBWMCore( database, dbConfig=dbConfig )
-        #elif pool is None and makePool == False:
-        #    self.bossLiteDB = BossLiteDB( database, dbConfig=dbConfig )
-        #else :
-        #    from ProdCommon.BossLite.API.BossLitePoolDB import BossLitePoolDB
-        #    self.bossLiteDB = BossLitePoolDB( database, dbConfig=dbConfig, \
-        #                                      pool=pool )
-
+        
         WMConnectionBase.__init__(self, daoPackage = "WMCore.BossLite")
         
+        # self.db = TrackingDB()
         self.db = None
-
-
+        
         return
 
-
-    ######################################################################
-    # Okay, this is where I start trying to redesign the API functions   #
-    # I'm going to rely on the new DBObjects
-    # And also not on any sort of database carrying
-    #     -mnorman
-    ######################################################################
-
-
-
-    # Start with task functions
-    
     ##########################################################################
-
 
     def saveTask( self, task ):
         """
@@ -129,7 +89,6 @@ class BossLiteAPI(WMConnectionBase):
 
     ##########################################################################
 
-
     def loadTask( self, taskId, jobRange='all', deep=True ) :
         """
         retrieve task information from db using task id
@@ -146,16 +105,17 @@ class BossLiteAPI(WMConnectionBase):
 
         # create template for task
         task = Task(parameters = {'id': int(taskId)})
-        task.load()
+        # attention here! Check the original implementation...
+        task.load(deep=False)
 
-        if jobRange == 'all':
+        # attention here! Check the original implementation...
+        if jobRange == 'all' and deep:
             # Then load all the jobs
             task.loadJobs()
 
         return task
 
     ##########################################################################
-
 
     def loadTaskByName( self, name, jobRange='all', deep=True ) :
         """
@@ -170,7 +130,6 @@ class BossLiteAPI(WMConnectionBase):
             task.loadJobs()
 
         return task
-
 
     ##########################################################################
 
@@ -199,10 +158,7 @@ class BossLiteAPI(WMConnectionBase):
 
         return taskList
 
-
-
     ##########################################################################
-
 
     def loadJob( self, taskId, jobId ) :
         """
@@ -249,8 +205,6 @@ class BossLiteAPI(WMConnectionBase):
 
     ###########################################################################
 
-
-
     def loadJobByName( self, jobName ) :
         """
         retrieve job information from db for jobs with name 'name'
@@ -263,8 +217,6 @@ class BossLiteAPI(WMConnectionBase):
         return job
 
     ############################################################################
-
-
 
     def getRunningInstance( self, job, runningAttrs = None ) :
         """

@@ -6,8 +6,8 @@ SQLite implementation of JobGroup.Status
 """
 
 __all__ = []
-__revision__ = "$Id: Status.py,v 1.4 2009/04/23 00:03:21 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Status.py,v 1.5 2009/04/29 21:15:15 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMBS.MySQL.JobGroup.Status import Status as StatusMySQL
 
@@ -17,7 +17,7 @@ class Status(StatusMySQL):
             left outer join wmbs_group_job_acquired wa on wj.id = wa.job
             left outer join wmbs_group_job_failed wf on wj.id = wf.job
             left outer join wmbs_group_job_complete wc on wj.id = wc.job
-            where jobgroup=:jobgroup and wa.job is null
+            where wj.jobgroup=:jobgroup and wa.job is null
                   and wf.job is null and wc.job is null
         ) as av, (
         select count(job) from wmbs_group_job_acquired where jobgroup=:jobgroup

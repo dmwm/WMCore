@@ -5,8 +5,8 @@ _GetParentInfo_
 Oracle implementation of Files.GetParentInfo
 """
 
-__revision__ = "$Id: GetParentInfo.py,v 1.1 2009/12/21 20:46:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetParentInfo.py,v 1.2 2009/12/23 17:49:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Files.GetParentInfo import GetParentInfo as GetParentInfoMySQL
 
@@ -31,7 +31,7 @@ class GetParentInfo(GetParentInfoMySQL):
                  wmbs_fileset_files.fileset = wmbs_workflow_output.output_fileset
                INNER JOIN wmbs_subscription ON
                  wmbs_subscription.workflow = wmbs_workflow_output.workflow_id
-               INNER JOIN wmbs_workflow_output wmbs_pworkflow_output ON
+               LEFT OUTER JOIN wmbs_workflow_output wmbs_pworkflow_output ON
                  wmbs_subscription.fileset = wmbs_pworkflow_output.output_fileset
                LEFT OUTER JOIN wmbs_workflow_output redneck_parent_output ON
                  wmbs_pworkflow_output.workflow_id = redneck_parent_output.workflow_id AND

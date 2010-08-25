@@ -3,21 +3,16 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.1 2010/02/12 14:34:37 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.2 2010/02/23 17:46:03 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import re
 import os
 import os.path
 
-
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
-from WMCore.WorkQueue import WorkQueue
-from WMCore.Services.Requests import JSONRequests
-from WMCore.Services.RequestManager.RequestManager \
-     import RequestManager as RequestManagerDS
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
     """
@@ -37,7 +32,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         retrive workload (workspec) from RequestManager
 	"""
         myThread = threading.currentThread()
-        self.wq.logger.info("Contacting Request manager for more work")
+        self.wq.logger.info("Contacting Request manager for more work %s" % self.reqMgr.__class__)
         if self.retrieveCondition():
             try:
                 workLoads = self.retrieveWorkLoadFromReqMgr()
@@ -55,7 +50,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             for workLoadUrl in workLoads.values():
                 wmspec = WMWorkloadHelper()
                 wmspec.load(workLoadUrl)
-                work.extend(self.wq_splitWork(wmspec))
+                work.extend(self.wq._splitWork(wmspec))
 
             self.wq.logger.info("Converted to work: %s" % str(work))
             myThread.transaction.begin()

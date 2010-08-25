@@ -4,24 +4,23 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: WorkQueueTestCase.py,v 1.2 2009/07/02 18:30:46 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueTestCase.py,v 1.3 2009/09/03 13:19:50 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import logging
 import os
-import commands
 import threading
-import random
-from sets import Set
 
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
+# pylint: disable-msg = W0611
+import WMCore.WMLogging # needed to bring in logging.SQLDEBUG
+# pylint: enable-msg = W0611
 
 class WorkQueueTestCase(unittest.TestCase):
     _setup = False
     _teardown = False
-    
+
     def setUp(self):
         """
         _setUp_
@@ -33,32 +32,32 @@ class WorkQueueTestCase(unittest.TestCase):
             return
 
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
-        self.testInit.setLogging()
+        self.testInit.setLogging() # logLevel = logging.SQLDEBUG
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"], useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database"], useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database"],
+                                useDefault = False)
 
-        myThread = threading.currentThread()
-                
         self._setup = True
         return
-          
-    def tearDown(self):        
+
+    def tearDown(self):
         """
         _tearDown_
         
         Drop all the WMBS tables.
         """
         myThread = threading.currentThread()
-        
+
         if self._teardown:
             return
 
         if myThread.transaction == None:
             myThread.transaction = Transaction(self.dbi)
-        
+
         myThread.transaction.begin()
-        
+
         self.testInit.clearDatabase(modules = ["WMCore.WorkQueue.Database"])
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self._teardown = True

@@ -8,8 +8,8 @@ Oracle implementation of AddLocation, Adds a Location to database if it doesn't 
 #Someone should check this!
 #It's been modified for Oracle by taking out the lfn marker
 
-__revision__ = "$Id: AddLocation.py,v 1.1 2009/05/15 16:47:40 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: AddLocation.py,v 1.2 2009/07/14 19:14:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from sets import Set
@@ -34,8 +34,8 @@ class AddLocation(MySQLAddLocation):
             raise Exception, "Type of location argument is not allowed: %s" \
                                 % type(location)
 
-    def execute(self, location, conn = None, transaction = None):
-        binds = self.getBinds(location)
+    def execute(self, siteName, conn = None, transaction = None):
+        binds = self.getBinds(siteName)
 	try:
 	        result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)

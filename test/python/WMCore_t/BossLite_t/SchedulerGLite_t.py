@@ -206,7 +206,7 @@ class SchedulerGLite(unittest.TestCase):
         
         return
     
-    
+    @attr('integration')
     def testD_kill(self):
         """
         Simple kill operation

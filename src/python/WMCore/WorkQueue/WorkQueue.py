@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.60 2010/02/03 17:10:04 swakef Exp $"
-__version__ = "$Revision: 1.60 $"
+__revision__ = "$Id: WorkQueue.py,v 1.61 2010/02/08 17:36:51 sryu Exp $"
+__version__ = "$Revision: 1.61 $"
 
 
 import uuid
@@ -343,7 +343,7 @@ class WorkQueue(WorkQueueBase):
         """
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
-        units = []
+        totalUnits = []
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
             wmspec = getWorkloadFromTask(topLevelTask)
@@ -353,31 +353,32 @@ class WorkQueue(WorkQueueBase):
 
             policy = startPolicy(wmspec.startPolicy(),
                                  self.params['SplittingMapping'])
-
-            units.extend(policy(wmspec, topLevelTask, self.dbsHelpers))
-
-        trans = self.beginTransaction()
-        for unit in units:
-            primaryBlock = unit['Data']
-            blocks = unit['ParentData']
-            jobs = unit['Jobs']
-
-            wmspec = unit['WMSpec']
-            unique = uuid.uuid4().hex[:10] # hopefully random enough
-            new_url = os.path.join(self.params['CacheDir'],
-                                       "%s.spec" % unique)
-            if os.path.exists(new_url):
-                raise RuntimeError, "spec file %s exists" % new_url
-            wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
-            wmspec.save(new_url)
-
-            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
-                                             blocks, parentQueueId,
-                                             topLevelTask)
-        self.commitTransaction(trans)
-        self.logger.info("Queued %s unit(s) for %s" % (len(units),
-                                                       wmspec.name()))
-        return len(units)
+            
+            units = policy(wmspec, topLevelTask, self.dbsHelpers)
+            totalUnits.extend(units)
+            
+            trans = self.beginTransaction()
+            for unit in units:
+                primaryBlock = unit['Data']
+                blocks = unit['ParentData']
+                jobs = unit['Jobs']
+    
+                wmspec = unit['WMSpec']
+                unique = uuid.uuid4().hex[:10] # hopefully random enough
+                new_url = os.path.join(self.params['CacheDir'],
+                                           "%s.spec" % unique)
+                if os.path.exists(new_url):
+                    raise RuntimeError, "spec file %s exists" % new_url
+                wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
+                wmspec.save(new_url)
+    
+                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+                                                 blocks, parentQueueId,
+                                                 topLevelTask)
+            self.commitTransaction(trans)
+            self.logger.info("Queued %s unit(s) for %s" % (len(units),
+                                                           wmspec.name()))
+        return len(totalUnits)
 
 
     def status(self, status = None, before = None, after = None, elementIDs = None,

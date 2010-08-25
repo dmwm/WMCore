@@ -5,8 +5,8 @@ _PhEDExInjectorPoller_
 Poll the DBSBuffer database and inject files as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.15 2010/04/23 16:33:17 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.16 2010/04/27 16:10:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import threading
 import logging
@@ -82,8 +82,23 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         return
     
-    def convertDataToXML(self, injectionData):
-                
+    def createInjectionSpec(self, injectionData):
+        """
+        _createInjectionSpec_
+
+        Trasform the data structure returned from the database into an XML
+        string for the PhEDEx Data Service.  The injectionData parameter must be
+        a dictionary keyed by dataset path.  Each dataset path will map to a
+        list of blocks, each block being a dict.  The block dicts will have
+        three keys: name, is-open and files.  The files key will be a list of
+        dicts, each of which have the following keys: lfn, size and checksum.
+        The following is an example object:
+
+        {"dataset1":
+          {"block1": {"is-open": "y", "files":
+            [{"lfn": "lfn1", "size": 10, "checksum": {"cksum": "1234"}},
+             {"lfn": "lfn2", "size": 20, "checksum": {"cksum": "4321"}}]}}}
+        """
         injectionSpec = XMLDrop.XMLInjectionSpec(self.dbsUrl)
 
         for datasetPath in injectionData:
@@ -98,8 +113,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                       file["size"])
 
         improv = injectionSpec.save()
-        xmlData = improv.makeDOMElement().toprettyxml()
-        return xmlData
+        return improv.makeDOMElement().toprettyxml()
     
     def injectFiles(self):
         """
@@ -135,10 +149,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                               siteName)
                 continue
 
-
-            injectRes = self.phedex.injectBlocks(location,
-                                                 uninjectedFiles[siteName],
-                                                 1, 0)
+            xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
+            injectRes = self.phedex.injectBlocks(location, xmlData, 0, 0)
 
             if not injectRes.has_key("error"):
                 for datasetName in uninjectedFiles[siteName]:

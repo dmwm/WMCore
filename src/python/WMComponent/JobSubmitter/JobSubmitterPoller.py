@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.13 2010/03/03 16:32:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.14 2010/03/03 16:42:57 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -133,7 +133,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             msg += str(ex)
             msg += str(traceback.format_exc())
             msg += "\n\n"
-            myThread.transaction.rollback()
+            if hasattr(myThread, 'transaction'):
+                myThread.transaction.rollback()
             raise
 
 
@@ -182,9 +183,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                 job["location"] = self.findSiteForJob(job)
                 job['custom']['location'] = job['location']    #Necessary for JSON
                 # Take care of accounting for the job
-                self.sites[job['location']][jobType]['task_running_jobs'] += 1
-                for key in self.sites[job['location']].keys():
-                    self.sites[job['location']][key]['total_running_jobs'] += 1
+                #self.sites[job['location']][jobType]['task_running_jobs'] += 1
+                #for key in self.sites[job['location']].keys():
+                #    self.sites[job['location']][key]['total_running_jobs'] += 1
                 # Now add the new job
                 newList.append(job)
 
@@ -253,12 +254,19 @@ class JobSubmitterPoller(BaseWorkerThread):
                     tmpSlots = nSpaces
                     tmpSite  = site
 
-        if not tmpSite:
+        # I guess we shouldn't do this
+        # if not tmpSite:
             # The chances of this are so ludicrously
             # low that it should never happen
             # Nevertheless, having said that...
             # Randomly choose a site
-            tmpSite = random.choice(self.sites.keys())
+        #    tmpSite = random.choice(self.sites.keys())
+
+        # Having chosen a site, account for it
+        if tmpSite:
+            self.sites[tmpSite][jobType]['task_running_jobs'] += 1
+            for key in self.sites[tmpSite].keys():
+                self.sites[tmpSite][key]['total_running_jobs'] += 1
 
 
         return tmpSite

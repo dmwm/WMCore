@@ -63,9 +63,9 @@ active.section_('controllers')
 # The class to load for this view/page
 active.controllers.object = 'WMCore.WebTools.Controllers'
 # The configuration for this object - the location of css and js
-active.controllers.css = {'reset': environ['YUI_ROOT'] + '/reset/reset.css', 
-                          'cms_reset': '../../../css/WMCore/WebTools/cms_reset.css', 
-                          'style': '../../../css/WMCore/WebTools/style.css'}
+active.controllers.css = {'reset.css': environ['YUI_ROOT'] + '/reset/reset.css', 
+        'cms_reset.css': environ['WMCORE_ROOT'] + '/src/css/WMCore/WebTools/cms_reset.css', 
+        'style.css': environ['WMCORE_ROOT'] + '/src/css/WMCore/WebTools/style.css'}
 active.controllers.js = {}
 # These are pages in "maintenance mode" - to be completed
 maint = config.WebtoolsDocs.views.section_('maintenance')

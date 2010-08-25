@@ -6,12 +6,13 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.12 2009/06/29 19:13:25 valya Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Controllers.py,v 1.13 2009/07/02 20:15:36 valya Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import cherrypy
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
+from cherrypy import tools
 from cherrypy.lib.static import serve_file
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
@@ -47,7 +48,13 @@ minimising setting appropriate headers and etags and gzip.
          
     @expose
     def index(self):
-        return "style loads from <a href='css'>css</a>, javascript from <a href='js'>js</a>"
+        return """Controller settings:
+<ul>
+<li>style loads from <a href='css'>css</a></li>
+<li>javascript loads from <a href='js'>js</a></li>
+<li>images loads from <a href='images'>images</a></li>
+</ul>
+"""
     
     @expose
     def default(self, *args, **kwargs):
@@ -58,26 +65,39 @@ minimising setting appropriate headers and etags and gzip.
         """
         serve static images
         """
-        mime_types = ['image/gif', 'image/png', 'image/jpg', 'image/jpeg']
-        cherryconf.update ({'tools.encode.on': True, 'tools.gzip.on': True})
+        mime_types = ['*/*', 'image/gif', 'image/png', 'image/jpg', 'image/jpeg']
         accepts = cherrypy.request.headers.elements('Accept')
         for accept in accepts:
             if  accept.value in mime_types and len(args) == 1 \
                 and self.imagemap.has_key(args[0]):
                 image = self.imagemap[args[0]]
-                return serve_file(image)
+                # use image extension to pass correct content type
+                ctype = 'image/%s' % image.split('.')[-1]
+                cherrypy.response.headers['Content-type'] = ctype
+                return serve_file(image, content_type=ctype)
     
     @exposecss
+    @tools.gzip()
     def css(self, *args, **kwargs):
         """
         cat together the specified css files and return a single css include
         get css by calling: /controllers/css/file1/file2/file3
         """
-        cherryconf.update ({'tools.encode.on': True, 'tools.gzip.on': True})
+        mime_types = ['text/css']
+        cherryconf.update({'tools.encode.on': True, 
+                           'tools.gzip.on': True,
+                           'tools.gzip.mime_types': mime_types,
+                          })
         
         args = list(args)
-        args.insert(0, 'cms_reset')
-        args.insert(0, 'reset')
+        try:
+            args.insert(0, 'cms_reset.css')
+        except:
+            pass
+        try:
+            args.insert(0, 'reset.css')
+        except:
+            pass
         scripts = self.checkScripts(args, self.cssmap)
         id = "-".join(scripts)
         
@@ -95,12 +115,18 @@ minimising setting appropriate headers and etags and gzip.
         return self.cache[id] 
         
     @exposejs
+    @tools.gzip()
     def js(self, *args, **kwargs):
         """
         cat together the specified js files and return a single js include
         get js by calling: /controllers/js/file1/file2/file3
         """
-        cherryconf.update ({'tools.encode.on': True, 'tools.gzip.on': True})
+        mime_types = ['application/javascript', 'text/javascript',
+                      'application/x-javascript', 'text/x-javascript']
+        cherryconf.update({'tools.gzip.on': True,
+                           'tools.gzip.mime_types': mime_types,
+                           'tools.encode.on': True,
+                          })
         
         args = list(args)
         scripts = self.checkScripts(args, self.jsmap)

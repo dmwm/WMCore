@@ -12,7 +12,7 @@ class Welcome(Page):
     def index(self):
         html = '<html>'
         html += '<head>'
-        html += '<link rel="stylesheet" type="text/css" href="/controllers/css/reset/style"/>'
+        html += '<link rel="stylesheet" type="text/css" href="/controllers/css/reset/style.css"/>'
         html += '</head>'
         html += '<body>'
         html += '<h1>Welcome to the DMWM web framework</h1>'

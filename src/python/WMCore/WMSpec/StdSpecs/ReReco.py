@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.35 2010/06/29 21:39:13 sfoulkes Exp $"
-__revision__ = "$Revision: 1.35 $"
+__version__ = "$Id: ReReco.py,v 1.36 2010/07/07 19:50:29 sfoulkes Exp $"
+__revision__ = "$Revision: 1.36 $"
 
 import subprocess
 
@@ -282,7 +282,7 @@ class ReRecoWorkloadFactory(object):
     
         parentTaskCmssw = parentTask.getStep("cmsRun1")
         mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModule)
-        self.addCleanupTask(mergeTask, parentOutputModule)
+        self.addCleanupTask(parentTask, parentOutputModule)
         return mergeTask
 
     def addCleanupTask(self, parentTask, parentOutputModuleName):

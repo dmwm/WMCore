@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.21 2009/05/26 21:07:22 meloam Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: CMSCouch.py,v 1.22 2009/05/27 10:04:09 metson Exp $"
+__version__ = "$Revision: 1.22 $"
 
 try:
     # Python 2.6
@@ -148,10 +148,12 @@ class Database(CouchDBRequests):
     TODO: implement COPY and MOVE calls.
     TODO: remove leading whitespace when committing a view
     """
-    def __init__(self, dbname = 'database', url = 'localhost:5984/'):
+    def __init__(self, dbname = 'database', url = 'localhost:5984/', size = 5000):
+        print 'hello from %s' % dbname
         self._queue = []
         self.name = urllib.quote_plus(dbname)
         JSONRequests.__init__(self, url)
+        self._queue_size = size
 
     def timestamp(self, data):
         """
@@ -175,6 +177,10 @@ class Database(CouchDBRequests):
         """
         if timestamp:
             doc = self.timestamp(doc)
+        #TODO: Thread this off so that it's non blocking...
+        if len(self._queue) >= self._queue_size:
+            print 'queue larger than %s records, committing' % self._queue_size
+            self.commit()
         self._queue.append(doc)
 
     def queueDelete(self, doc):
@@ -267,7 +273,7 @@ class Database(CouchDBRequests):
         view['language'] = language
         view['views'] = {}
         return view
-        
+
     def allDocs(self):
         return self.get('/%s/_all_docs' % self.name)
 

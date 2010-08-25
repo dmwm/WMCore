@@ -7,9 +7,8 @@ A simple API to CouchDB that sends HTTP requests to the REST interface.
 http://wiki.apache.org/couchdb/API_Cheatsheet
 """
 
-
-__revision__ = "$Id: CMSCouch.py,v 1.74 2010/08/12 19:50:42 meloam Exp $"
-__version__ = "$Revision: 1.74 $"
+__revision__ = "$Id: CMSCouch.py,v 1.75 2010/08/12 20:28:11 meloam Exp $"
+__version__ = "$Revision: 1.75 $"
 
 import urllib
 import datetime

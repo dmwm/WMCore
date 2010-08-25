@@ -8,11 +8,6 @@ class DefaultConfig(Configuration):
     
     def __init__(self, model=None):
         Configuration.__init__(self)
-        # Agent parameter
-        self.section_("Agent")
-        self.section_("General")
-        self.section_("General")
-        self.General.workDir = "/tmp/webtools/"
         
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
@@ -33,7 +28,6 @@ class DefaultConfig(Configuration):
         active.rest.object = 'WMCore.WebTools.RESTApi'
         active.rest.templates = '/tmp'
         active.rest.database = 'sqlite://'
-        active.rest.dbsocket = os.environ.get("DBSOCK", None)
         #active.rest.database = 'sqlite:////tmp/resttest.db'
         active.rest.section_('model')
         active.rest.model.object = model or 'WMCore.WebTools.RESTModel'

@@ -16,7 +16,6 @@ from WMCore.Operations.RecoveryCode import PurgeJobs
 from subprocess import Popen, PIPE
 import WMCore.WMInit
 
-@attr('integration')
 class TestRecoveryCode(unittest.TestCase):
     """
     Test for recoveryCode; disaster recovery system

@@ -490,4 +490,9 @@ class DBSReader:
            raise DBSReaderError("Invalid Block name: => %s <=" % blockName)
 
 
+# TODO: find the better way to handle emulation:
+# hacky code: swap the namespace if emulator config is set 
+from WMQuality.Emulators import emulatorSwitch
+if emulatorSwitch("DBSReader"):
+    from WMQuality.Emulators.DBSClient.DBSReader import DBSReader
 

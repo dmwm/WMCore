@@ -118,3 +118,10 @@ class RequestManager(Service):
         callname = 'assignment'
         return self._getResult(callname, args = args, verb="POST")
     
+# TODO: find the better way to handle emulation:
+# hacky code: swap the namespace if emulator config is set 
+from WMQuality.Emulators import emulatorSwitch
+if emulatorSwitch("RequestManager"):
+    from WMQuality.Emulators.RequestManagerClient.RequestManager import RequestManager
+
+    

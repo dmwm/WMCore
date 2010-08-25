@@ -313,3 +313,10 @@ class PhEDEx(Service):
             if node['name'] == name:
                 return node['se']
         return None
+
+# TODO: find the better way to handle emulation:
+# hacky code: swap the namespace if emulator config is set 
+from WMQuality.Emulators import emulatorSwitch
+if emulatorSwitch("PhEDEx"):
+    from WMQuality.Emulators.PhEDExClient.PhEDEx import PhEDEx
+    

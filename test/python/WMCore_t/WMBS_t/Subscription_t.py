@@ -1,15 +1,23 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1103, W0142, R0201
+# E1103: allow thread to hold variables
+# W0142: Some people like ** magic
+# R0201: Test methods CANNOT be functions
 
-import unittest, os, logging, commands, random, threading
+__revision__ = "$Id: Subscription_t.py,v 1.55 2010/05/13 16:15:15 mnorman Exp $"
+__version__ = "$Revision: 1.55 $"
 
-from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.DBFactory import DBFactory
+
+import unittest
+import logging
+import random
+import threading
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Job      import Job
@@ -18,6 +26,11 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine import DefaultConfig
 
 class SubscriptionTest(unittest.TestCase):
+    """
+    The unittest for the Subscription object
+
+    """
+    
     def setUp(self):
         """
         _setUp_
@@ -1168,7 +1181,7 @@ class SubscriptionTest(unittest.TestCase):
         Verify that the getJobGroups() method will return a list of JobGroups
         that contain jobs that have not been acquired/completed/failed.
         """
-        (testSubscription, testFileset, testWorkflow, testFileA,\
+        (testSubscription, testFileset, testWorkflow, testFileA, \
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
         testSubscription.create()
 
@@ -1276,6 +1289,8 @@ class SubscriptionTest(unittest.TestCase):
         testFileA.addChild(testFile1['lfn'])
 
         
+        logging.info("About to test fileset deletes")
+
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
@@ -1339,6 +1354,11 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(testFileD.exists(), 4)
         
     def testIsFileCompleted(self):
+        """
+        _testIsFileCompleted_
+
+        Test file completion markings
+        """
         (testSubscription, testFileset, testWorkflow, 
          testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
          
@@ -1349,9 +1369,9 @@ class SubscriptionTest(unittest.TestCase):
         
         testSubscription.completeFiles([testFileA, testFileC])
         
-        assert testSubscription.isFileCompleted(testFileA) == True,\
+        assert testSubscription.isFileCompleted(testFileA) == True, \
             "ERROR: file A should be completed"
-        assert testSubscription.isFileCompleted([testFileA, testFileC]) == True,\
+        assert testSubscription.isFileCompleted([testFileA, testFileC]) == True, \
             "ERROR: file A, C should be completed"
         assert testSubscription.isFileCompleted([testFileA, 
                                                  testFileB, 
@@ -1384,14 +1404,9 @@ class SubscriptionTest(unittest.TestCase):
 
         result = getSubTypes.execute()
 
-        assert len(result) == 3, \
-               "Error: Wrong number of types."
-        assert "Processing" in result, \
-               "Error: Processing type is missing."
-        assert "Merge" in result, \
-               "Error: Merge type is missing."
-        assert "Harvesting" in result, \
-               "Error: Harvesting type is missing."
+        self.assertEqual(len(result), 5, "Error: Wrong number of types.")
+        for subType in ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            self.assertTrue(subType in result, "Type %s is missing" % (subType))
 
         return
 

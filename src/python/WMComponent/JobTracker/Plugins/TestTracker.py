@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: TestTracker.py,v 1.4 2009/12/02 20:21:41 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TestTracker.py,v 1.5 2010/04/28 21:11:37 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 import logging
@@ -93,29 +93,13 @@ class TestTracker(TrackerPlugin):
 
         """
 
-        foundJobsToKill = False
-        
-        #Should already HAVE the ClassAds
-        command = "condor_rm"
-        commandList = []
-        for name in killList:
-            if not name in self.classAds.keys():
-                continue
-            commandList.append('%s -constraint \"WMAgent_JobID == %i\"' % (command, name))
-            command = '%s %s' % (command, str(self.classAds[name]['ClusterId']))
-            foundJobsToKill = True
+        for jobID in killList:
+            # This is a very long and painful command to run
+            command = 'condor_rm -constraint \"WMAgent_JobID =?= %i\"' % (jobID)
+            proc = Popen(command, stderr = PIPE, stdout = PIPE, shell = True)
+            out, err = proc.communicate()
 
-        #It's possible you didn't find any jobs, or were passed none.  If so, do nothing
-        if not foundJobsToKill:
-            return None
-        
-        
-        #Now kill 'em
-        logging.debug("condor_rm command: '%s'"%command)
-        sout    = os.popen(command)
-        content = sout.read()
-
-        return content
+        return
 
     def purge(self):
         """
@@ -150,7 +134,7 @@ class TestTracker(TrackerPlugin):
                                         'StatusReason': self.classAds[job['id']]['HoldReason']}
             elif self.classAds[job['id']]['JobStatus'] == 1:
                 #Job is Idle
-                logging.error("Job is idle")
+                #logging.error("Job is idle")
                 logging.error(self.classAds[job['id']])
                 trackDict[job['id']] = {'Status': 'Idle', 'StatusTime': self.classAds[job['id']]['ServerTime'] \
                                         - self.classAds[job['id']]['EnteredCurrentStatus']}

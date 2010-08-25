@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.21 2010/03/05 19:40:37 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.22 2010/04/21 15:56:01 meloam Exp $"
+__version__ = "$Revision: 1.22 $"
 
 
 import os
@@ -49,7 +49,7 @@ class DBSUploadTest(unittest.TestCase):
         setUp function for unittest
 
         """
-
+        raise Exception, "this test hangs buildbot. hard. someone (maybe me) needs to make sure that DBS is accessible";
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()

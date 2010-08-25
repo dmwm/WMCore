@@ -12,15 +12,14 @@ class WorkQueue(Service):
     API for dealing with retrieving information from WorkQueue DataService
     """
 
-    def __init__(self, dict = {}, responseType = "json", secure = False):
+    def __init__(self, dict = {}):
         """
         responseType will be either xml or json
         """
-        self.responseType = responseType.lower()
-
+        dict.setdefault('secure', False)
         if not dict.has_key('endpoint'):
             dict['endpoint'] = "%cmsweb.cern.ch/workqueue/" % \
-                                ((secure and "https://" or "http://"))
+                                ((dict['secure'] and "https://" or "http://"))
         if dict.has_key('cachepath'):
             pass
         elif os.getenv('WORKQUEUE_CACHE_DIR'):
@@ -39,6 +38,7 @@ class WorkQueue(Service):
                     filemode = 'w')
             dict['logger'] = logging.getLogger('WorkQueueParser')
 
+        dict.setdefault("accept_type", "application/json")
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
@@ -74,10 +74,6 @@ class WorkQueue(Service):
         except IOError, ex:
             raise RuntimeError("URL not available: %s" % callname)
 
-#        if self.responseType == "json":
-#            decoder = json.JSONDecoder()
-#            return decoder.decode(result)
-
         return result
     
     def getWork(self, siteJobs, pullingQueueUrl=None):
@@ -105,7 +101,7 @@ class WorkQueue(Service):
         if dictKey != None:
             args['dictKey'] = dictKey
         if elementIDs != None:
-            encodedElementIDs = jsonwrapper.loads(elementIDs)
+            encodedElementIDs = jsonwrapper.dumps(elementIDs)
             args['elementIDs'] = encodedElementIDs
         
         callname = 'status'

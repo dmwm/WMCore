@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.50 2010/06/23 13:59:17 meloam Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: Service.py,v 1.51 2010/06/23 14:08:37 meloam Exp $"
+__version__ = "$Revision: 1.51 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -239,7 +239,7 @@ class Service(dict):
                     msg += ' unavailable - status: %s reason: %s'
                     msg = msg % (cachefile, url, status, reason)
                     self['logger'].warning(msg)
-                    raise he
+                    raise
                 else:
                     cache_age = os.path.getmtime(cachefile)
                     t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
@@ -266,7 +266,7 @@ class Service(dict):
                             msg += ' unavailable '
                             msg = msg % (cachefile, url, status, reason)
                             self['logger'].warning(msg)
-                        raise he
+                        raise
                     
         finally:
             # Reset the timeout to it's original value

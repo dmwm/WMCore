@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.25 2010/04/23 16:44:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.26 2010/04/27 21:18:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import os
 import threading
@@ -166,7 +166,8 @@ class AccountantWorker:
         """
         returnList = []
         self.transaction.begin()
-        for job in parameters['input']:
+
+        for job in parameters:
             logging.info("Handling %s" % job["fwjr_path"])
             
             fwkJobReport = self.loadJobReport(job)
@@ -217,7 +218,6 @@ class AccountantWorker:
 
         self.transaction.commit()
         self.reset()
-            
         return returnList
 
     def outputFilesetsForJob(self, outputMap, merged, moduleLabel):

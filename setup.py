@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 from distutils.core import setup
 
+#TODO: derive a test suite (from packages) and run it if someone calls
+#setup.py test. Deriving the list of tests should also point out missing tests
+  
 setup (name='wmcore',
        version='1.0',
+       test_suite = '',
        package_dir={'WMCore': 'src/python/WMCore','WMComponent' : 'src/python/WMComponent','WMQuality' : 'src/python/WMQuality'},
        packages=['WMComponent.Proxy.Handler',
                  'WMComponent.Proxy',

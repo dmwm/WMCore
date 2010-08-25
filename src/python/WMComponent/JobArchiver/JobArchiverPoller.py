@@ -3,8 +3,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.7 2010/03/11 22:00:14 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.8 2010/03/31 18:33:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
@@ -39,6 +39,9 @@ class JobArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+
+        self.numberOfJobsToCluster = getattr(self.config.JobArchiver,
+                                             "numberOfJobsToCluster", 1000)
 
         if not os.path.isdir(config.JobArchiver.logDir):
             if os.path.exists(config.JobArchiver.logDir):
@@ -179,7 +182,7 @@ class JobArchiverPoller(BaseWorkerThread):
             return
 
         # Now we need to set up a final destination
-        jobFolder = 'JobCluster_%i' %(int(job['id']/self.config.JobArchiver.numberOfJobsToCluster))
+        jobFolder = 'JobCluster_%i' %(int(job['id'] / self.numberOfJobsToCluster))
         logDir = os.path.join(self.config.JobArchiver.logDir, jobFolder)
         if not os.path.exists(logDir):
             os.makedirs(logDir)

@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.20 2010/02/24 21:26:04 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.21 2010/03/05 19:40:37 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 
 import os
@@ -213,7 +213,7 @@ class DBSUploadTest(unittest.TestCase):
         """
         #raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
 
-        return
+        #return
 
         myThread = threading.currentThread()
 
@@ -454,6 +454,19 @@ class DBSUploadTest(unittest.TestCase):
             #assert blockCount == 1, \
             #       "Error: Wrong number of blocks in buffer: %s" % blockCount
 
+        poller.algorithm(parameters = None)
+
+
+        # Build a second dataset to make sure we
+        # Assign the same algos correctly
+        randomDataset2 = makeUUID()
+        
+        for i in range(10):
+            self.addToBuffer(randomDataset2)
+            
+            blockCount = countDAO.execute()
+
+
 
         poller.algorithm(parameters = None)
 
@@ -465,12 +478,18 @@ class DBSUploadTest(unittest.TestCase):
         processed = dbsReader.listProcessedDatasets(primary = randomDataset)
         self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
         datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
-        self.assertEqual(len(datasetFiles), 30)
+        self.assertEqual(len(datasetFiles), 28)
 
-
-        
+        self.assertTrue(randomDataset2 in primaries, 'Could not find dataset %s' %(randomDataset2))
+        processed = dbsReader.listProcessedDatasets(primary = randomDataset2)
+        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset2, randomDataset2, 'RECO'))
+        self.assertTrue(randomDataset2 in processed, 'Could not find dataset %s' %(randomDataset2))
+        self.assertEqual(len(datasetFiles), 28)
 
         return
+
+
+    
 
 
     def testBlockTimeout(self):
@@ -495,6 +514,9 @@ class DBSUploadTest(unittest.TestCase):
         config = self.createConfig()
         config.DBSUpload.DBSBlockTimeout = 20
         config.DBSUpload.DBSMaxFiles     = 40
+
+        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
+        dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
         
         poller = DBSUploadPoller(config)
         poller.setup(parameters = None)
@@ -513,9 +535,6 @@ class DBSUploadTest(unittest.TestCase):
 
 
         poller.algorithm(parameters = None)
-
-        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
-        dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
 
         primaries = dbsReader.listPrimaryDatasets()
         self.assertEqual(randomDataset in primaries, True, 'Could not find dataset %s' %(randomDataset))
@@ -546,6 +565,10 @@ class DBSUploadTest(unittest.TestCase):
 
 
         return
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

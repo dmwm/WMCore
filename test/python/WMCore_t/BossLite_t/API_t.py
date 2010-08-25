@@ -1,12 +1,16 @@
 #!/usr/bin/env python
+"""
+_API_t_
 
-__revision__ = "$Id: API_t.py,v 1.10 2010/05/18 13:52:43 spigafi Exp $"
-__version__ = "$Revision: 1.10 $"
+"""
+
+__revision__ = "$Id: API_t.py,v 1.11 2010/05/19 10:01:37 spigafi Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
-import threading
-import string
-
+import os
+import tempfile
+        
 # Import key features
 from WMQuality.TestInit import TestInit
 
@@ -18,8 +22,6 @@ from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
 # Import API
 from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 
-# database engine
-from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
 
 def populateDb(db, numtask, numjob):
     """
@@ -29,13 +31,13 @@ def populateDb(db, numtask, numjob):
 
     for t in xrange(numtask):
         task = Task()
-        task.data['name'] = 'task_%s'%str(t)
+        task.data['name'] = 'task_%s' % str(t)
         task.create(db)
         tmpId = task['id']
         # self.assertEqual(tmpId, task.exists(db))
         task.exists(db)
         for j in xrange(numjob):
-            parameters = {'name': '%s_job_%s'%(str(t),str(j)), 
+            parameters = {'name': '%s_job_%s' % (str(t), str(j)), 
                           'jobId': j, 
                           'taskId': tmpId }
             job = Job(parameters)
@@ -58,8 +60,7 @@ def populateDb(db, numtask, numjob):
 
 class APITest(unittest.TestCase):
     """
-    Unittest for the BossLiteAPI
-
+    Unit-test for BossLiteAPI
     """
     
     def setUp(self):
@@ -72,8 +73,10 @@ class APITest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.BossLite"],
                                 useDefault = False)
-
-
+        
+        return
+    
+    
     def tearDown(self):
         """
         Tear down database
@@ -83,18 +86,15 @@ class APITest(unittest.TestCase):
 
         return
 
-    def testA_APITaskSerializeDeserialize(self):
+    
+    def testA_TaskSerializeDeserialize(self):
         """
         test BossLiteAPI.serialize & BossLiteAPI.deserialize
         """
-
-        import os
-        import tempfile
-
+        
         testAPI = BossLiteAPI()
-        db = BossLiteDBWM()
 
-        task = populateDb(db, numtask= 1, numjob= 5)
+        task = populateDb(testAPI.db, numtask= 1, numjob= 5)
         
         # this produces an XML (str)
         encodedTask = testAPI.serialize(task)
@@ -109,7 +109,6 @@ class APITest(unittest.TestCase):
         # this reads an XML (file)
         decodedTask = testAPI.deserialize(fname)
         
-        # it works but I don't understand the 'decodedTask' format, however...
         # check Task
         self.assertEqual(task['name'], decodedTask[0]['name'])
         
@@ -129,32 +128,32 @@ class APITest(unittest.TestCase):
         os.unlink( fname )
         
         return
-
-    def testB_APITaskMethods(self):
+    
+    
+    def testB_TaskMethods(self):
         """
         put a description here
         """
 
         testAPI = BossLiteAPI()
-        db = BossLiteDBWM()
 
         # Start with task
         parameters = {'serverName': 'Taginae', 'name': 'Narses'}
         task = Task(parameters = parameters)
 
         # Can we create it?
-        self.assertFalse(task.exists(db))
+        self.assertFalse(task.exists(testAPI.db))
         
         testAPI.saveTask(task = task)
         
-        self.assertTrue(task.exists(db))
+        self.assertTrue(task.exists(testAPI.db))
 
         # Can we save and load it?
         task.data['startDirectory']  = 'Cannae'
         task.data['outputDirectory'] = 'Zama'
         task.data['user_proxy']      = 'Barca'
         testAPI.saveTask(task = task)
-        task2 = testAPI.loadTask(taskId = task.exists(db))
+        task2 = testAPI.loadTask(taskId = task.exists(testAPI.db))
 
         for key in task.data.keys():
             self.assertEqual(task.data[key], task2.data[key])
@@ -178,10 +177,10 @@ class APITest(unittest.TestCase):
         taskA2 = Task(parameters = {'name': 'Augustus',
                                     'user_proxy': 'MarkAntony',
                                     'startDirectory': 'Actium'})
-        taskA1.save(db)
-        taskA2.save(db)
-        taskA1.exists(db)  # Load the IDs
-        taskA2.exists(db)
+        taskA1.save(testAPI.db)
+        taskA2.save(testAPI.db)
+        taskA1.exists(testAPI.db)  # Load the IDs
+        taskA2.exists(testAPI.db)
         result = testAPI.loadTasksByAttr(binds = {'user_proxy' : 'MarkAntony'})
         
         self.assertEqual(len(result), 2)
@@ -191,50 +190,48 @@ class APITest(unittest.TestCase):
 
         testAPI.removeTask(task = taskA1)
         
-        self.assertFalse(taskA1.exists(db))
+        self.assertFalse(taskA1.exists(testAPI.db))
 
         return
 
 
-    def testC_APIJobMethods(self):
+    def testC_JobMethods(self):
         """
         put a description here
         """
 
         testAPI = BossLiteAPI()
-        db = BossLiteDBWM()
 
         # First create a job
         task = Task()
-        task.create(db)
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
-        self.assertFalse(job.exists(db))
+        task.create(testAPI.db)
+        tmp = task.exists(testAPI.db)
         
-        job.create(db)
+        self.assertTrue(tmp)
         
-        self.assertTrue(job.exists(db))
+        job = Job(parameters = {'name': 'Hadrian', 
+                                'jobId': 101, 
+                                'taskId': tmp})
+        self.assertFalse(job.exists(testAPI.db))
+        
+        job.create(testAPI.db)
+        
+        self.assertTrue(job.exists(testAPI.db))
         
         job.data['standardOutput'] = 'MarcusAurelius'
         job.data['standardError']  = 'AntoniousPius'
-        job.save(db)
+        job.save(testAPI.db)
 
         # Can we load by jobID?
-        job2 = testAPI.loadJob(taskId = task.exists(db), jobId = 101)
+        job2 = testAPI.loadJob(taskId = task.exists(testAPI.db), jobId = 101)
         
         for key in job.data.keys():
             self.assertEqual(job2.data[key], job.data[key])
 
-        # this test is not interesting because we usually load a job AFTER 
-        # the source task is loaded. Call "testAPI.loadJobByName" breaks 
-        # consistency checks over "taskId,jobId,name" 
-        try:
-            job3 = testAPI.loadJobByName(jobName = 'Hadrian')
-        except Exception, ex:
-            msg = str(ex)
-            self.assertTrue( (string.find(msg, "it is not completely specified")) != -1 )
+        job3 = testAPI.loadJobByName(jobName = 'Hadrian')
+        self.assertEqual(job3.data['jobId'], 101)
+        self.assertEqual(job3.data['taskId'], tmp)
         
-        # "loadJobsByAttr" calls directly "Job.SelectJob" DAO... is this the
-        # right approach? Cross-check with original implementation...
         jobs = testAPI.loadJobsByAttr( binds = {'name' : 'Hadrian'})
         
         self.assertEqual(len(jobs), 1)
@@ -244,67 +241,57 @@ class APITest(unittest.TestCase):
         
 
         task2 = testAPI.getTaskFromJob(job = jobs[0])
-
+        
+        self.assertEqual(task2.data['id'], tmp)
+        
         testAPI.removeJob(job = jobs[0])
         
-        self.assertFalse(jobs[0].exists(db))
+        self.assertFalse(jobs[0].exists(testAPI.db))
 
         return
     
     
-
-    def testD_APIRunningJobMethods(self):
+    def testD_RunningJobMethods(self):
         """
         put a description here
         """
 
         testAPI = BossLiteAPI()
-        db = BossLiteDBWM()
         
         # First create a job
         task = Task()
-        task.create(db)
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
-        job.create(db)
+        task.create(testAPI.db)
+        job = Job(parameters = {'name': 'Hadrian', 
+                                'jobId': 101, 
+                                'taskId': task.exists(testAPI.db)})
+        job.create(testAPI.db)
         
         self.assertEqual(job.runningJob, None)
 
-        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status': 'Dead',
-                                                                 'statusReason': 'WentToTheForum'} )
+        testAPI.getNewRunningInstance(job = job, 
+                    runningAttrs = {'status': 'Dead', 
+                                    'statusReason': 'WentToTheForum'} )
 
         self.assertEqual(job.runningJob['jobId'], 101)
         self.assertEqual(job.runningJob['submission'], 1)
         self.assertEqual(job.runningJob['status'], 'Dead')
         self.assertEqual(job.runningJob['statusReason'], 'WentToTheForum')
 
-        job.runningJob.save(db)
+        job.runningJob.save(testAPI.db)
 
         # Load the job
-        task.loadJobs(db)
+        task.loadJobs(testAPI.db)
 
         job.runningJob['service'] = 'IdesOfMarch'
-        job.updateRunningInstance(db)
-
-        # Try this from loading the job
-        # TEMPORARY DISABLED, see "testB_APIJobMethods" comments...
-        #
-        #job2['submissionNumber'] = 1
-        #job2 = testAPI.loadJobByName(jobName = 'Hadrian')
-        #
-        #testAPI.getRunningInstance(job = job2, runningAttrs = {'storage': 'Ravenna'})
-        #
-        #self.assertEqual(job2.runningJob['jobId'], 101)
-        #self.assertEqual(job2.runningJob['submission'], 1)
-        #self.assertEqual(job2.runningJob['status'], 'Dead')
-        #self.assertEqual(job2.runningJob['statusReason'], 'WentToTheForum')
-        #self.assertEqual(job2.runningJob['storage'], None)
-        #self.assertEqual(job2.runningJob['service'], 'IdesOfMarch')
+        job.updateRunningInstance(testAPI.db)
+          
+        job3 = Job(parameters = {'name': 'Trajan', 
+                                 'jobId': 102, 
+                                 'taskId': task.exists(testAPI.db)})
+        job3.create(testAPI.db)
         
-        
-        job3 = Job(parameters = {'name': 'Trajan', 'jobId': 102, 'taskId': task.exists(db)})
-        job3.create(db)
-        
-        testAPI.getRunningInstance(job = job3, runningAttrs = {'storage': 'Ravenna'})
+        testAPI.getRunningInstance(job = job3, 
+                                   runningAttrs = {'storage': 'Ravenna'})
         
         self.assertEqual(job3.runningJob['jobId'], 102)
         self.assertEqual(job3.runningJob['submission'], 1)
@@ -326,41 +313,42 @@ class APITest(unittest.TestCase):
         self.assertEqual(job4.runningJob['submission'], 1)
         self.assertEqual(job4.runningJob['status'], 'Dead')
         self.assertEqual(job4.runningJob['statusReason'], 'WentToTheForum')
-        # self.assertEqual(job4.runningJob['storage'], None)
-        # self.assertEqual(job4.runningJob['service'], 'IdesOfMarch')
         
         return
     
-
-    def testE_APICombinedMethods(self):
+    
+    def testE_CombinedMethods(self):
         """
         This is only another test ...
         """
 
         testAPI = BossLiteAPI()
-        db = BossLiteDBWM()
 
         # First create a job
         task = Task()
-        task.create(db)
-        job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
-        job.create(db)
+        task.create(testAPI.db)
+        job = Job(parameters = {'name': 'Hadrian', 
+                                'jobId': 101, 
+                                'taskId': task.exists(testAPI.db)})
+        job.create(testAPI.db)
         
         self.assertEqual(job.runningJob, None)
         
-        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status': 'Dead',
-                                                                 'statusReason': 'WentToTheForum'} )
+        testAPI.getNewRunningInstance(job = job, 
+                    runningAttrs = {'status': 'Dead', 
+                                    'statusReason': 'WentToTheForum'} )
         
         self.assertEqual(job.runningJob['jobId'], 101)
         self.assertEqual(job.runningJob['submission'], 1)
         self.assertEqual(job.runningJob['status'], 'Dead')
         self.assertEqual(job.runningJob['statusReason'], 'WentToTheForum')
         
-        job.runningJob.save(db)
-        job.save(db)
+        job.runningJob.save(testAPI.db)
+        job.save(testAPI.db)
         task2 = Task()
         
-        task2 = testAPI.loadTask(taskId = task.exists(db), jobRange = "all")
+        task2 = testAPI.loadTask(taskId = task.exists(testAPI.db), 
+                                                        jobRange = "all")
         
         for key in task.data.keys():
             self.assertEqual(task2.data[key], task.data[key])
@@ -368,63 +356,73 @@ class APITest(unittest.TestCase):
             for key in jobIter.data.keys():
                 self.assertEqual(jobIter.data[key], job[key])
             for key in ['jobId', 'submission', 'status', 'statusReason']:
-                self.assertEqual(jobIter.runningJob.data[key], job.runningJob.data[key])
+                self.assertEqual(jobIter.runningJob.data[key], 
+                                                  job.runningJob.data[key])
         
         return
-
-
-    def testF_APIbyRunningAttr(self):
+    
+    
+    def testF_ByRunningAttr(self):
         """
         This is only another test ...
         """
 
         testAPI = BossLiteAPI()
-        db = BossLiteDBWM()
 
         # First create a job
         task = Task()
-        task.save(db)
+        task.save(testAPI.db)
         
-        tmp = task.exists(db)
+        tmp = task.exists(testAPI.db)
         
         # 'jobId' MUSt starts from 1. 
         # Take a look at Task.addJob --> it always overrides 'jobId'!
-        job = Job(parameters = {'name': 'Spartacus', 'taskId': tmp, 'jobId': 1})
+        job = Job(parameters = {'name': 'Spartacus', 
+                                'taskId': tmp, 
+                                'jobId': 1} )
         self.assertEqual(job.runningJob, None)   
-        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'W'} )
+        testAPI.getNewRunningInstance(job = job, 
+                                            runningAttrs = {'status' : 'W'} )
         self.assertNotEqual(job.runningJob, None)  
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'Fringe', 'taskId': tmp, 'jobId': 2 })
+        job = Job(parameters = {'name': 'Fringe', 
+                                'taskId': tmp, 
+                                'jobId': 2 } )
         self.assertEqual(job.runningJob, None)   
-        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'SD'} )
+        testAPI.getNewRunningInstance(job = job, 
+                                            runningAttrs = {'status' : 'SD'} )
         self.assertNotEqual(job.runningJob, None)  
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'Stargate Universe', 'taskId': tmp, 'jobId': 3 })
+        job = Job(parameters = {'name': 'Stargate Universe', 
+                                'taskId': tmp, 
+                                'jobId': 3 } )
         self.assertEqual(job.runningJob, None)   
-        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'A'} )
+        testAPI.getNewRunningInstance(job = job, 
+                                            runningAttrs = {'status' : 'A'} )
         self.assertNotEqual(job.runningJob, None) 
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'Caprica', 'taskId': tmp, 'jobId': 4 })
+        job = Job(parameters = {'name': 'Caprica', 
+                                'taskId': tmp, 
+                                'jobId': 4 } )
         self.assertEqual(job.runningJob, None)   
-        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'K'} )
+        testAPI.getNewRunningInstance(job = job, 
+                                            runningAttrs = {'status' : 'K'} )
         self.assertNotEqual(job.runningJob, None) 
         task.addJob(job)
         
-        job = Job(parameters = {'name': 'The Mentalist', 'taskId': tmp, 'jobId': 5 })
+        job = Job(parameters = {'name': 'The Mentalist', 
+                                'taskId': tmp, 
+                                'jobId': 5 } )
         self.assertEqual(job.runningJob, None)   
-        testAPI.getNewRunningInstance(job = job, runningAttrs = {'closed' : 'N'} )
+        testAPI.getNewRunningInstance(job = job, 
+                                      runningAttrs = {'closed' : 'N'} )
         self.assertNotEqual(job.runningJob, None) 
         task.addJob(job)
         
-        task.save(db)
-        
-        # DEBUG
-        #queryResult = db.executeSQL(query = "SELECT * FROM bl_runningjob")
-        #for x in queryResult[0].fetchall() : 
-        #    print x.values()
+        task.save(testAPI.db)
          
         result = testAPI.loadCreated()
         self.assertEqual(len(result), 1)
@@ -446,8 +444,9 @@ class APITest(unittest.TestCase):
         
         return
     
+    
 if __name__ == "__main__":
-    suite1 = unittest.TestLoader().loadTestsFromTestCase(APITest)
+    APIsuite = unittest.TestLoader().loadTestsFromTestCase(APITest)
 
     # run the unit-test
-    unittest.TextTestRunner(verbosity=3).run(suite1)
+    unittest.TextTestRunner(verbosity=3).run(APIsuite)

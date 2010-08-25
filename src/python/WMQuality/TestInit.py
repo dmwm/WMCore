@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.17 2009/10/13 22:25:27 meloam Exp $"
+    "$Id: TestInit.py,v 1.18 2009/10/13 22:59:03 meloam Exp $"
 __version__ = \
-    "$Revision: 1.17 $"
+    "$Revision: 1.18 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -41,6 +41,7 @@ class TestInit:
     def __init__(self, testClassName):
         self.testClassName = testClassName
         self.testDir = None
+        self.currModules = []
         self.init = WMInit()
     
     def __del__(self):
@@ -117,6 +118,13 @@ class TestInit:
             for module in (defaultModules + customModules):
                 modules[module] = 'done'
             self.init.setSchema(modules.keys(), params = params)
+            
+            # store the list of modules we've added to the DB
+            modules = {}
+            for module in (defaultModules + customModules + self.currModules):
+                modules[module] = 'done'
+            self.currModules = modules.keys()
+            
         except:
             self.init.clearDatabase()
         
@@ -166,9 +174,11 @@ class TestInit:
     def clearDatabase(self, modules = []):
         """
         Database deletion. If no modules are specified
-        it will clear the whole database.
+        it will clear the tables we added with setschema
         """
         myThread = threading.currentThread()
+        if (modules == []):
+            modules = self.currModules
         self.init.clearDatabase(modules)
 
 

@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: TaskArchiver_t.py,v 1.2 2009/12/14 22:19:33 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TaskArchiver_t.py,v 1.3 2010/03/22 18:57:10 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import logging
@@ -94,6 +94,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.JobStateMachine.couchDBName = "job_accountant_t"
 
         config.component_("TaskArchiver")
+        config.TaskArchiver.componentDir = self.testInit.generateWorkDir()
         config.TaskArchiver.pollInterval  = 60
         config.TaskArchiver.logLevel      = 'SQLDEBUG'
         config.TaskArchiver.timeOut       = 0

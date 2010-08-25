@@ -8,9 +8,9 @@ This module implements the mysql backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.6 2009/05/15 19:09:15 mnorman Exp $"
+    "$Id: Queries.py,v 1.7 2009/07/17 16:02:30 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.6 $"
+    "$Revision: 1.7 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -29,6 +29,7 @@ class Queries(DBFormatter):
     def __init__(self):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
+        
        
     def selectWork(self, args, pooltable = 'tp_threadpool'):
         """
@@ -86,20 +87,19 @@ DELETE FROM %s WHERE id = :id
         """
         Updates work status of work being processed.
         """
-
-        # differentiate between onequeu and multi queue
+        # differentiate between one queue and multi queue
         if pooltable in ['tp_threadpool', 'tp_threadpool_buffer_in', \
             'tp_threadpool_buffer_out']:
-            sqlStr = """
-UPDATE %s SET state='queued' WHERE component = :componentName
-AND thread_pool_id = :thread_pool_id
-        """ % (pooltable)
+            sqlStr = """UPDATE %s SET state = 'queued'
+                          WHERE component = :componentName AND
+                                thread_pool_id = :thread_pool_id
+                     """ % (pooltable)
             self.execute(sqlStr, args)
         else:
-            sqlStr = """
-UPDATE %s SET state="queued" 
-        """ % (pooltable)
+            sqlStr = "UPDATE %s SET state = 'queued'" % (pooltable)
             self.execute(sqlStr, {})
+
+        return
 
     def getQueueLength(self, args, pooltable = 'tp_threadpool'):
         """

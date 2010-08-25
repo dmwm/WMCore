@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.6 2009/09/23 16:14:02 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMWorkload.py,v 1.7 2009/09/24 20:14:46 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 
 
@@ -28,6 +28,7 @@ def getWorkloadFromTask(taskRef):
     nodeData = taskRef
     if isinstance(taskRef, WMTaskHelper):
         nodeData = taskRef.data
+
     topNode = findTop(nodeData)
     if not hasattr(topNode, "objectType"):
         msg = "Top Node is not a WM definition object:\n"
@@ -55,7 +56,16 @@ class WMWorkloadHelper(PersistencyHelper):
     """
     def __init__(self, wmWorkload = None):
         self.data = wmWorkload
-
+        
+    def setSpecUrl(self, url):
+        self.data.persistency.specUrl = url
+        
+    def specUrl(self):
+        return self.data.persistency.specUrl
+    #TODO: I am not sure using property function is better for simple accessor.
+    #Ask Dave: either remove this do for other function for consistency
+    specUrl = property(specUrl)
+    
     def name(self):
         """
         _name_
@@ -170,6 +180,11 @@ class WMWorkload(ConfigSection):
     def __init__(self, name):
         ConfigSection.__init__(self, name)
         self.objectType = self.__class__.__name__
+        #  //persistent data
+        # //
+        #//
+        self.section_("persistency")
+        self.persistency.specUrl = None
         #  //
         # // request related information
         #//

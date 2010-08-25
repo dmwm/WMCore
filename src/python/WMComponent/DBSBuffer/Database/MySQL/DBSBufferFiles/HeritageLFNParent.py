@@ -5,15 +5,18 @@ _HeritageLFNParent_
 MySQL implementation of DBSBufferFiles.HeritageLFNParent
 """
 
-__revision__ = "$Id: HeritageLFNParent.py,v 1.1 2009/10/22 15:40:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: HeritageLFNParent.py,v 1.2 2009/12/17 21:56:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class HeritageLFNParent(DBFormatter):
     sql = """INSERT INTO dbsbuffer_file_parent (child, parent)
                SELECT :child, dbsbuffer_file.id FROM dbsbuffer_file
-                 WHERE dbsbuffer_file.lfn = :lfn"""
+                 WHERE dbsbuffer_file.lfn = :lfn AND NOT EXISTS
+                   (SELECT child FROM dbsbuffer_file_parent
+                    WHERE child = :child AND
+                          parent = (SELECT id FROM dbsbuffer_file WHERE lfn = :lfn))"""
     
     def execute(self, parentLFNs, childID, conn = None, transaction = False):
         binds = []

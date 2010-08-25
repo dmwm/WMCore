@@ -500,6 +500,8 @@ class DBObjectsPerformance(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
+                                useDefault = False)
         
         return
     
@@ -510,22 +512,12 @@ class DBObjectsPerformance(unittest.TestCase):
         """
         
         self.testInit.attemptToCloseDBConnections()
+        self.testInit.clearDatabase()
         
         return
     
     
-    def testA_databaseStartup(self):
-        """
-        testA_databaseStartup
-        """
-        
-        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
-                                useDefault = False)
-        
-        return
-    
-    
-    def testB_createAndSaveObjects(self):
+    def testA_createAndSaveObjects(self):
         """
         Performance test, do not abuse!
         """
@@ -579,13 +571,14 @@ class DBObjectsPerformance(unittest.TestCase):
         return
     
     
-    def testC_LoadObjects(self):
+    def testB_LoadObjects(self):
         """
         testC_databaseIsPersistent
         """
         
         db = BossLiteDBWM()
         log = logging.getLogger( "DBObjectsPerformance" )
+        self.testA_createAndSaveObjects()
 
         task = Task(parameters = {'id': 1})
                 
@@ -602,15 +595,6 @@ class DBObjectsPerformance(unittest.TestCase):
         
         return
     
-    
-    def testD_databaseClean(self):
-        """
-        testC_databaseIsPersistent
-        """
-        
-        self.testInit.clearDatabase()
-        
-        return
     
     
 if __name__ == "__main__":
@@ -629,4 +613,5 @@ if __name__ == "__main__":
 
     # run the unit-test
     unittest.TextTestRunner(verbosity=3).run(unitA)
+    unittest.TextTestRunner(verbosity=3).run(unitB)
     

@@ -143,14 +143,10 @@ def execute(command):
     """
     try:
         exitCode = runCommand(command)
-        msg = "Command :\n%s\n exited with status: %s" % (command, exitCode)
+        msg = "Command exited with status: %s" % (exitCode)
         print msg
     except Exception, ex:
-        msg = "Exception while invoking command:\n"
-        msg += "%s\n" % command
-        msg += "Exception: %s\n" % str(ex)
         print "ERROR: Exception During Stage Out:\n"
-        print msg
         raise StageOutError(msg, Command = command, ExitCode = 60311)
     if exitCode:
         msg = "Command exited non-zero"

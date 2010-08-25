@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.44 2010/08/09 21:34:52 sfoulkes Exp $"
-__revision__ = "$Revision: 1.44 $"
+__version__ = "$Id: ReReco.py,v 1.45 2010/08/10 16:28:48 swakef Exp $"
+__revision__ = "$Revision: 1.45 $"
 
 import subprocess
 
@@ -105,7 +105,7 @@ class ReRecoWorkloadFactory(StdBase):
         """
         set rereco policy according to the top level task job splitting algorithm
         """
-        workload.setStartPolicy("DatasetBlock", 
+        workload.setStartPolicy("Block",
                                 SliceType = SplitAlgoStartPolicyMap.getSliceType(splitAlgo), 
                                 SliceSize = SplitAlgoStartPolicyMap.getSliceSize(splitAlgo, splitAgrs))
         

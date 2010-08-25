@@ -43,13 +43,15 @@ class ReRecoWorkloadFactory():
         task.
         """
         lfnBase = "%s/%s/%s" % (self.unmergedLfnBase, dataTier, self.processedDatasetName)
+        mergedLFNBase = "%s/%s/%s" % (self.commonLfnBase, dataTier, self.processedDatasetName)
         cmsswStep = parentTask.getStep("cmsRun1")
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModule(dataTier),
                                         primaryDataset = self.inputPrimaryDataset,
                                         processedDataset = self.unmergedDatasetName,
                                         dataTier = dataTier,
-                                        lfnBase = lfnBase)
+                                        lfnBase = lfnBase,
+                                        mergedLFNBase = mergedLFNBase)
         self.addMergeTask(parentTask, dataTier)
         return
 

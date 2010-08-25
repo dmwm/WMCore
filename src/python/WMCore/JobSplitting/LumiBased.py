@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.13 2010/04/07 15:41:51 mnorman Exp $"
-__version__  = "$Revision: 1.13 $"
+__revision__ = "$Id: LumiBased.py,v 1.14 2010/06/17 20:49:09 mnorman Exp $"
+__version__  = "$Revision: 1.14 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
@@ -114,6 +114,8 @@ class LumiBased(JobFactory):
         """
 
         currentLumis  = 0
+        currentRuns   = 0
+        currentRun    = 0
         jobFiles      = Fileset()
 
         assignedFiles = []
@@ -133,6 +135,8 @@ class LumiBased(JobFactory):
                             lumiID = int(str(run.run) + str(l))
                             if not lumiID in lumisInJob:
                                 lumisInJob.append(lumiID)
+                        currentRuns += 1
+                        currentRun = run
                 #Now increment
                 currentLumis += len(lumisInJob)
 
@@ -140,14 +144,17 @@ class LumiBased(JobFactory):
             if currentLumis >= lumisPerJob:
                 self.newJob(name = makeUUID(), files = jobFiles)
                 self.currentJob["mask"].setMaxAndSkipLumis(currentLumis, lumi)
+                self.currentJob["mask"].setMaxAndSkipRuns(currentRuns, currentRun.run)
                 #Wipe clean
                 currentLumis = 0
+                currentRuns  = 0
                 jobFiles = Fileset()
 
         if not len(jobFiles.getFiles()) == 0:
             #Then we have files we need to check in because we ran out of lumis before filling the last job
             self.newJob(name = makeUUID(), files = jobFiles)
             self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, lumi)
+            self.currentJob["mask"].setMaxAndSkipRuns(currentRuns, currentRun.run)
             
 
     def EventBasedJobSplitting(self, lumiDict, eventsPerJob, location):

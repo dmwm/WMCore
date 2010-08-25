@@ -70,12 +70,13 @@ class NestedModel(RESTModel):
             print 'args[1:1+def_args]', args[1+def_args:]
             
             for a in kwargs.keys():
-                print 'a', a
+                print 'kwargs a', a
                 if a in children:
-                    method = a 
-                    kwargs.pop(a)
+                    method = a
+                    if not len(kwargs[a]): 
+                        kwargs.pop(a)
             for a in args[1+def_args:]:
-                print 'a', a
+                print 'args a', a
                 if a in children:
                     method = args.pop(args.index(a))
             

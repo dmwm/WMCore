@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.14 2009/07/21 20:41:16 meloam Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: ChangeState.py,v 1.15 2009/07/21 21:22:20 meloam Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -41,16 +41,17 @@ class ChangeState(WMObject):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
         Take a list of job objects (dicts) and the desired state change.
-        Return nothing, throw assertion error if the state change is not allowed
+        Return the jobs back, throw assertion error if the state change is not allowed
         and other exceptions as appropriate
         """
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
-        # 2. Make the state transition
-        self.persist(jobs, newstate, oldstate)
-        # 3. Document the state transition
+        # 2. Document the state transition
         jobs = self.recordInCouch(jobs, newstate, oldstate)
+        # 3. Make the state transition
+        self.persist(jobs, newstate, oldstate)
 
+        return jobs
 
     def getCouchByParentID(self, id):
         return self.database.loadView('jobs','get_by_parent_couch_id',{},[id])
@@ -87,7 +88,7 @@ class ChangeState(WMObject):
         assert len(jobs) == len(goodresult), \
                     "Got less than I was expecting from CouchDB: \n %s" %\
                         (goodresult,)
-        if oldstate == 'none':
+        if ((oldstate == 'none') or (oldstate == 'new')):
             def function(item1, item2):
                 item1['couch_record'] = item2['id']
                 return item1

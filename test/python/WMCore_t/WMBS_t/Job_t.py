@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.40 2010/04/08 20:09:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Job_t.py,v 1.41 2010/04/26 20:34:11 mnorman Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import unittest
 import logging
@@ -1127,6 +1127,7 @@ class JobTest(unittest.TestCase):
         """
 
         testJob  = self.createTestJob()
+        testJob['test'] = 'ThisIsATest'
         finalJob = testJob.getDataStructsJob()
 
         for key in finalJob.keys():

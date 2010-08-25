@@ -18,6 +18,7 @@ import WMCore.Database.CMSCouch as CMSCouch
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.JobGroup import JobGroup
 from sets import Set
 import time
 # Framework for this code written automatically by Inspect.py
@@ -31,28 +32,22 @@ class TestChangeState(unittest.TestCase):
         """
         _setUp_
         """
-        self.transitions = Transitions()
-        # TODO: write a config here
-        
-        # We need to set up the proper thread state for our test to run. Try it.
 
-        myThread = threading.currentThread()
-        
+        self.transitions = Transitions()
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-       
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
+
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
         
-        try:
-           self.testInit.setSchema(customModules = ["WMCore.ThreadPool", "WMCore.WMBS"], useDefault = False)
-        except:
-            print "Warning: something bad happened when trying to do testinit.SetSchema"
-            factory = WMFactory("Threadpool", "WMCore.ThreadPool")
-            destroy = factory.loadObject(myThread.dialect + ".Destroy")
-            destroyworked = destroy.execute(conn = myThread.transaction.conn)
-            raise
-
-
+        locationAction = daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "goodse.cern.ch")
+        locationAction.execute(siteName = "badse.cern.ch")
                                 
         # if you want to keep from colliding with other people
         #self.uniqueCouchDbName = 'jsm_test-%i' % time.time()
@@ -69,14 +64,16 @@ class TestChangeState(unittest.TestCase):
 
         myThread = threading.currentThread()
         
-
-
-        factory = WMFactory("Threadpool", "WMCore.ThreadPool")
+        factory = WMFactory("WMBS", "WMCore.WMBS")
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
         destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
         server = CMSCouch.CouchServer(self.change.config.JobStateMachine.couchurl)
         server.deleteDatabase(self.uniqueCouchDbName)
+        if not destroyworked:
+            raise Exception("Could not complete WMBS tear down.")
+        myThread.transaction.commit()
+
         
 
 
@@ -124,10 +121,14 @@ class TestChangeState(unittest.TestCase):
         testFileB.create()
 
         testJobA = Job(name = "TestJobA")
+        testJobA.create(testJobGroupA)
         testJobA.addFile(testFileA)
         
         testJobB = Job(name = "TestJobB")
+        testJobB.create(testJobGroupA)
         testJobB.addFile(testFileB)
+        
+        
         
         testJobGroupA.add(testJobA)
         testJobGroupA.add(testJobB)

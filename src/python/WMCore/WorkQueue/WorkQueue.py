@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.70 2010/02/11 19:22:47 sryu Exp $"
-__version__ = "$Revision: 1.70 $"
+__revision__ = "$Id: WorkQueue.py,v 1.71 2010/02/11 19:42:15 sryu Exp $"
+__version__ = "$Revision: 1.71 $"
 
 
 import time
@@ -90,6 +90,8 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('ReleaseRequireSubscribed', True)
         self.params.setdefault('PhEDExEndpoint', None)
         self.params.setdefault('PopulateFilesets', True)
+        #TODO: current directory as a default directory might not be a best choice.
+        # Don't know where else though 
         self.params.setdefault('CacheDir', os.path.join(os.getcwd(),
                                                         'wf_cache'))
         self.params.setdefault('NegotiationTimeout', 3600)
@@ -656,10 +658,9 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction())
 
         if not exists:
-            #FIXME: add proper cache location from parameter
-            #this might not be needed if the getWorkReturns json of wmSpec
+            #TODO: This might not be needed if the getWorkReturns json of wmSpec
             #Also if we need local cache need to clean up sometime
-            localCache = "/tmp/%s.pkl" % wmSpec.name()
+            localCache = os.path.join(self.params['CacheDir'], "%s.pkl" % wmSpec.name())
             wmSpec.setSpecUrl(localCache)
             wmSpec.save(localCache)
             

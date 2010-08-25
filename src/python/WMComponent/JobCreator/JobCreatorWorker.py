@@ -5,8 +5,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.3 2010/01/22 22:11:16 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.4 2010/02/10 16:54:28 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -125,14 +125,18 @@ class JobCreatorWorker:
                                             startDir = self.jobCacheDir)
 
             for job in wmbsJobGroup.jobs:
-                #Now, if we had the seeder do something, we save it
-                baggage = job.getBaggage()
-                #If there's something there, do something with it.
-                if baggage:
-                    cacheDir = job.getCache()
-                    output = open(os.path.join(cacheDir, 'baggage.pcl'),'w')
-                    pickle.dump(baggage, output)
-                    output.close()
+                #We better save the whole job
+                #First, add the necessary components
+                if wmTask:
+                    #If we managed to load the task, so the url should be valid
+                    job['spec']    = workflow.spec
+                    job['sandbox'] = wmTask.data.input.sandbox
+                    job['task']    = wmTask.getPathName()
+                cacheDir = job.getCache()
+                job['cache_dir'] = cacheDir
+                output = open(os.path.join(cacheDir, 'job.pkl'),'w')
+                pickle.dump(job, output)
+                output.close()
 
         #print "Finished JobCreatorWorker.__call__"
 

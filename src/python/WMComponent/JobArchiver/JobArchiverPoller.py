@@ -3,8 +3,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.4 2010/02/04 16:02:16 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.5 2010/02/11 17:33:37 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
@@ -20,6 +20,7 @@ from WMCore.JobStateMachine.ChangeState    import ChangeState
 
 from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
+from WMCore.WMBS.Fileset      import Fileset
 
 class JobArchiverPoller(BaseWorkerThread):
     """
@@ -68,7 +69,6 @@ class JobArchiverPoller(BaseWorkerThread):
 	And deal with it as desired.
         """
         logging.debug("Running algorithm for finding finished subscriptions")
-        myThread = threading.currentThread()
         try:
             self.archiveJobs()
             self.pollForClosable()
@@ -109,6 +109,11 @@ class JobArchiverPoller(BaseWorkerThread):
 
 
     def findFinishedJobs(self):
+        """
+        _findFinishedJobs_
+
+        Will actually, surprisingly, find finished jobs (i.e., jobs either exhausted or successful)
+        """
 
         jobList = []
 
@@ -119,8 +124,8 @@ class JobArchiverPoller(BaseWorkerThread):
         jobList.extend(jobList1)
         jobList.extend(jobList2)
 
-        logging.error("Found jobs to be finished")
-        logging.error(jobList)
+        #logging.error("Found jobs to be finished")
+        #logging.error(jobList)
 
         doneList = []
         
@@ -141,8 +146,6 @@ class JobArchiverPoller(BaseWorkerThread):
         regarding those jobs is cleaned up.
         """
 
-        myThread = threading.currentThread()
-
         for job in doneList:
             #print "About to clean cache for job %i" % (job['id'])
             self.cleanJobCache(job)
@@ -155,8 +158,6 @@ class JobArchiverPoller(BaseWorkerThread):
 
         Clears out any files still sticking around in the jobCache, tars up the contents and sends them off
         """
-
-        myThread = threading.currentThread()
 
         cacheDir = job.getCache()
 
@@ -180,7 +181,8 @@ class JobArchiverPoller(BaseWorkerThread):
         pipe = Popen(tarString, stdout = PIPE, stderr = PIPE, shell = False)
         pipe.wait()
 
-        shutil.move('%s/%s' % (cacheDir, tarName), '%s/%s' % (self.config.JobArchiver.logDir, tarName))
+        shutil.move('%s/%s' % (cacheDir, tarName), \
+                    '%s/%s' % (self.config.JobArchiver.logDir, tarName))
 
         shutil.rmtree('%s' % (cacheDir))
 

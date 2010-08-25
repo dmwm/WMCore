@@ -6,8 +6,10 @@ SQLAlchemy result sets (aka cursors) can be closed. Make this class look as much
 like the SQLAlchemy class to minimise the impact of adding this class.
 """
 
-__revision__ = "$Id: ResultSet.py,v 1.9 2009/05/18 12:07:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: ResultSet.py,v 1.10 2009/07/17 16:03:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
+
+import threading
 
 class ResultSet:
     def __init__(self):
@@ -27,12 +29,13 @@ class ResultSet:
         return self.data
     
     def add(self, resultproxy):
+        myThread = threading.currentThread()
         #Has to be there to provide some Oracle functionality
         #Oracle resultproxy doesn't have lastrowid
         if hasattr(resultproxy, 'lastrowid'):
             self.lastrowid = resultproxy.lastrowid
 
-        if not hasattr(resultproxy.dialect, "ORACLE_BINARY_TYPES"):
+        if myThread.dialect.lower() == "mysql":
             self.rowcount += resultproxy.rowcount
         
         if resultproxy.closed:
@@ -43,7 +46,7 @@ class ResultSet:
                 self.keys.extend(r.keys())
             self.data.append(r)
 
-            if hasattr(resultproxy.dialect, "ORACLE_BINARY_TYPES"):                
-                self.rowcount += len(r)
+        if myThread.dialect.lower() != "mysql":                
+            self.rowcount += len(self.data)
         
         return

@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.25 2009/09/24 20:43:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Create.py,v 1.26 2009/10/22 15:11:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.26 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -100,11 +100,7 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_file_location (
              filename INTEGER NOT NULL,
              location INTEGER NOT NULL,
-             UNIQUE(filename, location),
-             FOREIGN KEY(filename) REFERENCES dbsbuffer_file(id)
-               ON DELETE CASCADE,
-             FOREIGN KEY(location) REFERENCES dbsbuffer_location(id)
-               ON DELETE CASCADE)ENGINE=InnoDB"""
+             UNIQUE(filename, location)) ENGINE=InnoDB"""
 
         self.create["10dbsbuffer_block"] = \
           """CREATE TABLE dbsbuffer_block (

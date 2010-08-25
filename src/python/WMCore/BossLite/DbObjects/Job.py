@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.7 2010/04/22 14:32:05 spigafi Exp $"
-__revision__ = "$Revision: 1.7 $"
+__version__ = "$Id: Job.py,v 1.8 2010/04/26 10:13:12 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 
 # imports
@@ -157,12 +157,13 @@ class Job(DbObject):
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-            # create entry for runningJob
-            if self.runningJob is not None:
-                self.runningJob['jobId']      = self.data['jobId']
-                self.runningJob['taskId']     = self.data['taskId']
-                self.runningJob['submission'] = self.data['submissionNumber']
-                self.runningJob.save()
+        
+        # create entry for runningJob
+        if self.runningJob is not None:
+            self.runningJob['jobId']      = self.data['jobId']
+            self.runningJob['taskId']     = self.data['taskId']
+            self.runningJob['submission'] = self.data['submissionNumber']
+            self.runningJob.save()
             
         return
 
@@ -208,6 +209,9 @@ class Job(DbObject):
         # If it's internal, we only want the first job
         self.data.update(result[0])
         
+        if deep :
+            self.getRunningInstance()
+        
         self.existsInDataBase = True
         
         return
@@ -224,7 +228,7 @@ class Job(DbObject):
                       'submission': self.data['submissionNumber']}
         runJob = RunningJob(parameters = parameters)
         runJob.load()
-
+        
         # Not happy with this call because it's slow.  Maybe use ID?
         if not runJob.exists():  
             self.runningJob = None
@@ -263,6 +267,7 @@ class Job(DbObject):
 
         if not self.runningJob:
             self.getRunningInstance()
+            
         if not self.runningJob:
             # Then we couldn't load it either
             return

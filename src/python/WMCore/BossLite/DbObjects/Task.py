@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.9 2010/04/22 14:32:05 spigafi Exp $"
-__revision__ = "$Revision: 1.9 $"
+__version__ = "$Id: Task.py,v 1.10 2010/04/26 10:13:12 spigafi Exp $"
+__revision__ = "$Revision: 1.10 $"
 
 import os.path
 # import threading # seems unused
@@ -118,8 +118,7 @@ class Task(DbObject):
     @dbTransaction
     def save(self, deep = True):
         """
-        Save the task if there is new information in it. 
-        -> Save is always a 'deep' operation??   
+        Save the task if there is new information in it.  
         """
         
         status = 0
@@ -131,9 +130,12 @@ class Task(DbObject):
                            transaction = self.existingTransaction)
         else:
             self.create()
+
+        # self.data['id'] = self.exists()
         
-        if deep : 
+        if deep :
             for job in self.jobs:
+                job['taskId'] = self.data['id']
                 job.save()
                 status += 1
         

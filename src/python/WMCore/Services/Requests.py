@@ -8,8 +8,8 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set. 
 """
 
-__revision__ = "$Id: Requests.py,v 1.41 2010/08/04 14:59:17 swakef Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Requests.py,v 1.42 2010/08/04 21:57:11 swakef Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import urllib
 from urlparse import urlunparse
@@ -157,15 +157,17 @@ class Requests(dict):
                     "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
 
         # httplib2 will allow sockets to close on remote end without retrying
-        # try to send request - if this fails try again after closing conn
+        # try to send request - if this fails try again - should then succeed
         try:
             response, result = self['conn'].request(uri, method = verb,
                                     body = encoded_data, headers = headers)
             if response.status == 408: # timeout can indicate a socket error
-                raise socket.error
+                response, result = self['conn'].request(uri, method = verb,
+                                    body = encoded_data, headers = headers)
         except (socket.error, AttributeError):
-            # bug can cause connection errors to raise AttributeError
-            # close connection - if this is threaded this may spoil things
+            # AttributeError implies initial connection error - need to close
+            # & retry. httplib2 doesn't clear httplib state before next request
+            # if this is threaded this may spoil things
             # only have one endpoint so don't need to determine which to shut
             [conn.close() for conn in self['conn'].connections.values()]
             # ... try again... if this fails propagate error to client

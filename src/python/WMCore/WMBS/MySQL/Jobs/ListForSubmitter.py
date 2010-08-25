@@ -5,14 +5,15 @@ _ListForSubmitter_
 MySQL function to list jobs for submission
 """
 
-__revision__ = "$Id: ListForSubmitter.py,v 1.1 2010/07/28 15:47:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ListForSubmitter.py,v 1.2 2010/08/11 18:50:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListForSubmitter(DBFormatter):
     sql = """SELECT wmbs_job.id AS id, wmbs_job.cache_dir AS cache_dir,
-                    wmbs_sub_types.name AS type, wmbs_job.retry_count AS retry_count
+                    wmbs_sub_types.name AS type, wmbs_job.retry_count AS retry_count,
+                    wmbs_subscription.workflow as workflow
                     FROM wmbs_job
                INNER JOIN wmbs_jobgroup ON
                  wmbs_job.jobgroup = wmbs_jobgroup.id

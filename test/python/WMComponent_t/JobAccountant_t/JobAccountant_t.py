@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.9 2009/11/10 15:31:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.10 2009/11/13 15:55:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import logging
 import os.path
@@ -164,7 +164,7 @@ class JobAccountantTest(unittest.TestCase):
                "Error: test job in wrong state: %s" % testJob["state"]
         assert testJob["retry_count"] == 1, \
                "Error: test job has wrong retry count: %s" % testJob["retry_count"]
-        assert testJob["outcome"] == "fail", \
+        assert testJob["outcome"] == "failure", \
                "Error: test job has wrong outcome: %s" % testJob["outcome"]
 
         assert len(self.testSubscription.filesOfStatus("Acquired")) == 0, \
@@ -357,7 +357,7 @@ class JobAccountantTest(unittest.TestCase):
 
         for fwkJobReportFile in fwkJobReportFiles:
             assert jobOutput.has_key(fwkJobReportFile["LFN"]), \
-                   "Error: output file is not a child of the input: %s %s" % (fwkJobReportFile["LFN"], jobOutput.keys())
+                   "Error: output file is not a child of the input: %s %s %s %s" % (fwkJobReportFile["LFN"], jobOutput.keys(), inputChildren, testJob["input_files"])
 
             outputFile = jobOutput[fwkJobReportFile["LFN"]]
 
@@ -1088,6 +1088,45 @@ class JobAccountantTest(unittest.TestCase):
                                          jobReports[0].files)
 
         return
+
+    def testSixteenProcessLoadTest(self):
+        """
+        _testSixteenProcessLoadTest_
+
+        Run the load test using sixteen workers processes.
+        """
+        logging.info("Sixteen process load test:")
+        logging.info("  Filling DB...")
+        self.setupDBForLoadTest()
+        config = self.createConfig(workerThreads = 16)
+
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+
+        logging.info("  Running accountant...")
+
+        startTime = time.time()
+        accountant.algorithm()
+        endTime = time.time()
+        logging.info("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+
+        for (jobID, fwjrPath) in self.jobs:
+            logging.info("  Validating %s, %s" % (jobID, fwjrPath))
+            jobReports = readJobReport(fwjrPath)
+
+            # There are some job reports missing, so we'll just ignore the
+            # reports that don't parse correctly.  There are other unit tests
+            # that verify that the accountant handles this case correctly.
+            if len(jobReports) == 0:
+                continue
+            
+            self.verifyFileMetaData(jobID, jobReports[0].files)
+            self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReports[0].files)
+
+        return    
     
 if __name__ == '__main__':
     unittest.main()

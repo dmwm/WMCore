@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.4 2010/05/09 15:04:05 spigafi Exp $"
-__revision__ = "$Revision: 1.4 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.5 2010/05/09 20:00:32 spigafi Exp $"
+__revision__ = "$Revision: 1.5 $"
 
 from copy import deepcopy
 import threading
@@ -778,28 +778,24 @@ class BossLiteDBWM(BossLiteDBInterface):
         if type(obj) == Task :
             
             if classname == 'Task.GetJobs' :
-                action = self.engine.daofactory(classname)
-                result = action.execute(id = obj.data['id'],
-                                        conn = self.engine.getDBConn(),
-                                        transaction = self.existingTransaction)
+                binds = {'taskId' : obj.data['id'] }
                 
             elif obj.data['id'] > 0:
-                action = self.engine.daofactory(classname = "Task.SelectTask")
-                result = action.execute(value = obj.data['id'],
-                                        column = 'id',
-                                        conn = self.engine.getDBConn(),
-                                        transaction = self.existingTransaction)
+                classname = "Task.SelectTask"
+                binds = {'id' : obj.data['id'] }
                 
             elif obj.data['name']:
-                action = self.engine.daofactory(classname = "Task.SelectTask")
-                result = action.execute(value = obj.data['name'],
-                                        column = 'name',
-                                        conn = self.engine.getDBConn(),
-                                        transaction = self.existingTransaction)
+                classname = "Task.SelectTask"
+                binds = {'name' : obj.data['name'] }
                 
             else:
                 # Then you're screwed
                 return []
+            
+            action = self.engine.daofactory(classname = classname)
+            result = action.execute(binds = binds,
+                                    conn = self.engine.getDBConn(),
+                                    transaction = self.existingTransaction)
             
             return result
         
@@ -830,28 +826,24 @@ class BossLiteDBWM(BossLiteDBInterface):
         
         elif type(obj) == RunningJob :
             
-            # I think 'LoadByID' is useless...
-            if obj.data['id'] > 0:
-                action = self.engine.daofactory(
-                                    classname = "RunningJob.LoadByID" )
-                result = action.execute(id = obj.data['id'], 
-                                        conn = self.engine.getDBConn(),
-                                        transaction = self.existingTransaction)
-            
-            elif (obj.data['jobId'] and obj.data['taskId'] and \
+            if (obj.data['jobId'] and obj.data['taskId'] and \
                                                 obj.data['submission']) :
-                action = self.engine.daofactory(
-                                    classname = "RunningJob.LoadByParameters" )
-                result = action.execute(jobID = obj.data['jobId'], 
-                                        taskID = obj.data['taskId'],
-                                        submission = obj.data['submission'],
-                                        conn = self.engine.getDBConn(),
-                                        transaction = self.existingTransaction)
+                binds = {'task_id' : obj.data['taskId'],
+                         'job_id' : obj.data['jobId'],
+                         'submission' : obj.data['submission'] }
+                
+            elif obj.data['id'] > 0:
+                binds = {'id' : obj.data['id'] } 
                 
             else:
                 # We have nothing
                 return []
 
+            action = self.engine.daofactory( classname = "RunningJob.Load" )
+            result = action.execute(binds = binds,
+                                    conn = self.engine.getDBConn(),
+                                    transaction = self.existingTransaction)
+            
             return result
         
         else :

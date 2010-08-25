@@ -12,8 +12,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.36 2010/07/04 23:27:13 meloam Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.37 2010/07/13 22:11:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import os
 import threading
@@ -442,7 +442,6 @@ class AccountantWorker:
         wmbsJob.load()
 
         wmbsJob["outcome"] = "failure"
-        wmbsJob["retry_count"] += 1
         wmbsJob.save()
         
         # We'll fake the rest of the state transitions here as the rest of the

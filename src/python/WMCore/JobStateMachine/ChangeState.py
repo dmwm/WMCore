@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.51 2010/07/01 19:13:55 mnorman Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: ChangeState.py,v 1.52 2010/07/13 22:11:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.52 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
@@ -74,6 +74,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
+        self.incrementRetryDAO = self.daofactory("Jobs.IncrementRetry")
         return
 
     def propagate(self, jobs, newstate, oldstate):
@@ -238,11 +239,19 @@ class ChangeState(WMObject, WMConnectionBase):
 
     def persist(self, jobs, newstate, oldstate):
         """
-        Write the state change to WMBS, via DAO
+        _persist_
+
+        Update the job state in the database.
         """
+        if oldstate == "submitcooloff" or oldstate == "jobcooloff":
+            self.incrementRetryDAO.execute(jobs,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+        
         for job in jobs:
             job['state'] = newstate
             job['oldstate'] = oldstate
+            
         dao = self.daofactory(classname = "Jobs.ChangeState")
         dao.execute(jobs, conn = self.getDBConn(),
                     transaction = self.existingTransaction())

@@ -9,15 +9,14 @@ wrapper class), a retry count for that state, and an id for the couchdb record
 """
 
 __all__ = []
-__revision__ = "$Id: ChangeState.py,v 1.7 2009/08/11 20:11:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ChangeState.py,v 1.8 2010/07/13 22:11:00 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ChangeState(DBFormatter):
     sql = """UPDATE wmbs_job
             SET state = (select id from wmbs_job_state where name = :state),
-                retry_count = :retry,
                 couch_record = :couch_record,
                 state_time = :time 
             WHERE wmbs_job.id = :job      
@@ -32,7 +31,6 @@ class ChangeState(DBFormatter):
             dict = {'job': job['id'],
                     'state': job['state'],
                     'time': self.timestamp(),
-                    'retry': job['retry_count'],
                     'couch_record': job['couch_record']}
             return dict
         return map(function, jobs)

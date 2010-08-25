@@ -280,6 +280,69 @@ class TestChangeState(unittest.TestCase):
         
         return
 
+    def testRetryCount(self):
+        """
+        _testRetryCount_
+        
+        Verify that the retry count is incremented when we move out of the
+        submitcooloff or jobcooloff state.
+        """
+        DefaultConfig.config.JobStateMachine.couchURL = os.getenv("COUCHURL")
+        change = ChangeState(DefaultConfig.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", seName = "somese.cern.ch")
+        
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = "Test")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        for i in range(4):
+            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile.create()
+            testFileset.addFile(newFile)
+
+        testFileset.commit()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased")
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 4, \
+               "Error: Splitting should have created four jobs."
+
+        testJobA = jobGroup.jobs[0]
+        testJobB = jobGroup.jobs[1]
+        testJobC = jobGroup.jobs[2]
+        testJobD = jobGroup.jobs[3]
+
+        change.persist([testJobA], "created", "submitcooloff")
+        change.persist([testJobB], "created", "jobcooloff")
+        change.persist([testJobC, testJobD], "new", "none")        
+
+        testJobA.load()
+        testJobB.load()
+        testJobC.load()
+        testJobD.load()
+
+        assert testJobA["retry_count"] == 1, \
+               "Error: Retry count is wrong."
+        assert testJobB["retry_count"] == 1, \
+               "Error: Retry count is wrong."
+        assert testJobC["retry_count"] == 0, \
+               "Error: Retry count is wrong."
+        assert testJobD["retry_count"] == 0, \
+               "Error: Retry count is wrong."        
+
+        return    
+
     def testJobSerialization(self):
         """
         _testJobSerialization_
@@ -337,11 +400,11 @@ class TestChangeState(unittest.TestCase):
         assert fwjrDoc["retrycount"] == 0, \
                "Error: Retry count is wrong."
 
-        assert len(fwjrDoc["fwjr"].keys()) == 2, \
+        assert len(fwjrDoc["fwjr"]["steps"].keys()) == 2, \
                "Error: Wrong number of steps in FWJR."
-        assert "cmsRun1" in fwjrDoc["fwjr"].keys(), \
+        assert "cmsRun1" in fwjrDoc["fwjr"]["steps"].keys(), \
                "Error: cmsRun1 step is missing from FWJR."
-        assert "stageOut1" in fwjrDoc["fwjr"].keys(), \
+        assert "stageOut1" in fwjrDoc["fwjr"]["steps"].keys(), \
                "Error: stageOut1 step is missing from FWJR."        
 
         return

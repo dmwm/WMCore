@@ -4,7 +4,7 @@ DBS Uploader handler for NewWorkflow event
 """
 __all__ = []
 
-__revision__ = "$Id: NewWorkflowHandler.py,v 1.12 2009/01/14 22:06:58 afaq Exp $"
+__revision__ = "$Id: NewWorkflowHandler.py,v 1.13 2009/06/04 21:41:47 mnorman Exp $"
 __version__ = "$Reivison: $"
 __author__ = "anzar@fnal.gov"
 
@@ -13,9 +13,10 @@ from WMCore.ThreadPool.ThreadPool import ThreadPool
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 from ProdCommon.MCPayloads.WorkflowSpec import WorkflowSpec
+from ProdCommon.MCPayloads.MergeTools   import *
 
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter
-from ProdCommon.DataMgmt.DBS import DBSWriterObjects
+from ProdCommon.DataMgmt.DBS           import DBSWriterObjects
 from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 
@@ -29,6 +30,19 @@ import string
 import logging
 
 from WMCore.WMFactory import WMFactory
+
+
+
+
+class InvalidWorkFlowSpec(Exception):
+    """
+    Dummy definition of an exception
+    """
+    def __init__(self, workflowFile = None):
+        self.workflowFile = workflowFile
+
+    def __str__(self):
+        return str(self.workflowFile)
 
 class NewWorkflowHandler(BaseHandler):
     """
@@ -65,6 +79,7 @@ class NewWorkflowHandler(BaseHandler):
         if not os.path.exists(workflowFile):
             logging.error("Workflow File Not Found: %s" % workflowFile)
             raise InvalidWorkFlowSpec(workflowFile)
+        
         try:
             workflowSpec = WorkflowSpec()
             workflowSpec.load(workflowFile)
@@ -88,10 +103,24 @@ class NewWorkflowHandler(BaseHandler):
            for adataset in workflowSpec.payload._OutputDatasets:
                adataset['ParentDataset']=None
 
+
+        #     Now Create Merge workflow
+        #
+        try:
+            mergeWorkflowSpec = createMergeDatasetWorkflow(workflowSpec)
+        except:
+            logging.error("Couldn't make a merge workflow spec.  Probably already a merge spec")
+            mergeWorkflowSpec = None
+            pass
+
+        
+
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
         addToBuffer=factory.loadObject("AddToBuffer")
  
-        datasets = workflowSpec.outputDatasetsWithPSet()        
+        datasets = workflowSpec.outputDatasetsWithPSet()
+        if not mergeWorkflowSpec == None:
+            datasets = datasets + mergeWorkflowSpec.outputDatasetsWithPSet()
         for dataset in datasets:
             #dataset['PSetContent']="TMP Contents, actual contents too long so dropping them for testing"
             #print "\n\n\nATTENTION: PSetContent being trimmed for TESTING, please delete line above in real world\n\n\n"

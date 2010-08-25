@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.39 2009/04/14 17:44:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Fileset.py,v 1.40 2009/04/27 13:43:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.40 $"
 
 from sets import Set
 
@@ -191,7 +191,7 @@ class Fileset(WMBSBase, WMFileset):
         self.beginTransaction()
 
         closeAction = self.daofactory(classname = "Fileset.MarkOpen")
-        closeAction.execute(fileset = self.id, isOpen = isOpen,
+        closeAction.execute(fileset = self.name, isOpen = isOpen,
                             conn = self.getWriteDBConn(),
                             transaction = self.existingTransaction())
 

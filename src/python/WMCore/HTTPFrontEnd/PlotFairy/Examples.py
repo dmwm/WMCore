@@ -1,5 +1,4 @@
-import json
-import random 
+import json, random, urllib 
 
 def generate_random_baobab():
 	def random_recurse(total,depth_left):
@@ -18,9 +17,9 @@ def generate_random_baobab():
 simple_sparkline = {
 	'width':400, 'height':100,
 	'series':[
-		{'label':'series1','colour':'#ff0000','values':[random.random() for i in range(40)]},
-		{'label':'series2','colour':'#00ff00','values':[random.random() for i in range(40)]},
-		{'label':'series3','colour':'#0000ff','values':[random.random() for i in range(40)]}
+		{'label':'series1','colour':'ff0000','values':[random.random() for i in range(40)]},
+		{'label':'series2','colour':'00ff00','values':[random.random() for i in range(40)]},
+		{'label':'series3','colour':'0000ff','values':[random.random() for i in range(40)]}
 	],
 	'labelled':True,
 	'overlay':False
@@ -50,9 +49,9 @@ simple_bar_labels = {
 	'width':800,'height':800,
 	'xaxis':{'label':'Labelled axis','type':'labels','labels':['A','B','C','D']},
 	'series':[
-		{'label':'A', 'colour':'#ff0000','value':100},
-		{'label':'B', 'colour':'#00ff00','value':200},
-		{'label':'C', 'colour':'#0000ff','value':300}
+		{'label':'A', 'colour':'ff0000','value':100},
+		{'label':'B', 'colour':'00ff00','value':200},
+		{'label':'C', 'colour':'0000ff','value':300}
 	]
 }
 
@@ -62,9 +61,9 @@ simple_bar_numeric = {
 	'xaxis':{'label':'Numeric axis','type':'num','min':0,'max':100,'width':10},
 	'yaxis':{'label':'Log axis','log':False},
 	'series':[
-		{'label':'series1','colour':'#ff0000','values':range(10)},
-		{'label':'series2','colour':'#00ff00','values':[x**2 for x in range(10)]},
-		{'label':'series3','colour':'#0000ff','values':[x**3 for x in range(10)]}
+		{'label':'series1','colour':'ff0000','values':range(10)},
+		{'label':'series2','colour':'00ff00','values':[x**2 for x in range(10)]},
+		{'label':'series3','colour':'0000ff','values':[x**3 for x in range(10)]}
 	],
 	'legend':True
 }
@@ -75,9 +74,9 @@ simple_bar_time = {
 	'xaxis':{'label':'Numeric axis','type':'time','min':733280,'max':733290,'width':1},
 	'yaxis':{'label':'Log axis','log':True},
 	'series':[
-		{'label':'series1','colour':'#ff0000','values':range(10)},
-		{'label':'series2','colour':'#00ff00','values':[x**2 for x in range(10)]},
-		{'label':'series3','colour':'#0000ff','values':[x**3 for x in range(10)]}
+		{'label':'series1','colour':'ff0000','values':range(10)},
+		{'label':'series2','colour':'00ff00','values':[x**2 for x in range(10)]},
+		{'label':'series3','colour':'0000ff','values':[x**3 for x in range(10)]}
 	],
 	'legend':True
 }
@@ -93,9 +92,29 @@ simple_quality_map = {
 	]
 }
 
+print "<table>"
+print "<tr>"
+print "<td>"
 print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Sparkline&data=%s'>" % json.dumps(simple_sparkline)
+print "</td>"
+print "<td>"
 print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Baobab&data=%s'>" % json.dumps(simple_baobab)
+print "</td>"
+print "</tr>"
+print "<tr>"
+print "<td>"
 print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Bar&data=%s'>" % json.dumps(simple_bar_labels)
+print "</td>"
+print "<td>"
 print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Bar&data=%s'>" % json.dumps(simple_bar_numeric)
+print "</td>"
+print "</tr>"
+print "<tr>"
+print "<td>"
 print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=Bar&data=%s'>" % json.dumps(simple_bar_time)
+print "</td>"
+print "<td>"
 print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?type=QualityMap&data=%s'>" % json.dumps(simple_quality_map)
+print "</td>"
+print "</tr>"
+print "</table>"

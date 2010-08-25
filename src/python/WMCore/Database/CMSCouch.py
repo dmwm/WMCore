@@ -3,10 +3,12 @@
 _CMSCouch_
 
 A simple API to CouchDB that sends HTTP requests to the REST interface.
+
+http://wiki.apache.org/couchdb/API_Cheatsheet
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.69 2010/07/19 20:11:10 evansde Exp $"
-__version__ = "$Revision: 1.69 $"
+__revision__ = "$Id: CMSCouch.py,v 1.70 2010/07/29 13:46:17 metson Exp $"
+__version__ = "$Revision: 1.70 $"
 
 import urllib
 import datetime
@@ -21,7 +23,12 @@ def check_name(dbname):
     if not match:
         msg = '%s is not a valid database name'
         raise ValueError(msg % urllib.unquote_plus(dbname))
-        
+
+def check_server_url(srvurl):
+    good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
+    if not good_name:
+        raise ValueError('You must include http(s):// in your servers address')
+     
 class Document(dict):
     """
     Document class is the instantiation of one document in the CouchDB
@@ -59,7 +66,7 @@ class CouchDBRequests(BasicAuthJSONRequests):
     CouchDB has two non-standard HTTP calls, implement them here for
     completeness, and talks to the CouchDB port
     """
-    def __init__(self, url = 'localhost:5984'):
+    def __init__(self, url = 'http://localhost:5984'):
         """
         Initialise requests
         """
@@ -78,16 +85,20 @@ class CouchDBRequests(BasicAuthJSONRequests):
         """
         return self.makeRequest(uri, data, 'COPY')
     
-    def makeRequest(self, uri=None, data=None, type='GET',
-                     encode=True, decode=True, contentType=None):
+    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers = {}, 
+                     encode=True, decode=True, contentType=None, cache=False):
         """
         Make the request, handle any failed status, return just the data (for 
-        compatibility).
+        compatibility). By default do not cache the response.
+        
+        TODO: set caching in the calling methods.
         """
         try:
-            result, status, reason = BasicAuthJSONRequests.makeRequest(
-                                        self, uri, data, type, encode, decode, 
-                                        contentType)
+            if not cache:
+                incoming_headers.update({'Cache-Control':'no-cache'}) 
+            result, status, reason, cached = BasicAuthJSONRequests.makeRequest(
+                                        self, uri, data, type, incoming_headers,
+                                        encode, decode,contentType)
         except HTTPException, e:
             self.checkForCouchError(getattr(e, "status", None),
                                     getattr(e, "reason", None), data)
@@ -127,7 +138,7 @@ class Database(CouchDBRequests):
     TODO: remove leading whitespace when committing a view
     """
     def __init__(self, dbname = 'database', 
-                  url = 'localhost:5984', size = 1000):
+                  url = 'http://localhost:5984', size = 1000):
         """
         A set of queries against a CouchDB database
         """
@@ -317,7 +328,7 @@ class Database(CouchDBRequests):
         encodedOptions = {}
         for k,v in options.iteritems():
             encodedOptions[k] = self.encode(v)
-
+        
         if len(keys):
             if (encodedOptions):
                 data = urllib.urlencode(encodedOptions)
@@ -347,18 +358,21 @@ class Database(CouchDBRequests):
         encodedOptions = {}
         for k,v in options.iteritems():
             encodedOptions[k] = self.encode(v)
-
+        
         if len(keys):
             if (encodedOptions):
                 data = urllib.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
-                        (self.name, design, list, view, data), {'keys':keys}, decode=False)
+                        (self.name, design, list, view, data), {'keys':keys}, 
+                        decode=False)
             else:
                 retval = self.post('/%s/_design/%s/_list/%s/%s' % \
-                        (self.name, design, list, view), {'keys':keys}, decode=False)
+                        (self.name, design, list, view), {'keys':keys}, 
+                        decode=False)
         else:
             retval = self.get('/%s/_design/%s/_list/%s/%s' % \
-                        (self.name, design, list, view), encodedOptions, decode=False)
+                        (self.name, design, list, view), encodedOptions, 
+                        decode=False)
             
         if ('error' in retval):
             raise RuntimeError ,\
@@ -426,13 +440,11 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
     
-    def __init__(self, dburl='localhost:5984'):
+    def __init__(self, dburl='http://localhost:5984'):
         """
         Set up a connection to the CouchDB server
         """
-        if dburl.find("http://") == 0:
-            dburl = dburl[7:]
-            
+        check_server_url(dburl)
         CouchDBRequests.__init__(self, dburl)
         self.url = dburl
 
@@ -469,16 +481,43 @@ class CouchServer(CouchDBRequests):
             return self.createDatabase(dbname)
         return Database(dbname, self.url, size)
     
-    def replicate(self, source, destination, continuous=False, 
-                  create_target=False):
-        "Trigger replication between source and destination"
-        #TODO: how to protect from missing http://?
-        self.post('/_replicate', 
-                  data={"source":source,
-                        "target":destination, 
-                        "continuous":continuous,
-                        "create_target":create_target})
-
+    def replicate(self, source, destination, continuous = False, 
+                  create_target = False, cancel = False, doc_ids=False,
+                  filter = False, query_params = False):
+        """Trigger replication between source and destination. Options are as
+        described in http://wiki.apache.org/couchdb/Replication, in summary:
+            continuous = bool, trigger continuous replication 
+            create_target = bool, implicitly create the target database  
+            cancel = bool, stop continuous replication
+            doc_ids = list, id's of specific documents you want to replicate
+            filter = string, name of the filter function you want to apply to 
+                     the replication, the function should be defined in a design
+                     document in the source database.  
+            query_params = dictionary of parameters to pass into the filter 
+                     function
+        """
+        check_server_url(source)
+        check_server_url(destination)
+        data={"source":source,"target":destination}
+        #There must be a nicer way to do this, but I've not had coffee yet...
+        if continuous: data["continuous"] = continuous
+        if create_target: data["create_target"] = create_target
+        if cancel: data["cancel"] = cancel
+        if doc_ids: data["doc_ids"] = doc_ids
+        if filter:
+            data["filter"] = filter
+            if query_params:
+                data["query_params"] = query_params
+        self.post('/_replicate', data)
+    
+    def status(self):
+        """
+        See what active tasks are running on the server.
+        """
+        return {'databases': self.listDatabases(),
+                'server_stats': self.get('/_stats'),
+                'active_tasks': self.get('/_active_tasks')}
+        
     def __str__(self):
         """
         List all the databases the server has

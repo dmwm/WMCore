@@ -21,6 +21,8 @@ from WMCore.BossLite.DbObjects.Task        import Task
 from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
 
+from nose.plugins.attrib import attr
+
 def fakeTask(db, numjob):
     """
     This procedure create a fakeTask
@@ -63,7 +65,7 @@ class APISched(unittest.TestCase):
     Unit-test for BossLiteAPISched
     """
     
-    
+    @attr('integration')    
     def testA_databaseStartup(self):
         """
         testA_databaseStartup
@@ -82,7 +84,7 @@ class APISched(unittest.TestCase):
         
         return
     
-    
+    @attr('integration')    
     def testB_Submission(self):
         """
         Simple submission operation
@@ -106,7 +108,7 @@ class APISched(unittest.TestCase):
         
         return
     
-    
+    @attr('integration')    
     def testC_Status(self):
         """
         Simple status check operation
@@ -130,7 +132,7 @@ class APISched(unittest.TestCase):
         
         return
     
-    
+    @attr('integration')    
     def testD_GetOutput(self):
         """
         Simple getOutput operation

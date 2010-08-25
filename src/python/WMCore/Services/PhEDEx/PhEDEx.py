@@ -19,42 +19,6 @@ from WMCore.Services.JSONParser.JSONParser import JSONParser
     #import simplejson as json
 
 #TODO: this should move to the AuthorisedService class
-def getKeyCert():
-    """
-       Gets the User Proxy if it exists otherwise throws an exception
-       This code is bollowed from DBSAPI/dbsHttpService.py
-    """
-
-    # First presendence to HOST Certificate, This is how it set in Tier0
-    if os.environ.has_key('X509_HOST_CERT'):
-        cert = os.environ['X509_HOST_CERT']
-        key = os.environ['X509_HOST_KEY']
-        
-    # Second preference to User Proxy, very common
-    elif os.environ.has_key('X509_USER_PROXY'):
-        cert = os.environ['X509_USER_PROXY']
-        key = cert
-
-    # Third preference to User Cert/Proxy combinition
-    elif os.environ.has_key('X509_USER_CERT'):
-        cert = os.environ['X509_USER_CERT']
-        key = os.environ['X509_USER_KEY']
-
-    # Worst case, look for proxy at default location /tmp/x509up_u$uid
-    else :
-        uid = os.getuid()
-        cert = '/tmp/x509up_u'+str(uid)
-        key = cert
-
-    #Set but not found
-    if not os.path.exists(cert) or not os.path.exists(key):
-        msg = "Certificate is not found"
-        logging.error(msg)
-        raise Exception, msg
-    
-    # All looks OK, still doesn't gurantee proxy's validity etc.
-    return key, cert
-
 class PhEDEx(AuthorisedService):
 
     """
@@ -70,8 +34,6 @@ class PhEDEx(AuthorisedService):
         if not dict.has_key('enpoint'):
             dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
                                 self.responseType
-        if not dict.has_key('key') or not dict.has_key('cert'):
-            dict['key'], dict['cert'] = getKeyCert()
         
         #if self.responseType == 'json':
             #self.parser = JSONParser()

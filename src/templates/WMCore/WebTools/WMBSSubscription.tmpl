@@ -1,0 +1,149 @@
+<html>
+<head>
+<title>Subscription Status</title>
+
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo/yahoo-min.js&2.8.0r4/build/event/event-min.js&2.8.0r4/build/connection/connection-min.js"></script> 
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.0r4/build/datatable/assets/skins/sam/datatable.css"> 
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js&2.8.0r4/build/dragdrop/dragdrop-min.js&2.8.0r4/build/element/element-min.js&2.8.0r4/build/datasource/datasource-min.js&2.8.0r4/build/datatable/datatable-min.js"></script> 
+
+<style type="text/css">
+a.jobSuccess:link { color: green; }
+a.jobSuccess:visited { color: green; }
+a.jobSuccess:hover { color: white; background-color: green; }
+a.jobFailure:link { color: red; }
+a.jobFailure:visited { color: red; }
+a.jobFailure:hover { color: white; background-color: red; }
+a.jobRunning:link { color: blue; }
+a.jobRunning:visited { color: blue; }
+a.jobRunning:hover { color: white; background-color: blue }
+</style>
+
+</head>
+<style type="text/css">
+/* custom styles for this example */
+.yui-skin-sam .yui-dt-liner { white-space:nowrap; } 
+
+</style>
+
+<body class="yui-skin-sam">
+
+Workflow Name: <br>
+Fileset Name: <br>
+Fileset Open: <br>
+Fileset Files: <div id="filesetFiles"></div><br>
+Fileset Events: <div id="filesetEvents"></div><br>
+<br><br>
+<div id="workflow"></div>
+<br><br>
+Jobs:
+<div id="jobs">
+
+<script>
+var futonUrl = "http://cmssrv48:5984/_utils/document.html?tier1_skimming/";
+var subscriptionId = $subscriptionId;
+var listJobsUrl = "/wmbs/listjobsbysub/?return_type=application/json;subscriptionId=" + subscriptionId;
+
+var handleSuccess = function(o){
+    if(o.responseText !== undefined) {
+        var subscriptionJobs = eval("(" + o.responseText + ")").results;
+
+        jobsEl = document.getElementById("jobs");
+        var tbl     = document.createElement("table");
+        var tblBody = document.createElement("tbody");
+
+	var row = null;
+	var cell = null;
+	// total jobs
+	// totals for each state
+
+        for (i = 0; i < subscriptionJobs.length; i++) {
+           var jobState = subscriptionJobs[i].jobstate;
+            if (jobState == "cleanout" || jobState == 'exhausted' || 
+                jobState == 'success' || jobState == 'jobfailed') {
+                if (subscriptionJobs[i].outcome == 1) { 
+                    var linkClass = "jobSuccess"; 
+                    }
+                else { 
+                    var linkClass = "jobFailure"; 
+                    }
+                }
+            else {  
+                var linkClass = "jobRunning";
+                }
+
+            jobHTML = '<a href="' + futonUrl + subscriptionJobs[i].couch_record + '" ';
+            jobHTML += 'class="' + linkClass + '" target="_blank">';
+            jobHTML += subscriptionJobs[i].jobname + '</a> ';
+
+            if (row == null || i % 3 == 0) {
+                row = document.createElement("tr");
+                tblBody.appendChild(row);
+                }
+
+            var cell = document.createElement("td");
+            cell.innerHTML = jobHTML;
+            row.appendChild(cell);
+            }
+
+        tbl.appendChild(tblBody);
+        jobsEl.appendChild(tbl);
+        }
+    }
+
+var handleFailure = function(o) {
+    if (o.responseText !== undefined) {
+        }
+    }
+
+var callback = 
+{
+    success: handleSuccess,
+    failure: handleFailure,
+    argument: {}
+};
+
+var request = YAHOO.util.Connect.asyncRequest('GET', listJobsUrl, callback);
+
+var myColumnDefs = [
+    {key:"output_module", label:"Output Module", sortable:true, resizable:true},
+    {key:"output_files", label:"Files Created", sortable:true, resizable:true},
+    {key:"output_events", label:"Events Selected", sortable:true, resizable:true},
+    {key:"efficiency", label: "Efficiency", sortable:true, resizable: true}];
+
+var handleWFSuccess = function(o){
+    if(o.responseText !== undefined) {
+        var wmbsSubStatus = eval("(" + o.responseText + ")").results;
+
+	var filesetFiles = document.getElementById("filesetFiles");
+	filesetFiles.innerHTML = wmbsSubStatus[0].input_files;
+	var filesetEvents = document.getElementById("filesetEvents");
+	filesetEvents.innerHTML = wmbsSubStatus[0].input_events;
+
+        var myDataSource = new YAHOO.util.DataSource(wmbsSubStatus);
+        myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+        myDataSource.responseSchema = {
+            fields: ["output_module", "output_files","output_events","input_files", "input_events", "efficiency"]
+        };
+
+        var myDataTable = new YAHOO.widget.DataTable("workflow",
+                myColumnDefs, myDataSource, {caption: "Output Module Selection Efficiency"});
+       }
+    }
+
+var handleWFFailure = function(o) {
+    if(o.responseText !== undefined){
+        }
+    }
+
+var callback2 =
+{
+  success: handleWFSuccess,
+  failure: handleWFFailure,
+  argument: {}
+};
+
+var wfUrl = "/wmbs/listworkflowefficiency?return_type=application/json;subscriptionId=" + subscriptionId;
+var request2 = YAHOO.util.Connect.asyncRequest('GET', wfUrl, callback2);
+</script>
+</body>
+</html>

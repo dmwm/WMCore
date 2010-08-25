@@ -397,7 +397,7 @@ def makeJobTweak(job):
 
     firstEvent = mask['FirstEvent']
     if firstEvent != None:
-        result.addParameter("process.source.firstEvent", firstEvent)
+        result.addParameter("process.source.skipEvents", firstEvent)
 
     # lumi limits
     if mask["FirstLumi"]:

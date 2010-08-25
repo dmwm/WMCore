@@ -30,8 +30,8 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.16 2009/05/12 16:20:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobGroup.py,v 1.17 2009/05/28 16:47:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Fileset import Fileset
@@ -60,9 +60,10 @@ class JobGroup(WMObject):
         """
         _add_
 
-        Add a Job to the JobGroup.
+        Add a Job or list of jobs to the JobGroup.
         """
-        self.newjobs.append(job)
+        jobList = self.makelist(job)
+        self.newjobs.extend(jobList)
         return
 
     def commit(self):

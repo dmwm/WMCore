@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.43 2010/03/10 20:49:21 mnorman Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: File_t.py,v 1.44 2010/03/15 15:32:24 sryu Exp $"
+__version__ = "$Revision: 1.44 $"
 
 import unittest
 import logging
@@ -1448,6 +1448,43 @@ class FileTest(unittest.TestCase):
         
         return
 
+    def testCreateWithParent(self):
         
+        """
+        Test passing parnents arguments in file creation.
+        check if parent file does not exist, it create the file and set the parentage
+        """
+        
+        # create parent file before it got added to child file.
+        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                              events = 20, checksums = {'cksum': 1})
+        testFileParentA.addRun(Run( 1, *[45]))
+        testFileParentA.create()
+        
+        # don't create create parent file before it got added to child file.
+        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                              events = 20, checksums = {'cksum': 1})
+        testFileParentB.addRun(Run( 1, *[45]))
+        
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1}, 
+                         parents = [testFileParentA, testFileParentB])
+        testFileA.addRun(Run( 1, *[45]))
+        
+        testFileA.create()
+
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            assert parentFile in goldenFiles, \
+                   "ERROR: Unknown parent file"
+            goldenFiles.remove(parentFile)
+
+        assert len(goldenFiles) == 0, \
+              "ERROR: Some parents are missing"
+
 if __name__ == "__main__":
     unittest.main() 

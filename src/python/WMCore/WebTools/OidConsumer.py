@@ -47,11 +47,11 @@ class OidConsumer(cherrypy.Tool):
 
     # This is the method that is called in the cherrypy hook point (whenever
     # the user-agent requests a page
-    def callable(self, role=None, group=None, site=None):
+    def callable(self, authzfunc=None):
         self.verify()
         if isinstance(cherrypy.request.handler,cherrypy._cpdispatch.LateParamPageHandler):
             self.process()
-            self.check_authorization(role, group, site)
+            self.check_authorization(authzfunc)
             self.defaults()
         # Now cherrypy calls the handler()
     
@@ -149,17 +149,12 @@ class OidConsumer(cherrypy.Tool):
             cherrypy.session[self.session_name]['status'] = PROCESSING
 
 
-            # Extends the OpenID request using SREG. On this extended request,
-            # it asks for the user authorization stuff (role, group, site)
-            # Since this extension makes part of the original OpenID request,
-            # it will be sent securely.
-            sreg_request = sreg.SRegRequest(required=['role',
-                                                      'group',
-                                                      'site',
-                                                      'fullname'],
-                                            optional=['email'])
-            #sreg_request = sreg.SRegRequest(required=['nickname'],
-                                           # optional=['fullname', 'email'])
+            # Extends the OpenID request using SREG. Uses it to get authoriztion
+            # data. Since this extension makes part of the original OpenID
+            # request, it will be sent securely.
+            sreg_request = sreg.SRegRequest(required=['permissions',
+                                                      'fullname',
+                                                      'dn'])
             oidrequest.addExtension(sreg_request)
 
             # Should this auth request be sent as HTTPRedirect or as a POST?
@@ -223,9 +218,12 @@ class OidConsumer(cherrypy.Tool):
             # Gets additional information that came in the server response.
             # The authorization information is supposed to come in here.
             sreg_data = sreg.SRegResponse.fromSuccessResponse(info) or {}
-            for i in ['role', 'group', 'site', 'fullname']:
+            for i in ['fullname', 'dn']:
                 cherrypy.session[self.session_name][i] = sreg_data.get(i,None)
-                
+            # Should do a better job when passing a dict as a string
+            cherrypy.session[self.session_name]['permissions'] = \
+                                   eval(sreg_data.get('permissions',"{}"))
+            
             # Set the new session state to authenticated
             cherrypy.session[self.session_name]['status'] = AUTHENTICATED
             cherrypy.session[self.session_name]['openid_url'] = \
@@ -241,24 +239,22 @@ class OidConsumer(cherrypy.Tool):
 
         # End of process()
 
-    def check_authorization(self, role=None, group=None, site=None):
+    def check_authorization(self, authzfunc):
         # Do not process auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return
 
-        allowed = True
-        if role is not None:
-            allowed &= role==cherrypy.session[self.session_name]['role']
-        if group is not None:
-            allowed &= group==cherrypy.session[self.session_name]['group']
-        if site is not None:
-            allowed &= site==cherrypy.session[self.session_name]['site']
-
-        if not allowed:
+        permissions=cherrypy.session[self.session_name]['permissions'] # dict
+        fullname=cherrypy.session[self.session_name]['fullname'] # str
+        dn=cherrypy.session[self.session_name]['dn'] # str
+        if authzfunc and not authzfunc(permissions, fullname, dn):
+            # Not allowed
             msg = 'You are not allowed to access %s' % cherrypy.request.path_info
             cherrypy.session[self.session_name]['info'] = msg
-            raise cherrypy.HTTPRedirect(self.authz_path)            
+            raise cherrypy.HTTPRedirect(self.authz_path)
 
+        # Defaults to allow
+        
     def defaults(self):
         if not cherrypy.request.path_info.startswith(self.base_path):
             return # We only need to worry about handlers for the auth path

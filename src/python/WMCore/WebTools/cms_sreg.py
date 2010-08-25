@@ -4,6 +4,8 @@ from openid.extensions.sreg import *
 data_fields.update({'site': 'Site', 
     'role': 'Role', 
     'group': 'Group'})
+data_fields.update({'permissions': 'Roles', 
+    'dn': 'DN'})
 
 __all__ = [
     'SRegRequest',

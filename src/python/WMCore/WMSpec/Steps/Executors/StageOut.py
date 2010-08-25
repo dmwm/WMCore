@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.12 2010/04/08 15:41:12 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: StageOut.py,v 1.13 2010/04/08 21:08:21 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import os
 import os.path
@@ -106,7 +106,7 @@ class StageOut(Executor):
             # Have the results of that particular step in it,
             # So getting all the files should get ONLY the files
             # for that step; or so I hope
-            files = stepReport.getAllFiles()
+            files = stepReport.getAllFileRefsFromStep(step = step)
             for file in files:
                 if hasattr(file, 'lfn') and hasattr(file, 'pfn'):
                     # Save the input PFN in case we need it

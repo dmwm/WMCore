@@ -24,7 +24,7 @@ class StageOutTest(unittest.TestCase):
         realstep.disableRetries()
         self.realstep = realstep
         
-    def atestUnitTestBackend(self):
+    def testUnitTestBackend(self):
         executor = StageOutExecutor.StageOut()
         self.realstep.addFile("testin1", "testout1")
         # let's ride the win-train
@@ -53,6 +53,7 @@ class StageOutTest(unittest.TestCase):
         lfn = "/tmp/stageOutTest-%s" % int(time.time())
         self.realstep.addFile(pfn, lfn)
         executor.execute( self.realstep.data, None,**testOverrides)
+        self.assert_( os.path.exists(lfn) )
         os.remove(lfn)
             
     def testName(self):

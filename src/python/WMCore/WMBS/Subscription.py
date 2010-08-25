@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.59 2010/02/25 22:31:41 sryu Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: Subscription.py,v 1.60 2010/03/08 16:31:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.60 $"
 
 import logging
 
@@ -516,7 +516,7 @@ class Subscription(WMBSBase, WMSubscription):
         for jobGroup in jobGroups:
             for idUID in jgIDs:
                 # This should assign an ID to the right job
-                if jobGroup.uid == idUID['uid']:
+                if jobGroup.uid == idUID['guid']:
                     jobGroup.id = idUID['id']
                     break
 

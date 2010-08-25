@@ -6,8 +6,8 @@ MySQL implementation of JobGroup.BulkNewReturn
 """
 
 __all__ = []
-__revision__ = "$Id: BulkNewReturn.py,v 1.1 2010/02/25 21:48:17 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: BulkNewReturn.py,v 1.2 2010/03/08 16:31:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -17,17 +17,17 @@ class BulkNewReturn(DBFormatter):
 
     """
     sql = """INSERT INTO wmbs_jobgroup (subscription, uid, output,
-             last_update) VALUES (:subscription, :uid, :output,
+             last_update) VALUES (:subscription, :guid, :output,
              unix_timestamp())"""
 
-    returnSQL = """SELECT ID as ID, UID as UID FROM wmbs_jobgroup
+    returnSQL = """SELECT id AS id, uid AS guid FROM wmbs_jobgroup
                    WHERE subscription = :subscription
-                   AND uid = :uid
+                   AND uid = :guid
                    AND output = :output"""
 
     def execute(self, bulkInput = None, conn = None, transaction = False):
         """
-        This can take a list of dictionaries {subscription, uid, output}
+        This can take a list of dictionaries {subscription, guid, output}
         instead of the original inputs
 
         """
@@ -35,7 +35,7 @@ class BulkNewReturn(DBFormatter):
         binds = []
         for entry in bulkInput:
             binds.append({'subscription': entry['subscription'],
-                          'uid': entry['uid'],
+                          'guid': entry['uid'],
                           'output': entry['output']})
 
         self.dbi.processData(self.sql, binds, conn = conn,

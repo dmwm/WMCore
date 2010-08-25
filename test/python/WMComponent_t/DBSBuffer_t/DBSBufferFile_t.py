@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.6 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.7 2009/10/22 18:37:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
@@ -54,7 +54,6 @@ class FileTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
-            
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -193,7 +192,7 @@ class FileTest(unittest.TestCase):
         testFileParentA.create()
         testFileParentB.create()
         testFileParentC.create()
-        
+
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
                                  events = 10, cksum = 1)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -203,12 +202,11 @@ class FileTest(unittest.TestCase):
         testFile.addRun(Run( 1, *[45]))
         testFile.create()
         
-        testFile.addParent(testFileParentA["lfn"])
-        testFile.addParent(testFileParentB["lfn"])
-        testFile.addParent(testFileParentC["lfn"])
+        testFile.addParents([testFileParentA["lfn"], testFileParentB["lfn"],
+                             testFileParentC["lfn"]])
         
         parentLFNs = testFile.getParentLFNs()
-        
+
         assert len(parentLFNs) == 3, \
                "ERROR: Child does not have the right amount of parents"
 
@@ -307,8 +305,8 @@ class FileTest(unittest.TestCase):
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         
-        testFileParentA.addChild("/this/is/a/lfn")
-        testFileParentB.addChild("/this/is/a/lfn")
+        testFileParentA.addChildren("/this/is/a/lfn")
+        testFileParentB.addChildren("/this/is/a/lfn")
         
         testFileB = DBSBufferFile(id = testFileA["id"])
         testFileB.load(parentage = 1)
@@ -359,12 +357,12 @@ class FileTest(unittest.TestCase):
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
-        testFileParentA.addChild("/this/is/a/lfn")
+        testFileParentA.addChildren("/this/is/a/lfn")
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
-        testFileParentB.addChild("/this/is/a/lfn")
+        testFileParentB.addChildren("/this/is/a/lfn")
 
         testFileB = DBSBufferFile(id = testFileA["id"])
         testFileB.load(parentage = 1)
@@ -409,7 +407,6 @@ class FileTest(unittest.TestCase):
         testFileA.create()
         
         testFileA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
-        testFileA.setLocation(se = "se1.fnal.gov", immediateSave = True)
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
                               immediateSave = False)
 

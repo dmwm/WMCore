@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.4 2009/07/13 18:23:39 mnorman Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: LumiBased.py,v 1.5 2009/07/28 21:14:41 mnorman Exp $"
+__version__  = "$Revision: 1.5 $"
 
 from sets import Set
 
@@ -20,6 +20,9 @@ class LumiBased(JobFactory):
     """
     Split jobs by number of events
     """
+
+    locations = []
+
     def algorithm(self, groupInstance = None, jobInstance = None, *args,
                   **kwargs):
         """
@@ -48,12 +51,18 @@ class LumiBased(JobFactory):
 
 
         lumiDict = {}
-
+        self.locations = []
+        
         #Get all files in fileset
         for f in fileset:
 
             if hasattr(f, "loadData"):
                 f.loadData()
+
+
+            for location in f['locations']:
+                if not location in self.locations:
+                    self.locations.append(location)
 
             if sum([ len(run) for run in f['runs']]) == 0:
                 continue
@@ -62,13 +71,15 @@ class LumiBased(JobFactory):
             #Let's grab all the Lumi sections in the file
             for run in f['runs']:
                 for i in run:
-                    fileLumiList.append(i)
-            fileLumi = min(fileLumiList)
+                    fileLumiList.append(int(str(run.run) + str(i)))
+            #fileLumi = min(fileLumiList)
 
-            if not lumiDict.has_key(fileLumi):
-                lumiDict[fileLumi] = []
+            for fileLumi in fileLumiList:
+            
+                if not lumiDict.has_key(fileLumi):
+                    lumiDict[fileLumi] = []
 
-            lumiDict[fileLumi].append(f)
+                lumiDict[fileLumi].append(f)
 
        
         if not lumisPerJob == None:
@@ -78,6 +89,7 @@ class LumiBased(JobFactory):
         else:
             JobGroupList = self.FileBasedJobSplitting(lumiDict, filesPerJob, jobInstance, groupInstance)
 
+
         return JobGroupList
 
 
@@ -85,30 +97,49 @@ class LumiBased(JobFactory):
     def FileBasedJobSplitting(self, lumiDict, filesPerJob, jobInstance, groupInstance):
 
         JobGroupList = []
+
+        assignedFiles = []
+
+        for location in self.locations:
         
-        for lumi in lumiDict.keys():
-            joblist = []
-            baseName = makeUUID()
-
-            #Now split them into sections according to files per job
-            while len(lumiDict[lumi]) > 0:
+            for lumi in lumiDict.keys():
+                joblist = []
+                baseName = makeUUID()
                 jobFiles = Fileset()
-                for i in range(filesPerJob):
-                    #Watch out if your last job has less then the full number of files
-                    if len(lumiDict[lumi]) > 0:
-                        jobFiles.addFile(lumiDict[lumi].pop())
 
-                # Create the job
-                job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
-                                  files = jobFiles)
-                job["mask"].setMaxAndSkipLumis(1, lumi)
-                joblist.append(job)
+                #Now split them into sections according to files per job
+                for f in lumiDict[lumi]:
+                    if f['lfn'] in assignedFiles:
+                        continue
+                    if not location in f['locations']:
+                        continue
+                    assignedFiles.append(f['lfn'])
+
+                    #Is it too big (should never be)
+                    if len(jobFiles) < filesPerJob:
+                        jobFiles.addFile(f)
+                    #Now is it too big?
+                    if len(jobFiles) == filesPerJob:
+                        job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
+                                          files = jobFiles)
+                        job["mask"].setMaxAndSkipLumis(1, lumi)
+                        joblist.append(job)
+                        jobFiles = Fileset()
 
 
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroup.add(joblist)
-            jobGroup.commit()
-            JobGroupList.append(jobGroup)
+                if len(jobFiles) != 0:
+                    job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
+                                      files = jobFiles)
+                    job["mask"].setMaxAndSkipLumis(1, lumi)
+                    joblist.append(job)
+                    jobFiles = Fileset()
+
+                if len(joblist) > 0:
+                    jobGroup = groupInstance(subscription = self.subscription)
+                    jobGroup.add(joblist)
+                    jobGroup.commit()
+                    joblist = []
+                    JobGroupList.append(jobGroup)
 
         return JobGroupList
 
@@ -121,38 +152,55 @@ class LumiBased(JobFactory):
         jobFiles      = Fileset()
         baseName = makeUUID()
 
+        assignedFiles = []
 
-        for lumi in lumiDict.keys():
+        for location in self.locations:
 
-            #If we don't have enough Lumis in this job, add another one
-            if currentLumis < lumisPerJob:
-                for f in lumiDict[lumi]:
-                    jobFiles.addFile(f)
-                #Now increment
-                currentLumis = currentLumis + 1
+            for lumi in lumiDict.keys():
 
-            #If we now have enough lumis, we end.
-            if currentLumis == lumisPerJob:
+                if currentLumis < lumisPerJob:
+                    lumisInJob = []
+                    for f in lumiDict[lumi]:
+                        if f['lfn'] in assignedFiles:
+                            continue
+                        if not location in f['locations']:
+                            continue
+                        jobFiles.addFile(f)
+                        assignedFiles.append(f['lfn'])
+                        for run in list(f['runs']):
+                            for l in run:
+                                lumiID = int(str(run.run) + str(l))
+                                if not lumiID in lumisInJob:
+                                    lumisInJob.append(lumiID)
+                    #Now increment
+                    currentLumis = currentLumis + len(lumisInJob)
+
+                #If we now have enough lumis, we end.
+                if currentLumis >= lumisPerJob:
+                    job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
+                                      files = jobFiles)
+                    job["mask"].setMaxAndSkipLumis(lumisPerJob, lumi)
+                    joblist.append(job)
+                    #Wipe clean
+                    currentLumis = 0
+                    jobFiles = Fileset()
+
+            if not len(jobFiles.getFiles()) == 0:
+                #Then we have files we need to check in because we ran out of lumis before filling the last job
                 job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
                                   files = jobFiles)
                 job["mask"].setMaxAndSkipLumis(lumisPerJob, lumi)
                 joblist.append(job)
-                #Wipe clean
-                currentLumis = 0
-                jobFiles = Fileset()
 
-        if not len(jobFiles.getFiles()) == 0:
-            #Then we have files we need to check in because we ran out of lumis before filling the last job
-            job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
-                              files = jobFiles)
-            job["mask"].setMaxAndSkipLumis(lumisPerJob, lumi)
-            joblist.append(job)
+            if len(joblist) > 0:
+                #When done, create the jobGroup
+                jobGroup = groupInstance(subscription = self.subscription)
+                jobGroup.add(joblist)
+                #jobGroup.setSite(location)
+                jobGroup.commit()
+                JobGroupList.append(jobGroup)
+                joblist = []
 
-        #When done, create the jobGroup
-        jobGroup = groupInstance(subscription = self.subscription)
-        jobGroup.add(joblist)
-        jobGroup.commit()
-        JobGroupList.append(jobGroup)
 
         return JobGroupList
 
@@ -162,50 +210,59 @@ class LumiBased(JobFactory):
         JobGroupList  = []
         currentEvents = 0
         baseName = makeUUID()
+        assignedFiles = []
+        joblist = []
+        for location in self.locations:
 
-        for lumi in lumiDict.keys():
-            joblist = []
+            for lumi in lumiDict.keys():
+                jobFiles = Fileset()
+                for file in lumiDict[lumi]:
+                    if file['lfn'] in assignedFiles:
+                        continue
+                    if not location in file['locations']:
+                        continue
+                    assignedFiles.append(file['lfn'])
 
-            jobFiles = Fileset()
-            for file in lumiDict[lumi]:
-                eventsInFile = file['events']
-                if eventsInFile > eventsPerJob:
-                    #Push the panic button
-                    print "File %s is too big to be processed.  Skipping" %(file['lfn'])
-                    continue
-                #If we don't have enough events, add the file to the job
-                if eventsPerJob - currentEvents >= eventsInFile:
-                    currentEvents = currentEvents + eventsInFile
-                    jobFiles.addFile(file)
-                #If you have enough events, end the job and start a new one
-                else:
+                    
+                    eventsInFile = file['events']
+
+                    if eventsInFile > eventsPerJob:
+                        #Push the panic button
+                        print "File %s is too big to be processed.  Skipping" %(file['lfn'])
+                        continue
+                    #If we don't have enough events, add the file to the job
+                    if eventsPerJob - currentEvents >= eventsInFile:
+                        currentEvents = currentEvents + eventsInFile
+                        jobFiles.addFile(file)
+                    #If you have enough events, end the job and start a new one
+                    else:
+                        job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
+                                          files = jobFiles)
+                        job["mask"].setMaxAndSkipLumis(1, lumi)
+                        joblist.append(job)
+
+                        #Clear Fileset
+                        jobFiles = Fileset()
+
+                        #Now add next file into the next job
+                        currentEvents = eventsInFile
+                        jobFiles.addFile(file)
+                    
+                #If we have excess events, make a final job
+                if not currentEvents == 0:
                     job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
                                       files = jobFiles)
                     job["mask"].setMaxAndSkipLumis(1, lumi)
                     joblist.append(job)
-
-                    #Clear Fileset
                     jobFiles = Fileset()
-
-                    #Now add next file into the next job
-                    currentEvents = eventsInFile
-                    jobFiles.addFile(file)
+                    currentEvents = 0
                     
-            #If we have excess events, make a final job
-            if not currentEvents == 0:
-                job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
-                                      files = jobFiles)
-                job["mask"].setMaxAndSkipLumis(1, lumi)
-                joblist.append(job)
-                jobFiles = Fileset()
-                currentEvents = 0
-
-                    
-            #For each lumi create a jobGroup and append it to JobGroupList
-
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroup.add(joblist)
-            jobGroup.commit()
-            JobGroupList.append(jobGroup)
+                #For each location and lumi create a jobGroup and append it to JobGroupList
+                if len(joblist) > 0:
+                    jobGroup = groupInstance(subscription = self.subscription)
+                    jobGroup.add(joblist)
+                    jobGroup.commit()
+                    joblist = []
+                    JobGroupList.append(jobGroup)
 
         return JobGroupList

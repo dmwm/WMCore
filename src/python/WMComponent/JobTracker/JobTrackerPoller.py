@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.11 2010/06/01 16:13:02 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.12 2010/06/02 21:48:13 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 import logging
@@ -207,6 +207,9 @@ class JobTrackerPoller(BaseWorkerThread):
             
         results = loadAction.execute(jobID = binds)
 
+        if not type(results) == list:
+            results = [results]
+
         for entry in results:
             # One job per entry
             tmpJob = Job(id = entry['id'])
@@ -259,6 +262,10 @@ class JobTrackerPoller(BaseWorkerThread):
         
         listOfJobs = []
         jrBinds    = []
+
+        if not type(results) == list:
+            results = [results]
+        
         for entry in results:
             # One job per entry
             tmpJob = Job(id = entry['id'])

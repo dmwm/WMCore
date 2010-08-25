@@ -5,20 +5,27 @@ _AddRunLumi_
 MySQL implementation of AddRunLumi
 """
 
-__revision__ = "$Id: AddRunLumi.py,v 1.8 2009/12/16 17:45:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+import logging
+
+__revision__ = "$Id: AddRunLumi.py,v 1.9 2010/03/09 18:29:01 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddRunLumi(DBFormatter):
 
-    sql = """insert wmbs_file_runlumi_map (file, run, lumi) 
+    sql = """INSERT IGNORE wmbs_file_runlumi_map (file, run, lumi) 
             select id, :run, :lumi from wmbs_file_details 
             where lfn = :lfn"""
 
     def getBinds(self, file=None, runs=None):
 
 	binds = []
+
+        if type(file) == list:
+            for entry in file:
+                binds.extend(self.getBinds(file = entry['lfn'], runs = entry['runs']))
+            return binds
 
 	if type(file) == type('string'):
 		lfn = file

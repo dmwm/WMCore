@@ -95,7 +95,7 @@ def rerecoWorkload(workloadName, arguments):
     rerecoLogArch = rerecoCmssw.addStep("logArch1")
     rerecoLogArch.setStepType("LogArchive")
     rereco.applyTemplates()
-    rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
+    rereco.setSplittingAlgorithm("EventBased", events_per_job = 10000)
     rereco.addGenerator("BasicNaming")
     rereco.addGenerator("BasicCounter")
     rereco.setTaskType("Processing")
@@ -135,7 +135,7 @@ def rerecoWorkload(workloadName, arguments):
 
 
     processedDatasetName = "rereco_%s_%s" % (globalTagSetting.replace("::","_"), processingVersion)
-    unmergedDatasetName = "%s-unmerged" % processedDatasetName
+    unmergedDatasetName = "%s" % processedDatasetName
     commonLfnBase = lfnCategory
     commonLfnBase += "/%s" % acquisitionEra
     commonLfnBase += "/%s" % inputPrimaryDataset

@@ -24,36 +24,69 @@
 <script src="../javascript/namespace.js"></script>
 <script src="../javascript/dataTable.js"></script>
 <script src="../javascript/debugging.js"></script>
+
+<style>
+/* Class for marked rows */
+.yui-skin-sam .yui-dt tr.mark,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc {
+    background-color: #FF0000;
+    color: #fff;
+}
+
+.yui-skin-sam .yui-dt tr.warning,
+.yui-skin-sam .yui-dt tr.warning td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.warning td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.warning td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.warning td.yui-dt-desc {
+    background-color: #F76541;
+    color: #fff;
+}
+</style>
 </head>
 <body class="yui-skin-sam">
 <div id="resourceInfo"></div>
 <script type="text/javascript">
 //enableDebug()
-var dataFormatter = function(elCell, oRecord, oColumn, oData) {
-        
-        if (oData == 1) {
-            state = "Closed"
-        } else {
-			state = "<b>Open</b>"
-        }
-        elCell.innerHTML = state;
-    };
 
-// {key: state} is omitted
+var dateFormatter = function(elCell, oRecord, oColumn, oData) {
+        
+        var oDate = new Date(oData*1000);
+        //for the formatting check 
+        // http://developer.yahoo.com/yui/docs/YAHOO.util.Date.html#method_format
+        var str = YAHOO.util.Date.format(oDate, { format: "%M:%S"});
+        elCell.innerHTML = str;
+    }
+
+var colorRow = function(elTr, oRecord) {
+    if (oRecord.getData('alarm') < 0) {
+        YAHOO.util.Dom.addClass(elTr, 'mark');
+    } else if (oRecord.getData('last_error') > 0) {
+        YAHOO.util.Dom.addClass(elTr, 'warning');
+    };
+    return true;
+}; 
+
 var dataSchema = {
-        fields: [{key: "workflow"}, {key: "task"}, 
-		         {key: "jobs"}, {key: "success"}, {key: "owner"}, 
-				 {key: "open", formatter: dataFormatter}]
+        fields: [{key: "name", label: "component"}, {key:'pid'},
+		         {key: "worker_name", label:"worker"},
+				 {key: "ago", label: "last updated", formatter: dateFormatter} 
+		        ]
         };
 
-var dataUrl = "/wmbs/workflowstatus"
+var dataUrl = "/wmagent/heartbeat"
 
 var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 //writeDebugObject(dataSource)
-writeEval(dataSource.responseType)
+//writeEval(dataSource.responseType)
+var tableConfig = WMCore.WebTools.createDefaultTableConfig()
+tableConfig.formatRow = colorRow;
+tableConfig.paginator = {}
 var dataTable = WMCore.WebTools.createDataTable("resourceInfo", dataSource, 
                              WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
-                             WMCore.WebTools.createDefaultTableConfig(), 100000)
+                             tableConfig, 60000)
 
 </script>
 </body>

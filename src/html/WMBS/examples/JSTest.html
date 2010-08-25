@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>JS Test</title>
+<script src="../javascript/debugging.js"></script>
+</head>
+<body>
+	<script>
+		enableDebug()
+		function printObj(obj) {
+		  for (attr in obj) {
+		  	writeDebug(attr)
+			writeDebug(obj.attr)
+		  }  
+		}
+		var testObj = {"test": "start",
+		               "test1": {'middle': "start"},
+					   "test2": "end"}
+		printObj(testObj)
+		
+	</script>
+</body>
+</html>

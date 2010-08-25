@@ -33,9 +33,11 @@ var dataSchema = {
         fields: [{key: "site"}, {key: "data[0].type", label: "type"},
 		         {key: "['data'][0]['max_slots']", label: "max_slots"}, 
 				 {key: "['data'][0]['min_slots']", label: "min_slots"},  
-		         {key: "['data'][0]['total_slots']", label: "total_slots"},
-				  {key: "['data'][0]['task_running_jobs']", label: "task_running_jobs"}, 
-				 {key: "['data'][0]['total_running_jobs']", label: "running_jobs"}]
+		         {key: "['data'][0]['total_slots']", label: "total_slots"}]
+				 
+				 // running job columns are omitted
+				 //{key: "['data'][0]['task_running_jobs']", label: "task_running_jobs"}, 
+				 //{key: "['data'][0]['total_running_jobs']", label: "running_jobs"}]
         };
 
 var dataUrl = "/wmbs/listthresholdsforsubmit"

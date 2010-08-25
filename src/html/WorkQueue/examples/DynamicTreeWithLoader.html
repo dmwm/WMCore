@@ -226,13 +226,7 @@ var loader = new YAHOO.util.YUILoader({
     loadOptional: true,
  
     // The function to call when all script/css resources have been loaded
-    onSuccess: function() {
-		// alert("ok, should be loaded");
-        //this is your callback function; you can use
-        //this space to call all of your instantiation
-        //logic for the components you just loaded.
-		postload();
-    },
+    onSuccess: postload,
 	
     // should a failure occur, the onFailure function will be executed
     onFailure: function(o) {

@@ -8,11 +8,17 @@ class DefaultConfig(Configuration):
     
     def __init__(self, model=None):
         Configuration.__init__(self)
+        # Agent parameter
+        self.section_("Agent")
+        self.section_("General")
+        self.section_("General")
+        self.General.workDir = "/tmp/webtools/"
+        
         self.component_('Webtools')
         self.Webtools.application = 'UnitTests'
         self.Webtools.log_screen = False
-        self.Webtools.access_file = '/home/sryu/log_access'
-        self.Webtools.error_file = '/home/sryu/log_error'
+        self.Webtools.access_file = '/tmp/webtools/log_access'
+        self.Webtools.error_file = '/tmp/webtools/log_error'
         self.Webtools.port = 8080
         self.Webtools.host = "localhost"
         self.component_('UnitTests')

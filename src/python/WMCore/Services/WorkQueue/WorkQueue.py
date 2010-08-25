@@ -54,7 +54,7 @@ class WorkQueue(Service):
             return {}
         
     def _getResult(self, callname, clearCache = True,
-                   args = None, verb="POST"):
+                   args = None, verb="POST", contentType = None):
         """
         _getResult_
 

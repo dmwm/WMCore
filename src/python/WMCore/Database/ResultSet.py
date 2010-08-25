@@ -6,8 +6,8 @@ SQLAlchemy result sets (aka cursors) can be closed. Make this class look as much
 like the SQLAlchemy class to minimise the impact of adding this class.
 """
 
-__revision__ = "$Id: ResultSet.py,v 1.11 2009/07/22 20:41:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: ResultSet.py,v 1.12 2009/08/18 16:13:13 swakef Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 
@@ -21,13 +21,13 @@ class ResultSet:
 
     def close(self):
         return
-    
+
     def fetchone(self):
         return self.data[0]
-    
+
     def fetchall(self):
         return self.data
-    
+
     def add(self, resultproxy):
         myThread = threading.currentThread()
         #Has to be there to provide some Oracle functionality
@@ -39,18 +39,18 @@ class ResultSet:
             # By default, we'll use MySQL
             myThread.dialect = "MySQL"
 
-        if myThread.dialect.lower() == "mysql":
+        if myThread.dialect.lower() in ("mysql", "sqlite"):
             self.rowcount += resultproxy.rowcount
-        
+
         if resultproxy.closed:
             return
-        
+
         for r in resultproxy:
             if len(self.keys) == 0:
                 self.keys.extend(r.keys())
             self.data.append(r)
 
-        if myThread.dialect.lower() != "mysql":                
+        if myThread.dialect.lower() not in ("mysql", "sqlite"):
             self.rowcount += len(self.data)
-        
+
         return

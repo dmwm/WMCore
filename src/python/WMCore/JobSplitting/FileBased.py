@@ -6,27 +6,26 @@ File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
 
-__revision__ = "$Id: FileBased.py,v 1.25 2010/03/12 20:29:52 mnorman Exp $"
-__version__  = "$Revision: 1.25 $"
+__revision__ = "$Id: FileBased.py,v 1.26 2010/05/03 14:35:25 mnorman Exp $"
+__version__  = "$Revision: 1.26 $"
 
 import threading
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
 
 class FileBased(JobFactory):
     """
     Split jobs by number of files.
     """
 
-    def getJobName(self, baseName = None, length=None):
-        """
-        Create standard job name
-
-        """
-        if not baseName:
-            baseName = makeUUID()
-        return '%s-%s' % (baseName, str(length))
+    #def getJobName(self, baseName = None, length=None):
+    #    """
+    #    Create standard job name
+    #
+    #    """
+    #    if not baseName:
+    #        baseName = makeUUID()
+    #    return '%s-%s' % (baseName, str(length))
     
     def algorithm(self, *args, **kwargs):
         """
@@ -51,10 +50,8 @@ class FileBased(JobFactory):
             #Now we have all the files in a certain location
             fileList    = locationDict[location]
             filesInJob  = 0
-            totalJobs   = 0
             jobsInGroup = 0
             self.newGroup()
-            baseName = makeUUID()
             if len(fileList) == 0:
                 #No files for this location
                 #This isn't supposed to happen, but better safe then sorry
@@ -66,8 +63,8 @@ class FileBased(JobFactory):
                             self.newGroup()
                             jobsInGroup = 0
 
-                    self.newJob(name = self.getJobName(baseName = baseName, \
-                                                       length=totalJobs))
+                    self.newJob(name = self.getJobName(length=totalJobs))
+                    
                     filesInJob   = 0
                     totalJobs   += 1
                     jobsInGroup += 1

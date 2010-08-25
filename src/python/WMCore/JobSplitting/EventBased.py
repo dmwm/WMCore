@@ -6,11 +6,10 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: EventBased.py,v 1.17 2010/03/11 21:03:55 sfoulkes Exp $"
-__version__  = "$Revision: 1.17 $"
+__revision__ = "$Id: EventBased.py,v 1.18 2010/05/03 14:35:25 mnorman Exp $"
+__version__  = "$Revision: 1.18 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
 
 class EventBased(JobFactory):
     """
@@ -24,11 +23,11 @@ class EventBased(JobFactory):
         set number of events per job.  
         """
         eventsPerJob = int(kwargs.get("events_per_job", 100))
+        totalJobs    = 0
         
         locationDict = self.sortByLocation()
         for location in locationDict:
             self.newGroup() 
-            baseName = makeUUID()           
             fileList = locationDict[location]
         
             for f in fileList:
@@ -37,11 +36,13 @@ class EventBased(JobFactory):
 
                 if eventsInFile >= eventsPerJob:
                     while currentEvent < eventsInFile:
-                        self.newJob(name = '%s-%i' % (baseName, len(self.currentGroup.newjobs)))
+                        self.newJob(name = self.getJobName(length=totalJobs))
                         self.currentJob.addFile(f)
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                         currentEvent += eventsPerJob
+                        totalJobs    += 1
                 else:
-                    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.newjobs)))
+                    self.newJob(name = self.getJobName(length=totalJobs))
                     self.currentJob.addFile(f)
-                    self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)                    
+                    self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)
+                    totalJobs += 1

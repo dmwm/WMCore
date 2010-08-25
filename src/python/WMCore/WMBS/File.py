@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.46 2009/03/31 17:04:45 sryu Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: File.py,v 1.47 2009/05/08 16:04:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.47 $"
 
 from sets import Set
 
@@ -46,18 +46,18 @@ class File(WMBSBase, WMFile):
         if id is exist (not -1) check with id first
         Does a file exist with this lfn, return the id
         """
-        if self['id'] != -1:
-            action = self.daofactory(classname='Files.ExistsByID')
-            return action.execute(id = self['id'], conn = self.getReadDBConn(),
-                                  transaction = self.existingTransaction())
+        if self["id"] != -1:
+            action = self.daofactory(classname = "Files.ExistsByID")
+            result = action.execute(id = self["id"], conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
         else:
-            action = self.daofactory(classname='Files.Exists')
-            id = action.execute(lfn = self['lfn'],
-                                  conn = self.getReadDBConn(),
-                                  transaction = self.existingTransaction())
-            if id != False:
-                self['id'] = id
-            return id
+            action = self.daofactory(classname = "Files.Exists")
+            result = action.execute(lfn = self["lfn"], conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+            if result != False:
+                self["id"] = result
+
+        return result
         
     def getInfo(self):
         """
@@ -75,9 +75,9 @@ class File(WMBSBase, WMFile):
 
     def getRuns(self):
         """
-	    Get a list of run lumi objects (List of Set() of type
+        Get a list of run lumi objects (List of Set() of type 
         WMCore.DataStructs.Run)
-	    """
+        """
         return list(self['runs'])
                                     
     def getParentLFNs(self):
@@ -95,46 +95,47 @@ class File(WMBSBase, WMFile):
         result.sort()   # ensure SecondaryInputFiles are in order
         return [x['lfn'] for x in result]
     
-    def getAncestors(self, level=2, type="id"):
+    def getAncestors(self, level = 2, type = "id"):
         """
         Get ancestorLFNs. it will access directly DAO.
         level indicates the level of ancestors. default value is 2 
         (grand parents). level should be bigger than >= 1
         """
+        existingTransaction = self.beginTransaction()
+
         def _getAncestorIDs(ids, level):
             action = self.daofactory(classname = "Files.GetParentIDsByID")
-            parentIDs = action.execute(ids, conn = self.getReadDBConn(),
+            parentIDs = action.execute(ids, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
+
             parentIDs.sort()
             if level == 1 or len(parentIDs) == 0:
                 return parentIDs
             else:
-                return _getAncestorIDs(parentIDs, level-1)
+                return _getAncestorIDs(parentIDs, level - 1)
         
-        if self['id'] < 0:
+        if self["id"] < 0:
             self.load()
-        idList = _getAncestorIDs(self['id'], level)
+
+        idList = _getAncestorIDs(self["id"], level)
         
         if type == "id":
-            return idList
+            results = idList
         elif type == "lfn":
-            ancestorLFNs = []
+            results = []
             for fileID in idList:
                 anceFile = File(id=fileID)
                 anceFile.load()
-                ancestorLFNs.append(anceFile['lfn'])
-                
-            return ancestorLFNs
+                results.append(anceFile["lfn"])
         elif type == "file":
-            ancestors = []
+            results = []
             for fileID in idList:
                 anceFile = File(id=fileID)
                 anceFile.load()
-                ancestors.append(anceFile)
+                results.append(anceFile)
                 
-            return ancestors
-
-        return idList
+        self.commitTransaction(existingTransaction)
+        return results
     
     def getDescendants(self, level=2, type="id"):
         """
@@ -142,40 +143,41 @@ class File(WMBSBase, WMFile):
         level indicates the level of ancestors. default value is 2 
         (grand parents). level should be bigger than >= 1
         """
+        existingTransaction = self.existingTransaction()
+
         def _getDescendantIDs(ids, level):
             action = self.daofactory(classname = "Files.GetChildIDsByID")
-            childIDs = action.execute(ids, conn = self.getReadDBConn(),
+            childIDs = action.execute(ids, conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
+
             childIDs.sort()
             if level == 1 or len(childIDs) == 0:
                 return childIDs
             else:
-                return _getDescendantIDs(childIDs, level-1)
+                return _getDescendantIDs(childIDs, level - 1)
         
-        if self['id'] < 0:
+        if self["id"] < 0:
             self.load()
-        idList = _getDescendantIDs(self['id'], level)
+
+        idList = _getDescendantIDs(self["id"], level)
         
         if type == "id":
-            return idList
-        
+            results = idList
         elif type == "lfn":
-            descendantLFNs = []
+            results = []
             for fileID in idList:
                 descFile = File(id=fileID)
                 descFile.load()
-                descendantLFNs.append(descFile['lfn'])
-            return descendantLFNs
-        
+                results.append(descFile['lfn'])
         elif type == "file":
-            descendants = []
+            results = []
             for fileID in idList:
                 descFile = File(id=fileID)
                 descFile.load()
-                descendants.append(descFile)
-            return descendants
+                results.append(descFile)
         
-        return idList
+        self.commitTransaction(existingTransaction)
+        return results
     
     def load(self):
         """
@@ -186,15 +188,15 @@ class File(WMBSBase, WMFile):
         """
         if self["id"] > 0:
             action = self.daofactory(classname = "Files.GetByID")
-            result = action.execute(self["id"], conn = self.getReadDBConn(),
+            result = action.execute(self["id"], conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "Files.GetByLFN")
-            result = action.execute(self["lfn"], conn = self.getReadDBConn(),
+            result = action.execute(self["lfn"], conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
         self.update(result)
-        return self
+        return
 
     def loadData(self, parentage = 0):
         """
@@ -205,29 +207,35 @@ class File(WMBSBase, WMFile):
         is stored and any parentage information.  The parentage parameter to
         this method will determine how many generations to load.
         """
+        existingTransaction = self.beginTransaction()
+
         if self["id"] < 0 or self["lfn"] == "":
             self.load()
             
         action = self.daofactory(classname = "Files.GetRunLumiFile")
-        runs = action.execute(self["lfn"], conn = self.getReadDBConn(), 
+        runs = action.execute(self["lfn"], conn = self.getDBConn(), 
                               transaction = self.existingTransaction())
-        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+
+        [self.addRun(run = Run(r, *runs[r])) for r in runs.keys()]
 
         action = self.daofactory(classname = "Files.GetLocation")
-        self["locations"] = action.execute(self["lfn"], conn = self.getReadDBConn(),
+        self["locations"] = action.execute(self["lfn"], conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
         self["newlocations"].clear()
         self["parents"] = Set()
         
         if parentage > 0:
             action = self.daofactory(classname = "Files.GetParents")
-            parentLFNs = action.execute(self["lfn"],  conn = self.getReadDBConn(),
+            parentLFNs = action.execute(self["lfn"],  conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
+
             for lfn in parentLFNs:
-                f = File(lfn = lfn).load()
+                f = File(lfn = lfn)
+                f.load()
                 f.loadData(parentage = parentage - 1)
                 self["parents"].add(f)
 
+        self.commitTransaction(existingTransaction)
         return
 
     def create(self):
@@ -237,74 +245,84 @@ class File(WMBSBase, WMFile):
         Create a file.  If no transaction is passed in this will wrap all
         statements in a single transaction.
         """
+        existingTransaction = self.beginTransaction()
+
         if self.exists() != False:
             self.load()
             return
 
-        addAction = self.daofactory(classname="Files.Add")
+        addAction = self.daofactory(classname = "Files.Add")
         addAction.execute(files = self["lfn"], size = self["size"],
                           events = self["events"], cksum = self["cksum"],
                           first_event = self["first_event"],
                           last_event = self["last_event"],
-                          conn = self.getWriteDBConn(),
+                          conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 
         if len(self["runs"]) > 0:
             lumiAction = self.daofactory(classname="Files.AddRunLumi")
             lumiAction.execute(file = self["lfn"], runs = self["runs"],
-                                   conn = self.getWriteDBConn(),
+                                   conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
             
         self.updateLocations()
         self.load()
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
     
     def delete(self):
         """
         Remove a file from WMBS
         """
-        self.daofactory(classname='Files.Delete').execute(file=self['lfn'],
-                                                          conn = self.getWriteDBConn(),
-                                                          transaction = self.existingTransaction())
-
-        self.commitIfNew()
+        action = self.daofactory(classname = "Files.Delete")
+        action.execute(file =self["lfn"], conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
         return
         
     def addChild(self, lfn):
         """
         Set an existing file (lfn) as a child of this file
         """
-        child = File(lfn=lfn)
+        existingTransaction = self.beginTransaction()
+
+        child = File(lfn = lfn)
         child.load()
+
         if not self['id'] > 0:
             raise Exception, "Parent file doesn't have an id %s" % self['lfn']
         if not child['id'] > 0:
             raise Exception, "Child file doesn't have an id %s" % child['lfn']
 
-        heritageAction = self.daofactory(classname='Files.Heritage')
-        heritageAction.execute(child=child['id'], parent=self['id'], conn = self.getWriteDBConn(),
+        heritageAction = self.daofactory(classname = "Files.Heritage")
+        heritageAction.execute(child = child["id"], parent = self["id"], 
+                               conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-        self.commitIfNew()
+
+        self.commitTransaction(existingTransaction)
         return
         
     def addParent(self, lfn):
         """
         Set an existing file (lfn) as a parent of this file
         """
-        parent = File(lfn=lfn)
+        existingTransaction = self.beginTransaction()
+
+        parent = File(lfn = lfn)
         parent.load()
-        self['parents'].add(parent)
-        if not self['id'] > 0:
-            raise Exception, "Child file doesn't have an id %s" % self['lfn']
-        if not parent['id'] > 0:
+        self["parents"].add(parent)
+
+        if not self["id"] > 0:
+            raise Exception, "Child file doesn't have an id %s" % self["lfn"]
+        if not parent["id"] > 0:
             raise Exception, "Parent file doesn't have an id %s" % \
-                        parent['lfn']
+                        parent["lfn"]
         
-        action = self.daofactory(classname='Files.Heritage')
-        action.execute(child=self['id'], parent=parent['id'], conn = self.getWriteDBConn(),
+        action = self.daofactory(classname = "Files.Heritage")
+        action.execute(child = self["id"], parent = parent["id"],
+                       conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-        self.commitIfNew()
+
+        self.commitTransaction(existingTransaction)
         return
     
     def addRunSet(self, runSet):
@@ -315,19 +333,21 @@ class File(WMBSBase, WMFile):
         also there should be no duplicate entries in runSet.
         (May need to change in schema level not to allow duplicate record)
         """
-        lumiAction = self.daofactory(classname="Files.AddRunLumi")
+        existingTransaction = self.beginTransaction()
+
+        lumiAction = self.daofactory(classname = "Files.AddRunLumi")
         lumiAction.execute(file = self["lfn"], runs = runSet,
-                           conn = self.getWriteDBConn(),
+                           conn = self.getDBConn(),
                            transaction = self.existingTransaction())
         
-        # update the self["runs"]
-        self["runs"].clear()
         action = self.daofactory(classname = "Files.GetRunLumiFile")
-        runs = action.execute(self["lfn"], conn = self.getReadDBConn(), 
+        runs = action.execute(self["lfn"], conn = self.getDBConn(), 
                               transaction = self.existingTransaction())
+
+        self["runs"].clear()
         [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
 
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
     
     def updateLocations(self):
@@ -338,20 +358,22 @@ class File(WMBSBase, WMFile):
         written to the database all locations will be reloaded from the
         database.
         """
+        existingTransaction = self.beginTransaction()
+
         # Add new locations if required
         if len(self["newlocations"]) > 0:
             addAction = self.daofactory(classname = "Files.SetLocation")
             addAction.execute(file = self["lfn"], location = self["newlocations"],
-                              conn = self.getWriteDBConn(),
+                              conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
         # Update locations from the DB    
         getAction = self.daofactory(classname = "Files.GetLocation")
-        self["locations"] = getAction.execute(self["lfn"], conn = self.getWriteDBConn(),
+        self["locations"] = getAction.execute(self["lfn"], conn = self.getDBConn(),
                                               transaction = self.existingTransaction())
         self["newlocations"].clear()
 
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
         
     def setLocation(self, se, immediateSave = True):
@@ -371,3 +393,5 @@ class File(WMBSBase, WMFile):
 
         if immediateSave:
             self.updateLocations()
+
+        return

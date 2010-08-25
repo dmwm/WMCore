@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.26 2009/04/29 23:19:57 sryu Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Job.py,v 1.27 2009/05/08 16:04:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import datetime
 from sets import Set
@@ -80,6 +80,8 @@ class Job(WMBSBase, WMJob):
         
         Write the job to the database.
         """
+        existingTransaction = self.beginTransaction()
+
         self.job_group = group.id
 
         if self.name == None:
@@ -87,16 +89,16 @@ class Job(WMBSBase, WMJob):
 
         jobAction = self.daofactory(classname = "Jobs.New")
         jobAction.execute(self.job_group, self.name,
-                          conn = self.getWriteDBConn(),
+                          conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 
         self.load()
         
         maskAction = self.daofactory(classname = "Masks.New")
-        maskAction.execute(jobid = self.id, conn = self.getWriteDBConn(),
+        maskAction.execute(jobid = self.id, conn = self.getDBConn(),
                            transaction = self.existingTransaction())
         self.save()
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
         
     def delete(self):
@@ -104,9 +106,8 @@ class Job(WMBSBase, WMJob):
         Remove a job from WMBS
         """
         deleteAction = self.daofactory(classname='Jobs.Delete')
-        deleteAction.execute(id = self.id, conn = self.getWriteDBConn(),
+        deleteAction.execute(id = self.id, conn = self.getDBConn(),
                               transaction = self.existingTransaction())
-        self.commitIfNew()
         return
 
     def save(self):
@@ -115,18 +116,20 @@ class Job(WMBSBase, WMJob):
 
         Flush all changes that have been made to the job to the database.
         """
+        existingTransaction = self.beginTransaction()
+
         saveAction = self.daofactory(classname = "Jobs.Save")
         saveAction.execute(self.id, self.job_group, self.name,
-                           conn = self.getWriteDBConn(),
+                           conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
         maskAction = self.daofactory(classname = "Masks.Save")
         maskAction.execute(jobid = self.id, mask = self.mask,
-                           conn = self.getWriteDBConn(),
+                           conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
         self.associateFiles()
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
 
     def exists(self):
@@ -137,13 +140,15 @@ class Job(WMBSBase, WMJob):
         """
         if self.id != -1:
             action = self.daofactory(classname='Jobs.ExistsByID')
-            return action.execute(id = self.id, conn = self.getReadDBConn(),
-                                  transaction = self.existingTransaction())
+            result =  action.execute(id = self.id, conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname='Jobs.Exists')
-            self.id = action.execute(name = self.name, conn = self.getReadDBConn(),
+            result = action.execute(name = self.name, conn = self.getDBConn(),
                                   transaction = self.existingTransaction())
-            return self.id
+            self.id = result
+
+        return result
                 
     def load(self):
         """
@@ -154,11 +159,11 @@ class Job(WMBSBase, WMJob):
         """
         if self.id > 0:
             loadAction = self.daofactory(classname = "Jobs.LoadFromID")
-            results = loadAction.execute(self.id, conn = self.getReadDBConn(),
+            results = loadAction.execute(self.id, conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
         else:
             loadAction = self.daofactory(classname = "Jobs.LoadFromName")
-            results = loadAction.execute(self.name, conn = self.getReadDBConn(),
+            results = loadAction.execute(self.name, conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
 
         self.id = results["id"]
@@ -176,13 +181,15 @@ class Job(WMBSBase, WMJob):
         files.  Either the ID or the name must be specified before this is
         called.
         """
+        existingTransaction = self.beginTransaction()
+        
         if self.id < 0 or self.name == None:
             self.load()
         
         self.getMask()
         
         fileAction = self.daofactory(classname = "Jobs.LoadFiles")
-        files = fileAction.execute(self.id, conn = self.getReadDBConn(),
+        files = fileAction.execute(self.id, conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
 
         self.inputFiles = []
@@ -191,6 +198,7 @@ class Job(WMBSBase, WMJob):
             newFile.loadData(parentage = 0)
             self.addFile(newFile)
 
+        self.commitTransaction(existingTransaction)
         return
     
     def getMask(self):
@@ -201,11 +209,10 @@ class Job(WMBSBase, WMJob):
         and return the value
         """
         jobMaskAction = self.daofactory(classname = "Masks.Load")
-        jobMask = jobMaskAction.execute(self.id, conn = self.getReadDBConn(),
+        jobMask = jobMaskAction.execute(self.id, conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
 
         self.mask.update(jobMask)
-        
         return self.mask
     
     def getFiles(self, type = "list"):
@@ -222,8 +229,9 @@ class Job(WMBSBase, WMJob):
         if self.id < 0:
             return WMJob.getFiles(self, type)
     
+        existingTransaction = self.beginTransaction()
         idAction = self.daofactory(classname = "Jobs.LoadFiles")
-        fileIDs = idAction.execute(self.id, conn = self.getWriteDBConn(),
+        fileIDs = idAction.execute(self.id, conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
 
         currentFileIDs = WMJob.getFiles(self, type = "id") 
@@ -231,7 +239,8 @@ class Job(WMBSBase, WMJob):
             if fileID["id"] not in currentFileIDs:
                 self.loadData()
                 break
-        
+
+        self.commitTransaction(existingTransaction)
         return WMJob.getFiles(self, type)
 
     def processSuccessfulJob(self, file):
@@ -242,6 +251,8 @@ class Job(WMBSBase, WMJob):
         also add run-lumi information
         take wmbs file object as a argument (doesn't have to be loaded). 
         """
+        existingTransaction = self.beginTransaction()
+
         # doesn't need this process but use as the output file temporary holder
         WMJob.addOutput(self, file)
         
@@ -267,8 +278,8 @@ class Job(WMBSBase, WMJob):
                     newRunSet.add(inputRun)
         
         file.addRunSet(newRunSet)
-        self.commitIfNew()
-        
+
+        self.commitTransaction(existingTransaction)
         return
            
     def submit(self, name = None):
@@ -281,9 +292,9 @@ class Job(WMBSBase, WMJob):
         """
         WMJob.submit(self, name = name)
         nameAction = self.daofactory(classname = "Jobs.UpdateName")
-        nameAction.execute(self.id, name, conn = self.getWriteDBConn(),
+        nameAction.execute(self.id, name, conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-        self.commitIfNew()
+        
         return
 
     def associateFiles(self):
@@ -297,9 +308,8 @@ class Job(WMBSBase, WMJob):
 
         if len(files) > 0:
             addAction = self.daofactory(classname = "Jobs.AddFiles")
-            addAction.execute(self.id, files, conn = self.getWriteDBConn(),
+            addAction.execute(self.id, files, conn = self.getDBConn(),
                               transaction = self.existingTransaction())
-            self.commitIfNew()
 
         return
 
@@ -311,19 +321,21 @@ class Job(WMBSBase, WMJob):
         following:
           ACTIVE, COMPLETE, FAILED
         """
+        existingTransaction = self.beginTransaction()
+
         self.last_update = datetime.datetime.now()
         self.status = status.title()
         
         statusClass = "Jobs.%s" % self.status
         clearAction = self.daofactory(classname = "Jobs.ClearStatus")
-        clearAction.execute(self.id, conn = self.getWriteDBConn(),
+        clearAction.execute(self.id, conn = self.getDBConn(),
                             transaction = self.existingTransaction())
 
         updateAction = self.daofactory(classname = statusClass)
-        updateAction.execute(self.id, conn = self.getWriteDBConn(),
+        updateAction.execute(self.id, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
 
     def getStatus(self):
@@ -337,8 +349,7 @@ class Job(WMBSBase, WMJob):
         return: ACTIVE, COMPLETE, FAILED
         """
         statusAction = self.daofactory(classname = "Jobs.Status")
-        ac, fa, cm = statusAction.execute(self.id,
-                                          conn = self.getReadDBConn(),
+        ac, fa, cm = statusAction.execute(self.id, conn = self.getDBConn(),
                                           transaction = self.existingTransaction())
         
         # if it returns other than one some thing is wrong

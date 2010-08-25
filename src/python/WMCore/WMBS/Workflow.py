@@ -15,8 +15,8 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Workflow.py,v 1.20 2009/04/01 18:45:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Workflow.py,v 1.21 2009/05/08 16:04:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.21 $"
 
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
@@ -45,17 +45,27 @@ class Workflow(WMBSBase, WMWorkflow):
         
     def exists(self):
         """
-        Does a workflow exist with this spec and owner, return the id
+        _exists_
+
+        Determine whether or not a workflow exists with the given spec, owner
+        and name.  Return the ID if the workflow exists, False otherwise.
         """
         action = self.daofactory(classname = "Workflow.Exists")
-        return action.execute(spec = self.spec, owner = self.owner,
-                              name = self.name, conn = self.getReadDBConn(),
-                              transaction = self.existingTransaction())
+        result = action.execute(spec = self.spec, owner = self.owner,
+                                name = self.name, conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
     
+        return result
+
     def create(self):
         """
-        Write a workflow to the database
+        _create_
+
+        Write the workflow to the database.  If the workflow already exists in
+        the database nothing will happen.
         """
+        existingTransaction = self.beginTransaction()
+
         self.id = self.exists()
 
         if self.id != False:
@@ -64,42 +74,50 @@ class Workflow(WMBSBase, WMWorkflow):
         
         action = self.daofactory(classname = "Workflow.New")
         action.execute(spec = self.spec, owner = self.owner, name = self.name,
-                       conn = self.getWriteDBConn(),
+                       conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         
         self.id = self.exists()
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
     
     def delete(self):
         """
-        Remove this workflow from WMBS
+        _delete_
+
+        Remove this workflow from the database.
         """
         action = self.daofactory(classname = "Workflow.Delete")
-        action.execute(id = self.id, conn = self.getWriteDBConn(),
+        action.execute(id = self.id, conn = self.getDBConn(),
                        transaction = self.existingTransaction())
 
-        self.commitIfNew()
         return
         
     def load(self):
         """
-        Load a workflow from WMBS
+        _load_
+
+        Load a workflow from WMBS.  One of the following must be provided:
+          - The workflow ID
+          - The workflow name
+          - The workflow spec and owner
         """
+        existingTransaction = self.beginTransaction()
+
         if self.id > 0:
             action = self.daofactory(classname = "Workflow.LoadFromID")
             result = action.execute(workflow = self.id,
-                                    conn = self.getReadDBConn(),
+                                    conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         elif self.name != None:
             action = self.daofactory(classname = "Workflow.LoadFromName")
             result = action.execute(workflow = self.name,
-                                    conn = self.getReadDBConn(),
+                                    conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "Workflow.LoadFromSpecOwner")
             result = action.execute(spec = self.spec, owner = self.owner,
-                                    conn = self.getReadDBConn(),
+                                    conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
         self.id = result["id"]
@@ -108,13 +126,14 @@ class Workflow(WMBSBase, WMWorkflow):
         self.owner = result["owner"]
 
         action = self.daofactory(classname = "Workflow.LoadOutput")
-        results = action.execute(workflow = self.id, conn = self.getReadDBConn(),
+        results = action.execute(workflow = self.id, conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
 
         for result in results:
             outputFileset = Fileset(id = result["output_fileset"])
             self.outputMap[result["output_identifier"]] = outputFileset
             
+        self.commitTransaction(existingTransaction)
         return
 
     def addOutput(self, outputIdentifier, outputFileset):
@@ -123,6 +142,8 @@ class Workflow(WMBSBase, WMWorkflow):
 
         Associate an output of this workflow with a particular fileset.
         """
+        existingTransaction = self.beginTransaction()
+
         if self.id == False:
             self.create()
         
@@ -130,9 +151,8 @@ class Workflow(WMBSBase, WMWorkflow):
         
         action = self.daofactory(classname = "Workflow.InsertOutput")
         action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
-                       filesetID = outputFileset.id,
-                       conn = self.getWriteDBConn(),
+                       filesetID = outputFileset.id, conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return

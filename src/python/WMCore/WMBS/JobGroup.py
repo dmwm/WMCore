@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.27 2009/04/29 23:23:29 sryu Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: JobGroup.py,v 1.28 2009/05/08 16:04:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -71,7 +71,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         Add the new jobgroup to WMBS, create the output Fileset object
         """
-        self.beginTransaction()
+        existingTransaction = self.beginTransaction()
         
         self.groupoutput = Fileset(name = makeUUID())
         self.groupoutput.create()
@@ -81,11 +81,11 @@ class JobGroup(WMBSBase, WMJobGroup):
 
         action = self.daofactory(classname="JobGroup.New")
         action.execute(self.uid, self.subscription["id"],
-                       self.groupoutput.id, conn = self.getWriteDBConn(),
+                       self.groupoutput.id, conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         
         self.id = self.exists()
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
 
     def delete(self):
@@ -93,10 +93,9 @@ class JobGroup(WMBSBase, WMJobGroup):
         Remove a jobgroup from WMBS
         """
         deleteAction = self.daofactory(classname = "JobGroup.Delete")
-        deleteAction.execute(id = self.id, conn = self.getWriteDBConn(),
+        deleteAction.execute(id = self.id, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
-        self.commitIfNew()
         return
 
     def exists(self):
@@ -106,12 +105,14 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         if self.id != -1:
             action = self.daofactory(classname = "JobGroup.ExistsByID")
-            return action.execute(id = self.id, conn = self.getReadDBConn(),
-                                  transaction = self.existingTransaction())
+            result =  action.execute(id = self.id, conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "JobGroup.Exists")
-            return action.execute(uid = self.uid, conn = self.getReadDBConn(),
-                                  transaction = self.existingTransaction())
+            result = action.execute(uid = self.uid, conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        return result
     
     def load(self):
         """
@@ -121,13 +122,15 @@ class JobGroup(WMBSBase, WMJobGroup):
         JobGroup id, uid, last_update time, subscription id and output fileset
         id.  Either the JobGroup id or uid must be specified for this to work.
         """
+        existingTransaction = self.beginTransaction()
+
         if self.id > 0:
             loadAction = self.daofactory(classname = "JobGroup.LoadFromID")
-            result = loadAction.execute(self.id, conn = self.getReadDBConn(),
+            result = loadAction.execute(self.id, conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
         else:
             loadAction = self.daofactory(classname = "JobGroup.LoadFromUID")
-            result = loadAction.execute(self.uid, conn = self.getReadDBConn(),
+            result = loadAction.execute(self.uid, conn = self.getDBConn(),
                                         transaction = self.existingTransaction())            
 
         self.id = result["id"]
@@ -141,6 +144,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.groupoutput.load()
         
         self.jobs.clear()
+        self.commitTransaction(existingTransaction)
         return
 
     def loadData(self):
@@ -151,6 +155,8 @@ class JobGroup(WMBSBase, WMJobGroup):
         loading all the subscription information, the output fileset
         information and all the jobs that are associated with the group.
         """
+        existingTransaction = self.beginTransaction()
+
         if self.id < 0 or self.uid == None:
             self.load()
 
@@ -164,6 +170,7 @@ class JobGroup(WMBSBase, WMJobGroup):
             newJob.loadData()
             self.jobs.add(newJob)
 
+        self.commitTransaction(existingTransaction)
         return    
     
     def getJobIDs(self, type="dict"):
@@ -172,14 +179,10 @@ class JobGroup(WMBSBase, WMJobGroup):
         If type is JobList return list of Job object with only id field is 
         filled
         """
-        self.beginTransaction()
-        
         jobAction = self.daofactory(classname = "JobGroup.LoadJobs")
-        jobIDs = jobAction.execute(self.id, conn = self.getReadDBConn(),
+        jobIDs = jobAction.execute(self.id, conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
 
-        self.commitIfNew()
-        
         if type == "JobList":
             jobList = []
             for jobID in jobIDs:
@@ -200,7 +203,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         Write any new jobs to the database, creating them in the database if
         necessary.
         """
-        self.beginTransaction()
+        existingTransaction = self.beginTransaction()
 
         if self.id == -1:
             self.create()
@@ -209,7 +212,7 @@ class JobGroup(WMBSBase, WMJobGroup):
             j.create(group=self)
             
         WMJobGroup.commit(self)
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return
     
     def recordAcquire(self, jobs = None):
@@ -220,12 +223,14 @@ class JobGroup(WMBSBase, WMJobGroup):
         If no list of jobs is passed in then mark all files in jobGroup 
         as acquired.
         """
+        existingTransaction = self.beginTransaction()
+
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
         
         if type(jobs) != list:
             jobs = [jobs]
-        self.beginTransaction()
+
         for job in jobs:
             job.changeStatus("Active")
             inputFiles = job.getFiles()
@@ -233,7 +238,7 @@ class JobGroup(WMBSBase, WMJobGroup):
             if len(inputFiles) > 0:
                 self.subscription.acquireFiles(inputFiles)
 
-        self.commitIfNew()
+        self.commitTransaction(existingTransaction)
         return True
     
     def _recordFileStatusUponCompletion(self):
@@ -250,6 +255,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         
         if job group is in complete status return status, if not, False 
         """
+        existingTransaction = self.beginTransaction()
         status = self._completeStatus()
         
         if status == "COMPLETE" or status == "FailComplete":
@@ -275,7 +281,8 @@ class JobGroup(WMBSBase, WMJobGroup):
             # other function in the class
             #self.commitIfNew()
             return status
-        
+
+        self.commitTransaction(existingTransaction)
         return False
     
     def recordComplete(self, job, outputFiles):
@@ -290,6 +297,8 @@ class JobGroup(WMBSBase, WMJobGroup):
         JobGroup is completed. but it will be responsible the one who calls this 
         function to check jobGroup complete status
         """
+        existingTransaction = self.beginTransaction()
+
         #self.beginTransaction()
         #print self.existingTransaction()
         job.changeStatus("Complete")
@@ -312,6 +321,8 @@ class JobGroup(WMBSBase, WMJobGroup):
             output = False
         self.myThread.transaction.commit()
         #self.commitIfNew()
+
+        self.commitTransaction(existingTransaction)
         return output
     
     def recordFail(self, job):
@@ -326,9 +337,12 @@ class JobGroup(WMBSBase, WMJobGroup):
         JobGroup is failed. but it will be responsible the one who calls this 
         function to check jobGroup failed status
         """
+        existingTransaction = self.beginTransaction()
+
         job.changeStatus("Failed")            
         status = self._recordFileStatusUponCompletion()
-        self.myThread.transaction.commit()
+
+        self.commitTransaction(existingTransaction)
         return status
     
     def status(self, detail = False):
@@ -342,12 +356,15 @@ class JobGroup(WMBSBase, WMJobGroup):
         
         return: ACTIVE, COMPLETE, FAILED
         """
+        existingTransaction = self.beginTransaction()
+
         statusAction = self.daofactory(classname = "JobGroup.Status")
         av, ac, fa, cm = statusAction.execute(self.id,
-                                              conn = self.getReadDBConn(),
+                                              conn = self.getDBConn(),
                                               transaction = self.existingTransaction())
     
         total = av + ac + fa + cm
+        self.commitTransaction(existingTransaction)
         
         if total > 0:
             report = ''
@@ -384,10 +401,15 @@ class JobGroup(WMBSBase, WMJobGroup):
         
         To: check query whether performance can be improved
         """
+        existingTransaction = self.beginTransaction()
+
         statusAction = self.daofactory(classname = "JobGroup.IsComplete")
         all, cm, fa = statusAction.execute(self.id,
-                                      conn = self.getReadDBConn(),
+                                      conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+
         if all == cm:
             return "COMPLETE"
         elif all == cm + fa:
@@ -405,8 +427,11 @@ class JobGroup(WMBSBase, WMJobGroup):
         given job group. But it is the caller's responsibility to check where 
         the job group is successfully finished using isSuccessful() function
         """
+        existingTransaction = self.beginTransaction()
+        
         # output only makes sense if the group is completed
         # load output from DB 
         self.groupoutput.load()
+        self.commitTransaction(existingTransaction)
         return self.groupoutput
         

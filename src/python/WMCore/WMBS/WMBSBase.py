@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMBSBase.py,v 1.1 2009/01/08 21:50:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMBSBase.py,v 1.2 2009/05/08 16:04:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -15,7 +15,7 @@ from WMCore.DAOFactory import DAOFactory
 
 class WMBSBase:
     """
-    Generic methods used by all of the wmbs classes.
+    Generic methods used by all of the WMBS classes.
     """
     def __init__(self):
         """
@@ -38,48 +38,28 @@ class WMBSBase:
             self.myThread.transaction = Transaction(self.dbi)
             self.myThread.transaction.commit()
 
-        self.newTrans = False
         return
 
-    def getReadDBConn(self):
+    def getDBConn(self):
         """
-        _getReadDBConn_
+        _getDBConn_
 
-        Retrieve a "Read" database connection.  If there is an existing
-        transaction this will retrieve the database connection from the
-        transaction.  If no transaction exists None will be returned and it
-        will be up to the database class to create the connection.
+        Retrieve the database connection that is associated with the current
+        dataabase transaction.
         """
-        return self.myThread.transaction.conn
-
-    def getWriteDBConn(self):
-        """
-        _getWriteDBConn_
-
-        Retrieve a "Write" database connection.  If there is an existing
-        transaction this will retrieve the database connection from the
-        transaction.  If no transaction exists a new one will be created and
-        the connection from the new transaction will be returned.  The
-        transaction will be committed once commitIfNew() is called.
-        """
-        if self.myThread.transaction.conn == None:
-            self.newTrans = True
-            self.myThread.transaction.begin()
-
         return self.myThread.transaction.conn
 
     def beginTransaction(self):
         """
         _beginTransaction_
 
-        If there is no active transaction begin a new one and set newTrans to
-        True.  If there is an active transaction do nothing.
+        Begin a database transaction if one does not already exist.
         """
         if self.myThread.transaction.conn == None:
-            self.newTrans = True
             self.myThread.transaction.begin()
+            return False
 
-        return
+        return True
 
     def existingTransaction(self):
         """
@@ -92,15 +72,14 @@ class WMBSBase:
 
         return False
 
-    def commitIfNew(self):
+    def commitTransaction(self, existingTransaction):
         """
-        _commitIfNew_
+        _commitTransaction_
 
-        If there is an open transaction that was created by the getWriteDBConn()
-        method commit it to the database, return otherwise.
+        Commit a database transaction that was begun by self.beginTransaction().
         """
-        if self.newTrans:
+        if not existingTransaction:
             self.myThread.transaction.commit()
-            self.newTrans = False
+            self.myThread.transaction.conn = None
 
         return

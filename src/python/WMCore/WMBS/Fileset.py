@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.42 2009/04/29 16:33:51 mnorman Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Fileset.py,v 1.43 2009/05/08 16:04:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.43 $"
 
 from sets import Set
 
@@ -75,43 +75,46 @@ class Fileset(WMBSBase, WMFileset):
         Does a fileset exist with this name in the database
         """
         if self.id != -1:
-            action = self.daofactory(classname='Fileset.ExistsByID')
-            return action.execute(id = self.id, conn = self.getReadDBConn(),
-                                  transaction = self.existingTransaction())
-        else:
-            action = self.daofactory(classname='Fileset.Exists')
-            id = action.execute(self.name, conn = self.getReadDBConn(),
+            action = self.daofactory(classname = "Fileset.ExistsByID")
+            result = action.execute(id = self.id, conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
-            if id != False:
-                self.id = id
-            return id
-        
+        else:
+            action = self.daofactory(classname = "Fileset.Exists")
+            result = action.execute(self.name, conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+            if result != False:
+                self.id = result
+
+        return result
         
     def create(self):
         """
         Add the new fileset to WMBS, and commit the files
         """
+        existingTransaction = self.beginTransaction()
+
         if self.exists() != False:
             self.load()
+            self.commitTransaction(existingTransaction)
             return
         
         createAction = self.daofactory(classname = "Fileset.New")
-        createAction.execute(self.name, self.open, conn = self.getWriteDBConn(),
+        createAction.execute(self.name, self.open, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         self.commit()
         self.loadData()
-        self.commitIfNew()
-        
+
+        self.commitTransaction(existingTransaction)
         return
     
     def delete(self):
         """
         Remove this fileset from WMBS
         """
-        action = self.daofactory(classname='Fileset.Delete')
-        result = action.execute(name = self.name, conn = self.getWriteDBConn(),
+        action = self.daofactory(classname = "Fileset.Delete")
+        result = action.execute(name = self.name, conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
-        self.commitIfNew()
+
         return result
     
     def load(self): 
@@ -124,12 +127,12 @@ class Fileset(WMBSBase, WMFileset):
         if self.id > 0:
             action = self.daofactory(classname = "Fileset.LoadFromID")
             result = action.execute(fileset = self.id,
-                                    conn = self.getReadDBConn(),
+                                    conn = self.getDBConn(),
                                     transaction = self.existingTransaction())                                    
         else:
             action = self.daofactory(classname = "Fileset.LoadFromName")
             result = action.execute(fileset = self.name,
-                                    conn = self.getReadDBConn(),
+                                    conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
 
         self.id = result["id"]
@@ -137,8 +140,6 @@ class Fileset(WMBSBase, WMFileset):
         self.open = result["open"]
         self.lastUpdate = result["last_update"]
 
-        self.newfiles = Set()
-        self.files = Set()
         return self
 
     def loadData(self): 
@@ -147,32 +148,38 @@ class Fileset(WMBSBase, WMFileset):
 
         Load all the files that belong to this fileset.   
         """
+        existingTransaction = self.beginTransaction()
+
         if self.name == None or self.id < 0:
             self.load()
 
         action = self.daofactory(classname = "Files.InFileset")
         results = action.execute(fileset = self.id,
-                                 conn = self.getReadDBConn(),
+                                 conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
+
+        self.files = Set()
+        self.newfiles = Set()
 
         for result in results:
             file = File(id = result["fileid"])
             file.loadData(parentage = 1)
             self.files.add(file)
 
-        return self    
+        self.commitTransaction(existingTransaction)
+        return
     
     def commit(self):
         """
         Add contents of self.newfiles to the database, 
         empty self.newfiles, reload self
         """
-        self.beginTransaction()
+        existingTransaction = self.beginTransaction()
         
         if not self.exists():
             self.create()
+
         ids = []
-        
         while len(self.newfiles) > 0:
             #Check file objects exist in the database, save those that don't
             f = self.newfiles.pop()
@@ -183,11 +190,12 @@ class Fileset(WMBSBase, WMFileset):
 
         #Add Files to DB only if there are any files on newfiles            
         if len(ids) > 0:
-            addAction = self.daofactory(classname='Files.AddToFilesetByIDs')
+            addAction = self.daofactory(classname = "Files.AddToFilesetByIDs")
             addAction.execute(file = ids, fileset = self.id,
-                              conn = self.getWriteDBConn(),
+                              conn = self.getDBConn(),
                               transaction = self.existingTransaction())
-        self.commitIfNew()
+
+        self.commitTransaction(existingTransaction)
         return
 
     def markOpen(self, isOpen):
@@ -197,11 +205,9 @@ class Fileset(WMBSBase, WMFileset):
         Change the open status of this fileset.  The isOpen parameter is a bool
         representing whether or not the fileset is open.
         """
-        self.beginTransaction()
-
         closeAction = self.daofactory(classname = "Fileset.MarkOpen")
         closeAction.execute(fileset = self.name, isOpen = isOpen,
-                            conn = self.getWriteDBConn(),
+                            conn = self.getDBConn(),
                             transaction = self.existingTransaction())
 
-        self.commitIfNew()
+        return

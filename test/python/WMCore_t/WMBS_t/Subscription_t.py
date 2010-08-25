@@ -1282,6 +1282,8 @@ class SubscriptionTest(unittest.TestCase):
         testFileB.create()
         testFileC.create()
         testFileD.create()
+
+
         
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -1304,6 +1306,21 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription2 = Subscription(fileset = testFileset2,
                                          workflow = testWorkflow)
         testSubscription2.create()
+
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB")
+        testJobB.addFile(testFileB)
+
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+
+        testJobGroupA.commit()
+        testSubscription.save()
 
         testSubscription.deleteEverything()
 

@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.3 2009/06/05 16:40:34 mnorman Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: LumiBased.py,v 1.4 2009/07/13 18:23:39 mnorman Exp $"
+__version__  = "$Revision: 1.4 $"
 
 from sets import Set
 
@@ -52,6 +52,9 @@ class LumiBased(JobFactory):
         #Get all files in fileset
         for f in fileset:
 
+            if hasattr(f, "loadData"):
+                f.loadData()
+
             if sum([ len(run) for run in f['runs']]) == 0:
                 continue
             fileLumi = None
@@ -67,7 +70,7 @@ class LumiBased(JobFactory):
 
             lumiDict[fileLumi].append(f)
 
-
+       
         if not lumisPerJob == None:
             JobGroupList = self.LumiBasedJobSplitting(lumiDict, lumisPerJob, jobInstance, groupInstance)
         elif not eventsPerJob == None:
@@ -82,10 +85,10 @@ class LumiBased(JobFactory):
     def FileBasedJobSplitting(self, lumiDict, filesPerJob, jobInstance, groupInstance):
 
         JobGroupList = []
-        baseName = makeUUID()
         
         for lumi in lumiDict.keys():
             joblist = []
+            baseName = makeUUID()
 
             #Now split them into sections according to files per job
             while len(lumiDict[lumi]) > 0:

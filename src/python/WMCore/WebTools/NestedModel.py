@@ -64,18 +64,18 @@ class NestedModel(RESTModel):
         print 'basemethod', basemethnom
         print 'children', children
         try:
-            def_args = len(self.methods[verb][basemethnom]['default']['args'])
-            print 'def_args', def_args
+            print 'args', args
             print 'args[1:]', args[1:]
-            print 'args[1:1+def_args]', args[1+def_args:]
             
+            # is there a method in the keywords?
             for a in kwargs.keys():
                 print 'kwargs a', a
                 if a in children:
                     method = a
                     if not len(kwargs[a]): 
                         kwargs.pop(a)
-            for a in args[1+def_args:]:
+            # is there a method in the positional args?
+            for a in args[1:]:
                 print 'args a', a
                 if a in children:
                     method = args.pop(args.index(a))

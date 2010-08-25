@@ -13,7 +13,7 @@ from WMCore.BossLite.DbObjects.Job         import Job
 from WMCore.BossLite.DbObjects.Task        import Task
 from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
 
-from WMCore.BossLite.DbObjects.TrackingDB  import TrackingDB
+from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
 
 class DBObjectsTest(unittest.TestCase):
     
@@ -49,7 +49,7 @@ class DBObjectsTest(unittest.TestCase):
         """
         
         myThread = threading.currentThread()
-        db = TrackingDB()
+        db = BossLiteDBWM()
         
         parameters = {'serverName': 'Taginae', 'name': 'Narses'}
         task = Task(parameters = parameters)
@@ -112,7 +112,7 @@ class DBObjectsTest(unittest.TestCase):
 
         """
         
-        db = TrackingDB()
+        db = BossLiteDBWM()
         
         task = Task()
         task.create(db)
@@ -155,7 +155,7 @@ class DBObjectsTest(unittest.TestCase):
         """
         
         myThread = threading.currentThread()
-        db = TrackingDB()
+        db = BossLiteDBWM()
         
         task = Task()
         task.create(db)
@@ -204,7 +204,7 @@ class DBObjectsTest(unittest.TestCase):
 
         """
         
-        db = TrackingDB()
+        db = BossLiteDBWM()
         
         task = Task()
         task.create(db)
@@ -266,7 +266,7 @@ class DBObjectsTest(unittest.TestCase):
 
         """
         
-        db = TrackingDB()
+        db = BossLiteDBWM()
         nTestJobs = 7
         
         parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
@@ -309,7 +309,7 @@ class DBObjectsTest(unittest.TestCase):
         """
         
         myThread = threading.currentThread()
-        db = TrackingDB()
+        db = BossLiteDBWM()
         nTestJobs = 13
         
         parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
@@ -359,7 +359,7 @@ class DBObjectsTest(unittest.TestCase):
 
         """ 
         
-        db = TrackingDB()
+        db = BossLiteDBWM()
         
         parameters = {'name': 'Bishop'}
         task = Task(parameters)
@@ -425,7 +425,7 @@ class DBObjectsTest(unittest.TestCase):
 
         """ 
         
-        db = TrackingDB()
+        db = BossLiteDBWM()
         
         # invalid Task load, erroneous ID -> exception raised
         task = Task(parameters= {'id': 666})

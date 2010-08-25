@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-_EndOfRun_t_
+_FixedDelay_t_
 
-End of run splitting test
+Fixed delay job splitting.
 """
 
-__revision__ = "$Id: FixedDelay_t.py,v 1.4 2009/12/16 17:45:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FixedDelay_t.py,v 1.5 2010/06/28 15:34:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import os
@@ -26,25 +26,14 @@ from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
-class EndOfRunTest(unittest.TestCase):
-    """
-    _EndOfRun_t_
-    
-    End of run splitting test
-    """
-    
-
-    
+class FixedDelayTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
 
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
-        """
-
-
-        
+        """        
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -57,13 +46,12 @@ class EndOfRunTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "somese.cern.ch")
+        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
 
-        
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(i, *[45+i]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
@@ -71,7 +59,7 @@ class EndOfRunTest(unittest.TestCase):
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
-        newFile = File("/some/file/name", size = 1000, events = 100, locations = "somese.cern.ch")
+        newFile = File("/some/file/name", size = 1000, events = 100, locations = set(["somese.cern.ch"]))
         newFile.addRun(Run(1, *[45]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
@@ -80,7 +68,7 @@ class EndOfRunTest(unittest.TestCase):
         self.multipleFileLumiset = Fileset(name = "TestFileset3")
         self.multipleFileLumiset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(1, *[45+i/3]))
             newFile.create()
             self.multipleFileLumiset.addFile(newFile)
@@ -89,7 +77,7 @@ class EndOfRunTest(unittest.TestCase):
         self.singleLumiFileset = Fileset(name = "TestFileset4")
         self.singleLumiFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
             newFile.addRun(Run(1, *[45]))
             newFile.create()
             self.singleLumiFileset.addFile(newFile)
@@ -100,27 +88,25 @@ class EndOfRunTest(unittest.TestCase):
         testWorkflow.create()
         self.multipleFileSubscription  = Subscription(fileset = self.multipleFileFileset,
                                                       workflow = testWorkflow,
-                                                      split_algo = "EndOfRun",
+                                                      split_algo = "FixedDelay",
                                                       type = "Processing")
         self.singleFileSubscription    = Subscription(fileset = self.singleFileFileset,
                                                       workflow = testWorkflow,
-                                                      split_algo = "EndOfRun",
+                                                      split_algo = "FixedDelay",
                                                       type = "Processing")
         self.multipleLumiSubscription  = Subscription(fileset = self.multipleFileLumiset,
                                                       workflow = testWorkflow,
-                                                      split_algo = "EndOfRun",
+                                                      split_algo = "FixedDelay",
                                                       type = "Processing")
         self.singleLumiSubscription    = Subscription(fileset = self.singleLumiFileset,
                                                       workflow = testWorkflow,
-                                                      split_algo = "EndOfRun",
+                                                      split_algo = "FixedDelay",
                                                       type = "Processing")
 
         self.multipleFileSubscription.create()
         self.singleFileSubscription.create()
         self.multipleLumiSubscription.create()
         self.singleLumiSubscription.create()
-
-
         return
 
     def tearDown(self):
@@ -129,23 +115,7 @@ class EndOfRunTest(unittest.TestCase):
 
         Nothing to do...
         """
-
-        myThread = threading.currentThread()
-
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-            
-        myThread.transaction.begin()
-            
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-            
-        myThread.transaction.commit()
-        
+        self.testInit.clearDatabase()
         return
     
     def testNone(self):
@@ -261,6 +231,7 @@ class EndOfRunTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         self.multipleFileSubscription.getFileset().markOpen(False)
+
         self.singleFileSubscription.acquireFiles(
                            [self.singleFileSubscription.availableFiles().pop()])
         jobFactory = splitter(self.singleFileSubscription)
@@ -306,7 +277,6 @@ class EndOfRunTest(unittest.TestCase):
                 "JobFactory should have provides us with 9 files")
         
         self.assertEquals(len(myfiles), 9)
-
 
 
 if __name__ == '__main__':

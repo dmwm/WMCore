@@ -54,7 +54,7 @@ if 'PYTHONHOME' in os.environ:
     print "PYTHONHOME: %s" % os.environ['PYTHONHOME']
 if 'PYTHONPATH' in os.environ:
     print "PYTHONPATH: %s" % os.environ['PYTHONPATH']
-    
+sys.stdout.flush()
 os.execvp( commandLine[0], commandLine[0:] )
 
         

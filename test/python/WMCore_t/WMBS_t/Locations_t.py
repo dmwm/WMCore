@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.14 2010/04/08 20:09:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Locations_t.py,v 1.15 2010/04/14 20:46:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import unittest
@@ -14,6 +14,7 @@ import threading
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
+from WMCore.Database.Transaction import Transaction
 from WMQuality.TestInit import TestInit
 
 class LocationsTest(unittest.TestCase):
@@ -134,29 +135,31 @@ class LocationsTest(unittest.TestCase):
         
         myThread.transaction.begin()
 
+        localTransaction = Transaction(myThread.dbi)
+        localTransaction.begin()
+        
         locationNew = daoFactory(classname = "Locations.New")
 
         locationNew.execute("Satsuma", conn = myThread.transaction.conn, transaction = True)
         locationNew.execute("Choshu", conn = myThread.transaction.conn, transaction = True)
-        locationNew.execute("Tosa")
+        locationNew.execute("Tosa", conn = localTransaction.conn, transaction = True)
 
         listSites = daoFactory(classname = "Locations.ListSites")
-        nonTransSites = listSites.execute()
+        nonTransSites = listSites.execute(conn = localTransaction.conn, transaction = True)
         transSites = listSites.execute(conn = myThread.transaction.conn, transaction = True)
 
         assert len(nonTransSites) == 1, \
                "Error: Wrong number of sites in non transaction list."
         assert "Tosa" in nonTransSites, \
                "Error: Site missing in non transaction list."
-        assert len(transSites) == 3, \
+        assert len(transSites) == 2, \
                "Error: Wrong number of sites in transaction list."
         assert "Satsuma" in transSites, \
                "Error: Site missing in transaction list."
         assert "Choshu" in transSites, \
                "Error: Site missing in transaction list."
-        assert "Tosa" in transSites, \
-               "Error: Site missing in transaction list."        
 
+        localTransaction.commit()
         myThread.transaction.commit()
         return
 

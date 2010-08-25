@@ -22,7 +22,7 @@ class Welcome(Page):
         html += '<th align="left"><h3>Description</h3></th></tr>\n'
         self.namesAndDocstrings.sort()
         for name, docstring in self.namesAndDocstrings:
-            html += '<tr><td><p><a href="%s">%s</a></p></td>\n' \
+            html += '<tr><td><p><a href="/%s">%s</a></p></td>\n' \
                 % (name, name)
             html += '<td><p>%s</p></td></tr>\n' % docstring
         html += '</table><br />'

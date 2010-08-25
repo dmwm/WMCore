@@ -237,13 +237,10 @@ class FileManager:
         if option:
             self.defaultMethod['option'] = option
         
-        log.debug("Note: We have been directed to use a StageOut override")
-        log.debug("Local Stage Out Implementation to be used is: %s" % implName)
-        log.debug("Local Stage Out SE Name to be used is %s" % seName)
-        log.debug("Local Stage Out lfn-prefix to be used is %s" % lfn_prefix)
-        log.debug("Trivial File Catalog has been loaded:\n%s" % str(self.tfc))
-
-
+        log.info("Note: We have been directed to use a StageOut override")
+        log.info("Local Stage Out Implementation to be used is: %s" % implName)
+        log.info("Local Stage Out SE Name to be used is %s" % seName)
+        log.info("Local Stage Out lfn-prefix to be used is %s" % lfn_prefix)
 
 
     

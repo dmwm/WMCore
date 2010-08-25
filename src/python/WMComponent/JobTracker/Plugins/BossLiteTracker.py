@@ -2,8 +2,8 @@
 
 # It's the tracker for BossLite
 
-__revision__ = "$Id: BossLiteTracker.py,v 1.1 2010/07/08 15:44:57 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: BossLiteTracker.py,v 1.2 2010/08/13 09:16:06 mcinquil Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import logging
@@ -17,9 +17,8 @@ from WMCore.DAOFactory import DAOFactory
 from WMComponent.JobTracker.Plugins.TrackerPlugin  import TrackerPlugin
 
 from WMCore.BossLite.DbObjects.Job           import Job
+from WMCore.BossLite.DbObjects.RunningJob    import RunningJob
 from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
-
-
 
 
 class BossLiteTracker(TrackerPlugin):
@@ -90,8 +89,11 @@ class BossLiteTracker(TrackerPlugin):
                 jobAd     = jobInfo.get(job['id'])
                 jobStatus = jobAd.get('status', 'C')
                 statName  = 'NA'
-                dtStamp   = jobAd.get('time')
-                jobTime   = time.mktime(dtStamp.timetuple())
+                #dtStamp   = jobAd.get('lbTimestamp')
+                #jobTime   = time.mktime(dtStamp.timetuple())
+                jobTime   = jobAd.get('lbTimestamp')
+                if jobStatus is None:
+                    continue
                 # If the job is waiting to run, it's Idle
                 if jobStatus.lower() in ['c', 'su', 'w', 'ss', 'sr']:
                     statName = 'Idle'
@@ -111,12 +113,10 @@ class BossLiteTracker(TrackerPlugin):
                     statName = jobStatus
 
                 trackDict[job['id']] = {'Status': statName,
-                                        'StatusTime': time.time() - jobTime}
+                                        'StatusTime': long(time.time()) - jobTime}
             
-
         # At the end, kill all the jobs that have exited
         self.kill(killList = killList)
-
 
         return trackDict
 
@@ -134,6 +134,5 @@ class BossLiteTracker(TrackerPlugin):
             job = Job(parameters = {'name': name})
             job.load(db)
             job.remove(db)
-
 
         return

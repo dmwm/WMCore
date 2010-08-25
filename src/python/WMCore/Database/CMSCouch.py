@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.59 2010/04/27 15:24:27 metson Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: CMSCouch.py,v 1.60 2010/05/05 21:01:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.60 $"
 
 import urllib
 from httplib import BadStatusLine
@@ -340,17 +340,15 @@ class Database(CouchDBRequests):
                          value,
                          False)
     
-    def getAttachment(self, id, name=None):
+    def getAttachment(self, id, name = "attachment"):
         """
-        Retrieve an attachment
+        _getAttachment_
+        
+        Retrieve an attachment for a couch document.
         """
-        if (name == None):
-            name = "attachment"
-        attachment, response, result = self.get('/%s/%s/%s' % (self.name, id, 
-                                                               name),
-                         None,
-                         False,
-                         False)
+        url = "/%s/%s/%s" % (self.name, id, name)
+        attachment = self.get(url, None, False, False)
+        
         # there has to be a better way to do this but if we're not de-jsoning
         # the return values, then this is all I can do for error checking,
         # right?

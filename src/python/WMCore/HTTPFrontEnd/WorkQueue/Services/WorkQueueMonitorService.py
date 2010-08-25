@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.15 2010/05/10 22:06:27 sryu Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.16 2010/05/19 16:07:37 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -67,6 +67,12 @@ class WorkQueueMonitorService(ServiceInterface):
                           args = ["startIndex", "results"], validation = [self.validateInt])
         
         self.model.addDAO("GET", "workloadprogress", "Monitor.WorkloadsWithProgress")
+        self.model.addDAO("GET", "statusstat", "Monitor.StatusStatistics")
+        
+        # workloadID can be either workload id number or wildcard (*) 
+        self.model.addDAO("GET", "statusstatbyworkload", "Monitor.StatusStatByWorkload",
+                          args = ['workloadID'])
+        
         self.model.addDAO("GET", "elements", "Monitor.Elements")
         self.model.addDAO("GET", "sites", "Monitor.Sites")
         self.model.addDAO("GET", "data", "Monitor.Data")
@@ -87,7 +93,6 @@ class WorkQueueMonitorService(ServiceInterface):
         
         logging.info("%s initialised." % self._myClass)        
         
-
     def validateInt(self, input):
         """
         validate status function and do the type conversion if the argument 

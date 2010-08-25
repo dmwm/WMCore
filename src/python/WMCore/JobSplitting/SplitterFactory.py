@@ -16,7 +16,8 @@ class SplitterFactory(WMObject):
         
     def __call__(self, subscription=None, 
                  package='WMCore.DataStructs', 
-                 generators=[]):
+                 generators=[],
+                 limit = 0):
         # package is the package output of the splitter will be loaded from 
         """
         Instantiate an Subscription.split_algo and 
@@ -29,4 +30,5 @@ class SplitterFactory(WMObject):
         splitter = getattr(module, algorithm.split('.')[-1])
         return splitter(package=package, 
                         subscription=subscription, 
-                        generators=generators)
+                        generators=generators,
+                        limit = limit)

@@ -5,8 +5,8 @@ _Step.Executor.LogArchive_
 Implementation of an Executor for a LogArchive step
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.18 2010/06/29 19:06:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: LogArchive.py,v 1.19 2010/07/04 20:54:59 meloam Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import os
 import os.path
@@ -22,6 +22,7 @@ from WMCore.WMException import WMException
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 import WMCore.Storage.StageOutMgr as StageOutMgr
+import WMCore.Storage.FileManager
 
 
 class Alarm(Exception):
@@ -76,7 +77,7 @@ class LogArchive(Executor):
 
         # Wait fifteen minutes for stageOut
         waitTime = overrides.get('waitTime', 900)
-
+            
         matchFiles = [
             ".log$",
             "Report.pkl",
@@ -87,9 +88,21 @@ class LogArchive(Executor):
             ]
 
         #Okay, we need a stageOut Manager
-        manager = StageOutMgr.StageOutMgr(**overrides)
-        manager.numberOfRetries = self.step.retryCount
-        manager.retryPauseTime  = self.step.retryDelay
+        useNewStageOutCode = False
+        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
+            useNewStageOutCode = True
+        if not useNewStageOutCode:
+            # old style
+            manager = StageOutMgr.StageOutMgr(**overrides)
+            manager.numberOfRetries = self.step.retryCount
+            manager.retryPauseTime  = self.step.retryDelay
+        else:
+            # new style
+            manager = WMCore.Storage.FileManager.StageOutMgr(
+                                retryPauseTime  = self.step.retryDelay,
+                                numberOfRetries = self.step.retryCount,
+                                **overrides)
+
         #Now we need to find all the reports
         logFilesForTransfer = []
         #Look in the taskSpace first

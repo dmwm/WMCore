@@ -4,8 +4,8 @@ _BossLiteDBInterface_
 
 """
 
-__version__ = "$Id: BossLiteDBInterface.py,v 1.1 2010/05/03 13:01:32 spigafi Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: BossLiteDBInterface.py,v 1.2 2010/05/18 13:49:39 spigafi Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 
 class BossLiteDBInterface(object):
@@ -24,45 +24,7 @@ class BossLiteDBInterface(object):
         __init__
         """
         
-
-    ##########################################################################
-    # Methods for BossLiteAPI
-    ##########################################################################
-    
-    def insert(self, obj):
-        """
-        put your description here...
-        """
         
-        raise NotImplementedError
-
-    ##########################################################################
-
-    def select(self, template, strict = True):
-        """
-        put your description here...
-        """
-        
-        raise NotImplementedError
-
-    ##########################################################################
-
-    def update(self, template, skipAttributes = None):
-        """
-        put your description here...
-        """
-        
-        raise NotImplementedError
-
-    ##########################################################################
-
-    def delete(self, template):
-        """
-        put your description here...
-        """
-        
-        raise NotImplementedError
-     
     ##########################################################################
     # Methods for DbObjects
     ##########################################################################
@@ -73,8 +35,7 @@ class BossLiteDBInterface(object):
         """
         
         raise NotImplementedError
-        
-    ##########################################################################
+    
     
     def objSave(self, obj):
         """
@@ -82,8 +43,7 @@ class BossLiteDBInterface(object):
         """
         
         raise NotImplementedError
-        
-    ##########################################################################
+    
     
     def objCreate(self, obj):
         """
@@ -92,7 +52,6 @@ class BossLiteDBInterface(object):
         
         raise NotImplementedError   
         
-    ##########################################################################
     
     def objLoad(self, obj):
         """
@@ -101,7 +60,6 @@ class BossLiteDBInterface(object):
         
         raise NotImplementedError      
         
-    ##########################################################################
     
     def objUpdate(self, obj):
         """
@@ -110,7 +68,6 @@ class BossLiteDBInterface(object):
         
         raise NotImplementedError     
         
-    ##########################################################################
     
     def objRemove(self, obj):
         """

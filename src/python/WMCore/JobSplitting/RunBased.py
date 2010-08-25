@@ -10,10 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.18 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.18 $"
-
-from sets import Set
+__revision__ = "$Id: RunBased.py,v 1.19 2009/12/15 14:07:09 spiga Exp $"
+__version__  = "$Revision: 1.19 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset

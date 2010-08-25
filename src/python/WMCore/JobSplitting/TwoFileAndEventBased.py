@@ -4,10 +4,9 @@ _TwoFileAndEventBased_
 
 """
 
-__revision__ = "$Id: TwoFileAndEventBased.py,v 1.5 2009/10/29 13:43:28 sfoulkes Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: TwoFileAndEventBased.py,v 1.6 2009/12/15 14:07:09 spiga Exp $"
+__version__  = "$Revision: 1.6 $"
 
-from sets import Set
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID

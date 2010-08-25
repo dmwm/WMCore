@@ -7,10 +7,9 @@ or a a set of files for each job.
 
 """
 
-__revision__ = "$Id: SizeBased.py,v 1.3 2009/10/29 13:43:28 sfoulkes Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: SizeBased.py,v 1.4 2009/12/15 14:07:09 spiga Exp $"
+__version__  = "$Revision: 1.4 $"
 
-from sets import Set
 import logging
 
 from WMCore.JobSplitting.JobFactory import JobFactory

@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.19 2009/12/03 21:07:48 evansde Exp $"
-__version__  = "$Revision: 1.19 $"
+__revision__ = "$Id: JobFactory.py,v 1.20 2009/12/15 14:07:09 spiga Exp $"
+__version__  = "$Revision: 1.20 $"
 
 
 import logging
 import threading
 
-from sets import Set
-from sets import ImmutableSet
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Fileset  import Fileset
 from WMCore.DataStructs.File     import File
@@ -132,7 +130,7 @@ class JobFactory(WMObject):
         fileset = self.subscription.availableFiles()
 
         for file in fileset:
-            locSet = ImmutableSet(file['locations'])
+            locSet = frozenset(file['locations'])
 
             if locSet in fileDict.keys():
                 fileDict[locSet].append(file)

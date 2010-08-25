@@ -7,10 +7,8 @@ a set of jobs based on event counts.  Each jobgroup returned will only
 contain jobs for a single file.
 """
 
-__revision__ = "$Id: FileAndEventBased.py,v 1.13 2009/10/29 13:43:28 sfoulkes Exp $"
-__version__  = "$Revision: 1.13 $"
-
-from sets import Set
+__revision__ = "$Id: FileAndEventBased.py,v 1.14 2009/12/15 14:07:09 spiga Exp $"
+__version__  = "$Revision: 1.14 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID

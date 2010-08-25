@@ -6,8 +6,8 @@ A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
 """
 
-__revision__ = "$Id: Requests.py,v 1.26 2009/12/02 10:16:09 metson Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Requests.py,v 1.27 2009/12/15 14:07:33 spiga Exp $"
+__version__ = "$Revision: 1.27 $"
 
 try:
     # Python 2.6
@@ -21,7 +21,6 @@ import sys
 import base64
 from httplib import HTTPConnection
 from httplib import HTTPSConnection
-from sets import Set
 from WMCore.WMException import WMException
 import types
 import pprint
@@ -287,7 +286,7 @@ class JSONThunker:
             self.unrecurse(toThunk)
             return toThunk
         
-        elif ((type(toThunk) == type(Set()))):
+        elif ((type(toThunk) == type(set()))):
             tempDict = {'hack_to_encode_a_set_in_json_':True}
             counter = 0
             for val in toThunk:
@@ -393,7 +392,7 @@ class JSONThunker:
         if (type(data) == type({})):
             if ('hack_to_encode_a_set_in_json_' in data):
                 del data['hack_to_encode_a_set_in_json_']
-                newSet = Set()
+                newSet = set()
                 for k,v in data.iteritems():
                     newSet.add( self._unthunk(v) )
                 return newSet

@@ -7,11 +7,10 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.8 2009/11/06 22:10:57 sfoulkes Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.9 2009/12/15 14:07:09 spiga Exp $"
+__version__  = "$Revision: 1.9 $"
 
 import logging
-from sets import Set
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID

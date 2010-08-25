@@ -4,11 +4,10 @@ WorkQueue splitting by dataset
 
 """
 __all__ = []
-__revision__ = "$Id: Dataset.py,v 1.1 2009/12/02 13:52:43 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Dataset.py,v 1.2 2009/12/07 14:13:46 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-from copy import copy
 from math import ceil
 
 class Dataset(StartPolicyInterface):

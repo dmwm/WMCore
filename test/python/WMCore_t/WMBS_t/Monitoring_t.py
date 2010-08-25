@@ -5,12 +5,18 @@ _Monitoring_t_
 Unit tests for the WMBS Monitoring DAO objects.
 """
 
-__revision__ = "$Id: Monitoring_t.py,v 1.1 2010/01/25 20:15:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Monitoring_t.py,v 1.2 2010/01/26 17:36:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import unittest
 import threading
+
+from WMCore.WMBS.Fileset import Fileset as Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.Subscription import Subscription
 
 from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -18,6 +24,7 @@ from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
+from WMCore.Services.UUID import makeUUID
 
 class MonitoringTest(unittest.TestCase):
     def setUp(self):
@@ -32,6 +39,11 @@ class MonitoringTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
+
+        myThread = threading.currentThread()        
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)        
         return
                                                                 
     def tearDown(self):
@@ -49,12 +61,7 @@ class MonitoringTest(unittest.TestCase):
 
         Verify that the ListJobStates DAO works correctly.
         """
-        myThread = threading.currentThread()        
-        daoFactory = DAOFactory(package="WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-
-        listJobStates = daoFactory(classname = "Monitoring.ListJobStates")
+        listJobStates = self.daoFactory(classname = "Monitoring.ListJobStates")
         jobStates = listJobStates.execute()
 
         transitionStates = Transitions().states()
@@ -73,12 +80,7 @@ class MonitoringTest(unittest.TestCase):
 
         Verify that the ListSubTypes DAO works correctly.
         """
-        myThread = threading.currentThread()        
-        daoFactory = DAOFactory(package="WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
-
-        listSubTypes = daoFactory(classname = "Monitoring.ListSubTypes")
+        listSubTypes = self.daoFactory(classname = "Monitoring.ListSubTypes")
         subTypes = listSubTypes.execute()
 
         schemaTypes = CreateWMBSBase().subTypes
@@ -90,6 +92,66 @@ class MonitoringTest(unittest.TestCase):
                    "Error: Missing subscription type: %s" % subType
 
         return    
+
+    def testListRunningJobs(self):
+        """
+        _testListRunningJobs_
+
+        """
+        testWorkflow = Workflow(spec = makeUUID(), owner = "Steve",
+                                name = makeUUID(), task="Test")
+        testWorkflow.create()
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        type = "Processing")
+        testSubscription.create()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testJobA = Job(name = makeUUID(), files = [])
+        testJobA["couch_record"] = makeUUID()
+        testJobA.create(group = testJobGroup)
+        testJobA["state"] = "executing"
+
+        testJobB = Job(name = makeUUID(), files = [])
+        testJobB["couch_record"] = makeUUID()
+        testJobB.create(group = testJobGroup)
+        testJobB["state"] = "complete"
+
+        testJobC = Job(name = makeUUID(), files = [])
+        testJobC["couch_record"] = makeUUID()
+        testJobC.create(group = testJobGroup)        
+        testJobC["state"] = "new"
+
+        changeStateAction = self.daoFactory(classname = "Jobs.ChangeState")
+        changeStateAction.execute(jobs = [testJobA, testJobB, testJobC])
+
+        runningJobsAction = self.daoFactory(classname = "Monitoring.ListRunningJobs")
+        runningJobs = runningJobsAction.execute()
+
+        assert len(runningJobs) == 2, \
+               "Error: Wrong number of running jobs returned."
+
+        for runningJob in runningJobs:
+            if runningJob["job_name"] == testJobA["name"]:
+                assert runningJob["state"] == testJobA["state"], \
+                       "Error: Running job has wrong state."
+                assert runningJob["couch_record"] == testJobA["couch_record"], \
+                       "Error: Running job has wrong couch record."
+            else:
+                assert runningJob["job_name"] == testJobC["name"], \
+                       "Error: Running job has wrong name."
+                assert runningJob["state"] == testJobC["state"], \
+                       "Error: Running job has wrong state."
+                assert runningJob["couch_record"] == testJobC["couch_record"], \
+                       "Error: Running job has wrong couch record."                
+
+        return
         
 if __name__ == "__main__":
         unittest.main()

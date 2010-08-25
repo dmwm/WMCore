@@ -62,3 +62,6 @@ active.rest.section_('model')
 active.rest.model.object = 'RESTModel'
 active.rest.model.database = 'sqlite:////Users/metson/Documents/Workspace/GenDB/gendb.lite'
 active.rest.model.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+active.rest.section_('formatter')
+active.rest.formatter.object = 'RESTFormatter'
+active.rest.formatter.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'

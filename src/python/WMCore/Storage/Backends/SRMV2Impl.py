@@ -78,12 +78,12 @@ class SRMV2Impl(StageOutImpl):
                 if not output.count('SRM_FAILURE'): # any other codes?
                     break
             except Exception, ex:
-                 msg = "Warning: Exception while invoking command:\n"
-                 msg += "%s\n" % checkdircmd + dir
-                 msg += "Exception: %s\n" % str(ex)
-                 msg += "Go on anyway..."
-                 print msg
-                 pass
+                msg = "Warning: Exception while invoking command:\n"
+                msg += "%s\n" % checkdircmd + dir
+                msg += "Exception: %s\n" % str(ex)
+                msg += "Go on anyway..."
+                print msg
+                pass
 
         #  // Create needed directory levels from end of previous loop
         # //  to end of directory structure
@@ -94,12 +94,12 @@ class SRMV2Impl(StageOutImpl):
                 if exitCode:
                     raise RuntimeError, "Error creating directory, %s" % str(output)
             except Exception, ex:
-                 msg = "Warning: Exception while invoking command:\n"
-                 msg += "%s\n" % mkdircommand + dir
-                 msg += "Exception: %s\n" % str(ex)
-                 msg += "Go on anyway..."
-                 print msg
-                 pass
+                msg = "Warning: Exception while invoking command:\n"
+                msg += "%s\n" % mkdircommand + dir
+                msg += "Exception: %s\n" % str(ex)
+                msg += "Go on anyway..."
+                print msg
+                pass
                  
     def createRemoveFileCommand(self, pfn):
         """
@@ -154,14 +154,14 @@ class SRMV2Impl(StageOutImpl):
         #targetPFN =  remotePFN
         remotePath = None
         SFN = '?SFN='
-        sfn_idx = remotePFN.find('?SFN=')
+        sfn_idx = remotePFN.find(SFN)
         if sfn_idx >= 0:
             remotePath = remotePFN[sfn_idx+5:]
         r = re.compile('srm://([A-Za-z\-\.0-9]*)(:[0-9]*)?(/.*)')
         m = r.match(remotePFN)
         if not m:
             raise StageOutError("Unable to determine path from PFN for " \
-                                "target %s." % filePath)
+                                "target %s." % remotePFN)
         if remotePath == None:
             remotePath = m.groups()[2]
         remoteHost = m.groups()[0]

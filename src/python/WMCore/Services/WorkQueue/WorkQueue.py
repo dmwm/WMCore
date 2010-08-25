@@ -79,7 +79,7 @@ class WorkQueue(Service):
 
         return result
     
-    def getWork(self, siteJobs, pullingQueueUrl=None):
+    def getWork(self, siteJobs, pullingQueueUrl = None, team = None):
         
         """
         _getWork_
@@ -88,6 +88,7 @@ class WorkQueue(Service):
         args = {}
         args['siteJobs'] = siteJobs
         args['pullingQueueUrl'] = pullingQueueUrl
+        args['team'] = team
         
         callname = 'getwork'
         return self._getResult(callname, args = args, verb = "POST")

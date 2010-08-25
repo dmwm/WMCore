@@ -17,6 +17,8 @@ from os import path
 # change to a url here so unit tests aren't affected
 def wrapGetWork(workqueue, *args, **kwargs):
     """Change url's to be web-accessible"""
+    print "*-----------------*"
+    print kwargs
     result = workqueue.getWork(*args, **kwargs)
     for item in result:
         item['url'] = "%s/wf/%s" % (workqueue.params['QueueURL'],
@@ -51,7 +53,7 @@ class WorkQueueService(ServiceInterface):
         self.wq = WorkQueue(logger=self.model, dbi=self.model.dbi, **self.model.config.queueParams)
 
         self.model.addMethod('POST', 'getwork', partial(wrapGetWork, self.wq),
-                             args=["siteJobs", "pullingQueueUrl"])
+                             args=["siteJobs", "pullingQueueUrl", "team"])
         
         #TODO: change this call to GET - Preferably Requeust.py in Service handle this automatically
         # elementIDs -> convert elementID=1&elementID=2 but can be done upper level - responsible for 

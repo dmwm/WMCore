@@ -10,8 +10,8 @@
 import WMCore.Database.CMSCouch as CMSCouch
 import urllib
 import md5
-__revision__ = "$Id: ConfigCache.py,v 1.6 2009/07/08 15:00:35 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ConfigCache.py,v 1.7 2009/07/09 23:57:32 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 class WMConfigCache:
     ''' 
@@ -47,7 +47,7 @@ class WMConfigCache:
         '''
         document = self.database.document(docid)
         self.database.queueDelete(document)
-        self.database.commitQueued()
+        self.database.commit()
         
     def addConfig(self, newConfig ):
         '''
@@ -67,7 +67,7 @@ class WMConfigCache:
             # the config we want doesn't exist in the database, create it
 
             document    = CMSCouch.makeDocument({ "md5_hash": configMD5 })
-            commitInfo = self.database.commit( document )
+            commitInfo = self.database.commitOne( document )
             if (commitInfo[u'ok'] != True):
                 raise RuntimeError
             
@@ -230,7 +230,7 @@ class WMConfigCache:
                         }
                      """ }}
         database.queue( hashViewDoc )
-        database.commitQueued()
+        database.commit()
         return database
     def deleteDatabase(self):
         '''deletes an existing database (be careful!)'''

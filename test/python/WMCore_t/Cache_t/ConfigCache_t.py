@@ -8,7 +8,7 @@ import unittest
 import tempfile
 import os
 import md5
-
+from WMCore.Database.CMSCouch import *
 testDocument1 = \
 """#!/usr/bin/env python
 # TESTDOCUMENT1
@@ -83,7 +83,10 @@ class Test(unittest.TestCase):
         self.assertEqual( testString1, testDocument1 )
         self.assertEqual( testString2, testDocument2 )
 
-    
+    def testNonExistant(self):
+        self.assertRaises(IndexError, self.cache.getConfigByMD5, "nonexistantid" )
+        self.assertRaises(CouchNotFoundError, self.cache.getConfigByDocID, "nonexistantid" )
+        
     def testTweakFile(self):
         newid1, newrev1 = self.cache.addConfig( self.filename1 )
         newid1, newrev1 = self.cache.addTweakFile(newid1, newrev1,
@@ -139,7 +142,7 @@ class Test(unittest.TestCase):
             
             # now, delete the document
             self.cache.deleteConfig( newid )
-            self.assertRaises( RuntimeError, self.cache.getConfigByDocID, newid )
+            self.assertRaises( CouchNotFoundError, self.cache.getConfigByDocID, newid )
             
             os.remove( tmpname )
         

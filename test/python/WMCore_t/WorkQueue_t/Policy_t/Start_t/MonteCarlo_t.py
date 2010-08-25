@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.MonteCarlo tests
 """
 
-__revision__ = "$Id: MonteCarlo_t.py,v 1.3 2010/01/05 18:19:39 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: MonteCarlo_t.py,v 1.4 2010/02/12 16:33:55 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
@@ -24,11 +24,8 @@ class MonteCarloTestCase(unittest.TestCase):
             self.assertEqual(10, len(units))
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
-                spec = unit['WMSpec']
-                # ensure new spec object created for each work unit
-                self.assertNotEqual(id(spec), id(BasicProductionWorkload))
-                initialTask = spec.taskIterator().next()
-                self.assertEqual(initialTask.totalEvents(), 100)
+                self.assertEqual(unit['WMSpec'], BasicProductionWorkload)
+                self.assertEqual(unit['Task'], task)
 
 
     def testMultiMergeProductionWorkload(self):
@@ -39,17 +36,14 @@ class MonteCarloTestCase(unittest.TestCase):
             self.assertEqual(10.0, len(units))
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
-                spec = unit['WMSpec']
-                # ensure new spec object created for each work unit
-                self.assertNotEqual(id(spec), id(BasicProductionWorkload))
-                initialTask = spec.taskIterator().next()
-                self.assertEqual(initialTask.totalEvents(), 100)
+                self.assertEqual(unit['WMSpec'], MultiMergeProductionWorkload)
+                self.assertEqual(unit['Task'], task)
 
 
     def testMultiTaskProcessingWorkload(self):
         """Multi Task Processing Workflow"""
         count = 0
-        spec_ids = []
+        tasks = []
         for task in MultiTaskProductionWorkload.taskIterator():
             count += 1
             units = MonteCarlo(**self.splitArgs)(MultiTaskProductionWorkload, task)
@@ -57,13 +51,8 @@ class MonteCarloTestCase(unittest.TestCase):
             self.assertEqual(10 * count, len(units))
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
-                spec = unit['WMSpec']
-                # ensure new spec object created for each work unit
-                self.assertNotEqual(id(spec), id(MultiTaskProductionWorkload))
-                self.assert_(id(spec) not in spec_ids)
-                spec_ids.append(id(spec))
-                initialTask = spec.taskIterator().next()
-                self.assertEqual(initialTask.totalEvents(), 100)
+                self.assertEqual(unit['WMSpec'], MultiTaskProductionWorkload)
+                self.assertEqual(unit['Task'], task)
         self.assertEqual(count, 2)
 
 

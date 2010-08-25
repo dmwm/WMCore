@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-__revision__ = "$Id: Dataset_t.py,v 1.4 2010/01/05 18:19:39 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Dataset_t.py,v 1.5 2010/02/12 16:33:55 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import shutil
@@ -31,8 +31,8 @@ class DatasetTestCase(unittest.TestCase):
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(2, unit['Jobs'])
-                spec = unit['WMSpec']
-                initialTask = spec.taskIterator().next()
+                self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
+                self.assertEqual(task, unit['Task'])
                 self.assertEqual(unit['Data'], dataset)
 
 
@@ -52,8 +52,8 @@ class DatasetTestCase(unittest.TestCase):
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(2, unit['Jobs'])
-                spec = unit['WMSpec']
-                initialTask = spec.taskIterator().next()
+                self.assertEqual(MultiTaskProcessingWorkload, unit['WMSpec'])
+                self.assertEqual(task, unit['Task'])
                 self.assertEqual(unit['Data'], datasets[count])
             count += 1
         self.assertEqual(tasks, count)

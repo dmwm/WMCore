@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.71 2010/02/11 19:42:15 sryu Exp $"
-__version__ = "$Revision: 1.71 $"
+__revision__ = "$Id: WorkQueue.py,v 1.72 2010/02/12 16:33:55 swakef Exp $"
+__version__ = "$Revision: 1.72 $"
 
 
 import time
@@ -611,9 +611,8 @@ class WorkQueue(WorkQueueBase):
             units = policy(wmspec, topLevelTask, self.dbsHelpers)
             for unit in units:
                 unit['ParentQueueId'] = parentQueueId
-                unit["Task"] = topLevelTask
-                self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
-                                len(units), wmspec.name(), topLevelTask.name()))
+            self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
+                             len(units), wmspec.name(), topLevelTask.name()))
             totalUnits.extend(units)
         return totalUnits
 
@@ -624,9 +623,9 @@ class WorkQueue(WorkQueueBase):
         primaryInput = unit['Data']
         parentInputs = unit['ParentData']
         nJobs = unit['Jobs']
-        wmspec = unit['WMSpec']       
-        task = unit["Task"]        
-        
+        wmspec = unit['WMSpec']
+        task = unit["Task"]
+
         parentQueueId = unit['ParentQueueId']
         self._insertWMSpec(wmspec)
         self._insertWMTask(wmspec.name(), task)
@@ -663,7 +662,7 @@ class WorkQueue(WorkQueueBase):
             localCache = os.path.join(self.params['CacheDir'], "%s.pkl" % wmSpec.name())
             wmSpec.setSpecUrl(localCache)
             wmSpec.save(localCache)
-            
+
             wmSpecAction = self.daofactory(classname = "WMSpec.New")
             #TODO: need a unique value (name?) for first parameter
             owner = str(wmSpec.owner()) or self.params['QueueURL'] or "WorkQueue"

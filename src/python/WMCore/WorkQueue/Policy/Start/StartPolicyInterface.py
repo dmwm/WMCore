@@ -4,8 +4,8 @@ WorkQueue SplitPolicyInterface
 
 """
 __all__ = []
-__revision__ = "$Id: StartPolicyInterface.py,v 1.5 2010/02/11 17:57:00 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: StartPolicyInterface.py,v 1.6 2010/02/12 16:33:54 swakef Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
@@ -31,6 +31,8 @@ class StartPolicyInterface(PolicyInterface):
         raise NotImplementedError
 
     def newQueueElement(self, **args):
+        args.setdefault('WMSpec', self.wmspec)
+        args.setdefault('Task', self.initialTask)
         self.workQueueElements.append(WorkQueueElement(**args))
 
     def __call__(self, wmspec, task, dbs_pool = None):

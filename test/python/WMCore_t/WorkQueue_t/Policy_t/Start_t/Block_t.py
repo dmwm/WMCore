@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Block tests
 """
 
-__revision__ = "$Id: Block_t.py,v 1.4 2010/01/05 18:19:39 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Block_t.py,v 1.5 2010/02/12 16:33:55 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import shutil
@@ -32,20 +32,9 @@ class BlockTestCase(unittest.TestCase):
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
-                spec = unit['WMSpec']
-                # ensure new spec object created for each work unit
-                self.assertNotEqual(id(spec), id(Tier1ReRecoWorkload))
-                self.assertEqual(sum(1 for _ in spec.taskIterator()),
-                                 1) # Generators have no len()
-                initialTask = spec.taskIterator().next()
-                block = initialTask.inputDataset().blocks.whitelist
-                self.assertEqual(1, len(block))
-                block = block[0]
-                self.assertEqual(block, unit['Data'])
-                self.assertTrue(block.find(dataset + '#') > -1)
-                self.assertFalse(block in blocks)
-                blocks.append(block)
-            self.assertEqual(len(blocks),
+                self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
+                self.assertEqual(task, unit['Task'])
+            self.assertEqual(len(units),
                              len(dbs[inputDataset.dbsurl].blocks[dataset]))
 
 
@@ -66,21 +55,9 @@ class BlockTestCase(unittest.TestCase):
             blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
-                spec = unit['WMSpec']
-                initialTask = spec.taskIterator().next()
-                # ensure new spec object created for each work unit
-                self.assertNotEqual(id(spec), id(MultiTaskProcessingWorkload))
-                self.assertEqual(sum(1 for _ in spec.taskIterator()),
-                                 1) # Generators have no len()
-                self.assertEqual(spec.listAllTaskNames(), [initialTask.name()])
-                block = initialTask.inputDataset().blocks.whitelist
-                self.assertEqual(1, len(block))
-                block = block[0]
-                self.assertEqual(block, unit['Data'])
-                self.assertTrue(block.find('#') > -1) # must run on block
-                self.assertFalse(block in blocks)
-                blocks.append(block)
-            self.assertEqual(len(blocks),
+                self.assertEqual(MultiTaskProcessingWorkload, unit['WMSpec'])
+                self.assertEqual(task, unit['Task'])
+            self.assertEqual(len(units),
                              len(dbs[inputDataset.dbsurl].blocks[datasets[0]]))
             count += 1
         self.assertEqual(tasks, count)

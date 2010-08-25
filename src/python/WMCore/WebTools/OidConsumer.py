@@ -74,6 +74,21 @@ class OidConsumer(cherrypy.Tool):
         if cherrypy.request.script_name.startswith('/'+self.config.mount_point.rstrip('/')):
             return # skip pages to be handled by OidDefaultHandler.
 
+        # The following is a bug fix. It is necessary because for the security
+        # point of view, http://127.0.0.1/ is different from http://localhost/.
+        # If we set a cookie (the session id) for http://localhost and then
+        # after authenticating the server redirects us to http://127.0.0.1, the
+        # browser will not use send cookie, then a new session will start and the
+        # authentication will fail. The reason it fails is that some headers will
+        # get duplicated and the openid server will respond with a form with a
+        # single button to confirm. Then the consumer will not understand these
+        # doubled headers and will fail.
+        if not cherrypy.request.base.startswith(self.app_url):
+            #redir_to = self.app_url+cherrypy.request.script_name+
+            #cherrypy.request.path_info+cherrypy.request.path+'?'+urllib.urlencode(cherrypy.request.params)
+            redir_to = cherrypy.url(qs=cherrypy.request.query_string, base=self.app_url)
+            raise cherrypy.HTTPRedirect(redir_to)
+
         # These methods are responsible for achieving auth and authz
         # before allowing access to any other page
         if self.session()['status'] in [UNKNOWN]:
@@ -83,7 +98,7 @@ class OidConsumer(cherrypy.Tool):
 
         # 'status' is AUTHENTICATED, now checks if the user is authorized
         self.check_authorization(role, group, site, authzfunc)
-        
+
         # End of callable(). The user authenticated and authorized.
         # Now cherrypy calls the app handler to show the requested page.
         assert(self.session()['status']==AUTHENTICATED)
@@ -96,38 +111,32 @@ class OidConsumer(cherrypy.Tool):
         """
         # Here it is where we start playing with OpenId
         oidconsumer = consumer.Consumer(self.session(), self.store)
-        try:
-            oidrequest = oidconsumer.begin(self.oidserver)
-        except discover.DiscoveryFailure, exc:
-            msg =  '<br><br><b>Could not connect to the OpenID server %s</b>' % self.oidserver
-            msg += '<br><br> If you are running a private server instance, '
-            msg += 'make sure it is running and its address is correct.'
-            msg += '<br><br>Debug information:<br> %s' % cgi.escape(str(exc[0]))
-            self.session()['debug_info'] = msg
-            raise cherrypy.HTTPRedirect(self.error_path)
-            #raise cherrypy.HTTPRedirect(self.error_path+'?msg='+urllib.quote_plus(msg))
-        else:
-            # Then the authentication begins...
-            self.session()['status'] = PROCESSING
 
-            # Extends the OpenID request using SREG. Uses it to get authoriztion
-            # data. Since this extension makes part of the original OpenID
-            # request, it will be sent securely.
-            sreg_request = sreg.SRegRequest(required=['permissions',
+        # In our case we don't need to discover because we know
+        # the server we want to authenticate.
+        oidrequest = oidconsumer.beginWithoutDiscovery(discover.OpenIDServiceEndpoint.fromOPEndpointURL(self.oidserver))
+
+        # Then the authentication begins...
+        self.session()['status'] = PROCESSING
+
+        # Extends the OpenID request using SREG. Uses it to get authoriztion
+        # data. Since this extension makes part of the original OpenID
+        # request, it will be sent securely.
+        sreg_request = sreg.SRegRequest(required=['permissions',
                                                       'fullname',
                                                       'dn'])
-            oidrequest.addExtension(sreg_request)
+        oidrequest.addExtension(sreg_request)
 
-            # Set the return URL to be the one requested by the user.
-            return_to = cherrypy.url(qs=cherrypy.request.query_string, base=self.app_url)
-            trust_root = self.app_url # was cherrypy.request.base
+        # Set the return URL to be the one requested by the user.
+        return_to = cherrypy.url(qs=cherrypy.request.query_string, base=self.app_url)
+        trust_root = self.app_url # was cherrypy.request.base
 
-            # redirectURL() encodes the OpenID request into an URL
-            redirect_url = oidrequest.redirectURL(trust_root, return_to)
-            # Redirects the user-agent to the oid server using the
-            # encoded URL. After authenticating the user, the oid server
-            # will redirect the user agent back to 'return_to'
-            raise cherrypy.HTTPRedirect(redirect_url)
+        # redirectURL() encodes the OpenID request into an URL
+        redirect_url = oidrequest.redirectURL(trust_root, return_to)
+        # Redirects the user-agent to the oid server using the
+        # encoded URL. After authenticating the user, the oid server
+        # will redirect the user agent back to 'return_to'
+        raise cherrypy.HTTPRedirect(redirect_url)
 
         # End of request_auth()
 

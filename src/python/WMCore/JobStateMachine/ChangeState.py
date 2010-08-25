@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.7 2009/07/02 21:57:27 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ChangeState.py,v 1.8 2009/07/02 23:31:55 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -52,7 +52,7 @@ class ChangeState(WMObject):
     """
     Propagate the state of a job through the JSM.
     """
-    def __init__(self, config={}):
+    def __init__(self, config={}, couchDbName = 'jsm_job_history'):
         WMObject.__init__(self, config)
         self.myThread = threading.currentThread()
         self.logger = self.myThread.logger
@@ -63,7 +63,7 @@ class ChangeState(WMObject):
                                      dbinterface = self.dbi)
 
         server = CouchServer(self.config.JobStateMachine.couchurl)
-        self.couchdb = server.connectDatabase('jsm_job_history')
+        self.couchdb = server.connectDatabase(couchDbName)
 
     def propagate(self, jobs, newstate, oldstate):
         """
@@ -99,17 +99,19 @@ class ChangeState(WMObject):
         TODO: handle attachments
         """
         for job in jobs:
-            print "job is %s" % job
             doc = {'type': 'state change'}
             doc['old_state'] = oldstate
             doc['new_state'] = newstate
             if 'couch_record' in job:
                 doc['parent'] = job['couch_record']
             doc['job'] = job
+
             self.couchdb.queue(doc, True)
         goodresult, badresult = self.couchdb.commitQueued()
+        
         assert len(jobs) == len(goodresult), \
-                    "Got less than I was expecting from CouchDB"
+                    "Got less than I was expecting from CouchDB: \n %s %s" %\
+                        (goodresult,badresult)
         if oldstate == 'none':
             def function(item1, item2):
                 item1['couch_record'] = item2['id']

@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.35 2009/07/02 22:05:32 meloam Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: CMSCouch.py,v 1.36 2009/07/02 23:31:55 meloam Exp $"
+__version__ = "$Revision: 1.36 $"
 
 try:
     # Python 2.6
@@ -283,8 +283,7 @@ class Database(CouchDBRequests):
                 self._queue = self.timestamp(self._queue)
             
             uri  = '/%s/_bulk_docs/' % self.name
-            data = {'docs': list(self._queue)}
-                        
+            data = {'docs': list(self._queue)}       
             result = self.post(uri, data)
             # now we need to check if there were conflicts with the updates
             # we attempted
@@ -296,7 +295,7 @@ class Database(CouchDBRequests):
                 else:
                     row['ok'] = True
                     goodDocs.append(row)
-                
+            self._queue = []    
             return goodDocs, erroredDocs   
             
 #            thr  = HttpRequestThread(self.url, uri, data, 'POST')
@@ -441,6 +440,8 @@ class CouchServer(CouchDBRequests):
         return self.delete("/%s" % db)
 
     def connectDatabase(self, db):
+        if db not in self.listDatabases():
+            self.createDatabase(db)
         return Database(db, self.url)
 
     def __str__(self):

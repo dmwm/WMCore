@@ -12,22 +12,18 @@ from WMCore.WMFactory import WMFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 from WMCore.JobStateMachine import DefaultConfig
 import WMCore.Database.CMSCouch as CMSCouch
+import time
 # Framework for this code written automatically by Inspect.py
 
 
 class TestChangeState(unittest.TestCase):
-    _setup = False
-    _teardown = False
+
     transitions = None
     change = None
     def setUp(self):
         """
         _setUp_
         """
-        if self._setup:
-            
-            self.change = ChangeState(DefaultConfig.config)
-            return
         self.transitions = Transitions()
         # TODO: write a config here
         
@@ -36,8 +32,12 @@ class TestChangeState(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema()
-        self.change = ChangeState(DefaultConfig.config)
-        self._setup = True
+        # if you want to keep from colliding with other people
+        #self.uniqueCouchDbName = 'jsm_test-%i' % time.time()
+        # otherwise
+        self.uniqueCouchDbName = 'jsm_test'
+        self.change = ChangeState(DefaultConfig.config, \
+                                  couchDbName=self.uniqueCouchDbName)
 
 
     def tearDown(self):
@@ -45,10 +45,8 @@ class TestChangeState(unittest.TestCase):
         _tearDown_
         """
         self.testInit.clearDatabase()
-        if self._teardown:
-            return
-
-        self._teardown = True
+        server = CMSCouch.CouchServer(self.change.config.JobStateMachine.couchurl)
+        server.deleteDatabase(self.uniqueCouchDbName)
 
 
     def testCheck(self):
@@ -83,11 +81,22 @@ class TestChangeState(unittest.TestCase):
 
 
 
-    def testRecordInCouch(self):
+    def testRecordOneInCouch(self):
         """
         	This is the test class for function RecordInCouch from module ChangeState
         	"""
-        CMSCouch.Database()
+        jsm = self.change.recordInCouch( [{ "dumb_value": "is_dumb" }], "new", "none")
+        jsm = self.change.recordInCouch( jsm , "created", "new")
+        jsm = self.change.recordInCouch( jsm , "executing", "created")
+        jsm = self.change.recordInCouch( jsm , "complete", "executing")
+        jsm = self.change.recordInCouch( jsm , "success", "complete")
+        jsm = self.change.recordInCouch( jsm , "closeout", "success")
+        jsm = self.change.recordInCouch( jsm , "cleanout", "closeout")
+        
+        # now, walk up the chain of couch_records to follow the path the
+        #  job took through the state machine
+        print jsm
+            
         return
 
 
@@ -106,4 +115,4 @@ if __name__ == "__main__":
 #export DATABASE="mysql://sfoulkes:@localhost/ProdAgentDB_sfoulkes"
 #export DIALECT="MySQL"
 #export DBSOCK="/var/lib/mysql/mysql.sock"
-unittest.main()
+    unittest.main()

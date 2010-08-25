@@ -12,7 +12,7 @@ _BLOCK_LOCATIONS = {}
 def getSites(block):
     if _BLOCK_LOCATIONS.has_key(block):
         return _BLOCK_LOCATIONS[block]
-    return SITES[len(block) % len(SITES)]
+    return [SITES[len(block) % len(SITES)]]
 
 def moveBlock(block, sites):
     _BLOCK_LOCATIONS[block] = sites

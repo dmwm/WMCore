@@ -7,12 +7,13 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.2 2009/09/24 20:19:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.3 2009/09/24 20:40:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
 import time
+import os
 import unittest
 
 from sets import Set

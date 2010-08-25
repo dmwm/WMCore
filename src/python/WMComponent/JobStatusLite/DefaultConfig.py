@@ -19,4 +19,5 @@ config.JobStatusLite.queryInterval   = 120
 config.JobStatusLite.jobLoadLimit    = 100
 config.JobStatusLite.maxJobQuery     = 100
 config.JobStatusLite.taskLimit       = 30
+config.JobStatusLite.maxJobsCommit   = 100
 config.JobStatusLite.processes       = 5

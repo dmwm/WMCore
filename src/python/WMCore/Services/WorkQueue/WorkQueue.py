@@ -47,8 +47,11 @@ class WorkQueue(Service):
         Service.__init__(self, dict)
     
     def jsonThunkerDecoder(self, data):
-        thunker = JSONThunker()
-        return thunker.unthunk(JsonWrapper.loads(data))
+        if data:
+            thunker = JSONThunker()
+            return thunker.unthunk(JsonWrapper.loads(data))
+        else:
+            return {}
         
     def _getResult(self, callname, clearCache = True,
                    args = None, verb="POST"):

@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.10 $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -19,6 +19,7 @@ import unittest
 import random
 
 from WMComponent.DBSUpload.DBSUpload import DBSUpload
+from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 import WMComponent.DBSUpload.DBSUpload
@@ -73,23 +74,17 @@ class DBSUploadTest(unittest.TestCase):
             raise
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                        logger = myThread.logger,
+                                        dbinterface = myThread.dbi)
 
-        locationAction = daofactory(classname = "DBSBufferFiles.AddLocation")
+        locationAction = self.bufferFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
         locationAction.execute(siteName = "malpaquet") 
 
         self._teardown = False
-
-        #myThread = threading.currentThread()
-
-
         return
-
-
 
     def tearDown(self):
         """
@@ -148,6 +143,7 @@ class DBSUploadTest(unittest.TestCase):
         config.Agent.contact = "mnorman@fnal.gov"
         config.Agent.teamName = "DBS"
         config.Agent.agentName = "DBS Upload"
+        config.DBSUpload.uploadFileMax = 150
 
         myThread = threading.currentThread()
 
@@ -188,18 +184,8 @@ class DBSUploadTest(unittest.TestCase):
         """
         _addToBuffer_
 
-        This should add files to the buffer
-
+        Add files to the DBSBuffer with a set dataset path.
         """
-
-        print ""
-        print "WARNING: This only works if DBSBuffer works"
-        print ""
-
-        myThread = threading.currentThread()
-
-        #Stolen shamelessly from Steve's DBSBufferFile_t
-
         testFileParentA = DBSBufferFile(lfn = makeUUID(), size = 1024,
                                         events = 20, cksum = 1, locations = "malpaquet")
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
@@ -241,12 +227,7 @@ class DBSUploadTest(unittest.TestCase):
         testFile.addParent(testFileParentB["lfn"])
         testFile.addParent(testFileParentC["lfn"])
 
-
-        #print myThread.dbi.processData("SELECT * FROM dbsbuffer_file", {})[0].fetchall()
-        
-
         return
-
 
     def bulkAddToBuffer(self, name):
         """
@@ -531,6 +512,34 @@ class DBSUploadTest(unittest.TestCase):
 
         return
 
-    
+    def testBlockCreation(self):
+        """
+        _testBlockCreation_
+
+        Run the poller several times and make sure it doesn't unnecessarily
+        create blocks.
+        """
+        countDAO = self.bufferFactory(classname = "CountBlocks")
+        randomDataset = makeUUID()
+
+        blockCount = countDAO.execute()
+        assert blockCount == 0, \
+               "Error: Blocks in buffer before test started."
+        
+        poller = DBSUploadPoller(self.createConfig())
+        poller.DBSMaxFiles = 100
+        poller.DBSMaxSize = 1000000000000
+        poller.setup(parameters = None)
+
+        for i in range(10):
+            self.addToBuffer(randomDataset)
+            poller.algorithm(parameters = None)
+            blockCount = countDAO.execute()
+
+            assert blockCount == 1, \
+                   "Error: Wrong number of blocks in buffer: %s" % blockCount
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

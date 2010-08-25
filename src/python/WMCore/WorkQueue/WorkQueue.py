@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.11 2009/06/19 22:12:35 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WorkQueue.py,v 1.12 2009/06/24 21:00:23 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -26,6 +26,7 @@ from WMCore.WorkQueue.DBSHelper import DBSHelper
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
+from WMCore.WorkQueue.DataStructs.Block import Block
 
 #TODO: Need to update spec file on some changes.
 #TODO: What to persist. Most quantities can be loaded out of the spec file
@@ -42,49 +43,57 @@ class _WQElement(WorkQueueBase):
     WQElement container
 
     """
-    def __init__(self, specHelper, nJobs, primaryBlock = None, blocks = None):
+    def __init__(self, specHelper, nJobs, insertTime = None, primaryBlock = None, blocks = None):
                  
         WorkQueueBase.__init__(self)
         self.wmSpec = specHelper
         self.primaryBlock = primaryBlock
-        blocks = blocks or []
+        self.parentBlocks = blocks or []
         self.priority = self.wmSpec.priority
         self.nJobs = nJobs
-        self.insertTime = None
+        #TODO: need to set it NONE
+        self.insertTime = insertTime 
         self.status = "Available"
         self.subscription = None
-        
+            
     def create(self):
         """
         Insert the work queue element to DB
         """
         existingTransaction = self.beginTransaction()
         self._insertWMSpec()
-        self._insertBlock()
+        if self.primaryBlock: 
+            self._insertBlock()
         self._insertWorkQueueElement()
         self.commitTransaction(existingTransaction)
 
     def _insertWMSpec(self):
         """
         """
-        wmSpecAction = self.daofactory(classname = "WMSpec.New")
-        #TODO: need a unique value (name?) for first parameter
-        wmSpecAction.execute(self.wmSpec.specUrl, conn = self.getDBConn(),
+        existsAction = self.daofactory(classname = "WMSpec.Exists")
+        exists = existsAction.execute(self.wmSpec.name, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
+        
+        if not exists:
+            wmSpecAction = self.daofactory(classname = "WMSpec.New")
+            #TODO: need a unique value (name?) for first parameter
+            wmSpecAction.execute(self.wmSpec.name, self.wmSpec.specUrl, 
+                                 conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())
                 
     def _insertBlock(self):
         """
         """
-        def _blockCreation(self, block):
+        def _blockCreation(blockInfo):
             """
             """
-            blockAction.execute(block["Name"], block["Size"], block["NumEvent"],
-                                block["NumFiles"], conn = self.getDBConn(),
+            blockAction.execute(blockInfo["Name"], blockInfo["Size"], blockInfo["NumEvents"],
+                                blockInfo["NumFiles"], conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
                 
             
         blockAction = self.daofactory(classname = "Block.New")
-        blockParantageAction = self.daofactory(classname = "Block.Parentage")
+        blockParantageAction = self.daofactory(classname = "Block.AddParent")
             
         _blockCreation(self.primaryBlock)
         for block in self.parentBlocks:
@@ -98,43 +107,25 @@ class _WQElement(WorkQueueBase):
         """
         """
         wqAction = self.daofactory(classname = "WorkQueueElement.New")
+        if self.primaryBlock:
+            blockName = self.primaryBlock["Name"]
+        else:
+            blockName = "NoBlock"
         if self.parentBlocks:
             parentFlag = 1
         else:
             parentFlag = 0
-        wqAction.execute(self.wmSpec.specUrl, self.primaryBlock["Name"], 
-                         self.nJobs, self.priority, parentFlag,
-                         conn = self.getDBConn(),
-                         transaction = self.existingTransaction())
+        #TODO: need to handle properly production job: check whether unique contraint is correct on wmspec table 
+        existsAction = self.daofactory(classname = "WorkQueueElement.Exists")
+        exists = existsAction.execute(self.wmSpec.name, blockName, conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
         
-    def load(self, dbsHelper, id, wmspecID, blockID, numJobs, priority, parentFlag):
-        """
-        Load work queue element by various tables from DB
-        """
-    
-        wmSpecLoad = self.daofactory(classname = "WMSpec.LoadByID")
+        if not exists:
+            wqAction.execute(self.wmSpec.name, blockName, 
+                             self.nJobs, self.priority, parentFlag,
+                             conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
         
-        self.specUrl = wmSpecLoad.execute(blockID, conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-        
-        wqBlockLoad = self.daofactory(classname = "Block.LoadByID")
-        
-        self.primaryBlock = wqBlockLoad.execute(blockID, conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-        
-        if parentFlag:
-            wqParentAction = self.daofactory(classname = "Block.GetParentsByChildID")
-            self.parentBlocks = wqParentAction.execute(blockID, conn = self.getDBConn(),
-                                               transaction = self.existingTransaction())
-        self.updateLocations(dbsHelper)
-           
-        self.priority = priority
-        #TODO: need to get info somewhere
-        self.nJobs = numJobs
-        #TODO # get from loaded wq
-        self.insertTime = None
-        self.status = "Available"
-        self.subscription = None
     
     def __cmp__(self, other):
         """
@@ -161,7 +152,7 @@ class _WQElement(WorkQueueBase):
         Are all blocks online?
         """
         return True
-	online = property(online)
+    online = property(online)
 	   
     def locations(self):
         """
@@ -184,11 +175,13 @@ class _WQElement(WorkQueueBase):
         """
         Can we run at the given site?
         """
-        commonLocations = self.locations()
-        if not commonLocations and not self.primaryBlock:
+        
+        if not self.primaryBlock:
             return True # no input blocks - match any site
+        
+        commonLocations = self.locations
         #TODO: Stager behavior faked for now - should be site specific
-        return self.online() and site in commonLocations
+        return self.online and site in commonLocations
     
     
     def slotsAvailable(self, slots):
@@ -240,7 +233,12 @@ class _WQElement(WorkQueueBase):
         
         update all the block locations in the WQElement 
         """
-        locations = dbsHelper.getBlockLocations(self.primaryBlock["Name"])
+        #print "%%%%%%%%%%%%%%%%%%%%"
+        #print self.primaryBlock
+        #if not self.primaryBlock:
+        #    print "primary block is none"
+        #    return
+        locations = dbsHelper.listFileBlockLocation(self.primaryBlock["Name"])
             # just replace the location since the previous location might be
             # deleted 
         self.primaryBlock["Locations"] = locations    
@@ -261,26 +259,68 @@ class WorkQueue(WorkQueueBase):
     This  provide API for JSM (WorkQueuePool) - getWork(), gotWork()
     and injector
     """
-    def __init__(self, dbsUrl):
+    def __init__(self):
         WorkQueueBase.__init__(self)
-        self.elements = [ ]
+        self.wmSpecs = {}
+        self.elements = {} 
         self.dbsHelpers = {}
 
 
     def __len__(self):
-        return len(self.elements)
+        return len(self.elements.values())
 
-    def load(self, dbsHelper):
+    def load(self):
         """
         load all available work queue element from DB by priorty order.
         TODO: the selection can be fine grained if it takes up to much memory space
         """
         wqAction = self.daofactory(classname = "WorkQueueElement.GetElements")
-        self.elements = wqAction.execute(conn = self.getDBConn(),
+        elements = wqAction.execute(conn = self.getDBConn(),
                                          transaction = self.existingTransaction())
-        
+        for ele in elements:
+            if ele["id"] not in self.elements.keys():
+            #just update the priority
+                wqEle = self._getWQElement(ele["wmspec_id"], ele["block_id"], 
+                       ele["num_jobs"], ele["insert_time"])
+                self.elements[ele["id"]] = wqEle
+        self.updateLocationInfo()
     
+    def _getWQElement(self, wmSpecID, blockID, nJobs, insertTime):
+        """
+        get WQElement using DAO
+        TODO this would make more sense to be in _WQElement class. need to put it 
+        there if there is efficient way 
+        Handle production job currently block id will be 1 for that with block name "NoBlocks"
+        Need to handle properly
+        """
 
+        wmSpecLoad = self.daofactory(classname = "WMSpec.LoadByID")
+        
+        specInfo = wmSpecLoad.execute(wmSpecID, conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+        if specInfo[0]["name"] in self.wmSpecs.keys():
+            wmSpec = self.wmSpecs[specInfo[0]["name"]]
+        else:
+            wmSpec = WorkSpecParser(specInfo[0]["url"])
+            self.wmSpecs[specInfo[0]["name"]] = wmSpec
+
+        wqBlockLoad = self.daofactory(classname = "Block.LoadByID")
+        
+        blockInfo = wqBlockLoad.execute(blockID, conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+        primaryBlock = Block.getBlock(blockInfo)
+        parentBlocks = None 
+
+        if wmSpec.parentFlag:
+            wqParentAction = self.daofactory(classname = "Block.GetParentsByChildID")
+            blocks = wqParentAction.execute(blockID, conn = self.getDBConn(),
+                                               transaction = self.existingTransaction())
+            parentBlocks = []
+            for block in blocks:
+                parentBlocks.append(Block.getBlock(block))
+                
+        return _WQElement(wmSpec, nJobs, insertTime, primaryBlock, parentBlocks)
+    
     def match(self, conditions):
         """
         Loop over internal queue in priority order, 
@@ -288,7 +328,7 @@ class WorkQueue(WorkQueueBase):
         """
         results = []
         self.reorderList()
-        for element in self.elements:
+        for element in self.elements.values():
             # Act of matching returns the remaining match attributes
             matched, conditions = element.match(conditions)
             if matched:
@@ -302,7 +342,7 @@ class WorkQueue(WorkQueueBase):
         """
         Order internal queue in priority order, highest first.
         """
-        self.elements.sort()    
+        self.elements.values().sort()    
 
 
     def setStatus(self, subscription, status):
@@ -311,7 +351,7 @@ class WorkQueue(WorkQueueBase):
         """
         # set the status of given subscriptions and status
         results = []
-        for element in self.elements:
+        for element in self.elements.values():
             if element.subscription == subscription:
                 element.setStatus(status)
                 results.append(element)
@@ -335,7 +375,11 @@ class WorkQueue(WorkQueueBase):
         """
         Update locations for elements
         """
-        for element in self.elements:
+        #print "@@@@@@@@@@"
+        #print self.elements
+        for element in self.elements.values():
+            #print "----------------------"           
+            #print element.primaryBlock
             dbs = self.dbsHelpers[element.wmSpec.dbs_url]
             element.updateLocations(dbs)
 
@@ -346,8 +390,7 @@ class WorkQueue(WorkQueueBase):
         siteJob is dict format of {site: estimateJobSlot}
         """
         # always populate the self.elements freshly before the selection 
-        #TODO need to change load function since it gets multiple dbs url
-        self.load(self.dbsHelpers)
+        self.load()
         
         results = []
         subscriptions = []
@@ -423,7 +466,9 @@ class WorkQueue(WorkQueueBase):
             blocks = unit.blocks
             jobs = unit.jobs
             
+            #print "----- %s" % primaryBlock
             ele = _WQElement(spec, jobs, primaryBlock, blocks)
             ele.create()
-            self.elements.append(ele)
+            # only update in database 
+            #self.elements.append(ele)
         return True

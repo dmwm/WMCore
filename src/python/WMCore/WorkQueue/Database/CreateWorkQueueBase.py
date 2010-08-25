@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.4 2009/06/19 22:13:21 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.5 2009/06/24 21:00:24 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 
@@ -50,8 +50,11 @@ class CreateWorkQueueBase(DBCreator):
         self.create["01wq_wmspec"] = \
           """CREATE TABLE wq_wmspec (
              id          INTEGER      NOT NULL, 
-             name        VARCHAR(255) NOT NULL,
-             PRIMARY KEY(id))"""
+             name        VARCHAR(500) NOT NULL,
+             url         VARCHAR(500) NOT NULL,
+             PRIMARY KEY(id),
+             UNIQUE (name)
+             )"""
                                     
         self.create["02wq_block"] = \
           """CREATE TABLE wq_block (
@@ -59,8 +62,9 @@ class CreateWorkQueueBase(DBCreator):
              name           VARCHAR(500) NOT NULL,
              block_size     INTEGER      NOT NULL,
              num_files      INTEGER      NOT NULL,
-             num_event      INTEGER      NOT NULL,
-             PRIMARY KEY(id)
+             num_events      INTEGER      NOT NULL,
+             PRIMARY KEY(id),
+             UNIQUE (name)
              )"""
         
         self.create["03wq_element_status"] = \
@@ -137,8 +141,14 @@ class CreateWorkQueueBase(DBCreator):
         for i in range(3):
             self.inserts["%swq_elem_status_insert" % (60 + i)]=\
                 """INSERT INTO wq_element_status (id, status) VALUES (%d, '%s')
-                """ % (i, wqStatus[i]) 
-                
+                """ % (i, wqStatus[i])
+        
+        #TODO: need to find the better way to handle this        
+        #block magic string for no block (production work)  
+        self.inserts["80wq_block_insert"]=\
+                """INSERT INTO wq_block (name, block_size, num_files, num_events) 
+                   VALUES ('NoBlock', 0, 0, 0)
+                """
     def execute(self, conn = None, transaction = None):
         """
         _execute_

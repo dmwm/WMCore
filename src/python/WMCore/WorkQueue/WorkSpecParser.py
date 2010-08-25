@@ -6,8 +6,8 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.5 2009/06/19 14:19:40 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.6 2009/06/24 21:00:23 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, newWorkload
@@ -82,13 +82,16 @@ class WorkSpecParser:
         self.validateWorkflow()
         
         results = []
-
+        #print self.wmSpec.name()
+                
+        #print "######### %s" % dbs_pool
         if not self.inputDatasets:
             # we don't have any input data - divide into one block
             jobs = self.__estimateJobs(self.splitSize, self.totalEvents)
             results.append(WorkUnit(None, (), jobs))
             return results
-            
+        
+        #print "######### %s" % self.dbs_url
         # data processing - assume blocks are reasonable size
         #Only run over closed blocks - may need to change this
         if dbs_pool and dbs_pool.has_key(self.dbs_url):
@@ -98,22 +101,24 @@ class WorkSpecParser:
         for dataset in self.inputDatasets:
             blocks = dbs.getFileBlocksInfo(dataset, onlyClosedBlocks=True)
             for block in blocks:
-                name = block['Name']
+                #name = block['Name']
                 if self.splitType == 'Event':
                     jobs = self.__estimateJobs(self.splitSize, block['NumEvents'])
                 elif self.splitType == 'File':
                     jobs = self.__estimateJobs(self.splitSize, block['NumFiles'])
                 else:
                     raise RuntimeError, 'Unsupported SplitType: %s' % self.splitType
-                
-                if self.parents:
-                    blocks = block['Parents']
-                    if not blocks:
+
+                parentBlocks = None 
+                if self.parentFlag:
+                    #TODO: get parent blocks' info from dbs or is it returning dbs block? - needed for calculating jobs
+                    parentBlocks = block['Parents']
+                    if not parentBlocks:
                         msg = "Parentage required but no parents found for %s"
                         raise RuntimeError, msg % block['Name']
                 else:
                     blocks = []
-                results.append(WorkUnit(name, blocks, jobs))
+                results.append(WorkUnit(block, parentBlocks, jobs))
         return results
 
 
@@ -194,6 +199,11 @@ class WorkSpecParser:
 # //     Helper functions for getting info out of a wm spec
 #//
 
+    def name(self):
+        """wm spec name - should be unique"""
+        return self.wmSpec.name()
+    name = property(name)
+    
     def whitelist(self):
         """Site whitelist as defined in task"""
         return self.initialTask.data.constraints.sites.whitelist
@@ -255,7 +265,7 @@ class WorkSpecParser:
     def parents(self):
         """Do we need parents"""
         return getattr(self.initialTask.data.parameters, 'parentage', False)
-    parents = property(parents)
+    parentFlag = property(parents)
 
 #    def simpleMemoize(self, name, obj, item, default = None):
 #        """Poor mans memoize"""

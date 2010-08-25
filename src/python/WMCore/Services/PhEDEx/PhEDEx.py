@@ -17,6 +17,9 @@ class PhEDEx(Service):
 
     """
     API for dealing with retrieving information from PhEDEx DataService
+    
+    according to documentation
+    http://cmsweb.cern.ch/phedex/datasvc/doc
     """
 
     def __init__(self, dict = {}, responseType = "json", secure = False):
@@ -198,6 +201,20 @@ class PhEDEx(Service):
 
         Get replicas for given blocks
         kwargs are options passed through to phedex
+        
+        block          block name, can be multiple (*)
+        node           node name, can be multiple (*)
+        se             storage element name, can be multiple (*)
+        update_since  unix timestamp, only return replicas updated since this
+                time
+        create_since   unix timestamp, only return replicas created since this
+                time
+        complete       y or n, whether or not to require complete or incomplete
+                blocks. Default is to return either
+        subscribed     y or n, filter for subscription. default is to return either.
+        custodial      y or n. filter for custodial responsibility.  default is
+                to return either.
+        group          group name.  default is to return replicas for any group.
         """
 
         callname = 'blockreplicas'
@@ -208,6 +225,27 @@ class PhEDEx(Service):
         _getReplicaInfoForFiles_
 
         Retrieve file replica information from PhEDEx.
+        
+        block          block name, with '*' wildcards, can be multiple (*).  required when no lfn is specified.
+        node           node name, can be multiple (*)
+        se             storage element name, can be multiple (*)
+        update_since   unix timestamp, only return replicas updated since this
+                    time
+        create_since   unix timestamp, only return replicas created since this
+                    time
+        complete       y or n. if y, return only file replicas from complete block
+                    replicas.  if n only return file replicas from incomplete block
+                    replicas.  default is to return either.
+        dist_complete  y or n.  if y, return only file replicas from blocks
+                    where all file replicas are available at some node. if
+                    n, return only file replicas from blocks which have
+                    file replicas not available at any node.  default is
+                    to return either.
+        subscribed     y or n, filter for subscription. default is to return either.
+        custodial      y or n. filter for custodial responsibility.  default is
+                    to return either.
+        group          group name.  default is to return replicas for any group.
+        lfn            logical file nam
         """
         return self._getResult("filereplicas", args = args)
 
@@ -217,6 +255,19 @@ class PhEDEx(Service):
 
         Get subscriptios for blocks and datasets
         kwargs are options passed through to phedex
+        
+        dataset          dataset name (wildcards)
+        block            block name (wildcards)
+        node             node name (wildcards)
+        se               storage element
+        create_since     timestamp. only subscriptions created after.
+        request          request number which created the subscription.
+        custodial        y or n to filter custodial/non subscriptions.
+                           default is null (either)
+        group            group name filter 
+        priority         priority, one of "low", "normal" and "high"
+        move             y (move) or n (replica)
+        suspended        y or n, default is either
         """
 
         callname = 'subscriptions'

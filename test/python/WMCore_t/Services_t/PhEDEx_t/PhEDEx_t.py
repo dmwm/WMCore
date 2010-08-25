@@ -31,7 +31,7 @@ class PhEDExTest(unittest.TestCase):
         self.dbsTestUrl = "http://cmssrv49.fnal.gov:8989/DBS209/servlet/DBSServlet"
         self.testNode = "TX_Test1_Buffer"
         self.testNode2 = "TX_Test2_Buffer"
-
+    @attr('integration')
     def testInjection(self):
         dict = {}
         dict['endpoint'] = self.phedexTestDS
@@ -40,7 +40,7 @@ class PhEDExTest(unittest.TestCase):
 
         xmlData = XMLDrop.makePhEDExDrop(self.dbsTestUrl, "/Cosmics/Sryu_Test/RAW")
         print phedexApi.injectBlocks(self.testNode, xmlData)
-
+    @attr('integration')
     def testSubscription(self):
         dict = {}
         dict['endpoint'] = self.phedexTestDS
@@ -71,7 +71,7 @@ class PhEDExTest(unittest.TestCase):
         phedexApi = PhEDEx(dict)
         self.failUnless(phedexApi.getNodeSE('TX_Test4_MSS') == 'srm.test4.ch')
         self.failUnless(phedexApi.getNodeNames('srm.test1.ch') == [u'TX_Test1_MSS', u'TX_Test1_Buffer'])
-
+    @attr('integration')
     def testGetSubscriptionMapping(self):
         #TODO: How to handle data no longer at these locations?
         dataset = '/MinimumBias/BeamCommissioning09-v1/RAW'

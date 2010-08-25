@@ -57,30 +57,3 @@ class HTTPFrontEnd(Harness):
         cherrypy.engine.stop()
         
 
-if __name__ == '__main__':
-    config = loadConfigurationFile('DefaultConfig.py')
-    config.section_("Agent")
-    config.Agent.contact = "rickw@caltech.edu"
-    config.Agent.teamName = "Dodgers"
-    config.Agent.agentName = "Manny Ramirez"
-
-    config.section_("General")
-    config.General.workDir = os.getenv("PRODAGENT_WORKDIR")
-    config.section_("CoreDatabase")
-    config.CoreDatabase.dialect = 'mysql'
-    #config.CoreDatabase.socket = os.getenv("DBSOCK")
-    #config.CoreDatabase.user = os.getenv("DBUSER")
-    #config.CoreDatabase.passwd = os.getenv("DBPASS")
-    #config.CoreDatabase.hostname = os.getenv("DBHOST")
-    #config.CoreDatabase.name = os.getenv("DBNAME")
-    config.CoreDatabase.socket = '/home/rpw/work/mysqldata/mysql.sock'
-    config.CoreDatabase.user = 'some_user'
-    config.CoreDatabase.passwd = 'some_pass'
-    config.CoreDatabase.hostname = 'localhost'
-    config.CoreDatabase.name = 'wmbs'
-
-    harness = HTTPFrontEnd(config)
-    harness.prepareToStart()
-    harness.handleMessage("HTTPFrontendStart", "GOGOGOGOGO")
-    #harness.handleMessage("HTTPFrontendStop", "WHOAWHOAWHOA")
-    #harness.startComponent()

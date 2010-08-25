@@ -9,6 +9,7 @@ import threading
 
 from WMCore.WMFactory import WMFactory
 from WMCore.Database.Transaction import Transaction
+from WMComponent.HTTPFrontend.HTTPFrontEnd import HTTPFrontEnd
 
 class MsgServiceApp(unittest.TestCase):
     """
@@ -32,8 +33,7 @@ class MsgServiceApp(unittest.TestCase):
                                  "WMCore.MsgService",
                                  ],
                                 useDefault = False)
-        self.config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'), \
-                        'src/python/WMComponent/ErrorHandler/DefaultConfig.py'))
+
 
     def msgService(self):
         """ returns a MsgService instance """
@@ -55,6 +55,14 @@ class MsgServiceApp(unittest.TestCase):
         Database deletion
         """
         self.testInit.clearDatabase()
+    def testA(self):
+        config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'), \
+                        'src/python/WMComponent/ErrorHandler/DefaultConfig.py'))
+        self.testInit.generateWorkDir(config)
+        
+        harness = HTTPFrontEnd(config)
+        harness.prepareToStart()
+        harness.handleMessage("HTTPFrontendStart", "GOGOGOGOGO")
 
     def testB(self):
         ms = self.msgService()

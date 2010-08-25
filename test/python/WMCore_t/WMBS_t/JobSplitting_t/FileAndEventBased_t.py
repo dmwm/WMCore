@@ -5,8 +5,8 @@ _FileAndEventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FileAndEventBased_t.py,v 1.2 2009/03/23 16:07:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FileAndEventBased_t.py,v 1.3 2009/04/05 21:47:00 gowdy Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -362,6 +362,46 @@ class FileAndEventBasedTest(unittest.TestCase):
 
         assert len(jobGroups) == 10, \
                "ERROR: JobFactory didn't return ten JobGroups."
+
+        for jobGroup in jobGroups:
+            assert len(jobGroup.jobs) == 2, \
+               "ERROR: JobFactory didn't create 2 jobs."
+            for job in jobGroup.jobs:
+                assert len(job.getFiles(type = "lfn")) == 1, \
+                       "ERROR: Job contains too many files."
+        
+                assert job.mask.getMaxEvents() == 100, \
+                       "ERROR: Job's max events is incorrect."
+        
+                assert job.mask["FirstEvent"] in [0, 100], \
+                       "ERROR: Job's first event is incorrect."
+
+        return    
+
+    def selectionAlgorithm( self, wmbsFile ):
+        """
+        Needed to test selective splitting
+        """
+        if wmbsFile['id'] == 1:
+            return False
+        return True
+
+    def testSelectiveFileSplit(self):
+        """
+        _testSelectiveFileSplit_
+
+        Test job splitting event jobs when the input subscription has
+        more than one file available and we select only one of them.
+        Should only get nine job groups back.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)        
+
+        jobGroups = jobFactory(events_per_job = 100,
+                               selection_algorithm = self.selectionAlgorithm )
+
+        assert len(jobGroups) == 9, \
+               "ERROR: JobFactory didn't return nine JobGroups."
 
         for jobGroup in jobGroups:
             assert len(jobGroup.jobs) == 2, \

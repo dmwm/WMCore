@@ -7,6 +7,12 @@ from openid.cryptutil import randomString # To generate session IDs
 from openid.store import filestore
 import cms_sreg as sreg # To request authorization data
 import cgi # To use escape()
+try:
+    # Python 2.6
+    import json
+except:
+    # Prior to 2.6 requires simplejson
+    import simplejson as json
 # default handler for login/etc pages
 from WMCore.WebTools.OidDefaultHandler import OidDefaultHandler
 
@@ -23,6 +29,8 @@ DEFAULT_OID_SERVER = 'https://cmsweb.cern.ch/security/'
 class OidConsumer(cherrypy.Tool):
     def __init__(self, config):
         self.config = config
+        self.decoder = json.JSONDecoder()
+        
         if self.config.store == 'filestore':
             self.store = filestore.FileOpenIDStore(self.config.store_path)
         
@@ -45,13 +53,15 @@ class OidConsumer(cherrypy.Tool):
         self._point = 'before_request_body'
         self._priority = 60 # Just after the sessions being enabled
 
-    # This is the method that is called in the cherrypy hook point (whenever
-    # the user-agent requests a page
-    def callable(self, authzfunc=None):
+    def callable(self, role=[], group=[], site=[], authzfunc=None):
+        """
+        This is the method that is called in the cherrypy hook point (whenever
+        the user-agent requests a page
+        """
         self.verify()
         if isinstance(cherrypy.request.handler,cherrypy._cpdispatch.LateParamPageHandler):
             self.process()
-            self.check_authorization(authzfunc)
+            self.check_authorization(role, group, site, authzfunc)
             self.defaults()
         # Now cherrypy calls the handler()
     
@@ -173,10 +183,12 @@ class OidConsumer(cherrypy.Tool):
                 raise cherrypy.HTTPRedirect(self.authdummy_path)
         # End of verify()
 
-    # This function deals with the oid server response (when it redirects
-    # the user-agent back to here. This request contains the status of the
-    # user authentication in the oid server
     def process(self):
+        """
+        This function deals with the oid server response (when it redirects
+        the user-agent back to here. This request contains the status of the
+        user authentication in the oid server
+        """
         # Do not process auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return
@@ -191,7 +203,6 @@ class OidConsumer(cherrypy.Tool):
         # Ask the oid library to verify the response received from the oid serv.
         current_url=cherrypy.session[self.session_name].get('return_to',None)
         info = oidconsumer.complete(cherrypy.request.params,current_url)
-
         # Now verifies what it does mean
         if info.status == consumer.FAILURE:
             # The OpenID protocol failed, either locally or remotely
@@ -239,21 +250,74 @@ class OidConsumer(cherrypy.Tool):
 
         # End of process()
 
-    def check_authorization(self, authzfunc):
+    def check_authorization(self, role=[], group=[], site=[], authzfunc=None):
         # Do not process auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return
-
-        permissions=cherrypy.session[self.session_name]['permissions'] # dict
-        fullname=cherrypy.session[self.session_name]['fullname'] # str
-        dn=cherrypy.session[self.session_name]['dn'] # str
-        if authzfunc and not authzfunc(permissions, fullname, dn):
+        if authzfunc == None:
+            authzfunc = self.defaultAuth
+        permissions = cherrypy.session[self.session_name]['permissions']
+        if type(permissions) == type('str'):
+            permissions = self.decoder.decode(permissions)
+        user = {
+                'permissions':permissions,
+                'fullname': cherrypy.session[self.session_name]['fullname'],
+                'dn': cherrypy.session[self.session_name]['dn']}
+        
+        if authzfunc and not authzfunc(role, group, site, user):
             # Not allowed
             msg = 'You are not allowed to access %s' % cherrypy.request.path_info
             cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.authz_path)
-
-        # Defaults to allow
+    
+    def defaultAuth(self, role=[], group=[], site=[], user={}):
+        """
+        A deafult authorisation function. Returns True/False. It checks that the
+        user has the roles for either the groups or sites specified. If the site
+        or group list is 0 length it just checks the user has the named role. If
+        there is no role specified check that user is a non-empty dict. 
+        
+        Other authorisation functions should have the same signature and behave 
+        in the same manner.
+        """
+        if role and not isinstance(role, list):
+            role = [role]
+        if group and not isinstance(group, list):
+            group = [group]
+        if site and not isinstance(site, list):
+            site = [site]
+        if role == [] and group == [] and site == []:
+            if not user == {}:
+                return True
+            else:
+                return False
+        if len(role):
+            for r in role:
+                if len(group) == 0 and len(site) == 0:
+                    if r in user['permissions'].keys():
+                        return True
+                for g in group:
+                    if g in user['permissions'][r]:
+                        return True
+                for s in site:
+                    if s in user['permissions'][r]:
+                        return True
+        else:
+            # no role specified
+            l = []
+            for i in user['permissions'].values():
+                if type(i) == type([]):
+                    l.extend(i)
+                else:
+                    l.append(i)
+            for s in site:
+                if s in l:
+                    return True
+            for g in group:
+                if s in l:
+                    return True
+   
+        return False
         
     def defaults(self):
         if not cherrypy.request.path_info.startswith(self.base_path):

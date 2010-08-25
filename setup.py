@@ -45,9 +45,9 @@ if can_nose:
         def run(self):
             retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             if retval:
-                sys.exit(0)
+                return 0 
             else:
-                sys.exit(1)
+                return 1
 else:
     class TestCommand(Command):
         user_options = [ ]

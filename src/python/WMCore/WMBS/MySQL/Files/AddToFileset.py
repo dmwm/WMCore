@@ -18,8 +18,8 @@ class AddToFileset(DBFormatter):
                 transaction = False):
         binds = []
         timestamp = int(time.time())
-        for fileID in file:
-            binds.append({"file_id": fileID, "fileset": fileset,
+        for fileLFN in file:
+            binds.append({"lfn": fileLFN, "fileset": fileset,
                           "insert_time": timestamp})        
         
         self.dbi.processData(self.sql, binds, conn = conn,

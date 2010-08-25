@@ -43,14 +43,14 @@ if can_nose:
         def run(self):
             retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             if retval:
-                sys.exit(0)
+                return 0
             else:
-                sys.exit(1)
+                return 1
 else:
     class NoseCommand(Command):
         user_options = [ ]
         def run(self):
-            print "Nose isn't installed, fail"
+            print "Nose isn't installed. You must install the nose package to run tests (easy_install nose might do it)"
             pass
         
         def initialize_options(self):

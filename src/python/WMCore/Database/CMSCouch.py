@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.37 2009/07/09 21:49:42 meloam Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: CMSCouch.py,v 1.38 2009/07/09 23:56:01 meloam Exp $"
+__version__ = "$Revision: 1.38 $"
 
 try:
     # Python 2.6
@@ -144,16 +144,36 @@ class Requests:
         """
         return self.makeRequest(uri, data, 'DELETE', encoder, decoder)
 
-    def makeRequest(self, uri=None, data=None, request='GET',
+    def makeRequest(self, uri=None, data=None, type='GET',
                      encode=None, decode=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
         DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
         """
-        #raise RuntimeError, "url is %s" % self.url
-        status, data = httpRequest(self.url, uri, data, request)
-        if  (decode == False):
+        headers = {"Content-type": 
+                    'application/x-www-form-urlencoded', #self.accept_type,
+                    "Accept": self.accept_type}
+        encoded_data = ''
+            
+        if type != 'GET' and data:
+            if (encode == False):
+                encoded_data = data
+            else:
+                encoded_data = self.encode(data)
+            headers["Content-length"] = len(encoded_data)
+        else:
+            #encode the data as a get string
+            if  not data:
+                data = {}
+            uri = "%s?%s" % (uri, urllib.urlencode(data))
+        self.conn.connect()
+        self.conn.request(type, uri, encoded_data, headers)
+        response = self.conn.getresponse()
+        data = response.read()
+        self.conn.close()
+        checkForCouchError( response.status )
+        if (decode == False):
             return data
         else:
             return self.decode(data)
@@ -188,7 +208,10 @@ class JSONRequests(Requests):
         """
         decode the data to python from json
         """
-        return json.loads(data)
+        if data:
+            return json.loads(data)
+        else:
+            return {}
 
 class CouchDBRequests(JSONRequests):
     """
@@ -249,12 +272,7 @@ class Database(CouchDBRequests):
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print 'queue larger than %s records, committing' % self._queue_size
-            goodsub, badsub = self.commitQueued(viewlist=viewlist)
-            if badsub:
-                # some of our enqueued commits didn't go through
-                # TODO: handle this better
-                raise RuntimeError, "Some commits didn't succeed\n %s" % badsub
-            
+            self.commit(viewlist=viewlist)
         self._queue.append(doc)
 
     def queueDelete(self, doc):
@@ -264,8 +282,30 @@ class Database(CouchDBRequests):
         assert type(doc) == type({}), "document not a dictionary"
         doc['_deleted'] = True
         self.queue(doc)
+    
+    def commitOne(self, doc, returndocs=False, timestamp = False, viewlist=[]):
+        """
+            Helper function for when you know you only want to insert one doc
+            additionally keeps from having to rewrite ConfigCache to handle the
+            new commit function's semantics
+        
+        """
+        tmpqueue = self._queue
+        self._queue = []
+        try:
+            data = self.commit(doc,returndocs,timestamp,viewlist)
+        except:
+            raise
+        else:
+            # if we made it out okay, put a flag there
+            data[0][u'ok'] = True
+        finally:
+            self._queue = tmpqueue
 
-    def commitQueued(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
+            
+        return data[0]
+        
+    def commit(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
         """
         Add doc and/or the contents of self._queue to the database. If returndocs
         is true, return document objects representing what has been committed. If
@@ -273,31 +313,28 @@ class Database(CouchDBRequests):
         2009/01/30 18:04:11 - this will be the timestamp of when the commit was
         called, it will not override an existing timestamp field.
         
-        Returns a tuple:
-            (list of good documents, list of errored documents)
+        Returns a list of good documents
+            throws an exception otherwise
         """
-        if (len(self._queue) > 0) or doc:
-            if doc:
-                self.queue(doc)
-            if timestamp:
-                self._queue = self.timestamp(self._queue)
+        if (doc):
+            self.queue(doc, timestamp, viewlist)
             
-            uri  = '/%s/_bulk_docs/' % self.name
-            data = {'docs': list(self._queue)}       
-            result = self.post(uri, data)
-            # now we need to check if there were conflicts with the updates
-            # we attempted
-            erroredDocs = []
-            goodDocs    = []
-            for row in result:
-                if 'error' in row:
-                    erroredDocs.append(row)
-                else:
-                    row['ok'] = True
-                    goodDocs.append(row)
-            self._queue = []    
-            return goodDocs, erroredDocs   
-            
+        if timestamp:
+            self._queue = self.timestamp(self._queue)
+        # commit in thread to avoid blocking others
+        uri  = '/%s/_bulk_docs/' % self.name
+        data = {'docs': list(self._queue)}
+        retval = self.post(uri , data)
+        status = 201
+        if (status == 201):
+            self._queue = []
+            return retval
+        else:
+            self.queue = []
+            raise RuntimeError, "Unknown couchdb status %s data %s retval %s" % (status, data, retval)
+#           ##############3
+#           # currently nonfunctional threading code?
+#
 #            thr  = HttpRequestThread(self.url, uri, data, 'POST')
 #            thr.start() 
 #            if  len(self._queue) < self._queue_size:
@@ -312,21 +349,7 @@ class Database(CouchDBRequests):
             # if we will wait for all request then we should use thr.join()
 #            result = self.post('/%s/_bulk_docs/' % self.name, 
 #                                 {'docs': self._queue})
-        else:
-            raise RuntimeError, "No documents were provided to commit"
-        
-    def commit(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
-        if not doc:
-            raise RuntimeError, "No document provided to commit"
-        
-        if timestamp:
-            doc = self.timestamp(doc)
-        if  '_id' in doc.keys():
-            return self.put('/%s/%s' % (self.name,
-                                        urllib.quote_plus(doc['_id'])),
-                                        doc)
-        else:
-            return self.post('/%s' % self.name, doc)
+
 
     def document(self, id):
         """
@@ -371,11 +394,19 @@ class Database(CouchDBRequests):
         # the following is CouchDB 090 only, this is the reference platform
         if len(keys):
             data = urllib.urlencode(options)
-            return self.post('/%s/_design/%s/_view/%s?%s' % \
+            retval = self.post('/%s/_design/%s/_view/%s?%s' % \
                             (self.name, design, view, data), {'keys':keys})
         else:
-            return self.get('/%s/_design/%s/_view/%s' % \
+            retval = self.get('/%s/_design/%s/_view/%s' % \
                             (self.name, design, view), options)
+            
+        if ('error' in retval):
+            raise RuntimeError ,\
+                    "Error in CouchDB: viewError '%s' reason '%s'" %\
+                        (retval['error'], retval['reason'])
+        else:
+            return retval
+            
 
     def createDesignDoc(self, design='myview', language='javascript'):
         view = Document('_design/%s' % design)
@@ -409,6 +440,10 @@ class Database(CouchDBRequests):
         # TODO: MAKE BETTER ERROR HANDLING
         if (attachment.find('{"error":"not_found","reason":"deleted"}') != -1):
             raise RuntimeError, "File not found, deleted"
+        if (attachment.find('{"error":"not_found","reason":"missing"}') != -1):
+            raise RuntimeError, "File not found, deleted"
+        if (id == "nonexistantid"):
+            print attachment
         return attachment
        
 class CouchServer(CouchDBRequests):
@@ -446,3 +481,58 @@ class CouchServer(CouchDBRequests):
 
     def __str__(self):
         return self.listDatabases().__str__()
+
+
+# define some standard couch error classes
+# from:
+#  http://wiki.apache.org/couchdb/HTTP_status_list
+
+class CouchError(Exception):
+    def __init__(self, value):
+        self.value = value
+        self.type = "CouchError"
+    def __str__(self):
+        return "%s: %s" % (self.type, repr(self.value))
+class CouchBadRequestError(CouchError):
+    def __init__(self,value):
+        CouchError.__init__(value)
+        self.type = "CouchBadRequestError"
+class CouchNotFoundError(CouchError):
+    def __init__(self,value):
+        CouchError.__init__(self, value)
+        self.type = "CouchNotFoundError"
+class CouchNotAllowedError(CouchError):
+    def __init__(self,value):
+        CouchError.__init__(self, value)
+        self.type = "CouchNotAllowedError"
+class CouchConflictError(CouchError):
+    def __init__(self,value):
+        CouchError.__init__(self, value)
+        self.type = "CouchConflictError"
+class CouchPreconditionFailedError(CouchError):
+    def __init__(self,value):
+        CouchError.__init__(self, value)
+        self.type = "CouchPreconditionFailedError"
+class CouchInternalServerError(CouchError):
+    def __init__(self,value):
+        CouchError.__init__(self, value)
+        self.type = "CouchError"
+
+def checkForCouchError(status, data = None):
+    if (status == 400 ):
+        raise CouchBadRequestError( data )
+    elif (status == 404 ):
+        raise CouchNotFoundError( data )
+    elif (status == 405 ):
+        raise CouchNotAllowedError( data )
+    elif (status == 409 ):
+        raise CouchConflictError( data )
+    elif (status == 412 ):
+        raise CouchPreconditionFailedError( data )
+    elif (status == 500 ):
+        raise CouchInternalServerError( data )
+    elif (status >= 400 ):
+        # we have a new error status, log it
+        raise CouchError( "NEW ERROR STATUS! UPDATE CMSCOUCH.PY! status: %s data: %s" % (status, data))
+    else:
+        return

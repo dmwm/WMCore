@@ -7,8 +7,10 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.6 2009/12/02 19:42:28 evansde Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.7 2009/12/21 16:06:48 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
+
+import threading
 
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -37,7 +39,15 @@ class ExecuteMaster:
         available for that step, use it instead.
 
         """
+
+        myThread = threading.currentThread
+
+        myThread.watchdogMonitor.setupMonitors(task, wmbsJob)
+
+        myThread.watchdogMonitor.notifyJobStart(task)
+        
         for step in task.steps().nodeIterator():
+            myThread.watchdogMonitor.notifyStepStart(step)
             helper = WMStepHelper(step)
             stepType = helper.stepType()
             stepName = helper.name()
@@ -49,6 +59,9 @@ class ExecuteMaster:
             else:
                 executor = StepFactory.getStepExecutor(stepType)
                 self.doExecution(executor, step, wmbsJob)
+            myThread.watchdogMonitor.notifyStepEnd(step)
+
+        myThread.watchdogMonitor.notifyJobEnd(task)
         return
 
     def doExecution(self, executor, step, job):

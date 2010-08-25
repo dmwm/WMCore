@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 
-__revision__ = "$Id: Heartbeat.py,v 1.1 2009/09/11 01:29:16 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Heartbeat.py,v 1.2 2009/09/15 12:05:35 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import threading

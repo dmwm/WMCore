@@ -7,8 +7,8 @@ _PilotComponent_
 
 """
 
-__revision__ = "$Id: PilotJob.py,v 1.2 2009/09/11 01:29:16 khawar Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: PilotJob.py,v 1.3 2009/09/15 12:05:35 khawar Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -126,6 +126,8 @@ def getText(nodelist):
 """
 Class represents PilotJob 
 """
+PILOT_WAIT_JOB_POLL=100
+
 class PilotJob:  
     """ 
     _PilotJob_
@@ -510,6 +512,7 @@ class PilotJob:
                 if ( badRequestCount == int(badRequestThreshold) ): 
                     stopRequest = True
                     shutReason = jsonResult
+                    time.sleep(60)
                     break 
 	  	#continue till badRequestCount reaches value 4
                 continue
@@ -520,7 +523,7 @@ class PilotJob:
                 jsonResult["msg"]["payload"]["Error"])
                 print prMsg
                 #now wait for some time
-                time.sleep(20)
+                time.sleep(PILOT_WAIT_JOB_POLL)
                 #break
                 continue;
 		
@@ -528,7 +531,6 @@ class PilotJob:
                 print('No Task Found in the TaskQueue\n waiting')
                 
                 emptyRequestCount = emptyRequestCount + 1
-                print '2:condition:%s' % (emptyRequestCount == emptyRequestThreshold)
                 if ( emptyRequestCount == int(emptyRequestThreshold) ):
                     prMsg = 'Pilot job tried %s times but failed.\n' % emptyRequestCount
                     print ('%s shutdown the pilot' % prMsg )
@@ -542,7 +544,7 @@ class PilotJob:
                 print ('Pilot will generate %s request ' % \
                       (emptyRequestCount+1) )
                 #sleep for a while and re-generate the request    
-                time.sleep( 30 )
+                time.sleep( PILOT_WAIT_JOB_POLL )
                 continue
 		
 	        	
@@ -770,7 +772,7 @@ class PilotJob:
                 print outputFileLocation
                 print HDLocation 
                 os.link(outputFileLocation, HDLocation)
-                
+                #add this to the data cache util 
                 print 'Hard Link created'
             except:
                 print 'Error: %s'% sys.exc_info()[0]

@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.5 2010/04/20 15:08:20 spigafi Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: Job.py,v 1.6 2010/04/21 11:03:00 spigafi Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 
 # imports
@@ -98,36 +98,31 @@ class Job(DbObject):
             self.data['id'] = -1
 
 
-
-
     ##########################################################################
 
     @dbTransaction
     def create(self):
         """
         Create a new instance of a job
-
         """
+        
         if not self.exists():
             action = self.daofactory(classname = "Job.New")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
+        
+        return self.exists()
+        
 
-        return
-
-
-####################################################################
+    ####################################################################
 
     @dbTransaction
     def exists(self, noDB = False):
         """
         Check to see if the job exists
-
         """
-
         
-
         if noDB:
             if self.data['id'] < 0:
                 return False
@@ -141,11 +136,12 @@ class Job(DbObject):
                             transaction = self.existingTransaction)
         if id:
             self.data['id'] = id
+            
         self.existsInDataBase = True
+        
         return id
 
-
-###############################################################
+    ###############################################################
 
     @dbTransaction
     def save(self):
@@ -167,8 +163,7 @@ class Job(DbObject):
                 self.runningJob['taskId']     = self.data['taskId']
                 self.runningJob['submission'] = self.data['submissionNumber']
                 self.runningJob.save()
-
-
+            
         return
 
     ######################################################################
@@ -212,9 +207,8 @@ class Job(DbObject):
 
         # If it's internal, we only want the first job
         self.data.update(result[0])
+        
         self.existsInDataBase = True
-
-
         
         return
 
@@ -260,8 +254,6 @@ class Job(DbObject):
         return
 
     ###################################################################
-
-
 
     def updateRunningInstance(self):
         """

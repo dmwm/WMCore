@@ -9,8 +9,8 @@ Note that the period here refers to the amount of time between the end of a job
 and the creation of a new job.
 """
 
-__revision__ = "$Id: Periodic.py,v 1.8 2010/03/31 20:06:06 sfoulkes Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: Periodic.py,v 1.9 2010/04/19 14:39:25 sfoulkes Exp $"
+__version__  = "$Revision: 1.9 $"
 
 import time
 import threading
@@ -71,18 +71,21 @@ class Periodic(JobFactory):
         fileset = self.subscription.getFileset()
         fileset.load()
 
+        myThread = threading.currentThread()
         if not fileset.open:
-            fileset.loadData()
-            allFiles = fileset.getFiles()            
-            self.subscription.completeFiles(allFiles)
-            return []
+            if not self.outstandingJobs(0):
+                fileset.loadData()
+                allFiles = fileset.getFiles()
+                self.subscription.completeFiles(allFiles)
+                return []
+            else:
+                myThread.logger.debug("Periodic: Waiting for jobs to complete.")
 
         if self.outstandingJobs(jobPeriod):
             return []
 
         availableFiles = self.subscription.availableFiles()
         if len(availableFiles) == 0:
-            myThread = threading.currentThread()
             myThread.logger.debug("Periodic: No available files...")
             return []
 

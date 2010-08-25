@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.38 2010/02/16 16:38:58 mnorman Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Job_t.py,v 1.39 2010/02/26 21:24:33 mnorman Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import unittest
 import logging
@@ -1144,6 +1144,49 @@ class JobTest(unittest.TestCase):
             self.assertEqual(testJob[key], finalJob[key])
 
         self.assertEqual(str(finalJob.__class__), "<class 'WMCore.DataStructs.Job.Job'>")
+
+        return
+
+
+    def testLoadOutputID(self):
+        """
+        _testLoadOutputID_
+
+        Test whether we can load an output ID for a job
+        """
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task="Test")
+
+        testWorkflow.create()
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+
+        testSubscription.create()
+
+        testFileA = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileB = File(lfn = makeUUID(), locations = "test.site.ch")
+        testFileA.create()
+        testFileB.create()
+                         
+        testFileset.addFile([testFileA, testFileB])
+        testFileset.commit()
+
+        testSubscription.acquireFiles([testFileA, testFileB])
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testJob = Job()
+        testJob.create(group = testJobGroup)
+
+        self.assertEqual(testJob.loadOutputID(), testJobGroup.output.id)
+        
 
         return
 

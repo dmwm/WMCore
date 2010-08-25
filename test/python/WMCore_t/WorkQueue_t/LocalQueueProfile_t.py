@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueueProfile_t.py,v 1.3 2010/08/09 20:20:42 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: LocalQueueProfile_t.py,v 1.1 2010/08/09 20:20:42 sryu Exp $"
+__version__ = "$Revision: 1.1 $"
 
 #setup emulator for test, this needs to be at top of the file
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
@@ -32,14 +32,16 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         """
         WorkQueueTestCase.setUp(self)
         self.specGenerator = WMSpecGenerator()
-        self.specs = self.createReRecoSpec(10)
+        self.specs = self.createReRecoSpec(1, "file")
         
         self.cacheDir = tempfile.mkdtemp() 
+ 
         # Create queues
-        self.globalQueue = globalQueue(CacheDir = self.cacheDir,
-                                       NegotiationTimeout = 0,
-                                       QueueURL = 'global.example.com')
+        self.localQueue = localQueue(CacheDir = self.cacheDir,
+                                     NegotiationTimeout = 0,
+                                     QueueURL = 'global.example.com')
         
+        GlobalParams.setNumOfFilesPerBlock(100)
         
     def tearDown(self):
         """tearDown"""
@@ -66,17 +68,19 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         p.strip_dirs().sort_stats('time').print_stats(10)
         p.strip_dirs().sort_stats('calls').print_stats(30)
         #p.strip_dirs().sort_stats('name').print_stats(10)
+            
+    def testGetWorkLocalQueue(self):
+        for spec in self.specs:
+            self.localQueue.queueWork(spec, team = "A-team")
+        self.localQueue.updateLocationInfo()
+        self.createProfile('getWorkProfile.prof',
+                           self.localQueueGetWork)
         
-    def testQueueElementProfile(self):
-        self.createProfile('queueElementProfile.prof',
-                           self.multipleQueueWorkCall)
-
-    def multipleQueueWorkCall(self):
-        for wmspec in self.specs:
-            units = self.globalQueue._splitWork(wmspec)
-            with self.globalQueue.transactionContext():
-                for unit in units:
-                    self.globalQueue._insertWorkQueueElement(unit)
+    def localQueueGetWork(self):
+        siteJobs = {}
+        for site in Globals.SITES:
+            siteJobs[site] = 100000
+        self.localQueue.getWork(siteJobs, team = "A-team")
                              
         
 if __name__ == "__main__":

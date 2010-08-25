@@ -1,11 +1,11 @@
 """
-_File_t_
+_WorkQueueTestCase_
 
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: WorkQueueTestCase.py,v 1.10 2010/05/25 21:27:37 sryu Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WorkQueueTestCase.py,v 1.11 2010/08/09 20:20:42 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 from WMQuality.TestInit import TestInit

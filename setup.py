@@ -56,12 +56,14 @@ def runUnitTests():
     # todo: not portable
     testspypath = os.path.join([mydir, 'test','python'])
     srcpypath = os.path.join([mydir, 'src','python']) 
+    print "src path %s test: %s" % (srcpypath, testpypath)
     sys.path.append(testspypath)
     sys.path.append(srcpypath)
     
     # Walk the directory tree
     for dirpath, dirnames, filenames in os.walk('./test/python'):
         # skipping CVS directories and their contents
+ 
         pathelements = dirpath.split('/')
         if not 'CVS' in pathelements:
             # to build up a list of file names which contain tests
@@ -70,6 +72,8 @@ def runUnitTests():
                     if file.endswith('_t.py'):
                         testmodpath = pathelements[3:]
                         testmodpath.append(file.replace('.py', ''))
+                        print "examinging path: %s" % dirpath
+                        print "adding testmodpath %s" % testmodpath
                         testfiles.append('.'.join(testmodpath))
                         
     sys.stderr = open('/dev/null', 'w')

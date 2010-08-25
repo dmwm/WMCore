@@ -13,6 +13,7 @@ config.component_('Webtools')
 
 # This is the application
 config.Webtools.application = 'WebtoolsDocs'
+config.Webtools.port = 8010
 # This is the config for the application
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
@@ -20,6 +21,7 @@ config.WebtoolsDocs.templates = environ['WTBASE'] + '/templates/WMCore/WebTools'
 config.WebtoolsDocs.admin = 'your@email.com'
 config.WebtoolsDocs.title = 'CMS WMCore/WebTools Documentation'
 config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
+
 # Define the class that is the applications index
 #config.WebtoolsDocs.index = 'welcome'
 

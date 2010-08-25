@@ -202,5 +202,5 @@ class WebRequestSchema(TemplatedPage):
             result = self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
         except HTTPException, ex:
             return ex.reason+' '+ex.result
-        raise cherrypy.HTTPRedirect('http://'+self.reqMgrHost+'/reqMgrBrowser/requestDetails/'+schema['RequestName'])
+        raise cherrypy.HTTPRedirect('/reqMgrBrowser/requestDetails/'+schema['RequestName'])
     submit.exposed = True

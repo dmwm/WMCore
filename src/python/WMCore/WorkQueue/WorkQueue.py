@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.137 2010/08/10 16:15:54 swakef Exp $"
-__version__ = "$Revision: 1.137 $"
+__revision__ = "$Id: WorkQueue.py,v 1.138 2010/08/13 20:37:56 sryu Exp $"
+__version__ = "$Revision: 1.138 $"
 
 
 import time
@@ -809,6 +809,8 @@ class WorkQueue(WorkQueueBase):
             # update policy parameter
             self.params['SplittingMapping'][policyName].update(args = wmspec.startPolicyParameters())
             policy = startPolicy(policyName, self.params['SplittingMapping'])
+            self.logger.info("Using %s start policy with %s " % (policyName,
+                                            self.params['SplittingMapping']))
             units = policy(wmspec, topLevelTask, self.dbsHelpers, data)
             for unit in units:
                 unit['ParentQueueId'] = parentQueueId

@@ -10,7 +10,7 @@ Based on StageOutMgr class
 
 import os
 
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+#from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 #do we want seperate exceptions - for the moment no
 from WMCore.Storage.StageOutError import StageOutFailure
@@ -46,6 +46,8 @@ class DeleteMgr:
         # // Try an get the TFC for the site
         #//
         self.tfc = None
+
+        from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 
 

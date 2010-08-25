@@ -8,8 +8,8 @@ Equivalent of a PayloadNode in the old production system WorkflowSpec
 
 """
 
-__revision__ = "$Id: WMStep.py,v 1.6 2010/01/11 21:05:25 evansde Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMStep.py,v 1.7 2010/03/18 15:12:22 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper, nodeMap, getNode
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
@@ -84,6 +84,28 @@ class WMStepHelper(TreeHelper):
         return getStepTypeHelper(self.data)
 
 
+    def addOverride(self, override, overrideValue):
+        """
+        _addOverride_
+        
+        Add overrides for use in step executors
+        """
+
+        setattr(self.data.override, override, overrideValue)
+
+        return
+
+    def getOverrides(self):
+        """
+        _getOverrides_
+
+        Get overrides for use in executors
+        """
+
+        return self.data.override.dictionary_()
+    
+
+
 class WMStep(ConfigSectionTree):
     """
     _WMStep_
@@ -106,6 +128,7 @@ class WMStep(ConfigSectionTree):
         self.section_("sandbox")
         
         self.section_("emulator")
+        self.section_("override")
 
 
 

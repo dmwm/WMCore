@@ -44,6 +44,8 @@ if ( not (requestedDB in buildslave.conf) ):
 else:
     os.environ['DATABASE'] = buildslave.conf[requestedDB]
 
+os.environ['WMCOREBASE'] = os.path.normpath(os.path.join(os.getcwd(), ".."))
+
 commandLine = sys.argv[3:]
 
 # actually run

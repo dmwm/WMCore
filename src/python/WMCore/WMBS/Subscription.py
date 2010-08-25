@@ -20,15 +20,18 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.45 2009/09/11 19:08:07 mnorman Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: Subscription.py,v 1.46 2009/09/25 15:33:30 mnorman Exp $"
+__version__ = "$Revision: 1.46 $"
 
 from sets import Set
 import logging
 
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.File import File
+
+from WMCore.WMBS.Fileset  import Fileset
+from WMCore.WMBS.File     import File
 from WMCore.WMBS.Workflow import Workflow
+#from WMCore.WMBS.JobGroup import JobGroup as WMBSJobGroup
+#from WMCore.WMBS.Job      import Job      as WMBSJob
 from WMCore.WMBS.WMBSBase import WMBSBase
 
 from WMCore.DataStructs.Subscription import Subscription as WMSubscription
@@ -372,4 +375,51 @@ class Subscription(WMBSBase, WMSubscription):
         action = self.daofactory( classname = "Subscriptions.GetJobGroups" )
         return action.execute(self['id'], conn = self.getDBConn(),
                                           transaction = self.existingTransaction())
+
+
+    def deleteEverything(self):
+        """
+        _deleteEverything_
+
+        This function should delete the subscription, and absolutely everything else having anything
+        to do with the subscription that is NOT in use by any other piece.  It should check for all
+        the proper ownerships through a sequence of DAO calls that will take forever.
+
+        Nothing except the jobArchiver should be calling this.
+        """
+
+        self.loadData()
+
+        #First, jobs
+        for jobID in self.getJobs():
+            job = WMBSJob(id = jobID)
+            job.delete()
+
+        #Next jobGroups
+        for jobGroupID in self.getJobGroups():
+            jobGroup = WMBSJobGroup(id = jobGroupID)
+            jobGroup.delete()
+
+
+
+        #Next Fileset
+        filesetID = self["fileset"].id
+        action = self.daofactory(classname = "Fileset.DeleteCheck")
+        action.execute(fileid = self["fileset"].id, subid = self["id"])
+
+        #If we got rid of the fileset
+        #If we did not delete the fileset, all files are still in use
+        if not self["fileset"].exists():
+            #Now get rid of unused files
+            action = self.daofactory(classname = "Files.DeleteCheck")
+            for file in self["fileset"].files:
+                action.execute(file = file['id'], fileset = filesetID)
+
+        #Next Workflow
+        action = self.daofactory(classname = "Workflow.DeleteCheck")
+        action.execute(workid = self["workflow"].id, subid = self["id"])
+
+        #And last
+        self.delete()
+        return
    

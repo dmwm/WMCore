@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.29 2009/10/12 19:23:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: ChangeState.py,v 1.30 2009/10/15 20:46:08 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -117,26 +117,39 @@ class ChangeState(WMObject, WMConnectionBase):
         getCouchDAO = self.daoFactory("Jobs.GetCouchID")
         setCouchDAO = self.daoFactory("Jobs.SetCouchID")
 
+        jobIDNoCouch = []
+        for job in jobs:
+            if job["couch_record"] == None:
+                jobIDNoCouch.append(job['id'])
+        couchRecordList = getCouchDAO.execute(jobID = jobIDNoCouch)
+        for job in jobs:
+            for record in couchRecordList:
+                if job['id'] == record['jobid']:
+                    job["couch_record"] = record['couch_record']
+                    break
+        uuID          = None
+        newJobCounter = 0
+
+        couchRecordsToUpdate = []
+                
+        #print couchRecordList
+        
         for job in jobs:
             doc = None
-            couchRecord = None
+            couchRecord = job.get('couch_record', None)
             
             if job["couch_record"] == None:
-                couchRecord = getCouchDAO.execute(jobID = job["id"],
-                                                  conn = self.getDBConn(),
-                                                  transaction = self.existingTransaction())
+                doc = job
+                if not uuID:
+                    uuID = makeUUID()
+                doc["_id"] = '%s_%i' %(uuID, newJobCounter)
+                newJobCounter += 1
+                job["couch_record"] = doc["_id"]
+                doc["state_changes"] = []
+                doc["fwkjrs"] = []
+                couchRecordsToUpdate.append({'jobid': job['id'], 'couchid': doc['_id']})
+                couchRecord = doc["_id"]
 
-                if couchRecord == None:
-                    doc = job
-                    doc["_id"] = makeUUID()
-                    job["couch_record"] = doc["_id"]
-                    doc["state_changes"] = []
-                    doc["fwkjrs"] = []
-
-                    setCouchDAO.execute(jobID = job["id"], couchID = doc["_id"],
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-                    couchRecord = doc["_id"]
             else:
                 couchRecord = job["couch_record"]
 
@@ -154,6 +167,9 @@ class ChangeState(WMObject, WMConnectionBase):
 
             self.database.queue(doc)
 
+        if len(couchRecordsToUpdate) > 0:
+            setCouchDAO.execute(bulkList = couchRecordsToUpdate)
+            
         docsCommitted = self.database.commit()
         assert len(jobs) == len(docsCommitted), \
                "Got less than I was expecting from CouchDB: \n %s" %\

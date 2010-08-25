@@ -93,6 +93,8 @@ class Scram:
             stdin=subprocess.PIPE,
             )
 
+        # BADPYTHON
+        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write(self.preCommand())
         proc.stdin.write("%s project CMSSW %s\n" % (self.command, self.version))
         proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 3; fi\n""")
@@ -135,6 +137,8 @@ class Scram:
             self.stderr = ""
             return 1
 
+        # BADPYTHON
+        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write(self.preCommand())
         proc.stdin.write("%s ru -sh\n" % self.command)
         proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 4; fi\n""")
@@ -172,6 +176,8 @@ class Scram:
                                 stdin=subprocess.PIPE,
                                 )
 
+        # BADPYTHON
+        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write("%s\n" % self.preCommand())
         # scram fucks up the python environment from the parent shell
         proc.stdin.write(

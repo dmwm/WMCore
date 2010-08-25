@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.20 2010/06/10 16:19:04 swakef Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.21 2010/06/23 14:22:59 meloam Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import os
 import WMCore.WMInit
@@ -40,7 +40,7 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'INFO'
-config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:9996'
+config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:9997'
 config.WorkQueueManager.pollInterval = 10
 config.WorkQueueManager.queueParams = {"ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
                                        }

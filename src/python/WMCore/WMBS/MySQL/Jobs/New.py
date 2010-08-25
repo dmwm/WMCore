@@ -6,8 +6,8 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.9 2009/05/11 14:47:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: New.py,v 1.10 2009/05/12 16:17:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import time
 
@@ -24,7 +24,7 @@ class New(DBFormatter):
     def execute(self, jobgroup, name, couch_record = None, location = None, 
                 conn = None, transaction = False):
         binds = {"jobgroup": jobgroup, "name": name, 
-                 "couch_record": couch_record, "state_time": time.time(),
+                 "couch_record": couch_record, "state_time": int(time.time()),
                  "location": location}
 
         self.dbi.processData(self.sql, binds, conn = conn,

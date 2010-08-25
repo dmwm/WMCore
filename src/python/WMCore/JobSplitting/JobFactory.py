@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.33 2010/08/02 20:52:03 mnorman Exp $"
-__version__  = "$Revision: 1.33 $"
+__revision__ = "$Id: JobFactory.py,v 1.34 2010/08/03 15:13:29 mnorman Exp $"
+__version__  = "$Revision: 1.34 $"
 
 
 import logging
@@ -174,11 +174,11 @@ class JobFactory(WMObject):
         fileDict = {}
 
         if self.grabByProxy:
-            #logging.error("About to load files by proxy")
+            logging.debug("About to load files by proxy")
             fileset = self.loadFiles(size = self.limit)
         else:
             fileset = self.subscription.availableFiles(limit = self.limit)
-            #logging.error("Have fileset")
+            logging.debug("About to load files by DAO")
 
         for file in fileset:
             locSet = frozenset(file['locations'])
@@ -220,6 +220,8 @@ class JobFactory(WMObject):
         resulting ResultProxies in self.proxies
         """
 
+        logging.debug("Opening DB resultProxies for JobFactory")
+
         myThread = threading.currentThread()
 
         # Handle all DAO stuff
@@ -235,6 +237,7 @@ class JobFactory(WMObject):
 
         for proxy in results:
             self.proxies.append(proxy)
+            logging.debug("Received %i proxies" % (len(self.proxies)))
 
         # Activate everything so that we grab files by proxy
         self.grabByProxy  = True

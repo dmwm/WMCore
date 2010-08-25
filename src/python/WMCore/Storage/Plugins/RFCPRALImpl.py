@@ -7,10 +7,10 @@ Implementation of StageOutImpl interface for RFIO in Castor-2
 """
 import os 
 import re
-from StageOut.Registry import registerStageOutImpl
-from StageOut.StageOutImpl import StageOutImpl
+from WMCore.Storage.Registry import registerStageOutImpl
+from WMCore.Storage.StageOutImpl import StageOutImpl
 
-from StageOut.Execute import runCommand
+from WMCore.Storage.Execute import runCommand
 
 
 class RFCPRALImpl(StageOutImpl):

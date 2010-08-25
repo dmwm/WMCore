@@ -7,30 +7,22 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.11 $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "mnorman@fnal.gov"
 
-import commands
-import logging
 import os
 import threading
 import time
 import unittest
-import random
 
 from WMComponent.DBSUpload.DBSUpload import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
-from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 import WMComponent.DBSUpload.DBSUpload
-from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.UUID import makeUUID
-from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
 
 from DBSAPI.dbsApi import DbsApi
@@ -45,9 +37,6 @@ class DBSUploadTest(unittest.TestCase):
       This fails if you use the in-memory syntax for sqlite 
       i.e. (DATABASE = sqlite://)
     """
-
-    _setup_done = False
-    _teardown = False
     _maxMessage = 10
 
 
@@ -59,20 +48,15 @@ class DBSUploadTest(unittest.TestCase):
 
         """
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-
-        #if (os.getenv("DIALECT").lower() != 'sqlite'):
-        #    print "About to tear down"
-        #    self.tearDown()
-        try:
-            self.testInit.setSchema(customModules = ["WMCore.ThreadPool","WMCore.MsgService","WMComponent.DBSBuffer.Database"],
+        self.testInit.setSchema(customModules = 
+                                ["WMCore.ThreadPool",
+                                 "WMCore.MsgService",
+                                 "WMComponent.DBSBuffer.Database"],
                                 useDefault = False)
-        except WMException, e:
-            self.tearDown()
-            raise
-
+      
         myThread = threading.currentThread()
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                         logger = myThread.logger,
@@ -83,48 +67,15 @@ class DBSUploadTest(unittest.TestCase):
         locationAction.execute(siteName = "se1.fnal.gov")
         locationAction.execute(siteName = "malpaquet") 
 
-        self._teardown = False
-        return
 
     def tearDown(self):
         """
         _tearDown_
         
         tearDown function for unittest
-
         """
-
-        myThread = threading.currentThread()
         
-        factory2 = WMFactory("MsgService", "WMCore.MsgService")
-        destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy2.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-        
-        factory = WMFactory("Threadpool", "WMCore.ThreadPool")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ThreadPool tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-        myThread.transaction.commit()
-        
-        self._teardown = True
-
-
-        return
-
+        self.testInit.clearDatabase()
 
     def createConfig(self, configAddress = os.path.join(os.path.dirname(\
                         WMComponent.DBSUpload.DBSUpload.__file__), 'DefaultConfig.py')):
@@ -136,47 +87,8 @@ class DBSUploadTest(unittest.TestCase):
         """
 
                 # read the default config first.
-        config = loadConfigurationFile(configAddress)
-
-        # some general settings that would come from the general default 
-        # config file
-        config.Agent.contact = "mnorman@fnal.gov"
-        config.Agent.teamName = "DBS"
-        config.Agent.agentName = "DBS Upload"
+        config = self.testInit.getConfiguration(configAddress)
         config.DBSUpload.uploadFileMax = 150
-
-        myThread = threading.currentThread()
-
-        config.section_("General")
-        
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            if os.getenv("DATABASE") == 'sqlite://':
-                raise RuntimeError,\
-                    "These tests will not work using in-memory SQLITE"
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database = os.getenv("DATABASE")
 
         return config
 
@@ -236,10 +148,6 @@ class DBSUploadTest(unittest.TestCase):
         This should add files to the buffer
 
         """
-
-        print ""
-        print "WARNING: This only works if DBSBuffer works"
-        print ""
 
         myThread = threading.currentThread()
 

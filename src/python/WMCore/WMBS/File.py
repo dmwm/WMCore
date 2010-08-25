@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.50 2009/08/21 10:03:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: File.py,v 1.51 2009/08/21 10:46:19 sfoulkes Exp $"
+__version__ = "$Revision: 1.51 $"
 
 from sets import Set
 
@@ -255,6 +255,7 @@ class File(WMBSBase, WMFile):
                           events = self["events"], cksum = self["cksum"],
                           first_event = self["first_event"],
                           last_event = self["last_event"],
+                          merged = self["merged"],
                           conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 

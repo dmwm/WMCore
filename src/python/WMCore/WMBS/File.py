@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.49 2009/06/29 18:59:47 mnorman Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: File.py,v 1.50 2009/08/21 10:03:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.50 $"
 
 from sets import Set
 
@@ -19,13 +19,12 @@ class File(WMBSBase, WMFile):
     """
     A simple object representing a file in WMBS
     """
-    #pylint: disable-msg=R0913
-    def __init__(self, lfn = '', id = -1, size = 0, events = 0, cksum = 0,
+    def __init__(self, lfn = "", id = -1, size = 0, events = 0, cksum = 0,
                  parents = None, locations = None, first_event = 0,
-                 last_event = 0):
+                 last_event = 0, merged = True):
         WMBSBase.__init__(self)
-        WMFile.__init__(self, lfn=lfn, size=size, events=events, 
-                        cksum=cksum, parents=parents)
+        WMFile.__init__(self, lfn = lfn, size = size, events = events, 
+                        cksum = cksum, parents = parents, merged = merged)
 
         if locations == None:
             self.setdefault("newlocations", Set())
@@ -358,10 +357,8 @@ class File(WMBSBase, WMFile):
         written to the database all locations will be reloaded from the
         database.
         """
-
         if not self.exists():
             return
-
         
         existingTransaction = self.beginTransaction()
 

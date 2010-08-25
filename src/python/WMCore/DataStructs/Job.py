@@ -12,8 +12,8 @@ work that needs to get done.
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.19 2009/03/20 14:42:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Job.py,v 1.20 2009/05/01 15:40:53 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -123,3 +123,6 @@ class Job(Pickleable):
         """
         self.changeStatus('COMPLETE')
         self.report = report
+    
+    def getStatus(self):
+        return self.status

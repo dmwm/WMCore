@@ -11,6 +11,6 @@ class GetLocation(GetLocationFileMySQL):
     Oracle specific: file is reserved word
     """
     
-    sql = sql = """select se_name from wmbs_location 
+    sql = sql = """select site_name from wmbs_location 
                    where id in (select location from wmbs_file_location 
                    where fileid in (select id from wmbs_file_details where lfn=:lfn))"""

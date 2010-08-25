@@ -491,8 +491,9 @@ class DBObjectsPerformance(unittest.TestCase):
         Performance test, do not abuse!
         """
         
-        numtask = 10
-        numjob  = 100
+        numtask = 1
+        numjob  = 10
+        numrunningjob = 2
         
         db = BossLiteDBWM()
         log = logging.getLogger( "DBObjectsPerformance" )
@@ -515,6 +516,7 @@ class DBObjectsPerformance(unittest.TestCase):
                     job.data['submissionNumber'] = 1
                     job.data['closed'] = 'N'
                     
+                    """
                     parameters = {'jobId': job.data['jobId'], 
                                   'taskId': tmpId,
                                   'submission' : job.data['submissionNumber']}
@@ -524,6 +526,11 @@ class DBObjectsPerformance(unittest.TestCase):
                     runJob.data['process_status'] = 'not_handled'
                     
                     job.setRunningInstance(runJob)
+                    """
+                    
+                    for rj in xrange(numrunningjob):
+                        job.newRunningInstance(db)
+                        
                     task.addJob(job)
                 task.save(db)
             except DbError, ex:
@@ -534,7 +541,7 @@ class DBObjectsPerformance(unittest.TestCase):
         end_time = time.time()
         
         log.info("task= %3d, jobs/task= %3d, runJobs/Job= %3d, Time= %f" % \
-            (numtask, numjob, 1, (end_time-start_time)))
+            (numtask, numjob, numrunningjob, (end_time-start_time)))
         
         return
     

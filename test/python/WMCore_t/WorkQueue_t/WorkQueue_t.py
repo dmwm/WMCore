@@ -8,25 +8,22 @@
 
 import unittest
 import os
-import shutil
-from copy import deepcopy, copy
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
-from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMTask import makeWMTask
-
 from WorkQueueTestCase import WorkQueueTestCase
-
-from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
-from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
+from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
+                                    import workload as BasicProductionWorkload
+from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
+                                import workload as MultiTaskProductionWorkload
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
 from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 
 class fakeSiteDB:
+    """Fake sitedb interactions"""
     def phEDExNodetocmsName(self, node):
+        """strip buffer/mss etc"""
         return node.replace('_MSS',
                             '').replace('_Buffer',
                                         '').replace('_Export', '')
@@ -41,6 +38,7 @@ rerecoArgs.update({
     })
 
 class TestReRecoFactory(ReRecoWorkloadFactory):
+    """Override bits that talk to cmsssw"""
     
     def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
                             scenarioArgs):
@@ -53,6 +51,12 @@ class TestReRecoFactory(ReRecoWorkloadFactory):
         ReRecoWorkloadFactory.setReRecoPolicy(self, workload,
                                               splitAlgo, splitAgrs)
         workload.setStartPolicy("DatasetBlock")
+
+def getFirstTask(wmspec):
+    """Return the 1st top level task"""
+    # http://www.logilab.org/ticket/8774
+    # pylint: disable=E1101,E1103
+    return wmspec.taskIterator().next()
 
 class WorkQueueTest(WorkQueueTestCase):
     """
@@ -81,18 +85,18 @@ class WorkQueueTest(WorkQueueTestCase):
         self.blacklistSpec = rerecoFactory('blacklistSpec', rerecoArgs)
         self.blacklistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testBlacklist.spec'))
-        self.blacklistSpec.taskIterator().next().data.constraints.sites.blacklist = ['SiteA']
+        getFirstTask(self.blacklistSpec).data.constraints.sites.blacklist = ['SiteA']
         self.blacklistSpec.save(self.blacklistSpec.specUrl())
 
         # ReReco spec with whitelist
         self.whitelistSpec = rerecoFactory('whitelistlistSpec', rerecoArgs)
         self.whitelistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testWhitelist.spec'))
-        self.whitelistSpec.taskIterator().next().data.constraints.sites.whitelist = ['SiteB']
+        getFirstTask(self.whitelistSpec).data.constraints.sites.whitelist = ['SiteB']
         self.whitelistSpec.save(self.whitelistSpec.specUrl())
 
         # setup Mock DBS and PhEDEx
-        inputDataset = self.processingSpec.taskIterator().next().inputDataset()
+        inputDataset = getFirstTask(self.processingSpec).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)

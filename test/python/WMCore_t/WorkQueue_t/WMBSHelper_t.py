@@ -14,8 +14,8 @@ from WorkQueueTestCase import WorkQueueTestCase
 
 #from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
 from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
-
 
 #TODO: This is a stub, it needs major fleshing out.
 
@@ -33,7 +33,7 @@ class WMBSHelperTest(WorkQueueTestCase):
         """
         WorkQueueTestCase.setUp(self)
         self.wmspec = self.createWMSpec()
-        self.topLevelTask = self.wmspec.taskIterator().next()
+        self.topLevelTask = getFirstTask(self.wmspec)
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = MockDBSReader(self.inputDataset.dbsurl, self.dataset)
@@ -51,7 +51,7 @@ class WMBSHelperTest(WorkQueueTestCase):
         return wmspec 
     
     def getDBS(self, wmspec):
-        topLevelTask = wmspec.taskIterator().next()
+        topLevelTask = getFirstTask(wmspec.taskIterator())
         inputDataset = topLevelTask.inputDataset()
         dataset = topLevelTask.getInputDatasetPath()
         dbs = MockDBSReader(inputDataset.dbsurl, dataset)
@@ -61,7 +61,7 @@ class WMBSHelperTest(WorkQueueTestCase):
         
     def createWMBSHelperWithTopTask(self, wmspec, block):
         
-        topLevelTask = wmspec.taskIterator().next()
+        topLevelTask = getFirstTask(wmspec)
          
         wmbs = WMBSHelper(wmspec, '/somewhere',
                           "whatever", topLevelTask.name(), 

@@ -29,6 +29,7 @@ from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 
 class WorkQueueManagerTest(unittest.TestCase):
     """
@@ -73,7 +74,8 @@ class WorkQueueManagerTest(unittest.TestCase):
 
 
         config = self.testInit.getConfiguration()
-        
+        # http://www.logilab.org/ticket/8961
+        # pylint: disable-msg=E1101, E1103
         config.component_("WorkQueueManager")
         config.section_("General")
         config.General.workDir = "."
@@ -109,8 +111,8 @@ class WorkQueueManagerTest(unittest.TestCase):
 
     def setupGlobalWorkqueue(self, spec):
         """Return a workqueue instance"""
-        dataset = spec.taskIterator().next().getInputDatasetPath()
-        inputDataset = spec.taskIterator().next().inputDataset()
+        dataset = getFirstTask(spec).getInputDatasetPath()
+        inputDataset = getFirstTask(spec).inputDataset()
         mockDBS = MockDBSReader('http://example.com', dataset)
         dbsHelpers = {'http://example.com' : mockDBS,
                       'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet' : mockDBS,

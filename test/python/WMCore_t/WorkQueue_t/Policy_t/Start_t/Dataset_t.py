@@ -11,6 +11,7 @@ import shutil
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
 #from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
 from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 
@@ -21,7 +22,7 @@ class DatasetTestCase(unittest.TestCase):
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
         Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
-        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
@@ -62,7 +63,7 @@ class DatasetTestCase(unittest.TestCase):
     def testWhiteBlackLists(self):
         """Block/Run White/Black lists"""
         Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
-        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
@@ -73,7 +74,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs2.update(rerecoArgs)
         blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
                                                      rerecoArgs2)
-        task = blacklistBlockWorkload.taskIterator().next()
+        task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 1.0)
@@ -83,7 +84,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs2['BlockBlacklist'] = []
         blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
                                                      rerecoArgs2)
-        task = blacklistBlockWorkload.taskIterator().next()
+        task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 1.0)
@@ -93,7 +94,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs2['BlockBlacklist'] = [dataset + '#1']
         blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
                                                      rerecoArgs2)
-        task = blacklistBlockWorkload.taskIterator().next()
+        task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Jobs'], 1.0)
@@ -103,7 +104,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
                                                      rerecoArgs3)
-        task = blacklistBlockWorkload.taskIterator().next()
+        task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Data'], dataset)
@@ -113,7 +114,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
                                                      rerecoArgs3)
-        task = blacklistBlockWorkload.taskIterator().next()
+        task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Data'], dataset)
@@ -124,7 +125,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
                                                     rerecoArgs3)
-        task = blacklistBlockWorkload.taskIterator().next()
+        task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Data'], dataset)
@@ -135,7 +136,7 @@ class DatasetTestCase(unittest.TestCase):
         rerecoArgs3.update(rerecoArgs)
         blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
                                                      rerecoArgs3)
-        task = blacklistBlockWorkload.taskIterator().next()
+        task = getFirstTask(blacklistBlockWorkload)
         units = Dataset(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Data'], dataset)
@@ -145,7 +146,7 @@ class DatasetTestCase(unittest.TestCase):
     def testDataDirectiveFromQueue(self):
         """Test data directive from queue"""
         Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
-        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)

@@ -3,8 +3,8 @@
 gLite CLI interaction class through JSON formatted output
 """
 
-__revision__ = "$Id: SchedulerGLite.py,v 1.2 2010/06/01 15:51:07 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SchedulerGLite.py,v 1.3 2010/06/11 16:54:55 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "filippo.spiga@cern.ch"
 
 import os
@@ -341,7 +341,7 @@ class SchedulerGLite(SchedulerInterface) :
                           + selJob.runningJob['schedulerId']
                 
                 out, ret = self.ExecuteCommand( self.proxyString + command )
-
+                
                 if ret != 0 :
                     if out.find("Proxy File Not Found") != -1 :
                         # Proxy missing
@@ -793,12 +793,12 @@ class SchedulerGLite(SchedulerInterface) :
         else :
             # files are elsewhere, just add their composed path
             if task['globalSandbox'] is not None :
-                jdl += 'InputSandboxBaseURI = "%s";\n' % task['startDirectory']
                 for ifile in task['globalSandbox'].split(','):
                     if ifile.strip() == '' :
                         continue
-                    if ifile.find( 'file:/' ) == 0:
-                        globalSandbox += '"' + ifile + '",'
+                    if ifile.find( 'file:/' )  <= 0:
+                        globalSandbox += '"' + task['startDirectory'] + \
+                                                                ifile + '",'
                         
                         commonFiles += "root.inputsandbox[%d]," % isbIndex
                         isbIndex += 1

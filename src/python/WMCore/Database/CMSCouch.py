@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.10 2009/03/16 13:09:24 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: CMSCouch.py,v 1.11 2009/03/18 18:26:20 valya Exp $"
+__version__ = "$Revision: 1.11 $"
 
 try:
     # Python 2.6
@@ -81,6 +81,8 @@ class Requests:
             headers["Content-length"] = len(encoded_data)
         else:
             #encode the data as a get string
+            if  not data:
+                data = {}
             uri = "%s?%s" % (uri, urllib.urlencode(data))
         self.conn.connect()
         self.conn.request(type, uri, encoded_data, headers)
@@ -178,8 +180,8 @@ class Database(CouchDBRequests):
             result = self.post('/%s/_bulk_docs/' % self.name, {'docs': self._queue})
             self._queue = []
             return result
-        else:
-            if '_id' in doc.keys():
+        elif doc:
+            if  '_id' in doc.keys():
                 return self.put('/%s/%s' % (self.name, 
                                             urllib.quote_plus(doc['_id'])), 
                                             doc)

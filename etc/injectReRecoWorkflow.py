@@ -27,8 +27,8 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 # The default arguments are set in:
 #   WMCORE/src/python/WMCore/WMSpec/StdSpecs/ReReco.py
 arguments = getTestArguments()
-arguments["StdJobSplitAlgo"] = "EventBased"
-arguments["StdJobSplitArgs"] = {"events_per_job": 20000}
+arguments["StdJobSplitAlgo"] = "FileBased"
+arguments["StdJobSplitArgs"] = {"files_per_job": 1}
 arguments["SkimJobSplitAlgo"] = "TwoFileBased"
 arguments["SkimJobSplitArgs"] = {"files_per_job": 1}
 

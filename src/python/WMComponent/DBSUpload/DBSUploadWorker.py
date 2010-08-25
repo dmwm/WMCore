@@ -8,8 +8,8 @@
 The DBSUploadWorker for uploading to DBS
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadWorker.py,v 1.2 2010/06/15 20:18:58 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSUploadWorker.py,v 1.3 2010/08/06 15:40:24 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 
@@ -257,6 +257,8 @@ class DBSUploadWorker:
 
                 for block in readyBlocks:
                     # First insert each block
+                    logging.error("About to put block into DBS")
+                    logging.error(block['open'])
                     self.uploadToDBS.setBlockStatus(block = block['Name'],
                                                     locations = [block['location']],
                                                     openStatus = block['open'],
@@ -293,6 +295,10 @@ class DBSUploadWorker:
 
                 sys.stdout = open(os.devnull, 'w')
                 sys.stderr = open(os.devnull, 'w')
+
+                logging.info("About to send %i blocks to DBSInterface" % (len(readyBlocks)))
+                for block in readyBlocks:
+                    logging.info("About to send to DBS block %s" %(block['Name']))
                 
                 
                 affBlocks = self.dbsInterface.runDBSBuffer(algo = algo,
@@ -311,6 +317,7 @@ class DBSUploadWorker:
                                                     {'DAS_ID': dasID},
                                                     inDBS = 1)
                 for block in affBlocks:
+                    logging.info("About to set in DBSBuffer with status %s block %s" %(str(block['open']), block['Name']))
                     if block['open'] == 0:
                         self.uploadToDBS.setBlockStatus(block = block['Name'],
                                                         locations = [block['location']],
@@ -318,6 +325,8 @@ class DBSUploadWorker:
 
                 # Update file status
                 self.uploadToDBS.updateFilesStatus(fileLFNs, "InDBS")
+
+                logging.info("Commmitting DBSBuffer transaction")
 
                 myThread.transaction.commit()
 

@@ -51,10 +51,11 @@ class XMLFileblock(list):
         result.attrs['is-open'] = self.isOpen
         for entry in self:
             #To do: check this appending is needed anymore
-            checksum="cksum:%s"%entry[1] #add cksum:
+            #I don't think it is
+            #checksum="cksum:%s"%entry[1] #add cksum:
             file = IMProvNode("file")
             file.attrs['name'] =  entry[0]
-            file.attrs['checksum'] = checksum
+            file.attrs['checksum'] = entry[1]
             file.attrs['bytes'] =  entry[2]
 
             result.addNode(file)

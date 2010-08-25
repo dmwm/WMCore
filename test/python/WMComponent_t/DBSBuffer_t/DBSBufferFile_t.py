@@ -5,19 +5,21 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.15 2010/03/09 18:27:52 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.16 2010/05/14 18:56:00 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import os
 import threading
 
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMFactory  import WMFactory
 
 from WMQuality.TestInit import TestInit
 from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBSBuffer.Database.Interface.AddToBuffer   import AddToBuffer
 
 class DBSBufferFileTest(unittest.TestCase):
     def setUp(self):
@@ -821,6 +823,105 @@ class DBSBufferFileTest(unittest.TestCase):
 
         return
 
+
+
+    def testBulkLoad(self):
+        """
+        _testBulkLoad_
+
+        Can we load in bulk?
+        """
+
+        bufferFactory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
+        addToBuffer   = bufferFactory.loadObject("AddToBuffer")
+
+        bulkLoad = self.daoFactory(classname = "DBSBufferFiles.LoadBulkFilesByID")
+
+
+        testFileChildA = DBSBufferFile(lfn = "/this/is/a/child/lfnA", size = 1024,
+                                        events = 20)
+        testFileChildA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileChildB = DBSBufferFile(lfn = "/this/is/a/child/lfnB", size = 1024,
+                                        events = 20)
+        testFileChildB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildB.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileChildC = DBSBufferFile(lfn = "/this/is/a/child/lfnC", size = 1024,
+                                        events = 20)
+        testFileChildC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                                    appFam = "RECO", psetHash = "GIBBERISH",
+                                    configContent = "MOREGIBBERISH")
+        testFileChildC.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        
+        testFileChildA.create()
+        testFileChildB.create()
+        testFileChildC.create()
+
+        testFileChildA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
+        testFileChildB.setLocation(["se1.fnal.gov", "se1.cern.ch"])
+        testFileChildC.setLocation(["se1.fnal.gov", "se1.cern.ch"])
+
+        runSet = set()
+        runSet.add(Run( 1, *[45]))
+        runSet.add(Run( 2, *[67, 68]))
+        testFileChildA.addRunSet(runSet)
+        testFileChildB.addRunSet(runSet)
+        testFileChildC.addRunSet(runSet)
+
+
+        testFileChildA.save()
+        testFileChildB.save()
+        testFileChildC.save()
+
+        setCksumAction = self.daoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
+        binds = [{'lfn': "/this/is/a/child/lfnA", 'cktype': 'adler32', 'cksum': 201},
+                 {'lfn': "/this/is/a/child/lfnA", 'cktype': 'cksum', 'cksum': 101},
+                 {'lfn': "/this/is/a/child/lfnB", 'cktype': 'adler32', 'cksum': 201},
+                 {'lfn': "/this/is/a/child/lfnB", 'cktype': 'cksum', 'cksum': 101},
+                 {'lfn': "/this/is/a/child/lfnC", 'cktype': 'adler32', 'cksum': 201},
+                 {'lfn': "/this/is/a/child/lfnC", 'cktype': 'cksum', 'cksum': 101}]
+        setCksumAction.execute(bulkList = binds)        
+
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
+                                 events = 10)
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFile.create()
+
+        testFileChildA.addParents([testFile["lfn"]])
+        testFileChildB.addParents([testFile["lfn"]])
+        testFileChildC.addParents([testFile["lfn"]])
+
+
+        binds = [{'id': testFileChildA.exists()},
+                 {'id': testFileChildB.exists()},
+                 {'id': testFileChildC.exists()}]
+
+        listOfFiles = addToBuffer.loadDBSBufferFilesBulk(fileObjs = binds)
+
+        #print listOfFiles
+
+
+        compareList = ['locations', 'psetHash', 'configContent', 'appName',
+                       'appVer', 'appFam', 'events', 'datasetPath', 'runs']
+
+
+        for f in listOfFiles:
+            self.assertTrue(f['lfn'] in ["/this/is/a/child/lfnA", "/this/is/a/child/lfnB",
+                                         "/this/is/a/child/lfnC"],
+                            "Unknown file in loaded results")
+            self.assertEqual(f['checksums'], {'adler32': '201', 'cksum': '101'})
+            for parent in f['parents']:
+                self.assertEqual(parent['lfn'], testFile['lfn'])
+            for key in compareList:
+                self.assertEqual(f[key], testFileChildA[key])
+        
     
         
 if __name__ == "__main__":

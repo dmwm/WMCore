@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-__revision__ = "$Id: Subscription_t.py,v 1.59 2010/06/28 19:01:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.59 $"
+__revision__ = "$Id: Subscription_t.py,v 1.60 2010/07/06 20:41:18 mnorman Exp $"
+__version__ = "$Revision: 1.60 $"
 
 
 import unittest
@@ -1330,6 +1330,10 @@ class SubscriptionTest(unittest.TestCase):
 
         testJobA = Job(name = "TestJobA")
         testJobA.addFile(testFileA)
+        testJobA['mask']['FirstEvent'] = 101
+        testJobA['mask']['LastEvent']  = 101
+        testJobA['mask']['FirstLumi']  = 102
+        testJobA['mask']['LastLumi']   = 102
         
         testJobB = Job(name = "TestJobB")
         testJobB.addFile(testFileB)
@@ -1359,6 +1363,16 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(len(result), 4,
                          'Should have acquired 4 files, instead have %i' %(len(result)))
         self.assertEqual(len(testJobGroupA.jobs), 2)
+
+
+
+        testJob1 = Job(id = testJobA.exists())
+        testJob1.loadData()
+        self.assertEqual(testJob1['mask']['FirstEvent'], 101)
+        self.assertEqual(testJob1['mask']['LastEvent'], 101)
+        self.assertEqual(testJob1['mask']['FirstLumi'], 102)
+        self.assertEqual(testJob1['mask']['LastLumi'], 102)
+
 
 
         return

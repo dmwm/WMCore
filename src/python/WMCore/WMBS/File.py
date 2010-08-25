@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.47 2009/05/08 16:04:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: File.py,v 1.48 2009/05/26 15:44:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.48 $"
 
 from sets import Set
 
@@ -143,7 +143,7 @@ class File(WMBSBase, WMFile):
         level indicates the level of ancestors. default value is 2 
         (grand parents). level should be bigger than >= 1
         """
-        existingTransaction = self.existingTransaction()
+        existingTransaction = self.beginTransaction()
 
         def _getDescendantIDs(ids, level):
             action = self.daofactory(classname = "Files.GetChildIDsByID")

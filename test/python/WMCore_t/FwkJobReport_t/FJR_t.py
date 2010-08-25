@@ -6,8 +6,8 @@ General test for FJR
 
 """
 
-__revision__ = "$Id: FJR_t.py,v 1.4 2009/08/10 16:51:18 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FJR_t.py,v 1.5 2009/10/13 22:31:38 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -29,6 +29,7 @@ class FJRTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
+        self.tempDir = self.testInit.generateWorkDir()
 
         
             
@@ -105,20 +106,20 @@ class FJRTest(unittest.TestCase):
         error['Status'] = '456'
         fjr.addRemovedFile('/a/removed/lfn/location.root','the.se.name')
         fjr.addUnremovedFile('a/unremoved/lfn/location.root','the.se.name')
-        fjr.write(os.path.join(os.getenv("TESTDIR"),'fjr1.xml'))
+        fjr.write(os.path.join(self.tempDir,'fjr1.xml'))
 
     def testB(self):
         """
         Read job report, and extract information.
         """
 
-        reportLocation = os.path.join(os.getenv("TESTDIR"),"fjr1.xml")
+        reportLocation = os.path.join(self.tempDir,"fjr1.xml")
         fjr = readJobReport(reportLocation) 
         checksum = FJRUtils.readCksum(reportLocation)
         print('Checksum job report: '+str(checksum))
         filesize = FJRUtils.fileSize(reportLocation)
         print('File size job report: '+str(filesize))
-        newReportLocation = os.path.join(os.getenv("TESTDIR"),"fjr2.xml")
+        newReportLocation = os.path.join(self.tempDir,"fjr2.xml")
         print('Merging reports')
         FJRUtils.mergeReports(newReportLocation, reportLocation)
 

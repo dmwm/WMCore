@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.3 2009/06/19 14:19:40 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.4 2009/06/24 20:58:08 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import pickle
@@ -14,6 +14,7 @@ from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMTask import makeWMTask
 from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
 
+from WorkQueueTestCase import WorkQueueTestCase
 
 def createSpec(name, path, dataset = None):
     """
@@ -67,86 +68,20 @@ class MockDBSReader:
 # pylint: enable-msg=W0613,R0201
         
 
-
-class WorkQueueElementTest(unittest.TestCase):
-    """
-    _WorkQueueElementTest_
-    
-    """
-    def setUp(self):
-        """
-        If we dont have a wmspec file create one
-        """
-        self.specFile = os.path.join(os.getcwd(), 'testworkflow.pickle')
-        self.specName = 'testWf'
-        createSpec(self.specName, self.specFile)
-        self.specHelper = WorkSpecParser(self.specFile)
-
-
-    def tearDown(self):
-        """tearDown"""
-        try:
-            os.unlink(self.specFile)
-        except OSError:
-            pass
-
-
-    def testOrdering(self):
-        """
-        Test priority sorting
-        """
-        ele1 = _WQElement(self.specHelper, 1)
-        ele2 = _WQElement(self.specHelper, 1)
-        ele2.priority = 2
-        self.assertTrue(ele2 < ele1)
-        ele1.priority = 3
-        self.assertTrue(ele1 < ele2)
-        # ensure old jobs rise in priority - very basic check
-        ele2.insert_time = 0
-        self.assertTrue(ele2 < ele1)
-
-
-    def testMatch(self):
-        """
-        Test elements match correctly
-        """
-        condition = {'SiteA' : 100}
-        ele = _WQElement(self.specHelper, 50)
-        matched, _ = ele.match({'SiteA' : 49})
-        self.assertFalse(matched)
-        matched, condition = ele.match(condition)
-        self.assertTrue(matched)
-        self.assertEqual(condition, {'SiteA' : 50})
-        matched, condition = ele.match(condition)
-        self.assertTrue(matched)
-        self.assertEqual(condition, {})
-        matched, condition = ele.match(condition)
-        self.assertFalse(matched)
-        ele.setStatus("Acquired")
-        self.assertEqual("Acquired", ele.status)
-
-
-    def runTest(self):
-        """Run all tests"""
-        self.testOrdering() 
-        self.testMatch()
-
-
-class WorkQueueTest(unittest.TestCase):
+class WorkQueueTest(WorkQueueTestCase):
     """
     _WorkQueueTest_
     
     """
-    setup = False
 #    specFile = os.path.join(os.getcwd(), 'testworkflow.pickle')
 #    specName = 'testWf'
-    queue = None
-    
     
     def setUp(self):
         """
         If we dont have a wmspec file create one
         """
+        WorkQueueTestCase.setUp(self)
+        
         self.specFile = os.path.join(os.getcwd(), 'testworkflow.pickle')
         self.specName = 'testWf'
         createSpec(self.specName, self.specFile)
@@ -157,11 +92,12 @@ class WorkQueueTest(unittest.TestCase):
         self.__class__.queue = WorkQueue()
         mockDBS = MockDBSReader('http://example.com')
         self.__class__.queue.dbsHelpers['http://example.com'] = mockDBS
-        self.setup = True
-
+        
 
     def tearDown(self):
         """tearDown"""
+        WorkQueueTestCase.tearDown(self)
+        
         for f in (self.specFile, self.processingSpecFile):
             try:
                 os.unlink(f)
@@ -183,10 +119,12 @@ class WorkQueueTest(unittest.TestCase):
         # Queue Work & check accepted
         for _ in range (0, numBlocks):
             self.queue.queueWork(specfile)
-        self.assertEqual(numBlocks, len(self.queue))
+        # commented out for now queueWork only update the database for now
+        #self.assertEqual(numBlocks, len(self.queue))
         
         # try to get work - Note hardcoded values - bah.
         work = self.queue.getWork({'SiteA' : 0})
+        self.assertEqual(numBlocks, len(self.queue))
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : njobs[0]})
         self.assertEqual(len(work), 1)
@@ -226,7 +164,7 @@ class WorkQueueTest(unittest.TestCase):
         
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
-        self.assertEqual(numBlocks, len(self.queue))
+        #self.assertEqual(numBlocks, len(self.queue))
 
         # Check splitting
         #In blacklist
@@ -251,7 +189,7 @@ class WorkQueueTest(unittest.TestCase):
         # SiteB can run all blocks now
         work = self.queue.getWork({'SiteB' : total})
         self.assertEqual(len(work), 2)
-        
+       
 
 #    def testRestore(self):
 #        """

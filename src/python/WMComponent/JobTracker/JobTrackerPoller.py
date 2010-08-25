@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.5 2010/01/22 20:50:39 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.6 2010/02/10 17:05:50 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
@@ -114,6 +114,10 @@ class JobTrackerPoller(BaseWorkerThread):
 
         passedJobs, failedJobs = self.parseJobs(trackDict)
 
+        logging.error("In trackJobs")
+        logging.error(passedJobs)
+        logging.error(failedJobs)
+
         self.failJobs(failedJobs)
         self.passJobs(passedJobs)
 
@@ -183,7 +187,7 @@ class JobTrackerPoller(BaseWorkerThread):
             job = Job(id = jobID)
             job.load()
             listOfJobs.append(job)
-            job.setFWJRPath(os.path.join(job.getCache(), 'FrameworkJobReport.xml'))
+            job.setFWJRPath(os.path.join(job.getCache(), 'Report.pkl'))
 
         self.changeState.propagate(listOfJobs, 'jobfailed', 'executing')
 
@@ -212,9 +216,12 @@ class JobTrackerPoller(BaseWorkerThread):
             job.load()
             listOfJobs.append(job)
             job.setFWJRPath(os.path.join(job.getCache(), \
-                                         'FrameworkJobReport.xml'))
+                                         'Report.pkl'))
+            logging.error("Job %i has finished on site" %(jobID))
 
         myThread.transaction.begin()
+        logging.error("Propagating jobs in jobTracker")
+        logging.error(listOfJobs)
         self.changeState.propagate(listOfJobs, 'complete', 'executing')
         myThread.transaction.commit()
 

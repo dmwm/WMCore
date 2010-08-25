@@ -126,6 +126,19 @@ class TestPhEDExInjector(unittest.TestCase):
             config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         self.config = config
         
+        myThread = threading.currentThread()
+        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
+                                    VALUES ('block1','100',0)""")
+        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
+                                    VALUES ('block1','101',0)""")
+        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
+                                    VALUES ('block1','102',1)""")
+        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
+                                    VALUES ('block2','100',0)""")
+        myThread.dbi.processData("""INSERT INTO dbsbuffer_location (id,se_name) VALUES (100,'location1')""")
+        myThread.dbi.processData("""INSERT INTO dbsbuffer_location (id,se_name) VALUES (101,'location2')""")
+        myThread.dbi.processData("""INSERT INTO dbsbuffer_location (id,se_name) VALUES (102,'location3')""")
+        
     def tearDown(self):
         """
         Database deletion
@@ -165,18 +178,7 @@ class TestPhEDExInjector(unittest.TestCase):
         
  
         
-        myThread = threading.currentThread()
-        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
-                                    VALUES ('block1','100',0)""")
-        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
-                                    VALUES ('block1','101',0)""")
-        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
-                                    VALUES ('block1','102',1)""")
-        myThread.dbi.processData("""INSERT INTO dbsbuffer_block (blockname, location, is_in_phedex)
-                                    VALUES ('block2','100',0)""")
-        myThread.dbi.processData("""INSERT INTO dbsbuffer_location (id,se_name) VALUES (100,'location1')""")
-        myThread.dbi.processData("""INSERT INTO dbsbuffer_location (id,se_name) VALUES (101,'location2')""")
-        myThread.dbi.processData("""INSERT INTO dbsbuffer_location (id,se_name) VALUES (102,'location3')""")
+
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
         self.assertEqual(len(result), 4)
         

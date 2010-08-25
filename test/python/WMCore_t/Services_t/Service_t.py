@@ -87,6 +87,7 @@ class ServiceTest(unittest.TestCase):
         dict = {'logger': self.logger, 
                 'endpoint':'http://cmssw.cvs.cern.ch',
                 'cacheduration': 0.0002,
+                'maxcachereuse': 0.001,
                 'timeout': 10,
                 'usestalecache': True}
         service = Service(dict)

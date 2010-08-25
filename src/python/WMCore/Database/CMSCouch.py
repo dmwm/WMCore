@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.17 2009/04/29 19:16:06 metson Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: CMSCouch.py,v 1.18 2009/05/12 16:38:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 try:
     # Python 2.6
@@ -18,7 +18,6 @@ except:
     import simplejson as json
 import urllib
 from httplib import HTTPConnection
-import uuid
 import time
 import datetime
 
@@ -27,8 +26,6 @@ class Document(dict):
         dict.__init__(self)
         if id:
             self.setdefault("_id", id)
-        else:
-            self.setdefault("_id", uuid.uuid1())
     
     def delete(self):
         self['_deleted'] = True

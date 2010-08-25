@@ -16,8 +16,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.71 2010/08/05 20:50:43 mnorman Exp $"
-__version__ = "$Revision: 1.71 $"
+__revision__ = "$Id: Subscription.py,v 1.72 2010/08/05 20:54:36 mnorman Exp $"
+__version__ = "$Revision: 1.72 $"
 
 import logging
 
@@ -143,7 +143,7 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return
     
-    def filesOfStatus(self, status, limit=0):
+    def filesOfStatus(self, status, limit=0, loadChecksums = True):
         """
         _filesOfStatus_
         
@@ -171,7 +171,8 @@ class Subscription(WMBSBase, WMSubscription):
         #Run through all files
         for f in fileList:
             fl = File(id = f['file'])
-            #fl.loadChecksum()
+            if loadChecksums:
+                fl.loadChecksum()
             fl.update(fileInfoDict[f['file']])
             if 'locations' in f.keys():
                 fl.setLocation(f['locations'], immediateSave = False)

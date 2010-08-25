@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.55 2010/04/21 11:11:36 metson Exp $"
-__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: CMSCouch.py,v 1.56 2010/04/22 15:58:00 metson Exp $"
+__version__ = "$Revision: 1.56 $"
 
 try:
     # Python 2.6
@@ -220,12 +220,21 @@ class Database(CouchDBRequests):
         doc.delete()
         self.commitOne(doc)
 
-    def compact(self):
+    def compact(self, views=[]):
         """
         Compact the database: http://wiki.apache.org/couchdb/Compaction
+         
+        If given, views should be a list of design document name (minus the 
+        _design/ - e.g. myviews not _design/myviews). For each view in the list 
+        view compaction will be triggered.
         """
-        return self.post('/%s/_compact' % self.name)
-
+        
+        response = self.post('/%s/_compact' % self.name)
+        if len(views) > 0:
+            for view in views:
+                response[view] = self.post('/%s/_compact/%s' % (self.name, view))
+        return response
+            
     def changes(self, since=-1):
         """
         Get the changes since sequence number. Store the last sequence value to

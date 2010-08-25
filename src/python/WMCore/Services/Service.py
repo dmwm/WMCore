@@ -13,8 +13,8 @@ If you just want to retrieve the data without caching use the Requests class
 directly.
 """
 
-__revision__ = "$Id: Service.py,v 1.16 2009/07/13 17:54:31 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Service.py,v 1.17 2009/07/14 07:44:14 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import datetime
 import os
@@ -39,6 +39,7 @@ class Service(Requests):
         Requests.__init__(self, endpoint.netloc)
         
          #set up defaults
+        self.setdefault("inputdata", None)
         self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
         self.setdefault("accept_type", 'text/xml')
@@ -79,7 +80,7 @@ class Service(Requests):
         except OSError: # File doesn't exist
             return
 
-    def getData(self, cachefile, url):
+    def getData(self, cachefile, url, inputdata=None):
         """
         Takes the *full* path to the cachefile and the url of the resource.
         """
@@ -89,7 +90,9 @@ class Service(Requests):
         try:
             # Get the data
             url = self["basepath"] + url
-            data, status, reason = self.makeRequest(uri=url, type=self["method"])
+            data, status, reason = self.makeRequest(uri=url, 
+                                                    type=self["method"],
+                                                    data=self['inputdata'])
             # Don't need to prepend the cachepath, methods calling getData have
             # done that for us 
             f = open(cachefile, 'w')

@@ -14,15 +14,27 @@ class WorkQueueServiceTest(unittest.TestCase):
         """
         setUP global values
         """
-        self.wmbsTestDS = "http://cmssrv18.fnal.gov:6660/workqueue/"
+        wmbsTestDS = "http://cmssrv18.fnal.gov:6660/workqueue/"
+        
+        self.params = {}
+        self.params['endpoint'] = wmbsTestDS
+        
         
 
     def testGetWork(self):
-        dict = {}
-        dict['endpoint'] = self.wmbsTestDS
-        wqApi = WorkQueue(dict)
+        wqApi = WorkQueue(self.params)
 
         print wqApi.getWork({'SiteB' : 15, 'SiteA' : 15}, "http://test.url")
+
+    def testSynchronize(self):
+        wqApi = WorkQueue(self.params)
+        childUrl = "http://test.url"
+        childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
+        print wqApi.synchronize(childUrl, childResources)
+        
+        childUrl = "http://test.url"
+        childResources = []
+        print wqApi.synchronize(childUrl, childResources)
         
 if __name__ == '__main__':
 

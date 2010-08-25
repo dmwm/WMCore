@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.2 2009/10/14 19:18:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.3 2009/10/22 18:23:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import time
@@ -47,6 +47,9 @@ class AccountantWorker:
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                        logger = myThread.logger,
+                                        dbinterface = myThread.dbi)        
 
         self.failJobInputAction = self.daoFactory(classname = "Jobs.FailInput")
         self.completeJobInputAction = self.daoFactory(classname = "Jobs.CompleteInput")
@@ -145,7 +148,7 @@ class AccountantWorker:
                 return outputChild["child_sub_output_fset"]
 
         return outputMap[moduleLabel]["fileset"]        
-        
+
     def addFileToDBS(self, jobReportFile, fileParentLFNs):
         """
         _addFileToDBS_
@@ -175,28 +178,7 @@ class AccountantWorker:
 
         dbsFile.create()
         dbsFile.setLocation(se = jobReportFile["SEName"])
-
-        for fileParentLFN in fileParentLFNs:
-            parentDBSFile = DBSBufferFile(lfn = fileParentLFN)
-
-            if not parentDBSFile.exists():
-                # Parent files that don't already exist inside the DBSBuffer
-                # were probably created elsewhere (the tier0) and were added to
-                # DBS by the system that created them.  We don't need to add
-                # them to DBS again, but do need to record them here so that
-                # parentage information is maintained.
-                parentDBSFile["status"] = "AlreadyInDBS"
-
-                parentDBSFile.setAlgorithm(appName = "cmsRun",
-                                           appVer = "UNKNOWN",
-                                           appFam = "UNKNOWN",
-                                           psetHash = "GIBBERISH",
-                                           configContent = "MOREGIBBERISH")
-        
-                parentDBSFile.setDatasetPath("/bogus/dataset/path")
-                parentDBSFile.create()            
-            dbsFile.addParent(fileParentLFN)
-
+        dbsFile.addParents(fileParentLFNs)
         return
 
     def addFileToWMBS(self, jobType, fwjrFile, jobMask, inputFiles,

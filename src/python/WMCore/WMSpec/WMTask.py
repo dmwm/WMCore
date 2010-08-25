@@ -11,10 +11,11 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.29 2010/05/07 22:12:54 sfoulkes Exp $"
-__revision__ = "$Revision: 1.29 $"
+__version__ = "$Id: WMTask.py,v 1.30 2010/05/10 21:11:15 mnorman Exp $"
+__revision__ = "$Revision: 1.30 $"
 
 import os
+import os.path
 
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -24,6 +25,7 @@ from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
+import WMCore.FwkJobReport.Report as Report
 
 def getTaskFromStep(stepRef):
     """
@@ -282,13 +284,13 @@ class WMTaskHelper(TreeHelper):
         I don't know if this should go here.
         Setup the environment variables mandated in the WMTask
         """
-        
+
         if not hasattr(self.data, 'environment'):
             #No environment to setup, pass
             return
         
         envDict = self.data.environment.dictionary_()
-        
+
         for key in envDict.keys():
             if str(envDict[key].__class__) == "<class 'WMCore.Configuration.ConfigSection'>":
                 #At this point we do not support the setting of sub-sections for environment variables
@@ -576,6 +578,25 @@ class WMTaskHelper(TreeHelper):
         Get the task Type setting
         """
         return self.data.taskType
+
+    def combineLogs(self, jobLocation, logLocation):
+        """
+        _combineLogs_
+
+        Combine all the logs from all the steps in the task to a single log
+        """
+
+        finalReport = Report.Report()
+        taskSteps = self.listAllStepNames()
+        for taskStep in taskSteps:
+            reportPath = os.path.join(jobLocation, taskStep, "Report.pkl")
+            if os.path.isfile(reportPath):
+                stepReport = Report.Report(taskStep)
+                stepReport.unpersist(reportPath)
+                finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
+
+        finalReport.persist(logLocation)
+
 
 
 class WMTask(ConfigSectionTree):

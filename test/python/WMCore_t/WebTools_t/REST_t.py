@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """
-_Trigger_t_
+_REST_t_
 
-Unit tests for message services: subscription, priority subscription, buffers,
-etc..
+Unit tests for checking RESTModel works correctly
 
+TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.10 2009/12/29 12:46:40 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: REST_t.py,v 1.11 2009/12/29 12:48:42 metson Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import os

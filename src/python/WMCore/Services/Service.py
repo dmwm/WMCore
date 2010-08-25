@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.41 2010/03/16 19:53:39 sryu Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Service.py,v 1.42 2010/04/13 17:47:47 sryu Exp $"
+__version__ = "$Revision: 1.42 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -229,8 +229,13 @@ class Service(dict):
             f.write(str(data))
             f.close()
         except HTTPException, e:
-            msg = 'Failed to contact %s (%s) reason: %s'
-            self['logger'].exception(msg % (e.url, e.status, e.reason))
+            try:
+                msg = 'Failed to contact %s (%s) reason: %s'
+                self['logger'].exception(msg % (e.url, e.status, e.reason))
+            except:
+                #Some error doesn't have the same format (i.e. ConnotSendRequest)
+                self['logger'].exception('Fail to contact: %s' % str(e))
+                
             self['logger'].debug('Request data: %s' %e.req_data)
             self['logger'].debug('Request headers: %s' %e.req_headers)    
         except Exception, e:

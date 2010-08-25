@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.61 2010/07/15 15:56:39 swakef Exp $"
+    "$Id: TestInit.py,v 1.62 2010/07/23 18:47:57 meloam Exp $"
 __version__ = \
-    "$Revision: 1.61 $"
+    "$Revision: 1.62 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -114,12 +114,16 @@ class TestInit:
                              logExists = False, logLevel = logLevel)
     
     def generateWorkDir(self, config = None, deleteOnDestruction = True):
-        self.deleteTmp = deleteOnDestruction
         self.testDir = tempfile.mkdtemp()
         if config:
             config.section_("General")
             config.General.workDir = self.testDir
         os.environ['TESTDIR'] = self.testDir
+        if os.getenv('WMCORE_KEEP_DIRECTORIES', False):
+            deleteOnDestruction = True
+            logging.info("Generated testDir - %s" % self.testDir)
+            
+        self.deleteTmp = deleteOnDestruction
         return self.testDir
         
     def getBackendFromDbURL(self, dburl):

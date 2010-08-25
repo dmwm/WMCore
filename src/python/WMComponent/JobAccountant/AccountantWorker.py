@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.3 2009/10/22 18:23:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.4 2009/10/26 16:54:58 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import time
@@ -51,8 +51,6 @@ class AccountantWorker:
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)        
 
-        self.failJobInputAction = self.daoFactory(classname = "Jobs.FailInput")
-        self.completeJobInputAction = self.daoFactory(classname = "Jobs.CompleteInput")
         self.newLocationAction = self.daoFactory(classname = "Locations.New")
         self.getOutputMapAction = self.daoFactory(classname = "Jobs.GetOutputMap")
         self.getOutputDBSParentAction = self.daoFactory(classname = "Jobs.GetOutputParentLFNs")
@@ -278,10 +276,8 @@ class AccountantWorker:
         self.bulkAddToFilesetAction.execute(binds = filesetAssoc,
                                             conn = self.transaction.conn,
                                             transaction = True)
-        self.completeJobInputAction.execute(jobID = jobID,
-                                            conn = self.transaction.conn,
-                                            transaction = True)            
-
+        wmbsJob.completeInputFiles()
+        
         self.stateChanger.propagate([wmbsJob], "closeout", "success")
         return
         
@@ -299,11 +295,8 @@ class AccountantWorker:
         wmbsJob["outcome"] = "failure"
         wmbsJob["retry_count"] += 1
         wmbsJob.save()
-
-        self.failJobInputAction.execute(jobID = jobID,
-                                        conn = self.transaction.conn,
-                                        transaction = True)
-
+        wmbsJob.failInputFiles()
+        
         # We'll fake the rest of the state transitions here as the rest of the
         # WMAgent job submission framework is not yet complete.
         wmbsJob["fwjr"] = fwkJobReport

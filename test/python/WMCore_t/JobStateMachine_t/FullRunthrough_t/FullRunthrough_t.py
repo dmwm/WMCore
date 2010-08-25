@@ -8,6 +8,8 @@ import logging
 import time
 import random
 import WMCore.WMInit
+from nose.plugins.attrib import attr
+
 from WMQuality.TestInit         import TestInit
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.WMFactory           import WMFactory
@@ -40,7 +42,6 @@ from WMComponent.JobArchiver.JobArchiver     import JobArchiver
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
-
 
 
 class FullRunthroughTest(unittest.TestCase):
@@ -86,7 +87,7 @@ class FullRunthroughTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def tearDown(self):
         """
         _tearDown_
@@ -423,7 +424,7 @@ class FullRunthroughTest(unittest.TestCase):
 
         return passed, failed
 
-
+    @attr('integration')
     def testA_StartupSequence(self):
         """
         _testA_StartupSequence_
@@ -476,7 +477,7 @@ class FullRunthroughTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testB_SimpleEndToEnd(self):
         """
         testB_SimpleEndToEnd
@@ -583,7 +584,7 @@ class FullRunthroughTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testC_RecyclingEndToEnd(self):
         """
         testC_RecyclingEndToEnd
@@ -748,7 +749,7 @@ class FullRunthroughTest(unittest.TestCase):
         return
 
 
-
+    @attr('integration')
     def testD_LargeEndToEnd(self):
         """
         testD_LargeEndToEnd

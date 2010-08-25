@@ -40,10 +40,14 @@ if can_nose:
         # WARNING WARNING WARNING
         user_options = [('reallyDeleteMyDatabaseAfterEveryTest=', 
                          None, 
-                         'If you set this I WILL DELETE YOUR DATABASE AFTER EVERY TEST. DO NOT RUN ON A PRODUCTION SYSTEM')]
+                         'If you set this I WILL DELETE YOUR DATABASE AFTER EVERY TEST. DO NOT RUN ON A PRODUCTION SYSTEM'),
+                         ('buildBotMode=',
+                          None,
+                          'Are we running inside buildbot?')]
 
         def initialize_options(self):
             self.reallyDeleteMyDatabaseAfterEveryTest = False
+            self.buildBotMode = False
             pass
         
         def finalize_options(self):
@@ -56,8 +60,12 @@ if can_nose:
                 import WMQuality.TestInit
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(3)
+            
+            if self.buildBotMode:
+                retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
+            else:    
+                retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python','-a','!integration'])
                 
-            retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             if retval:
                 sys.exit( 0 ) 
             else:

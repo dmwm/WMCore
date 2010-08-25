@@ -258,7 +258,7 @@ Queue 1
             pipe.wait()
             
 
-
+    @attr('integration')
     def testPurge(self):
         """
         _testPurge_

@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.31 2010/07/08 19:51:50 mnorman Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.32 2010/07/08 20:52:56 mnorman Exp $"
+__version__ = "$Revision: 1.32 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -52,6 +52,15 @@ class FullSitesError(Exception):
 
     def __init__(self, jobType):
         self.jobType = jobType
+
+    pass
+
+
+class BadJobCacheError(Exception):
+    """
+    Yet another signal passing exception
+
+    """
 
     pass
 
@@ -133,6 +142,8 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         self.changeState = ChangeState(self.config)
 
+        self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
+
         return
 
     def algorithm(self, parameters = None):
@@ -172,8 +183,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             # Return!
             return
         jobList = self.getJobs()
-        jobList = self.grabTask(jobList)
-        #self.submitJobs(jobList)
+        jobList = self.submitJobs(jobList)
 
 
         idList = []
@@ -193,19 +203,16 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         newList = []
 
-        getJobs    = self.daoFactory(classname = "Jobs.GetAllJobs")
-        loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
+        loadAction = self.daoFactory(classname = "Jobs.LoadForSubmitter")
         for jobType in self.types:
-            jobList   = getJobs.execute(state = 'Created', jobType = jobType)
 
-            if len(jobList) == 0:
+
+            results = loadAction.execute(type = jobType)
+
+            if len(results) == 0:
+                # Then we have no jobs of this type
+                # Ignore!
                 continue
-
-            binds = []
-            for jobID in jobList:
-                binds.append({"jobid": jobID})
-
-            results = loadAction.execute(jobID = binds)
 
             # You have to have a list
             if type(results) == dict:
@@ -219,14 +226,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 listOfJobs.append(tmpJob)
 
             for job in listOfJobs:
-                #job.getMask()
                 job['type']     = jobType
-                #job['location'] = self.findSiteForJob(job)
-                #if not job['location']:
-                    # Then all sites are full for this round
-                    # Ignore this job until later
-                #    continue
-                #job['custom']['location'] = job['location']    #Necessary for JSON
                 newList.append(job)
                 
         logging.info("Have %i jobs in JobSubmitter.getJobs()" % len(newList))
@@ -373,11 +373,14 @@ class JobSubmitterPoller(BaseWorkerThread):
 
 
 
-    def grabTask(self, jobList):
+    def submitJobs(self, jobList):
         """
-        _grabTask_
+        _submitJobs_
 
-        Grabs the task, sandbox, etc for each job by using the WMBS DAO object
+        Grabs the task, sandbox, etc for each job by loading the pickled job
+        from the JobCreator
+        Then it submits them, splitting them into units and sending them to
+        the plugins
         """
 
         failList = []
@@ -390,30 +393,21 @@ class JobSubmitterPoller(BaseWorkerThread):
         sortedJobList = {}
         submitIndex   = {}
         lenWork       = 0
+        count         = 0
 
         for job in jobList:
+            count += 1
+            
             if job['type'] in fullList:
                 # Then the sites are all full for that type
                 # Skip that job
                 skippedJobs += 1
                 continue
-                
-            if not os.path.isdir(job['cache_dir']):
-                # Well, then we're in trouble, because we need that info
-                # Kill this job
-                logging.error("Job %i has no cache directory." % (job['id']))
+            try:    
+                loadedJob = self.loadJobFromPkl(job = job)
+            except BadJobCacheError:
                 killList.append(job)
                 continue
-            jobPickle  = os.path.join(job['cache_dir'], 'job.pkl')
-            if not os.path.isfile(jobPickle):
-                # Then we don't have a pickle file, and we're screwed
-                # Kill this job
-                logging.error("Job %i has no pickled job file." % (job['id']))
-                killList.append(job)
-                continue
-            fileHandle = open(jobPickle, "r")
-            loadedJob  = cPickle.load(fileHandle)
-            loadedJob['type'] = job['type']
 
             try:
                 loadedJob['location'] = self.findSiteForJob(loadedJob)
@@ -485,9 +479,24 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                 # We've submitted them, let's dump them
                 sortedJobList[sandbox] = []
-                
+
 
             jList2.append(loadedJob)
+
+            # If we've run over enough jobs, repoll ResourceControl
+            # This is to allow updated information during long polling cycles
+            if count % self.repollCount == 0:
+                self.pollJobs()
+                # Now we have to fill the sites with
+                # jobs that have not yet been submitted
+                for sandbox in sortedJobList.keys():
+                    for j in sortedJobList[sandbox]:
+                        site = j['location']
+                        self.sites[site][job['type']]['task_running_jobs'] += 1
+                        for type in self.sites[site].keys():
+                            self.sites[site][type]['total_running_jobs'] += 1
+
+            
 
         # What happens we get to the end of the road?
         # Submit all unsubmitted jobs
@@ -542,6 +551,34 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         
         return jList2
+
+
+    def loadJobFromPkl(self, job):
+        """
+        _loadJobFromPkl_
+
+        Load the job from the Pickle file and attach the right info
+        """
+
+
+        if not os.path.isdir(job['cache_dir']):
+            # Well, then we're in trouble, because we need that info
+            # Kill this job
+            logging.error("Job %i has no cache directory." % (job['id']))
+            raise BadJobCacheError
+
+        jobPickle  = os.path.join(job['cache_dir'], 'job.pkl')
+        if not os.path.isfile(jobPickle):
+            # Then we don't have a pickle file, and we're screwed
+            # Kill this job
+            logging.error("Job %i has no pickled job file." % (job['id']))
+            raise BadJobCacheError
+
+        fileHandle = open(jobPickle, "r")
+        loadedJob  = cPickle.load(fileHandle)
+        loadedJob['type'] = job['type']
+
+        return loadedJob
 
 
     def prepForSubmit(self, jobList, sandbox, packagePath):

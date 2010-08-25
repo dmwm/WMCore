@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.30 2009/12/07 18:56:43 mnorman Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Create.py,v 1.31 2010/04/01 19:47:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -28,9 +28,10 @@ class Create(DBCreator):
         self.create["01dbsbuffer_dataset"] = \
               """CREATE TABLE dbsbuffer_dataset
 			(
-			   ID     BIGINT UNSIGNED not null auto_increment,
-			   Path   varchar(500)    unique not null,
-			   primary key(ID)	
+			   id     BIGINT UNSIGNED not null auto_increment,
+			   path   varchar(500)    unique not null,
+                           subscribed int default 0,
+			   primary key(id)	
 			) ENGINE=InnoDB"""
 
         self.create["02dbsbuffer_algo"] = \

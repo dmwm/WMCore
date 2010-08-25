@@ -2,7 +2,10 @@
 """
 _SetupCMSSWPset_
 
+Create a CMSSW PSet suitable for running a WMAgent job.
 """
+
+import types
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 
@@ -31,6 +34,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _createProcess_
 
+        Create a Configuration.DataProcessing PSet.
         """
         if funcName == "merge":
             try:
@@ -45,7 +49,38 @@ class SetupCMSSWPset(ScriptInterface):
                 from Configuration.DataProcessing.GetScenario import getScenario
                 scenarioInst = getScenario(scenario)
                 applicationFunc = self.funcMap[funcName]
-                self.process = applicationFunc(scenarioInst,  funcArgs.dictionary_())
+
+                if type(funcArgs) == type({}):
+                    # Our function arguments are already a dictionary, which
+                    # means they're probably the result of some JSON decoding.
+                    # We'll have to make sure they don't contain any unicode
+                    # strings.
+                    strArgs = {}
+                    for key in funcArgs.keys():
+                        value = funcArgs[key]
+                        
+                        if type(key) in types.StringTypes:
+                            key = str(key)
+                        if type(value) in types.StringTypes:
+                            value = str(value)
+                        elif type(value) == type([]):
+                            newValue = []
+                            for item in value:
+                                if type(item) in types.StringTypes:
+                                    newValue.append(str(item))
+                                else:
+                                    newValue.append(item)
+
+                            value = newValue
+                        
+                        strArgs[key] = value
+                        
+                    self.process = applicationFunc(scenarioInst,  strArgs)
+                else:
+                    # Our function arguments are most likely in the form of a
+                    # config section.
+                    self.process = applicationFunc(scenarioInst,
+                                                   funcArgs.dictionary_())
             except Exception, ex:
                 msg = "Failed to retrieve the Scenario named "
                 msg += str(scenario)
@@ -60,6 +95,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _loadPSet_
 
+        Load a PSet that was shipped with the job sandbox.
         """
         psetModule = "WMTaskSpace.%s.PSet" % self.step.data._internal_name
 
@@ -87,7 +123,6 @@ class SetupCMSSWPset(ScriptInterface):
         #   logicalFileName
         #   dataset.dataTier
         #   dataset.filterName
-        print dir(self.process)
         if hasattr(self.process, "outputModules"):
             outputModuleNames = self.process.outputModules.keys()
         else:
@@ -141,6 +176,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _applyTweak_
 
+        Apply a tweak to the process.
         """
         tweak = PSetTweak()
         tweak.unpersist(psetTweak)
@@ -151,6 +187,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _call_
 
+        Examine the step configuration and contruct a PSet from that.
         """
         step = self.step.data
         self.process = None

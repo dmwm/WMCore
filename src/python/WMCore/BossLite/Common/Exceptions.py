@@ -3,8 +3,8 @@
 BossLite exceptions
 """
 
-__version__ = "$Id: Exceptions.py,v 1.1 2010/03/30 10:01:49 mnorman Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: Exceptions.py,v 1.2 2010/05/28 13:07:27 mcinquil Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 import inspect
 
@@ -104,7 +104,7 @@ class SchedulerError(BossLiteError):
     scheduler errors
     """
 
-    def __init__(self, value, msg, command=None):
+    def __init__(self, value, msg='', command=None):
         """
         __init__
         """

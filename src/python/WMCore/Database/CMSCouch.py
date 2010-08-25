@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.58 2010/04/26 22:07:38 metson Exp $"
-__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: CMSCouch.py,v 1.59 2010/04/27 15:24:27 metson Exp $"
+__version__ = "$Revision: 1.59 $"
 
 import urllib
 from httplib import BadStatusLine
@@ -395,15 +395,15 @@ class CouchServer(CouchDBRequests):
         db = urllib.quote_plus(db)
         return self.delete("/%s" % db)
 
-    def connectDatabase(self, db, create=True):
+    def connectDatabase(self, dbname = 'database', create = True, size = 1000):
         """
         Return a Database instance, pointing to a database in the server. If the
         database doesn't exist create it if create is True.
         """ 
-        if create and db not in self.listDatabases():
-            self.createDatabase(db)
-        db = urllib.quote_plus(db)
-        return Database(db, self.url)
+        if create and dbname not in self.listDatabases():
+            self.createDatabase(dbname)
+        dbname = urllib.quote_plus(dbname)
+        return Database(dbname, self.url, size)
 
     def __str__(self):
         """

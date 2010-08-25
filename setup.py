@@ -28,7 +28,7 @@ class TestCommand(Command):
 
     def run(self):
         '''
-        Finds all the tests modules in tests/, and runs them.
+        Finds all the tests modules in test/python/WMCore_t, and runs them.
         '''
         testfiles = [ ]
         # Walk the directory tree

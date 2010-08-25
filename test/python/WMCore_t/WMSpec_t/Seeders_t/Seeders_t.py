@@ -137,7 +137,7 @@ class SeederTest(unittest.TestCase):
 
         task1 = makeWMTask("task1")
 
-        randomDict = {"generator.initialSeed": None, "evtgenproducer.initialSeed": None, "MAXINT": None}
+        randomDict = {"generator.initialSeed": None, "evtgenproducer.initialSeed": None, "MAXINT": 10000}
         lumiDict   = {"lumi_per_run": 5}
 
         task1.addSeeder("RandomSeeder", randomDict)
@@ -160,7 +160,7 @@ class SeederTest(unittest.TestCase):
                 self.assertEqual(job["mask"]["FirstRun"],  (count/6) + 1)
                 x = conf.RandomSeeder.generator.initialSeed
                 assert x > 0, "ERROR: producing negative random numbers"
-                assert x < 100000, "ERROR: MAXINT tag failed; producing bad random number %i" %(x)
+      	        assert x < 10000, "ERROR: MAXINT tag failed; producing bad random number %i" %(x)
                 count += 1
 
         return
@@ -175,7 +175,7 @@ class SeederTest(unittest.TestCase):
         Test whether the PresetSeeder works
         """
 
-        task1 = makeWMTask("task1")
+        task1 = makeWMTask("task2")
 
         seederDict = {"generator.initialSeed": 1001, "evtgenproducer.initialSeed": 1001}
         task1.addSeeder("PresetSeeder", seederDict)

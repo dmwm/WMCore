@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.14 2010/03/01 15:18:05 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.15 2010/03/09 18:27:52 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import os
@@ -765,7 +765,63 @@ class DBSBufferFileTest(unittest.TestCase):
         assert parentStatus[0] == "NOTUPLOADED", \
                "ERROR: Wrong status returned."
 
-        return    
+        return
+
+    def testSetLocationByLFN(self):
+        """
+        _testSetLocationByLFN_
+
+        """
+
+        myThread = threading.currentThread()
+
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")        
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+
+        setLocationAction = self.daoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
+        setLocationAction.execute(binds = {'lfn': "/this/is/a/lfn", 'sename': 'se1.cern.ch'})
+
+        testFileB = DBSBufferFile(id = testFileA["id"])
+        testFileB.load()
+
+        self.assertEqual(testFileB['locations'], set(['se1.cern.ch']))
+        
+        return
+
+
+    def testAddCKSumByLFN(self):
+        """
+        _testAddCKSumByLFN_
+
+        """
+
+        
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileA.create()
+
+        checksums = {"adler32": "adler32", "cksum": "cksum", "md5": "md5"}
+        setCksumAction = self.daoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
+        binds = [{'lfn': "/this/is/a/lfn", 'cktype': 'adler32', 'cksum': 201},
+                 {'lfn': "/this/is/a/lfn", 'cktype': 'cksum', 'cksum': 101}]
+        setCksumAction.execute(bulkList = binds)
+
+        testFileB = DBSBufferFile(id = testFileA["id"])
+        testFileB.load()
+
+        self.assertEqual(testFileB['checksums'], {'adler32': '201', 'cksum': '101'})
+
+        return
+
+    
         
 if __name__ == "__main__":
     unittest.main()

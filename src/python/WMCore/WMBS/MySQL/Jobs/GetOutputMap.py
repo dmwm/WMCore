@@ -17,7 +17,6 @@ class GetOutputMap(DBFormatter):
     """
     sql = """SELECT wmbs_workflow_output.output_identifier AS wf_output_id,
                     wmbs_workflow_output.output_fileset AS wf_output_fset,
-                    wmbs_workflow_output.output_parent AS wf_output_parent,
                     output_subs.sub_type AS child_sub_type,
                     child_sub_output.output_identifier AS child_sub_output_id,
                     child_sub_output.output_fileset AS child_sub_output_fset
@@ -51,9 +50,6 @@ class GetOutputMap(DBFormatter):
         (output module label).  Each value will be a dictionary with the
         following keys:
           fileset - The ID of the fileset for the output module
-          parent - The parent of the output module.  This will be the name of
-            another output module (for redneck parentage).  Most of the time it
-            will be null and the input files for the job will be set as parents.
           children - A list of dictionaries with infomration on any
             subscriptions that run over the output fileset.  Each value will be
             a dictionary with the following keys:
@@ -70,7 +66,6 @@ class GetOutputMap(DBFormatter):
         for result in results:
             if not outputMap.has_key(result["wf_output_id"]):
                 outputMap[result["wf_output_id"]] = {"fileset": None,
-                                                     "parent": result["wf_output_parent"],
                                                      "children": []}
 
             labelMap = outputMap[result["wf_output_id"]]

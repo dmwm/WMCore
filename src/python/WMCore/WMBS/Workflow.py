@@ -134,13 +134,12 @@ class Workflow(WMBSBase, WMWorkflow):
 
         for result in results:
             outputFileset = Fileset(id = result["output_fileset"])
-            self.outputMap[result["output_identifier"]] = {"output_fileset": outputFileset,
-                                                           "output_parent": result["output_parent"]}
+            self.outputMap[result["output_identifier"]] = {"output_fileset": outputFileset}
             
         self.commitTransaction(existingTransaction)
         return
 
-    def addOutput(self, outputIdentifier, outputFileset, outputParent = None):
+    def addOutput(self, outputIdentifier, outputFileset):
         """
         _addOutput_
 
@@ -151,12 +150,11 @@ class Workflow(WMBSBase, WMWorkflow):
         if self.id == False:
             self.create()
         
-        self.outputMap[outputIdentifier] = {"output_fileset": outputFileset,
-                                            "output_parent": outputParent}
+        self.outputMap[outputIdentifier] = {"output_fileset": outputFileset}
         
         action = self.daofactory(classname = "Workflow.InsertOutput")
         action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
-                       filesetID = outputFileset.id, outputParent = outputParent,
+                       filesetID = outputFileset.id,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         

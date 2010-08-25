@@ -221,7 +221,7 @@ class WorkflowTest(unittest.TestCase):
         assert len(testWorkflowB.outputMap.keys()) == 0, \
             "ERROR: Output map exists before output is assigned"
 
-        testWorkflowA.addOutput("outModOne", testFilesetA, "parentA")
+        testWorkflowA.addOutput("outModOne", testFilesetA)
         testWorkflowA.addOutput("outModTwo", testFilesetB)
 
         testWorkflowC = Workflow(name = "wf001", task='Test')
@@ -236,23 +236,18 @@ class WorkflowTest(unittest.TestCase):
 
         assert testWorkflowC.outputMap["outModOne"]["output_fileset"].id == testFilesetA.id, \
                "ERROR: Output map incorrectly maps filesets."
-        assert testWorkflowC.outputMap["outModOne"]["output_parent"] == "parentA", \
-               "ERROR: Output map has incorrect parent."        
         assert testWorkflowC.outputMap["outModTwo"]["output_fileset"].id == testFilesetB.id, \
                "ERROR: Output map incorrectly maps filesets."
-        assert testWorkflowC.outputMap["outModTwo"]["output_parent"] == None, \
-               "ERROR: Output map has incorrect parent."
 
         return
 
     def testLoadFromTask(self):
         """
         _testLoadFromTask_
+
         Verify that Workflow.LoadFromTask DAO correct turns
-        the workflow by task
+        the workflow by task.
         """
-
-
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Hassen",
                                  name = "wf001", task = "sometask")
         testWorkflow1.create()

@@ -4,9 +4,6 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-
-
-
 import threading
 
 from WMCore.Database.DBCreator import DBCreator
@@ -139,7 +136,6 @@ class CreateWMBSBase(DBCreator):
              workflow_id       INTEGER NOT NULL,
              output_identifier VARCHAR(255) NOT NULL,
              output_fileset    INTEGER NOT NULL,
-             output_parent     VARCHAR(255),
              FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE,
              FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)

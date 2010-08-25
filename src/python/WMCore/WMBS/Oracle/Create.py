@@ -216,8 +216,7 @@ class Create(CreateWMBSBase):
           """CREATE TABLE wmbs_workflow_output (
                workflow_id       INTEGER      NOT NULL,
                output_identifier VARCHAR(255) NOT NULL,
-               output_fileset    INTEGER      NOT NULL,
-               output_parent     VARCHAR(255) 
+               output_fileset    INTEGER      NOT NULL
                ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_workflow_output"] = \

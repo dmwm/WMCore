@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: RESTFormat_t.py,v 1.1 2010/01/06 20:57:38 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RESTFormat_t.py,v 1.2 2010/01/06 21:25:15 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import json
@@ -48,12 +48,9 @@ class RESTFormatTest(unittest.TestCase):
     @serverSetup    
     def testEncodedInput(self):
         
-        #for type in ['application/json', 'application/x-www-form-urlencoded'] :
-            # test not accepted type should return 406 error
-        #type = 'application/x-www-form-urlencoded'
         type = 'text/plain'
         input={'a':'%', 'b':'b'}    
-        #input = urllib.urlencode(input)
+        #methodTest encoded input with urlencode
         methodTest('GET', '/rest/list3', accept=type, input=input, 
                          output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
         

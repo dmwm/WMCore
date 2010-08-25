@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.13 2009/12/14 20:32:33 evansde Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: CMSSW.py,v 1.14 2010/03/19 15:31:21 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -19,6 +19,7 @@ import subprocess
 import sys
 import os
 import select
+import time
 
 
 
@@ -71,8 +72,7 @@ class CMSSW(Executor):
         stepModule = "WMTaskSpace.%s" % self.stepName
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
-
-
+        
         # write the wrapper script to a temporary location
         # I don't pass it directly through os.system because I don't
         # trust that there won't be shell-escape shenanigans with
@@ -237,10 +237,18 @@ class CMSSW(Executor):
 
         """
         print "Steps.Executors.CMSSW.post called"
+
         if (emulator != None):
             return emulator.emulatePost( self.step )
 
+
+        # Attach info to files
+        self.report.addInfoToOutputFilesForStep(stepName = self.stepName, step = self.step)
+
         return None
+
+
+    
 
 configBlob = """#!/bin/bash
 

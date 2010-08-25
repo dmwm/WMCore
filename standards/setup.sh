@@ -13,7 +13,7 @@ export TESTDIR=/home/fvlingen/programFiles/CMS_CVS/WMCORE_TEST
 # location of WMCORE
 export WMCOREBASE=/home/fvlingen/programFiles/CMS_CVS/WMCORE
 # webtools base (only for webtools related files and modules)
-export WTBASE=$WMCOREBASE/src
+export WMCORE_ROOT=$WMCOREBASE/src
 # yui home (only for webtools related files and modules)
 export YUIHOME=/put/your/value/here
 # path settings for incorporating wmcore binaries.
@@ -21,6 +21,8 @@ export PATH=$WMCOREBASE/bin:$PATH
 # add wmcore library and tests to pythonpath.
 export PYTHONPATH=$WMCOREBASE/src/python:$PYTHONPATH
 export PYTHONPATH=$WMCOREBASE/test/python:$PYTHONPATH
+
+#TODO: this should eventually defined with in WMCore envrioment. but for not get it from prodagent setting.
 echo "-->Sourcing CMS environment"
 #edit the profile.d/init.sh file such that you do not include
 #the prodagent and prodcommon libraries of the installed package.

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.23 2010/03/31 21:35:59 sfoulkes Exp $"
-__version__  = "$Revision: 1.23 $"
+__revision__ = "$Id: JobFactory.py,v 1.24 2010/04/05 13:40:33 mnorman Exp $"
+__version__  = "$Revision: 1.24 $"
 
 
 import logging
@@ -121,7 +121,16 @@ class JobFactory(WMObject):
         if len(self.jobGroups) == 0:
             return
 
-        self.subscription.bulkCommit(jobGroups = self.jobGroups)
+        if self.package == 'WMCore.WMBS':
+            self.subscription.bulkCommit(jobGroups = self.jobGroups)
+        else:
+            # Then we have a DataStructs job, and we have to do everything
+            # by hand.
+            for jobGroup in self.jobGroups:
+                jobGroup.commit()
+                for job in jobGroup.jobs:
+                    job.save()
+            self.subscription.save()
         return
 
     def sortByLocation(self):

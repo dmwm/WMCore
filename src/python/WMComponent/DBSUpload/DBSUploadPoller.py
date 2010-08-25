@@ -3,8 +3,8 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.13 2009/11/24 16:45:34 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.14 2009/11/24 21:39:17 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import threading
 import logging
@@ -50,8 +50,9 @@ class DBSUploadPoller(BaseWorkerThread):
         self.dbsversion = self.config.DBSUpload.dbsversion
         self.uploadFileMax = self.config.DBSUpload.uploadFileMax
 
-        self.DBSMaxFiles   = self.config.DBSUpload.DBSMaxFiles
-        self.DBSMaxSize    = self.config.DBSUpload.DBSMaxSize
+        self.DBSMaxFiles     = self.config.DBSUpload.DBSMaxFiles
+        self.DBSMaxSize      = self.config.DBSUpload.DBSMaxSize
+        self.DBSBlockTimeout = self.config.DBSUpload.DBSBlockTimeout
 
         if dbsconfig == None:
             self.dbsconfig = config
@@ -163,8 +164,9 @@ class DBSUploadPoller(BaseWorkerThread):
             if len(files) > 0:
                 logging.debug('Preparing to insert %i files' %(len(files)))
             	affectedBlocks = self.dbswriter.insertFilesForDBSBuffer(files = files, procDataset = dict(dataset), \
-                                                       algos = algos, jobType = "NotMerge", insertDetectorData = False, \
-                                                       maxFiles = self.DBSMaxFiles, maxSize = self.DBSMaxSize)
+                                                                        algos = algos, jobType = "NotMerge", insertDetectorData = False, \
+                                                                        maxFiles = self.DBSMaxFiles, maxSize = self.DBSMaxSize, \
+                                                                        timeOut = self.DBSBlockTimeout)
                 logging.debug('Have inserted files and received back blocks %s' %(affectedBlocks))
                 for block in affectedBlocks:
                     info = block['StorageElementList']

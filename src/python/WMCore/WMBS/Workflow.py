@@ -15,11 +15,12 @@ bunch of data).
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Workflow.py,v 1.19 2009/03/09 13:15:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Workflow.py,v 1.20 2009/04/01 18:45:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.20 $"
 
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
+from WMCore.WMBS.Fileset import Fileset
 
 class Workflow(WMBSBase, WMWorkflow):
     """
@@ -56,6 +57,7 @@ class Workflow(WMBSBase, WMWorkflow):
         Write a workflow to the database
         """
         self.id = self.exists()
+
         if self.id != False:
             self.load()
             return
@@ -104,4 +106,33 @@ class Workflow(WMBSBase, WMWorkflow):
         self.spec = result["spec"]
         self.name = result["name"]
         self.owner = result["owner"]
+
+        action = self.daofactory(classname = "Workflow.LoadOutput")
+        results = action.execute(workflow = self.id, conn = self.getReadDBConn(),
+                                transaction = self.existingTransaction())
+
+        for result in results:
+            outputFileset = Fileset(id = result["output_fileset"])
+            self.outputMap[result["output_identifier"]] = outputFileset
+            
+        return
+
+    def addOutput(self, outputIdentifier, outputFileset):
+        """
+        _addOutput_
+
+        Associate an output of this workflow with a particular fileset.
+        """
+        if self.id == False:
+            self.create()
+        
+        self.outputMap[outputIdentifier] = outputFileset
+        
+        action = self.daofactory(classname = "Workflow.InsertOutput")
+        action.execute(workflowID = self.id, outputIdentifier = outputIdentifier,
+                       filesetID = outputFileset.id,
+                       conn = self.getWriteDBConn(),
+                       transaction = self.existingTransaction())
+        
+        self.commitIfNew()
         return

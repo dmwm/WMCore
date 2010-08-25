@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.12 2010/05/24 10:00:02 spigafi Exp $"
-__revision__ = "$Revision: 1.12 $"
+__version__ = "$Id: RunningJob.py,v 1.13 2010/05/25 20:42:27 spigafi Exp $"
+__revision__ = "$Revision: 1.13 $"
 
 from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 
@@ -93,6 +93,11 @@ class RunningJob(DbObject):
     
     # exception class
     exception = JobError
+    
+    # Time fields
+    timeFields = ['lbTimestamp', 'submissionTime', 'startTime', \
+                  'scheduledAtSite' , 'stopTime', 'stageOutTime', \
+                  'outputRequestTime', 'outputEnqueueTime', 'getOutputTime']
     
     
     def __init__(self, parameters = None):

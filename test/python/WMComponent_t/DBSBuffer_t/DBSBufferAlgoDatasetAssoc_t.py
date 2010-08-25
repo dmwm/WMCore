@@ -5,21 +5,14 @@ _DBSBufferAlgoDatasetAssoc_t_
 Unit tests for manipulating associating algorithms to datasets in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferAlgoDatasetAssoc_t.py,v 1.2 2009/10/13 20:53:41 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSBufferAlgoDatasetAssoc_t.py,v 1.3 2009/10/13 20:58:25 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
-import logging
-import os
-import commands
 import threading
-import random
-from sets import Set
 
-from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.DBFactory import DBFactory
+
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class DBSBufferDatasetTest(unittest.TestCase):

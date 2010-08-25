@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.6 2010/03/26 14:05:50 maxa Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.7 2010/04/12 20:54:14 maxa Exp $"
+__version__ = "$Revision: 1.7 $"
 
 
 
@@ -348,20 +348,19 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         testName = inspect.stack()[0][3]
         data, exp = self._tester(testName, "GET", 200, "workloads")
         r = data["results"]
-        self.assertEqual(len(r), 1, "Only 1 workload (wmspec) item expected, got'%s' items" % len(r))
-        self.assertEqual(r[0]["id"], 1, "id of the workload expected 1, got '%s'" % r[0]["id"])
-        name = "ProductionSpec1"
-        self.assertEqual(r[0]["name"], name, "%s name of workload expected, got '%s'" % (name, r[0]["name"]))
+        self.assertEqual(len(r), 1, "Only 1 workload (wmspec) item expected, got %s items" % len(r))
 
 
 
     def testWorkloadsByIdDAO(self):
         testName = inspect.stack()[0][3]
-        inpt = {"id": 1}
+        id = 1
+        inpt = {"id": id}
         data, exp = self._tester(testName, "POST", 200, "workloadsbyid", inpt = inpt)
         r = data["results"]
-        self.assertEqual(len(r), 1, "Only 1 workload (wmspec) item expected, got'%s' items" % len(r))
-        self.assertEqual(r[0]["id"], 1, "id of the workload expected 1, got '%s'" % r[0]["id"])
+        got = r[0]["id"]
+        self.assertEqual(len(r), 1, "Only 1 workload (wmspec) item expected, got %s items" % len(r))
+        self.assertEqual(got, id, "id of the workload expected %s, got %s" % (id, got))
 
 
 
@@ -371,9 +370,21 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         inpt = {"name": name}
         data, exp = self._tester(testName, "POST", 200, "workloadsbyname", inpt = inpt)
         r = data["results"]
-        self.assertEqual(len(r), 1, "Only 1 workload (wmspec) item expected, got'%s' items" % len(r))
-        self.assertEqual(r[0]["name"], name, "id of the workload expected 1, got '%s'" % name)
+        got = r[0]["name"]
+        self.assertEqual(len(r), 1, "Only 1 workload (wmspec) item expected, got %s items" % len(r))
+        self.assertEqual(got, name, "name of the workload expected %s, got %s" % (name, got))
 
+
+
+    def testWorkloadsByOwnerDAO(self):
+        testName = inspect.stack()[0][3]
+        owner = "DMWMTest"
+        inpt = {"owner": owner}
+        data, exp = self._tester(testName, "POST", 200, "workloadsbyowner", inpt = inpt)
+        r = data["results"]
+        got = r[0]["owner"]
+        self.assertEqual(len(r), 1, "Only 1 workload (wmspec) item expected, got %s items" % len(r))
+        self.assertEqual(got, owner, "owner of the workload expected %s, got %s" % (owner, got))
 
     
         

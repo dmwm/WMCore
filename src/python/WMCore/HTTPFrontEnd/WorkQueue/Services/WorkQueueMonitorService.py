@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.12 2010/03/26 14:05:50 maxa Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.13 2010/04/12 20:54:13 maxa Exp $"
 __version__ = "$Revision"
 
 
@@ -78,6 +78,8 @@ class WorkQueueMonitorService(ServiceInterface):
                           args = ["id"], validation = [self.validateId])
         self.model.addDAO("POST", "workloadsbyname", "Monitor.WorkloadsByName",
                           args = ["name"])
+        self.model.addDAO("POST", "workloadsbyowner", "Monitor.WorkloadsByOwner",
+                          args = ["owner"])
         
         logging.info("%s initialised." % self._myClass)        
         

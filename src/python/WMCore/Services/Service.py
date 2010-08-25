@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.20 2009/07/15 11:29:42 metson Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Service.py,v 1.21 2009/07/15 16:19:40 sryu Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import datetime
 import os
@@ -83,11 +83,18 @@ class Service(Requests):
         Calculate the cache filename for a given query.
         """
         hash = 0
-        for i in self['inputdata'].items():
-            hash += i[0].__hash__() + i[1].__hash__()
-        for i in inputdata.items():
-            hash += i[0].__hash__() + i[1].__hash__()
+        if inputdata:
+            for key, value in inputdata.items():
+                if type(value) == list:
+                    value = tuple(value)
+                hash += key.__hash__() + value.__hash__()
+        else:
+            for key, value in self['inputdata'].items():
+                if type(value) == list:
+                    value = tuple(value)
+                hash += key.__hash__() + value.__hash__()
         cachefile = "%s/%s_%s" % (self["cachepath"], hash, cachefile)
+        
         return cachefile
     
     def refreshCache(self, cachefile, url, inputdata={}):
@@ -97,9 +104,10 @@ class Service(Requests):
         """
         t = datetime.datetime.now() - datetime.timedelta(hours=self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, inputdata)
+        
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
-            self.getData(cachefile, url)
+            self.getData(cachefile, url, inputdata)
         return open(cachefile, 'r')
 
     def forceRefresh(self, cachefile, url, inputdata={}):
@@ -110,7 +118,7 @@ class Service(Requests):
         cachefile = self.cacheFileName(cachefile, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url)
+        self.getData(cachefile, url, inputdata)
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile, inputdata={}):
@@ -134,10 +142,13 @@ class Service(Requests):
         socket.setdefaulttimeout(self['timeout'])
         try:
             # Get the data
+            if not inputdata:
+                inputdata = self["inputdata"]
+            
             url = self["basepath"] + url
             data, status, reason = self.makeRequest(uri=url, 
                                                     type=self["method"],
-                                                    data=self['inputdata'])
+                                                    data=inputdata)
             # Don't need to prepend the cachepath, the methods calling getData
             # have done that for us 
             f = open(cachefile, 'w')

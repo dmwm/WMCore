@@ -11,8 +11,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.21 2010/05/13 20:00:15 mnorman Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: StageOut.py,v 1.22 2010/07/01 16:29:33 meloam Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import os
 import os.path
@@ -23,6 +23,7 @@ from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.FwkJobReport.Report             import Report
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
+import WMCore.Storage.FileManager
 #from WMCore.Storage.StageOutError import StageOutFailure
 
 from WMCore.WMSpec.ConfigSectionTree import nodeParent, nodeName
@@ -62,6 +63,11 @@ class StageOut(Executor):
 
 
         """
+        # switch between old stageOut behavior and new, fancy stage out behavior
+        useNewStageOutCode = False
+        if hasattr(self.step, "newStageOut") and self.step.newStageOut:
+            useNewStageOutCode = True
+        
         #Are we using emulators again?
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
@@ -73,11 +79,13 @@ class StageOut(Executor):
 
         # Set wait to 15 minutes
         waitTime = overrides.get('waitTime', 900)
+        print "override %s " % self.step
 
         # Pull out StageOutMgr Overrides
         stageOutCall = {}
         if overrides.has_key("command") and overrides.has_key("option") \
                and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
+            logging.debug('using override in StageOut')
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')
@@ -85,9 +93,17 @@ class StageOut(Executor):
 
         # naw man, this is real
         # iterate over all the incoming files
-        manager = StageOutMgr.StageOutMgr(**stageOutCall)
-        manager.numberOfRetries = self.step.retryCount
-        manager.retryPauseTime  = self.step.retryDelay
+        if not useNewStageOutCode:
+            # old style
+            manager = StageOutMgr.StageOutMgr(**stageOutCall)
+            manager.numberOfRetries = self.step.retryCount
+            manager.retryPauseTime  = self.step.retryDelay
+        else:
+            # new style
+            manager = WMCore.Storage.FileManager.StageOutMgr(
+                                retryPauseTime  = self.step.retryDelay,
+                                numberOfRetries = self.step.retryCount,
+                                **stageOutCall)
 
         # We need to find a list of steps in our task
         # And eventually a list of jobReports for out steps

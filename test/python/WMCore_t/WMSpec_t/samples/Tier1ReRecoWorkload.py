@@ -35,7 +35,8 @@ rereco.addInputDataset(
     primary = "MinimumBias",
     processed = "BeamCommissioning09-v1",
     tier = "RAW",
-    dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+    dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+    )
 
 
 
@@ -60,9 +61,11 @@ rerecoCmsswHelper.setDataProcessingConfig(
     writeTiers = ['RECO'])
 
 rerecoCmsswHelper.addOutputModule(
-    "outputRECO", primaryDataset = "Primary",
-    processedDataset = "Processed",
-    dataTier = "RECO")
+    "outputRECO", primaryDataset = "MinimumBias",
+    processedDataset = "rereco_GR09_P_V7_v99",
+    dataTier = "RECO",
+    lfnBase = "/store/data/BeamCommissioning09/MinimumBias/RECO/rereco_GR09_P_V7_v99"
+    )
 
 #Add a stageOut step
 skimStageOutHelper = skimStageOut.getTypeHelper()
@@ -70,6 +73,7 @@ skimLogArchHelper  = skimLogArch.getTypeHelper()
 
 
 rereco.addGenerator("BasicNaming")
+rereco.addGenerator("BasicCounter")
 
 
 

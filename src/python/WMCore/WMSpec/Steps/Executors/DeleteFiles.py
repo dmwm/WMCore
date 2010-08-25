@@ -6,8 +6,8 @@ Implementation of an Executor for a Delete step
 
 """
 
-__revision__ = "$Id: DeleteFiles.py,v 1.1 2010/04/21 16:16:40 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DeleteFiles.py,v 1.2 2010/04/29 14:31:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -107,8 +107,11 @@ class DeleteFiles(Executor):
                 msg = "Indefinite hang during stageOut of logArchive"
                 logging.error(msg)
             except:
-                print "Exception raised in stageout executor, how do we handle that?"
+                self.report.addError(self.stepName, 1, "StageOutFailure", str(ex))
+                self.report.setStepStatus(self.stepName, 1)
+                self.report.persist("Report.pkl")
                 raise
+
             signal.alarm(0)
 
 

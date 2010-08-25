@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.1 2009/07/09 22:12:13 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.2 2009/08/10 14:35:24 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -132,10 +132,11 @@ init jobCreator
         self.blank()
 
         #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
-        self.pollSubscriptions()
+
         #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
         self.pollJobs()
         self.pollSites()
+        self.pollSubscriptions()
         #logging.info(myThread.dbi.processData("SELECT id FROM wmbs_jobgroup", {})[0].fetchall())
         self.askWorkQueue()
 
@@ -157,8 +158,6 @@ init jobCreator
 
         subscriptionList = self.daoFactory(classname = "Subscriptions.List")
         subscriptions    = subscriptionList.execute()
-
-        #logging.info(subscriptions)
 
         myThread.transaction.commit()
         #Now go through each one looking for jobs
@@ -202,25 +201,18 @@ init jobCreator
 
         myThread = threading.currentThread()
 
-        #logging.info('Entering pollJobs()')
-
         #First, get all subscriptions
         subscriptionList = self.daoFactory(classname = "Subscriptions.List")
         subscriptions    = subscriptionList.execute()
 
-        #logging.info('I have subscriptions')
-
         #Then get all locations
         locationList  = self.daoFactory(classname = "Locations.ListSites")
-        #logging.info('About to get locations')
         locations     = locationList.execute()
         
-        #logging.info('Got locations')
         logging.info(locations)
 
         #Prepare to get all jobs
         jobsList   = self.daoFactory(classname = "Subscriptions.Jobs")
-        #jobLocate  = self.daoFactory(classname = "Subscriptions.GetNumberOfJobsPerSite")
         jobStates  = ['Created', 'Executing', 'SubmitFailed', 'JobFailed', 'SubmitCooloff', 'JobCooloff']
 
         #logging.info('Created factories')
@@ -230,14 +222,16 @@ init jobCreator
             self.sites[location] = 0
 
         count = 0
-        for subscription in subscriptions:
+        for sub in subscriptions:
+            subscription = Subscription(id = sub)
+            subscription.loadData()
             #logging.info("I am processing subscription %i" %(subscription))
             for location in locations:
                 count += 1
                 #logging.info("I have done this %s times" %(count))
                 for state in jobStates:
                     #logging.info('I should be doing something for state %s' %(state))
-                    value = subscription.getNumberOfJobsPerSite(location = location, subscription = subscription, state = state)
+                    value = subscription.getNumberOfJobsPerSite(location = location, state = state)
                     #value = jobLocate.execute(location = location, subscription = subscription, state = state).values()[0]
                     self.sites[location] = self.sites[location] + value
                 logging.info("There are now %i jobs for site %s with value %i" %(self.sites[location], location, value))
@@ -277,12 +271,7 @@ init jobCreator
 
 
         for location in self.sites.keys():
-            #Do something!
-
             slots = siteDB.getPledgedSlots(location)
-
-            #print slots
-            
             self.slots[location] = slots
 
         return
@@ -295,9 +284,6 @@ init jobCreator
         """
 
         logging.info('Off to see the work queue')
-        #logging.info(self.sites)
-        #logging.info(self.sites.keys())
-        #logging.info(self.slots)
 
         workQueueDict = {}
 
@@ -311,7 +297,7 @@ init jobCreator
 
             workQueueDict[location] = freeSlots
 
-        #workQueue = WorkQueue()
+
         #workQueue.askWork(workQueueDict)
 
 
@@ -388,26 +374,59 @@ init jobCreator
 
         logging.info('I am in createJobGroup for jobGroup %i' %(wmbsJobGroup.id))
 
+        #Here things get interesting.
+        #We assume that this follows the basic scheme for the jobGroups, that each jobGroup contains
+        #files with only one set of sites.
+        #Using this we can determine the number of free slots for each job.
+
+
         for job in wmbsJobGroup.jobs:
-            #logging.info('Saving jobs for %i in jobGroup %i' %(wmbsSubscription['id'], wmbsJobGroup.id))
-            job["location"] = wmbsJobGroup.getSite()
-            job.create(wmbsJobGroup)
+            logging.info('Saving jobs for %i in jobGroup %i' %(wmbsSubscription['id'], wmbsJobGroup.id))
+            job["location"] = self.findSiteForJob(job)
+            self.sites[job["location"]] += 1
+            job.save()
+
+        print self.sites
+        print self.slots
 
         myThread.transaction.commit()
 
         cfg_params = {}
 
         #This does nothing
+        logging.info("Submitting jobs")
         jobSubmitter = JobSubmitter(self.config)
         jobSubmitter.configure(cfg_params)
         jobSubmitter.submitJobs(jobGroup = wmbsJobGroup, jobGroupConfig = jobGroupConfig)
 
-        logging.info("JobCreator has submitted jobs and am ending")
+        logging.info("JobCreator has submitted jobs and is ending")
 
 
         return
 
+    def findSiteForJob(self, job):
+        """
+        _findSiteForJob_
 
+        This searches all known sites and finds the best match for this job
+        """
+
+        myThread = threading.currentThread()
+
+        sites = list(job.getFiles()[0]['locations'])
+
+        tmpSite  = ''
+        tmpSlots = 0
+        for loc in sites:
+            if not loc in self.slots.keys() and not loc in self.sites.keys():
+                logging.error('Found job for unknown site %s' %(loc))
+                logging.error('ABORT: Am not processing jobGroup %i' %(wmbsJobGroup.id))
+                return
+            if self.slots[loc] - self.sites[loc] > tmpSlots:
+                tmpSlots = self.slots[loc] - self.sites[loc]
+                tmpSite  = loc
+
+        return tmpSite
 
 
             

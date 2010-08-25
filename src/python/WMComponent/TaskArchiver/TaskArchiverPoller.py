@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.6 2010/05/12 19:14:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.7 2010/05/20 20:59:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -81,7 +81,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         checking to see if they've finished, and then notifying the workQueue and
         finishing things up.
         """
-        subList  = self.findFinishedSubscriptions()
+        subList = self.findFinishedSubscriptions()
+        if len(subList) == 0:
+            return
 
         if self.workQueue != None:
             doneList = self.notifyWorkQueue(subList)

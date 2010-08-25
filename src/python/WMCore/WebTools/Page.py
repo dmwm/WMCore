@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.22 2009/05/05 02:29:55 valya Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Page.py,v 1.23 2009/05/08 16:03:46 metson Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import md5
 import urllib
@@ -19,37 +19,33 @@ import traceback
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DataStructs.WMObject import WMObject
- 
+
 class Page(WMObject):
     """
     __Page__
-    
+
     Page is a base class that holds a configuration
     """
-    def __init__(self, config = {}):
-        #Config is a WMCore.Configuration
-        self.config = config
-    
     def warning(self, msg):
         self.log(msg, logging.WARNING)
-        
+
     def exception(self, msg):
         self.log(msg, logging.ERROR)
-        
+
     def debug(self, msg):
         self.log(msg, logging.DEBUG)
-    
+
     def info(self, msg):
         self.log(msg, logging.INFO)
-    
+
     def log(self, msg, severity):
-        cplog(msg, context=self.config.application, 
+        cplog(msg, context=self.config.application,
                 severity=severity, traceback=False)
-        
+
 class TemplatedPage(Page):
     """
     __TemplatedPage__
-    
+
     TemplatedPage is a class that provides simple Cheetah templating
     """
     def __init__(self, config = {}):
@@ -62,7 +58,7 @@ class TemplatedPage(Page):
             self.templatedir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'Templates')
         self.debug("Templates are located in: %s" % self.templatedir)
         self.debug("Using Cheetah version: %s" % Version)
-        
+
     def templatepage(self, file=None, *args, **kwargs):
         searchList=[]
         if len(args) > 0:
@@ -81,25 +77,25 @@ class DatabasePage(TemplatedPage, DBFormatter):
     def __init__(self, config = {}):
         """
         __DatabasePage__
-        
-        A page with a database connection (a WMCore.Database.DBFormatter) held 
-        in self.dbi. Look at the DBFormatter class for other handy helper 
+
+        A page with a database connection (a WMCore.Database.DBFormatter) held
+        in self.dbi. Look at the DBFormatter class for other handy helper
         methods, such as getBinds and formatDict.
-        
-        The DBFormatter class was originally intended to be extensively 
-        sub-classed, such that it's subclasses followed the DAO pattern. For web 
-        tools we do not generally do this, and you will normally access the 
+
+        The DBFormatter class was originally intended to be extensively
+        sub-classed, such that it's subclasses followed the DAO pattern. For web
+        tools we do not generally do this, and you will normally access the
         database interface directly:
-        
+
         binds = {'id': 123}
         sql = "select * from table where id = :id"
         result = self.dbi.processData(sql, binds)
         return self.formatDict(result)
-        
-        Although following the DAO pattern is still possible and encouraged 
+
+        Although following the DAO pattern is still possible and encouraged
         where appropriate. However, if you want to use the DAO pattern it may be
-        better to *not* expose the DAO classes and have a normal DatabasePage 
-        exposed that passes the database connection to all the DAO's. 
+        better to *not* expose the DAO classes and have a normal DatabasePage
+        exposed that passes the database connection to all the DAO's.
         """
         TemplatedPage.__init__(self, config)
         assert hasattr(self.config, 'database'), "No database configured"
@@ -129,19 +125,19 @@ def exposeatom (func):
     def wrapper (self, *args, **kwds):
         data = func (self, *args, **kwds)
         cherrypy.response.headers['Content-Type'] = "application/atom+xml"
-        return self.templatepage('Atom', data = data, 
+        return self.templatepage('Atom', data = data,
                                  config = self.config,
                                  request = request)
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
     wrapper.exposed = True
     return wrapper
-    
+
 def exposexml (func):
     def wrapper (self, *args, **kwds):
         data = func (self, *args, **kwds)
         cherrypy.response.headers['Content-Type'] = "application/xml"
-        return self.templatepage('XML', data = data, 
+        return self.templatepage('XML', data = data,
                                  config = self.config,
                                  request = request)
     wrapper.__doc__ = func.__doc__
@@ -151,27 +147,27 @@ def exposexml (func):
 
 def exposedasxml (func):
     """
-    This will prepend the DAS header to the data and calculate the checksum of 
+    This will prepend the DAS header to the data and calculate the checksum of
     the data to set the etag correctly
-    
+
     TODO: pass in the call_time value, can we get this in a smart/neat way?
-    TODO: include the request_version in the data hash - a new version should 
+    TODO: include the request_version in the data hash - a new version should
     result in an update in a cache
     TODO: "inherit" from the exposejson
     """
     def wrapper (self, *args, **kwds):
         das = runDas(self, func, *args, **kwds)
         header = """<?xml version='1.0' standalone='yes'?>
-<das request_timestamp="%s" 
-     request_url="%s" 
-     request_version="%s" 
-     request_call="%s" 
-     call_time="%s">""" % (das['request_timestamp'], 
-                           das['request_url'], 
-                           das['request_version'], 
-                           das['request_call'], 
+<das request_timestamp="%s"
+     request_url="%s"
+     request_version="%s"
+     request_call="%s"
+     call_time="%s">""" % (das['request_timestamp'],
+                           das['request_url'],
+                           das['request_version'],
+                           das['request_call'],
                            das['call_time'])
-        
+
         cherrypy.response.headers['ETag'] = das[das['request_call']].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"
         xmldata = header + das[das['request_call']].__str__() + "</das>"
@@ -209,11 +205,11 @@ def exposejson (func):
 
 def exposedasjson (func):
     """
-    This will prepend the DAS header to the data and calculate the checksum of 
+    This will prepend the DAS header to the data and calculate the checksum of
     the data to set the etag correctly
-    
+
     TODO: pass in the call_time value, can we get this in a smart/neat way?
-    TODO: include the request_version in the data hash - a new version should 
+    TODO: include the request_version in the data hash - a new version should
     result in an update in a cache
     TODO: "inherit" from the exposejson
     """

@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.21 2010/08/16 11:15:21 mcinquil Exp $"
-__revision__ = "$Revision: 1.21 $"
+__version__ = "$Id: Job.py,v 1.22 2010/08/18 01:33:55 mcinquil Exp $"
+__revision__ = "$Revision: 1.22 $"
 
 from WMCore.Services.UUID import makeUUID
 
@@ -362,7 +362,7 @@ class JobDBFormatter(DbObjectDBFormatter):
             result['id']               = entry['id']
             result['jobId']            = entry['jobid']
             result['taskId']           = entry['taskid']
-            result['wmbsJobId']        = entry['wmbsJobId']
+            result['wmbsJobId']        = entry['wmbsjobid']
             result['name']             = entry['name']
             result['executable']       = entry['executable']
             result['events']           = entry['events']

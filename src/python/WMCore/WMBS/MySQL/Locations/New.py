@@ -14,8 +14,8 @@ class New(DBFormatter):
                       FROM DUAL WHERE NOT EXISTS
                 (SELECT site_name FROM wmbs_location WHERE site_name = :location)"""
     
-    def execute(self, siteName = None, jobSlots = 0, seName = None,
-                ceName = None,conn = None, transaction = False):
+    def execute(self, siteName, jobSlots = 0, seName = None,
+                ceName = None, conn = None, transaction = False):
         binds = {"location": siteName, "slots": jobSlots, "sename": seName,
                  "cename": ceName}
         self.dbi.processData(self.sql, binds, conn = conn, 

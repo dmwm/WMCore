@@ -6,6 +6,7 @@ Sample configuration for the WMBS DAS service.
 """
 from WMCore.Configuration import Configuration
 from os import environ
+import WMCore.WMInit
 
 config = Configuration()
 
@@ -15,7 +16,7 @@ config.Webtools.host = "cmssrv52.fnal.gov"
 config.Webtools.port = 8085
 
 config.component_("WMBSMonitoring")
-config.WMBSMonitoring.templates = environ["WMCOREBASE"] + '/src/templates/WMCore/WebTools'
+config.WMBSMonitoring.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools'
 config.WMBSMonitoring.admin = "sfoulkes@fnal.gov"
 config.WMBSMonitoring.title = "WMBS Monitoring"
 config.WMBSMonitoring.description = "Monitoring of a WMBS instance"
@@ -28,7 +29,7 @@ active = config.WMBSMonitoring.views.section_('active')
 wmbs = active.section_('wmbs')
 # The class to load for this view/page
 wmbs.object = 'WMCore.WebTools.RESTApi'
-wmbs.templates = environ['WMCOREBASE'] + '/src/templates/WMCore/WebTools/'
+wmbs.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools/'
 wmbs.database = 'mysql://sfoulkes:@localhost/WMAgentDB_sfoulkes'
 wmbs.dbsocket = '/opt/MySQL-5.1/var/lib/mysql/mysql.sock'
 

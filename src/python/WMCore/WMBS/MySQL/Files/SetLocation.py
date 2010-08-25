@@ -5,10 +5,12 @@ from WMCore.Database.DBFormatter import DBFormatter
 from sets import Set
 
 class SetLocation(DBFormatter):
-    sql = """insert wmbs_file_location (file, location) 
-             select wmbs_file_details.id, wmbs_location.id from wmbs_file_details, wmbs_location 
-             where wmbs_file_details.lfn = :lfn
-             and wmbs_location.se_name = :location"""
+    sql = """INSERT wmbs_file_location (file, location) 
+             SELECT wmbs_file_details.id, wmbs_location.id from wmbs_file_details, wmbs_location 
+             WHERE wmbs_file_details.lfn = :lfn
+             AND wmbs_location.se_name = :location 
+             AND NOT EXISTS (SELECT * FROM wmbs_file_location WHERE file = wmbs_file_details.id
+             and location = wmbs_location.id)"""
                 
     def getBinds(self, file = None, location = None):
         if type(location) == type('string'):

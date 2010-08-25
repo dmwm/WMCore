@@ -4,8 +4,8 @@
 JobStatusLite unit test 
 """
 
-__revision__ = "$Id: JobStatusLite_t.py,v 1.6 2010/08/17 20:06:28 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobStatusLite_t.py,v 1.7 2010/08/17 20:19:47 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 
 from WMQuality.TestInit import TestInit
@@ -211,6 +211,7 @@ class JobStatusLite_t( unittest.TestCase ):
         """
         testing the polling of success jobs
         """
+        raise RuntimeError, "This test takes too long to run: see - http://vpac05.phy.vanderbilt.edu:8010/builders/Unit%20Tests%20Mysql/builds/139/steps/test/logs/stdio --MELO"
 
         config = self.createConfig()
         taskadded = self.fillDatabase( 1, 10, 'SD', 'handled' )[0]

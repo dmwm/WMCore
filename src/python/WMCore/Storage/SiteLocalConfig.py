@@ -7,13 +7,13 @@ into an object with an API for getting info from it
 
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: SiteLocalConfig.py,v 1.2 2009/11/19 21:21:21 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SiteLocalConfig.py,v 1.3 2009/12/11 16:36:45 mnorman Exp $"
 
 import os
 
-from IMProv.IMProvLoader import loadIMProvFile
-from IMProv.IMProvQuery import IMProvQuery
+#from IMProv.IMProvLoader import loadIMProvFile
+#from IMProv.IMProvQuery import IMProvQuery
 
 from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
@@ -125,14 +125,15 @@ class SiteLocalConfig:
 
         """
         try:
-            node = loadIMProvFile(self.siteConfigFile)
+            #node = loadIMProvFile(self.siteConfigFile)
+            node = xmlFileToNode(self.siteConfigFile)
         except StandardError, ex:
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
             raise SiteConfigError, msg
 
-        node2 = xmlFileToNode(self.siteConfigFile)
-        nodeResult =  nodeReader(node2)
+        #node2 = xmlFileToNode(self.siteConfigFile)
+        nodeResult =  nodeReader(node)
 
         if not nodeResult.has_key('siteName'):
             msg = "Unable to find site name in SiteConfigFile:\n"

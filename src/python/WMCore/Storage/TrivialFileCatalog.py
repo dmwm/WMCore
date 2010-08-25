@@ -30,8 +30,8 @@ import re
 import urlparse
 import xml.parsers.expat
 
-from IMProv.IMProvLoader import loadIMProvFile
-from IMProv.IMProvQuery import IMProvQuery
+#from IMProv.IMProvLoader import loadIMProvFile
+#from IMProv.IMProvQuery import IMProvQuery
 
 from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 

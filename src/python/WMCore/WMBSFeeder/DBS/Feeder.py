@@ -3,15 +3,13 @@
 """
 _Feeder_
 """
-__all__ = []
-__revision__ = "$Id: Feeder.py,v 1.3 2009/07/20 10:04:11 riahi Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "simon"
+__revision__ = "$Id: Feeder.py,v 1.4 2009/07/25 10:47:09 riahi Exp $"
+__version__ = "$Revision: 1.4 $"
 
-# DBS2
-from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
-from DBSAPI.dbsApiException import DbsConnectionError
-from ProdCommon.DataMgmt.DBS.DBSErrors import DBSReaderError
+
+from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.DBS.DBSErrors import DBSReaderError
+from DBSAPI.dbsApiException import DbsConnectionError 
 
 import logging
 import time
@@ -19,10 +17,11 @@ import time
 #from WMCore.WMBSFeeder.Registry import registerFeederImpl
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
 from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
 
 class Feeder(FeederImpl):
     """
-    Feeder implementation
+    feeder implementation
     """
 
     def __init__(self, purgeTime = 48,
@@ -47,9 +46,9 @@ class Feeder(FeederImpl):
 
         # FIXME: it has to be done by another object 
         # Get configuration       
-        # self.wmConf = WMConf(backend = os.getenv('DIALECT'))
-        # self.wmConf.setLogging()
-        # self.wmConf.setDatabaseConnection()
+        #self.wmConf = WMConf(backend = os.getenv('DIALECT'))
+        #self.wmConf.setLogging()
+        #self.wmConf.setDatabaseConnection()
 
         #self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
         #      logger = self.myThread.logger, \
@@ -57,49 +56,64 @@ class Feeder(FeederImpl):
         #self.locationExist = self.daofactory(classname = "Locations.Exists")
         #self.locationNew = self.daofactory(classname = "Locations.New")
 
+
         # The last run that was identified as new, and run purge time
         self.purgeTime = purgeTime * 3600 # Convert hours to seconds
+
     
     def __call__(self, fileset):
         """
         The algorithm itself
         """
      
-        logging.debug("the Feeder Feeder is processing %s" % \
+        logging.debug("the Feeder is processing %s" % \
                  fileset.name) 
-    
+
+        # Load fileset
+        filesetToProcess = Fileset(name = fileset.name)
+        filesetToProcess.loadData()
+  
         # get list of files
         tries = 1
-
+ 
         while True:
  
             try:
 
                 now = time.time()  
-                blocks = self.dbsReader.getFiles(fileset.name)
-                fileset.last_update = now
+
+                try:
+                    blocks = self.dbsReader.getFiles(filesetToProcess.name)
+
+                except:
+                    logging.debug("dbsReader call error...")
+
+
+                filesetToProcess.last_update = now
                 logging.debug("DBS queries done ...")
 
                 break
 
             except DBSReaderError, ex:
                 logging.error("DBS error: %s, cannot get files for %s" % \
-                          (str(ex), fileset.name))
-                return fileset 
+                          (str(ex), filesetToProcess.name))
+                return filesetToProcess
 
             # connection error, retry
             except DbsConnectionError, ex:
                 logging.error("Unable to connect to DBS, retrying: " + \
                           str(ex))
                 if tries > self.connectionAttempts: #too many errors - bail out
-                    return fileset
+                    return filesetToProcess 
                 tries = tries + 1
+
 
         # check for empty datasets
         if blocks == {}:
-            logging.debug("DBS: Empty blocks - %s" %fileset.name)  
-            return fileset 
-    
+            logging.debug("DBS: Empty blocks - %s" %filesetToProcess.name)  
+            return filesetToProcess 
+  
+  
         # get all file blocks
         blockList = blocks.keys()
     
@@ -118,25 +132,28 @@ class Feeder(FeederImpl):
             #else:
 
             #    for loc in seList:
-
             #        if not self.locationExist.execute(site_name = loc):
             #            self.locationNew.execute(sename = loc)
   
-            
+     
             for files in blocks[fileBlock]['Files']:
                 
                 # Assume parents and LumiSection aren't asked 
                 newfile = File(files['LogicalFileName'], size=files['FileSize'],
                                  events=files['NumberOfEvents'])
-                                 #lumi=files['LumiList'], locations=seList)
+                                 #lumi=files['LumiList']), locations=seList)
 
                 newfile.create()
                 newfile.setLocation(seList)
-                fileset.addFile(newfile)
+                filesetToProcess.addFile(newfile)
+
+        # Close fileset
+        filesetToProcess.markOpen(False)
 
         # Commit the fileset
-        fileset.commit()
-        logging.debug("fileset %s is commited"% fileset.name)
+        filesetToProcess.commit()
+
+        logging.debug("fileset %s is commited"% filesetToProcess.name)
 
     def persist(self):
         """

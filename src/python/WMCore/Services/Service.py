@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.34 2010/01/20 22:03:46 sryu Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Service.py,v 1.35 2010/02/02 16:56:11 sryu Exp $"
+__version__ = "$Revision: 1.35 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -50,6 +50,7 @@ from WMCore.Services.Requests import Requests
 from WMCore.WMException import WMException
 
 class Service(dict):
+    
     def __init__(self, dict = {}):
         #The following should read the configuration class
         for a in ['logger', 'endpoint']:
@@ -105,27 +106,46 @@ class Service(dict):
                   (self, self["requests"]["host"], self["basepath"],
                    self["requests"]["accept_type"], self["cachepath"],
                    self["cacheduration"]))
-
+    
+    def _makeHash(self, inputdata, hash):
+        """
+        make hash from complex data combination of list and dict.
+        TODO: maybe it is better just jsonize and make hash for json string. 
+        """
+        for key, value in inputdata.items():
+            hash += key.__hash__()
+            if type(value) == list:
+                self._makeHashFromList(value, hash)
+            elif type(value) == dict:
+                self._makeHash(value, hash)
+        return hash     
+    
+    def _makeHashFromList(self, inputList, hash):
+        for value in inputList:
+            if type(value) == dict:
+                self._makeHash(value, hash)
+            elif type(value) == list:
+                self._makeHashFromList(value, hash)
+            else:
+                #assuming non other complex value come here
+                hash += value.__hash__()
+        return hash
+    
     def cacheFileName(self, cachefile, inputdata = {}):
         """
         Calculate the cache filename for a given query.
         """
         hash = 0
         if inputdata:
-            for key, value in inputdata.items():
-                if type(value) == list:
-                    value = tuple(value)
-                hash += key.__hash__() + value.__hash__()
+            hash = self._makeHash(inputdata, hash)
         else:
-            for key, value in self['inputdata'].items():
-                if type(value) == list:
-                    value = tuple(value)
-                hash += key.__hash__() + value.__hash__()
+            hash = self._makeHash(self['inputdata'], hash)
         cachefile = "%s/%s_%s" % (self["cachepath"], hash, cachefile)
 
         return cachefile
 
-    def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True):
+    def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True, 
+                     encoder = True, decoder= True):
         """
         See if the cache has expired. If it has make a new request to the 
         service for the input data. Return the cachefile as an open file object.  
@@ -135,13 +155,13 @@ class Service(dict):
 
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
-            self.getData(cachefile, url, inputdata)
+            self.getData(cachefile, url, inputdata, encoder, decoder)
         if openfile:
             return open(cachefile, 'r')
         else:
             return cachefile
 
-    def forceRefresh(self, cachefile, url='', inputdata = {}):
+    def forceRefresh(self, cachefile, url='', inputdata = {}, encoder = True, decoder = True):
         """
         Make a new request to the service for the input data, regardless of the 
         cache statue. Return the cachefile as an open file object.  
@@ -149,7 +169,7 @@ class Service(dict):
         cachefile = self.cacheFileName(cachefile, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url, inputdata)
+        self.getData(cachefile, url, inputdata, encoder, decoder)
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile, inputdata = {}):
@@ -162,7 +182,7 @@ class Service(dict):
         except OSError: # File doesn't exist
             return
 
-    def getData(self, cachefile, url, inputdata = {}):
+    def getData(self, cachefile, url, inputdata = {}, encoder = True, decoder = True):
         """
         Takes the already generated *full* path to cachefile and the url of the 
         resource. Don't need to call self.cacheFileName(cachefile, inputdata)
@@ -182,7 +202,9 @@ class Service(dict):
                                  (url, inputdata))
             data, status, reason = self["requests"].makeRequest(uri = url,
                                                     verb = self["method"],
-                                                    data = inputdata)
+                                                    data = inputdata,
+                                                    encoder = encoder,
+                                                    decoder = decoder)
             # Don't need to prepend the cachepath, the methods calling getData
             # have done that for us 
             f = open(cachefile, 'w')

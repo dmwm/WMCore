@@ -9,8 +9,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.24 2010/08/03 14:48:22 swakef Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.25 2010/08/04 21:26:41 sryu Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import os
 import WMCore.WMInit
@@ -215,6 +215,12 @@ config.WMBSMonitoring.views.active.wmbs.templates = WMCore.WMInit.getWMBASE() + 
 config.WMBSMonitoring.views.active.wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
 config.WMBSMonitoring.views.active.wmbs.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
 
+wmbsmonitor = config.WMBSMonitoring.views.active.section_('wmbsmonitor')
+wmbsmonitor.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
+wmbsmonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+wmbsmonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript')
+wmbsmonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html')
+
 # REST service for WMComponents running (WorkQueueManager in this case)
 wmagent = config.WMBSMonitoring.views.active.section_('wmagent')
 # The class to load for this view/page
@@ -224,3 +230,9 @@ wmagent.section_('model')
 wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
 wmagent.section_('formatter')
 wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'
+
+wmagentmonitor = config.WMBSMonitoring.views.active.section_('wmagentmonitor')
+wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
+wmagentmonitor.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+wmagentmonitor.javascript = path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
+wmagentmonitor.html = path.join(WMCore.WMInit.getWMBASE(), 'src/html/')

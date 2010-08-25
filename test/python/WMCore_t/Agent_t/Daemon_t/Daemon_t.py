@@ -6,8 +6,8 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.4 2009/02/09 21:00:15 fvlingen Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Daemon_t.py,v 1.5 2009/10/01 01:13:24 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -32,9 +32,6 @@ class DaemonTest(unittest.TestCase):
     
     """
 
-    _setup = False
-    _teardown = False
-
     # minimum number of messages that need to be in queue
     _minMsg = 20
     # number of publish and gets from queue
@@ -43,26 +40,17 @@ class DaemonTest(unittest.TestCase):
     def setUp(self):
         "make a logger instance and create tables"
        
-        if not DaemonTest._setup: 
-            self.testInit = TestInit(__file__)
-            self.testInit.setLogging()
-            self.testInit.setDatabaseConnection()
-            self.testInit.setSchema(['WMCore.Agent.Daemon'])
-            DaemonTest._setup = True
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(['WMCore.Agent.Daemon'])
+
 
     def tearDown(self):
         """
         Deletion of the databases 
         """
-        myThread = threading.currentThread()
-        if DaemonTest._teardown and myThread.dialect == 'MySQL':
-            # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
-
-        DaemonTest._teardown = False
+        self.testInit.clearDatabase()
 
                
     def testA(self):

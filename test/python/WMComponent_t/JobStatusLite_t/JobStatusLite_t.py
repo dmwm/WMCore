@@ -4,24 +4,29 @@
 JobStatusLite unit test 
 """
 
-__revision__ = "$Id: JobStatusLite_t.py,v 1.9 2010/08/17 23:29:52 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: JobStatusLite_t.py,v 1.10 2010/08/18 08:30:37 mcinquil Exp $"
+__version__ = "$Revision: 1.10 $"
 
 
 from WMQuality.TestInit import TestInit
+
+from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
+
 
 # Import JobStatusLite modules
 from WMComponent.JobStatusLite.JobStatusPoller import JobStatusPoller
 from WMComponent.JobStatusLite.StatusScheduling import StatusScheduling
 
 # Import BossLite Objects
-from WMCore.BossLite.DbObjects.Job         import Job
-from WMCore.BossLite.DbObjects.Task        import Task
-from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
-from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
-from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
+from WMCore.BossLite.DbObjects.Job          import Job
+from WMCore.BossLite.DbObjects.Task         import Task
+from WMCore.BossLite.DbObjects.RunningJob   import RunningJob
+from WMCore.BossLite.API.BossLiteAPI        import BossLiteAPI
+from WMCore.BossLite.API.BossLiteAPISched   import BossLiteAPISched
 from WMCore.BossLite.DbObjects.BossLiteDBWM import BossLiteDBWM
-from WMCore.BossLite.Common.Exceptions     import DbError
+from WMCore.BossLite.Common.Exceptions      import DbError
+from WMCore.BossLite.Common.Exceptions      import SchedulerError
+
 
 #import threading
 import unittest
@@ -44,11 +49,14 @@ def fakeTask( db, numjob ):
     task = Task( taskParams )
     task.create( db )
     task.exists( db )
+    i = 0
     for j in xrange( numjob ):
         jobParams['name'] = 'Fake_job_%s' % str(j)
         jobParams['standardError'] = 'hostname-%s.err' % str(j)
         jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
         jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
+        jobParams['wmbsJobId'] = i
+        i += 1
         
         job = Job( parameters = jobParams )
         job.newRunningInstance( db )
@@ -71,9 +79,15 @@ class JobStatusLite_t( unittest.TestCase ):
         self.testInit = TestInit( __file__ )
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema( customModules = ["WMCore.BossLite"], \
+        self.testInit.setSchema( customModules = ["WMCore.BossLite", "WMCore.Agent.Database"], \
                                  useDefault = False \
                                )
+
+        # Set heartbeat
+        self.componentName = 'JobStatusLite'
+        self.heartbeatAPI  = HeartbeatAPI(self.componentName)
+        self.heartbeatAPI.registerComponent()
+
 
     def tearDown( self ):
         """
@@ -84,7 +98,7 @@ class JobStatusLite_t( unittest.TestCase ):
 
         return
 
-    def fillDatabase( self, numtask = 2, numjob = 50, \
+    def fillDatabase( self, numtask = 2, numjob = 3, \
                       status = 'R', pstatus = 'handled'):
         """
         generate some fake tasks/jobs/runjobs
@@ -100,14 +114,17 @@ class JobStatusLite_t( unittest.TestCase ):
                 task.data['name'] = 'task_%s' % str(t)
                 names.append( 'task_%s' % str(t) )
                 task.create( db )
+                i = 0
                 for j in xrange( 1, 1 + numjob ):
                     jobstatic = { \
                                    'name':   '%s_job_%s' % (str(t), str(j)), \
                                    'jobId':  j, \
                                    'taskId': task.exists( db ), \
+                                   'wmbsJobId': i, \
                                    'submissionNumber': 1, \
                                    'closed': 'N' \
                                 }
+                    i += 1
                     job = Job( parameters = jobstatic )
                     job.create( db )
                     job.save( db )
@@ -139,15 +156,16 @@ class JobStatusLite_t( unittest.TestCase ):
         config = self.testInit.getConfiguration()
 
         config.component_('JobStatusLite')
+        config.Agent.agentName  = 'testAgent'
+        config.Agent.componentName = 'JobStatusLite'
         config.JobStatusLite.namespace     = \
                    'WMComponent.JobStatusLite.JobStatusLite'
         config.JobStatusLite.componentDir  = os.getcwd()
-        config.JobStatusLite.ComponentDir  = '/tmp/application/JobStatusLite'
         config.JobStatusLite.logLevel      = 'INFO'
-        config.JobStatusLite.pollInterval  = 60
-        config.JobStatusLite.queryInterval = 12
+        config.JobStatusLite.pollInterval  = 10
+        config.JobStatusLite.queryInterval = 10
         config.JobStatusLite.jobLoadLimit  = 500
-        config.JobStatusLite.maxJobQuery   = 50
+        config.JobStatusLite.maxJobQuery   = 100
         config.JobStatusLite.taskLimit     = 30
         config.JobStatusLite.maxJobsCommit = 100
         config.JobStatusLite.processes     = 3
@@ -162,7 +180,7 @@ class JobStatusLite_t( unittest.TestCase ):
         
         myBossLiteAPI = BossLiteAPI()
 
-        taskname = fakeTask( myBossLiteAPI.db, 10 )
+        taskname = fakeTask( myBossLiteAPI.db, 3 )
         task = myBossLiteAPI.loadTaskByName( taskname )
 
         mySchedConfig =  { 'name' : 'SchedulerGLite' }
@@ -191,9 +209,9 @@ class JobStatusLite_t( unittest.TestCase ):
         """
         testing the polling of failed jobs
         """
-        raise RuntimeError, "This test takes too long to run: see - http://vpac05.phy.vanderbilt.edu:8010/builders/Unit%20Tests%20Mysql/builds/137/steps/test/logs/stdio --MELO"
+
         config = self.createConfig()
-        taskadded = self.fillDatabase( 1, 10, 'A', 'handled' )[0]
+        taskadded = self.fillDatabase( 1, 3, 'A', 'handled' )[0]
         print "Calling JobStatusPoller for Aborted jobs"
         obj1 = JobStatusPoller( config )
         obj1.setup( None )
@@ -211,10 +229,9 @@ class JobStatusLite_t( unittest.TestCase ):
         """
         testing the polling of success jobs
         """
-        raise RuntimeError, "This test takes too long to run: see - http://vpac05.phy.vanderbilt.edu:8010/builders/Unit%20Tests%20Mysql/builds/139/steps/test/logs/stdio --MELO"
 
         config = self.createConfig()
-        taskadded = self.fillDatabase( 1, 10, 'SD', 'handled' )[0]
+        taskadded = self.fillDatabase( 1, 3, 'SD', 'handled' )[0]
         print "Calling JobStatusPoller for Done jobs"
         obj1 = JobStatusPoller( config )
         obj1.setup( None )
@@ -233,10 +250,9 @@ class JobStatusLite_t( unittest.TestCase ):
         """
         testing the polling of new jobs
         """
-        raise RuntimeError, "This test takes too long to run: see - http://vpac05.phy.vanderbilt.edu:8010/builders/Unit%20Tests%20Mysql/builds/140/steps/test/logs/stdio --MELO"
 
         config = self.createConfig()
-        taskadded = self.fillDatabase( 1, 10, 'S', 'not_handled' )[0]
+        taskadded = self.fillDatabase( 1, 3, 'S', 'not_handled' )[0]
         print "Calling JobStatusPoller for new jobs"
         obj1 = JobStatusPoller( config )
         obj1.setup( None )
@@ -254,10 +270,9 @@ class JobStatusLite_t( unittest.TestCase ):
         """
         testing the polling of killed jobs
         """
-        raise RuntimeError, "This test takes too long to run: see - http://vpac05.phy.vanderbilt.edu:8010/builders/Unit%20Tests%20Mysql/builds/143/steps/test/logs/stdio --MELO"
 
         config = self.createConfig()
-        taskadded = self.fillDatabase( 1, 10, 'K', 'handled' )[0]
+        taskadded = self.fillDatabase( 1, 3, 'K', 'handled' )[0]
         print "Calling JobStatusPoller for Killed jobs"
         obj1 = JobStatusPoller( config )
         obj1.setup( None )
@@ -309,7 +324,9 @@ class JobStatusLite_t( unittest.TestCase ):
         """
 
         config = self.createConfig()
+        print "Real task submission..."
         taskname = self.submit()
+        print "...done!"
         print "Calling StatusScheduling"
         obj1 = StatusScheduling( config )
         obj1.setup( None )
@@ -319,11 +336,14 @@ class JobStatusLite_t( unittest.TestCase ):
         print "Checking if jobs were processed"
         bliteapi = BossLiteAPI()
         task = bliteapi.loadTaskByName( taskname )
-        #for job in task.jobs:
-        #    print job.runningJob
         ## need to kill the submitted jobs
-        self.kill( task['id'] )
+        ## we don't care if it is wrong of it is right
+        try:
+            self.kill( task['id'] )
+        except SchedulerError, se:
+            pass
         print "..finished."
+
 
 if __name__ == '__main__':
     unittest.main()

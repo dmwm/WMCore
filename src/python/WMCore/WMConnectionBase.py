@@ -5,10 +5,11 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.6 2010/01/27 17:12:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.7 2010/01/27 17:36:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
+import copy
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -17,7 +18,7 @@ class WMConnectionBase:
     """
     Generic db connection and transaction methods used by all of the WMCore classes.
     """
-    def __init__(self, daoPackage, logger=None, dbi=None):
+    def __init__(self, daoPackage, logger = None, dbi = None):
         """
         ___init___
 
@@ -27,18 +28,21 @@ class WMConnectionBase:
         create one but leave the transaction closed.
         """
         myThread = threading.currentThread()
-        if not logger:
-            logger = myThread.logger
-
-        if not dbi:
-            dbi = myThread.dbi
-
-        myThread.daoFactory = DAOFactory(package = daoPackage,
-                                         logger = logger,
-                                         dbinterface = dbi)
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = myThread.logger
+        if dbi:
+            self.dbi = dbi
+        else:
+            self.dbi = myThread.dbi
+        
+        self.daofactory = DAOFactory(package = daoPackage,
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
 
         if "transaction" not in dir(myThread):
-            myThread.transaction = Transaction(dbi)
+            myThread.transaction = Transaction(self.dbi)
             myThread.transaction.commit()
             
         return
@@ -70,7 +74,7 @@ class WMConnectionBase:
         myThread = threading.currentThread()
 
         if "transaction" not in dir(myThread):
-            myThread.transaction = Transaction(myThread.dbi)
+            myThread.transaction = Transaction(self.dbi)
             return False
         
         if myThread.transaction.transaction == None:
@@ -106,13 +110,14 @@ class WMConnectionBase:
             
         return
 
-    def daofactory(self, classname):
+    def __getstate__(self):
         """
-        _daofactory_
+        __getstate__
 
-        The DAOFactory object moved into the thread storage so that we can
-        actually pickle objects that inherit from this (we don't want to
-        pickle any database code). 
+        The database connection information isn't pickleable, so we to kill that
+        before we attempt to pickle.
         """
-        myThread = threading.currentThread()
-        return myThread.daoFactory(classname = classname)
+        self.dbi = None
+        self.logger = None
+        self.daofactory = None
+        return self.__dict__

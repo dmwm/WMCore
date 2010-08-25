@@ -6,8 +6,8 @@ _WMRuntimeMonitor_
 This is the base class for monitors
 """
 
-__version__ = "$Revision: 1.1 $"
-__revision__ = "$Id: WMRuntimeMonitor.py,v 1.1 2009/12/21 15:59:09 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WMRuntimeMonitor.py,v 1.2 2009/12/22 17:37:09 mnorman Exp $"
 
 import threading
 import os
@@ -50,7 +50,7 @@ class WMRuntimeMonitor:
         pass
 
 
-    def periodicUpdate(self, monitorState):
+    def periodicUpdate(self):
         """
         Periodic update.
         """

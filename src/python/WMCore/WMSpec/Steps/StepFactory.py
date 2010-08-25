@@ -91,6 +91,24 @@ def getStepTemplate(stepType):
         msg += str(ex)
         raise StepFactoryException(msg)
 
+def getStepTypeHelper(stepReference):
+    """
+    _getStepTypeHelper_
+
+    Given a step instance, get its type, use that to get a template
+    from the factory and use the template to instantiate the type
+    specific helper
+
+    """
+    stepType = getattr(stepReference, "stepType", None)
+    if stepType == None:
+        msg = "Unable to find stepType attribute for step reference passed\n"
+        msg += "to getStepTypeHelper method"
+        raise StepFactoryException(msg)
+    template = getStepTemplate(stepType)
+    helper = template.helper(stepReference)
+    return helper
+
 
 def getStepBuilder(stepType):
     """

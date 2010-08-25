@@ -6,8 +6,10 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.20 2010/04/20 15:31:27 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: WMWorkload.py,v 1.21 2010/04/20 16:04:36 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
+
+import logging
 
 
 
@@ -81,19 +83,28 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data._internal_name
 
-    def owner(self):
+    def getOwner(self):
         """
-        _owner_
+        _getOwner_
         return owner information
         """
-        return self.data.owner.owner
+        return self.data.owner.dictionary_()
 
-    def setOwner(self, owner):
+    def setOwner(self, name, ownerProperties = {}):
         """
         _setOwner_
-        sets the owner of wmspec
+        sets the owner of wmspec.
+        Takes a name as a mandatory argument, and then a dictionary of properties
         """
-        self.data.owner.owner = owner
+        self.data.owner.name = name
+
+        if not type(ownerProperties) == dict:
+            raise Exception("Someone is trying to setOwner without a dictionary")
+
+        for key in ownerProperties.keys():
+            setattr(self.data.owner, key, ownerProperties[key])
+
+        return
 
 
      

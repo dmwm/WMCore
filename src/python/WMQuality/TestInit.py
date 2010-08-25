@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.36 2010/02/08 19:59:14 meloam Exp $"
+    "$Id: TestInit.py,v 1.37 2010/02/08 20:02:28 meloam Exp $"
 __version__ = \
-    "$Revision: 1.36 $"
+    "$Revision: 1.37 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -113,7 +113,7 @@ class TestInit:
         if trashDatabases:
             dbi = self.getDBInterface()
             dialect = self.coreConfig.CoreDatabase.dialect
-            formatter = DBFormatter(logging, dbi)
+            formatter = DBFormatter(logging.getLogger(''), dbi)
             print "wiping dialect: %s " % dialect
             if (dialect == 'MySQL'):
                 print "wiping mysql"

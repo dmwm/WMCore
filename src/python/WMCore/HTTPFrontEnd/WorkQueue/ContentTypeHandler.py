@@ -17,7 +17,10 @@ class ContentTypeHandler:
             return func(args, kwargs)
     
     def jsonHandler(self, args, kwargs):
-        
+        """
+        TODO: corrently it only works with cjson not json from python2.6.
+        There is issues of converting unit code to string.
+        """
         from WMCore.Wrappers import JsonWrapper
         params = request.body.read()
         if params:

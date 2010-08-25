@@ -64,7 +64,7 @@ class DummyRESTModel(RESTModel):
     def list(self, int, str):
         """ if sanitise needed to be called method signature of callee should be 
             (*args, **kwargs) """
-        return input
+        return {'int':int, 'str':str}
 
     def list1(self):
         """ test no argument case, return 'No argument' string """
@@ -77,8 +77,7 @@ class DummyRESTModel(RESTModel):
     
     def list3(self, *args, **kwargs):
         """ test sanitise without any validation specified """
-        input = self.sanitise_input(args, kwargs, method = 'list3')
-        return input
+        return kwargs
         
     def val_0(self, input):
         # checks whether input is right number

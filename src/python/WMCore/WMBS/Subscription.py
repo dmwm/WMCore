@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.62 2010/04/02 14:01:17 mnorman Exp $"
-__version__ = "$Revision: 1.62 $"
+__revision__ = "$Id: Subscription.py,v 1.63 2010/04/05 16:19:55 mnorman Exp $"
+__version__ = "$Revision: 1.63 $"
 
 import logging
 
@@ -405,6 +405,25 @@ class Subscription(WMBSBase, WMSubscription):
 
         jobGroups = self.getAllJobGroups()
 
+
+        filesets = []
+        filesets.append(self['fileset'].id)
+
+        # Get output filesets from the workflow
+        self['workflow'].load()
+        for entry in self['workflow'].outputMap:
+            id = self['workflow'].outputMap[entry]["output_fileset"].id
+            if not id in filesets:
+                filesets.append(id)
+
+        # Get output filesets from jobGroups
+        for jobGroupID in jobGroups:
+            loadAction = self.daofactory(classname = "JobGroup.LoadFromID")
+            result = loadAction.execute(jobGroupID, conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+            filesets.append(result['output'])
+
+
         #First, jobs
         deleteAction = self.daofactory(classname = "Jobs.Delete")
         jobDeleteList = []
@@ -413,26 +432,32 @@ class Subscription(WMBSBase, WMSubscription):
         deleteAction.execute(id = jobDeleteList, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
+
+
         #Next jobGroups
         deleteAction = self.daofactory(classname = "JobGroup.Delete")
         for jobGroupID in jobGroups:
             deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
-        filesetID = self["fileset"].id
-        self['fileset'].loadData()
-        action = self.daofactory(classname = "Fileset.DeleteCheck")
-        action.execute(fileid = self["fileset"].id, subid = self["id"],
-                       conn = self.getDBConn(), transaction = self.existingTransaction())
 
-        #If we got rid of the fileset
-        #If we did not delete the fileset, all files are still in use
-        if not self["fileset"].exists():
-            #Now get rid of unused files
-            action = self.daofactory(classname = "Files.DeleteCheck")
-            for file in self["fileset"].files:
-                action.execute(file = file['id'], fileset = filesetID,
-                               conn = self.getDBConn(), transaction = self.existingTransaction())
+
+        for filesetID in filesets:
+            fileset = Fileset(id = filesetID)
+            fileset.loadData()
+            action = self.daofactory(classname = "Fileset.DeleteCheck")
+            action.execute(fileid = fileset.id, subid = self["id"],
+                           conn = self.getDBConn(), transaction = self.existingTransaction())
+            if not fileset.exists():
+                # If we got rid of the fileset
+                # If we did not delete the fileset, all files are still in use
+                # Now get rid of unused files
+
+                action = self.daofactory(classname = "Files.DeleteCheck")
+                for file in fileset.files:
+                    action.execute(file = file['id'], fileset = fileset.id,
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
 
         #Next Workflow
         action = self.daofactory(classname = "Workflow.DeleteCheck")

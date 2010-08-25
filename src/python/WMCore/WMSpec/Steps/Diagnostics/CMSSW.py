@@ -84,11 +84,11 @@ class CMSRunHandler(DiagnosticHandler):
 
 
         errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step.._internal_name))
+                              '%s-stderr.log' % (executor.step._internal_name))
 
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
-            msg += '\n Adding last ten lines of error report\n'
+            msg += '\n Adding last ten lines of CMSSW stderr:\n'
             msg += "".join(logTail)
                 
         # make sure the report has the error in it
@@ -131,7 +131,7 @@ class EDMExceptionHandler(DiagnosticHandler):
         addOn = '\n'
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
-            addOn += '\nAdding last ten lines of error report\n'
+            addOn += '\nAdding last ten lines of CMSSW stderr:\n'
             addOn += "".join(logTail)
         else:
             logging.error("No stderr from CMSSW")

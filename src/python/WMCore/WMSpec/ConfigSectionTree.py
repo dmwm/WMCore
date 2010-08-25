@@ -7,8 +7,8 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-__revision__ = "$Id: ConfigSectionTree.py,v 1.6 2010/02/26 19:34:18 evansde Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ConfigSectionTree.py,v 1.7 2010/04/09 20:34:12 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import types
 
@@ -270,6 +270,7 @@ class TreeHelper:
         """
         for i in listNodes(self.data):
             yield getNode(self.data, i)
+            
     def nodeChildIterator(self):
         """
         generator for processing all subnodes in execution order

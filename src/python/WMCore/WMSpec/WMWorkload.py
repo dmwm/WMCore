@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.16 2010/03/29 19:19:12 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WMWorkload.py,v 1.17 2010/04/09 20:34:12 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 
 
@@ -94,6 +94,19 @@ class WMWorkloadHelper(PersistencyHelper):
         sets the owner of wmspec
         """
         self.data.owner = owner 
+
+     
+    def sandbox(self):
+        """
+        _sandbox_
+        """
+        return self.data.sandbox
+    
+    def setSandbox(self, sandboxPath):
+        """
+        _sandbox_
+        """
+        self.data.sandbox = sandboxPath
     
     def priority(self):
         """
@@ -203,10 +216,6 @@ class WMWorkloadHelper(PersistencyHelper):
                 return x
         return None
 
-
-
-
-
     def taskIterator(self):
         """
         generator to traverse top level tasks
@@ -214,11 +223,26 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         for i in self.data.tasks.tasklist:
             yield self.getTask(i)
-
+    
     def listAllTaskNodes(self):
+        """
+        """
         result = []
         for t in self.taskIterator():
             result.extend(t.listNodes())
+        return result
+
+    
+    def listAllTaskPathNames(self):
+        """
+        _listAllTaskPathNames_
+
+        Generate a list of all known task path names including
+        tasks that are part of the top level tasks
+        """
+        result = []
+        for t in self.taskIterator():
+            result.extend(t.listPathNames())
         return result
 
     def listAllTaskNames(self):
@@ -230,7 +254,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         result = []
         for t in self.taskIterator():
-            result.extend(t.listPathNames())
+            result.extend(t.listNames())
         return result
 
     def listTasksOfType(self, ttype):
@@ -349,8 +373,8 @@ class WMWorkload(ConfigSection):
         #//
         self.section_("tasks")
         self.tasks.tasklist = []
-
-
+        
+        self.sandbox = None
 
 def newWorkload(workloadName):
     """

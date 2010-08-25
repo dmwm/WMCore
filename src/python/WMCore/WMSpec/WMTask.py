@@ -11,8 +11,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.24 2010/03/09 20:50:53 sfoulkes Exp $"
-__revision__ = "$Revision: 1.24 $"
+__version__ = "$Id: WMTask.py,v 1.25 2010/04/09 20:34:12 sryu Exp $"
+__revision__ = "$Revision: 1.25 $"
 
 import os
 
@@ -118,6 +118,14 @@ class WMTaskHelper(TreeHelper):
         """
         for t in self.taskIterator():
             yield t.getPathName()
+    
+    def listNames(self):
+        """
+        _listPathNames
+        
+        """
+        for t in self.taskIterator():
+            yield t.name()
 
     def makeWorkflow(self):
         """
@@ -564,6 +572,7 @@ class WMTask(ConfigSectionTree):
         self.section_("pythonLibs")
         self.section_("constraints")
         self.section_("input")
+        self.input.sandbox = None
         self.input.section_("splitting")
         self.input.splitting.algorithm = None
         self.constraints.section_("sites")

@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.22 2009/03/05 15:05:07 metson Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Root.py,v 1.23 2009/04/07 09:42:04 metson Exp $"
+__version__ = "$Revision: 1.23 $"
 
 # CherryPy
 from cherrypy import quickstart, expose, server, log, tree, engine, dispatch
@@ -165,10 +165,11 @@ class Root(WMObject):
             namesAndDocstrings = []
             # make a default Welcome
             for view in self.appconfig.views.active:
-               viewName = view._internal_name
-               viewObj = tree.apps['/%s' % viewName].root
-               docstring = viewObj.__doc__
-               namesAndDocstrings.append((viewName, docstring))
+                if not getattr(view, "hidden", False):
+                    viewName = view._internal_name
+                    viewObj = tree.apps['/%s' % viewName].root
+                    docstring = viewObj.__doc__
+                    namesAndDocstrings.append((viewName, docstring))
             tree.mount(Welcome(namesAndDocstrings), "/")
 
 if __name__ == "__main__":

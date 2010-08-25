@@ -5,8 +5,8 @@ _DbObject_
 Base class for all objects in the database
 """
 
-__version__ = "$Id: DbObject.py,v 1.5 2010/05/03 08:38:06 spigafi Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: DbObject.py,v 1.6 2010/05/03 13:22:00 spigafi Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 import logging
 import traceback
@@ -139,39 +139,59 @@ class DbObject(object):
 
     ##########################################################################
 
-    def save(self, deep = True):
+    def save(self, db, deep = True):
         """
         save object into database
         """
+        
         raise NotImplementedError
 
     ##########################################################################
 
-    def load(self, deep = True):
+    def load(self, db, deep = True):
         """
         load object from database
         """
+        
         raise NotImplementedError
 
     ##########################################################################
 
-    def remove(self):
+    def remove(self, db):
         """
         remove object from database
         """
+        
         raise NotImplementedError
 
     ##########################################################################
 
-    def update(self, deep = True):
+    def update(self, db, deep = True):
         """
         update object in database
         """
+        
         raise NotImplementedError
-
 
     ##########################################################################
 
+    def create(self, db):
+        """
+        update object into database
+        """
+        
+        raise NotImplementedError
+
+    ##########################################################################
+
+    def exists(self, db):
+        """
+        check if the object exists inside the database
+        """
+        
+        raise NotImplementedError
+
+    ##########################################################################
     def __str__(self):
         """
         return a printed representation of the task

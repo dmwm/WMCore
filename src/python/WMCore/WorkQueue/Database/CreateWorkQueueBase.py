@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.10 2009/08/18 23:18:17 swakef Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.11 2009/08/24 14:56:59 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import threading
 
@@ -23,10 +23,10 @@ class CreateWorkQueueBase(DBCreator):
     """
     requiredTables = ["01wq_wmspec",
                       "02wq_block",
-                      "04wq_element",
-                      "05wq_block_parentage",
-                      "07wq_site",
-                      "08wq_block_site_assoc"
+                      "03wq_element",
+                      "04wq_block_parentage",
+                      "05wq_site",
+                      "06wq_block_site_assoc"
                       ]
 
 
@@ -65,8 +65,8 @@ class CreateWorkQueueBase(DBCreator):
              PRIMARY KEY(id),
              UNIQUE (name)
              )"""
-
-        self.create["04wq_element"] = \
+                          
+        self.create["03wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL,
@@ -81,24 +81,26 @@ class CreateWorkQueueBase(DBCreator):
              UNIQUE (wmspec_id, block_id)
              ) """
 
-        self.create["05wq_block_parentage"] = \
+        self.create["04wq_block_parentage"] = \
           """CREATE TABLE wq_block_parentage (
              child        INTEGER    NOT NULL,
              parent       INTEGER    NOT NULL,
              PRIMARY KEY (child, parent)
              )"""
 
-        self.create["07wq_site"] = \
+        self.create["05wq_site"] = \
           """CREATE TABLE wq_site (
              id          INTEGER      NOT NULL,
              name        VARCHAR(255) NOT NULL,
              PRIMARY KEY(id)
              )"""
+             
 
-        self.create["08wq_block_site_assoc"] = \
+        self.create["06wq_block_site_assoc"] = \
           """CREATE TABLE wq_block_site_assoc (
              block_id     INTEGER    NOT NULL,
              site_id      INTEGER    NOT NULL,
+             __ oracle doesn have BOOL needs some other datatype---
              -- online BOOL DEFAULT FALSE, -- for when we track staging
              PRIMARY KEY (block_id, site_id)
              )"""
@@ -127,26 +129,10 @@ class CreateWorkQueueBase(DBCreator):
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_block_element
                  FOREIGN KEY(block_id) REFERENCES wq_block(id)"""
 
-        self.constraints["FK_wq_element_assoc"] = \
-              """ALTER TABLE wq_element_subs_assoc ADD CONSTRAINT FK_wq_element_assoc
-                 FOREIGN KEY(element_id) REFERENCES wq_element(id)"""
-
-        self.constraints["FK_wq_element_status"] = \
-              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_status
-                 FOREIGN KEY(status) REFERENCES wq_element_status(id)"""
-
-        self.constraints["FK_wq_element_sub"] = \
-              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_sub
-                 FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""
-
-        wqStatus = ["Available", "Acquired", "Done", "Failed"]
-        for i in range(3):
-            self.inserts["%swq_elem_status_insert" % (60 + i)] = \
-                """INSERT INTO wq_element_status (id, status) VALUES (%d, '%s')
-                """ % (i, wqStatus[i])
 
         #TODO: need to find the better way to handle this        
-        #block magic string for no block (production work)  
+        #block magic string for no block (production work)
+        #Currently production fake block name is generated
 #        self.inserts["80wq_block_insert"]=\
 #                """INSERT INTO wq_block (name, block_size, num_files, num_events) 
 #                   VALUES ('NoBlock', 0, 0, 0)

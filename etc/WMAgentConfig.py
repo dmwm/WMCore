@@ -1,12 +1,16 @@
-#!/usr/bin/env python
+########################
+# the default config should work out of the box with minimal change
+# Under the '## User specific parameter' line need to be changed to make the config correctly
+########################
+
 """
 WMAgent Configuration
 
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.21 2010/06/23 14:22:59 meloam Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.22 2010/06/29 20:45:50 sryu Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import os
 import WMCore.WMInit
@@ -15,9 +19,13 @@ from WMCore.Configuration import Configuration
 config = Configuration()
 
 config.section_("Agent")
+## User specific parameter
 config.Agent.hostName = "cmssrv52.fnal.gov"
+## User specific parameter
 config.Agent.contact = "sfoulkes@fnal.gov"
+## User specific parameter
 config.Agent.teamName = "DMWM"
+## User specific parameter
 config.Agent.agentName = "WMAgentCommissioning"
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
@@ -26,13 +34,18 @@ config.section_("General")
 config.General.workDir = "/storage/local/data1/wmagent/work"
 
 config.section_("JobStateMachine")
+## User specific parameter
 config.JobStateMachine.couchurl = "http://cmssrv52.fnal.gov:8570"
+## User specific parameter
 config.JobStateMachine.couchDBName = "wmagent_commissioning"
+## User specific parameter
 config.JobStateMachine.configCacheDBName = "wmagent_config_cache"
 config.JobStateMachine.default_retries = 5
 
 config.section_("CoreDatabase")
+## User specific parameter
 config.CoreDatabase.socket = "/opt/MySQL-5.1/var/lib/mysql/mysql.sock"
+## User specific parameter
 config.CoreDatabase.connectUrl = "mysql://sfoulkes:@localhost/WMAgentDB_sfoulkes"
 
 config.component_('WorkQueueManager')
@@ -151,6 +164,7 @@ config.TaskArchiver.useWorkQueue = True
 
 config.webapp_('WorkQueueService')
 config.WorkQueueService.componentDir = config.General.workDir + "/WorkQueueService"
+## User specific parameter
 config.WorkQueueService.server.port = 9997
 config.WorkQueueService.server.host = config.Agent.hostName
 config.WorkQueueService.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
@@ -180,13 +194,15 @@ workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/')
 
 config.webapp_("WMBSMonitoring")
 config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"
-config.WMBSMonitoring.server.host = "cmssrv52.fnal.gov"
+config.WMBSMonitoring.server.host = config.Agent.hostName
+## User specific parameter
 config.WMBSMonitoring.server.port = 8087
 config.WMBSMonitoring.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools'
 config.WMBSMonitoring.admin = "sfoulkes@fnal.gov"
 config.WMBSMonitoring.title = "WMBS Monitoring"
 config.WMBSMonitoring.description = "Monitoring of a WMBS instance"
 config.WMBSMonitoring.instance = "ReReco WMAGENT"
+## User specific parameter
 config.WMBSMonitoring.couchURL = "http://cmssrv52:5984/_utils/document.html?wmagent_commissioning/"
 config.WMBSMonitoring.section_('views')
 config.WMBSMonitoring.views.section_('active')
@@ -197,3 +213,13 @@ config.WMBSMonitoring.views.active.wmbs.object = 'WMCore.WebTools.RESTApi'
 config.WMBSMonitoring.views.active.wmbs.templates = WMCore.WMInit.getWMBASE() + '/src/templates/WMCore/WebTools/'
 config.WMBSMonitoring.views.active.wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
 config.WMBSMonitoring.views.active.wmbs.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
+
+# REST service for WMComponents running (WorkQueueManager in this case)
+wmagent = config.WMBSMonitoring.views.active.section_('wmagent')
+# The class to load for this view/page
+wmagent.object = 'WMCore.WebTools.RESTApi'
+wmagent.templates = os.path.join( WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
+wmagent.section_('model')
+wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
+wmagent.section_('formatter')
+wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'

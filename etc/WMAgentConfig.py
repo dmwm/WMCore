@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.19 2010/06/10 13:16:16 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.20 2010/06/10 16:19:04 swakef Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import os
 import WMCore.WMInit
@@ -159,7 +159,7 @@ config.WorkQueueService.title = 'WorkQueue Data Service'
 config.WorkQueueService.description = 'Provide WorkQueue related service call'
 config.WorkQueueService.section_('views')
 config.WorkQueueService.views.section_('active')
-config.WorkQueueService.views.active.section_('workqueue')
+workqueue = config.WorkQueueService.views.active.section_('workqueue')
 workqueue.object = 'WMCore.WebTools.RESTApi'
 workqueue.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
 workqueue.section_('model')

@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.14 2010/03/17 15:01:46 maxa Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: wmcoreD,v 1.15 2010/03/17 15:24:40 maxa Exp $"
+__version__ = "$Revision: 1.15 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -173,10 +173,7 @@ def connectionTest(configFile):
         return
 
     (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
-    # get the socket from configuration, if specified
     socket = getattr(config.CoreDatabase, "socket", None)
-    # if not, try the enviroment variable
-    socket = socket or os.environ.get("DBSOCK", None)
 
     try:
        wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.DEBUG)

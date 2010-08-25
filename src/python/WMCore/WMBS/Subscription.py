@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.44 2009/09/10 18:16:33 mnorman Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: Subscription.py,v 1.45 2009/09/11 19:08:07 mnorman Exp $"
+__version__ = "$Revision: 1.45 $"
 
 from sets import Set
 import logging
@@ -188,16 +188,11 @@ class Subscription(WMBSBase, WMSubscription):
                                 transaction = self.existingTransaction()):
             fl = File(id = f["file"])
             fl.load()
+            if "locations" in f.keys():
+                fl.setLocation(f["locations"])
             files.add(fl)
 
-        #Now, for each file, grab the location
-        if len(files) > 0:
-            locationAction = self.daofactory(classname = "Files.GetBulkLocation")
-            fileInfo       = locationAction.execute(files)
-            for file in files:
-                file['locations'] = Set(fileInfo[file['id']])
-        
-            
+
         self.commitTransaction(existingTransaction)
         return files 
     

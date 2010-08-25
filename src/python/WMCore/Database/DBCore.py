@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.27 2009/04/07 20:20:51 sryu Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: DBCore.py,v 1.28 2009/04/08 18:53:36 sryu Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -234,10 +234,10 @@ class DBInterface(WMObject):
             if len(binds) == len(sqlstmt):
                 assert_value = True 
             WMCore.WMLogging.sqldebug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
-            WMCore.WMLogging.sqldebug( sqlstmt, binds, connection, transaction)
-            WMCore.WMLogging.sqldebug( type(sqlstmt), type(binds),
-                               type("string"), type({}),
-                               type(connection), type(transaction))
+            WMCore.WMLogging.sqldebug( 'sql: %s\n binds: %s\n, connection:%s\n, transaction:%s\n' % 
+                                       (sqlstmt, binds, connection, transaction))
+            WMCore.WMLogging.sqldebug( 'type check:\nsql: %s\n binds: %s\n, connection:%s\n, transaction:%s\n' % 
+                                       (type(sqlstmt), type(binds), type(connection), type(transaction)))
             raise Exception, """DBInterface.processData Nothing executed, problem with your arguments 
 Probably mismatched sizes for sql (%i) and binds (%i)""" % (len(sqlstmt), len(binds))
         if not conn: 

@@ -21,9 +21,13 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Job import Job
 
-from WMCore.Agent.Configuration import loadConfigurationFile
+from WMCore.Agent.Configuration import *
 
 from WMComponent.JobSubmitter.JobSubmitter import JobSubmitter
+
+from WMCore.JobStateMachine.ChangeState import ChangeState
+
+from subprocess import Popen, PIPE
 
 class JobSubmitterTest(unittest.TestCase):
     """
@@ -49,10 +53,12 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.Services.BossLite"],
-                                useDefault = False)
+        #self.testInit.setSchema(customModules = ["WMCore.Services.BossLite"],
+        #                        useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.MsgService"], useDefault = False)
 
         
         myThread = threading.currentThread()
@@ -61,9 +67,11 @@ class JobSubmitterTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
+        locationSlots  = daofactory(classname = "Locations.SetJobSlots")
 
         for site in self.sites:
             locationAction.execute(siteName = site)
+            locationSlots.execute(siteName = site, jobSlots = 1000)
 
 
         self._setup = True
@@ -93,14 +101,22 @@ class JobSubmitterTest(unittest.TestCase):
             raise Exception("Could not complete WMBS tear down.")
         myThread.transaction.commit()
 
-
-        factory2 = WMFactory("WMBS", "WMCore.Services.BossLite")
-        destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
+        factory = WMFactory("MsgService", "WMCore.MsgService")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
-        destroyworked = destroy2.execute(conn = myThread.transaction.conn)
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
         if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
+            raise Exception("Could not complete MsgService tear down.")
         myThread.transaction.commit()
+
+
+        #factory2 = WMFactory("WMBS", "WMCore.Services.BossLite")
+        #destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
+        #myThread.transaction.begin()
+        #destroyworked = destroy2.execute(conn = myThread.transaction.conn)
+        #if not destroyworked:
+        #    raise Exception("Could not complete WMBS tear down.")
+        #myThread.transaction.commit()
         
         self._teardown = True
 
@@ -108,7 +124,7 @@ class JobSubmitterTest(unittest.TestCase):
 
 
 
-    def createJobGroup(self, nSubs, instance = '', workloadSpec = None):
+    def createJobGroup(self, nSubs, config, instance = '', workloadSpec = None):
         """
         This function acts to create a number of test job group with jobs that we can submit
 
@@ -117,6 +133,8 @@ class JobSubmitterTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         jobGroupList = []
+
+        changeState = ChangeState(config)
 
         for i in range(0, nSubs):
 
@@ -128,7 +146,7 @@ class JobSubmitterTest(unittest.TestCase):
             myThread.transaction.begin()
 
             testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                    name = "wf001"+nameStr, task="Test"+nameStr)
+                                    name = "wf001"+nameStr, task="basicWorkloadWithSandbox/Processing")
             testWorkflow.create()
         
             testFileset = Fileset(name = "TestFileset"+nameStr)
@@ -154,43 +172,34 @@ class JobSubmitterTest(unittest.TestCase):
             for file in testFileset.getFiles():
                 testJob = Job(name = "test-%s" %(file["lfn"]))
                 testJob.addFile(file)
-                testJob["location"] = file.getLocations()[0]
+                testJob["location"]  = file.getLocations()[0]
                 testJob.create(testJobGroup)
+                testJob.setCache(os.getcwd())
                 testJobGroup.add(testJob)
 
             testJobGroup.commit()
             jobGroupList.append(testJobGroup)
 
-
-
-
-                
-            print 'Created subscription %s' %(testSubscription['id'])
-
-
             myThread.transaction.commit()
 
-            return jobGroupList
+            changeState.propagate(testJobGroup.jobs, 'created', 'new')
+
+        return jobGroupList
         
 
-
-    def testBasicSubmission(self):
+    def getConfig(self, configPath = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobSubmitter/DefaultConfig.py')):
         """
-        This is the simplest of tests
+        _getConfig_
 
+        Gets a basic config from default location
         """
-
-        #This submits a job without a scheduler, and hence to fake
-        #Because of this, this test is basically nonfunctional - there are no results
-        #Other then it runs without BossLite committing suicide.
 
         myThread = threading.currentThread()
-
-        jobGroupList = self.createJobGroup(5, 'first')
-
-
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
-
+        
+        if os.path.isfile(configPath):
+            config = loadConfigurationFile(configPath)
+        else:
+            config = Configuration()
         # some general settings that would come from the general default 
         # config file
 
@@ -227,18 +236,54 @@ class JobSubmitterTest(unittest.TestCase):
         else:
             config.CoreDatabase.dbsock = None
 
-        cfg_params = {}
-        jobGroupConfig  = {'globalSandbox': os.getcwd() + '/tmp/',
-                           'jobType'      : 'test',
-                           'jobCacheDir'  : os.getcwd() + '/tmp/'}
-            
+        return config
 
-        jobSubmitter = JobSubmitter(config)
-        jobSubmitter.configure(cfg_params)
+    def testBasicSubmission(self):
+        """
+        This is the simplest of tests
 
-        for jobGroup in jobGroupList:
-            #print "I have a jobGroup"
-            jobSubmitter.submitJobs(jobGroup, jobGroupConfig)
+        """
+
+        #This submits a job to the local condor_q
+        #It basically does nothing, so there's little to test
+        
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+
+        if not os.path.isdir(config.JobSubmitter.submitDir):
+            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
+        if not os.path.isfile('basicWorkloadWithSandbox.pcl'):
+            self.assertEqual(True, False, 'basicWorkloadWithSandbox.pcl must be present in working directory')
+
+        #Right now only works with 1
+        jobGroupList = self.createJobGroup(1, config, 'first', workloadSpec = 'basicWorkloadWithSandbox')
+
+
+        # some general settings that would come from the general default 
+        # config file
+
+        testJobSubmitter = JobSubmitter(config)
+        testJobSubmitter.prepareToStart()
+
+        print "Killing"
+        myThread.workerThreadManager.terminateWorkers()
+
+
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
+
+        for state in result:
+            self.assertEqual(state.values()[0], 15)
+
+
+        username = os.getenv('USER')
+        pipe = Popen(['condor_q', username], stdout = PIPE, stderr = PIPE, shell = True)
+
+        output = pipe.communicate()[0]
+
+        self.assertEqual(output.find(username) > 0, True, "I couldn't find your username in the local condor_q.  Check it manually to find your job")
+
+        print "WARNING!  REMOVE YOUR JOB FROM THE CONDOR_Q!"
 
         return
 

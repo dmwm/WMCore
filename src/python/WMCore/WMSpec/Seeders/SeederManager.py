@@ -30,14 +30,13 @@ class SeederManager:
             return
         #Otherwise we have a fully formed task of some type
 
-        for seederName in task.data.seeders.listSections_():
-            confValues = TreeHelper(getattr(task.data.seeders, seederName))
-            args = {}
-            tempArgs = confValues.pythoniseDict(sections = False)
-            for entry in tempArgs.keys():
-                args[entry.split('%s.' %seederName)[1]] = tempArgs[entry]
-            self.addSeeder(seederName, **args)
+        configList = task.getSeederConfigs()
 
+        for seederConfig in configList:
+            seederName = seederConfig.keys()[0]
+            self.addSeeder(seederName, **seederConfig[seederName])
+
+        return
 
     def addSeeder(self, seederName, **args):
         """

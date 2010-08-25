@@ -4,9 +4,6 @@ gLite CLI interaction class through JSON formatted output
 """
 
 
-
-
-
 import os
 import tempfile
 import re
@@ -224,6 +221,9 @@ class SchedulerGLite(SchedulerInterface) :
         # the '-e' override the ...
         if service != '' :
             command += ' -e ' + service
+        elif self.service != '':
+            command += ' -e ' + self.service
+
 
         command += ' ' + fname
         out, ret = self.ExecuteCommand( self.proxyString + command )
@@ -554,6 +554,9 @@ class SchedulerGLite(SchedulerInterface) :
 
         if service != '' :
             command += ' -e ' + service
+        elif self.service != '':
+            command += ' -e ' + self.service
+
 
         command += " " + fname
         

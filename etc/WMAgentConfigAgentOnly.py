@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfigAgentOnly.py,v 1.1 2010/05/27 16:05:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMAgentConfigAgentOnly.py,v 1.2 2010/06/08 19:53:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import WMCore.WMInit
@@ -71,7 +71,7 @@ config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
 config.JobTracker.componentDir  = config.General.workDir + "/JobTracker"
 config.JobTracker.logLevel = "DEBUG"
 config.JobTracker.pollInterval = 10
-config.JobTracker.trackerName = "TestTracker"
+config.JobTracker.trackerName = "CondorTracker"
 config.JobTracker.pluginDir = "WMComponent.JobTracker.Plugins"
 config.JobTracker.runTimeLimit = 7776000
 config.JobTracker.idleTimeLimit = 7776000

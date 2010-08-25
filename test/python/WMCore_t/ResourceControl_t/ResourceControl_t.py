@@ -5,12 +5,13 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-__revision__ = "$Id: ResourceControl_t.py,v 1.6 2010/06/22 19:33:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ResourceControl_t.py,v 1.7 2010/07/01 19:52:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import threading
 
+from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
@@ -182,6 +183,16 @@ class ResourceControlTest(unittest.TestCase):
         testFilesetB = Fileset(name = "TestFilesetB")
         testFilesetB.create()        
 
+        testFileA = File(lfn = "testFileA", locations = "testSE1")
+        testFileA.create()
+        testFilesetA.addFile(testFileA)
+        testFilesetA.commit()
+
+        testFileB = File(lfn = "testFileB", locations = "testSE1")
+        testFileB.create()
+        testFilesetB.addFile(testFileB)
+        testFilesetB.commit()        
+
         testSubscriptionA = Subscription(fileset = testFilesetA,
                                         workflow = testWorkflow,
                                         type = "Processing")
@@ -191,47 +202,43 @@ class ResourceControlTest(unittest.TestCase):
                                         type = "Merge")
         testSubscriptionB.create()        
 
-        subLocationAction = self.daoFactory(classname = "Subscriptions.MarkLocation")
-        subLocationAction.execute(testSubscriptionA["id"], "testSite1")
-        subLocationAction.execute(testSubscriptionB["id"], "testSite1")        
-
         testJobGroupA = JobGroup(subscription = testSubscriptionA)
         testJobGroupA.create()
         testJobGroupB = JobGroup(subscription = testSubscriptionB)
         testJobGroupB.create()        
 
         # Has been assigned a location and is complete.
-        testJobA = Job(name = makeUUID(), files = [])
+        testJobA = Job(name = makeUUID(), files = [testFileA])
         testJobA["couch_record"] = makeUUID()
         testJobA.create(group = testJobGroupA)
         testJobA["state"] = "success"
 
         # Has been assigned a location and is incomplete.
-        testJobB = Job(name = makeUUID(), files = [])
+        testJobB = Job(name = makeUUID(), files = [testFileA])
         testJobB["couch_record"] = makeUUID()
         testJobB.create(group = testJobGroupA)
         testJobB["state"] = "executing"
 
         # Does not have a location.
-        testJobC = Job(name = makeUUID(), files = [])
+        testJobC = Job(name = makeUUID(), files = [testFileA])
         testJobC["couch_record"] = makeUUID()
         testJobC.create(group = testJobGroupA)        
         testJobC["state"] = "new"
 
         # Has been assigned a location and is complete.
-        testJobD = Job(name = makeUUID(), files = [])
+        testJobD = Job(name = makeUUID(), files = [testFileB])
         testJobD["couch_record"] = makeUUID()
         testJobD.create(group = testJobGroupB)        
         testJobD["state"] = "cleanout"
 
         # Has been assigned a location and is incomplete.
-        testJobE = Job(name = makeUUID(), files = [])
+        testJobE = Job(name = makeUUID(), files = [testFileB])
         testJobE["couch_record"] = makeUUID()
         testJobE.create(group = testJobGroupB)        
         testJobE["state"] = "new"
 
         # Does not have a location.
-        testJobF = Job(name = makeUUID(), files = [])
+        testJobF = Job(name = makeUUID(), files = [testFileB])
         testJobF["couch_record"] = makeUUID()
         testJobF.create(group = testJobGroupB)        
         testJobF["state"] = "new"
@@ -249,30 +256,33 @@ class ResourceControlTest(unittest.TestCase):
         testFilesetC = Fileset(name = "TestFilesetC")
         testFilesetC.create()
 
+        testFileC = File(lfn = "testFileC", locations = set(["testSE1", "testSE2"]))
+        testFileC.create()
+        testFilesetC.addFile(testFileC)
+        testFilesetC.commit()
+
         testSubscriptionC = Subscription(fileset = testFilesetC,
                                         workflow = testWorkflow,
                                         type = "Processing")
         testSubscriptionC.create()
-        subLocationAction.execute(testSubscriptionC["id"], "testSite1")        
-        subLocationAction.execute(testSubscriptionC["id"], "testSite2")
 
         testJobGroupC = JobGroup(subscription = testSubscriptionC)
         testJobGroupC.create()
 
         # Has been assigned a location and is complete.
-        testJobG = Job(name = makeUUID(), files = [])
+        testJobG = Job(name = makeUUID(), files = [testFileC])
         testJobG["couch_record"] = makeUUID()
         testJobG.create(group = testJobGroupC)
         testJobG["state"] = "success"
 
         # Has been assigned a location and is incomplete.
-        testJobH = Job(name = makeUUID(), files = [])
+        testJobH = Job(name = makeUUID(), files = [testFileC])
         testJobH["couch_record"] = makeUUID()
         testJobH.create(group = testJobGroupC)
         testJobH["state"] = "executing"
 
         # No location
-        testJobI = Job(name = makeUUID(), files = [])
+        testJobI = Job(name = makeUUID(), files = [testFileC])
         testJobI["couch_record"] = makeUUID()
         testJobI.create(group = testJobGroupC)        
         testJobI["state"] = "new"

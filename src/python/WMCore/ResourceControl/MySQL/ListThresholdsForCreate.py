@@ -6,8 +6,8 @@ Query the database to determine how many jobs are running so that we can
 determine whether or not to task for more work.  
 """
 
-__revision__ = "$Id: ListThresholdsForCreate.py,v 1.3 2010/06/16 19:28:15 sryu Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: ListThresholdsForCreate.py,v 1.4 2010/07/01 19:52:08 sfoulkes Exp $"
+__version__  = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -25,17 +25,18 @@ class ListThresholdsForCreate(DBFormatter):
                      GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""
     
     unassignedSQL = """SELECT wmbs_location.site_name, wmbs_location.job_slots,
-                              job_count.total AS total FROM wmbs_location
+                              COUNT(job_location.location) AS total FROM wmbs_location
                          LEFT OUTER JOIN
-                           (SELECT wmbs_subscription_location.location, COUNT(wmbs_job.id) AS total
-                                   FROM wmbs_job
-                              INNER JOIN wmbs_jobgroup ON
-                                wmbs_job.jobgroup = wmbs_jobgroup.id
-                              INNER JOIN wmbs_subscription_location ON
-                                wmbs_jobgroup.subscription = wmbs_subscription_location.subscription
+                           (SELECT wmbs_job_assoc.job, wmbs_file_location.location AS location
+                                   FROM wmbs_job_assoc
+                              INNER JOIN wmbs_file_location ON
+                                wmbs_job_assoc.file = wmbs_file_location.file
+                              INNER JOIN wmbs_job ON
+                                wmbs_job_assoc.job = wmbs_job.id
                             WHERE wmbs_job.location IS NULL    
-                            GROUP BY wmbs_subscription_location.location) job_count ON
-                            wmbs_location.id = job_count.location"""
+                            GROUP BY wmbs_job_assoc.job, wmbs_file_location.location) job_location ON
+                            wmbs_location.id = job_location.location
+                       GROUP BY wmbs_location.site_name, wmbs_location.job_slots"""
     
     def format(self, assignedResults, unassignedResults):
         """

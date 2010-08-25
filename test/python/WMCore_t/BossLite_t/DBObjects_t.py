@@ -205,6 +205,17 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(task.jobs[0]['jobId'], 101)
         self.assertEqual(task.jobs[0]['taskId'], task.exists())
 
+        # Check if task.update works
+        # This recursively tests if job.update works
+        task.jobs[0].newRunningInstance()
+        task.jobs[0].runningJob['service'] = 'Unserved'
+        task.update()
+
+        job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists()})
+        job2.load()
+        job2.getRunningInstance()
+        self.assertEqual(job2.runningJob['service'], task.jobs[0].runningJob['service'])
+
 
 
         return

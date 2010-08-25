@@ -42,7 +42,8 @@ class PersistencyHelper:
         elif extension == 'json':
             JsonWrapper.dump(self.data, handle)
         else:
-            handle.write(self.data)
+            pickle.dump(self.data, handle)
+            #handle.write(str(self.data))
             
         handle.close()
         return
@@ -64,7 +65,8 @@ class PersistencyHelper:
         elif extension == 'json':
             self.data = JsonWrapper.load(handle)
         else:
-            self.data = handle.read()
+            self.data = pickle.load(handle)
+            #self.data = handle.read()
         handle.close()
         return
 

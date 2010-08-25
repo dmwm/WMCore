@@ -2,9 +2,7 @@ import urllib
 import logging
 import os
 import pwd
-import re
-# this is temporary library until ProdCommon is ported to WMCore
-#from ProdCommon.DataMgmt.PhEDEx.DropMaker import DropMaker
+
 from WMCore.Services.PhEDEx import PhEDExXMLDrop
 from WMCore.Services.Service import Service
 
@@ -134,8 +132,8 @@ class PhEDEx(Service):
 
         {"dataset1":
           {"block1": {"is-open": "y", "files":
-                        [{"lfn": "lfn1", "size": 10, "checksum": "cksum1234"},
-                         {"lfn": "lfn2", "size": 20, "checksum": "cksum4321"}]}}}
+              [{"lfn": "lfn1", "size": 10, "checksum": {"cksum": "1234"}},
+               {"lfn": "lfn2", "size": 20, "checksum": {"cksum": "4321"}}]}}}
 
         The verbose and strict parameters are passed to the PhEDEx data service.
         A verbose setting of 1 will enable verbose output, a strict setting 1 of

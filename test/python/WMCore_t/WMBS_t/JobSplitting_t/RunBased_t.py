@@ -5,21 +5,27 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.1 2009/07/13 16:23:27 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: RunBased_t.py,v 1.2 2009/07/13 18:35:01 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
+import os
+import threading
+import logging
 
-from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.Job import Job
-from WMCore.DataStructs.Subscription import Subscription
-from WMCore.DataStructs.Workflow import Workflow
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
+from WMQuality.TestInit import TestInit
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMFactory import WMFactory
 
 class EventBasedTest(unittest.TestCase):
     """
@@ -36,31 +42,59 @@ class EventBasedTest(unittest.TestCase):
         Create two subscriptions: One that contains a single file and one that
         contains multiple files.
         """
+
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
+        
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        locationAction = daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "somese.cern.ch")
+        
         self.multipleFileFileset = Fileset(name = "TestFileset1")
+        self.multipleFileFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
             newFile.addRun(Run(i, *[45+i]))
+            newFile.create()
             self.multipleFileFileset.addFile(newFile)
+        self.multipleFileFileset.commit()
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
-        newFile = File("/some/file/name", size = 1000, events = 100)
+        self.singleFileFileset.create()
+        newFile = File("/some/file/name", size = 1000, events = 100, locations = "somese.cern.ch")
         newFile.addRun(Run(1, *[45]))
+        newFile.create()
         self.singleFileFileset.addFile(newFile)
+        self.singleFileFileset.commit()
 
 
         self.multipleFileRunset = Fileset(name = "TestFileset3")
+        self.multipleFileRunset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
             newFile.addRun(Run(i/3, *[45]))
+            newFile.create()
             self.multipleFileRunset.addFile(newFile)
+        self.multipleFileRunset.commit()
 
         self.singleRunFileset = Fileset(name = "TestFileset4")
+        self.singleRunFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
             newFile.addRun(Run(1, *[45]))
+            newFile.create()
             self.singleRunFileset.addFile(newFile)
+        self.singleRunFileset.commit()
 
-        testWorkflow = Workflow()
+        testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman", name = "wf001", task="Test")
+        testWorkflow.create()
         self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
                                                      workflow = testWorkflow,
                                                      split_algo = "RunBased",
@@ -78,6 +112,12 @@ class EventBasedTest(unittest.TestCase):
                                                      split_algo = "RunBased",
                                                      type = "Processing")
 
+
+        self.multipleFileSubscription.create()
+        self.singleFileSubscription.create()
+        self.multipleRunSubscription.create()
+        self.singleRunSubscription.create()
+
         
         return
 
@@ -85,9 +125,26 @@ class EventBasedTest(unittest.TestCase):
         """
         _tearDown_
 
-        Nothing to do...
+        Tear down WMBS architechture.
         """
-        pass
+
+        myThread = threading.currentThread()
+
+        if myThread.transaction == None:
+            myThread.transaction = Transaction(self.dbi)
+            
+        myThread.transaction.begin()
+            
+        factory = WMFactory("WMBS", "WMCore.WMBS")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        
+        if not destroyworked:
+            raise Exception("Could not complete WMBS tear down.")
+            
+        myThread.transaction.commit()
+
+        return
 
     def testExactRuns(self):
         """

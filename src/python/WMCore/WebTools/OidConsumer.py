@@ -5,7 +5,7 @@ import openid
 from openid.consumer import consumer, discover
 from openid.cryptutil import randomString # To generate session IDs
 from openid.store import filestore
-from openid.extensions import sreg # To request authorization data
+import cms_sreg as sreg # To request authorization data
 import cgi # To use escape()
 # default handler for login/etc pages
 from WMCore.WebTools.OidDefaultHandler import OidDefaultHandler
@@ -152,9 +152,9 @@ class OidConsumer(cherrypy.Tool):
             # it asks for the user authorization stuff (role, group, site)
             # Since this extension makes part of the original OpenID request,
             # it will be sent securely.
-            sreg_request = sreg.SRegRequest(required=['nickname',  # 'role'
-                                                      'fullname',  # 'group'
-                                                      'email'])    # 'site'
+            sreg_request = sreg.SRegRequest(required=['role',
+                                                      'group',
+                                                      'site'])
             #sreg_request = sreg.SRegRequest(required=['nickname'],
                                            # optional=['fullname', 'email'])
             oidrequest.addExtension(sreg_request)
@@ -221,12 +221,9 @@ class OidConsumer(cherrypy.Tool):
             # The authorization information is supposed to come in here.
             sreg_data = sreg.SRegResponse.fromSuccessResponse(info)            
             if sreg_data:
-                cherrypy.session[self.session_name]['role'] = \
-                                      sreg_data.get('nickname',None)
-                cherrypy.session[self.session_name]['group'] = \
-                                      sreg_data.get('fullname',None)
-                cherrypy.session[self.session_name]['site'] = \
-                                      sreg_data.get('email',None)
+                for i in ['role', 'group', 'site']:
+                    cherrypy.session[self.session_name][i] = \
+                                      sreg_data.get(i,None)
             else:
                 cherrypy.session[self.session_name]['role']  = None
                 cherrypy.session[self.session_name]['group'] = None

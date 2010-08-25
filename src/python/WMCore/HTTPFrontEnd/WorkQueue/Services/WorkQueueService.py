@@ -17,8 +17,7 @@ from os import path
 # change to a url here so unit tests aren't affected
 def wrapGetWork(workqueue, *args, **kwargs):
     """Change url's to be web-accessible"""
-    print "*-----------------*"
-    print kwargs
+
     result = workqueue.getWork(*args, **kwargs)
     for item in result:
         item['url'] = "%s/wf/%s" % (workqueue.params['QueueURL'],

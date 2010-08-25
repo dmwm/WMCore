@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.25 2010/04/05 19:26:01 mnorman Exp $"
-__version__  = "$Revision: 1.25 $"
+__revision__ = "$Id: JobFactory.py,v 1.26 2010/05/03 14:30:35 mnorman Exp $"
+__version__  = "$Revision: 1.26 $"
 
 
 import logging
@@ -159,3 +159,17 @@ class JobFactory(WMObject):
 
         return fileDict
 
+
+    def getJobName(self, length):
+        """
+        _getJobName_
+
+        Creates a job name based on workflow and task
+        Uses a passed in integer length that MUST be unique!
+        """
+
+        name = '%s-%s-%i' % (self.subscription.taskName(),
+                             self.subscription.workflowName(),
+                             length)
+
+        return name

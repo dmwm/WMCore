@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.12 2010/03/02 21:09:25 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.13 2010/03/03 16:32:53 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -237,14 +237,14 @@ class JobSubmitterPoller(BaseWorkerThread):
                 tmpSlots = nSpaces
                 tmpSite  = site
         if tmpSlots < 0:  # Then we didn't have any sites under the minimum
-            for site in self.sites.keys:
+            for site in self.sites.keys():
                 tmpSlots = -999999
                 tmpSite  = None
                 if not jobType in self.sites[site].keys():
                     # Then we don't actually have this type at this site
                     continue
                 siteDict = self.sites[site][jobType]
-                if not siteDict['task_running_job'] < siteDict['max_slots']:
+                if not siteDict['task_running_jobs'] < siteDict['max_slots']:
                     # Then we have too many jobs for this task
                     # Ignore this site
                     continue
@@ -277,8 +277,8 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         changeState = ChangeState(self.config)
 
-        #logging.error("In submitJobs")
-        #logging.error(len(jobList))
+        logging.error("In submitJobs")
+        logging.error(len(jobList))
 
         count = 0
         successList = []
@@ -299,8 +299,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             #package.extend(listOfJobs)
             package.save(os.path.join(packagePath, 'JobPackage.pkl'))
 
-            #logging.error('About to send jobs to Plugin')
-            #logging.error(len(listOfJobs))
+            logging.error('About to send jobs to Plugin')
+            logging.error(len(listOfJobs))
             
             while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
                 listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]

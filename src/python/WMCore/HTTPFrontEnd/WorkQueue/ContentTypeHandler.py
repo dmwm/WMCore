@@ -28,8 +28,7 @@ class ContentTypeHandler:
             params = request.body.read()
             if params:
                 kw = JsonWrapper.loads(params)
-                for k in kw.keys():
-                    kwargs[str(kw)] = kw.pop(k)
+                kwargs.update(kw)
         return args, kwargs
     
     def jsonThunkerHandler(self, args, kwargs):

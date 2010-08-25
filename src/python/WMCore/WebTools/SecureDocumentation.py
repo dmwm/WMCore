@@ -1,4 +1,5 @@
 from cherrypy import expose, tools
+import cherrypy
 from WMCore.WebTools.Page import TemplatedPage
 from os import listdir
 
@@ -10,7 +11,11 @@ class SecureDocumentation(TemplatedPage):
     @tools.cernoid()
     def index(self):
         templates = listdir(self.templatedir)
-        index = "<h1>Documentation</h1>\n<ol>"
+        index = "<h1>Secure Documentation</h1>"
+        index += "You are logged in using <a href='%s'>%s</a>\n" % \
+                (cherrypy.session['SecurityModule']['openid_url'],
+                 cherrypy.session['SecurityModule']['openid_url'])
+        index += "\n<ol>"
         for t in templates:
             if '.tmpl' in t:
                 index = "%s\n<li><a href='%s'>%s</a></li>" % (index, 

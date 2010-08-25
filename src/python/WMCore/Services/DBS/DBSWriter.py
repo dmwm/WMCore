@@ -303,25 +303,15 @@ class DBSWriter:
                               #BranchHash = outFile['BranchHash'],
                             )
             #Set checksums by hand
-            if type(outFile['cktype']) == list:
-                #Well, then we're in trouble
-                #Multiple checksums
-                print "We have a list?"
-                print outFile['cktype']
-                for entry in outFile['cktype']:
-                    #This should be a dictionary with a cktype and cksum key
-                    if str(entry['cktype']).lower() == 'cksum':
-                        dbsfile['Checksum'] = str(outFile['cksum'])
-                    elif str(entry['cktype']).lower() == 'adler32':
-                        dbsfile['Adler32'] = str(outFile['cksum'])
-                    elif str(entry['cktype']).lower() == 'md5':
-                        dbsfile['Md5'] = str(outFile['cksum'])
-            elif str(outFile['cktype']).lower() == 'cksum':
-                dbsfile['Checksum'] = str(outFile['cksum'])
-            elif str(outFile['cktype']).lower() == 'adler32':
-                dbsfile['Adler32'] = str(outFile['cksum'])
-            elif str(outFile['cktype']).lower() == 'md5':
-                dbsfile['Md5'] = str(outFile['cksum'])
+            #dbsfile['Checksum'] = 0  #Set a default?
+            for entry in outFile['checksums'].keys():
+                #This should be a dictionary with a cktype key and cksum value
+                if entry.lower() == 'cksum':
+                    dbsfile['Checksum'] = str(outFile['checksums'][entry])
+                elif entry.lower() == 'adler32':
+                    dbsfile['Adler32'] = str(outFile['checksums'][entry])
+                elif entry.lower() == 'md5':
+                    dbsfile['Md5'] = str(outFile['checksums'][entry])
             
 
             

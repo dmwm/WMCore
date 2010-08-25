@@ -7,9 +7,10 @@ Extension for a normal ConfigSection to provide a Tree structure
 of ConfigSections
 
 """
-__revision__ = "$Id: ConfigSectionTree.py,v 1.3 2009/05/22 16:04:49 evansde Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ConfigSectionTree.py,v 1.4 2009/08/17 16:41:34 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
+import types
 
 from WMCore.Configuration import ConfigSection
 
@@ -154,6 +155,35 @@ def nodeIterator(node):
     for i in listNodes(node):
         yield getNode(node, i)
 
+def format(value):
+    """
+    _format_
+
+    format a value as python
+    keep parameters simple, trust python...
+    """
+    if type(value) == types.StringType:
+        value = "\'%s\'" % value
+    return str(value)
+
+def formatNative(value):
+    """
+    _formatNative_
+
+    Like the format function, but allowing passing of ints, floats, etc.
+    """
+
+    if type(value) == types.IntType:
+        return value
+    if type(value) == types.FloatType:
+        return value
+    if type(value) == types.ListType:
+        return value
+    if type(value) == types.DictType:
+        return dict
+    else:
+        return format(value)
+
 class TreeHelper:
     """
     _TreeHelper_
@@ -165,7 +195,6 @@ class TreeHelper:
     """
     def __init__(self, cfgSectTree):
         self.data = cfgSectTree
-
 
     def name(self):
         """get name of this node"""
@@ -221,6 +250,35 @@ class TreeHelper:
         """
         for i in listNodes(self.data):
             yield getNode(self.data, i)
+
+
+    def pythoniseDict(self, **options):
+        """
+        convert self into dict of python format strings with
+        values in value position
+
+        """
+        prefix     = options.get('prefix',   None)
+        sections   = options.get('sections',   False)
+
+        if prefix != None:
+            myName = "%s.%s" % (prefix, self.data._internal_name)
+        else:
+            myName = self.data._internal_name
+
+        result = {}
+
+        for attr in self.data._internal_settings:
+            if attr in self.data._internal_children:
+                if sections:
+                    result["%s.section_(\'%s\')" % (myName, attr)] = '_Section_'
+                result.update(TreeHelper(getattr(self.data, attr)).pythoniseDict(prefix = myName))
+                continue
+
+            #This is potentially dangerous, because it adds lists, dicts.
+            result["%s.%s" %(myName, attr)] = formatNative(getattr(self.data, attr))
+
+        return result
 
 
 

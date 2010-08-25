@@ -17,7 +17,7 @@ class testJSONRequests(unittest.TestCase):
     def testSet1(self):
         self.roundTrip(Set([]))
     def testSet2(self):
-        self.roundTrip(Set([1,2,3,4]))
+        self.roundTrip(Set([1,2,3,4,Run(1)]))
     def testSet3(self):
         self.roundTrip(Set(['a','b','c','d']))
     def testSet4(self):

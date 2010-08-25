@@ -10,6 +10,7 @@ from httplib import HTTPConnection
 from httplib import HTTPSConnection
 from sets import Set
 from WMCore.WMException import WMException
+import types
 
 class Requests(dict):
     """
@@ -149,16 +150,23 @@ class JSONSetEncoder(json.JSONEncoder):
             tempDict = {'_hack_to_encode_a_set_in_json':True}
             counter = 0
             for item in toEncode:
-                tempDict[counter] = JSONSetEncoder.encode(self, item)
+                tempDict[counter] = item
                 counter += 1
             return tempDict
+        elif (isinstance(toEncode, object)):
+            ourdict = toEncode.__dict__
+            ourdict['_json_hack_type'] = "%s" % toEncode.__class__
+            return ourdict
         else:
             return "**PLACEHOLDER** NEED TO FIX"
                 
 def JSONDecodeSetCallback(toDecode):
     if '_hack_to_encode_a_set_in_json' in toDecode:
         del toDecode['_hack_to_encode_a_set_in_json']
-        return Set(toDecode.values())
+        try:
+            return Set(toDecode.values())
+        except:
+            return "setfail in requests.py"
     else:
         return toDecode
 

@@ -83,8 +83,8 @@ class PhEDEx(AuthorisedService):
         
         return result 
 
-    def injectBlocks(self, dbsUrl, node, datasetPath = None, verbose=0, strict=1, *blockNames):
-    
+    def injectBlocks(self, dbsUrl, node, datasetPath = None, verbose = 0,
+                     strict = 1, *blockNames):
         """
         _injectBlocksToPhedex_
     
@@ -103,12 +103,70 @@ class PhEDEx(AuthorisedService):
         
         xml = PhEDExXMLDrop.makePhEDExDrop(dbsUrl, datasetPath, *blockNames)
 
+        print "XML: %s" % xml
+
         args['data'] = xml
         args['verbose'] = verbose
         args['strict'] = strict
         
-        return self._getResult(callname, args=args)
-     
+        #return self._getResult(callname, args=args)
+        return None
+
+    def injectBlocksFromDB(self, dbsUrl, injectionData, nodeName, verbose = 0,
+                           strict = 0):
+        """
+        _injectBlocksFromDB_
+
+        Inject blocks into PhEDEx without querying local DBS.  The injectionData
+        parameter must be a dictionary keyed by dataset path.  Each dataset path
+        will map to a list of blocks, each block being a dict.  The block dicts
+        will have three keys: name, is-open and files.  The files key will be a
+        list of dicts, each of which have the following keys: lfn, size and
+        checksum.  The following is an example object:
+
+        {"dataset1":
+          {"block1": {"is-open": "y", "files":
+                        [{"lfn": "lfn1", "size": 10, "checksum": "cksum1234"},
+                         {"lfn": "lfn2", "size": 20, "checksum": "cksum4321"}]}}}
+
+        The verbose and strict parameters are passed to the PhEDEx data service.
+        A verbose setting of 1 will enable verbose output, a strict setting 1 of
+        will cause the data service to throw an error if it can't insert the
+        data exactly as requested.
+        """
+        injectionSpec = PhEDExXMLDrop.XMLInjectionSpec(dbsUrl)
+
+        for datasetPath in injectionData:
+            datasetSpec = injectionSpec.getDataset(datasetPath)
+
+            for fileBlockName, fileBlock in injectionData[datasetPath].iteritems():
+                blockSpec = datasetSpec.getFileblock(fileBlockName,
+                                                     fileBlock["is-open"])
+
+                for file in fileBlock["files"]:
+                    blockSpec.addFile(file["lfn"], file["checksum"],
+                                      file["size"])
+
+        improv = injectionSpec.save()
+        xmlString = improv.makeDOMElement().toprettyxml()
+
+        args = {}
+        args["node"] = nodeName
+        args["data"] = xmlString
+        args["verbose"] = verbose
+        args["strict"] = strict
+        
+        return self._getResult("inject", args = args)
+
+    def getReplicaInfoForBlock(self, blockName):
+        """
+        _getReplicaInfoForBlock_
+
+        Retrieve replica information from PhEDEx for a particular block.
+        """
+        args = {"block": blockName}
+        return self._getResult("filereplicas", args = args)        
+        pass
     
     def subscribe(self, dbsUrl, subscription):
         """

@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.35 2009/12/22 16:10:26 mnorman Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Job_t.py,v 1.36 2010/01/22 18:01:15 mnorman Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import unittest
 import logging
@@ -1090,6 +1090,39 @@ class JobTest(unittest.TestCase):
         assert len(goldenRecoOutput) == 0, \
                "Error: Missing outputs in output map for RECO."
         
+        return
+
+
+    def testLocations(self):
+        """
+        _testLocations_
+        
+        Test setting and getting locations using DAO objects
+        """
+
+
+        testJob = self.createTestJob()
+
+        jobGetLocation = self.daoFactory(classname = "Jobs.GetLocation")
+        jobSetLocation = self.daoFactory(classname = "Jobs.SetLocation")
+
+        result = jobGetLocation.execute(jobid = testJob['id'])
+        self.assertEqual(result, [['test.site.ch']])
+        jobSetLocation.execute(jobid = testJob['id'], location = "test2.site.ch")
+        result = jobGetLocation.execute(jobid = testJob['id'])
+        self.assertEqual(result, [['test2.site.ch']])
+
+
+        testJob2 = self.createTestJob()
+        testJob3 = self.createTestJob()
+
+        binds = [{'jobid': testJob['id']}, {'jobid': testJob2['id']}, {'jobid': testJob3['id']}]
+        result = jobGetLocation.execute(jobid = binds)
+        self.assertEqual(result, \
+                         [{'site_name': 'test2.site.ch', 'id': 1L}, \
+                          {'site_name': 'test.site.ch', 'id': 2L}, \
+                          {'site_name': 'test.site.ch', 'id': 3L}])
+
         return
 
 if __name__ == "__main__":

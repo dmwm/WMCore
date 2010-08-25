@@ -9,10 +9,11 @@ from WMCore.Database.Dialects import SQLiteDialect
 from WMCore.Database.Dialects import OracleDialect
 
 class DAOFactory(object):
-    def __init__(self, package='WMCore', logger=None, dbinterface=None):
+    def __init__(self, package='WMCore', logger=None, dbinterface=None, owner=""):
         self.package = package
         self.logger = logger
         self.dbinterface = dbinterface
+        self.owner = owner
         self.logger.debug("Instantiating DAOFactory for %s package" % self.package)
         self.dialects = {"Oracle" : OracleDialect,
                     "MySQL" : MySQLDialect,
@@ -35,4 +36,7 @@ class DAOFactory(object):
         self.logger.debug("importing %s, %s" % (module, classname))
         module = __import__(module, globals(), locals(), [classname])#, -1)
         instance = getattr(module, classname.split('.')[-1])
-        return instance(self.logger, self.dbinterface)
+        if self.owner:
+            return instance(self.logger, self.dbinterface, self.owner)
+        else:
+            return instance(self.logger, self.dbinterface)

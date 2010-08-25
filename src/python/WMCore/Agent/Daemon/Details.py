@@ -9,18 +9,30 @@ Also, provides utils to shutdown the daemon process
 
 """
 
-__revision__ = "$Id: Details.py,v 1.3 2010/02/05 14:17:34 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "fvlingen@caltech.edu"
+__revision__ = "$Id: Details.py,v 1.4 2010/02/18 14:58:46 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 import os
+import subprocess
 import shutil
 import time
 #FIXME: needs to be replaced with persistent backend.
 from xml.dom.minidom import parse
 
+def run(command):
+    proc = subprocess.Popen(
+            ["/bin/bash"], shell=True, cwd=os.environ['PWD'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            )
 
+    proc.stdin.write(command)
+    stdout, stderr =  proc.communicate()
+    rc = proc.returncode
+    
+    return stdout, stderr, rc
 
 class Details(dict):
     """
@@ -66,7 +78,10 @@ class Details(dict):
         Dumb check on /proc/pid existing. Anyone know a better way?
 
         """
-        return os.path.exists("/proc/%s" % self['ProcessID'])
+        se, so, rc = run('ps -p %s' % self['ProcessID']) 
+        if rc != 0:
+            return False
+        return True
 
     def kill(self, signal = 15):
         """

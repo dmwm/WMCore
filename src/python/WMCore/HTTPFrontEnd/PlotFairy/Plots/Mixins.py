@@ -193,7 +193,7 @@ def axis_format(axis,data):
         axis.set_major_formatter(SIFormatter())
     elif format=='time':
          if not data.get('timeformat',None)==None:
-             axis.set_major_formatter(TimeFormatter(data['timeformat']))
+             axis.set_major_formatter(TimeFormatter(data.get('timeformat','hour')))
          else:
              axis.set_major_formatter(TimeFormatter())
              #axis.set_major_locator(TimeLocator()) not yet written...
@@ -261,7 +261,7 @@ class NumericAxisMixin(Mixin):
                                                      FloatBase('max',default=None),
                                                      ElementBase('log',bool,default=False),
                                                      FloatBase('logbase',min=1,default=10),
-                                                     StringBase('timeformat',None,default=None),
+                                                     StringBase('timeformat',default=None),
                                                      StringBase('format',('num','time','binary','si','hex'),default='num')])]
         super(NumericAxisMixin,self).__init__(*args,**kwargs)
     def predata(self,*args,**kwargs):
@@ -402,6 +402,13 @@ class AnyBinnedAxisMixin(Mixin):
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
         #super(AnyBinnedAxisMixin,self).predata(*args,**kwargs)
+        
+    def postdata(self,*args,**kwargs):
+        axes = self.figure.gca()
+        axis = getattr(axes,self.__axis)
+        data = self.props.get(self.__axis)
+        if data['min'] or data['max']:
+            axis.set_view_interval(data['min'],data['max'])    
 
 XAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'xaxis')
 YAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'yaxis')

@@ -52,7 +52,8 @@ def random_data(length=10):
                  math.sqrt,
                  math.exp,
                  math.cos,
-                 math.sin
+                 math.sin,
+                 lambda x: 1./x if not x==0 else 0
                  ]
     terms = [random.choice(functions) for i in range(random.randint(1,4))]
     return [sum([t(i) for t in terms]) for i in range(length)]

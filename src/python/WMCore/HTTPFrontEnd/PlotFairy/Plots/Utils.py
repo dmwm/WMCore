@@ -50,22 +50,37 @@ class TimeFormatter(matplotlib.ticker.ScalarFormatter):
                (2419200,'%d %b %Y'),
                (31557600,'%b %Y'),
                (315576000,'%Y'))
-    def __init__(self,span=3600):
-        self.span = span
+    formats = {
+               'second':'%M:%S',
+               'minute':'%H:%M',
+               'hour':'%a %H:%M',
+               'day':'%m %d',
+               'week':'%b %d',
+               'month':'%d %b %Y',
+               'year':'%b %Y',
+               'decade':'%Y'
+               }
+    def __init__(self,span='hour'):
+        if span in TimeFormatter.formats:
+            self.time_format = TimeFormatter.formats[span]
+        else:
+            self.time_format = span
+        matplotlib.ticker.ScalarFormatter.__init__(self,useOffset=False)
     def __call__(self,val,pos=None):
-        t = time.localtime(val)
-        for f in formats:
-            if f[0]>=self.span:
-                return time.strftime(f[1],t)
+        return time.strftime(self.time_format,time.localtime(val))
                 
 class HexFormatter(matplotlib.ticker.ScalarFormatter):
+    def __init__(self):
+        matplotlib.ticker.ScalarFormatter.__init__(self,useOffset=False)
     def __call__(self,val,pos=None):
-        return str(hex(val))           
+        return '%x'%val           
 
 class SuffixFormatter(matplotlib.ticker.ScalarFormatter):
     suffix = [(1,'')]
+    def __init__(self):
+        matplotlib.ticker.ScalarFormatter.__init__(self,useOffset=False)
     def __call__(self,val,pos=None):
-        for s in self.suffix:
+        for s in self.__class__.suffix:
             if abs(val)>=100.*s[0]:
                 return "%.0f%s"%(val/s[0],s[1])
             if abs(val)>=10.*s[0]:

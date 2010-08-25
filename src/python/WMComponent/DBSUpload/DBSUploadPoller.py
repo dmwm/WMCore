@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W6501
+# W6501: Allow logging messages to have string formatting
 """
 The DBSUpload algorithm
 
@@ -24,8 +26,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.24 2010/05/14 22:45:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.25 2010/05/19 20:35:58 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import threading
 import logging
@@ -217,7 +219,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 # WARNING!  This is a temporary fix
                 # Don't count on it staying around!
                 # Also, I know it's clumsy.  Not particularly caring about that now.
-                if not datasetAlgo['DatasetInDBS'] and dataset['PrimaryDataset'].lower() != 'bogus':
+                if dataset['PrimaryDataset'].lower() != 'bogus':
                     # We should add the dataset too
 
                     logging.info('Entering primary, processed datasets into DBS')

@@ -5,11 +5,12 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.61 2010/02/16 16:37:38 mnorman Exp $"
-__version__ = "$Revision: 1.61 $"
+__revision__ = "$Id: File.py,v 1.62 2010/03/05 19:00:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.62 $"
 
 import threading
 import time
+import logging
 
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.DataStructs.Run import Run
@@ -196,15 +197,7 @@ class File(WMBSBase, WMFile):
                                     transaction = self.existingTransaction())
 
         self.update(result)
-
         self.loadChecksum()
-        
-        #Now get the checksum
-        #action = self.daofactory(classname = 'Files.GetChecksum')
-        #result = action.execute(fileid = self['id'], conn = self.getDBConn(),
-        #                        transaction = self.existingTransaction())
-        #if result:
-        #    self.update(result)
         return
 
     def loadData(self, parentage = 0):
@@ -254,9 +247,6 @@ class File(WMBSBase, WMFile):
         Create a file.  If no transaction is passed in this will wrap all
         statements in a single transaction.
         """
-
-        myThread = threading.currentThread()
-        
         existingTransaction = self.beginTransaction()
 
         if self.exists() != False:
@@ -379,8 +369,6 @@ class File(WMBSBase, WMFile):
         if not self.exists():
             return
 
-        myThread = threading.currentThread()
-        
         existingTransaction = self.beginTransaction()
 
         # Add new locations if required
@@ -496,18 +484,24 @@ class File(WMBSBase, WMFile):
 
         This function will create a WMBS File given a DataStructs file
         """
-
         self.update(file)
+
+        if type(file["locations"]) == set:
+            s = file["locations"].copy()
+            seName = s.pop()
+        elif type(file["locations"]) == list:
+            seName = file["locations"][0]
+        else:
+            seName = file["locations"]
+
+        self.setLocation(se = seName, immediateSave = False)
+
         self.create()
         #I don't know why I need this...
         self["parents"] = set()
 
         for parent in file['parents']:
             self.addParent(parent)
-
-        for location in file['locations']:
-            self.setLocation(se = location)
-
 
         return
 

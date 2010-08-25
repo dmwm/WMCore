@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.17 2010/06/21 21:25:45 sfoulkes Exp $"
-__version__  = "$Revision: 1.17 $"
+__revision__ = "$Id: LumiBased.py,v 1.18 2010/06/21 21:38:14 mnorman Exp $"
+__version__  = "$Revision: 1.18 $"
 
 import operator
 
@@ -88,6 +88,9 @@ class LumiBased(JobFactory):
             # Start this out high so we immediately create a new job
             lumisInJob  = lumisPerJob + 100
 
+            # Hold the last lumi run
+            lastRun    = None
+
             for f in locationDict[location]:
                 fileLength = sum([ len(run) for run in f['runs']])
                 if fileLength == 0:
@@ -99,6 +102,9 @@ class LumiBased(JobFactory):
                 if lumisInJob >= lumisPerJob:
                     # Then we need to close out this job
                     # And start a new job
+                    if lastRun:
+                        self.currentJob["mask"]['LastRun']   = lastRun.run
+                        self.currentJob["mask"]['LastLumi']  = lastRun.lumis[-1]
                     self.newJob(name = self.getJobName(length=totalJobs))
                     firstRun = fileRuns[0]
                     self.currentJob['mask']['FirstRun']  = firstRun.run
@@ -110,14 +116,11 @@ class LumiBased(JobFactory):
                 # Actually add the file to the job
                 self.currentJob.addFile(f)
                 lumisInJob += fileLength
+                lastRun = fileRuns[-1]
 
-                
-                if lumisInJob >= lumisPerJob:
-                    # Write down the ending info from this job
-                    # Do not close job until you get the
-                    # start info from the next file
-                    # This simplifies things
-                    lastRun = fileRuns[-1]
+            if self.currentJob:
+                # If we get to the end of the job, attach the last runs and lumis
+                if lastRun:
                     self.currentJob["mask"]['LastRun']   = lastRun.run
                     self.currentJob["mask"]['LastLumi']  = lastRun.lumis[-1]
 
@@ -133,6 +136,8 @@ class LumiBased(JobFactory):
 
 
         totalJobs = 0
+        lastLumi = None
+        lastRun = None
         for location in locationDict.keys():
 
             # Create a new jobGroup
@@ -156,6 +161,9 @@ class LumiBased(JobFactory):
                         if lumisInJob == lumisPerJob:
                             # Then we need to close out this job
                             # And start a new job
+                            if lastRun != None and lastLumi != None:
+                                self.currentJob["mask"]['LastRun']   = lastRun
+                                self.currentJob["mask"]['LastLumi']  = lastLumi
                             self.newJob(name = self.getJobName(length=totalJobs))
                             self.currentJob['mask']['FirstRun']  = run.run
                             self.currentJob['mask']['FirstLumi'] = lumi
@@ -167,12 +175,14 @@ class LumiBased(JobFactory):
 
                         lumisInJob += 1
 
-                        if lumisInJob == lumisPerJob:
-                            # Then this will be closed next round
-                            # Set things here
-                            self.currentJob["mask"]['LastRun']   = run.run
-                            self.currentJob["mask"]['LastLumi']  = lumi
+                        lastLumi = lumi
+                        lastRun = run.run
 
+            if self.currentJob:
+                if lastRun and lastLumi:
+                    self.currentJob["mask"]['LastRun']   = lastRun
+                    self.currentJob["mask"]['LastLumi']  = lastLumi
+                                
                         
 
 

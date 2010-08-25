@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.9 2010/04/26 12:20:14 spigafi Exp $"
-__revision__ = "$Revision: 1.9 $"
+__version__ = "$Id: Job.py,v 1.10 2010/04/27 18:54:03 spigafi Exp $"
+__revision__ = "$Revision: 1.10 $"
 
 
 # imports
@@ -96,7 +96,9 @@ class Job(DbObject):
             self.data['name'] = makeUUID()
         if not self.data['id']:
             self.data['id'] = -1
-
+            
+        # object not in database
+        self.existsInDataBase = False
 
     ##########################################################################
 
@@ -106,14 +108,16 @@ class Job(DbObject):
         Create a new instance of a job
         """
         
-        if not self.exists():
-            action = self.daofactory(classname = "Job.New")
-            action.execute(binds = self.data,
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction)
+        # is this 'if' necessary? This check is probably duplicated...
+        #if not self.existsInDataBase:
+        action = self.daofactory(classname = "Job.New")
+        action.execute(binds = self.data,
+                       conn = self.getDBConn(),
+                       transaction = self.existingTransaction)
         
-        return self.exists()
-        
+        # update ID & check... necessary call!
+        if self.exists() : 
+            self.existsInDataBase = True
 
     ####################################################################
 
@@ -136,20 +140,18 @@ class Job(DbObject):
                             transaction = self.existingTransaction)
         if tmpId:
             self.data['id'] = tmpId
-            
-        self.existsInDataBase = True
         
         return tmpId
 
     ###############################################################
 
     @dbTransaction
-    def save(self):
+    def save(self, deep = True):
         """
         Save the object into the database
         """
 
-        if not self.exists():
+        if not self.existsInDataBase:
             # Then we don't have an entry yet
             self.create()
         else:
@@ -157,9 +159,11 @@ class Job(DbObject):
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
+            
         
         # create entry for runningJob
-        if self.runningJob is not None:
+        if deep and self.runningJob is not None:
+            # consistency?
             self.runningJob['jobId']      = self.data['jobId']
             self.runningJob['taskId']     = self.data['taskId']
             self.runningJob['submission'] = self.data['submissionNumber']
@@ -174,7 +178,13 @@ class Job(DbObject):
         """
         Load the job info from the database
         """
-
+        
+        # consistency check
+        if not self.valid(['jobId', 'taskId', 'name']):
+            raise JobError("The following job instance cannot be loaded," + \
+                     " since it is not completely specified: %s" % self)
+        
+        # the select MUST be done taking care of these three fields...
         if self.data['id'] > 0:
             # Then load by ID
             value = self.data['id']
@@ -192,19 +202,25 @@ class Job(DbObject):
 
         else:
             # We have no identifiers.  We're screwed
+            # this branch doesn't exist
             return
 
+        # this DAO MUST be reviewed
         action = self.daofactory(classname = "Job.SelectJob")
         result = action.execute(value = value,
                                 column = column,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction)
 
-
         if result == []:
             # Then the job doesn't exist!
-            logging.error('Attempted to load non-existant job!')
-            return
+            raise JobError("No job instances corresponds to the," + \
+                     " template specified: %s" % self)
+        
+        if len(result) > 1 :
+            # bad message, I would like to change it...
+            raise JobError("Multiple job instances corresponds to the" + \
+                     " template specified: %s" % self)
 
         # If it's internal, we only want the first job
         self.data.update(result[0])
@@ -271,6 +287,7 @@ class Job(DbObject):
             
         if not self.runningJob:
             # Then we couldn't load it either
+            # maybe rise an exception?
             return
 
         # check consistency
@@ -311,20 +328,18 @@ class Job(DbObject):
 
     ###########################################################################
 
-    def update(self, deep = False):
+    def update(self, deep = True):
         """
         update job information in database
         """
-        status = 0
         
-        self.save()
-
+        """
         if deep and self.runningJob:
             self.updateRunningInstance()
             status += 1
-
-        # return number of entries updated.
-        return status
+        """
+        
+        return self.save(deep)
 
     ###########################################################################
 

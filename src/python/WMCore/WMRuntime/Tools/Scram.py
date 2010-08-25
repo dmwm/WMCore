@@ -26,6 +26,7 @@ sample usage:
 """
 
 import os
+import sys
 import subprocess
 
 class Scram:
@@ -142,7 +143,7 @@ class Scram:
         self.stdout, self.stderr = proc.communicate()
         if proc.returncode == 0:
             for l in self.stdout.split(";\n"):
-                if l == "": continue
+                if l.strip() == "": continue
                 l = l.replace("export ", "")
                 var,val = l.split("=", 1)
                 self.runtimeEnv[var] = val
@@ -171,7 +172,10 @@ class Scram:
                                 stdin=subprocess.PIPE,
                                 )
 
-        proc.stdin.write(self.preCommand())
+        proc.stdin.write("%s\n" % self.preCommand())
+        # scram fucks up the python environment from the parent shell
+        proc.stdin.write(
+            "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
         proc.stdin.write("%s\n" % command)
         proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()

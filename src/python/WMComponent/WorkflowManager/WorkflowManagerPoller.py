@@ -6,11 +6,12 @@ The actual subscription creation algorithm
 __all__ = []
 __revision__ = "$Id: WorkflowManagerPoller.py,v 1.6 \
             2009/07/27 23:21:44 riahi Exp $"
-__version__ = "$Revision: 1.7 $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
 import re
+import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -47,14 +48,14 @@ class WorkflowManagerPoller(BaseWorkerThread):
         available, create the subscriptions
         """
         # Get all watched mappings
-        #managedWorkflows = self.queries.getManagedWorkflows()
         availableWorkflows = self.queries.getUnsubscribedWorkflows() 
         logging.debug("Found %s unsubscribed managed workflows" \
               % len(availableWorkflows))
+
         
         # Get the details of all unsubscribed filesets
-        #availableFilesets = self.queries.getUnsubscribedFilesets()
         availableFilesets = self.queries.getAllFilesets()
+
         logging.debug("Found %s filesets" % len(availableFilesets))
             
         # Match filesets to managed workflows  
@@ -102,7 +103,71 @@ class WorkflowManagerPoller(BaseWorkerThread):
                                      split_algo = managedWorkflow['split_algo'],
                                      type = managedWorkflow['type'])
                     newSub.create()
-    
+
+        time.sleep(10)
+
+        managedWorkflows = self.queries.getManagedWorkflows()
+        logging.debug("Found %s  managed workflows" \
+              % len(managedWorkflows))
+
+        unsubscribedFilesets = self.queries.getUnsubscribedFilesets()
+        logging.debug("Found %s unsubscribed filesets" % \
+                len(unsubscribedFilesets))
+
+        for unsubscribedFileset in unsubscribedFilesets:
+            # Workflow object cache to pass into Subscription constructor
+            # FIXME
+            wfObj = None
+
+            for managedWork in managedWorkflows:
+
+                logging.debug("The workflow %s" %managedWork['workflow'])
+
+                # Fileset object cache
+                wfObj = None
+                fsObj = None
+
+                # Load the location information
+                #whitelist = Set()
+                #blacklist = Set()
+                # Location is only caf  
+                #locations = self.queries.getLocations(managedWorkflow['id'])
+                #for location in locations:
+                #    if bool(int(location['valid'])) == True:
+                #        whitelist.add(location['site_name'])
+                #    else:
+                #        blacklist.add(location['site_name'])
+
+                # Attempt to match workflows to filesets
+                if re.match(managedWork['fileset_match'], \
+                     unsubscribedFileset['name']):
+                    # Log in debug
+                    msg = "Creating subscription for %s to workflow id %s"
+                    msg %= (unsubscribedFileset['name'], \
+                          managedWork['workflow'])
+                    logging.debug(msg)
+
+                    # Match found - Load the fileset if not already loaded
+                    if not fsObj:
+                        fsObj = Fileset(id = unsubscribedFileset['id'])
+                        fsObj.load()
+
+                    # Load the workflow if not already loaded
+                    if not wfObj:
+                        wfObj = Workflow(id = managedWork['workflow'])
+                        wfObj.load()
+
+                    # Create the subscription
+                    newSub = Subscription(fileset = fsObj, \
+                                     workflow = wfObj, \
+                                     #whitelist = whitelist, \
+                                     #blacklist = blacklist, \
+                                     split_algo = managedWork['split_algo'],
+                                     type = managedWork['type'])
+                    newSub.create()
+                    newSub.load()
+
+
     def algorithm(self, parameters):
         """
         Queries DB for all watched filesets, if matching filesets become
@@ -117,3 +182,12 @@ class WorkflowManagerPoller(BaseWorkerThread):
         except:
             myThread.transaction.rollback()
             raise
+
+
+
+
+
+
+ 
+
+

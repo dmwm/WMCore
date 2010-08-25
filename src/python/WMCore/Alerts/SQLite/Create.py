@@ -6,8 +6,8 @@ Create the "alert_current" and "alert_history" tables for the alert
 system in a MySQL database.
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/07/10 21:45:34 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/08/12 19:55:21 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -20,7 +20,7 @@ class Create(DBCreator):
     Create the "alert_current" and "alert_history" tables for the alert
     system in a MySQL database.
     """
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None):
         """
         ___init___
 
@@ -28,7 +28,11 @@ class Create(DBCreator):
         needed.
         """
         myThread = threading.currentThread()
-        DBCreator.__init__(self, myThread.logger, myThread.dbi)
+        if logger == None:
+            logger = myThread.logger
+        if dbi == None:
+            dbi = myThread.dbi
+        DBCreator.__init__(self, logger, dbi)
         self.create = {}
         self.constraints = {}
 

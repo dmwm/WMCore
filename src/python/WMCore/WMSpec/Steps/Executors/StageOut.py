@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.8 2010/03/18 15:13:45 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: StageOut.py,v 1.9 2010/03/19 20:58:58 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import os.path
@@ -92,70 +92,70 @@ class StageOut(Executor):
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
             logging.info("Beginning report processing for step %s" % (step))
             reportLocation = os.path.join(stepLocation, 'Report.pkl')
-            if os.path.isfile(reportLocation):
-                #First, get everything from a file and 'unpersist' it
-                stepReport = Report(step)
-                stepReport.unpersist(reportLocation)
-                taskID = getattr(stepReport.data, 'id', None)
-                #print stepReport.data
-                if hasattr(stepReport.data, step):
-                    #Once you have the file, make sure you can get the step out of the jobReport
-                    stepSegment = getattr(stepReport.data, step)
-                    if hasattr(stepSegment, 'output'):
-                        #Once you have the step, you need the output
-                        stepOutput = getattr(stepSegment, 'output')
-                        for output in stepOutput:
-                            if hasattr(output, 'files'):
-                                stepFiles = getattr(output, 'files')
-                                for file in stepFiles:
-                                    if hasattr(file, 'LFN') and hasattr(file, 'PFN'):
-                                        #Save the input PFN in case we need it
-                                        #Undecided whether to move file.PFN to the output PFN
-                                        file.InputPFN        = file.PFN
-                                        fileForTransfer = {'LFN': getattr(file, 'LFN'), \
-                                                           'PFN': getattr(file, 'PFN'), \
-                                                           'SEName' : None, \
-                                                           'StageOutCommand': None}
-                                        signal.signal(signal.SIGALRM, alarmHandler)
-                                        signal.alarm(waitTime)
-                                        try:
-                                            manager(fileForTransfer)
-                                            #Afterwards, the file should have updated info.
-                                            filesTransferred.append(fileForTransfer)
-                                            file.StageOutCommand = fileForTransfer['StageOutCommand']
-                                            file.SEName          = fileForTransfer['SEName']
-                                            file.OutputPFN       = fileForTransfer['PFN']
-                                        except Alarm:
-                                            msg = "Indefinite hang during stageOut of logArchive"
-                                            logging.error(msg)
-                                        except:
-                                            print "Exception raised in stageout executor, how do we handle that?"
-                                            raise
-                                        signal.alarm(0)
-                                    else:
-                                        msg = "Not a file"
-
-
-                            else:
-                                msg = "Could not find any files in output"
+            if not os.path.isfile(reportLocation):
+                logging.error("Cannot find report for step %s in space %s" % (step, stepLocation))
+                continue
+            # First, get everything from a file and 'unpersist' it
+            stepReport = Report(step)
+            stepReport.unpersist(reportLocation)
+            taskID = getattr(stepReport.data, 'id', None)
+            if not hasattr(stepReport.data, step):
+                # This is weird, because the step isn't in its own taskSpace
+                msg = "Could not find any mention of step %s in report in the step TaskSpace" % (step)
+                logging.error(msg)
+                continue
+            # Once you have the file, make sure you can get the step out of the jobReport
+            stepSegment = getattr(stepReport.data, step)
+            if not hasattr(stepSegment, 'output'):
+                msg = "Could not find an output module in step %s" % (step)
+                logging.error(msg)
+                continue
+            # Once you have the step, you need the output
+            stepOutput = getattr(stepSegment, 'output')
+            for output in stepOutput:
+                if hasattr(output, 'files'):
+                    stepFiles = getattr(output, 'files')
+                    for file in stepFiles:
+                        if hasattr(file, 'LFN') and hasattr(file, 'PFN'):
+                            # Save the input PFN in case we need it
+                            # Undecided whether to move file.PFN to the output PFN
+                            file.InputPFN        = file.PFN
+                            fileForTransfer = {'LFN': getattr(file, 'LFN'), \
+                                               'PFN': getattr(file, 'PFN'), \
+                                               'SEName' : None, \
+                                               'StageOutCommand': None}
+                            signal.signal(signal.SIGALRM, alarmHandler)
+                            signal.alarm(waitTime)
+                            try:
+                                manager(fileForTransfer)
+                                #Afterwards, the file should have updated info.
+                                filesTransferred.append(fileForTransfer)
+                                file.StageOutCommand = fileForTransfer['StageOutCommand']
+                                file.SEName          = fileForTransfer['SEName']
+                                file.OutputPFN       = fileForTransfer['PFN']
+                            except Alarm:
+                                msg = "Indefinite hang during stageOut of logArchive"
                                 logging.error(msg)
-                    else:
-                        msg = "Could not find an output module in step %s" % (step)
-                        logging.error(msg)
+                            except:
+                                print "Exception raised in stageout executor, how do we handle that?"
+                                raise
+                            signal.alarm(0)
+                        else:
+                            msg = "Not a file"
+                            logging.error(msg)
+                            continue
 
-                    #The file has to be written back
 
                 else:
-                    #This is weird, because the step isn't in its own taskSpace
-                    msg = "Could not find any mention of step %s in report in the step TaskSpace" % (step)
+                    msg = "Could not find any files in output"
                     logging.error(msg)
 
-                #Am DONE with report
-                #Persist it
-                stepReport.persist(reportLocation)
 
-            else:
-                logging.error("Cannot find report for step %s in space %s" % (step, stepLocation))
+            # Am DONE with report
+            # Persist it
+            stepReport.persist(reportLocation)
+
+                
 
         #Done with all steps, and should have a list of stagedOut files in fileForTransfer
         print filesTransferred

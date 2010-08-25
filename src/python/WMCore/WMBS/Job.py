@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.48 2010/04/23 17:41:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: Job.py,v 1.49 2010/04/26 20:34:35 mnorman Exp $"
+__version__ = "$Revision: 1.49 $"
 
 import datetime
 
@@ -94,7 +94,7 @@ class Job(WMBSBase, WMJob):
                               transaction = self.existingTransaction())
         return
 
-    def save(self):
+    def save(self, MaskAndFiles = True):
         """
         _save_
 
@@ -114,12 +114,14 @@ class Job(WMBSBase, WMJob):
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
-        maskAction = self.daofactory(classname = "Masks.Save")
-        maskAction.execute(jobid = self["id"], mask = self["mask"],
-                           conn = self.getDBConn(),
-                           transaction = self.existingTransaction())
+        if MaskAndFiles:
+            maskAction = self.daofactory(classname = "Masks.Save")
+            maskAction.execute(jobid = self["id"], mask = self["mask"],
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
 
-        self.associateFiles()
+            self.associateFiles()
+            
         self.commitTransaction(existingTransaction)
         return
 
@@ -409,21 +411,17 @@ class Job(WMBSBase, WMJob):
 
         job = WMJob(name = self['name'])
 
-        job["id"]          = self["id"]         
-        job["jobgroup"]    = self["jobgroup"]   
-        job["name"]        = self["name"]       
-        job["state"]       = self["state"]      
-        job["state_time"]  = self["state_time"] 
-        job["outcome"]     = self["outcome"]    
-        job["retry_count"] = self["retry_count"]
-        job["location"]    = self["location"]   
-        job["mask"]        = self["mask"]       
-        job["task"]        = self["task"]
-        #job["input_files"] = self["input_files"]
-        job["sandbox"]     = self["sandbox"]
+        # Transfer all simple keys
+        for key in self.keys():
+            keyType = type(self.get(key))
+            if keyType in [str, long, int, float]:
+                job[key] = self[key]
 
         for file in self['input_files']:
             job['input_files'].append(file.returnDataStructsFile())
+
+        
+                
 
         return job
 

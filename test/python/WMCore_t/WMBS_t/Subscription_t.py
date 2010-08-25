@@ -566,10 +566,16 @@ class SubscriptionTest(unittest.TestCase):
                          locations = Set(["goodse.cern.ch"]))
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 20,
                          locations = Set(["goodse.cern.ch"]))
+        testFileD.addRun(Run(1, *[45]))
+        testFileD.addRun(Run(2, *[45]))
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 20,
                          locations = Set(["goodse.cern.ch"]))
+        testFileE.addRun(Run(1, *[45]))
+        testFileE.addRun(Run(2, *[45]))        
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 20,
                          locations = Set(["goodse.cern.ch"]))
+        testFileF.addRun(Run(1, *[45]))
+        testFileF.addRun(Run(2, *[45]))        
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -600,11 +606,14 @@ class SubscriptionTest(unittest.TestCase):
         availableFiles = availAction.execute(subscription = testSubscription["id"])
 
         testFileDDict = {"id": testFileD["id"], "lfn": testFileD["lfn"],
-                         "size": testFileD["size"], "events": testFileD["events"]}
+                         "size": testFileD["size"], "events": testFileD["events"],
+                         "run": 1}
         testFileEDict = {"id": testFileE["id"], "lfn": testFileE["lfn"],
-                         "size": testFileE["size"], "events": testFileE["events"]}
+                         "size": testFileE["size"], "events": testFileE["events"],
+                         "run": 1}
         testFileFDict = {"id": testFileF["id"], "lfn": testFileF["lfn"],
-                         "size": testFileF["size"], "events": testFileF["events"]}        
+                         "size": testFileF["size"], "events": testFileF["events"],
+                         "run": 1}
 
         goldenFiles = [testFileDDict, testFileEDict, testFileFDict]
         for availableFile in availableFiles:

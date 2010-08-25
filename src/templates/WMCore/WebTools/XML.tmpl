@@ -9,8 +9,15 @@
 	</head>
 #if type($data) == type({})
 #for k,v in $data.items()
+  #if type($v) == type([])
+	#for i in $v
+	<$k>$i</$k>
+	#end for
+	#else
 	<$k>$v</$k>
+	#end if
 #end for
+
 #else
 	<body>$data</body>
 #end if

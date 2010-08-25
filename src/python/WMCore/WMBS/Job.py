@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.42 2009/12/24 16:19:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Job.py,v 1.43 2009/12/24 16:37:28 mnorman Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import datetime
 
@@ -46,6 +46,7 @@ class Job(WMBSBase, WMJob):
         self["attachments"]  = {}
         self["cache_dir"]    = None
         self["sandbox"]      = None
+        self['fwjr']         = None
 
         return
             
@@ -67,8 +68,9 @@ class Job(WMBSBase, WMJob):
 
         jobAction = self.daofactory(classname = "Jobs.New")
         jobAction.execute(jobgroup = self["jobgroup"], name = self["name"],
-                          couch_record = self["couch_record"], location = self["location"],
-                          cache_dir = self["cache_dir"], outcome = self["outcome"],
+                          couch_record = self["couch_record"],
+                          location = self["location"], cache_dir = self['cache_dir'],
+                          outcome = self['outcome'], fwjr = self['fwjr'],
                           conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 
@@ -96,13 +98,19 @@ class Job(WMBSBase, WMJob):
         _save_
 
         Flush all changes that have been made to the job to the database.
+
+        Note that this does not save the state of the job, the state has to
+        be altered with the JobStateMachine, in order to preserve order and
+        prevent any accidental trouble
         """
         existingTransaction = self.beginTransaction()
 
         saveAction = self.daofactory(classname = "Jobs.Save")
-        saveAction.execute(self["id"], self["jobgroup"], self["name"],
-                           self["couch_record"], self["location"], 
-                           self["outcome"], self["cache_dir"], conn = self.getDBConn(),
+        saveAction.execute(jobid = self["id"], jobgroup = self["jobgroup"],
+                           name = self["name"], couch_record = self["couch_record"],
+                           location = self["location"], outcome = self["outcome"],
+                           cache_dir = self["cache_dir"], fwjr = self['fwjr'],
+                           conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
         maskAction = self.daofactory(classname = "Masks.Save")

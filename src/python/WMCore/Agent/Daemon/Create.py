@@ -152,7 +152,7 @@ def test():
 
 def createDaemon(workdir, keepParent = False):
     """
-    This is a wrapper over the new deamon methods.
+    This is a wrapper over the new daemon methods.
     That follows the same interface.
 
     """

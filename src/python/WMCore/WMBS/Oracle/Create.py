@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.27 2009/12/04 20:59:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Create.py,v 1.28 2009/12/21 19:57:16 mnorman Exp $"
+__version__ = "$Revision: 1.28 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -120,6 +120,22 @@ class Create(CreateWMBSBase):
                child  INTEGER NOT NULL,
                parent INTEGER NOT NULL
                ) %s""" % tablespaceTable
+
+        self.constraints["01_fk_wmbs_file_parent"] = \
+          """ALTER TABLE wmbs_file_parent ADD
+               (CONSTRAINT fk_fileparent_parent FOREIGN KEY(parent)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_file_parent"] = \
+          """ALTER TABLE wmbs_file_parent ADD
+               (CONSTRAINT fk_fileparent_child FOREIGN KEY(child)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
+
+        self.constraints["01_idx_wmbs_file_parent"] = \
+          """CREATE INDEX wmbs_file_parent_parent ON wmbs_file_parent(parent) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_file_parent"] = \
+          """CREATE INDEX wmbs_file_parent_child ON wmbs_file_parent(child) %s""" % tablespaceIndex
 
         self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
@@ -409,6 +425,7 @@ class Create(CreateWMBSBase):
 
         self.constraints["01_idx_wmbs_sub_jobgroup"] = \
           """CREATE INDEX idx_wmbs_jobgroup_sub ON wmbs_jobgroup(subscription) %s""" % tablespaceIndex
+
 
              
         self.create["14wmbs_job_state"] = \

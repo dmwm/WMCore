@@ -4,13 +4,14 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.8 2010/02/12 15:41:27 mnorman Exp $"
-__version__  = "$Revision: 1.8 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.9 2010/02/26 18:31:29 mnorman Exp $"
+__version__  = "$Revision: 1.9 $"
 
 import threading
 import logging
 import os
 import os.path
+import traceback
 #import time
 #import cProfile, pstats
 
@@ -132,7 +133,7 @@ init jobCreator
                 raise Exception (msg)
 
 
-    def algorithm(self, parameters):
+    def algorithm(self, parameters = None):
         """
         Actually runs the code
         """
@@ -141,7 +142,9 @@ init jobCreator
             self.runJobCreator()
         except Exception, ex:
             #myThread.transaction.rollback()
-            msg = "Failed to execute JobCreator \n%s" % (ex)
+            msg = "Failed to execute JobCreator \n%s\n" % (ex)
+            msg += str(traceback.format_exc())
+            msg += "\n\n"
             raise Exception(msg)
 
         #print self.timing

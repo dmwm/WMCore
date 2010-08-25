@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.14 2010/02/10 20:52:01 evansde Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WMWorkload.py,v 1.15 2010/02/12 16:23:41 evansde Exp $"
+__version__ = "$Revision: 1.15 $"
 
 
 
@@ -208,6 +208,12 @@ class WMWorkloadHelper(PersistencyHelper):
         for i in self.data.tasks.tasklist:
             yield self.getTask(i)
 
+    def listAllTaskNodes(self):
+        result = []
+        for t in self.taskIterator():
+            result.extend(t.listNodes())
+        return result
+
     def listAllTaskNames(self):
         """
         _listAllTaskNames_
@@ -248,9 +254,9 @@ class WMWorkloadHelper(PersistencyHelper):
         taskName = helper.name()
         pathName = "/%s/%s" % (self.name(), taskName)
         helper.setPathName(pathName)
-        if taskName in self.listAllTaskNames():
+        if taskName in self.listAllTaskNodes():
             msg = "Duplicate task name: %s\n" % taskName
-            msg += "Known tasks: %s\n" % self.listAllTaskNames()
+            msg += "Known tasks: %s\n" % self.listAllTaskNodes()
             raise RuntimeError, msg
         self.data.tasks.tasklist.append(taskName)
         setattr(self.data.tasks, taskName, task)
@@ -267,9 +273,9 @@ class WMWorkloadHelper(PersistencyHelper):
         workload
 
         """
-        if taskName in self.listAllTaskNames():
+        if taskName in self.listAllTaskNodes():
             msg = "Duplicate task name: %s\n" % taskName
-            msg += "Known tasks: %s\n" % self.listAllTaskNames()
+            msg += "Known tasks: %s\n" % self.listAllTaskNodes()
             raise RuntimeError, msg
         task = WMTask(taskName)
         helper = WMTaskHelper(task)

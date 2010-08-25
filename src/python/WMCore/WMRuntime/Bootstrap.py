@@ -8,6 +8,7 @@ Frontend module for setting up TaskSpace & StepSpace areas within a job.
 import inspect
 import pickle
 import os
+import os.path
 import logging
 import threading
 from logging.handlers import RotatingFileHandler
@@ -79,11 +80,12 @@ def loadJobDefinition():
     """
     sandboxLoc = locateWMSandbox()
     package = JobPackage()
-    packageLoc = "%s/%s" % (sandboxLoc, "JobPackage.pcl")
+    packageLoc = os.path.join(sandboxLoc, "JobPackage.pcl")
     try:
         package.load(packageLoc)
     except Exception, ex:
         msg = "Failed to load JobPackage:%s\n" % packageLoc
+        msg += str(ex)
         raise BootstrapException, msg
 
     try:
@@ -98,7 +100,8 @@ def loadJobDefinition():
     try:
         job = package[index]
     except Exception, ex:
-        msg = "Failed to extract Job"
+        msg = "Failed to extract Job\n"
+        msg += str(ex)
         raise BootstrapException, msg
 
     return job
@@ -130,6 +133,7 @@ def loadTask(job):
 
     """
     workload = loadWorkload()
+
     try:
         task = workload.getTaskByPath(job['task'])
     except Exception, ex:

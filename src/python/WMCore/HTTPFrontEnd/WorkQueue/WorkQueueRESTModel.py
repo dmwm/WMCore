@@ -4,9 +4,9 @@
 Rest Model for Workqueue DAS.
 """
 
-from WMCore.Wrappers import JsonWrapper
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.WMFactory import WMFactory
+from WMCore.HTTPFrontEnd.WorkQueue.ContentTypeHandler import ContentTypeHandler
 
 class WorkQueueRESTModel(RESTModel):
     """
@@ -23,3 +23,11 @@ class WorkQueueRESTModel(RESTModel):
             for module in config.serviceModules:
                 service = factory.loadObject(module, self)
                 service.register()
+                
+    def processParams(self, args, kwargs):
+        """
+        overwrite base class processParams to handle encoding and decoding
+        depending on the content type
+        """
+        handler = ContentTypeHandler()
+        return handler.convertToParam(args, kwargs)

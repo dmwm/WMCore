@@ -17,118 +17,25 @@ class WorkQueueService(ServiceInterface):
     """
     def register(self):
         
+        #TODO workqueue can be a logcal queue as well get the right config.
         self.wq = globalQueue(logger=self.model, dbi=self.model.dbi, **self.model.config.queueParams)
         #only support get for now
-        self.model.addMethod('POST', 'getwork', self.getWork, args=[])
-        self.model.addMethod('POST', 'status', self.status, args=["status", "before", "after", 
+        self.model.addMethod('POST', 'getwork', self.wq.getWork, args=["siteJobs", "pullingQueueUrl"])
+        self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after", 
                                         "elementIDs", "subs", "dictKey"])
-        self.model.addMethod('PUT', 'synchronize', self.synchronize, args=["child_url", "child_report"])
-        self.model.addMethod('PUT', 'gotwork', self.gotWork, args=["elementIDs"])
-        self.model.addMethod('PUT', 'failwork', self.failWork, args=["elementIDs"])
-        self.model.addMethod('PUT', 'donework', self.doneWork, args=["elementIDs"])
-        self.model.addMethod('PUT', 'cancelwork', self.cancelWork, args=["elementIDs"])
-        #self.model.addMethod('DELETE', 'deletework', self.deleteWork, args=["elementIDs"])
+        self.model.addMethod('PUT', 'synchronize', self.wq.synchronize, args=["child_url", "child_report"])
         
+        self.model.addMethod('PUT', 'gotwork', self.wq.gotWork, args=["elementIDs"])
+        self.model.addMethod('PUT', 'failwork', self.wq.failWork, args=["elementIDs"])
+        self.model.addMethod('PUT', 'donework', self.wq.doneWork, args=["elementIDs"])
+        self.model.addMethod('PUT', 'cancelwork', self.wq.cancelWork, args=["elementIDs"])
+        #TODO: this needs to be more clearly defined (current deleteWork doesn't do anything) 
+        #self.model.addMethod('DELETE', 'deletework', self.wq.deleteWork, args=["elementIDs"])
+        
+    
+    #TODO if it needs to be validated, add validation
+    #The only requirment of validation function is take input (dict) type return input.
+    #raise exception if it fails.       
+    #def validateArgs(self, input):
+    #    return input
             
-    def validateArgs(self, input):
-        return input
-            
-    def getWork(self, **kwargs):    
-        """
-        _getWork_
-        
-        TODO: not the best way to handle parameters which is not in dict format
-        find the better way to handle it 
-        """
-        pqUrl = kwargs.pop("PullingQueueUrl", None)
-        result = self.wq.getWork(kwargs, pqUrl)
-        return result
-    
-    def synchronize(self, child_url, child_report):
-        """
-        _synchronize_
-        
-        TODO: not the best way to handle parameters which is not in dict format
-        find the better way to handle it 
-        """
-        decodedChildReport = JsonWrapper.loads(child_report)
-        
-        result = self.wq.synchronize(child_url, decodedChildReport)
-        #print result
-        return result
-    
-    def doneWork(self, elementIDs):
-        """
-        _doneWork_
-        
-        TODO: not the best way to handle parameters which is not in dict format
-        find the better way to handle it 
-        """
-        decodedElementIDs = JsonWrapper.loads(elementIDs)
-        result = self.wq.doneWork(decodedElementIDs)
-        #print result
-        return result
-    
-    def failWork(self, elementIDs):
-        """
-        _failWork_
-        
-        TODO: not the best way to handle parameters which is not in dict format
-        find the better way to handle it 
-        """
-        decodedElementIDs = JsonWrapper.loads(elementIDs)
-        result = self.wq.doneWork(decodedElementIDs)
-        #print result
-        return result
-    
-    def cancelWork(self, elementIDs):
-        """
-        _cancelWork_
-        
-        TODO: not the best way to handle parameters which is not in dict format
-        find the better way to handle it 
-        """
-        decodedElementIDs = JsonWrapper.loads(elementIDs)
-        result = self.wq.doneWork(decodedElementIDs)
-        #print result
-        return result
-    
-    def gotWork(self, elementIDs):
-        """
-        _doneWork_
-        
-        TODO: not the best way to handle parameters which is not in dict format
-        find the better way to handle it 
-        """
-        decodedElementIDs = JsonWrapper.loads(elementIDs)
-        result = self.wq.doneWork(decodedElementIDs)
-        #print result
-        return result
-    
-    def deleteWork(self, elementIDs):
-        """
-        _deleteWork_
-        
-        TODO: not the best way to handle parameters which is not in dict format
-        find the better way to handle it 
-        """
-        decodedElementIDs = JsonWrapper.loads(elementIDs)
-        result = self.wq.doneWork(decodedElementIDs)
-        #print result
-        return result
-    
-    def status(self, status = None, before = None, after = None, elementIDs=None, 
-               dictKey = None):
-        
-        if elementIDs != None:
-            elementIDs = JsonWrapper.loads(elementIDs)
-        
-        if before != None:
-            before = int(before)
-        if after != None:
-            after = int(after)
-        
-        result = self.wq.status(status, before, after, elementIDs, 
-                                dictKey)
-        
-        return result

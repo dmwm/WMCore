@@ -5,7 +5,8 @@ import pwd
 
 from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.Service import Service
-
+from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+    
 class WorkQueue(Service):
 
     """
@@ -14,7 +15,6 @@ class WorkQueue(Service):
 
     def __init__(self, dict = {}):
         """
-        responseType will be either xml or json
         """
         dict.setdefault('secure', False)
         if not dict.has_key('endpoint'):
@@ -38,9 +38,18 @@ class WorkQueue(Service):
                     filemode = 'w')
             dict['logger'] = logging.getLogger('WorkQueueParser')
 
-        dict.setdefault("accept_type", "application/json")
+        dict.setdefault("accept_type", "application/json+thunker")
+        dict.setdefault("content_type", "application/json")
+        
+        self.encoder = JsonWrapper.dumps
+        self.decoder = self.jsonThunkerDecoder
+        
         Service.__init__(self, dict)
-
+    
+    def jsonThunkerDecoder(self, data):
+        thunker = JSONThunker()
+        return thunker.unthunk(JsonWrapper.loads(data))
+        
     def _getResult(self, callname, clearCache = True,
                    args = None, verb="POST"):
         """
@@ -67,10 +76,11 @@ class WorkQueue(Service):
             # If that changes keep the reset to original self['method']
             
             self["method"] = verb
-            f = self.refreshCache(file, callname, args)
+            # can't pass the decoder here since refreshCache wright to file
+            f = self.refreshCache(file, callname, args, encoder = self.encoder)
             result = f.read()
             f.close()
-
+            result = self.decoder(result)
         except IOError, ex:
             raise RuntimeError("URL not available: %s" % callname)
 
@@ -82,14 +92,15 @@ class WorkQueue(Service):
         _getWork_
 
         """
-        args = siteJobs
-        args['PullingQueueUrl'] = pullingQueueUrl
+        args = {}
+        args['siteJobs'] = siteJobs
+        args['pullingQueueUrl'] = pullingQueueUrl
         
         callname = 'getwork'
         return self._getResult(callname, args = args, verb="POST")
     
-    def status(self, status = None, before = None, after = None, elementIDs=None, 
-               dictKey = None):
+    def status(self, status = None, before = None, after = None, 
+               elementIDs=None, dictKey = None):
         
         args = {}
         if status != None:
@@ -101,8 +112,7 @@ class WorkQueue(Service):
         if dictKey != None:
             args['dictKey'] = dictKey
         if elementIDs != None:
-            encodedElementIDs = JsonWrapper.dumps(elementIDs)
-            args['elementIDs'] = encodedElementIDs
+            args['elementIDs'] = elementIDs
         
         callname = 'status'
         return self._getResult(callname, args = args, verb="POST")
@@ -111,9 +121,8 @@ class WorkQueue(Service):
         """
         _synchronize_
         """
-        encodedChildReport = JsonWrapper.dumps(child_report)
         args = {}
-        args['child_report'] = encodedChildReport
+        args['child_report'] = child_report
         args['child_url'] = child_url
         
         callname = 'synchronize'
@@ -123,9 +132,8 @@ class WorkQueue(Service):
         """
         _doneWork_
         """
-        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
-        args['elementIDs'] = encodedElementIDs
+        args['elementIDs'] = elementIDs
         
         callname = 'donework'
         return self._getResult(callname, args = args, verb="PUT")
@@ -134,9 +142,8 @@ class WorkQueue(Service):
         """
         _failWork_
         """
-        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
-        args['elementIDs'] = encodedElementIDs
+        args['elementIDs'] = elementIDs
         
         callname = 'failwork'
         return self._getResult(callname, args = args, verb="PUT")
@@ -145,9 +152,8 @@ class WorkQueue(Service):
         """
         _cancelWork_
         """
-        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
-        args['elementIDs'] = encodedElementIDs
+        args['elementIDs'] = elementIDs
         
         callname = 'cancelwork'
         return self._getResult(callname, args = args, verb="PUT")
@@ -156,9 +162,8 @@ class WorkQueue(Service):
         """
         _gotWork_
         """
-        encodedElementIDs = JsonWrapper.dumps(elementIDs)
         args = {}
-        args['elementIDs'] = encodedElementIDs
+        args['elementIDs'] = elementIDs
         
         callname = 'gotwork'
         return self._getResult(callname, args = args, verb="PUT")

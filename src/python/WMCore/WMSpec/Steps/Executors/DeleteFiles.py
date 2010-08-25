@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 _Step.Executor.DeleteFiles_
 
@@ -6,18 +7,15 @@ Implementation of an Executor for a Delete step
 
 """
 
-__revision__ = "$Id: DeleteFiles.py,v 1.2 2010/04/29 14:31:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DeleteFiles.py,v 1.3 2010/05/11 16:01:59 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
-import os
 import os.path
 import logging
 import signal
 
 from WMCore.WMSpec.Steps.Executor           import Executor
-from WMCore.FwkJobReport.Report             import Report
 
-import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.DeleteMgr as DeleteMgr
         
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler

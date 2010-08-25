@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.18 2010/04/29 14:58:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: StageOut.py,v 1.19 2010/05/11 16:01:59 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import os
 import os.path
@@ -20,6 +20,9 @@ from WMCore.FwkJobReport.Report             import Report
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
 from WMCore.Storage.StageOutError import StageOutFailure
+
+from WMCore.WMSpec.ConfigSectionTree import nodeParent, nodeName
+from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
         
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
 
@@ -114,39 +117,53 @@ class StageOut(Executor):
             # for that step; or so I hope
             files = stepReport.getAllFileRefsFromStep(step = step)
             for file in files:
-                if hasattr(file, 'lfn') and hasattr(file, 'pfn'):
-                    # Save the input PFN in case we need it
-                    # Undecided whether to move file.pfn to the output PFN
-                    file.InputPFN   = file.pfn
-                    fileForTransfer = {'LFN': getattr(file, 'lfn'), \
-                                       'PFN': getattr(file, 'pfn'), \
-                                       'SEName' : None, \
-                                       'StageOutCommand': None}
-                    signal.signal(signal.SIGALRM, alarmHandler)
-                    signal.alarm(waitTime)
-                    try:
-                        manager(fileForTransfer)
-                        #Afterwards, the file should have updated info.
-                        filesTransferred.append(fileForTransfer)
-                        file.StageOutCommand = fileForTransfer['StageOutCommand']
-                        file.location        = fileForTransfer['SEName']
-                        file.OutputPFN       = fileForTransfer['PFN']
-                    except Alarm:
-                        msg = "Indefinite hang during stageOut of logArchive"
-                        logging.error(msg)
-                    except Exception, ex:
-                        stepReport.addError(self.stepName, 1, "StageOutFailure", str(ex))
-                        stepReport.setStepStatus(self.stepName, 1)
-                        stepReport.persist("Report.pkl")                        
-                        raise
-                        
-                    signal.alarm(0)
-                else:
+                if not hasattr(file, 'lfn') and hasattr(file, 'pfn'):
+                    # Then we're truly hosed on this file; ignore it
                     msg = "Not a file: %s" % file
                     logging.error(msg)
                     continue
-
-
+                # Support direct-to-merge
+                # This requires pulling a bunch of stuff from everywhere
+                # First check if it's needed
+                if hasattr(self.step.output, 'minMergeSize') and hasattr(file, 'size') \
+                       and not getattr(file, 'merged', False):
+                    # We need both of those to continue, and we don't
+                    # direct-to-merge 
+                    if file.size > self.step.output.minMergeSize:
+                        # Then this goes direct to merge
+                        try:
+                            file = self.handleLFNForMerge(file = file)
+                        except:
+                            stepReport.addError(self.stepName, 50011,
+                                                "DirectToMergeFailure", str(ex))
+                
+                # Save the input PFN in case we need it
+                # Undecided whether to move file.pfn to the output PFN
+                file.InputPFN   = file.pfn
+                fileForTransfer = {'LFN': getattr(file, 'lfn'), \
+                                   'PFN': getattr(file, 'pfn'), \
+                                   'SEName' : None, \
+                                   'StageOutCommand': None}
+                signal.signal(signal.SIGALRM, alarmHandler)
+                signal.alarm(waitTime)
+                try:
+                    manager(fileForTransfer)
+                    #Afterwards, the file should have updated info.
+                    filesTransferred.append(fileForTransfer)
+                    file.StageOutCommand = fileForTransfer['StageOutCommand']
+                    file.location        = fileForTransfer['SEName']
+                    file.OutputPFN       = fileForTransfer['PFN']
+                except Alarm:
+                    msg = "Indefinite hang during stageOut of logArchive"
+                    logging.error(msg)
+                except Exception, ex:
+                    stepReport.addError(self.stepName, 1, "StageOutFailure", str(ex))
+                    stepReport.setStepStatus(self.stepName, 1)
+                    stepReport.persist("Report.pkl")                        
+                    raise
+                        
+                signal.alarm(0)
+                
                 
 
             # Am DONE with report
@@ -176,3 +193,56 @@ class StageOut(Executor):
         return None
 
 
+
+
+
+
+    # Accessory methods
+    def handleLFNForMerge(self, file):
+        """
+        _handleLFNForMerge_
+
+        Digs up unmerged LFN out of WMStep outputModule and 
+        changes the current file to match.
+        """
+
+        # First get the output module
+        # Do this by finding the name in the step report
+        # And then finding that module in the WMStep Helper
+        outputRef = nodeParent(file)
+        if not outputRef:
+            logging.error("Direct to merge failed due to broken config parentage")
+            return file
+        outputName = nodeName(outputRef)
+        if outputName.lower() == "merged":
+            # Don't skip merge for merged files!
+            return file
+        helper     = getStepTypeHelper(self.step)
+        outputMod  = helper.getOutputModule(moduleName = outputName)
+
+        if not outputMod:
+            # Then we couldn't get the output module
+            logging.error("Attempt to directly merge failed " \
+                          + "due to no output module %s in WMStep" %(outputName))
+            return file
+
+
+        # Okay, now we should have the output Module
+        # Now we just need a second LFN
+
+        newBase = getattr(outputMod, 'mergedLFNBase', None)
+        oldBase = getattr(outputMod, 'lfnBase', None)
+
+        if not lfnBase:
+            logging.error("Direct to Merge failed due to no mergedLFNBase in %s" %(outputName))
+            return file
+
+        # Replace the actual LFN base
+        oldLFN = getattr(file, 'lfn')
+        newLFN = oldLFN.replace(oldBase, newBase)
+
+        # Set the file attributes
+        setattr(file, 'lfn', newLFN)
+        setattr(file, 'merged', True)
+
+        return file

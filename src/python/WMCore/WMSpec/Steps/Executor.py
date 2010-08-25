@@ -25,8 +25,7 @@ class Executor:
 
     def __init__(self):
         self.report = None
-
-
+        self.diagnostic = None
 
 
     def initialise(self, step, job):

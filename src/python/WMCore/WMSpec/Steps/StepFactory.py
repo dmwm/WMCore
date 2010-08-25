@@ -75,13 +75,25 @@ class FetcherFactory(WMFactory):
         WMFactory.__init__(self, self.__class__.__name__,
                            "WMCore.WMSpec.Steps.Fetchers")
 
+class DiagnosticFactory(WMFactory):
+    """
+    _DiagnosticFactory_
+
+    Instantiate a WMFactory instance for the Diagnostics package
+
+    """
+    def __init__(self):
+        WMFactory.__init__(self, self.__class__.__name__,
+                           "WMCore.WMSpec.Steps.Diagnostics")
+
+
 
 _TemplateFactory = TemplateFactory()
 _BuilderFactory  = BuilderFactory()
 _ExecutorFactory = ExecutorFactory()
 _EmulatorFactory = EmulatorFactory()
 _FetcherFactory  = FetcherFactory()
-
+_DiagnosticFactory = DiagnosticFactory()
 
 def getStepTemplate(stepType):
     """
@@ -143,7 +155,7 @@ def getStepExecutor(stepType):
 
     """
     try:
-        return _ExecutorFactory.loadObject(stepType)
+        executor =_ExecutorFactory.loadObject(stepType)
     except WMException, wmEx:
         msg = "ExecutorFactory Unable to load Object: %s" % stepType
         raise StepFactoryException(msg)
@@ -152,6 +164,8 @@ def getStepExecutor(stepType):
         msg += str(ex)
         raise StepFactoryException(msg)
 
+    executor.diagnostic = getDiagnostic(stepType)
+    return executor
 
 def getStepEmulator(stepEmuName):
     """
@@ -189,3 +203,21 @@ def getFetcher(fetcherName):
         msg = "Error creating object %s in FetcherFactory:\n" % fetcherName
         msg += str(ex)
         raise StepFactoryException(msg)
+
+def getDiagnostic(stepType):
+    """
+    _getDiagnostic_
+
+    Get the appropriate Diagnostic for the stepType, falling back
+    on a Generic Diagnostic if there isnt a specific impl
+
+    """
+    try:
+        return _DiagnosticFactory.loadObject(stepType)
+    except WMException, wmEx:
+        return _DiagnosticFactory.loadObject("Generic")
+    except Exception, ex:
+        msg = "Error creating object %s in DiagnosticFactory:\n" % stepType
+        msg += str(ex)
+        raise StepFactoryException(msg)
+

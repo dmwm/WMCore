@@ -7,11 +7,12 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.5 2009/11/19 11:59:58 evansde Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.6 2009/12/02 19:42:28 evansde Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 import inspect, os
 
 class ExecuteMaster:
@@ -72,9 +73,11 @@ class ExecuteMaster:
             print "TODO: Implement Me!!!"
             executor.saveReport()
             self.toTaskDirectory()
-        #try:
-        executor.execute()
-        #finally:
+        try:
+            executor.execute()
+        except WMExecutionFailure, ex:
+            executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
+        #TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()
 
         postOutcome = executor.post()

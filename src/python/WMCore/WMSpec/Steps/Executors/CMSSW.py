@@ -5,12 +5,11 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.8 2009/11/19 11:59:58 evansde Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: CMSSW.py,v 1.9 2009/12/02 19:42:28 evansde Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
-from WMCore.WMException import WMException
-from WMCore.WMSpec.WMStep import WMStepHelper
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMRuntime.Tools.Scram import Scram
 
 from WMCore.FwkJobReport.Report import Report
@@ -23,7 +22,7 @@ import select
 
 
 
-getStepName = lambda step: WMStepHelper(step).name()
+
 
 class CMSSW(Executor):
     """
@@ -38,10 +37,7 @@ class CMSSW(Executor):
         """
         _pre_
 
-        Pre execution work.
-
-        Determine where the configuration is coming and add the appropriate
-        tools to get it
+        Pre execution checks
 
         """
         if (emulator != None):
@@ -54,10 +50,13 @@ class CMSSW(Executor):
             self.stepSpace.getFromSandbox(psetFile)
             self.stepSpace.getFromSandbox(psetTweak)
             self.step.runtime.scramPreScripts.append(
-                "WMCore.WMRuntime.Scripts.InstallPSetTweak")
+                "InstallPSetTweak")
 
 
-        #TODO: Handle case where we have a config library instead
+        if hasattr(self.step.application.configuration, 'scenario'):
+            self.step.runtime.scramPreScripts.append(
+                "InstallScenario")
+
 
         return None
 
@@ -69,14 +68,9 @@ class CMSSW(Executor):
 
 
         """
-
-
         stepModule = "WMTaskSpace.%s" % self.stepName
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
-
-
-
 
 
         # write the wrapper script to a temporary location
@@ -100,17 +94,18 @@ class CMSSW(Executor):
             initialisation = self.step.application.setup.softwareEnvironment,
             directory = self.step.builder.workingDir
             )
-
         projectOutcome = scram.project()
         if projectOutcome > 0:
             msg = scram.diagnostic()
-            self.report.addError(60513, "ScramSetupFailure", msg)
-            return
+            #self.report.addError(60513, "ScramSetupFailure", msg)
+            print msg
+            raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
         runtimeOutcome = scram.runtime()
         if runtimeOutcome > 0:
             msg = scram.diagnostic()
-            self.report.addError(60513, "ScramSetupFailure", msg)
-            return
+            #self.report.addError(60513, "ScramSetupFailure", msg)
+            print msg
+            raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
 
 
         #
@@ -132,7 +127,10 @@ class CMSSW(Executor):
             scriptProcess.stdin.write(invokeCommand)
             stdout, stderr = scriptProcess.communicate()
             retCode = scriptProcess.returncode
-            print stdout, stderr, retCode
+            if retCode > 0:
+                msg = "Error running command\n%s\n" % invokeCommand
+                msg += "%s\n %s\n %s\n" % (retCode, stdout, stderr)
+                raise WMExecutionFailure(60514, "PreScriptFailure", msg)
 
 
         #
@@ -145,11 +143,16 @@ class CMSSW(Executor):
                 stepModule,
                 script)
 
-
             retCode = scram(invokeCommand)
-            print scram.stdout, scram.stderr, retCode
+            if retCode > 0:
+                msg = "Error running command\n%s\n" % invokeCommand
+                msg += "%s\n %s\n %s\n" % (retCode, stdout, stderr)
+                msg += scram.diagnostic()
+                raise WMExecutionFailure(60515, "PreScriptScramFailure", msg)
 
-        configPath = "%s/%s-main.sh" % (self.step.builder.workingDir, helper.name())
+
+        configPath = "%s/%s-main.sh" % (self.step.builder.workingDir,
+                                        self.stepName)
         handle = open(configPath, 'w')
         handle.write(configBlob)
         handle.close()
@@ -157,6 +160,10 @@ class CMSSW(Executor):
         # the script looks for:
         # <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION> <JOB_REPORT> <EXECUTABLE>
         #    <CONFIG>
+        # open the output files
+        stdoutHandle = open( self.step.output.stdout , 'w')
+        stderrHandle = open( self.step.output.stderr , 'w')
+
         args = ['/bin/bash', configPath, scramCommand,
                                          scramProject,
                                          cmsswVersion,
@@ -164,23 +171,14 @@ class CMSSW(Executor):
                                          cmsswCommand,
                                          cmsswConfig,
                                          cmsswArguments]
-        spawnedChild = subprocess.Popen( args, 0, None, None, subprocess.PIPE,
-                                                         subprocess.PIPE )
-        # open the output files
-        stdoutHandle = open( self.step.output.stdout , 'w')
-        stderrHandle = open( self.step.output.stderr , 'w')
+        spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
+                                         stderrHandle )
 
         # loop and collect the data
-        while (1):
-            (rdready, wrready, errready) = select.select([spawnedChild.stdout,
-                                                 spawnedChild.stderr],[],[])
-            if stdoutHandle in rdready:
-                ourbuffer = spawnedChild.stdout.read(-1)
-                stdoutHandle.write(buffer)
-            if stderrHandle in rdready:
-                ourbuffer = spawnedChild.stderr.read(-1)
-                stderrHandle.write(buffer)
-
+        while True:
+            (rdready, wrready, errready) = select.select(
+                [stdoutHandle.fileno(),
+                 stderrHandle.fileno()],[],[])
             # see if the process is still running
             spawnedChild.poll()
             if (spawnedChild.returncode != None):
@@ -189,32 +187,35 @@ class CMSSW(Executor):
             select.select([], [], [], .1)
 
         spawnedChild.wait()
-        # the spawned CMSSW shell has returned, let's interpret return calls
-        # I'm avoiding the codes from
-        # https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes
-        # 70 we called the script with too few arguments
-        # 71 scram project failure
-        # 72 chdir failure
-        # 73 scram runtime fail
-        # FIXME python doesn't have a switch construct, is there a nicer
-        #    way to do this?
-        argsDump = { 'arguments': args}
-        if (spawnedChild.returncode == 70):
-            raise WMException("Wrong number of arguments to cmssw wrapper"
-                              ,None,**argsDump)
-        elif (spawnedChild.returncode == 71):
-            raise WMException("Failure in scram project"
-                              ,None,**argsDump)
-        elif (spawnedChild.returncode == 72):
-            raise WMException("Failed to chdir to the cmssw directory"
-                              ,None,**argsDump)
-        elif (spawnedChild.returncode == 73):
-            raise WMException("Failed to execute the scram runtime"
-                              ,None,**argsDump)
-        elif (spawnedChild.returncode != 0):
-            raise WMException("Unknown error in cmsRun. Code: %i" % spawnedChild.returncode, None, **argsDump)
+        stdoutHandle.close()
+        stderrHandle.close()
 
-        step.execution.exitStatus = spawnedChild.returncode
+        self.step.execution.exitStatus = spawnedChild.returncode
+        argsDump = { 'arguments': args}
+
+        if spawnedChild.returncode != 0:
+            msg = "Error running cmsRun\n%s\n" % argsDump
+            msg += "%s\n" % spawnedChild.returncode
+            raise WMExecutionFailure(spawnedChild.returncode,
+                                     "CmsRunFailure", msg)
+
+        #TODO: Move all this stuff to the CMSSW diagnostic
+        ##if (spawnedChild.returncode == 70):
+##            raise WMException("Wrong number of arguments to cmssw wrapper"
+##                              ,None,**argsDump)
+##        elif (spawnedChild.returncode == 71):
+##            raise WMException("Failure in scram project"
+##                              ,None,**argsDump)
+##        elif (spawnedChild.returncode == 72):
+##            raise WMException("Failed to chdir to the cmssw directory"
+##                              ,None,**argsDump)
+##        elif (spawnedChild.returncode == 73):
+##            raise WMException("Failed to execute the scram runtime"
+##                              ,None,**argsDump)
+##        elif (spawnedChild.returncode != 0):
+##            raise WMException("Unknown error in cmsRun. Code: %i" % spawnedChild.returncode, None, **argsDump)
+
+
         return
 
 
@@ -253,13 +254,15 @@ CONFIGURATION=$6
 shift;shift;shift
 shift;shift;shift
 
+echo "$SCRAM_COMMAND $SCRAM_PROJECT"
+
 # do the actual executing
-$SCRAM_COMMAND $SCRAM_PROJECT $CMSSW_VERSION
-if [ $? -ne 0] then echo "***\nScram failed: $?\n"; exit 71; fi
+$SCRAM_COMMAND project $SCRAM_PROJECT $CMSSW_VERSION
+if [ $? -ne 0 ]; then echo "Scram failed"; exit 71; fi
 cd $CMSSW_VERSION
-if [ $? -ne 0] then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
+if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 eval `$SCRAM_COMMAND runtime -sh`
-if [ $? -ne 0] then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
+if [ $? -ne 0 ]; then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
 cd ..
 $EXECUTABLE "$@" -j $JOB_REPORT $CONFIG &
 PROCID=$!

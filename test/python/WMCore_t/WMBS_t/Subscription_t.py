@@ -4,8 +4,8 @@
 # W0142: Some people like ** magic
 # R0201: Test methods CANNOT be functions
 
-__revision__ = "$Id: Subscription_t.py,v 1.55 2010/05/13 16:15:15 mnorman Exp $"
-__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: Subscription_t.py,v 1.56 2010/05/24 15:24:21 mnorman Exp $"
+__version__ = "$Revision: 1.56 $"
 
 
 import unittest
@@ -1404,8 +1404,8 @@ class SubscriptionTest(unittest.TestCase):
 
         result = getSubTypes.execute()
 
-        self.assertEqual(len(result), 5, "Error: Wrong number of types.")
-        for subType in ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect"]:
+        self.assertEqual(len(result), 6, "Error: Wrong number of types.")
+        for subType in ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim"]:
             self.assertTrue(subType in result, "Type %s is missing" % (subType))
 
         return

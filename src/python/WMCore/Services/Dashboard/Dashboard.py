@@ -5,8 +5,8 @@ _Dashboard_
 Talk to the Dashboard Service to get site status.
 """
 
-__revision__ = "$Id: Dashboard.py,v 1.5 2010/01/08 21:38:37 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Dashboard.py,v 1.6 2010/01/08 21:43:07 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Services.Service import Service
 class Dashboard(Service):
@@ -33,8 +33,8 @@ class Dashboard(Service):
         self['logger'].debug(status)
         for i in ["MAINTENANCE", "ERROR", "WARNING", "UP"]:
             if i in status:
-                 return {'status':i, 'id':name}
-        return {'status':'UNKNOWN', 'id':name}
+                 return {'status':i, 'cms_name':name}
+        return {'status':'UNKNOWN', 'cms_name':name}
     
 if __name__ == '__main__':
     import logging

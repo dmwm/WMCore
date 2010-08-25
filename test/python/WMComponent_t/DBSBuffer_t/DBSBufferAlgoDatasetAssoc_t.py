@@ -5,8 +5,8 @@ _DBSBufferAlgoDatasetAssoc_t_
 Unit tests for manipulating associating algorithms to datasets in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferAlgoDatasetAssoc_t.py,v 1.1 2009/06/24 17:07:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBSBufferAlgoDatasetAssoc_t.py,v 1.2 2009/10/13 20:53:41 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -23,16 +23,7 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class DBSBufferDatasetTest(unittest.TestCase):
-    _setup = False
-    _teardown = False
 
-    def runTest(self):
-        """
-        _runTest_
-
-        Run all the unit tests.
-        """
-        unittest.main()
     
     def setUp(self):
         """
@@ -41,10 +32,9 @@ class DBSBufferDatasetTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         DBSBuffer tables.
         """
-        if self._setup:
-            return
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
@@ -81,8 +71,6 @@ class DBSBufferDatasetTest(unittest.TestCase):
                                             configContent = "MOREGIBBERISH2")
         self.algo2ID = listResult[0]["id"]
 
-        self._setup = True
-        return
           
     def tearDown(self):        
         """
@@ -90,25 +78,8 @@ class DBSBufferDatasetTest(unittest.TestCase):
         
         Drop all the DBSBuffer tables.
         """
-        myThread = threading.currentThread()
-        
-        if self._teardown:
-            return
+        self.testInit.clearDatabase()
 
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-        
-        myThread.transaction.begin()
-
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-        
-        myThread.transaction.commit()    
-        self._teardown = True
             
     def testCreate(self):
         """

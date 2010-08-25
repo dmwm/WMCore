@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.1 2009/03/09 19:00:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.2 2009/04/09 16:41:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -224,6 +224,9 @@ class WMBSMergeBySize(JobFactory):
         mergeUnits = self.defineMergeUnits(mergeableFiles)
         mergeUnits.sort(mergeUnitCompare)
         self.defineMergeJobs(mergeUnits)
+
+        if len(self.jobs) == 0:
+            return []
 
         jobGroup = groupInstance(subscription = self.subscription)
         jobGroup.add(self.jobs)

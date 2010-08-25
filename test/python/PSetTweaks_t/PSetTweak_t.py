@@ -41,8 +41,8 @@ class PSetTweakTest(unittest.TestCase):
 
 
 
-        for x,y in tweak:
-            print x,y
+        #for x,y in tweak:
+        #    print x,y
 
 
     def testD(self):
@@ -55,7 +55,7 @@ class PSetTweakTest(unittest.TestCase):
         tweak.addParameter("process.module1.module2.module3.parameter3", ["file:/store/whatever"])
         tweak.addParameter("process.module1.module2.module3.parameter4", 1234)
 
-        print tweak.pythonise()
+        #print tweak.pythonise()
 
         persistFile = "/tmp/PSetTweak_persist.py"
         tweak.persist(persistFile, "python")
@@ -63,7 +63,7 @@ class PSetTweakTest(unittest.TestCase):
         tweak2 = PSetTweak.PSetTweak()
         tweak2.unpersist(persistFile)
 
-        print tweak2.pythonise()
+        #print tweak2.pythonise()
 
 
 
@@ -77,7 +77,7 @@ class PSetTweakTest(unittest.TestCase):
         tweak.addParameter("process.module1.module2.module3.parameter3", ["file:/store/whatever"])
         tweak.addParameter("process.module1.module2.module3.parameter4", 1234)
 
-        print tweak.jsonise()
+        #print tweak.jsonise()
 
 
         persistFile = "/tmp/PSetTweak_persist.json"
@@ -85,7 +85,7 @@ class PSetTweakTest(unittest.TestCase):
         tweak2 = PSetTweak.PSetTweak()
         tweak2.unpersist(persistFile)
 
-        print tweak2.jsonise()
+        #print tweak2.jsonise()
 
 
 if __name__ == '__main__':

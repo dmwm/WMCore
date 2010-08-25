@@ -41,7 +41,7 @@ class LocationTest(unittest.TestCase, WMBSBase):
             startTime = time.time()    
             locationNew = self.dao(classname = "Locations.New")
             for location in locations:
-                locationNew.execute(sename = location)
+                locationNew.execute(siteName = location)
             endTime = time.time()
             elapsedTime = endTime - startTime
             self.totaltime = self.totaltime + elapsedTime
@@ -84,7 +84,7 @@ class LocationTest(unittest.TestCase, WMBSBase):
             startTime = time.time()    
             locationDel = self.dao(classname = "Locations.Delete")
             for location in locations:
-                locationDel.execute(sename = location)
+                locationDel.execute(siteName = location)
             endTime = time.time()
             elapsedTime = endTime - startTime   
             self.totaltime = self.totaltime + elapsedTime

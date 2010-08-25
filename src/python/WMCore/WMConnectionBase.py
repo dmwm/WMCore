@@ -5,14 +5,16 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.7 2010/01/27 17:36:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.8 2010/02/25 18:15:53 swakef Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import copy
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
+
+from contextlib import contextmanager
 
 class WMConnectionBase:
     """
@@ -36,7 +38,7 @@ class WMConnectionBase:
             self.dbi = dbi
         else:
             self.dbi = myThread.dbi
-        
+
         self.daofactory = DAOFactory(package = daoPackage,
                                      logger = self.logger,
                                      dbinterface = self.dbi)
@@ -44,7 +46,7 @@ class WMConnectionBase:
         if "transaction" not in dir(myThread):
             myThread.transaction = Transaction(self.dbi)
             myThread.transaction.commit()
-            
+
         return
 
     def getDBConn(self):
@@ -64,7 +66,7 @@ class WMConnectionBase:
             return None
 
         return myThread.transaction.conn
-            
+
     def beginTransaction(self):
         """
         _beginTransaction_
@@ -76,7 +78,7 @@ class WMConnectionBase:
         if "transaction" not in dir(myThread):
             myThread.transaction = Transaction(self.dbi)
             return False
-        
+
         if myThread.transaction.transaction == None:
             myThread.transaction.begin()
             return False
@@ -107,7 +109,7 @@ class WMConnectionBase:
         if not existingTransaction:
             myThread = threading.currentThread()
             myThread.transaction.commit()
-            
+
         return
 
     def __getstate__(self):
@@ -121,3 +123,30 @@ class WMConnectionBase:
         self.logger = None
         self.daofactory = None
         return self.__dict__
+
+
+    @contextmanager
+    def transactionContext(self):
+        """
+        Returns a transaction as a ContextManager
+
+        Usage:
+            with transactionContext():
+                databaseCode1()
+                databaseCode2()
+
+        Equates to beginTransaction() followed by either
+        commitTransaction or a rollback
+        """
+        existingTransaction = self.beginTransaction()
+        try:
+            yield existingTransaction
+        except:
+            # responsibility for rolling back is on the transaction starter
+            if not existingTransaction:
+                self.logger.error('Exception caught, rolling back transaction')
+                threading.currentThread().transaction.rollback()
+            raise
+        else:
+            # only commits if transaction started by this invocation
+            self.commitTransaction(existingTransaction)

@@ -7,9 +7,7 @@ Created by Dave Evans on 2010-07-21.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import os
-import unittest
+
 
 import WMCore.Database.CMSCouch as CMSCouch
 
@@ -50,16 +48,3 @@ class Interface:
         return output
         
 
-class InterfaceTests(unittest.TestCase):
-    def setUp(self):
-        self.url = "127.0.0.1:5984"
-        self.database = "groupuser"
-        
-    def testA(self):
-        
-        guInt = Interface(self.url, self.database)
-        
-        print guInt.documentsOwned("DMWM", "evansde77")
-        
-if __name__ == '__main__':
-    unittest.main()

@@ -330,8 +330,10 @@ class JSONThunker:
     
     def handleDictObjectUnThunk(self, value, data):
         for k,v in data.iteritems():
+            print "->unthunk dict"
             if (k == 'json_hack_in_dict_'):
                 for k2,v2 in data['json_hack_in_dict_'].iteritems():
+                    print "-->deeply unthunk dict"
                     value[k2] = self._unthunk(v2)
             else:
                 value.__dict__[k] = self._unthunk(v)
@@ -389,6 +391,8 @@ class JSONThunker:
                 mod = sys.modules[module]
                 try:
                     ourClass = getattr(mod, name)
+                    print "\n*Classtype is %s type is %s mod is %s" %(ourClass, type(ourClass), mod)
+                    print "-> name is %s module is %s " % (name, module)                                           
                 except:
                     print "failed to get %s from %s" % (mod, name)
                     raise
@@ -398,31 +402,48 @@ class JSONThunker:
                 del data['json_hack_mod_']
                 del data['json_hack_name_']
                 if (hasattr(ourClass, '__from_json__')):
+                    print "fromjsonhack"
                     try:
                         value.__class__ = ourClass
                     except:
                         value = ourClass()
                     value = ourClass.__from_json__(value, data, self)
-                elif ( 'json_hack_in_dict_' in data ):  
+                elif ( 'json_hack_in_dict_' in data ):
+                    print "dictunthunk"  
                     try:
                         value.__class__ = ourClass
                     except:
                         value = ourClass()
                     value = self.handleDictObjectUnThunk( value, data )
-                elif ( 'json_list_data_' in data ):  
+                elif ( 'json_list_data_' in data ):
+                    print "listunthunk"  
                     try:
                         value.__class__ = ourClass
                     except:
                         value = ourClass()
                     value = self.handleListObjectUnThunk( value, data )
                 else:
-                    if (type(ourClass) == types.ClassType):
-                        value.__class__ = ourClass
-                        value.__dict__ = data
-                    else:
-                        value = ourClass()
-                        value.__dict__ = data
-                
+                    print "did we get here"
+                    try:
+                        value.__class__ = getattr(ourClass, name).__class__
+                        print "changed the class to %s " % value.__class__
+                    except Exception, ex:
+                        print "Except1 in requests %s " % ex
+                        try:
+                            #value = _EmptyClass()
+                            value.__class__ = ourClass
+                        except Exception, ex2:
+                            print "Except2 in requests %s " % ex2
+                            print type(ourClass)
+                            try:
+                                value = ourClass();
+                            except:
+                                print 'megafail'
+                                pass
+                    
+                    print "name %s module %s" % (name, module)
+                    value.__dict__ = data
+                print "our value is %s "% value
                 return value
             else:
                 for k,v in data.iteritems():

@@ -5,8 +5,11 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.54 2009/10/22 18:41:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: File.py,v 1.55 2009/12/02 19:39:06 mnorman Exp $"
+__version__ = "$Revision: 1.55 $"
+
+import threading
+import time
 
 from sets import Set
 
@@ -21,10 +24,10 @@ class File(WMBSBase, WMFile):
     """
     def __init__(self, lfn = "", id = -1, size = 0, events = 0, cksum = 0,
                  parents = None, locations = None, first_event = 0,
-                 last_event = 0, merged = True):
+                 last_event = 0, merged = True, cktype = 'cksum'):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events, 
-                        cksum = cksum, parents = parents, merged = merged)
+                        cksum = cksum, parents = parents, merged = merged, cktype = cktype)
 
         if locations == None:
             self.setdefault("newlocations", Set())
@@ -64,7 +67,7 @@ class File(WMBSBase, WMFile):
         """
         return self['lfn'], self['id'], self['size'], self['events'], \
                self['cksum'], list(self['runs']), list(self['locations']), \
-               list(self['parents'])
+               list(self['parents']), self['cktype']
 
     def getLocations(self):
         """
@@ -195,6 +198,13 @@ class File(WMBSBase, WMFile):
                                     transaction = self.existingTransaction())
 
         self.update(result)
+
+        #Now get the checksum
+        action = self.daofactory(classname = 'Files.GetChecksum')
+        result = action.execute(fileid = self['id'], conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+        if result:
+            self.update(result)
         return
 
     def loadData(self, parentage = 0):
@@ -244,6 +254,9 @@ class File(WMBSBase, WMFile):
         Create a file.  If no transaction is passed in this will wrap all
         statements in a single transaction.
         """
+
+        myThread = threading.currentThread()
+        
         existingTransaction = self.beginTransaction()
 
         if self.exists() != False:
@@ -253,7 +266,7 @@ class File(WMBSBase, WMFile):
 
         addAction = self.daofactory(classname = "Files.Add")
         addAction.execute(files = self["lfn"], size = self["size"],
-                          events = self["events"], cksum = self["cksum"],
+                          events = self["events"],
                           first_event = self["first_event"],
                           last_event = self["last_event"],
                           merged = self["merged"],
@@ -265,10 +278,13 @@ class File(WMBSBase, WMFile):
             lumiAction.execute(file = self["lfn"], runs = self["runs"],
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
-            
+
         self.updateLocations()
         self.load()
         self.commitTransaction(existingTransaction)
+        if self['cksum'] and self['cktype']:
+            #Add a checksum
+            self.setCksum(cksum = self['cksum'], cktype = self['cktype'])
         return
     
     def delete(self):
@@ -361,6 +377,8 @@ class File(WMBSBase, WMFile):
         """
         if not self.exists():
             return
+
+        myThread = threading.currentThread()
         
         existingTransaction = self.beginTransaction()
 
@@ -413,6 +431,7 @@ class File(WMBSBase, WMFile):
                     "locations": list(self["locations"]),
                     "id": self["id"],
                     "cksum": self["cksum"],
+                    "cktype": self["cktype"],
                     "events": self["events"],
                     "merged": self["merged"],
                     "size": self["size"],
@@ -428,5 +447,29 @@ class File(WMBSBase, WMFile):
             fileDict["runs"].append(runDict)
                                                 
         return fileDict
+
+
+    def setCksum(self, cksum, cktype):
+        """
+        _setCKType_
+        
+        Set the Checksum Type
+        """
+
+        myThread = threading.currentThread()
+
+        if self['id'] < 0:
+            #You haven't bothered to create the file!
+            return
+
+        existingTransaction = self.beginTransaction()
+
+        action = self.daofactory(classname = "Files.AddChecksum")
+        action.execute(fileid = self['id'], cktype = cktype, cksum = cksum, \
+                       conn = self.getDBConn(), transaction = existingTransaction)
+
+        self.commitTransaction(existingTransaction)
+
+        return
 
 

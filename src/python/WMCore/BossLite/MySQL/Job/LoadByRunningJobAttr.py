@@ -6,11 +6,13 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.3 2010/05/19 13:25:28 spigafi Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.4 2010/05/20 11:57:20 spigafi Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
+
+from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 
 class LoadByRunningJobAttr(DBFormatter):
     """
@@ -50,9 +52,9 @@ class LoadByRunningJobAttr(DBFormatter):
         
         for x in binds:
             if type(binds[x]) == str :
-                whereStatement.append( "bl_runningjob.%s = '%s'" % (x, binds[x]) )
+                whereStatement.append( "bl_runningjob.%s = '%s'" % (RunningJob.fields[x], binds[x]) )
             else:
-                whereStatement.append( "bl_runningjob.%s = %s" % (x, binds[x]) )
+                whereStatement.append( "bl_runningjob.%s = %s" % (RunningJob.fields[x], binds[x]) )
                 
         whereClause = ' AND '.join(whereStatement)
 

@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.57 2010/02/20 19:39:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.57 $"
+__revision__ = "$Id: Subscription.py,v 1.58 2010/02/25 22:05:49 mnorman Exp $"
+__version__ = "$Revision: 1.58 $"
 
 import logging
 
@@ -26,6 +26,8 @@ from WMCore.WMBS.WMBSBase import WMBSBase
 
 from WMCore.DataStructs.Subscription import Subscription as WMSubscription
 from WMCore.DataStructs.Fileset      import Fileset      as WMFileset
+
+from WMCore.Services.UUID import makeUUID
 
 class Subscription(WMBSBase, WMSubscription):
     def __init__(self, fileset = None, workflow = None, id = -1,
@@ -410,7 +412,6 @@ class Subscription(WMBSBase, WMSubscription):
             deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
-        #Next Fileset
         filesetID = self["fileset"].id
         action = self.daofactory(classname = "Fileset.DeleteCheck")
         action.execute(fileid = self["fileset"].id, subid = self["id"],
@@ -453,3 +454,111 @@ class Subscription(WMBSBase, WMSubscription):
                 return False 
         
         return True
+
+
+    def bulkCommit(self, jobGroups):
+        """
+        _bulkCommit_
+
+        Commits all objects created during job splitting.  This is dangerous because it assumes
+        that you can pass in all jobGroups.
+        """
+
+        jobList      = []
+        jobGroupList = []
+        nameList     = []
+
+        # You have to do things in this order:
+        # 1) First create Filesets, then jobGroups
+        # 2) Second, create jobs pointing to jobGroups
+        # 3) Deal with masks, etc.
+
+        # First, do we exist?  We better
+        # This happens in its own transaction
+        if self['id'] == -1:
+            self.create()
+
+
+        existingTransaction = self.beginTransaction()
+
+        # You need to create a number of Filesets equal to the
+        # number of jobGroups.
+
+        for jobGroup in jobGroups:
+            # Make a random name for each fileset
+            nameList.append(makeUUID())
+
+        # Create filesets
+        action = self.daofactory( classname = "Fileset.BulkNewReturn" )
+        fsIDs  = action.execute(nameList = nameList, open = True,
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+
+        for jobGroup in jobGroups:
+            if not jobGroup.uid:
+                jobGroup.uid = makeUUID()
+            jobGroupList.append({'subscription': self['id'],
+                                 'uid': jobGroup.uid,
+                                 'output': fsIDs.pop()})
+
+        action = self.daofactory( classname = "JobGroup.BulkNewReturn" )
+        jgIDs  = action.execute(bulkInput = jobGroupList,
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+
+        for jobGroup in jobGroups:
+            for idUID in jgIDs:
+                # This should assign an ID to the right job
+                if jobGroup.uid == idUID['uid']:
+                    jobGroup.id = idUID['id']
+                    break
+
+        for jobGroup in jobGroups:
+            for job in jobGroup.newjobs:
+                if job["id"] != None:
+                    continue
+            
+                job["jobgroup"] = jobGroup.id
+
+                if job["name"] == None:
+                    job["name"] = makeUUID()
+                jobList.append(job)
+
+
+        bulkAction = self.daofactory(classname = "Jobs.New")
+        result = bulkAction.execute(jobList = jobList, conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        #Move jobs to jobs from newjobs
+        for jobGroup in jobGroups:
+            jobGroup.jobs.extend(jobGroup.newjobs)
+            jobGroup.newjobs = []
+
+        #Use the results of the bulk commit to get the jobIDs
+        fileDict = {}
+        for job in jobList:
+            job['id'] = result[job['name']]
+            fileDict[job['id']] = []
+            for file in job['input_files']:
+                fileDict[job['id']].append(file['id'])
+
+
+        maskAction = self.daofactory(classname = "Masks.New")
+        maskAction.execute(jobList = jobList, conn = self.getDBConn(), 
+                           transaction = self.existingTransaction())
+
+        fileAction = self.daofactory(classname = "Jobs.AddFiles")
+        fileAction.execute(jobDict = fileDict, conn = self.getDBConn(), 
+                           transaction = self.existingTransaction())
+
+
+        fileList = []
+        for job in jobList:
+            fileList.extend(job['input_files'])
+
+        self.acquireFiles(files = fileList)
+
+
+        self.commitTransaction(existingTransaction)
+
+        return

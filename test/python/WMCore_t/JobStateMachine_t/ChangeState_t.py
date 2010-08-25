@@ -28,10 +28,15 @@ class TestChangeState(unittest.TestCase):
         # TODO: write a config here
         
         # We need to set up the proper thread state for our test to run. Try it.
-        self.testInit = TestInit( "TestChangeState" )
+
+        myThread = threading.currentThread()
+        
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema()
+        self.testInit.setSchema(customModules = ["WMCore.ThreadPool"], useDefault = False)
+
+                                
         # if you want to keep from colliding with other people
         #self.uniqueCouchDbName = 'jsm_test-%i' % time.time()
         # otherwise
@@ -44,9 +49,18 @@ class TestChangeState(unittest.TestCase):
         """
         _tearDown_
         """
-        self.testInit.clearDatabase()
+
+        myThread = threading.currentThread()
+        
+
+
+        factory = WMFactory("Threadpool", "WMCore.ThreadPool")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+
         server = CMSCouch.CouchServer(self.change.config.JobStateMachine.couchurl)
         server.deleteDatabase(self.uniqueCouchDbName)
+        
 
 
     def testCheck(self):

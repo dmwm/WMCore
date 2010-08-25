@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.30 2009/09/24 20:17:42 sryu Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: WorkQueue.py,v 1.31 2009/09/28 21:03:42 sryu Exp $"
+__version__ = "$Revision: 1.31 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -72,8 +72,8 @@ class WorkQueue(WorkQueueBase):
 
         wqAction = self.daofactory(classname = "WorkQueueElement.New")
         parentFlag = parentInputs and 1 or 0
-        wqAction.execute(wmspec.name, primaryInput, nJobs,
-                             wmspec.priority, parentFlag, subscription,
+        wqAction.execute(wmspec.name(), primaryInput, nJobs,
+                             wmspec.priority(), parentFlag, subscription,
                              parentQueueId, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
@@ -82,13 +82,13 @@ class WorkQueue(WorkQueueBase):
         """
         """
         existsAction = self.daofactory(classname = "WMSpec.Exists")
-        exists = existsAction.execute(wmSpec.name, conn = self.getDBConn(),
+        exists = existsAction.execute(wmSpec.name(), conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
         if not exists:
             wmSpecAction = self.daofactory(classname = "WMSpec.New")
             #TODO: need a unique value (name?) for first parameter
-            wmSpecAction.execute(wmSpec.name, wmSpec.specUrl,
+            wmSpecAction.execute(wmSpec.name(), wmSpec.specUrl(),
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
 

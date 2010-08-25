@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.19 2010/07/08 19:46:43 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.20 2010/07/20 20:28:54 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import unittest
 import threading
@@ -396,7 +396,7 @@ class JobSubmitterTest(unittest.TestCase):
         return workload
 
 
-    def checkJDL(self, config, cacheDir, submitFile, site = None):
+    def checkJDL(self, config, cacheDir, submitFile, site = None, indexFlag = False):
         """
         _checkJDL_
 
@@ -406,26 +406,31 @@ class JobSubmitterTest(unittest.TestCase):
         jobs, head = parseJDL(jdlLocation = os.path.join(config.JobSubmitter.submitDir,
                                                          submitFile))
 
+        batch = 1
+
 
         # Check each job entry in the JDL
         for job in jobs:
             # Check each key
-            index = job.get('index', 0)
+            index = int(job.get('+WMAgent_JobID', 0))
             self.assertTrue(index != 1)
             self.assertTrue('+WMAgent_JobName' in job.keys())
             # TODO: Think of a better way to do this
             #self.assertEqual(job.get('initialdir', None),
             #                 os.path.join(cacheDir, 'Job_%i' % index))
-            self.assertEqual(job.get('+WMAgent_JobID', 0), str(index))
             #self.assertEqual(job.get('globusscheduler', None), self.ceName)
+            argValue = index -1
+            if indexFlag:
+                batch    = index - 1
+                argValue = 0
             inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'Tier1ReReco-Sandbox.tar.bz2'),
-                                              os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'batch_1/JobPackage.pkl'),
+                                              os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'batch_%i/JobPackage.pkl' % (batch)),
                                               os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
             self.assertEqual(job.get('transfer_input_files', None),
                              inputFileString)
             # Arguments use a list starting from 0
             self.assertEqual(job.get('arguments', None),
-                             'Tier1ReReco-Sandbox.tar.bz2 %i' % (index - 1))
+                             'Tier1ReReco-Sandbox.tar.bz2 %i' % (argValue))
 
             if site:
                 self.assertEqual(job.get('globusscheduler', None), site)
@@ -1058,6 +1063,86 @@ class JobSubmitterTest(unittest.TestCase):
         pipe.communicate()
 
         return
+
+
+
+    def testG_IndexErrorTest(self):
+        """
+        _IndexErrorTest_
+
+        Check to see you get proper indexes for the jobPackages
+        if you have more jobs then you normally run at once.
+        """
+
+
+        workloadName = "basicWorkload"
+
+        myThread = threading.currentThread()
+
+        workload = self.createTestWorkload()
+
+        config   = self.getConfig()
+        config.JobSubmitter.jobsPerWorker = 1
+
+        changeState = ChangeState(config)
+
+        nSubs = 1
+        nJobs = 10
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            site = 'se.T2_US_UCSD')
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+
+        # Do pre-submit check
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+        
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+        jobSubmitter.algorithm()
+
+
+        if os.path.exists('CacheDir'):
+            shutil.rmtree('CacheDir')
+        shutil.copytree(self.testDir, 'CacheDir')
+
+
+        # Check that jobs are in the right state
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 0)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        
+        # Check on the JDL
+        submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
+        self.checkJDL(config = config, cacheDir = cacheDir,
+                      submitFile = submitFile, site = 'T2_US_UCSD', indexFlag = True)
+
+
+
+        # Check to make sure we have running jobs
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nJobs * nSubs)
+
+        
+
+
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()        
 
 
 

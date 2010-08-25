@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.5 2010/04/28 16:56:29 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.6 2010/05/03 17:48:30 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import os.path
@@ -133,7 +133,8 @@ class CondorGlobusPlugin(PluginBase):
         
         jdl.append("universe = globus\n")
         jdl.append("should_transfer_executable = TRUE\n")
-        jdl.append("transfer_output_files = Report.pkl\n") 
+        jdl.append("transfer_output_files = Report.pkl\n")
+        jdl.append("transfer_output_remaps = \"Report.pkl = Report.$(Cluster).$(Process).pkl\"")
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")
         jdl.append("log_xml = True\n" )

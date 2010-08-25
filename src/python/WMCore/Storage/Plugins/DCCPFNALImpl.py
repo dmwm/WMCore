@@ -119,7 +119,7 @@ class DCCPFNALImpl(StageOutImplV2):
         else:
             # looks like lustre -- do a regular CP
             copyGuy = retrieveStageOutImpl('cp',useNewVersion = True)
-            return copyGuy.doTransfer(self,sourcePFN,targetPFN,stageOut, seName, command, options, protocol)
+            return copyGuy.doTransfer(sourcePFN,targetPFN,stageOut, seName, command, options, protocol)
         
     
     def doDelete(self, pfnToRemove, seName, command, options, protocol  ):

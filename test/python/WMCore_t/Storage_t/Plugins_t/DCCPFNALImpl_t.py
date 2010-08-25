@@ -57,7 +57,11 @@ class DCCPFNALImplTest(unittest.TestCase):
             '/store/unmerged/lustre/NONEXISTANTSOURCE', '/store/unmerged/lustre/NONEXISTANTTARGET', True, None, None, None, None\
              ).AndRaise(StageOutFailure("testFailure"))
         
-   
+        # do one with a real pfn
+        self.runMocker.runCommand(\
+            [self.commandPrepend, 'mkdir', '-m', '755', '-p',\
+            '/pnfs/cms/WAX/11/store/temp/WMAgent/unmerged/RECO/WMAgentCommissioning10-v7newstageout']).AndReturn(("0",""))
+        self.runMocker.runCommand([self.commandPrepend, 'dccp', '-o', '86400', '-d', '0', '-X', '-role=cmsprod', 'file:///etc/hosts', 'dcap://cmsdca.fnal.gov:24037/pnfs/fnal.gov/usr/cms/WAX/11/store/temp/WMAgent/unmerged/RECO/WMAgentCommissioning10-v7newstageout/0000/0661D749-DD95-DF11-8A0F-00261894387C.root ']).AndReturn(("0",""))
         # now try to delete it (pnfs)
         self.runMocker.runCommand( 
             ['rm', '-fv', '/pnfs/cms/WAX/11/store/tmp/testfile' ]\
@@ -83,6 +87,14 @@ class DCCPFNALImplTest(unittest.TestCase):
         self.assertRaises(StageOutFailure,
                            testObject.doTransfer,'/store/unmerged/lustre/NONEXISTANTSOURCE',
                               '/store/unmerged/lustre/NONEXISTANTTARGET',
+                              True, 
+                              None,
+                              None,
+                              None,
+                              None)
+        self.assertRaises(StageOutFailure,
+                           testObject.doTransfer,'file:///etc/hosts',
+                              'dcap://cmsdca.fnal.gov:24037/pnfs/fnal.gov/usr/cms/WAX/11/store/temp/WMAgent/unmerged/RECO/WMAgentCommissioning10-v7newstageout/0000/0661D749-DD95-DF11-8A0F-00261894387C.root ',
                               True, 
                               None,
                               None,

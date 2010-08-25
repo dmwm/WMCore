@@ -7,11 +7,12 @@ Filesets and Feeders manager
 __all__ = []
 __revision__ = "$Id: FeederManagerPoller.py,\
      v 1.4 2009/11/06 12:08:15 riahi Exp $" 
-__version__ = "$Revision: 1.5 $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
 import traceback
+import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 #from ProdCommon.ThreadTools import WorkQueue
@@ -19,7 +20,10 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMFactory import WMFactory
 
 # Tracks filesets watched:{filesetName:filesetObject}
-#FILESET_WATCH = {}
+FILESET_WATCH = {}
+FILESET_NEW = {}
+LONG_SLEEP = time.time()/60 
+SHORT_SLEEP = time.time()/60 
 
 class FeederManagerPoller(BaseWorkerThread):
     """
@@ -33,8 +37,6 @@ class FeederManagerPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.queries = None
-        #self.workq = WorkQueue.WorkQueue \
-        #      ([self.pollExternal for _ in range(threads)])
 
     def setup(self, parameters):
         """
@@ -47,13 +49,15 @@ class FeederManagerPoller(BaseWorkerThread):
 
     def databaseWork(self):
         """
-        Queries DB for all watched filesets, if information about filesets are
         completed, set the fileset to close (Not implemented yet)
         """
+
         # Global variable shared between threads 
-        #global FILESET_WATCH 
-        #FILESET_WATCH = {}
-        filesetWatch = {}
+        global FILESET_WATCH 
+        global FILESET_NEW
+        global LONG_SLEEP 
+
+        FILESET_NEW = {}
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -66,36 +70,27 @@ class FeederManagerPoller(BaseWorkerThread):
 
         for fileset in range(len(managedFilesets)):
 
-            # Poll for the new fileset only
-            #if managedFilesets[fileset]['name'] in FILESET_WATCH:
-            #    logging.debug \
-     #  ('fileset %s is in mn_filesets' % managedFilesets[fileset]['name']) 
-
-      #      else: 
-
             logging.debug("Processing %s %s" % \
   ( managedFilesets[fileset]['id'] , managedFilesets[fileset]['name'] ) )
-            filesetToUpdate = Fileset(id=managedFilesets[fileset]['id'])
 
-            filesetToUpdate.loadData()
-            # lock me!
-            filesetWatch[filesetToUpdate.name] = filesetToUpdate
+            if managedFilesets[fileset]['name'] not in FILESET_WATCH:
 
-        # WorkQueue worker
-        for name, fileset in filesetWatch.items():
+                filesetToUpdate = Fileset(id=managedFilesets[fileset]['id'])
+                filesetToUpdate.loadData()
 
-            logging.debug("Will poll %s : %s" % (name, fileset.id))
-            #self.workq.enqueue(name, fileset)
+                FILESET_WATCH[filesetToUpdate.name] = filesetToUpdate
+                FILESET_NEW[filesetToUpdate.name] = filesetToUpdate
+        
+        logging.debug("NEW FILESETS %s" %FILESET_NEW)
+        logging.debug("OLD FILESETS%s" %FILESET_WATCH)
 
-        #for key, filesets in self.workq.__iter__():
+        # new fileset queries 
+        for name, fileset in FILESET_NEW.items():
 
-            #fileset = FILESET_WATCH[key]
+            logging.debug("Polling %s : %s" % (name, fileset.id))
             self.pollExternal(fileset)
 
-#            logging.debug \
-#      ("the poll key %s result %s is ready !" % (key,str(fileset.id)))
 
-            myThread.transaction.begin()
             feederId = self.queries.getFeederId((fileset.name).split(":")[1])
             myThread.transaction.commit()
 
@@ -111,10 +106,44 @@ class FeederManagerPoller(BaseWorkerThread):
                 self.queries.removeManagedFilesets(fileset.id, feederId)
                 myThread.transaction.commit()
 
-                # lock me!
-                #del FILESET_WATCH[key]
+            
+            logging.debug("Sleeping for 60 SEC after processing %s\
+                      " %fileset.name)
+            time.sleep(60)
 
-        #myThread.transaction.commit()
+        if ((time.time()/60) - LONG_SLEEP) > 60 :
+
+            # Long pause queries 
+            for name, fileset in FILESET_WATCH.items():
+
+                logging.debug("Will poll %s : %s" % (name, fileset.id))
+                self.pollExternal(fileset)
+
+
+                myThread.transaction.begin()
+                feederId = self.queries.getFeederId((fileset.name\
+                          ).split(":")[1])
+                myThread.transaction.commit()
+
+                logging.debug("the Feeder %s has processed %s and is \
+                      removing it if closed" % (feederId , fileset.name ) )
+
+
+                # Finally delete fileset
+                # If the fileset is closed remove it
+                if fileset.open == False:
+
+                    myThread.transaction.begin()
+                    self.queries.removeManagedFilesets(fileset.id, feederId)
+                    myThread.transaction.commit()
+
+                time.sleep(60)
+
+            # Update short_sleep var
+            LONG_SLEEP = time.time()/60
+
+            #myThread.transaction.commit()
+
 
     # Switch to static method if needed
     def pollExternal(self, fileset):

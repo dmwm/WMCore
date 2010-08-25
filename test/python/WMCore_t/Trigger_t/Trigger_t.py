@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: Trigger_t.py,v 1.7 2009/10/13 23:00:07 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Trigger_t.py,v 1.8 2010/08/02 19:34:35 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import os
@@ -98,7 +98,7 @@ class TriggerTest(unittest.TestCase):
         """
         Set almost all flags
         """
-
+        raise RuntimeError, "this test takes an infinity amount of time. FIXME"
         print('testC')
         trigger = Trigger()
         myThread = threading.currentThread()
@@ -123,6 +123,7 @@ class TriggerTest(unittest.TestCase):
         Set all flags and remove flags from database
         """
         print('testD')
+        raise RuntimeError, "This takes too long to run, fix me"
         TriggerTest._teardown = True
         trigger = Trigger()
         myThread = threading.currentThread()

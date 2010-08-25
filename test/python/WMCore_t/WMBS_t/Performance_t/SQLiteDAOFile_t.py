@@ -13,8 +13,8 @@ from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.File_t import PerformanceFileTest as FileTest
 from nose.plugins.attrib import attr
-@attr('performance')
 class SQLiteDAOFileTest(FileTest, SQLiteDAOTest, TestCase):
+    __performance__=True
     """
     __SQLiteDAOFileTest__
 

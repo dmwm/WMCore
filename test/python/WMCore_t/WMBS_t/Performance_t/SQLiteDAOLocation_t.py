@@ -13,8 +13,8 @@ from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.Location_t import LocationTest
 from nose.plugins.attrib import attr
-@attr('performance')
 class SQLiteDAOLocation_t(LocationTest, SQLiteDAOTest, TestCase):
+    __performance__=True
     """
     __SQLiteDAOLocation_t__
 

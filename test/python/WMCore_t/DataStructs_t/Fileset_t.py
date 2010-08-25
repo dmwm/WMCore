@@ -131,6 +131,7 @@ class FilesetTest (unittest.TestCase):
             Testcase for the listLFN method of the Fileset class
             
         """
+        raise RuntimeError, "This test takes too long to run. FIXME"
         #Kinda slow way of verifying if the raw LFN from each file at the
         #fileset is returned from the meth
         allFiles = self.fileset.getFiles()

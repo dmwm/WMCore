@@ -12,8 +12,8 @@ from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.Job_t import JobTest
 from nose.plugins.attrib import attr
-@attr('performance')
 class MySQLDAOJobTest(JobTest, MySQLDAOTest, TestCase):
+    __performance__=True
     """
     __MySQLDAOJobTest__
 

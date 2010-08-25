@@ -29,6 +29,7 @@ except:
 try:
     import nose
     from nose.plugins import Plugin, PluginTester
+    from nose.plugins.attrib import AttributeSelector
     import nose.failure
     import nose.case
     can_nose = True
@@ -84,16 +85,19 @@ if can_nose:
         def run(self):
             if self.reallyDeleteMyDatabaseAfterEveryTest:
                 print "#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####"
+                print "#### buildbotmode is %s" % self.buildBotMode
                 sys.stdout.flush()
                 import WMQuality.TestInit
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
             
-            if self.buildBotMode:
+            if not self.buildBotMode:
                 retval =  nose.run(argv=[__file__,'--with-xunit', '--all-modules','-v','test/python'])
             else:    
-                retval =  nose.run(argv=[__file__,'--with-xunit', '--all-modules','-v','test/python','-a','!integration,!performance'],
-                                    addplugins=[DetailedOutputter()])
+                print "### We are in buildbot mode ###"
+                sys.stdout.flush()
+                retval =  nose.run(argv=[__file__,'--with-xunit', '--all-modules','-v','test/python','-a','!integration,!performance,!__integration__,!__performance__'],
+                                    addplugins=[DetailedOutputter(), AttributeSelector()])
                 
             if retval:
                 sys.exit( 0 ) 

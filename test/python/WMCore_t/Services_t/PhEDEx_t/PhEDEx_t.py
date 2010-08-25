@@ -7,6 +7,7 @@ from WMCore.Services.DBS import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList
+from nose.plugins.attrib import attr
 
 
 class PhEDExTest(unittest.TestCase):
@@ -61,7 +62,8 @@ class PhEDExTest(unittest.TestCase):
             xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl, 
                                     newSubscription.getDatasetPaths())
             print phedexApi.subscribe(sub, xmlData)
-
+            
+    @attr('integration')
     def testNodeMap(self):
 
         dict = {}

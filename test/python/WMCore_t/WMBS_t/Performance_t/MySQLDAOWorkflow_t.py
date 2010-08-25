@@ -13,8 +13,8 @@ from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.Workflow_t import WorkflowTest
 from nose.plugins.attrib import attr
-@attr('performance')
 class MySQLDAOWorkflowTest(WorkflowTest, MySQLDAOTest, TestCase):
+    __performance__=True
     """
     __MySQLDAOWorkflowTest__
 

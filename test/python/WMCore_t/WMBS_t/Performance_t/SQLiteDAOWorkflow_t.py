@@ -13,8 +13,8 @@ from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.Workflow_t import WorkflowTest
 from nose.plugins.attrib import attr
-@attr('performance')
 class SQLiteDAOWorkflowTest(WorkflowTest, SQLiteDAOTest, TestCase):
+    __performance__=True
     """
     __SQLiteDAOWorkflowTest__
 

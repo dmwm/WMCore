@@ -11,8 +11,8 @@ DB Performance testcase for WMBS File class
 import commands
 from ConfigParser import ConfigParser  
 from nose.plugins.attrib import attr
-@attr('performance')
 class MySQLDAOTest:
+    __performance__=True
     """
     __MySQLDAOTest__
 

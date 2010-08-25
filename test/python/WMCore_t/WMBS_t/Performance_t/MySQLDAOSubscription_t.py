@@ -13,8 +13,8 @@ from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.Subscription_t import SubscriptionTest
 from nose.plugins.attrib import attr
-@attr('performance')
 class MySQLDAOSubscriptionTest(SubscriptionTest, MySQLDAOTest, TestCase):
+    __performance__=True
     """
     __MySQLDAOSubscriptionTest__
 

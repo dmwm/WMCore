@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.37 2010/08/02 17:34:19 meloam Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.38 2010/08/02 19:34:36 meloam Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import logging
 import os.path
@@ -1041,7 +1041,6 @@ class JobAccountantTest(unittest.TestCase):
         Run the load test using one worker process.
         """
         print("  Filling DB...")
-
         self.setupDBForLoadTest()
         
         config = self.createConfig()

@@ -5,8 +5,8 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.9 2010/04/13 20:41:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: FileBased_t.py,v 1.10 2010/08/02 19:34:35 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import os
@@ -24,6 +24,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
+from nose.plugins.attrib import attr
 
 class FileBasedTest(unittest.TestCase):
     """
@@ -277,7 +278,8 @@ class FileBasedTest(unittest.TestCase):
 
         
         return
-
+    
+    @attr('performance')
     def testTiming(self):
         """
         _testTiming_

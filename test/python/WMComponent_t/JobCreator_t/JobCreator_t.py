@@ -5,8 +5,8 @@
 # W0201: Don't much around with __init__
 # E1103: Use thread members
 
-__revision__ = "$Id: JobCreator_t.py,v 1.23 2010/07/21 15:40:07 mnorman Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.24 2010/08/02 19:34:35 meloam Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import unittest
 import random
@@ -41,6 +41,7 @@ from WMCore.Agent.HeartbeatAPI               import HeartbeatAPI
 #Workload stuff
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
+from nose.plugins.attrib import attr
 
 class JobCreatorTest(unittest.TestCase):
     """
@@ -336,7 +337,7 @@ class JobCreatorTest(unittest.TestCase):
         
 
 
-
+    @attr('performance')
     def testB_ProfilePoller(self):
         """
         Profile your performance

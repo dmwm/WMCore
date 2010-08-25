@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.18 2009/07/13 19:17:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Create.py,v 1.19 2009/07/14 19:19:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -104,15 +104,3 @@ class Create(DBCreator):
                ON DELETE CASCADE,
              FOREIGN KEY(location) REFERENCES dbsbuffer_location(id)
                ON DELETE CASCADE)ENGINE=InnoDB"""
-
-        self.constraints["FK_dbsbuffer_file_ds"]=\
-		      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_file_ds
-    			 foreign key(Dataset) references dbsbuffer_dataset(ID) on delete CASCADE"""
-
-        self.constraints["FK_dbsbuffer_file_ds"]=\
-                      """ALTER TABLE dbsbuffer_file ADD CONSTRAINT FK_dbsbuffer_dbsbuffile
-                         foreign key(WMBS_File_ID) references dbsbuffer_file(ID)"""
-
-        self.constraints["FK_dbsbuffer_ds_algo"]=\
-              """ALTER TABLE dbsbuffer_algo DD CONSTRAINT FK_dbsbuffer_ds_algo
-                 foreign key(Algo) references dbsbuffer_algo(ID)"""

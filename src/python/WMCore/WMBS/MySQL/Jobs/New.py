@@ -6,8 +6,8 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.10 2009/05/12 16:17:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: New.py,v 1.11 2009/09/10 16:12:57 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import time
 
@@ -21,12 +21,60 @@ class New(DBFormatter):
                :state_time, :couch_record, 
                (SELECT id FROM wmbs_location WHERE site_name = :location))"""
 
-    def execute(self, jobgroup, name, couch_record = None, location = None, 
-                conn = None, transaction = False):
-        binds = {"jobgroup": jobgroup, "name": name, 
-                 "couch_record": couch_record, "state_time": int(time.time()),
-                 "location": location}
+    getIDsql = """SELECT id as id, name as name FROM wmbs_job WHERE name= :name AND jobgroup= :jobgroup"""
 
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)            
-        return
+
+    def getBinds(self, jobList):
+        binds = []
+        for job in jobList:
+            tmpDict = {}
+            tmpDict["jobgroup"]     = job.get("jobgroup")
+            tmpDict["name"]         = job.get("name")
+            tmpDict["couch_record"] = job.get("couch_record", None)
+            tmpDict["location"]     = job.get("location", None)
+            tmpDict["state_time"]   = int(time.time())
+            binds.append(tmpDict)
+
+        return binds
+
+    def format(self, input):
+        result = {}
+        jobList = self.formatDict(input)
+        for job in jobList:
+            result[job['name']] = job['id']
+
+        return result
+    
+    def execute(self, jobgroup = None, name = None, couch_record = None, location = None, 
+                conn = None, transaction = False, jobList = None):
+
+        #Adding jobList enters bulk mode
+
+        if jobList:
+            binds = self.getBinds(jobList)
+            
+            self.dbi.processData(self.sql, binds, conn = conn, transaction = transaction)
+            
+            binds2 = []
+            for d in binds:
+                binds2.append({'name': d['name'], 'jobgroup': d['jobgroup']})
+
+            #Now we need the IDs
+            result = self.dbi.processData(self.getIDsql, binds2, conn = conn, transaction = transaction)
+            return self.format(result)
+
+        
+
+        elif jobgroup and name:
+            binds = {"jobgroup": jobgroup, "name": name, 
+                     "couch_record": couch_record, "state_time": int(time.time()),
+                     "location": location}
+
+            self.dbi.processData(self.sql, binds, conn = conn,
+                                 transaction = transaction)            
+            return
+
+        else:
+            logging.error('Asked for new jobs in Jobs.New without jobgroup and name!')
+            return
+        

@@ -24,8 +24,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.19 2010/02/28 14:57:20 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.20 2010/03/03 17:50:03 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import threading
 import logging
@@ -201,10 +201,17 @@ class DBSUploadPoller(BaseWorkerThread):
                 dataset = createDatasetFromInfo(info = datasetAlgo)
 
                 if not algo['InDBS']:
-                        # Well then we better add it
-                        logging.info('About to insert algo into DBS')
-                        newAlgos.append(DBSWriterObjects.createAlgorithm(algo, configMetadata = None, apiRef = self.dbsapi))
-                        addToBuffer.updateAlgo(algo, 1)
+                    # Well then we better add it
+                    logging.info('About to insert algo into DBS')
+                    newAlgos.append(DBSWriterObjects.createAlgorithm(algo, configMetadata = None, apiRef = self.dbsapi))
+                    addToBuffer.updateAlgo(algo, 1)
+                else:
+                    # Then the algo is already in DBS
+                    # We still need a DBSInstance of this
+                    # By calling this without an apiRef, we should create
+                    # An instance of DBSAlgorithm without trying
+                    # To check it back into DBS
+                    newAlgos.append(DBSWriterObjects.createAlgorithm(algo, configMetadata = None, apiRef = None))
 
 
                 # WARNING!  This is a temporary fix

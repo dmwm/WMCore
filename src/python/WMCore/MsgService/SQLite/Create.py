@@ -5,8 +5,8 @@ _Create_
 Class for creating SQLite specific schema for persistent messages.
 """
 
-__revision__ = "$Id: Create.py,v 1.5 2010/02/03 18:55:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Create.py,v 1.6 2010/02/09 17:33:23 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import logging
 import threading
@@ -129,7 +129,7 @@ CREATE TABLE ms_message (
    FOREIGN KEY(source) references ms_process(procid),
    FOREIGN KEY(dest) references ms_process(procid)
    ) 
-
+"""
         self.create['07tf_ms_message_buffer_in'] = """
 CREATE TABLE ms_message_buffer_in (
    messageid INTEGER PRIMARY KEY AUTOINCREMENT,

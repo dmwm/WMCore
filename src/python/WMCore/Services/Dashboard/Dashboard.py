@@ -5,8 +5,8 @@ _Dashboard_
 Talk to the Dashboard Service to get site status.
 """
 
-__revision__ = "$Id: Dashboard.py,v 1.1 2008/09/18 18:56:48 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Dashboard.py,v 1.2 2010/01/08 21:20:43 metson Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Services.Service import Service
 class Dashboard(Service):
@@ -17,7 +17,7 @@ class Dashboard(Service):
     
     def getStatus(self, name):
         summaryfile = "db_sam_summary_%s.csv" % (name)
-        self.logger.debug('writing to %s/%s for site %s' % (self.path, 
+        self['logger'].debug('writing to %s/%s for site %s' % (self['cachepath'], 
                                                             summaryfile, 
                                                             name))
         
@@ -27,7 +27,7 @@ class Dashboard(Service):
         status = []
         for l in summaryfile.readlines():
             status.append(l.strip().rsplit(',',1)[1])
-        self.logger.debug(status)
+        self['logger'].debug(status)
         for i in ["MAINTENANCE", "ERROR", "WARNING", "UP"]:
             if i in status:
                  return {'status':i, 'id':name}

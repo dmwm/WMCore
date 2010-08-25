@@ -406,12 +406,6 @@ class SubscriptionTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Missing completed files"
 
-        completedFiles = testSubscription.filesOfStatus(status = "CompletedFiles",
-                                                        maxFiles = 1)
-
-        assert len(completedFiles) == 1, \
-               "ERROR: maxFiles parameter didn't limit files returned."
-
         testSubscription.delete()
         testWorkflow.delete()
         testFileset.delete()
@@ -528,12 +522,6 @@ class SubscriptionTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
                "ERROR: Missing acquired files"
-
-        acquiredFiles = testSubscription.filesOfStatus(status = "AcquiredFiles",
-                                                       maxFiles = 1)
-
-        assert len(acquiredFiles) == 1, \
-               "ERROR: maxFiles parameter didn't limit files returned."
 
         testSubscription.delete()
         testWorkflow.delete()
@@ -665,11 +653,6 @@ class SubscriptionTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
                "ERROR: Missing available files"
-
-        availableFiles = testSubscription.availableFiles(maxFiles = 1)
-
-        assert len(availableFiles) == 1, \
-               "ERROR: maxFiles parameter didn't limit files returned."               
 
         testSubscription.delete()
         testWorkflow.delete()

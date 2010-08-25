@@ -6,7 +6,7 @@ Map between split algorithm and start policy
 SplitAlgoToStartPolicy = {"FileBased" : "NumberOfFiles",
                           "EventBased" : "NumberOfEvents"}
 
-SplitAlogToArgMap = {"FileBased" : "files_per_job",
+SplitAlgoToArgMap = {"FileBased" : "files_per_job",
                      "EventBased" : "events_per_job"}
 
 def getSliceType(splitAlgo):
@@ -24,7 +24,10 @@ def getSliceSize(splitAlgo, splitArgs):
     """
     
     if SplitAlgoToStartPolicy.has_key(splitAlgo):
-        return splitArgs[SplitAlogToArgMap[splitAlgo]]
+        return splitArgs[SplitAlgoToArgMap[splitAlgo]]
     else:
-        return splitArgs[SplitAlogToArgMap["FileBased"]]
+        if splitArgs.has_key(SplitAlgoToArgMap["FileBased"]):
+            return splitArgs[SplitAlgoToArgMap["FileBased"]]
+        else:
+            return 1
     

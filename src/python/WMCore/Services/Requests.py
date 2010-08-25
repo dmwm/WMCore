@@ -7,6 +7,9 @@ except:
 import urllib
 import os
 from httplib import HTTPConnection
+from httplib import HTTPSConnection
+
+from WMCore.WMException import WMException
 
 class Requests(dict):
     """
@@ -131,16 +134,15 @@ class SecureRequests(Requests):
     Example implementation of Requests using a different connection type, e.g. 
     use HTTPS to send requests to a given URL, authenticating via a key/cert 
     pair
-    """
-
+    """ 
     def _getURLOpener(self):
         """
         method getting a secure (HTTPS) connection
         """
         key, cert = self.getKeyCert()
-        return HTTPSConnection(self['host'], key_file=cert, cert_file=key)
+        return HTTPSConnection(self['host'], key_file=key, cert_file=cert)
     
-    def getKeyCert():
+    def getKeyCert(self):
         """
        _getKeyCert_
        
@@ -149,15 +151,17 @@ class SecureRequests(Requests):
         """
         # Zeroth case is if the class has over ridden the key/cert and has it
         # stored in self
-        if self['cert'] and self['key']:
-            key = self.key
-            cert = self.cert
+        if self.has_key('cert') and self.has_key('key' ) \
+             and self['cert'] and self['key']:
+            key = self['key']
+            cert = self['cert']
         # Now we're trying to guess what the right cert/key combo is... 
         # First presendence to HOST Certificate, This is how it set in Tier0
         elif os.environ.has_key('X509_HOST_CERT'):
             cert = os.environ['X509_HOST_CERT']
             key = os.environ['X509_HOST_KEY']
-            
+            print cert
+            print key
         # Second preference to User Proxy, very common
         elif os.environ.has_key('X509_USER_PROXY'):
             cert = os.environ['X509_USER_PROXY']
@@ -177,8 +181,8 @@ class SecureRequests(Requests):
     
         #Set but not found
         if not os.path.exists(cert) or not os.path.exists(key):
-            msg = "Certificate is not found"
-            raise Exception, msg
-        
+            raise WMException('Request requires a host certificate and key', 
+                              "WMCORE-11")
+            
         # All looks OK, still doesn't gurantee proxy's validity etc.
         return key, cert

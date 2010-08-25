@@ -13,5 +13,6 @@ class GetParentIDsByID(GetParentIDsMySQL):
         for r in result:
             for f in r.fetchall():
                 out.add(f[0])
+            r.close()
         return list(out) 
     

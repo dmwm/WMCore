@@ -5,11 +5,15 @@ _DropMaker_
 Generate the XML file for injecting data into PhEDEx
 Modified from ProdCommon.DataMgmt.PhEDEx.DropMaker.py
 
+TODO: Need to merge with ProdCommon.DataMgmt.PhEDEx.DropMaker.py - Talk to Stuart
 """
 
 import logging
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvDoc import IMProvDoc
+
+from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+
 
 class XMLFileblock(list):
     """
@@ -201,8 +205,7 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
     generate an XML structure for injection
 
     """
-    spec = XMLInjectionSpec(dbsUrl, 
-                            datasetPath)
+    spec = XMLInjectionSpec(dbsUrl)
 
 
     reader = DBSReader(dbsUrl)
@@ -210,11 +213,11 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
     for block in blockNames:
         blockContent = reader.getFileBlock(block)
         isOpen = reader.blockIsOpen(block)
-        
+        dataset = spec.getDataset(datasetPath)   
         if isOpen:
-            xmlBlock = spec.getFileblock(block, "y")
+            xmlBlock = dataset.getFileblock(block, "y")
         else:
-            xmlBlock = spec.getFileblock(block, "n")
+            xmlBlock = dataset.getFileblock(block, "n")
 
         [ xmlBlock.addFile(
             x['LogicalFileName'],x['Checksum'] ,x['FileSize']

@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.4 2009/12/16 18:55:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: RunBased_t.py,v 1.5 2010/01/22 13:31:33 riahi Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import os
@@ -277,6 +277,28 @@ class EventBasedTest(unittest.TestCase):
         return
 
 
+    def testPersistSingleRunsCombineUneven(self):
+        """
+        _testPerisistSingleRunsCombineUneven_
+
+        Test run based job splitting when the number of jobs is
+        less then and indivisible by the number of files, with multiple files.
+
+        """
+
+        #This should return two jobs, one with 8 and one with 2 files
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleRunSubscription)
+
+        jobGroups = jobFactory(files_per_job = 8)
+
+        self.assertEqual(len(jobGroups),         1)
+        self.assertEqual(len(jobGroups[0].jobs), 2)
+        self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 2)
+        self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 8)
+
+        return
     
 
 if __name__ == '__main__':

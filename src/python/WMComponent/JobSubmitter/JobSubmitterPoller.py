@@ -7,8 +7,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.7 2010/01/22 22:09:19 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.8 2010/02/02 19:48:39 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -20,6 +20,7 @@ import threading
 import time
 import os.path
 import string
+import cPickle
 #import common
 
 #WMBS objects
@@ -32,6 +33,24 @@ from WMCore.JobStateMachine.ChangeState       import ChangeState
 from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
+from WMCore.DataStructs.JobPackage            import JobPackage
+
+
+def sortListOfDictsByKey(list, key):
+    """
+    Sorts a list of dictionaries into a dictionary by keys
+
+    """
+
+    finalList = {}
+
+    for entry in list:
+        value = entry.get(key, '__NoKey__')
+        if not value in finalList.keys():
+            finalList[value] = []
+        finalList[value].append(entry)
+
+    return finalList
 
 
 
@@ -245,19 +264,34 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
+        sortedJobList = sortListOfDictsByKey(jobList, 'sandbox')
+
         changeState = ChangeState(self.config)
 
-        listOfJobs = jobList[:]
         count = 0
-
-        while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
-            listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]
-            listOfJobs = listOfJobs[self.config.JobSubmitter.jobsPerWorker:]
-            self.processPool.enqueue([{'jobs': listForSub}])
-            count += 1
-        if len(listOfJobs) > 0:
-            self.processPool.enqueue([{'jobs': listOfJobs}])
-            count += 1
+        successList = []
+        failList    = []
+        for sandbox in sortedJobList.keys():
+            if not sandbox or not os.path.isfile(sandbox):
+                #Sandbox does not exist!  Dump jobs!
+                for job in sortedJobList[sandbox]:
+                    failList.append(job)
+            listOfJobs = sortedJobList[sandbox][:]
+            packagePath = os.path.join(os.path.dirname(sandbox), 'batch_%i' %(listOfJobs[0]['id']))
+            if not os.path.exists(packagePath):
+                os.makedirs(packagePath)
+            package = JobPackage()
+            package.extend(listOfJobs)
+            package.save(os.path.join(packagePath, 'JobPackage.pkl'))
+            
+            while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
+                listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]
+                listOfJobs = listOfJobs[self.config.JobSubmitter.jobsPerWorker:]
+                self.processPool.enqueue([{'jobs': listForSub, 'packageDir': packagePath}])
+                count += 1
+            if len(listOfJobs) > 0:
+                self.processPool.enqueue([{'jobs': listOfJobs, 'packageDir': packagePath}])
+                count += 1
 
         #result = self.processPool.dequeue(len(jobList))
         result = []
@@ -265,10 +299,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         result = self.processPool.dequeue(count)
 
         #This will return a list of dictionaries of job ids
-
-        successList = []
-        failList    = []
-
+             
         successCompilation = []
         for entry in result:
             if 'Success' in entry.keys():
@@ -299,44 +330,37 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        taskFinder = self.daoFactory(classname="Jobs.GetTask")
+        failList = []
 
-        #Assemble list
-        jobIDs = []
         for job in jobList:
-            jobIDs.append(job['id'])
-
-        tasks = taskFinder.execute(jobID = jobIDs)
-
-        taskDict = {}
-        for job in jobList:
-            #Now it gets interesting
-            #Load the WMTask and grab the info that you need
-            jobID = job['id']
-            workloadName = tasks[jobID].split('/')[0]
-            taskName = tasks[jobID].split('/')[1:]
-            if type(taskName) == list:
-                taskName = string.join(taskName, '/')
-            #If we haven't picked this up before, pick it up now
-            if not workloadName in taskDict.keys():
-                #We know the format that the path is in
-                workloadPath = os.path.join(self.config.WMAgent.WMSpecDirectory, '%s.pcl' %(workloadName))
+            if not os.path.isdir(job['cache_dir']):
+                #Well, then we're in trouble, because we need that info
+                failList.append(job)
+                continue
+            jobPickle  = os.path.join(job['cache_dir'], 'job.pkl')
+            if not os.path.isfile(jobPickle):
+                failList.append(job)
+                continue
+            fileHandle = open(jobPickle, "r")
+            loadedJob  = cPickle.load(fileHandle)
+            job.update(loadedJob)
+            if not 'sandbox' in job.keys() or not 'task' in job.keys():
+                #Then we need to construct a task or a sandbox
+                if not 'spec' in job.keys():
+                    #Well, we have no spec
+                    failList.append(job)
+                    continue
+                if not os.path.isfile(job['spec']):
+                    failList.append(job)
+                    continue
                 wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
-                if not os.path.isfile(workloadPath):
-                    workloadPath = os.path.join(self.config.WMAgent.WMSpecDirectory, '%s.pckl' %(workloadName))
-                    if not os.path.isfile(workloadPath):
-                        logging.error("Could not find WMSpec file %s in path %s for job %i" %(workloadName, workloadPath, jobID))
-                        continue
-                wmWorkload.load(os.path.join(self.config.WMAgent.WMSpecDirectory, '%s.pcl' %(workloadName)))
-                taskDict[workloadName] = wmWorkload
+                wmWorkload.load(job['spec'])
+                job['sandbox'] = task.data.input.sandbox
                 
 
-            task = taskDict[workloadName].getTask(taskName)
-            if not hasattr(task.data.input, 'sandbox'):
-                logging.error("Job %i has no sandbox!" %(jobID))
-                continue
-            job['sandbox'] = task.data.input.sandbox
-            
+        for job in jobList:
+            if job in failList:
+                jobList.remove(job)
 
         return jobList
 

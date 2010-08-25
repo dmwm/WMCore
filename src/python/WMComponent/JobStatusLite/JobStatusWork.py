@@ -12,8 +12,8 @@ on the subset of jobs assigned to them.
 
 """
 
-__revision__ = "$Id: JobStatusWork.py,v 1.4 2010/07/26 14:28:12 mcinquil Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobStatusWork.py,v 1.5 2010/07/26 17:06:36 mcinquil Exp $"
+__version__ = "$Revision: 1.5 $"
 
 #import threading
 #from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
@@ -165,7 +165,7 @@ class JobStatusWork:
         loop = True
         runningAttrs = {'processStatus': '%handled',
                         'closed' : 'N'}
-        #jobsToPoll = cls.params['jobsToPoll']
+        jobsToPoll = int(cls.params['jobsToPoll'])
 
         # perform query
         while loop :
@@ -180,20 +180,14 @@ class JobStatusWork:
                         }
                 task = bossSession.loadTask(taskId) #, deep = False)
                 logging.info("Loaded task with id %s."%str(taskId))
-                selectedJobs = bossSession.loadJobsByRunningAttr( binds )
+                selectedJobs = bossSession.loadJobsByRunningAttr( binds, limit = [offset, jobsToPoll] )
                 logging.info("Loaded %s jobs."%str(len(selectedJobs)))
-                #task.jobs = selectedJobs
 
-                #task = bossSession.load(
-                #    taskId, runningAttrs=runningAttrs, \
-                #    strict=False, \
-                #    limit=jobsToPoll, offset=offset )
-
-                #if task.jobs == [] :
-                #    loop = False
-                #    break
-                #else:
-                #    offset += jobsToPoll
+                if not len(selectedJobs) > 0 :
+                    loop = False
+                    break
+                else:
+                    offset += jobsToPoll
 
                 if task['user_proxy'] is None :
                     task['user_proxy'] = ''
@@ -226,5 +220,5 @@ class JobStatusWork:
                     %(str(taskId), str( e ) ) )
                 logging.error( traceback.format_exc() )
                 loop = False
-                #offset += int(cls.params['jobsToPoll'])
+                offset += int(cls.params['jobsToPoll'])
 

@@ -3,8 +3,8 @@
 The JobStatus subprocess worker for the status check/update
 """
 __all__ = []
-__revision__ = "$Id: StatusWorker.py,v 1.3 2010/06/09 20:28:48 mcinquil Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: StatusWorker.py,v 1.4 2010/07/26 17:06:36 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -89,11 +89,11 @@ class StatusWorker:
         else:
             for param in parameters:
                 for k in param.keys():
-                    logging.info("Received group " + str(k))
+                    logging.info("Received group [%s]"%str(k))
                     self.checkStatusByGroup(k)
 
-        logging.info(str(myThread) + ": finished StatusWorker.__call__")
-        logging.info(str(myThread) + ": returning [%s]"%str(parameters))
+        logging.debug(str(myThread) + ": finished StatusWorker.__call__")
+        logging.debug("Returning [%s]"%str(parameters))
         
         return parameters
 

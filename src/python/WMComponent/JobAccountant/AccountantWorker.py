@@ -8,8 +8,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.11 2010/01/14 14:54:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.12 2010/01/26 17:45:52 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import threading
@@ -440,9 +440,11 @@ class AccountantWorker:
             if outputFileset != None:
                 filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputFileset})
 
-        self.bulkAddToFilesetAction.execute(binds = filesetAssoc,
-                                            conn = self.transaction.conn,
-                                            transaction = True)
+        if len(filesetAssoc) > 0:
+            self.bulkAddToFilesetAction.execute(binds = filesetAssoc,
+                                                conn = self.transaction.conn,
+                                                transaction = True)
+
         wmbsJob.completeInputFiles()        
         self.stateChanger.propagate([wmbsJob], "success", "complete")
 

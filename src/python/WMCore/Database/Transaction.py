@@ -11,8 +11,8 @@ in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
 you set {'isolation_level':None} all sql will be implicitly committed and the
 Transaction object will be meaningless.
 """
-__revision__ = "$Id: Transaction.py,v 1.7 2009/05/18 19:41:19 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Transaction.py,v 1.8 2009/06/11 18:36:38 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import logging
 import time
@@ -42,6 +42,8 @@ class Transaction(WMObject):
         #print "Transaction::begin(%s) pre: %s, %s" % (id(self), self.conn, self.transaction)
 
         if self.conn == None:
+            self.conn = self.dbi.connection()
+        if self.conn.closed:
             self.conn = self.dbi.connection()
 
         self.transaction = self.conn.begin()
@@ -120,6 +122,9 @@ class Transaction(WMObject):
         Tries to re-execute all statements that where not committed,
         before the connection was lost.
         """
+        #Added by mnorman for testing.  Do NOT commit
+        #for sql, binds in self.sqlBuffer:
+        #    print 'Going to attempt redo for %s, %s' %(sql, binds)
         tries = 0
         result = None
         connectionProblem = True

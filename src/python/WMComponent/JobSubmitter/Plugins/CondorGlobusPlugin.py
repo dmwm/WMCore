@@ -12,14 +12,18 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.10 2010/06/16 18:30:34 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.11 2010/07/08 19:50:03 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import os.path
 import logging
 import threading
 import cPickle
+
+# Delete these
+import cProfile
+import commands
 
 import subprocess
 
@@ -89,6 +93,9 @@ class CondorGlobusPlugin(PluginBase):
 
         result = {'Success': []}
 
+        successList = []
+        failList    = []
+
         for entry in parameters:
             jobList         = entry.get('jobs')
             self.packageDir = entry.get('packageDir', None)
@@ -98,8 +105,8 @@ class CondorGlobusPlugin(PluginBase):
             self.unpacker   = os.path.join(getWMBASE(),
                                        'src/python/WMCore/WMRuntime/Unpacker.py')
             
-            logging.error("I have jobs")
-            logging.error(jobList[0])
+            logging.debug("I have jobs")
+            logging.debug(jobList[0])
             
             if type(jobList) == dict:
                 # We only got one of them
@@ -124,11 +131,11 @@ class CondorGlobusPlugin(PluginBase):
 
 
             # Now submit them
-            logging.error("About to submit %i jobs" %(len(jobList)))
-            command = ["condor_submit", jdlFile]
-            pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE, shell = False)
+            logging.info("About to submit %i jobs" %(len(jobList)))
+            command = "condor_submit %s" %(jdlFile)
+            pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
             output, error = pipe.communicate()
+
 
             if not error == '':
                 logging.error("Printing out command stderr")
@@ -144,8 +151,24 @@ class CondorGlobusPlugin(PluginBase):
                     if job == {}:
                         continue
                     result['Success'].append(job['id'])
+                    job['couch_record'] = None
+                    successList.append(job)
             else:
                 logging.error("JobSubmission failed due to error")
+                for job in jobList:
+                    if job == {}:
+                        continue
+                    job['couch_record'] = None
+                    failList.append(job)
+                
+
+
+        if len(successList) > 0:
+            logging.info("About to pass jobs")
+            logging.info(successList)
+            self.passJobs(jobList = successList)
+        if len(failList) > 0:
+            self.failJobs(jobList = failList)
 
 
         # We must return a list of jobs successfully submitted,

@@ -14,8 +14,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.11 2010/06/07 19:59:32 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.12 2010/07/08 19:50:03 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import os
 import os.path
@@ -70,6 +70,9 @@ class CondorGlideInPlugin(PluginBase):
 
         result = {'Success': []}
 
+        successList = []
+        failList    = []
+
         for entry in parameters:
             jobList = entry.get('jobs', [])
             self.packageDir = entry.get('packageDir', None)
@@ -116,6 +119,12 @@ class CondorGlideInPlugin(PluginBase):
                 if job == {}:
                     continue
                 result['Success'].append(job['id'])
+                successList.append(job)
+
+        if len(successList) > 0:
+            self.passJobs(jobList = successList)
+        if len(failList) > 0:
+            self.failJobs(jobList = successList)
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed

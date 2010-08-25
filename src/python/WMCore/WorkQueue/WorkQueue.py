@@ -40,7 +40,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMCore.Services.DBS.DBSReader import DBSReader
-
+import sys; print sys.version
 #TODO: Scale test
 #TODO: Decide whether to move/refactor db functions
 #TODO: Transaction handling
@@ -329,7 +329,7 @@ class WorkQueue(WorkQueueBase):
                                     transaction = self.existingTransaction())
                     wmspecInfo['data'] = data['name']
         
-            #make one transaction      
+            #make one transaction
             with self.transactionContext():
                 if self.params['PopulateFilesets']:    
                     subscription = self._wmbsPreparation(match, 
@@ -568,7 +568,6 @@ class WorkQueue(WorkQueueBase):
             to_update[item['Status']].add(my_item['Id'])
 
         self.logger.debug('Synchronise() updates: %s' % str(to_update))
-        import sys; print sys.version
         with self.transactionContext():
             for ele in progress_updates:
                 self.setProgress(ele, id = 'ParentQueueId')

@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for the error handler.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.5 2009/09/29 12:23:02 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Create.py,v 1.6 2009/09/29 14:25:41 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "delgadop@cern.ch"
 
 import threading
@@ -106,6 +106,20 @@ CREATE TABLE `tq_hostdata` (
     PRIMARY KEY `id` (`id`),
     CONSTRAINT `fk_data` FOREIGN KEY (`data`) REFERENCES `tq_data`(`guid`),
     CONSTRAINT `uniq_hostdata` UNIQUE (`host`, `se`, `data`) 
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+"""
+
+# TODO: This will go away when we move to cache per host
+# Links pilots and the data stored in their cache
+        self.create['tq_pilotdata'] = """
+CREATE TABLE `tq_pilotdata` (
+    `id` int unsigned NOT NULL AUTO_INCREMENT,
+    `pilot` varchar(255) NOT NULL,
+    `data` varchar(255) NOT NULL,
+    PRIMARY KEY `id` (`id`),
+    CONSTRAINT `fk_data` FOREIGN KEY (`data`) REFERENCES `tq_data`(`guid`),
+    CONSTRAINT `fk_pilot` FOREIGN KEY (`pilot`) REFERENCES `tq_pilots`(`id`),
+    CONSTRAINT `uniq_pilotdata` UNIQUE (`pilot`, `data`) 
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
 

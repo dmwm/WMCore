@@ -3,8 +3,8 @@
 Base handler for fileRemoved.
 """
 __all__ = []
-__revision__ = "$Id: FileRemovedHandler.py,v 1.5 2009/09/29 14:22:46 delgadop Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: FileRemovedHandler.py,v 1.6 2009/09/29 14:25:42 delgadop Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -98,13 +98,24 @@ class FileRemovedHandler(object):
 
                 for guid in files:
                     # TODO: Is there a better way to do this in bulk mode?
-                    # Delete the file from the hostdata association
-                    self.queries.removeFileHost(guid, pilotId)
+# TODO: This will go away when we move to cache per host
+#       Instead we get the commented code below
+                    # Delete the file from the pilotdata association
+                    self.queries.removeFilePilot(guid, pilotId)
 
-                # Now, if the data was not at other host,
+                # Now, if the data was not at other pilot,
                 # remove it also from the tq_data table
-                self.queries.removeLooseData()
+                self.queries.removeLooseDataPilot()
 
+#                    # Delete the file from the hostdata association
+#                    self.queries.removeFileHost(guid, pilotId)
+#
+#                # Now, if the data was not at other host,
+#                # remove it also from the tq_data table
+#                self.queries.removeLooseData()
+
+
+# TODO: End of cache per host
 
                 # Update last heartbeat
                 self.queries.updatePilot(pilotId, {'last_heartbeat': None})

@@ -3,8 +3,8 @@
 Function library for use of different handlers dealing with pilots.
 """
 __all__ = []
-__revision__ = "$Id: TQRoutines.py,v 1.2 2009/09/29 12:23:02 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TQRoutines.py,v 1.3 2009/09/29 14:25:41 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from traceback import extract_tb
 import sys
@@ -86,24 +86,35 @@ def finishPilot(handler, transaction, pilotId, reason = None):
     try:
         transaction.begin()
                 
-        # See if this was the last pilot on its own host
-        # and if so, remove its cache from that host
-        res = handler.queries.countPilotMates(pilotId)
-        handler.logger.debug("countPilotMates: %s" % res)
+# TODO: This will go away when we move to cache per host
+#       Instead we get the commented code below
 
-        if res == 0:
-            result = 'Error'
-            fields = {'Error': 'Not registered pilot', \
-                      'PilotId': pilotId}
-            transaction.rollback()
-            return {'msgType': result, 'payload': fields}
+        handler.queries.removeFilePilot(None, pilotId)
 
-        if res == 1:
-            handler.queries.removeFileHost(None, pilotId)
-
-        # Now, if the data was not at other host,
+        # Now, if the data was not at other pilot,
         # remove it also from the tq_data table
-        handler.queries.removeLooseData()
+        handler.queries.removeLooseDataPilot()
+
+#        # See if this was the last pilot on its own host
+#        # and if so, remove its cache from that host
+#        res = handler.queries.countPilotMates(pilotId)
+#        handler.logger.debug("countPilotMates: %s" % res)
+#
+#        if res == 0:
+#            result = 'Error'
+#            fields = {'Error': 'Not registered pilot', \
+#                      'PilotId': pilotId}
+#            transaction.rollback()
+#            return {'msgType': result, 'payload': fields}
+#
+#        if res == 1:
+#            handler.queries.removeFileHost(None, pilotId)
+#
+#        # Now, if the data was not at other host,
+#        # remove it also from the tq_data table
+#        handler.queries.removeLooseData()
+
+# TODO: End of cache per host
 
         # Check if there are tasks with this pilot
         # and if so, run the procedure for rescheduling/abort

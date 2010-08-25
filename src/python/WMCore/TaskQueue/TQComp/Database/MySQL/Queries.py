@@ -9,9 +9,9 @@ This module implements the mysql backend for the TQComp
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.6 2009/09/29 12:23:02 delgadop Exp $"
+    "$Id: Queries.py,v 1.7 2009/09/29 14:25:41 delgadop Exp $"
 __version__ = \
-    "$Revision: 1.6 $"
+    "$Revision: 1.7 $"
 __author__ = \
     "delgadop@cern.ch"
 
@@ -797,6 +797,23 @@ class Queries(DBFormatter):
         return self.format(result)
 
 
+# TODO: This will go away when we move to cache per host
+    def getDataPerPilot(self, pilotPattern):
+        """ 
+        Returns a list of tuples, one per matching pilot, including
+        a list of held file guids.
+        """
+        
+        sqlStr = """
+         SELECT pilot, data FROM tq_pilotdata
+         WHERE pilot LIKE :pilotPattern
+         ORDER BY pilot
+         """ 
+ 
+        result = self.execute(sqlStr, {'pilotPattern': pilotPattern})
+        return self.format(result)
+
+
     def getCacheAtHost(self, host, se):
         """ 
         Returns the files that are present in a given host's cache.
@@ -812,6 +829,19 @@ class Queries(DBFormatter):
  
         result = self.execute(sqlStr, {'host': host, \
                               'se': se})
+        return self.format(result)
+
+
+# TODO: This will go away when we move to cache per host
+    def getCacheAtPilot(self, pilot):
+        """ 
+        Returns the files that are present in a given pilot's cache.
+        """
+        sqlStr = """
+         SELECT data FROM tq_pilotdata 
+         WHERE pilot = :pilot
+        """ 
+        result = self.execute(sqlStr, {'pilot': pilot})
         return self.format(result)
 
 
@@ -878,7 +908,23 @@ class Queries(DBFormatter):
         
 #        self.execute(sqlStr, {'host': host, 'data': data})
         self.execute(sqlStr, {'pilot': pilot, 'data': data})
-   
+  
+
+# TODO: This will go away when we move to cache per host
+    def addFilePilot(self, pilot, data):
+        """
+        Inserts a new pilot<->data association, given the data guid and
+        the pilot. If the association exists already  (the pair must be 
+        unique), the insert is skipped silently.
+        """
+
+        if (not data) or (not pilot): return
+        
+        sqlStr = """
+         INSERT IGNORE INTO tq_pilotdata(pilot, data) VALUES (:pilot, :data)
+        """ 
+        self.execute(sqlStr, {'pilot': pilot, 'data': data})
+
 
     def addFileHostBulk(self, pilot, dataList):
         """
@@ -900,6 +946,30 @@ class Queries(DBFormatter):
         self.execute(sqlStr, dataList)
 
     
+# TODO: This will go away when we move to cache per host
+    def addFilePilotBulk(self, pilot, dataList):
+        """
+        Inserts a bunch of pilot<->data associations, given a list of data 
+        guids and the pilot. If the association exists already
+        (the pair must be unique), the insert is skipped silently.
+        The 'dataList' argument is a list of dicts, each containing only 
+        one field with 'guid' as key.
+        """
+        logging.debug("Queries.addFilePilotBulk: %s entries" % (len(dataList)))
+
+        if (not pilot) or (not dataList): return
+
+        for i in dataList: 
+            i['pilot'] =  pilot
+
+        
+        sqlStr = """
+         INSERT IGNORE INTO tq_pilotdata(pilot, data) VALUES (:pilot, :guid)
+        """ 
+
+        self.execute(sqlStr, dataList)
+
+
     def removeFileHost(self, data, pilot):
         """
         Removes a host<->data association, given the data guid and 
@@ -923,11 +993,30 @@ class Queries(DBFormatter):
 #        self.execute(sqlStr, {'host': host, 'data': data})
         self.execute(sqlStr, vars)
     
+# TODO: This will go away when we move to cache per host
+    def removeFilePilot(self, data, pilot):
+        """
+        Removes a pilot<->data association, given the data guid and the
+        pilot. If 'data' is None, remove all data in the cache of the pilot.
+        """
+        if not data:
+           dataStr = ""
+           vars = {'pilot': pilot}
+        else:
+           dataStr = "AND data=:data"
+           vars = {'pilot': pilot, 'data': data}
+
+        sqlStr = """
+         DELETE FROM tq_pilotdata WHERE pilot = :pilot %s
+        """  % (dataStr)
+        
+        self.execute(sqlStr, vars)
+
 
     def removeLooseData(self):
         """
-        Removes all data entries data are not associated to any host
-        in the tq_hostdata table.
+        Removes all data entries in the tq_data table, that are not 
+        associated to any host in the tq_hostdata table.
         """
         sqlStr = """
          DELETE FROM tq_data 
@@ -938,6 +1027,21 @@ class Queries(DBFormatter):
         result = self.execute(sqlStr, {})
         return self.format(result)
  
+ 
+# TODO: This will go away when we move to cache per host
+    def removeLooseDataPilot(self):
+        """
+        Removes all data entries in the tq_data table, that are not 
+        associated to any pilot in the tq_pilotdata table.
+        """
+        sqlStr = """
+         DELETE FROM tq_data 
+         USING tq_data LEFT OUTER JOIN tq_pilotdata 
+           ON tq_data.guid = tq_pilotdata.data 
+         WHERE tq_pilotdata.pilot IS NULL;
+        """
+        result = self.execute(sqlStr, {})
+        return self.format(result)
  
 # ------------ EXECUTE ----------------
  

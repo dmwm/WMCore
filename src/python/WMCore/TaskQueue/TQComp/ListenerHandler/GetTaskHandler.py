@@ -3,8 +3,8 @@
 Base handler for getTask.
 """
 __all__ = []
-__revision__ = "$Id: GetTaskHandler.py,v 1.6 2009/09/29 12:23:03 delgadop Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: GetTaskHandler.py,v 1.7 2009/09/29 14:25:42 delgadop Exp $"
+__version__ = "$Revision: 1.7 $"
 
 #from WMCore.Agent.BaseHandler import BaseHandler
 #from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -115,9 +115,16 @@ class GetTaskHandler(object):
                 if not ('se' in payload):
                    payload['se'] = res[0]['se']
 
+# TODO: This will go away when we move to cache per host
+#       Instead we get the commented code below
                 if not 'cache' in payload:
-                   payload['cache'] = self.queries.getCacheAtHost(\
-                                    payload['host'], payload['se'])
+                   payload['cache'] = self.queries.getCacheAtPilot(pilotId)
+
+#                if not 'cache' in payload:
+#                   payload['cache'] = self.queries.getCacheAtHost(\
+#                                    payload['host'], payload['se'])
+
+# TODO: End of cache per host
              
                 # Update heartbeat of the pilot (in any case)
                 vars = {'last_heartbeat': None}

@@ -3,8 +3,8 @@
 Base handler for addFile.
 """
 __all__ = []
-__revision__ = "$Id: AddFileHandler.py,v 1.4 2009/09/29 12:23:03 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: AddFileHandler.py,v 1.5 2009/09/29 14:25:42 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -105,8 +105,14 @@ class AddFileHandler(object):
                 self.logger.debug('addFilesBulk: %s' % files)
                 self.queries.addFilesBulk(files)
                         
-                # Register file with pilot's host (if not already there)
-                self.queries.addFileHostBulk(pilotId, guids)
+# TODO: This will go away when we move to cache per host
+#       Instead we get the commented code below
+                # Register file with pilot (if not already there)
+                self.queries.addFilePilotBulk(pilotId, guids)
+
+#                # Register file with pilot's host (if not already there)
+#                self.queries.addFileHostBulk(pilotId, guids)
+# TODO: End of cache per host
 
                 # Update last heartbeat
                 self.queries.updatePilot(pilotId, {'last_heartbeat': None})

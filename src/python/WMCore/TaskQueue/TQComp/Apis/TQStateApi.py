@@ -7,8 +7,8 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQStateApi.py,v 1.6 2009/09/29 12:23:02 delgadop Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: TQStateApi.py,v 1.7 2009/09/29 14:25:41 delgadop Exp $"
+__version__ = "$Revision: 1.7 $"
 
 #import logging
 import threading
@@ -191,6 +191,30 @@ class TQStateApi(TQApi):
             prev = (row[0], row[1])
 
         return d
+
+# TODO: This will go away when we move to cache per host
+    def getDataPerPilot(self, pilotPattern = "%"):
+        """
+        Returns a dict with pairs pilot as key and a list of 
+        files (names) as values. Only pilots matching the provided 
+        pattern are returned (all by default).
+        """
+        self.transaction.begin()
+        res = self.queries.getDataPerPilot(pilotPattern)
+        self.transaction.commit()
+
+#        self.logger.debug("res: %s" % res)
+        d = {}
+        prev = ""
+        for row in res:
+            if row[0] == prev:
+                d[row[0]].append(row[1])
+            else:
+                d[row[0]] = [row[1]]
+            prev = row[0]
+
+        return d
+        
         
     def getPilotsPerHost(self, hostPattern = "%"):
         """

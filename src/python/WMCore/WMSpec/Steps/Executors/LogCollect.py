@@ -6,8 +6,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: LogCollect.py,v 1.2 2010/05/14 22:47:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LogCollect.py,v 1.3 2010/05/27 19:45:03 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os.path
 import logging
@@ -179,7 +179,11 @@ class LogCollect(Executor):
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         tarBall         = tarfile.open(tarBallLocation, 'w:')
         for f in fileList:
-            tarBall.add(f["PFN"])
+            path = f['PFN'].split('/')
+            tarBall.add(name = f["PFN"],
+                        arcname = os.path.join(path[-3],
+                                               path[-2],
+                                               os.path.basename(f['PFN'])))
         tarBall.close()
 
         return tarBallLocation

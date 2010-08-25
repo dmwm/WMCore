@@ -15,17 +15,10 @@ class PhEDExSubscription(object):
         """
         if type(datasetPathList) == str:
             datasetPathList = [datasetPathList]
-        else:
-            raise TypeError, "First argument should be tuple (dataPathID, datasetPath)"
-            
         if type(nodeList) == str:
             nodeList = [nodeList]
-        else:
-            raise TypeError, "First argument should be tuple (nodeID, node)"
             
         self.datasetPaths = frozenset(datasetPathList)
-        
-        logging.debug("SubPolicy class dataset path %s" % self.datasetPaths)
         self.nodes = frozenset(nodeList)
         
         self.level = level.lower()

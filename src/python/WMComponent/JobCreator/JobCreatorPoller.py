@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.13 2010/03/22 15:39:25 mnorman Exp $"
-__version__  = "$Revision: 1.13 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.14 2010/03/22 16:21:44 sryu Exp $"
+__version__  = "$Revision: 1.14 $"
 
 import threading
 import logging
@@ -100,7 +100,7 @@ init jobCreator
                        'pollSubSplit': 0, 'baggage': 0, 'createWorkArea': 0}
 
         if self.config.JobCreator.useWorkQueue:
-            self.workQueue = localQueue(self.config.JobCreator.WorkQueueParam)
+            self.workQueue = localQueue(**self.config.JobCreator.WorkQueueParam)
         
         return
 

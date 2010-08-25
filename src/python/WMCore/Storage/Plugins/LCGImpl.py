@@ -37,18 +37,19 @@ class LCGImpl(StageOutImplV2):
                             ( options, fromPfn, toPfn )
         
         logging.info("Staging out with lcg-cp")
-        logging.debug("  commandline: %s" % transferCommand)
-        (exitCode, _) = runCommand(transferCommand)
+        logging.info("  commandline: %s" % transferCommand)
+        (exitCode, output) = runCommand(transferCommand)
         # riddle me this, the following line fails with:
         # not all arguments converted during string formatting
         #FIXME
+        logging.info("  output from lcg-cp: %s" % output)
         logging.info("  complete. #" )#exit code" is %s" % exitCode)
     
         logging.info("Verifying file sizes")
         localSize  = os.path.getsize( localFileName )
         remoteSize = subprocess.Popen(['lcg-ls', '-l', '-b', '-D', 'srmv2', toPfn],
                                        stdout=subprocess.PIPE).communicate()[0]
-        logging.info("Localsize: %s Remotesize: %s" % localSize, remoteSize)
+        logging.info("Localsize: %s Remotesize: %s" % (localSize, remoteSize))
         if localSize != remoteSize:
             try:
                 self.doDelete(toPfn,None,None,None,None)

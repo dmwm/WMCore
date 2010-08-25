@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.6 2010/01/22 19:28:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: wmcoreD,v 1.7 2010/01/22 19:29:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -261,7 +261,7 @@ def shutdown(configFile):
             #  //
             # // Cleanout everything in ComponentDir
             #//  for this component
-            print "Removing %s" % compDir
+            print "Removing %s\n" % compDir
             exitCode = subprocess.call(["rm", "-rf", "%s" % compDir])
             if exitCode:
                 msg = "Failed to clean up dir: %s\n" % compDir

@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.6 2010/01/29 08:49:59 riahi Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: RunBased_t.py,v 1.7 2010/02/25 21:44:07 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import os
@@ -168,7 +168,7 @@ class EventBasedTest(unittest.TestCase):
         """
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
         jobGroups = jobFactory(files_per_job = 1)
 
@@ -195,7 +195,7 @@ class EventBasedTest(unittest.TestCase):
         """
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
         
         jobGroups = jobFactory(files_per_job = 2)
         
@@ -222,7 +222,7 @@ class EventBasedTest(unittest.TestCase):
         """
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleFileSubscription)
         
         jobGroups = jobFactory(files_per_job = 1)
         
@@ -247,7 +247,7 @@ class EventBasedTest(unittest.TestCase):
         """
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleRunSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleRunSubscription)
         
         jobGroups = jobFactory(files_per_job = 2)
 
@@ -278,7 +278,7 @@ class EventBasedTest(unittest.TestCase):
         #This should return two jobs, one with 8 and one with 2 files
 
         splitter = SplitterFactory()
-        jobFactory = splitter(self.singleRunSubscription)
+        jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleRunSubscription)
         
         jobGroups = jobFactory(files_per_job = 8)
         

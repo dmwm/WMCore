@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.1 2010/03/03 18:02:42 swakef Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GlobalWorkQueueConfig.py,v 1.2 2010/03/18 14:54:01 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -26,7 +26,7 @@ config.CoreDatabase.connectUrl = "mysql://sfoulkes:@localhost/WMAgentDB_sfoulkes
 
 config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
-config.WorkQueueManager.componentDir = config.General.WorkDir + "/WorkQueueManager"
+config.WorkQueueManager.componentDir = path.join(config.General.workDir, "WorkQueueManager")
 config.WorkQueueManager.level = "GlobalQueue"
 
 config.webapp_('WorkQueueService')

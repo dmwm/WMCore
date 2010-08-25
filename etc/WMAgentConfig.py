@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.3 2010/03/03 18:02:42 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.4 2010/03/18 14:54:01 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Configuration import Configuration
 config = Configuration()
@@ -126,7 +126,7 @@ config.TaskArchiver.timeOut      = 0
 
 config.component_("WorkQueueManager")
 config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
-config.WorkQueueManager.componentDir = config.General.WorkDir + "/WorkQueueManager"
+config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = "LocalQueue"
 config.WorkQueueManager.queueParams = {'ParentQueue' : 'http://cmssrv52.fnal.gov:8570/workqueue'}
 

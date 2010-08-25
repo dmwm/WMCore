@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: FileBased.py,v 1.20 2009/09/30 15:09:58 mnorman Exp $"
-__version__  = "$Revision: 1.20 $"
+__revision__ = "$Id: FileBased.py,v 1.21 2009/10/15 20:29:51 mnorman Exp $"
+__version__  = "$Revision: 1.21 $"
 
 from sets import Set
 from sets import ImmutableSet
@@ -26,8 +26,10 @@ class FileBased(JobFactory):
     Split jobs by number of files.
     """
 
-    def getJobName(self, length=None):
-        return '%s-%s' %(makeUUID(), str(length))
+    def getJobName(self, baseName = None, length=None):
+        if not baseName:
+            baseName = makeUUID()
+        return '%s-%s' %(baseName, str(length))
         #return baseName+str(length+1)
     
     def algorithm(self, *args, **kwargs):
@@ -42,6 +44,7 @@ class FileBased(JobFactory):
         
         filesPerJob  = int(kwargs.get("files_per_job", 10))
         filesInJob   = 0
+        totalJobs    = 0
         listOfFiles  = []
 
         #Get a dictionary of sites, files
@@ -51,15 +54,18 @@ class FileBased(JobFactory):
             #Now we have all the files in a certain location
             fileList   = locationDict[location]
             filesInJob = 0
+            totalJobs  = 0
             self.newGroup()
+            baseName = makeUUID()
             if len(fileList) == 0:
                 #No files for this location
                 #This isn't supposed to happen, but better safe then sorry
                 continue
             for file in fileList:
                 if filesInJob == 0 or filesInJob == filesPerJob:
-                    self.newJob(name = self.getJobName(length=filesInJob))
+                    self.newJob(name = self.getJobName(baseName = baseName, length=totalJobs))
                     filesInJob = 0
+                    totalJobs += 1
                     
                 filesInJob += 1
                 self.currentJob.addFile(file)

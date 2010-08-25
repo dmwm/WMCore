@@ -5,8 +5,8 @@ Defines default config values for JobAccountant specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.2 2010/01/22 22:07:26 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2010/01/26 21:04:16 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 
@@ -27,5 +27,7 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 #config.WorkQueueManager.level = "LocalQueue"
 #config.WorkQueueManager.serviceUrl = "http://cmssrv18.fnal.gov:6660"
 
-config.WorkQueueManager.logLevel = 'INFO'
+config.WorkQueueManager.logLevel = 'DEBUG'
 config.WorkQueueManager.pollInterval = 10
+# add parameters for global or local queue if default param is not what you want
+config.WorkQueueManager.queueParams = {}

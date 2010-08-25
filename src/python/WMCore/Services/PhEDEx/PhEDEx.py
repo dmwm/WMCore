@@ -2,7 +2,7 @@ import urllib
 import logging
 import os
 import pwd
-
+import re
 # this is temporary library until ProdCommon is ported to WMCore
 #from ProdCommon.DataMgmt.PhEDEx.DropMaker import DropMaker
 from WMCore.Services.PhEDEx import PhEDExXMLDrop
@@ -54,7 +54,7 @@ class PhEDEx(Service):
 
         Service.__init__(self, dict)
 
-    def _getResult(self, callname, file = 'result', clearCache = True,
+    def _getResult(self, callname, clearCache = True,
                    args = None, verb="POST"):
         """
         _getResult_
@@ -65,6 +65,13 @@ class PhEDEx(Service):
         TODO: Probably want to move this up into Service
         """
         result = ''
+        if args == None:
+            argString = ''
+        else:
+            # rely on str() sorts dictionary by keys.
+            argString = str(args).replace('{', '_').replace('}', '_').replace(':', '-').replace(',', '_')
+            argString = re.sub('\s+', '', argString)
+        file = callname + argString + '.cache'
         if clearCache:
             self.clearCache(file, args)
         try:

@@ -17,7 +17,7 @@ from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
-
+import WMCore.Storage.Backends
 
 
 class StageOutSuccess(Exception):
@@ -206,6 +206,7 @@ class StageOutMgr:
                     fileToStage['PFN'] = pfn
                     fileToStage['SEName'] = fallback['se-name']
                     fileToStage['StageOutCommand'] = fallback['command']
+                    print "attempting fallback"
                     self.completedFiles[fileToStage['LFN']] = fileToStage
                     if self.failed.has_key(lfn):
                         del self.failed[lfn]

@@ -3,8 +3,13 @@
 Extend the default sreg library to support permissions and DN for a user
 """
 
-__revision__ = "$Id: cms_sreg.py,v 1.5 2010/01/28 17:55:27 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: cms_sreg.py,v 1.6 2010/01/28 18:08:58 metson Exp $"
+__version__ = "$Revision: 1.6 $"
+
+# All these imports are just to set __all__ correctly which unfortunately seems
+# necessary. Really this is a passthrough for the sreg code from the openid 
+# package
+# pylint: disable-msg=W0611
 
 from openid.extensions.sreg import SRegRequest
 from openid.extensions.sreg import SRegResponse

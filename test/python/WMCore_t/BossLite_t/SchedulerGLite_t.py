@@ -4,8 +4,8 @@ _SchedulerGLite_t_
 
 """
 
-__revision__ = "$Id: SchedulerGLite_t.py,v 1.3 2010/06/02 21:01:02 spigafi Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SchedulerGLite_t.py,v 1.4 2010/08/18 01:37:41 mcinquil Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import time
@@ -40,12 +40,15 @@ def fakeTask(db, numjob):
     task.create(db)
     # self.assertEqual(tmpId, task.exists(db))
     task.exists(db)
+    i = 0
     for j in xrange(numjob):
         
         jobParams['name'] = 'Fake_job_%s' % str(j)
         jobParams['standardError'] = 'hostname-%s.err' % str(j)
         jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
         jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
+        jobParams['wmbsJobId']   = i
+        i += 1
         
         job = Job( parameters = jobParams )
         job.newRunningInstance(db)
@@ -221,10 +224,10 @@ class SchedulerGLite(unittest.TestCase):
         
         return
     
-    
+    ## TODO: use standard unit test behaviour
     def testZ_dropDatabase(self):
         """
-        Simple submission through SchedulerGLite
+        Tear down db
         """
         
         testInit = TestInit(__file__)

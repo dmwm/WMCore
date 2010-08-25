@@ -4,8 +4,8 @@ _APISched_t_
 
 """
 
-__revision__ = "$Id: APISched_t.py,v 1.4 2010/06/28 18:27:44 spigafi Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: APISched_t.py,v 1.5 2010/08/18 01:37:41 mcinquil Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 
@@ -39,12 +39,15 @@ def fakeTask(db, numjob):
     task.create(db)
     # self.assertEqual(tmpId, task.exists(db))
     task.exists(db)
+    i = 0
     for j in xrange(numjob):
         
         jobParams['name'] = 'Fake_job_%s' % str(j)
         jobParams['standardError'] = 'hostname-%s.err' % str(j)
         jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
         jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
+        jobParams['wmbsJobId']   = i
+        i += 1
         
         job = Job( parameters = jobParams )
         job.newRunningInstance(db)
@@ -66,11 +69,11 @@ class APISched(unittest.TestCase):
         testA_databaseStartup
         """
         
-        testInit = TestInit(__file__)
-        testInit.setLogging()
-        testInit.setDatabaseConnection()
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
         
-        testInit.setSchema(customModules = ["WMCore.BossLite"],
+        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
                                 useDefault = False)
         
         # populate DB
@@ -152,16 +155,16 @@ class APISched(unittest.TestCase):
         return
     
     
+    ## TODO: use standard unit test behaviour
     def testE_dropDatabase(self):
         """
         Simple submission through SchedulerGLite
         """
+        self.testInit = TestInit(__file__)
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
         
-        testInit = TestInit(__file__)
-        testInit.setLogging()
-        testInit.setDatabaseConnection()
-        
-        testInit.clearDatabase()
+        self.testInit.clearDatabase()
         
         return
     

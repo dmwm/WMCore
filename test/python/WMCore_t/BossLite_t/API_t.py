@@ -4,8 +4,8 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.17 2010/06/28 18:38:54 spigafi Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: API_t.py,v 1.18 2010/08/18 01:37:41 mcinquil Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import unittest
 import os
@@ -37,12 +37,15 @@ def populateDb(db, numtask, numjob):
         tmpId = task['id']
         # self.assertEqual(tmpId, task.exists(db))
         task.exists(db)
+        i = 0
         for j in xrange(numjob):
             parameters = {'name': '%s_job_%s' % (str(t), str(j)), 
                           'jobId': j, 
                           'taskId': tmpId }
             job = Job(parameters)
             job.data['closed'] = 'N'
+            job.data['wmbsJobId'] = i
+            i += 1
             
             # job.save(db, deep= False)
             
@@ -212,7 +215,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'Hadrian', 
                                 'jobId': 101, 
-                                'taskId': tmp})
+                                'taskId': tmp,
+                                'wmbsJobId': 1})
         self.assertFalse(job.exists(testAPI.db))
         
         job.create(testAPI.db)
@@ -263,7 +267,8 @@ class APITest(unittest.TestCase):
         testAPI.saveTask(task)
                 
         job1 = Job(parameters = { 'standardError' : 'hostname.err',
-                                 'standardOutput' : 'hostname.out' } )
+                                  'standardOutput' : 'hostname.out',
+                                  'wmbsJobId': 1 } )
         task.addJob(job1)
         
         testAPI.updateDB(job1)
@@ -281,7 +286,8 @@ class APITest(unittest.TestCase):
         #testAPI.updateDB(task)
         
         job2 = Job(parameters = { 'standardError' : 'date.err',
-                                 'standardOutput' : 'date.out' } )
+                                  'standardOutput' : 'date.out',
+                                  'wmbsJobId': 2 } )
         task.addJob(job2)
         testAPI.updateDB(job2)
         
@@ -315,7 +321,8 @@ class APITest(unittest.TestCase):
         #testAPI.updateDB(task)
         
         job3 = Job(parameters = { 'standardError' : 'top.err',
-                                 'standardOutput' : 'top.out' } )
+                                  'standardOutput' : 'top.out',
+                                  'wmbsJobId': 3 } )
         task.addJob(job3)
         testAPI.updateDB(job3)
         tmp = testAPI.getNewRunningInstance(job = task.jobs[2], runningAttrs = { 
@@ -332,7 +339,8 @@ class APITest(unittest.TestCase):
         #testAPI.updateDB(task)
         
         job4 = Job(parameters = { 'standardError' : 'uname.err',
-                                 'standardOutput' : 'uname.out' } )
+                                  'standardOutput' : 'uname.out',
+                                  'wmbsJobId': 4 } )
         task.addJob(job4)
         testAPI.updateDB(job4)
         
@@ -379,10 +387,10 @@ class APITest(unittest.TestCase):
                                     loadedTask.jobs[2]['submissionNumber'])
         self.assertEqual(loadedTask.jobs[3].runningJob['submission'], 
                                     loadedTask.jobs[3]['submissionNumber'])
-        
+
         jobList = testAPI.loadJobsByRunningAttr(
                             binds = {'status': 'T'} )
-        
+
         self.assertEqual(len(jobList), 2)
         
         tmpJ = ['top.out', 'date.out']
@@ -439,7 +447,8 @@ class APITest(unittest.TestCase):
         task.create(testAPI.db)
         job = Job(parameters = {'name': 'Hadrian', 
                                 'jobId': 101, 
-                                'taskId': task.exists(testAPI.db)})
+                                'taskId': task.exists(testAPI.db),
+                                'wmbsJobId': 1 })
         job.create(testAPI.db)
         
         self.assertEqual(job.runningJob, None)
@@ -489,7 +498,8 @@ class APITest(unittest.TestCase):
         # Take a look at Task.addJob --> it always overrides 'jobId'!
         job = Job(parameters = {'name': 'Spartacus', 
                                 'taskId': tmp, 
-                                'jobId': 1} )
+                                'jobId': 1,
+                                'wmbsJobId': 1 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
                                             runningAttrs = {'status' : 'W'} )
@@ -498,7 +508,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'Fringe', 
                                 'taskId': tmp, 
-                                'jobId': 2 } )
+                                'jobId': 2,
+                                'wmbsJobId': 2 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
                                             runningAttrs = {'status' : 'SD'} )
@@ -507,7 +518,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'Stargate Universe', 
                                 'taskId': tmp, 
-                                'jobId': 3 } )
+                                'jobId': 3,
+                                'wmbsJobId': 3 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
                                             runningAttrs = {'status' : 'A'} )
@@ -516,7 +528,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'Caprica', 
                                 'taskId': tmp, 
-                                'jobId': 4 } )
+                                'jobId': 4,
+                                'wmbsJobId': 4 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
                                             runningAttrs = {'status' : 'K'} )
@@ -525,7 +538,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'The Mentalist', 
                                 'taskId': tmp, 
-                                'jobId': 5 } )
+                                'jobId': 5,
+                                'wmbsJobId': 5  } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
                                       runningAttrs = {'closed' : 'Y'} )
@@ -611,7 +625,8 @@ class APITest(unittest.TestCase):
         tmp = task.exists(testAPI.db)
         job = Job(parameters = {'name': 'Spartacus', 
                                 'taskId': tmp, 
-                                'jobId': 1} )
+                                'jobId': 1,
+                                'wmbsJobId': 1 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
             runningAttrs = {'outputRequestTime' : timeA - 30*60,
@@ -622,7 +637,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'Fringe', 
                                 'taskId': tmp, 
-                                'jobId': 2 } )
+                                'jobId': 2,
+                                'wmbsJobId': 2 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
             runningAttrs = {'outputRequestTime' : timeA - 50*60,
@@ -632,7 +648,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'Stargate Universe', 
                                 'taskId': tmp, 
-                                'jobId': 3 } )
+                                'jobId': 3,
+                                'wmbsJobId': 3 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
             runningAttrs = {'outputRequestTime' : timeA ,
@@ -642,7 +659,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'Caprica', 
                                 'taskId': tmp, 
-                                'jobId': 4 } )
+                                'jobId': 4,
+                                'wmbsJobId': 4 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
             runningAttrs = {'outputRequestTime' : timeA - 80*60 ,
@@ -652,7 +670,8 @@ class APITest(unittest.TestCase):
         
         job = Job(parameters = {'name': 'The Mentalist', 
                                 'taskId': tmp, 
-                                'jobId': 5 } )
+                                'jobId': 5,
+                                'wmbsJobId': 5 } )
         self.assertEqual(job.runningJob, None)   
         testAPI.getNewRunningInstance(job = job, 
             runningAttrs = {'outputRequestTime' : timeA - 130*60,

@@ -7,8 +7,8 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.4 2009/07/30 18:37:07 sfoulkes Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.5 2009/08/03 19:48:14 sfoulkes Exp $"
+__version__  = "$Revision: 1.5 $"
 
 import logging
 from sets import Set
@@ -28,26 +28,27 @@ class TwoFileBased(JobFactory):
         """
         filesPerJob = int(kwargs.get("files_per_job", 10))
         filesInJob = 0
-        jobs = []
+        jobGroups = []
+        jobGroup = None
 
         baseName = makeUUID()
 
         for availableFile in self.subscription.availableFiles():
             availableFile.loadData(parentage = 1)
             if filesInJob == 0 or filesInJob == filesPerJob:
-                job = jobInstance(name = "%s-%s" % (baseName, len(jobs) + 1))
-                jobs.append(job)
+                if jobGroup:
+                    jobGroup.commit()
+                jobGroup = groupInstance(subscription = self.subscription)
+                jobGroups.append(jobGroup)
+                job = jobInstance(name = "%s-%s" % (baseName, len(jobGroups) + 1))
+                jobGroup.add(job)
                 filesInJob = 0
 
             filesInJob += 1
             self.subscription.acquireFiles(availableFile)
             job.addFile(availableFile)
 
-        if len(jobs) == 0:
-            return []
+        if jobGroup:
+            jobGroup.commit()
 
-        jobGroup = groupInstance(subscription = self.subscription)
-        jobGroup.add(jobs)
-        jobGroup.commit()
-
-        return [jobGroup]
+        return jobGroups

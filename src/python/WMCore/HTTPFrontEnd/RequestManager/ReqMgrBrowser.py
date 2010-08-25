@@ -56,7 +56,10 @@ class ReqMgrBrowser(TemplatedPage):
     def requestDetails(self, requestName):
         result = ""
         request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        helper = self.getWorkloadFromRequest(request)
+        helper = WMWorkloadHelper()
+        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
+        helper.load(pfn)
+
         docId = None
         try:
             # Header consists of links to orig. config, tweakfile,
@@ -260,14 +263,22 @@ class ReqMgrBrowser(TemplatedPage):
         """ handles some checkboxes """
         result = ""
         requestName = kwargs["requestName"]
-        helper = self.getWorkloadFromName(requestName)
+        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
+        helper = WMWorkloadHelper()
+        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
+        helper.load(pfn)
+        schema = helper.data.request.schema
         for key, value in kwargs.iteritems():
            if key == "siteWhitelist":
                result += "Site Whitelist changed to " + str(value) + "<BR>"
                helper.setSiteWhitelist(value)
+               schema.SiteWhitelust = value
+               helper.save(pfn)
            elif key == "siteBlacklist":
                result += "Site Blacklist changed to " + str(value) + "<BR>"
                helper.setSiteBlacklist(value)
+               schema.SiteBlacklist = value
+               helper.save(pfn)
            elif key == "requestName":
                pass
            elif value != None:
@@ -277,18 +288,6 @@ class ReqMgrBrowser(TemplatedPage):
         result += self.detailsBackLink(requestName)
         return result
     handleAssignmentPage.exposed = True
-
-
-    def getWorkloadFromName(self, requestName):
-        request = self.jsonSender.get("/reqMgr/request/"+requestName)[0]
-        return self.getWorkloadFromRequest(request)
-
-    def getWorkloadFromRequest(self, request):
-         # Pull in the workload
-        helper = WMWorkloadHelper()
-        pfn = os.path.join(self.workloadDir, request['RequestWorkflow'])
-        helper.load(pfn)
-        return helper
 
     def modifyWorkload(self, requestName, workload, requestType, runWhitelist=None, runBlacklist=None, blockWhitelist=None, blockBlacklist=None):
         if workload == None or not os.path.exists(workload):

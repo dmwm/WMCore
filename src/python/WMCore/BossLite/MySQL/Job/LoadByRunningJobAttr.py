@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.2 2010/05/17 19:08:56 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.3 2010/05/19 13:25:28 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -38,23 +38,37 @@ class LoadByRunningJobAttr(DBFormatter):
                 WHERE bl_runningjob.submission = 
                         ( SELECT MAX(submission) FROM bl_runningjob 
                             WHERE bl_runningjob.job_id = bl_job.job_id )
-                        AND bl_runningjob.%s = :value """
+                        AND %s """
 
-    def execute(self, column, value, conn = None, transaction = False):
+    def execute(self, binds, limit = None, conn = None, transaction = False):
         """
         Load a job based on the attributes of the most recent runningJob
         """
         
         objFormatter = JobDBFormatter()
+        whereStatement = []
         
-        if type(value) == list:
-            binds = value
-        else:
-            binds = {'value': value}
+        for x in binds:
+            if type(binds[x]) == str :
+                whereStatement.append( "bl_runningjob.%s = '%s'" % (x, binds[x]) )
+            else:
+                whereStatement.append( "bl_runningjob.%s = %s" % (x, binds[x]) )
+                
+        whereClause = ' AND '.join(whereStatement)
 
-        sql = self.sql % (column)
+        sqlFilled = self.sql % (whereClause)
         
-        result = self.dbi.processData(sql, binds, conn = conn,
+        if limit :
+            if type(limit) == list and len(limit) == 2 :
+                sqlFilled += """ AND bl_job.id > %s LIMIT %s """ (limit[0], limit[1]) 
+                # sqlFilled += """ LIMIT %s, %s """ % (limit[0], limit[1])
+            # elif type(limit) == list and len(limit) == 1 :
+            #      sqlFilled += """ LIMIT %s """ % (limit[0])
+            # elif type(limit) == int and limit >= 0 :
+            #     sqlFilled += """ LIMIT %s """ % (limit)
+            # if something is wrong, the LIMIT is ignored
+        
+        result = self.dbi.processData(sqlFilled, {}, conn = conn,
                                       transaction = transaction)
         
         ppResult = self.formatDict(result)

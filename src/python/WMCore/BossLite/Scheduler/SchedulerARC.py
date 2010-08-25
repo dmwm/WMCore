@@ -361,6 +361,16 @@ class SchedulerARC(SchedulerInterface):
                 # (0.6.*) -- otherwise everything after the first space is
                 # lost -- but will cause problems for newer versions
                 # (0.8.*).
+        for f in job['inputFiles']:
+            xrsl += '(%s %s)' % (f.split('/')[-1], f)
+            if inputfiles == "'":
+                inputfiles += f.split('/')[-1]
+            else:
+                inputfiles += "\\ " + f.split('/')[-1]
+                # FIXME: The '\\' above is required with older versions of ARC
+                # (0.6.*) -- otherwise everything after the first space is
+                # lost -- but will cause problems for newer versions
+                # (0.8.*).
         xrsl += ')'
 
         outputfiles = ""

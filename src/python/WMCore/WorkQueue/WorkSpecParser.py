@@ -6,11 +6,14 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.6 2009/06/24 21:00:23 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.7 2009/06/25 16:04:41 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+from ProdCommon.MCPayloads.UUID import makeUUID
+
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, newWorkload
+from WMCore.WorkQueue.DataStructs.Block import Block
 
 #TODO: Pull useful stuff out of wmspec then free it - large data structure
 #TODO: Cleanup, logArchive etc. WorkflowTypes needed???
@@ -88,7 +91,12 @@ class WorkSpecParser:
         if not self.inputDatasets:
             # we don't have any input data - divide into one block
             jobs = self.__estimateJobs(self.splitSize, self.totalEvents)
-            results.append(WorkUnit(None, (), jobs))
+            block = Block()
+            block["Name"] = "ProductionBlock-%s" % makeUUID()
+            block["NumFiles"] = 0
+            block["NumEvents"] = self.totalEvents
+            block["Size"] = 0
+            results.append(WorkUnit(block, None, jobs))
             return results
         
         #print "######### %s" % self.dbs_url

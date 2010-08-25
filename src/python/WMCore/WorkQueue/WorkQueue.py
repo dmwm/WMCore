@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.13 2009/06/24 22:11:47 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: WorkQueue.py,v 1.14 2009/06/25 16:04:15 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -62,12 +62,12 @@ class _WQElement(WorkQueueBase):
         """
         existingTransaction = self.beginTransaction()
         self._insertWMSpec()
-        print self.primaryBlock
+        #print self.primaryBlock
         if self.primaryBlock: 
             self._insertBlock()
         self._insertWorkQueueElement()
         self.commitTransaction(existingTransaction)
-        print "create work queue element"
+        #print "create work queue element"
 
     def _insertWMSpec(self):
         """
@@ -109,10 +109,8 @@ class _WQElement(WorkQueueBase):
         """
         """
         wqAction = self.daofactory(classname = "WorkQueueElement.New")
-        if self.primaryBlock:
-            blockName = self.primaryBlock["Name"]
-        else:
-            blockName = "NoBlock"
+        blockName = self.primaryBlock["Name"]
+        
         if self.parentBlocks:
             parentFlag = 1
         else:
@@ -177,8 +175,8 @@ class _WQElement(WorkQueueBase):
         """
         Can we run at the given site?
         """
-        
-        if not self.primaryBlock:
+        #TO DO better convention for production block name
+        if not self.primaryBlock or self.primaryBlock["Name"].startswith("ProductionBlock"):
             return True # no input blocks - match any site
         
         commonLocations = self.locations
@@ -209,6 +207,8 @@ class _WQElement(WorkQueueBase):
 
         #TODO: Add some ranking so most restrictive requirements match first
         for site, slots in conditions.iteritems():
+            if site in self.wmSpec.blacklist:
+                continue
             if self.dataAvailable(site) and self.slotsAvailable(slots):
                 newconditions = {}
                 newconditions.update(conditions)
@@ -366,7 +366,8 @@ class WorkQueue(WorkQueueBase):
          Return True if status of any blocks changed else False
         """
         #TODO: Error handling?
-        wflows = lambda x: x.wmSpec.specUrl in workflows
+
+        wflows = lambda x: x.wmSpec.specUrl  in workflows
         affected = self.mark(wflows, 'priority', newpriority)
         if affected:
             self.reorderList()
@@ -447,7 +448,7 @@ class WorkQueue(WorkQueueBase):
         Iterate over queue, setting field to newvalue
         """
         count = 0
-        for ele in self.elements:
+        for ele in self.elements.values():
             if searcher(ele):
                 setattr(ele, field, newvalue)
                 count += 1
@@ -468,7 +469,7 @@ class WorkQueue(WorkQueueBase):
             blocks = unit.blocks
             jobs = unit.jobs
             
-            print "----- %s" % primaryBlock
+            #print "----- %s" % primaryBlock
             ele = _WQElement(spec, jobs, None, primaryBlock, blocks)
             ele.create()
             # only update in database 

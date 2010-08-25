@@ -52,9 +52,12 @@ class DCCPFNALImpl(StageOutImplV2):
     """
     
     def doWrapped(self, commandArgs):
-        wrapperPath = os.path.join(getWMBASE(),'src','python','WMCore','Storage','Plugins','DDCPFNAL','wrapenv.sh')
-        commandArgs.insert(0,wrapperPath)
+        wrapperPath = os.path.join(getWMBASE(),'src','python','WMCore','Storage','Plugins','DCCPFNAL','wrapenv.sh')
+        commandArgs.insert(0, wrapperPath)
         exitCode, output = runCommand(commandArgs)
+        if exitCode != 0:
+            logging.info("Non zero exit code: %s" % repr(exitCode))
+            
         return (exitCode, output)
     
     def doTransfer(self, sourcePFN, targetPFN, stageOut, seName, command, options = None, protocol = None  ):

@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.13 2010/08/04 20:10:13 meloam Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Transaction_t.py,v 1.14 2010/08/04 20:14:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import commands
 import logging
@@ -25,8 +25,7 @@ class TransactionTest(unittest.TestCase):
 
 
     def setUp(self):
-        raise RuntimeError, "All of these tests fail. esp. on Mysql. help"
-        #self.tearDown()
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -66,9 +65,6 @@ class TransactionTest(unittest.TestCase):
 
 
     def testGoodTransaction(self):
-        print('testGoodTransaction')
-        raise RuntimeError, "This test seems to run for a really really long time even though it shouldnt"
-        #self._teardown = True
         myThread = threading.currentThread()
         myThread.transaction.begin()
         myThread.transaction.processData(self.create[myThread.dialect])
@@ -85,9 +81,6 @@ class TransactionTest(unittest.TestCase):
         self.assertEqual( len(result2[0].fetchall()) ,  3, "commit failed" )
             
     def testBadTransaction(self):
-        print('testBadTransaction')
-        #self._teardown = True
-        raise RuntimeError, "This test seems to hang for a long long time"
         myThread = threading.currentThread()
         myThread.transaction.begin()
         myThread.transaction.processData(self.create[myThread.dialect])
@@ -107,44 +100,43 @@ class TransactionTest(unittest.TestCase):
         self.assertEqual(l,0)
 
         return
-        #"roll back failed, %s records" % l
 
-    def testLostConnection(self):
-        """
-        Make some transactions and lose the connection 
-        before committing.
-        """
-        print('testLostTransaction')
-        raise RuntimeError, "This test seems to run for a really really long time even though it shouldnt"
+#     def testLostConnection(self):
+#         """
+#         Make some transactions and lose the connection 
+#         before committing.
+#         """
+#         print('testLostTransaction')
+#         raise RuntimeError, "This test seems to run for a really really long time even though it shouldnt"
 
-        #self._teardown = True
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        myThread.transaction.processData(self.create[myThread.dialect])
-        myThread.transaction.commit()
-        self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
-        myThread.transaction.begin()
-        # create some inserts (in batches of three)
-        for i in xrange(0, 10):
-            myThread.transaction.processData(self.insert, self.insert_binds)
-        # lose connection by closing on purpose:
-        myThread.transaction.conn.close()
-        # try to submit something. 
-        myThread.transaction.processData(self.insert, self.insert_binds)
-        myThread.transaction.commit()
-        self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
-        myThread.transaction.begin()
+#         #self._teardown = True
+#         myThread = threading.currentThread()
+#         myThread.transaction.begin()
+#         myThread.transaction.processData(self.create[myThread.dialect])
+#         myThread.transaction.commit()
+#         self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
+#         myThread.transaction.begin()
+#         # create some inserts (in batches of three)
+#         for i in xrange(0, 10):
+#             myThread.transaction.processData(self.insert, self.insert_binds)
+#         # lose connection by closing on purpose:
+#         myThread.transaction.conn.close()
+#         # try to submit something. 
+#         myThread.transaction.processData(self.insert, self.insert_binds)
+#         myThread.transaction.commit()
+#         self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
+#         myThread.transaction.begin()
        
-        result1 = myThread.transaction.processData(self.select)
-        #print result1[0].fetchall()
+#         result1 = myThread.transaction.processData(self.select)
+#         #print result1[0].fetchall()
 
-        # check if the right amount of entries have been made. 
-        self.assertEqual(len(result1), 1)
-        self.assertEqual(len(result1[0].fetchall()), 33)
+#         # check if the right amount of entries have been made. 
+#         self.assertEqual(len(result1), 1)
+#         self.assertEqual(len(result1[0].fetchall()), 33)
 
-        myThread.transaction.commit()
-        # check if buffer is empty
-        self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
+#         myThread.transaction.commit()
+#         # check if buffer is empty
+#         self.assertEqual( len(myThread.transaction.sqlBuffer) ,  0 )
     
            
 

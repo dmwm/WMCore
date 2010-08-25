@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.12 2009/05/09 11:45:24 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Create.py,v 1.13 2009/05/09 12:10:34 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -114,11 +114,11 @@ class Create(CreateWMBSBase):
          
         self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
-             id    INTEGER not null,
-             spec  VARCHAR(255) not null,
-             name  VARCHAR(255) not null,
-             task  VARCHAR(255),
-             owner VARCHAR(255),
+             id     INTEGER not null,
+             spec   VARCHAR(255) not null,
+             name   VARCHAR(255) not null,
+             task   VARCHAR(255) not null,
+             owner  VARCHAR(255),
              
              constraint pk_workflow primary key (id),
              constraint uk_workflow_nameowner unique (name, owner))"""

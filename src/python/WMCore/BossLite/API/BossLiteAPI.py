@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.13 2010/06/13 15:18:42 spigafi Exp $"
-__revision__ = "$Revision: 1.13 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.14 2010/06/28 19:05:14 spigafi Exp $"
+__revision__ = "$Revision: 1.14 $"
 
 #import logging
 import copy
@@ -348,6 +348,24 @@ class BossLiteAPI(object):
         return jobList
     
     
+    def loadJobsByTimestamp( self, time_binds, standard_binds = None, 
+                                                            limit = None ) :
+        """
+        retrieve job information from db for job whose running 
+        instance match time attributes
+        """
+        
+        binds = {}
+        
+        binds.update(time_binds)
+        if standard_binds :
+            binds.update(standard_binds)
+        
+        results  = self.loadJobsByRunningAttr(binds = binds, limit = limit)
+        
+        return results
+    
+    
     def loadCreated( self, limit = None ) :
         """
         retrieve information from db for jobs created but not submitted
@@ -392,14 +410,6 @@ class BossLiteAPI(object):
     ##########################################################################
     # Missing Methods - Not Implemented Yet
     ##########################################################################
-    
-    def loadJobsByTimestamp( self ) :
-        """
-        retrieve job information from db for job whose running instance match attributes
-        """
-
-        raise NotImplementedError
-    
     
     def loadJobDistinct( self ):
         """

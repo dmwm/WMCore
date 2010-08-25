@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: EventBased.py,v 1.13 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.13 $"
+__revision__ = "$Id: EventBased.py,v 1.14 2009/10/26 16:26:01 mnorman Exp $"
+__version__  = "$Revision: 1.14 $"
 
 from sets import Set
 
@@ -34,7 +34,7 @@ class EventBased(JobFactory):
 
         #Get a dictionary of sites, files
         locationDict = self.sortByLocation()
-        baseName = makeUUID()
+        #baseName = makeUUID()
 
 
         #  //
@@ -43,13 +43,14 @@ class EventBased(JobFactory):
         eventsPerJob = int(kwargs.get("events_per_job", 100))
         carryOver = 0
 
-        baseName = makeUUID()
+        
 
         for location in locationDict:
             fileList     = locationDict[location]
             currentEvent = 0
             # A group per location...
             self.newGroup()
+            baseName = makeUUID()
             
             for f in fileList:
                 eventsInFile = f['events']
@@ -58,7 +59,7 @@ class EventBased(JobFactory):
                 if eventsInFile >= eventsPerJob:
                     currentEvent   = 0
                     while currentEvent < eventsInFile:
-                        self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                        self.newJob(name = '%s-%i' % (baseName, len(self.currentGroup.newjobs)))
                         self.currentJob.addFile(f)
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                         currentEvent += eventsPerJob
@@ -67,7 +68,7 @@ class EventBased(JobFactory):
                     if currentEvent + eventsInFile > eventsPerJob:
                         #Create new jobs, because we is out of room
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)
-                        self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                        self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.newjobs)))
                         currentEvent = 0
 
                     if currentEvent + eventsInFile <= eventsPerJob:
@@ -75,7 +76,7 @@ class EventBased(JobFactory):
                         if self.currentJob:
                             self.currentJob.addFile(f)
                         else:
-                            self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                            self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.newjobs)))
                             self.currentJob.addFile(f)
                         currentEvent += eventsInFile
 

@@ -1,3 +1,4 @@
+from Globals import GlobalParams
 import Globals
 
 class DataBlockGenerator(object):
@@ -13,11 +14,11 @@ class DataBlockGenerator(object):
         
         self.blocks[dataset] = []
         
-        for i in range(Globals.NUM_OF_BLOCKS_PER_DATASET):
+        for i in range(GlobalParams.numOfBlocksPerDataset()):
             blockName = "%s#%s" % (dataset, i)
-            numOfFiles = Globals.NUM_OF_FILES_PER_BLOCK
-            numOfEvents = Globals.NUM_OF_FILES_PER_BLOCK * Globals.NUM_OF_EVENTS_PER_FILE
-            size = Globals.NUM_OF_FILES_PER_BLOCK * Globals.SIZE_OF_FILE
+            numOfFiles = GlobalParams.numOfFilesPerBlock()
+            numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
+            size = GlobalParams.numOfFilesPerBlock() * GlobalParams.sizeOfFile()
             
             self.blocks[dataset].append(
                                     {'Name' : blockName,
@@ -42,8 +43,8 @@ class DataBlockGenerator(object):
     
     def createDBSFile(self, dbsFile = {}):
         defaultDBSFile = {'Checksum': "123456",
-                          'NumberOfEvents': Globals.NUM_OF_EVENTS_PER_FILE,
-                          'FileSize': Globals.SIZE_OF_FILE,
+                          'NumberOfEvents': GlobalParams.numOfEventsPerFile(),
+                          'FileSize': GlobalParams.sizeOfFile(),
                           'ParentList': [],
                           'LumiList': [{'RunNumber': 1, 'LumiSectionNumber': 1}, 
                                        {'RunNumber': 1, 'LumiSectionNumber': 2}]

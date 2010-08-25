@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.112 2010/05/24 16:48:16 swakef Exp $"
-__version__ = "$Revision: 1.112 $"
+__revision__ = "$Id: WorkQueue.py,v 1.113 2010/06/02 14:42:11 swakef Exp $"
+__version__ = "$Revision: 1.113 $"
 
 
 import time
@@ -605,13 +605,17 @@ class WorkQueue(WorkQueueBase):
         elements = self.status(after = since, dictKey = "ParentQueueId")
 
         # apply end policy to elements grouped by parent
-        items = [dict(endPolicy(group,
-                           self.params['EndPolicySettings'])) for \
-                                                    group in elements.values()]
-        # Strip out data members we don't want to send to the server
-        for i in items:
+        results = [endPolicy(group,
+                             self.params['EndPolicySettings']) for \
+                             group in elements.values()]
+        items = []
+        # Need to be in dict format for sending over the wire
+        for x in results:
+            # Strip out data members we don't want to send to the server
+            i = dict(x)
             i.pop('Elements', None)
             i.pop('WMSpec', None)
+            items.append(i)
 
         if items:
             self.logger.debug("Update parent queue with: %s" % str(items))
@@ -626,16 +630,28 @@ class WorkQueue(WorkQueueBase):
                 msg = "Unable to send update to parent queue, error: %s"
                 self.logger.warning(msg % str(ex))
                 result = {}
+            else:
+                # some of our element status's may be overriden by the parent
+                # e.g. if request is canceled at top level
+                if result:
+                    msg = "Parent queue status override to %s for %s"
+                    with self.transactionContext():
+                        for status, ids in result.items():
+                            self.logger.info(msg % (status, list(ids)))
+                            self.setStatus(status, ids, id_type = 'parent_queue_id')
 
-            # some of our element status's may be overriden by the parent
-            # e.g. if request is canceled at top level
-            if result:
-                msg = "Parent queue status override to %s for %s"
-                with self.transactionContext():
-                    for status, items in result.items():
-                        self.logger.info(msg % (status, list(items)))
-                        self.setStatus(status, items, id_type = 'parent_queue_id')
+                # prune elements that are finished (after reporting to parent)
+                complete_elements = sum([list(x['Elements']) for x
+                                         in results if x.inEndState()], [])
+                if complete_elements:
+                    action = self.daofactory(classname = "WorkQueueElement.Delete")
+                    complete_ids = [x['Id'] for x in complete_elements]
+                    self.logger.info('Finished with elements: %s' % str(complete_ids))
+                    action.execute(ids = complete_ids,
+                                  conn = self.getDBConn(),
+                                  transaction = self.existingTransaction())
 
+        # record update times
         if full:
             self.lastFullReportToParent = now
         else:

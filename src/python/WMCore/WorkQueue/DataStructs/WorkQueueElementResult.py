@@ -6,8 +6,8 @@ A dictionary based object meant to represent a WorkQueue block
 
 #Can we re-use WorkQueueElement for this?
 
-__revision__ = "$Id: WorkQueueElementResult.py,v 1.3 2010/03/02 13:39:41 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueElementResult.py,v 1.4 2010/06/02 14:42:08 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 class WorkQueueElementResult(dict):
     """Class to hold the status of a related group of WorkQueueElements"""
@@ -65,3 +65,10 @@ class WorkQueueElementResult(dict):
                     msg = "Unable to compute overall status of elements: %s"
                     raise RuntimeError, msg % str(self['Elements'])
             return status
+
+    def inEndState(self):
+        """Are all requests complete (either success or failure)"""
+        for element in self['Elements']:
+            if not element.inEndState():
+                return False
+        return True

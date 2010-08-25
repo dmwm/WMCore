@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.32 2010/05/26 14:51:37 sryu Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.33 2010/06/02 14:42:11 swakef Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import unittest
 import os
@@ -394,8 +394,9 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # finish work locally and propagate to global
         self.localQueue.doneWork([str(x['element_id']) for x in work])
-        self.localQueue.updateParent()
-        self.assertEqual(len(self.globalQueue.status('Done')), 3)
+        self.assertEqual(len(self.globalQueue.status('Done')), len(work))
+        self.localQueue.updateParent() # will delete elements from local
+        self.assertEqual(len(self.globalQueue.status('Done')), 1)
 
 
     def testMultiTaskProduction(self):

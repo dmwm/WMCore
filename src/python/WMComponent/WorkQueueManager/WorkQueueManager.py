@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: WorkQueueManager.py,v 1.2 2010/02/12 14:34:37 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueManager.py,v 1.3 2010/02/22 15:18:01 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -26,6 +26,9 @@ from WMCore.WorkQueue.WorkQueue import localQueue, globalQueue, WorkQueue
 from WMCore.Services.RequestManager.RequestManager \
      import RequestManager as RequestManagerDS
 
+# Should probably import this but don't want to create the dependency
+WORKQUEUE_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
+
 class WorkQueueManager(Harness):
 
     def __init__(self, config):
@@ -37,7 +40,7 @@ class WorkQueueManager(Harness):
         self.logger = None
         self.wq = None
         self.reqMgr = None
-        
+
         print "WorkQueueManager.__init__"
 
     def setConfig(self, config):
@@ -65,6 +68,25 @@ class WorkQueueManager(Harness):
         qConfig = wqManager.queueParams
         qConfig.setdefault('CacheDir', path.join(wqManager.componentDir, 'wf'))
 
+        # find http endpoint if not set
+        if not hasattr(qConfig, 'QueueURL'):
+            try:
+                for webapp in config.listWebapps_():
+                    webapp = config.webapp_(webapp)
+                    for page in webapp.section_('views').section_('active'):
+                        if page.section_('model').object == WORKQUEUE_REST_NAMESPACE:
+                            qConfig['QueueURL'] = 'http://%s:%s%s' % (webapp.host,
+                                                                      webapp.port,
+                                                                      page._internal_name)
+                            break
+                    else:
+                        raise RuntimeError
+            except RuntimeError:
+                msg = """Unable to determine WorkQueue QueueURL, Either:
+                Configure a WorkQueueRESTModel webapp_ section or,
+                Add a WorkQueueManager.queueParams.QueueURL setting."""
+                raise RuntimeError, msg
+
         return config
 
     def preInitialization(self):
@@ -90,7 +112,7 @@ class WorkQueueManager(Harness):
             myThread.workerThreadManager.addWorker(WorkQueueManagerWorkPoller(self.wq), pollInterval)
             # Report to parent queue
             myThread.workerThreadManager.addWorker(WorkQueueManagerReportPoller(self.wq), self.wq.params['ReportInterval'])
-        
+
         return
 
     def instantiateQueues(self, config):

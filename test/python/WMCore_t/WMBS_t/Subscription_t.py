@@ -1269,6 +1269,24 @@ class SubscriptionTest(unittest.TestCase):
         fourthResult  = testSubscription.getJobGroups()
         self.assertFalse(fourthResult, \
                             "Should be no jobgroups, found %s" % (fourthResult,))
+
+    def testIDFilesetWorkflowDAO(self):
+        """
+        _testIDFilesetWorkflowDAO_
+
+        """
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+
+        testSubscription.create()
+
+        idDAO = self.daofactory(classname = "Subscriptions.IDFromFilesetWorkflow")
+        subID = idDAO.execute(workflow = testWorkflow.name, fileset = testFileset.name)
+
+        assert subID == testSubscription["id"], \
+               "ERROR: ID DAO returned the wrong ID."
+
+        return
                
 if __name__ == "__main__":
     unittest.main()

@@ -192,6 +192,8 @@ class DBObjectsTest(unittest.TestCase):
     def testD_TestAssociations(self):
         """
         Test association between jobs, tasks, etc.
+        -> ok for consistency but this is not the right way to create task and job 
+           and connect them (NdFilippo)
 
         """
 
@@ -243,6 +245,42 @@ class DBObjectsTest(unittest.TestCase):
 
         return
 
+    def testE_CreateTaskJobsCascade(self):
+        """
+        Test creation task and jobs in cascade
+
+        """
+        
+        nTestJobs = 10
+        
+        parameters = {'serverName': 'Spartacus', 'name': 'Destiny'}
+        task = Task(parameters = parameters)
+        
+        task.create()
+        
+        for jobId in range(0, nTestJobs):
+            job = Job( parameters = {'name': ('Filippo-' + str(jobId)), 
+                                            'jobId': (100+jobId),
+                                            'taskId': task.exists(),
+                                            'events' : jobId*3 } )
+            task.addJob(job)
+
+        task.save()
+               
+        task2 = Task(parameters = {'id': 1})  
+        task2.load(deep = True)
+        
+        self.assertTrue(task2.exists())
+        self.assertEqual(task.exists(), task2.exists())
+        self.assertEqual(task.data['name'], task2.data['name'])
+
+        self.assertEqual(len(task2.jobs), nTestJobs)
+        
+        for jobId in range(0, nTestJobs):
+            for key in ['name', 'jobId', 'taskId', 'events'] :
+                self.assertEqual(task.jobs[jobId].data[key], task2.jobs[jobId].data[key])
+            
+        return
 
 if __name__ == "__main__":
     unittest.main()

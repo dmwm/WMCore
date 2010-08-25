@@ -5,8 +5,8 @@ WorkerNode unittest for WMRuntime/WMSpec
 
 """
 
-__revision__ = "$Id: Runtime_t.py,v 1.2 2010/07/01 15:04:34 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Runtime_t.py,v 1.3 2010/07/30 14:11:12 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 # Basic libraries
 import unittest
@@ -232,7 +232,7 @@ class RuntimeTest(unittest.TestCase):
             # Now that we're here, run the unpacker
 
             package  = os.path.join(self.testDir, 'packages', '%sJobPackage.pkl' % (taskName))
-            jobIndex = 0
+            jobIndex = 1
 
             RunUnpacker(sandbox = sandbox, package = package,
                         jobIndex = jobIndex, jobname = taskName)
@@ -315,9 +315,13 @@ class RuntimeTest(unittest.TestCase):
         params = task.jobSplittingParameters()
         jobGroups = jobfactory(**params)
 
+        jobID = 1
         package = JobPackage()
         for group in jobGroups:
-            package.extend(group.getJobs())
+            for job in group.jobs:
+                job['id'] = jobID
+                jobID += 1
+                package[job['id']] = job
 
         return package
 
@@ -494,6 +498,7 @@ class RuntimeTest(unittest.TestCase):
         self.assertEqual(report.data.seName, 'cmssrm.fnal.gov')
         self.assertEqual(report.data.siteName, 'T1_US_FNAL')
         self.assertEqual(report.data.hostName, socket.gethostname())
+        self.assertTrue(report.data.completed)
 
         # Should have status 0 (emulator job)
         self.assertEqual(cmsReport.status, 0)

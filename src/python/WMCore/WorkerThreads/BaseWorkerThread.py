@@ -9,8 +9,8 @@ to perform thread-specific setup and clean-up operations
 """
 
 __revision__ = \
-        "$Id: BaseWorkerThread.py,v 1.19 2010/02/25 18:23:20 swakef Exp $"
-__version__ = "$Revision: 1.19 $"
+        "$Id: BaseWorkerThread.py,v 1.20 2010/05/13 18:37:55 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -156,7 +156,8 @@ class BaseWorkerThread:
 
                             # Catch if someone forgets to commit/rollback
                             if myThread.transaction.transaction is not None:
-                                msg = "Transaction reached end of poll loop."
+                                msg = """ Thread %s:  Transaction reached 
+                                          end of poll loop.""" % myThread.getName()
                                 msg += " Raise a bug against me. Rollback."
                                 logging.error(msg)
                                 myThread.transaction.rollback()

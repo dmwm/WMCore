@@ -142,7 +142,7 @@ class Requests(dict):
         that a sub class can override it to have different type of connection
         i.e. - if it needs authentication, or some fancy handler 
         """
-        return HTTPConnection(self['host'], 443)
+        return HTTPConnection(self['host'])
 
 class _EmptyClass:
     pass

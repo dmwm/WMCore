@@ -6,8 +6,8 @@ down version of the old message service in the prodagent that
 is compliant with the old schema.
 """
 
-__revision__ = "$Id: ProxyMsgs.py,v 1.4 2009/11/28 01:03:42 riahi Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ProxyMsgs.py,v 1.5 2010/05/30 21:15:41 riahi Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -22,9 +22,7 @@ import logging
 # to the other database through the old msg service interface.
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
-
 from WMCore.Database.DBFormatter import DBFormatter
-import MySQLdb
 
 class ProxyMsgs:
     """
@@ -40,9 +38,9 @@ class ProxyMsgs:
 
         self.options = {}
         self.options['unix_socket'] = os.getenv("DBSOCK")
-        dbFactory = DBFactory(logging.getLogger(), contactinfo, self.options)
+        self.dbFactory = DBFactory(logging.getLogger(), contactinfo, self.options)
 
-        self.dbi = dbFactory.connect()
+        self.dbi = self.dbFactory.connect()
         self.trans = Transaction(self.dbi)
         self.trans.commit()
         self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
@@ -198,7 +196,7 @@ class ProxyMsgs:
         """
         _publish_
         """
-        
+      
         # check if message type is in database
         sqlCommand = """
                      SELECT typeid
@@ -206,17 +204,27 @@ class ProxyMsgs:
                        WHERE name = '""" + name + """'
                      """
 
-        dbFactory = DBFactory(logging.getLogger()\
+        try:
+
+            self.trans.begin()
+            result = self.trans.processData(sqlCommand, {})
+            self.trans.commit()
+
+        except:
+
+            self.dbFactory = DBFactory(logging.getLogger()\
           , self.contactinfo, self.options)
-        self.dbi = dbFactory.connect()
-        self.trans = Transaction(self.dbi)
-        self.trans.commit()
-        self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
-        self.trans.begin()
-        result = self.trans.processData(sqlCommand, {})
+            self.dbi = self.dbFactory.connect()
+            self.trans = Transaction(self.dbi)
+            self.trans.commit()
+            self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
+            self.trans.begin()
+            result = self.trans.processData(sqlCommand, {})
+            self.trans.commit()
+           
 
         rows = self.dbformat.format(result)
-
+  
         # get message type id
         if len(rows) == 1:
             
@@ -233,6 +241,7 @@ class ProxyMsgs:
                            VALUES
                              ('""" + name + """')
                          """
+            self.trans.begin()
             self.trans.processData(sqlCommand, {})
 
             # get id
@@ -241,12 +250,17 @@ class ProxyMsgs:
             row = self.dbformat.formatOne(result)
             typeid = row[0]
             
+            self.trans.commit()
+
+        self.trans.begin()
+
         # get destinations
         sqlCommand = """
                      SELECT procid
                        FROM ms_subscription
                        WHERE typeid = '""" + str(typeid) + """'
                      """
+
         result = self.trans.processData(sqlCommand, {})
         dests = self.dbformat.format(result)
         
@@ -296,15 +310,23 @@ class ProxyMsgs:
                        WHERE name = '""" + name + """'
 
                      """
-        dbFactory = DBFactory(logging.getLogger(), \
-           self.contactinfo, self.options)
-        self.dbi = dbFactory.connect()
-        self.trans = Transaction(self.dbi)
-        self.trans.commit()
-        self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
-        self.trans.begin()
-        result = self.trans.processData(sqlCommand, {})
-        self.trans.commit()
+        try:
+
+            self.trans.begin()
+            result = self.trans.processData(sqlCommand, {})
+            self.trans.commit()
+
+        except:
+
+            self.dbFactory = DBFactory(logging.getLogger()\
+          , self.contactinfo, self.options)
+            self.dbi = self.dbFactory.connect()
+            self.trans = Transaction(self.dbi)
+            self.trans.commit()
+            self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
+            self.trans.begin()
+            result = self.trans.processData(sqlCommand, {})
+            self.trans.commit()
  
         rows = self.dbformat.format(result)
 
@@ -359,16 +381,23 @@ class ProxyMsgs:
             # get messsages
             result = 0
             # execute command
-            dbFactory = DBFactory(logging.getLogger(), \
-                self.contactinfo, self.options)
-            self.dbi = dbFactory.connect()
-            self.trans = Transaction(self.dbi)
-            self.trans.commit()
-            self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
-            self.trans.begin()
-            result = self.trans.processData(sqlCommand, {})
-            self.trans.commit()
+            try:
 
+                self.trans.begin()
+                result = self.trans.processData(sqlCommand, {})
+                self.trans.commit()
+
+            except:
+
+                self.dbFactory = DBFactory(logging.getLogger()\
+              , self.contactinfo, self.options)
+                self.dbi = self.dbFactory.connect()
+                self.trans = Transaction(self.dbi)
+                self.trans.commit()
+                self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
+                self.trans.begin()
+                result = self.trans.processData(sqlCommand, {})
+                self.trans.commit()
 
             rows = self.dbformat.format(result)
             # there is one, return it
@@ -412,9 +441,23 @@ class ProxyMsgs:
                      DELETE 
                        FROM ms_message
                      """
-        self.trans.begin()
-        self.trans.processData(sqlCommand, {})
-        self.trans.commit()
+        try:
+
+            self.trans.begin()
+            self.trans.processData(sqlCommand, {})
+            self.trans.commit()
+
+        except:
+
+            self.dbFactory = DBFactory(logging.getLogger()\
+          , self.contactinfo, self.options)
+            self.dbi = self.dbFactory.connect()
+            self.trans = Transaction(self.dbi)
+            self.trans.commit()
+            self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
+            self.trans.begin()
+            self.trans.processData(sqlCommand, {})
+            self.trans.commit()
 
     def remove(self, messageType):
         """
@@ -427,18 +470,28 @@ class ProxyMsgs:
                      SELECT typeid
                        FROM ms_type
                        WHERE name = '""" + messageType + """'
-                     """
-        dbFactory = DBFactory(logging.getLogger(), \
-            self.contactinfo, self.options)
-        self.dbi = dbFactory.connect()
-        self.trans = Transaction(self.dbi)
-        self.trans.commit()
-        self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
-        self.trans.begin()
-        result = self.trans.processData(sqlCommand, {})
-        rows = self.dbformat.format(result)
-        self.trans.commit()
+                      """
+
+        try:
+
+            self.trans.begin()
+            result = self.trans.processData(sqlCommand, {})
+            self.trans.commit()
+
+        except:
+
+            self.dbFactory = DBFactory(logging.getLogger()\
+          , self.contactinfo, self.options)
+            self.dbi = self.dbFactory.connect()
+            self.trans = Transaction(self.dbi)
+            self.trans.commit()
+            self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
+            self.trans.begin()
+            result = self.trans.processData(sqlCommand, {})
+            self.trans.commit()
     
+        rows = self.dbformat.format(result)
+
         # no rows, nothing to do
         if len(rows) == 0:
             return
@@ -473,9 +526,25 @@ class ProxyMsgs:
                           
                           """ % timeval
 
-        self.trans.begin()
-        self.trans.processData(sqlCommand, {})
-        self.trans.commit()
+        try: 
+
+            self.trans.begin()
+            self.trans.processData(sqlCommand, {})
+            self.trans.commit()
+
+        except:
+
+            self.dbFactory = DBFactory(logging.getLogger()\
+          , self.contactinfo, self.options)
+            self.dbi = self.dbFactory.connect()
+            self.trans = Transaction(self.dbi)
+            self.trans.commit()
+            self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
+            self.trans.begin()
+            self.trans.processData(sqlCommand, {})
+            self.trans.commit()
+
+
 
     def getList(self, dests):
         """

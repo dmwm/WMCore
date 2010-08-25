@@ -4,8 +4,8 @@
 Rest Model abstract implementation
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.39 2009/12/23 21:41:25 metson Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: RESTModel.py,v 1.40 2009/12/28 21:40:47 sryu Exp $"
+__version__ = "$Revision: 1.40 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -36,7 +36,7 @@ class RESTModel(WebAPI):
                                }
                          }
         
-    def ping(self, *args, **kwargs): 
+    def ping(self): 
         """
         Return a simple message
         """
@@ -61,7 +61,11 @@ class RESTModel(WebAPI):
         if verb in self.methods.keys():
             method = args[0]
             if method in self.methods[verb].keys():
-                data = self.methods[verb][method]['call'](*args[1:], **kwargs)
+                try:
+                    data = self.methods[verb][method]['call'](*args[1:], **kwargs)
+                except TypeError, e:
+                    #TODO: check with Simon this might not what he wants
+                    raise HTTPError(400, str(e))
                 if 'expires' in self.methods[verb][method].keys():
                     return data, self.methods[verb][method]['expires']
                 else:
@@ -85,13 +89,13 @@ class RESTModel(WebAPI):
         add dao in self.methods and wrap it with sanitise_input. Assumes that a 
         DAOFactory instance is available from self.
         """
-        def function(args, kwargs):
+        def function(*args, **kwargs):
             # store the method name
             method = methodKey
-            input = self.sanitise_input(args, kwargs, method)
+            input = self.sanitise_input(method, *args, **kwargs)
             # store the dao
             dao = self.daofactory(classname=daoStr)
-            return dao.execute(input)
+            return dao.execute(**input)
                   
         self.addMethod(verb, methodKey, function, args, validation, version)
         
@@ -99,13 +103,13 @@ class RESTModel(WebAPI):
         """
         add a method handler in self.methods and wrap it with sanitise_input.
         """
-        def function(args, kwargs):
+        def function(*args, **kwargs):
             # store the method name
             method = methodKey
-            input = self.sanitise_input(args, kwargs, method)
+            input = self.sanitise_input(method, *args, **kwargs)
             # store the function
             func = funcName
-            return func(input)
+            return func(**input)
                   
         self.addMethod(verb, methodKey, function, args, validation, version)
         
@@ -122,7 +126,7 @@ class RESTModel(WebAPI):
                                          'validation': validation,
                                          'version': version}
 
-    def sanitise_input(self, args=[], kwargs={}, method = None):
+    def sanitise_input(self,  method = None, *args, **kwargs):
         """
         Pull out the necessary input from kwargs (by name) and, failing that, 
         pulls out the number required args from args, which assumes the 
@@ -166,4 +170,4 @@ class RESTModel(WebAPI):
                 result.update(fnc(input))
             return result
         except Exception, e:
-            raise HTTPError(400, e.message)
+            raise HTTPError(400, str(e))

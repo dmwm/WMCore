@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.51 2009/08/21 10:46:19 sfoulkes Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: File.py,v 1.52 2009/08/26 18:28:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.52 $"
 
 from sets import Set
 
@@ -398,3 +398,32 @@ class File(WMBSBase, WMFile):
             self.updateLocations()
 
         return
+
+    def __to_json__(self, thunker):
+        """
+        __to_json__
+
+        Serialize the file object.  This will convert all Sets() to lists and
+        weed out the internal data structures that don't need to be shared.
+        """
+        fileDict = {"last_event": self["last_event"],
+                    "first_event": self["first_event"],
+                    "lfn": self["lfn"],
+                    "locations": list(self["locations"]),
+                    "id": self["id"],
+                    "cksum": self["cksum"],
+                    "events": self["events"],
+                    "merged": self["merged"],
+                    "size": self["size"],
+                    "runs": [],
+                    "parents": []}
+
+        for parent in self["parents"]:
+            fileDict["parents"].append(thunker._thunk(parent))
+
+        for run in self["runs"]:
+            runDict = {"run_number": run.run,
+                       "lumis": run.lumis}
+            fileDict["runs"].append(runDict)
+                                                
+        return fileDict

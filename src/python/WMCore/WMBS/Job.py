@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.33 2009/08/26 16:52:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Job.py,v 1.34 2009/08/26 18:28:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import datetime
 from sets import Set
@@ -263,31 +263,9 @@ class Job(WMBSBase, WMJob):
         """
         __to_json__
 
-        Do some json serialization.
+        Serialize the job object.  This will convert all Sets() to lists and
+        weed out the internal data structures that don't need to be shared.
         """
-        def buildFileDict(wmbsFile):
-            fileDict = {"last_event": wmbsFile["last_event"],
-                        "first_event": wmbsFile["first_event"],
-                        "lfn": wmbsFile["lfn"],
-                        "locations": list(wmbsFile["locations"]),
-                        "id": wmbsFile["id"],
-                        "cksum": wmbsFile["cksum"],
-                        "events": wmbsFile["events"],
-                        "merged": wmbsFile["merged"],
-                        "size": wmbsFile["size"],
-                        "runs": [],
-                        "parents": []}
-
-            for parent in wmbsFile["parents"]:
-                fileDict["parents"].append(buildFileDict(parent))
-
-            for run in wmbsFile["runs"]:
-                runDict = {"run_number": run.run,
-                           "lumis": run.lumis}
-                fileDict["runs"].append(runDict)
-                        
-            return fileDict
-
         jobDict = {"name": self["name"], "state_time": self["state_time"],
                    "couch_record": self["couch_record"], "mask": self["mask"],
                    "attachments": self["attachments"],
@@ -297,6 +275,6 @@ class Job(WMBSBase, WMJob):
                    "input_files": []}
 
         for inputFile in self["input_files"]:
-            jobDict["input_files"].append(buildFileDict(inputFile))
+            jobDict["input_files"].append(thunker._thunk(inputFile))
 
         return jobDict

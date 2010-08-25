@@ -478,6 +478,12 @@ class DBObjectsTest(unittest.TestCase):
 
     
 class DBObjectsPerformance(unittest.TestCase):
+    """
+    DBObjectsPerformance unit-test
+    """
+    
+    numtask = 1
+    numjob  = 10
     
     def setUp(self):
         """
@@ -487,42 +493,46 @@ class DBObjectsPerformance(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
-        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
-                                useDefault = False)
 
 
     def tearDown(self):
         """
         Tear down database
         """
-
-        self.testInit.clearDatabase()
-
-        return
+        
+        self.testInit.attemptToCloseDBConnections()
+        
     
-    def testA_fullObjects(self):
+    def testA_databaseStartup(self):
+        """
+        testA_databaseStartup
+        """
+        
+        self.testInit.setSchema(customModules = ["WMCore.BossLite"],
+                                useDefault = False)
+        
+    
+    def testB_createAndSaveObjects(self):
         """
         Performance test, do not abuse!
         """
-        
-        numtask = 1
-        numjob  = 10
         
         db = BossLiteDBWM()
         log = logging.getLogger( "DBObjectsPerformance" )
 
         start_time = time.time()
 
-        for t in xrange(numtask):
+        for t in xrange(self.numtask):
             try:
                 task = Task()
                 task.data['name'] = 'task_%s'%str(t)
                 task.create(db)
                 tmpId = task['id']
-                # self.assertEqual(tmpId, task.exists(db))
+                
+                self.assertEqual(tmpId, task.exists(db))
+                
                 task.exists(db)
-                for j in xrange(numjob):
+                for j in xrange(self.numjob):
                     parameters = {'name': '%s_job_%s'%(str(t),str(j)), 
                                   'jobId': j, 
                                   'taskId': tmpId }
@@ -549,8 +559,39 @@ class DBObjectsPerformance(unittest.TestCase):
         
         end_time = time.time()
         
-        log.info("task= %3d, jobs/task= %3d, Time= %f" % \
-            (numtask, numjob, (end_time-start_time)))
+        log.info("SAVE: task= %3d, jobs/task= %3d, Time= %f" % \
+            (self.numtask, self.numjob, (end_time-start_time)))
+        
+        return
+    
+    def testC_LoadObjects(self):
+        """
+        testC_databaseIsPersistent
+        """
+        db = BossLiteDBWM()
+        log = logging.getLogger( "DBObjectsPerformance" )
+
+        task = Task(parameters = {'id': 1})
+                
+        start_time = time.time()
+        
+        task.load(db)
+        
+        end_time = time.time()
+        
+        log.info("LOAD: Time= %f" % ( (end_time-start_time) ) )
+        
+        self.assertEqual(1, task.exists(db))
+        self.assertEqual(self.numjob, len(task.jobs))
+        
+        return
+    
+    def testD_databaseClean(self):
+        """
+        testC_databaseIsPersistent
+        """
+        
+        self.testInit.clearDatabase()
         
         return
     

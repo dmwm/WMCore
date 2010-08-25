@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.27 2010/02/03 05:11:20 sfoulkes Exp $"
+    "$Id: TestInit.py,v 1.28 2010/02/04 15:59:27 mnorman Exp $"
 __version__ = \
-    "$Revision: 1.27 $"
+    "$Revision: 1.28 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -43,9 +43,11 @@ class TestInit:
         self.testDir = None
         self.currModules = []
         self.init = WMInit()
+        self.deleteTmp = True
     
     def __del__(self):
-        self.delWorkDir()
+        if self.deleteTmp:
+            self.delWorkDir()
     
     def delWorkDir(self):
         if (self.testDir != None):
@@ -71,7 +73,8 @@ class TestInit:
         self.init.setLogging(self.testClassName, self.testClassName,
                              logExists = False, logLevel = logLevel)
     
-    def generateWorkDir(self, config = None):
+    def generateWorkDir(self, config = None, deleteOnDestruction = True):
+        self.deleteTmp = deleteOnDestruction
         self.testDir = tempfile.mkdtemp()
         if config:
             config.section_("General")

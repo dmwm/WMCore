@@ -5,8 +5,8 @@ _LumiBased_t
 Test lumi based splitting.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.8 2010/04/07 15:40:29 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.9 2010/04/13 20:53:40 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import threading
@@ -56,8 +56,8 @@ class LumiBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "somese.cern.ch")
-        locationAction.execute(siteName = "otherse.cern.ch")
+        locationAction.execute(siteName = 's1', seName = "somese.cern.ch")
+        locationAction.execute(siteName = 's2', seName = "otherse.cern.ch")
 
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")

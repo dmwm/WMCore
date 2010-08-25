@@ -11,16 +11,12 @@ _ReReco_
 Standard ReReco workflow.
 """
 
-
-__version__ = "$Id: ReReco.py,v 1.48 2010/08/11 19:12:15 sfoulkes Exp $"
-__revision__ = "$Revision: 1.48 $"
-
-import subprocess
+__version__ = "$Id: ReReco.py,v 1.49 2010/08/13 14:48:56 sfoulkes Exp $"
+__revision__ = "$Revision: 1.49 $"
 
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
-from WMCore.Services.Requests import JSONRequests
 
 from WMCore.Cache.ConfigCache import WMConfigCache
 from WMCore.WMSpec.StdSpecs import SplitAlgoStartPolicyMap
@@ -393,6 +389,11 @@ class ReRecoWorkloadFactory(StdBase):
         if skimConfigDoc == None:
             return workload
 
+        if not procOutput.has_key(self.skimInput):
+            error = "Processing config does not have the following output module: %s.  " % self.skimInput
+            error += "Please change your skim input to be one of the following: %s" % procOutput.keys()
+            raise Exception, error
+        
         parentMergeTask = procOutput[self.skimInput]
         skimTask = parentMergeTask.addTask("Skims")
         parentCmsswStep = parentMergeTask.getStep("cmsRun1")

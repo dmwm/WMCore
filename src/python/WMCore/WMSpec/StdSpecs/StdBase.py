@@ -5,8 +5,8 @@ _StdBase_
 Base class with helper functions for standard WMSpec files.
 """
 
-__version__ = "$Id: StdBase.py,v 1.1 2010/08/09 21:34:52 sfoulkes Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: StdBase.py,v 1.2 2010/08/13 14:48:55 sfoulkes Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 import tempfile
 import subprocess
@@ -28,7 +28,15 @@ class StdBase(object):
         """
         _getOutputModuleInfo_
 
+        For a given config try to determine the output module configuration.
+        Create a temporary directory and setup a CMSSW project using scramv1 in
+        it.  Use a subshell and scramv1 to setup the CMSSW environment and then
+        execute the outputmodules-from-config script.  Looks for the JSON file
+        that the script leaves behind and pass that back to the caller.
         """
+        stderr = None
+        stdout = None
+        
         try:
             self.tempDir = tempfile.mkdtemp()
 
@@ -64,6 +72,9 @@ class StdBase(object):
             decoder = JSONDecoder()        
             return decoder.decode(outputJSON)
         except Exception, ex:
+            error = "Error determining output modules: %s.  " % str(ex)
+            error += "STDOUT from process: %s\n" % stdout
+            error += "STDERR from process: %s\n" % stderr
             shutil.rmtree(self.tempDir)
-            raise Exception, "Error determining output module configuration."
+            raise Exception, error
             

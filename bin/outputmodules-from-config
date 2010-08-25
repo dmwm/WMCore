@@ -35,6 +35,7 @@ def outputModulesFromConfig(configHandle):
     Go through all the output modules in a config and extract the meta data.
     """
     outputModules = {}
+    
     for outputModuleName in configHandle.outputModules.keys():
         outputModule = getattr(configHandle, outputModuleName)
         outputModules[outputModuleName] = {}
@@ -62,26 +63,35 @@ if __name__ == "__main__":
         encodedConfig = sys.stdin.readline()
         config = jsonDecoder.decode(encodedConfig)
 
+        print "Config passed in from the spec: %s" % config
+
         if config.get("configUrl", None):
+            print "Have a URL for a config, trying to download..."
             tempDir = tempfile.mkdtemp()
             configPath = os.path.join(tempDir, "cmsswConfig.py")
             compConfigPath = os.path.join(tempDir, "cmsswConfig.pyc")
             configString = urllib.urlopen(config["configUrl"]).read(-1)
+            print "Config download successful.  Trying to open..."
             configFile = open(configPath, "w")
             configFile.write(configString)
             configFile.close()
             process = loadConfig(configPath).process
+            print "Opened config successfully, cleaning up..."
             os.remove(configPath)
             os.remove(compConfigPath)
             os.rmdir(tempDir)
         else:
+            print "Have a scenario for a Configuration.DataProcessing config, trying to create..."
             from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
             mySetup = SetupCMSSWPset()
             mySetup.createProcess(config["scenarioName"], config["scenarioFunc"],
                                   config["scenarioArgs"])
             process = mySetup.process
+            print "Create successful..."
 
+        print "Trying to determine output modules in the config..."
         outputModules = outputModulesFromConfig(process)
+        print "Successfully determined output modules, saving..."
         outputModulesJSON = jsonEncoder.encode(outputModules)
 
         outputHandle = open("outputModules.json", "w")

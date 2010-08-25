@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.25 2010/07/29 18:26:20 mnorman Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.26 2010/07/29 20:06:33 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import unittest
 import threading
@@ -505,6 +505,13 @@ class JobSubmitterTest(unittest.TestCase):
         self.assertEqual(len(result), 0)
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
+
+
+        # Check assigned locations
+        getLocationAction = self.daoFactory(classname = "Jobs.GetLocation")
+        for id in result:
+            loc = getLocationAction.execute(jobid = id)
+            self.assertEqual(loc, [['T2_US_UCSD']])
 
         
         # Check on the JDL

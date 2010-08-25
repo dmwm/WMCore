@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.51 2009/12/17 16:51:08 sryu Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: WorkQueue.py,v 1.52 2010/01/06 17:02:19 swakef Exp $"
+__version__ = "$Revision: 1.52 $"
 
 # pylint: disable-msg = W0104, W0622
 # pylint: enable-msg = W0104, W0622
@@ -34,7 +34,6 @@ from WMCore.WorkQueue.Policy.Start import startPolicy
 from WMCore.WorkQueue.Policy.End import endPolicy
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
-from WMCore.WorkQueue.WorkSpecTaskParser import WorkSpecTaskParser
 from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
 from WMCore.WMBS.File import File as WMBSFile
 
@@ -371,7 +370,7 @@ class WorkQueue(WorkQueueBase):
                     raise RuntimeError, "spec file %s exists" % new_url
                 wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
                 wmspec.save(new_url)
-    
+
                 self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
                                              blocks, parentQueueId,
                                              topLevelTask)
@@ -379,7 +378,7 @@ class WorkQueue(WorkQueueBase):
         return len(units)
 
 
-    def status(self, status = None, before = None, after = None, elementIDs=None, 
+    def status(self, status = None, before = None, after = None, elementIDs = None,
                dictKey = None):
         """Return status of elements
            if given only return elements updated since the given time
@@ -491,7 +490,7 @@ class WorkQueue(WorkQueueBase):
 
         fullResync = time.time() > self.lastLocationUpdate + \
                                 self.params['FullLocationRefreshInterval']
-        
+
         mapping = self._getLocations([x['name'] for x in blocks], fullResync)
 
         if not mapping:
@@ -750,7 +749,7 @@ class WorkQueue(WorkQueueBase):
                 args['block'].append(item)
             else:
                 args['dataset'].append(item)
-                
+
         response = self.phedexService.subscriptions(**args)['phedex']
         self.lastLocationUpdate = response['request_timestamp']
         result = {}
@@ -778,7 +777,7 @@ class WorkQueue(WorkQueueBase):
                 # have work for some blocks in this dataset
                 if dset.has_key('subscription'):
                     # work for block and have dataset level subscription
-                    subs = [x['node'] for x in dset['subscription']]                    
+                    subs = [x['node'] for x in dset['subscription']]
                     for block in dset['block']:
                         if block['name'] in args['block']:
                             result[block['name']] = [x['node'] for x in block['subscription']]

@@ -14,6 +14,7 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 from WMCore.DataStructs.Run import Run
 
@@ -39,13 +40,10 @@ arguments = {
     "CouchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
     "CouchDBName": "wmagent_config_cache",
     "Scenario": ""
-#     "scenario": "cosmics",
-#     "processingOutputModules": {"outputRECORECO": {"dataTier": "RECO", "filterName": ""},
-#                                 "outputALCARECOALCARECO": {"dataTier": "ALCARECO", "filterName": ""}},
-#     "skimOutputModules": {},
-#     "processingConfig": "",
-#     "skimConfig": ""
-    
+
+#     "Scenario": "cosmics",
+#     "ProcessingConfig": "",
+#     "SkimConfig": ""
     }
 
 if not os.environ.has_key("WMAGENT_CONFIG"):
@@ -151,13 +149,21 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     for dbsResult in dbsResults:
         myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
                       events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
-                      locations = "cmssrm.fnal.gov")
+                      locations = "cmssrm.fnal.gov", merged = True)
         myRun = Run(runNumber = dbsResult["LumiList"][0]["RunNumber"])
         for lumi in dbsResult["LumiList"]:
             myRun.lumis.append(lumi["LumiSectionNumber"])
         myFile.addRun(myRun)
         myFile.create()
         inputFileset.addFile(myFile)
+
+        dbsFile = DBSBufferFile(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
+                                events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
+                                locations = "cmssrm.fnal.gov", status = "AlreadyInDBS")
+        dbsFile.setDatasetPath(datasetPath)
+        dbsFile.setAlgorithm(appName = "cmsRun", appVer = "Unknown", appFam = "Unknown",
+                             psetHash = "Unknown", configConfig = "Unknown")
+        dbsFile.create()
         
     inputFileset.commit()
     inputFileset.markOpen(False)

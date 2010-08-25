@@ -3,17 +3,15 @@
     WorkQueue.Policy.Start.Block tests
 """
 
-__revision__ = "$Id: Block_t.py,v 1.6 2010/03/17 14:28:08 swakef Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Block_t.py,v 1.7 2010/03/22 09:59:47 swakef Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import shutil
 from WMCore.WorkQueue.Policy.Start.Block import Block
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
-from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workingDir
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
-shutil.rmtree(workingDir, ignore_errors = True)
 
 class BlockTestCase(unittest.TestCase):
 

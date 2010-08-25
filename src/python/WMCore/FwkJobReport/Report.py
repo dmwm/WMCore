@@ -5,8 +5,8 @@ _Report_
 Job Report object
 """
 
-__version__ = "$Revision: 1.11 $"
-__revision__ = "$Id: Report.py,v 1.11 2010/03/12 20:19:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Report.py,v 1.12 2010/03/19 15:29:08 mnorman Exp $"
 
 import cPickle
 import logging
@@ -15,6 +15,8 @@ from WMCore.Configuration import ConfigSection
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run  import Run
+
+from WMCore.FwkJobReport.FileInfo import FileInfo
 
 def jsonise(cfgSect):
     result = {}
@@ -191,6 +193,10 @@ class Report:
         if file.has_key("locations"):
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
+
+        if file.has_key('lfn'):
+            fileRef.LFN = file['lfn']
+            keyList.remove('lfn')
 
         # Now add the dataset
         # Assume one dataset per output module
@@ -563,3 +569,36 @@ class Report:
             listOfFiles.append(file)
 
         return listOfFiles
+
+
+
+    def addInfoToOutputFilesForStep(self, stepName, step):
+        """
+        _addInfoToOutputFilesForStep_
+
+        Add the information missing from output files to the files
+        This requires the WMStep to be passed in
+        """
+
+        stepReport = self.retrieveStep(step = stepName)
+        fileInfo   = FileInfo()
+
+        if not stepReport:
+            return None
+
+        listOfModules = getattr(stepReport, 'outputModules', None)
+
+        for module in listOfModules:
+            outputMod = getattr(stepReport.output, module, None)
+            for n in range(outputMod.files.fileCount):
+                file = getattr(outputMod.files, 'file%i' %(n), None)
+                if not file:
+                    msg = "Could not find file%i in module" %(n)
+                    logging.error(msg)
+                    return None
+                fileInfo(fileReport = file, step = step, outputModule = module)
+
+
+        return
+                
+        

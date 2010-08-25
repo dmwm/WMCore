@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.16 2010/02/04 22:36:35 meloam Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.17 2010/02/04 22:42:52 meloam Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import logging
 import os.path
@@ -145,7 +145,7 @@ class JobAccountantTest(unittest.TestCase):
         testJob["state"] = "complete"
         self.stateChangeAction.execute(jobs = [testJob])
 
-        fwjrPath = os.path.join(os.getenv("WMCOREBASE"),
+        fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                 "test/python/WMComponent_t/JobAccountant_t/", fwjrName)
         self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
         return
@@ -299,7 +299,7 @@ class JobAccountantTest(unittest.TestCase):
                                        conn = myThread.transaction.conn,
                                        transaction = True)
 
-        fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
+        fwjrBasePath = WMCore.WMInit.getWMBASE() + "/test/python/WMComponent_t/JobAccountant_t/"
         self.setFWJRAction.execute(jobID = self.testJobA["id"],
                                    fwjrPath = fwjrBasePath + "SplitSuccessA.xml",
                                    conn = myThread.transaction.conn,
@@ -541,7 +541,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.setup()
         accountant.algorithm()
 
-        fwjrBasePath = os.getenv("WMCOREBASE") + "/test/python/WMComponent_t/JobAccountant_t/"
+        fwjrBasePath = WMCore.WMInit.getWMBASE() + "/test/python/WMComponent_t/JobAccountant_t/"
         jobReports = readJobReport(fwjrBasePath + "SplitSuccessA.xml")
         self.verifyFileMetaData(self.testJobA["id"], jobReports[0].files)
         self.verifyJobSuccess(self.testJobA["id"])
@@ -682,7 +682,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJob])
 
         self.setFWJRAction.execute(self.testJob["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedSkimSuccess.xml"))
         return
@@ -701,7 +701,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.setup()
         accountant.algorithm()
 
-        jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReports = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedSkimSuccess.xml"))
         self.verifyFileMetaData(self.testJob["id"], jobReports[0].files)
@@ -834,7 +834,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJob])
 
         self.setFWJRAction.execute(jobID = self.testJob["id"],
-                                   fwjrPath = os.path.join(os.getenv("WMCOREBASE"),
+                                   fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergeSuccess.xml"))
         return
@@ -852,7 +852,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.setup()
         accountant.algorithm()
 
-        jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReports = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergeSuccess.xml"))
         self.verifyFileMetaData(self.testJob["id"], jobReports[0].files)
@@ -993,7 +993,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobA])
 
         self.setFWJRAction.execute(self.testJobA["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco1.xml"))
 
@@ -1004,7 +1004,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobB])
 
         self.setFWJRAction.execute(self.testJobB["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco2.xml"))
 
@@ -1015,7 +1015,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobC])
 
         self.setFWJRAction.execute(self.testJobC["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco3.xml"))
 
@@ -1026,7 +1026,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobD])
 
         self.setFWJRAction.execute(self.testJobD["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco4.xml"))
 
@@ -1037,7 +1037,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobE])
 
         self.setFWJRAction.execute(self.testJobE["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco5.xml"))                
         return
@@ -1105,7 +1105,7 @@ class JobAccountantTest(unittest.TestCase):
         self.skimMergeJob["state"] = "executing"
         self.stateChangeAction.execute(jobs = [self.skimMergeJob])
         self.setFWJRAction.execute(self.skimMergeJob["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeSkim.xml"))
 
@@ -1115,7 +1115,7 @@ class JobAccountantTest(unittest.TestCase):
         self.aodMergeJob1["state"] = "executing"
         self.stateChangeAction.execute(jobs = [self.aodMergeJob1])
         self.setFWJRAction.execute(self.aodMergeJob1["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeAod1.xml"))
 
@@ -1124,7 +1124,7 @@ class JobAccountantTest(unittest.TestCase):
         self.aodMergeJob2["state"] = "executing"
         self.stateChangeAction.execute(jobs = [self.aodMergeJob2])
         self.setFWJRAction.execute(self.aodMergeJob2["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeAod2.xml"))
 
@@ -1133,7 +1133,7 @@ class JobAccountantTest(unittest.TestCase):
         self.recoMergeJob1["state"] = "executing"
         self.stateChangeAction.execute(jobs = [self.recoMergeJob1])
         self.setFWJRAction.execute(self.recoMergeJob1["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeReco1.xml"))
 
@@ -1143,7 +1143,7 @@ class JobAccountantTest(unittest.TestCase):
         self.recoMergeJob2["state"] = "executing"
         self.stateChangeAction.execute(jobs = [self.recoMergeJob2])
         self.setFWJRAction.execute(self.recoMergeJob2["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeReco2.xml"))        
 
@@ -1165,19 +1165,19 @@ class JobAccountantTest(unittest.TestCase):
         accountant.setup()
         accountant.algorithm()
 
-        jobReport1 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport1 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco1.xml"))
-        jobReport2 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport2 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco2.xml"))
-        jobReport3 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport3 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco3.xml"))
-        jobReport4 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport4 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco4.xml"))
-        jobReport5 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport5 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "UnmergedRedneckReco5.xml"))
 
@@ -1221,7 +1221,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.skimMergeJob])
         accountant.algorithm()
 
-        skimReport = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        skimReport = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeSkim.xml"))
         self.verifyFileMetaData(self.skimMergeJob["id"], skimReport[0].files)        
@@ -1239,7 +1239,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.aodMergeJob1])
         accountant.algorithm()
 
-        aodReport1 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        aodReport1 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeAod1.xml"))
         self.verifyFileMetaData(self.aodMergeJob1["id"], aodReport1[0].files)        
@@ -1264,7 +1264,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.recoMergeJob2])
         accountant.algorithm()
 
-        recoReport2 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        recoReport2 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                  "test/python/WMComponent_t/JobAccountant_t/",
                                                  "RedneckRecoMergeReco2.xml"))
         self.verifyFileMetaData(self.recoMergeJob2["id"], recoReport2[0].files)        
@@ -1297,7 +1297,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.aodMergeJob2])
         accountant.algorithm()
 
-        aodReport2 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        aodReport2 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeAod2.xml"))
         self.verifyFileMetaData(self.aodMergeJob2["id"], aodReport2[0].files)        
@@ -1334,7 +1334,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.recoMergeJob1])        
         accountant.algorithm()        
 
-        recoReport1 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        recoReport1 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                  "test/python/WMComponent_t/JobAccountant_t/",
                                                  "RedneckRecoMergeReco1.xml"))
         self.verifyFileMetaData(self.recoMergeJob1["id"], recoReport1[0].files)        
@@ -1453,7 +1453,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobA])
 
         self.setFWJRAction.execute(self.testJobA["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco1.xml"))
 
@@ -1464,7 +1464,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobB])
 
         self.setFWJRAction.execute(self.testJobB["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco2.xml"))
 
@@ -1475,7 +1475,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobC])
 
         self.setFWJRAction.execute(self.testJobC["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco3.xml"))
 
@@ -1486,7 +1486,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobD])
 
         self.setFWJRAction.execute(self.testJobD["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco4.xml"))
 
@@ -1497,7 +1497,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJobE])
 
         self.setFWJRAction.execute(self.testJobE["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco5.xml"))        
 
@@ -1531,7 +1531,7 @@ class JobAccountantTest(unittest.TestCase):
         self.recoMergeJob["state"] = "executing"
         self.stateChangeAction.execute(jobs = [self.recoMergeJob])
         self.setFWJRAction.execute(self.recoMergeJob["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeReco1.xml"))
 
@@ -1540,7 +1540,7 @@ class JobAccountantTest(unittest.TestCase):
         self.aodMergeJob["state"] = "executing"
         self.stateChangeAction.execute(jobs = [self.aodMergeJob])
         self.setFWJRAction.execute(self.aodMergeJob["id"],
-                                   os.path.join(os.getenv("WMCOREBASE"),
+                                   os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "RedneckRecoMergeAod1.xml"))        
 
@@ -1562,19 +1562,19 @@ class JobAccountantTest(unittest.TestCase):
         accountant.setup()
         accountant.algorithm()
 
-        jobReport1 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport1 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco1.xml"))
-        jobReport2 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport2 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco2.xml"))
-        jobReport3 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport3 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco3.xml"))
-        jobReport4 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport4 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco4.xml"))
-        jobReport5 = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReport5 = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergedRedneckReco5.xml"))        
 
@@ -1638,7 +1638,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.aodMergeJob])        
         accountant.algorithm()        
         
-        aodReport = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        aodReport = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                "test/python/WMComponent_t/JobAccountant_t/",
                                                "RedneckRecoMergeAod1.xml"))
         self.verifyFileMetaData(self.aodMergeJob["id"], aodReport[0].files)        
@@ -1657,7 +1657,7 @@ class JobAccountantTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.recoMergeJob])        
         accountant.algorithm()        
 
-        recoReport = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        recoReport = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                "test/python/WMComponent_t/JobAccountant_t/",
                                                "RedneckRecoMergeReco1.xml"))
         self.verifyFileMetaData(self.recoMergeJob["id"], recoReport[0].files)        
@@ -1743,7 +1743,7 @@ class JobAccountantTest(unittest.TestCase):
             testJob.addFile(newFile)
             testJob.associateFiles()
 
-            fwjrPath = os.path.join(os.getenv("WMCOREBASE"),
+            fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                     "test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports",
                                     "FrameworkJobReport-45%02d.xml" % i)
             self.jobs.append((testJob["id"], fwjrPath))
@@ -1962,7 +1962,7 @@ class JobAccountantTest(unittest.TestCase):
         accountant.setup()
         accountant.algorithm()
 
-        jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+        jobReports = readJobReport(os.path.join(WMCore.WMInit.getWMBASE(),
                                                 "test/python/WMComponent_t/JobAccountant_t/",
                                                 "MergeSuccessNoFiles.xml"))
         self.verifyJobSuccess(self.testJob["id"])

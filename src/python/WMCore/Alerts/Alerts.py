@@ -5,8 +5,8 @@ _Alerts_
 WMCore alert system.
 """
 
-__revision__ = "$Id: Alerts.py,v 1.5 2008/11/18 15:14:53 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Alerts.py,v 1.6 2009/09/02 22:22:28 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.DataStructs.Alert import Alert
 from WMCore.WMFactory import WMFactory
@@ -29,7 +29,15 @@ class Alerts:
         Initialize the DAO factory
         """
         myThread = threading.currentThread()
-        queryDialect = myThread.dialect + ".Queries"
+        
+        if myThread.dialect == "oracle":
+            dbName = "Oracle"
+        elif myThread.dialect == "mysql":
+            dbNmae = "MySQL"
+        elif myThread.dialect == "sqlite":
+            dbName = "SQLite"
+            
+        queryDialect = dbName + ".Queries"
         factory = WMFactory("alerts", "WMCore.Alerts")
         self.query = factory.loadObject(queryDialect)
 

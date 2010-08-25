@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.38 2010/03/31 18:24:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Harness.py,v 1.39 2010/04/14 16:04:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.39 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -148,7 +148,6 @@ class Harness:
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
             myThread.dbi = myThread.dbFactory.connect()
             myThread.transaction = Transaction(myThread.dbi)
-            myThread.transaction.commit()
 
             # Attach a worker manager object to the main thread
             if not hasattr(myThread, 'workerThreadManager'):

@@ -11,8 +11,8 @@ in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
 you set {'isolation_level':None} all sql will be implicitly committed and the
 Transaction object will be meaningless.
 """
-__revision__ = "$Id: Transaction.py,v 1.9 2009/07/28 12:52:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Transaction.py,v 1.10 2010/04/14 16:04:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import logging
 import time
@@ -31,7 +31,7 @@ class Transaction(WMObject):
         self.dbi = dbinterface
         self.conn = None
         self.transaction = None
-        self.begin()
+
         # retries when disconnect
         self.retries = 5
         # buffer for losing connection

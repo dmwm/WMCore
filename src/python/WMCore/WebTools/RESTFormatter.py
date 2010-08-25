@@ -2,7 +2,9 @@
 """
 _DASRESTFormatter_
 
-A basic REST formatter
+A basic REST formatter.
+
+Could add YAML via http://pyyaml.org/
 """
 from WMCore.WebTools.Page import TemplatedPage, exposejson, exposexml, exposeatom
 

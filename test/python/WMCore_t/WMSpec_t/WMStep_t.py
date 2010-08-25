@@ -104,6 +104,25 @@ class WMStepTest(unittest.TestCase):
         self.assertEqual(output, {'test': 'nonsense'})
 
         return
+
+
+    def testD_getOutputModule(self):
+        """
+        Test our ability to get an output module
+
+        """
+
+        wmStep = makeWMStep("step2")
+
+        wmStep.data.output.section_('modules')
+        wmStep.data.output.modules.section_('test')
+        setattr(wmStep.data.output.modules.test, 'tester', 'nonsense')
+
+        testModule = wmStep.getOutputModule(moduleName = 'test')
+
+        self.assertEqual(testModule.tester, 'nonsense')
+
+        return
         
 
 

@@ -112,7 +112,7 @@ def runUnitTests():
             __import__(oneModule)
             modules.append(sys.modules[oneModule])
         except Exception, e:
-            print "ERROR: Can't load test case %s - %s" % (oneModule, e)
+            sys.stderr.write("ERROR: Can't load test case %s - %s\n" % (oneModule, e)
             loadFail.append(oneModule)    
 
     load = unittest.defaultTestLoader.loadTestsFromModule  

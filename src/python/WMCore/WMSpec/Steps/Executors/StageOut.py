@@ -11,8 +11,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.23 2010/07/04 20:01:01 meloam Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: StageOut.py,v 1.24 2010/07/04 23:51:32 meloam Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import os
 import os.path
@@ -87,7 +87,7 @@ class StageOut(Executor):
         stageOutCall = {}
         if overrides.has_key("command") and overrides.has_key("option") \
                and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
-            logging.debug('using override in StageOut')
+            logging.critical('using override in StageOut')
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')
@@ -102,6 +102,8 @@ class StageOut(Executor):
             manager.retryPauseTime  = self.step.retryDelay
         else:
             # new style
+	    logging.critical("STAGEOUT IS USING NEW STAGEOUT CODE")
+            print "STAGEOUT IS USING NEW STAGEOUT CODE"
             manager = WMCore.Storage.FileManager.StageOutMgr(
                                 retryPauseTime  = self.step.retryDelay,
                                 numberOfRetries = self.step.retryCount,

@@ -20,7 +20,7 @@ def doOverrides(stepHelper, newStageOut, arguments):
         stepHelper.addOverride('se-name',arguments.get('stageOutSeName'))
         stepHelper.addOverride('lfn-prefix', arguments.get('stageOutLfnPrefix'))
         stepHelper.addOverride('newStageOut',True)
-
+    return stepHelper
         
 def tier0PromptRecoWorkload(workloadName, arguments):
     """
@@ -89,7 +89,7 @@ def tier0PromptRecoWorkload(workloadName, arguments):
     rerecoCmssw.setStepType("CMSSW")
     rerecoStageOut = rerecoCmssw.addStep("stageOut1")
     rerecoStageOut.setStepType("StageOut")
-    doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+    rerecoStageOut = doOverrides(rerecoStageOut,    useNewStageOut, arguments )
     rerecoLogArch = rerecoCmssw.addStep("logArch1")
     rerecoLogArch.setStepType("LogArchive")
     doOverrides(rerecoLogArch,    useNewStageOut, arguments )
@@ -182,10 +182,10 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         mergeRecoCmssw.setStepType("CMSSW")
         mergeRecoStageOut = mergeRecoCmssw.addStep("stageOut1")
         mergeRecoStageOut.setStepType("StageOut")
-        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+        doOverrides(mergeRecoStageOut,    useNewStageOut, arguments )
 
         mergeRecoLogArch = mergeRecoCmssw.addStep("logArch1")
-        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+        doOverrides(mergeRecoLogArch,    useNewStageOut, arguments )
 
         mergeRecoLogArch.setStepType("LogArchive")
 
@@ -227,10 +227,10 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         skimAlcaCmssw.setStepType("CMSSW")
         skimAlcaStageOut = skimAlcaCmssw.addStep("stageOut1")
         skimAlcaStageOut.setStepType("StageOut")
-        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+        doOverrides(skimAlcaStageOut,    useNewStageOut, arguments )
 
         skimAlcaLogArch = skimAlcaCmssw.addStep("logArch1")
-        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+        doOverrides(skimAlcaLogArch,    useNewStageOut, arguments )
 
         skimAlcaLogArch.setStepType("LogArchive")
         skimAlca.addGenerator("BasicNaming")
@@ -268,10 +268,10 @@ def tier0PromptRecoWorkload(workloadName, arguments):
             mergeAlcaCmssw.setStepType("CMSSW")
             mergeAlcaStageOut = mergeAlcaCmssw.addStep("stageOut1")
             mergeAlcaStageOut.setStepType("StageOut")
-            doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+            doOverrides(mergeAlcaStageOut,    useNewStageOut, arguments )
 
             mergeAlcaLogArch = mergeAlcaCmssw.addStep("logArch1")
-            doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+            doOverrides(mergeAlcaLogArch,    useNewStageOut, arguments )
 
             mergeAlcaLogArch.setStepType("LogArchive")
             mergeAlca.addGenerator("BasicNaming")
@@ -309,10 +309,10 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         mergeAodCmssw.setStepType("CMSSW")
         mergeAodStageOut = mergeAodCmssw.addStep("stageOut1")
         mergeAodStageOut.setStepType("StageOut")
-        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+        doOverrides(mergeAodStageOut,    useNewStageOut, arguments )
 
         mergeAodLogArch = mergeAodCmssw.addStep("logArch1")
-        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+        doOverrides(mergeAodLogArch,    useNewStageOut, arguments )
 
         mergeAodLogArch.addOverride('newStageOut',useNewStageOut)
         mergeAod.addGenerator("BasicNaming")

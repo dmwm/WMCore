@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
-__revision__ = "$Id: CMSSW.py,v 1.21 2010/06/18 19:29:46 sfoulkes Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: CMSSW.py,v 1.22 2010/07/04 23:51:32 meloam Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import tempfile
 import subprocess
@@ -87,7 +87,7 @@ class CMSSW(Executor):
             directory = self.step.builder.workingDir,
             architecture = scramArch,
             )
-        
+ 	print "Runing SCRAM"       
         projectOutcome = scram.project()
         if projectOutcome > 0:
             msg = scram.diagnostic()
@@ -105,6 +105,7 @@ class CMSSW(Executor):
         #
         # pre scripts
         #
+	print "RUNNING PRE SCRIPTS"
         for script in self.step.runtime.preScripts:
             # TODO: Exception handling and error handling & logging
             scriptProcess = subprocess.Popen(
@@ -132,6 +133,7 @@ class CMSSW(Executor):
         #
         # pre scripts with scram
         #
+	print "RUNNING SCRAM SCRIPTS"
         for script in self.step.runtime.scramPreScripts:
             "invoke scripts with scram()"
             invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
@@ -169,20 +171,25 @@ class CMSSW(Executor):
                                          cmsswCommand,
                                          cmsswConfig,
                                          cmsswArguments]
-        spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
+        print "Executing CMSSW. args: %s" % args
+	spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
                                          stderrHandle )
 
-        # loop and collect the data
-        while True:
-            (rdready, wrready, errready) = select.select(
-                [stdoutHandle.fileno(),
-                 stderrHandle.fileno()],[],[])
-            # see if the process is still running
-            spawnedChild.poll()
-            if (spawnedChild.returncode != None):
-                break
-            # give the process some time to fill a buffer
-            select.select([], [], [], .1)
+	(stdoutData, stderrData) = spawnedChild.communicate()
+        # the above line replaces the bottom block. I'm unsure of why
+	# nobody used communicate(), but I'm leaving this just in case
+	# AMM Jul 4th, /2010
+	# loop and collect the data
+#        while True:
+#           (rdready, wrready, errready) = select.select(
+#                [stdoutHandle.fileno(),
+#                 stderrHandle.fileno()],[],[])
+#            # see if the process is still running
+#            spawnedChild.poll()
+#            if (spawnedChild.returncode != None):
+#                break
+#            # give the process some time to fill a buffer
+#            select.select([], [], [], .1)
 
         spawnedChild.wait()
         stdoutHandle.close()

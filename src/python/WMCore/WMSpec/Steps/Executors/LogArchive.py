@@ -5,8 +5,8 @@ _Step.Executor.LogArchive_
 Implementation of an Executor for a LogArchive step
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.19 2010/07/04 20:54:59 meloam Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: LogArchive.py,v 1.20 2010/07/04 23:51:32 meloam Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import os
 import os.path
@@ -98,6 +98,7 @@ class LogArchive(Executor):
             manager.retryPauseTime  = self.step.retryDelay
         else:
             # new style
+            print "LOGARCHIVE IS USING NEW STAGEOUT CODE"
             manager = WMCore.Storage.FileManager.StageOutMgr(
                                 retryPauseTime  = self.step.retryDelay,
                                 numberOfRetries = self.step.retryCount,

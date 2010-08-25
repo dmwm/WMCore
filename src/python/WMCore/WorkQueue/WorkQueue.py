@@ -1,6 +1,9 @@
 import time
 from sets import Set
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.WorkQueue.DBSHelper import DBSHelper
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
 
 class _WQElement(WMObject):
     """
@@ -24,9 +27,9 @@ class _WQElement(WMObject):
         self.njobs = njobs
         self.time = time.time()
         self.status = "Available"
-        self.wmSpec = WorkSpecParser(specUrl).getwmSpec()
+        self.wmSpec = WorkSpecParser(specUrl)
 
-    def __cmp__(x, y):
+    def __cmp__(self, x, y):
         tfactor = x.time
         current = time.time()
         weight = 0.01
@@ -46,7 +49,7 @@ class _WQElement(WMObject):
           or None if no match found
         """
         #TODO: Match against conditions dict, and return updated dict with taken resources removed
-        if not _online:
+        if not self._online():
             return None
         #For now just return first matching requirement 
         # Later add some ranking so most restrictive requirements match first
@@ -66,7 +69,7 @@ class _WQElement(WMObject):
         """
         commonLocation = Set(self.blockLocations[self.primaryBlock])
         for locations in self.blockLocations.values():
-            commonLocation = commonLocation.interSection(Set(locations))
+            commonLocation = commonLocation.intersection(Set(locations))
         return list(commonLocation)
     
             
@@ -96,17 +99,22 @@ class WorkQueue(WMObject):
         self.dbsHelper = DBSHelper(dbsUrl)
 
     def addElement(self, specUrl = None, primaryBlock = None, parentBlocks=[], priority = 0, 
-                   whiteList, blackList):
+                   whiteList, blackList, nJobs, dbsUrl):
         """
         _addElement_
         
         TODO: eventually this will be the database update for WorkQueue table set
         """
-        blockLocations = {} # TODO: Should be automated contains both primaryBlock and parentBlock 
+        dbsHelper = DBSHelper(dbsUrl)
+        blockLocations = {primaryBlock:
+                          dbsHelper.getBlockLocations(primaryBlock)} # TODO: Should be automated contains both primaryBlock and parentBlock 
+        for block in parentBlocks:
+            blockLocations[block] = dbsHelper.getBlockLocations(block)
+            
         online = 1 # TODO: Should be automated 
-        newElem = _WQElement(specUrl, primaryBlock, blockLocations, priority, online, njobs, 
-                             whiteList, blackList)
-        self.elements.add[newElem] 
+        newElem = _WQElement(specUrl, primaryBlock, blockLocations, priority, online, 
+                             nJobs, whiteList, blackList)
+        self.elements.append(newElem) 
 
     def match(self, conditions):
         """
@@ -122,6 +130,7 @@ class WorkQueue(WMObject):
                 results.append(element)
                 conditions.pop(matched) #Remove used resource from further matches
         
+        return results
 
     def reorderList(self):
         self.elements.sort()    
@@ -143,7 +152,7 @@ class WorkQueue(WMObject):
             if (not found):
                 print "Element not found nothing changed"
             else:
-                self.ReorderList
+                self.reorderList
                 
     def updateLocationInfo(self):
         
@@ -157,20 +166,27 @@ class WorkQueue(WMObject):
         """
         # update the location information in WorkQueue
         # if this is too much overhead use separate component
-        self.uplateLocationInfo()
+        self.updateLocationInfo()
         subscriptions = []
         #for site in siteJobs.key():
         # might just return one  block
-        blocks = self.match(siteJobs)
-        # create fileset workflow and subscription
-        #generate fileset name from multiple blocks
-        #generate workflow name from multiple blocks
-        filesetName = "Fileset"
-        workflowName = "Workflow"
-        wmbsHelper = WMBSHelper(self.wmSpec)
-        subscriptions = wmbsHelper.createSubscription(fileName=workflowName,
-                                                workflowName=workflowName)
-        return subscriptions
+        wqElementList = self.match(siteJobs)
+        for wqElement in wqElementList:
+            wmSpec = WorkSpecParser(wqElement.specUrl)
+            wmbsHelper = WMBSHelper(wmSpec)
+            # create fileset workflow and subscription
+            # generate workflow name from wmSpec names
+            workflowName= "Workflow"
+            
+            results = {}
+            for site in wqElementList["sites"]: 
+                # generate fileset name from multiple blocks using some convention.
+                # fileset should be blocks processed in the same sites
+                filesetName = "Fileset"
+                subscription = wmbsHelper.createSubscription(fileName=workflowName,
+                                                    	     workflowName=workflowName)
+                results[site] = subscription
+        return results
     
     def gotWork(self, subscription):
         """
@@ -203,12 +219,13 @@ class WorkQueue(WMObject):
         """
         Take and queue work from a WMSpec
         """
-        spec = workSpecParser(wmspec)
+        spec = WorkSpecParser(wmspec)
         for name, blocks, jobs in spec:
             self.addElement(specUrl = wmspec,
                             primaryBlock = name,
                             parentBlocks = [],
-                            priority = workSpecParser.priority(),
-                            whitelist = workSpecParser.whitelist(),
-                            blacklist = workSpecParser.blacklist()
-                            )
+                            priority = spec.priority(),
+                            whitelist = spec.siteWhitelist(),
+                            blacklist = spec.siteBlacklist(),
+                            nJobs = jobs,
+                            dbsUrl = spec.wmSpec.dbsUrl)

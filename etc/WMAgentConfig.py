@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.9 2010/04/07 15:08:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.10 2010/04/09 18:06:00 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import os
 import WMCore.WMInit
@@ -126,9 +126,7 @@ config.RetryManager.componentDir  = config.General.workDir + "/RetryManager"
 config.RetryManager.logLevel = "DEBUG"
 config.RetryManager.pollInterval = 10
 config.RetryManager.coolOffTime = {"create": 10, "submit": 10, "job": 10}
-config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
-config.RetryManager.pluginName = "CreateRetryAlgo"
-config.RetryManager.WMCoreBase = WMCore.WMInit.getWMBASE()
+config.RetryManager.pluginName = "RetryAlgo"
 
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"

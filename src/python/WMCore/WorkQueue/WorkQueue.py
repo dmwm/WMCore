@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.133 2010/08/03 16:23:48 sryu Exp $"
-__version__ = "$Revision: 1.133 $"
+__revision__ = "$Id: WorkQueue.py,v 1.134 2010/08/05 15:30:10 sryu Exp $"
+__version__ = "$Revision: 1.134 $"
 
 
 import time
@@ -657,6 +657,7 @@ class WorkQueue(WorkQueueBase):
         counter = 0
         if self.parent_queue:
             for team in self.params['Teams']:
+                self.logger.info("Getting Work for Team: %s" % team)
                 totalUnits = []
                 if not resources:
                     from WMCore.ResourceControl.ResourceControl import ResourceControl
@@ -684,6 +685,7 @@ class WorkQueue(WorkQueueBase):
                             totalUnits.extend(self._splitWork(wmspec,
                                                         element['element_id'],
                                                         element.get('data')))
+                            self.logger.info("Getting element form parent queue: %s" % element.get('data'))
 
                         with self.transactionContext():
                             for unit in totalUnits:

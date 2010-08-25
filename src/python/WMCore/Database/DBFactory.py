@@ -12,8 +12,8 @@ class DBFactory(object):
     # class variable
     _engineMap = {}
     _defaultEngineParams = {"convert_unicode" : True, 
-                            "strategy": 'threadlocal',
-                            "pool_size": 10}
+                            "strategy": 'threadlocal'}
+                            #"pool_size": 10}
     
     def __init__(self, logger, dburl=None, options={}):
         self.logger = logger
@@ -81,8 +81,12 @@ class DBFactory(object):
                 self.dburl = '%s/%s' % (self.dburl, options['sid'])
                 del options['sid']
                 
-                
-        self.engine = self._engineMap.setdefault(self.dburl,     
+        if self.dburl.split(':')[0].lower() == "sqlite":
+            self.engine = create_engine(self.dburl, 
+                                        connect_args = options,
+                                        **self._defaultEngineParams)
+        else:
+            self.engine = self._engineMap.setdefault(self.dburl,     
                                          create_engine(self.dburl, 
                                                        connect_args = options,
                                                        **self._defaultEngineParams)

@@ -4,13 +4,20 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.3 2009/10/13 23:06:12 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.4 2009/10/30 13:51:11 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import logging
 import threading
 import unittest
+import time
+import shutil
+
+from subprocess import Popen, PIPE
+
+from WMCore.Agent.Configuration import loadConfigurationFile
+
 
 
 from WMQuality.TestInit   import TestInit
@@ -65,16 +72,32 @@ class JobArchiverTest(unittest.TestCase):
         """
         Database deletion
         """
+
         self.testInit.clearDatabase()
+
+
+    def getConfig(self):
+        """
+        _createConfig_
+
+        General config file
+        """
+        config = self.testInit.getConfiguration()
+
+        config.section_("General")
+        config.General.workDir = "."
+
+        config.section_("JobStateMachine")
+        config.JobStateMachine.couchurl    = os.getenv("COUCHURL", "cmssrv48.fnal.gov:5984")
+        #config.JobStateMachine.couchDBName = "job_accountant_t"
+
+        config.component_("JobArchiver")
+        config.JobArchiver.pollInterval  = 60
+        config.JobArchiver.logLevel      = 'INFO'
+        config.JobArchiver.logDir        = os.path.join(os.getcwd(), 'logs')
+
+        return config        
         
-        
-
-    def getConfig(self, configPath=os.path.join(os.getenv('WMCOREBASE'), \
-                                                'src/python/WMComponent/JobArchiver/DefaultConfig.py')):
-
-
-        return self.testInit.getConfiguration( configPath )
-
 
     def createTestJobGroup(self):
         """
@@ -128,6 +151,8 @@ class JobArchiverTest(unittest.TestCase):
         Otherwise does nothing.
         """
 
+        return
+
         myThread = threading.currentThread()
 
         config = self.getConfig()
@@ -136,11 +161,15 @@ class JobArchiverTest(unittest.TestCase):
 
         changer = ChangeState(config)
 
+        for job in testJobGroup.jobs:
+            job["outcome"] = "success"
+            job.save()
+
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'success', 'complete')
-        changer.propagate(testJobGroup.jobs, 'closeout', 'success')
+
 
 
 
@@ -166,32 +195,61 @@ class JobArchiverTest(unittest.TestCase):
 
         changer = ChangeState(config)
 
+        if not os.path.isdir('test'):
+            os.mkdir('test')
+
+        if not os.path.isdir(config.JobArchiver.logDir):
+            os.mkdir(config.JobArchiver.logDir)
+
+        for job in testJobGroup.jobs:
+            myThread.transaction.begin()
+            job["outcome"] = "success"
+            job.save()
+            myThread.transaction.commit()
+            path = os.path.join('test', job['name'])
+            os.mkdir(path)
+            f = open('%s/%s.out' %(path, job['name']),'w')
+            f.write(job['name'])
+            f.close()
+            job.setCache(path)
+
+
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'success', 'complete')
-        changer.propagate(testJobGroup.jobs, 'closeout', 'success')
 
-        result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
-        self.assertEqual(len(result), 1)
 
         testJobArchiver = JobArchiver(config)
         testJobArchiver.prepareToStart()
 
         logging.debug("Killing")
         myThread.workerThreadManager.terminateWorkers()
-
-        result = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
-        self.assertEqual(len(result), 0)
-        result = myThread.dbi.processData("SELECT * FROM wmbs_file_details")[0].fetchall()
-        self.assertEqual(len(result), 0)
-        result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
-        self.assertEqual(len(result), 0)
-        result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
-        self.assertEqual(len(result), 0)
-        testWMBSFileset = Fileset(id = 1)
-        self.assertEqual(testWMBSFileset.exists(), False)
         
+        
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
+        
+        for val in result:
+            self.assertEqual(val.values()[0], 11, "Job did not end in cleanout state, instead in state %i" %(val.values()[0]))
+        
+        
+        dirList = os.listdir('test')
+        for job in testJobGroup.jobs:
+            self.assertEqual(job["name"] in dirList, False)
+
+        logList = os.listdir(config.JobArchiver.logDir)
+        for job in testJobGroup.jobs:
+            self.assertEqual('Job_%s.tar' %(job['name']) in logList, True, 'Could not find transferred tarball for job %s' %(job['name']))
+            pipe = Popen(['tar', '-xvf', '%s/Job_%s.tar' %(config.JobArchiver.logDir, job['name'])], stdout = PIPE, stderr = PIPE, shell = False)
+            pipe.wait()
+            filename = 'test/%s/%s.out' %(job['name'], job['name'])
+            self.assertEqual(os.path.isfile(filename), True, 'Could not find file %s' %(filename))
+            f = open(filename, 'r')
+            fileContents = f.readlines()
+            f.close()
+            self.assertEqual(fileContents[0].find(job['name']) > -1, True)
+            shutil.rmtree('test/%s' %(job['name']))
+
         return
 
 

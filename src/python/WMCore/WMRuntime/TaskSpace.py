@@ -70,7 +70,7 @@ class TaskSpace:
             raise RuntimeError, msg
 
         wmsandboxLoc = inspect.getsourcefile(WMSandbox)
-        workloadPcl = wmsandboxLoc.replace("__init__.py","WMWorkload.pcl")
+        workloadPcl = wmsandboxLoc.replace("__init__.py","WMWorkload.pkl")
 
         handle = open(workloadPcl, 'r')
         wmWorkload = pickle.load(handle)
@@ -90,7 +90,7 @@ class TaskSpace:
         Get the WMTask instance from the workload
 
         """
-        return self.workload.getTask(self.taskName)
+        return self.workload.getTaskByPath(self.taskName)
 
 
     def stepSpaces(self):

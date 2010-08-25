@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/08/13 23:58:47 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/08/24 09:53:19 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -22,6 +22,8 @@ config.PhEDExInjector.logLevel = 'INFO'
 config.PhEDExInjector.pollInterval = 60 * 30 # half hour
 config.PhEDExInjector.newInjectionHandler = \
     'WMComponent.PhEDExInjector.NewInjectionHandler'
+config.PhEDExInjector.phedexurl = \
+    'https://localhost:9999/phedex/datasvc/json/tbedi/'
 config.component_("DBSUpload")
 #The log level of the component. 
 config.DBSUpload.logLevel = 'INFO'

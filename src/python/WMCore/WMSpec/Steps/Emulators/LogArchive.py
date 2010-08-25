@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 """
-_StageOut_
+_LogArchive_
 
-Basic Emulator for StageOut Step
+Basic Emulator for LogArchive Step
 
 """
 
 from WMCore.WMSpec.Steps.Emulator import Emulator
 
-class StageOut(Emulator):
+class LogArchive(Emulator):
     """
-    _StageOut_
+    _LogArchive_
 
-    Emulate the execution of a StageOut Step
+    Emulate the execution of a LogArchive Step
 
     """
     def pre(self):
@@ -28,7 +28,7 @@ class StageOut(Emulator):
         """
         _execute_
 
-        Emulate StageOut execution
+        Emulate LogArchive execution
 
         """
         self.step.section_("execution")
@@ -36,7 +36,7 @@ class StageOut(Emulator):
         self.step.section_("emulation")
         self.step.emulation.emulatedBy = str(self.__class__.__name__)
 
-        print "Emulating StageOut Step"
+        print "Emulating LogArchive Step"
 
 
     def post(self):

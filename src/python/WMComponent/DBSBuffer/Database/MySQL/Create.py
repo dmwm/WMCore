@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.16 2009/01/12 23:02:34 afaq Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Create.py,v 1.17 2009/05/18 20:13:28 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -57,7 +57,7 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_file (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
              lfn          VARCHAR(255) NOT NULL,
-             size         BIGINT,
+             filesize     BIGINT,
              events       INTEGER,
              cksum        BIGINT UNSIGNED,
 	     dataset 	  BIGINT UNSIGNED   not null,
@@ -77,9 +77,9 @@ class Create(DBCreator):
 
         self.create["06dbsbuffer_file_runlumi_map"] = \
           """CREATE TABLE dbsbuffer_file_runlumi_map (
-             file    INTEGER NOT NULL,
-             run     INTEGER NOT NULL,
-             lumi    INTEGER NOT NULL,
+             filename    INTEGER NOT NULL,
+             run         INTEGER NOT NULL,
+             lumi        INTEGER NOT NULL,
              FOREIGN KEY (file) references dbsbuffer_file(id)
                ON DELETE CASCADE)ENGINE=InnoDB"""
 
@@ -91,10 +91,10 @@ class Create(DBCreator):
 
         self.create["08dbsbuffer_file_location"] = \
           """CREATE TABLE dbsbuffer_file_location (
-             file     INTEGER NOT NULL,
+             filename INTEGER NOT NULL,
              location INTEGER NOT NULL,
              UNIQUE(file, location),
-             FOREIGN KEY(file)     REFERENCES dbsbuffer_file(id)
+             FOREIGN KEY(filename) REFERENCES dbsbuffer_file(id)
                ON DELETE CASCADE,
              FOREIGN KEY(location) REFERENCES dbsbuffer_location(id)
                ON DELETE CASCADE)ENGINE=InnoDB"""

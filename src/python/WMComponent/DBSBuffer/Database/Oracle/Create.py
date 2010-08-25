@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/05/15 16:19:13 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/05/18 20:14:37 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 import logging
@@ -98,7 +98,7 @@ FOR EACH ROW
 CREATE TABLE dbsbuffer_file (
      id                    NUMBER(11)    NOT NULL ENABLE,
      lfn                   VARCHAR2(255) NOT NULL ENABLE,
-     "size"                NUMBER(11),
+     filesize              NUMBER(11),
      events                INTEGER,
      cksum                 NUMBER(11),
      dataset 	           NUMBER(11)    NOT NULL ENABLE,
@@ -143,10 +143,10 @@ CREATE TABLE dbsbuffer_file_parent (
 
         self.create["06dbsbuffer_file_runlumi_map"] = """
 CREATE TABLE dbsbuffer_file_runlumi_map (
-     "file"  CONSTRAINT dbsbuffer_file_runlumi_map_i REFERENCES dbsbuffer_file(id)
+     filename  CONSTRAINT dbsbuffer_file_runlumi_map_i REFERENCES dbsbuffer_file(id)
      ON DELETE CASCADE,
-     run     INTEGER    NOT NULL ENABLE,
-     lumi    INTEGER    NOT NULL ENABLE
+     run       INTEGER    NOT NULL ENABLE,
+     lumi      INTEGER    NOT NULL ENABLE
      )"""
 
 
@@ -183,11 +183,11 @@ FOR EACH ROW
 
         self.create["08dbsbuffer_file_location"] = """
 CREATE TABLE dbsbuffer_file_location (
-     "file"     CONSTRAINT dbsbuffer_file_location_file REFERENCES dbsbuffer_file(id)
+     filename   CONSTRAINT dbsbuffer_file_location_file REFERENCES dbsbuffer_file(id)
      ON DELETE CASCADE,
      location   CONSTRAINT dbsbuffer_file_location_loc REFERENCES
      dbsbuffer_location(id) ON DELETE CASCADE,
-     CONSTRAINT dbsbuffer_file_location_uniq UNIQUE ("file", location)
+     CONSTRAINT dbsbuffer_file_location_uniq UNIQUE (filename, location)
      )"""
 
         

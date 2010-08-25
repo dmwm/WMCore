@@ -5,8 +5,8 @@ SQLite implementation of AddRunLumi
 
 """
 
-__revision__ = "$Id: AddRunLumi.py,v 1.1 2009/05/14 16:21:51 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: AddRunLumi.py,v 1.2 2009/05/18 20:16:10 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 
@@ -19,7 +19,7 @@ class AddRunLumi(MySQLAddRunLumi):
 
     """
 
-    sql = """INSERT INTO dbsbuffer_file_runlumi_map (file, run, lumi) 
+    sql = """INSERT INTO dbsbuffer_file_runlumi_map (filename, run, lumi) 
        SELECT id, :run, :lumi from dbsbuffer_file
        where lfn = :lfn"""
 

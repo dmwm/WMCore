@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.20 2009/09/17 09:43:00 metson Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: RESTApi.py,v 1.21 2009/09/22 15:13:43 metson Exp $"
+__version__ = "$Revision: 1.21 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
@@ -57,7 +57,7 @@ class RESTApi(WebAPI):
                                  'version': 1}})
                             
         # TODO: implement HEAD & TRACE
-        self.supporttypes = self.formatter.supporttypes
+        self.supporttypes = self.formatter.supporttypes.keys()
         
     def set_model(self, config):
         factory = WMFactory('webtools_factory')
@@ -105,6 +105,7 @@ class RESTApi(WebAPI):
         return self.formatResponse(data)
     
     def formatResponse(self, data):
+        print self.supporttypes
         datatype = accept(self.supporttypes)
         
         data = self.formatter.format(data, datatype)

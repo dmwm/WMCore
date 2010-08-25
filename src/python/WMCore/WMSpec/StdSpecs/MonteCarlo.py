@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# pylint: disable-msg=C0301,W0142
 """
 MonteCarlo.py
 
@@ -7,15 +8,12 @@ Created by Dave Evans on 2010-08-17.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
+
 import os
 
 
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.Cache.WMConfigCache import ConfigCache
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.Configuration import ConfigSection
 
 
@@ -27,10 +25,31 @@ class MoveToStdBase:
         self.workloadName = None
         self.owner = None
         self.acquisitionEra = None
+        self.maxMergeSize = None
+        self.unmergedLFNBase = None
+        self.globalTag = None
+        self.minMergeSize = None
+        self.primaryDataset = None
+        self.mergedLFNBase = None
+        self.maxMergeEvents = None
+        self.couchConfigDoc = None
+        self.dbsUrl = None
+        self.processingVersion = None
+        self.scramArch = None
+        self.siteWhitelist = None
+        self.siteBlacklist = None
+        self.frameworkVersion = None
+        self.couchUrl = None
+        self.couchDBName = None
+        self.emulation = None
+        
         
         
         
     def newWorkload(self):
+        """
+        Create a new workload instance
+        """
         workload = newWorkload(self.workloadName)
         workload.setOwner(self.owner)
         workload.data.properties.acquisitionEra = self.acquisitionEra
@@ -186,7 +205,13 @@ class MonteCarloWorkloadFactory(MoveToStdBase):
         production.addGenerator("BasicCounter")
         #TODO: Seed Generator
         production.setTaskType("Production")
-        
+        production.addProduction(**{"ProductionArgs": "GoHere"})
+    
+        prodTaskCmsswHelper = productionCmssw.getTypeHelper()
+        prodTaskCmsswHelper.setGlobalTag(self.globalTag)
+        prodTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
+                                           scramArch = self.scramArch)
+        prodTaskCmsswHelper.setConfigCache(self.couchUrl, self.couchConfigDoc, dbName = self.couchDBName)
     
         for omod in self.getOutputModules():
             self.addOutputModule( production,  omod['moduleName'], self.primaryDataset,
@@ -200,7 +225,7 @@ class MonteCarloWorkloadFactory(MoveToStdBase):
         
         Use the config cache URL to pull the PSet Tweak and grab the output modules it defines
         
-        #TODO: Move to ConfigCache API, this will be general for anything dealing with the config cache
+        TODO: Move to ConfigCache API, this will be general for anything dealing with the config cache
         
         """
         config = ConfigSection("ConfigCache")
@@ -220,12 +245,13 @@ class MonteCarloWorkloadFactory(MoveToStdBase):
         
 
 def getTestArguments():
+    """generate some test data"""
     args = {}
     args['AcquisitionEra'] = "CSA2010"
     args['Requestor'] = "evansde77"
     args['CMSSWVersion'] = "CMSSW_3_7_1"
     args["ScramArch"] =  "slc5_ia32_gcc434"
-    args["ProcessingVersion"]= "v2scf"
+    args["ProcessingVersion"] = "v2scf"
     args["SkimInput"] = "output"
     args["GlobalTag"] = "GR10_P_v4::All"
     
@@ -241,8 +267,8 @@ def getTestArguments():
     return args
 
 def main():
-    
-    from WMCore.DataStructs.Job import Job
+    """main functionf for testing"""
+    #from WMCore.DataStructs.Job import Job
     
     factory = MonteCarloWorkloadFactory()
     workload = factory("derp", getTestArguments())
@@ -251,7 +277,7 @@ def main():
     task = workload.getTask('Production')
 
     task.build(os.getcwd())
-    task.execute(Job("job1"))
+    #task.execute(Job("job1"))
 
 if __name__ == '__main__':
     main()

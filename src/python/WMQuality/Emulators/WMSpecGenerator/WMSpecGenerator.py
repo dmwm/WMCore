@@ -3,13 +3,14 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMSpecGenerator.py,v 1.1 2010/02/08 22:21:11 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMSpecGenerator.py,v 1.2 2010/02/23 17:50:03 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import os
 import shutil
 
+from WMCore.WMSpec.StdSpecs import ReReco
 from Samples.BasicProductionWorkload import createWorkload as BasicProductionWorkload
 from Samples.BasicProcessingWorkload import createWorkload as BasicProcessingWorkload
 #from Samples.MultiTaskProcessingWorkload import createWorkload as MultiTaskProcessingWorkload
@@ -34,11 +35,14 @@ class WMSpecGenerator(object):
 
     def createProductionSpec(self, specName, returnType="spec"):
         spec = BasicProductionWorkload(specName)
-        if returnType != "spec":
+        if returnType == "file":
+            specUrl = self._save(spec)
+            return specUrl
+        elif returnType == "spec":
+            spec
+        else:
             specUrl = self._save(spec)
             return spec, specUrl
-        else:
-            spec
     
     def createProcessingSpec(self, specName, returnType="spec"):
         spec = BasicProcessingWorkload(specName)

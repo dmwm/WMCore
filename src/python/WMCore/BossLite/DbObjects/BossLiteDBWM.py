@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.10 2010/05/18 13:46:05 spigafi Exp $"
-__revision__ = "$Revision: 1.10 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.11 2010/05/19 13:26:19 spigafi Exp $"
+__revision__ = "$Revision: 1.11 $"
 
 import threading
 
@@ -335,14 +335,14 @@ class BossLiteDBWM(BossLiteDBInterface):
             raise NotImplementedError 
     
     @dbTransaction
-    def jobLoadByRunningAttr(self, attribute, binds):
+    def jobLoadByRunningAttr(self,  binds, limit = None):
         """
         put your description here
         """
         
         action = self.engine.daofactory(classname = "Job.LoadByRunningJobAttr")
-        result = action.execute(column = attribute,
-                                value = binds,
+        result = action.execute(binds = binds,
+                                limit = limit,
                                 conn = self.engine.getDBConn(),
                                 transaction = self.existingTransaction)
         

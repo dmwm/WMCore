@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.7 2010/04/20 15:33:23 spigafi Exp $"
-__revision__ = "$Revision: 1.7 $"
+__version__ = "$Id: Task.py,v 1.8 2010/04/21 10:55:10 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 import os.path
 import threading
@@ -92,10 +92,10 @@ class Task(DbObject):
     @dbTransaction
     def exists(self, noDB = False):
         """
-        If the job exists, return ID
+        If the task exists, return ID
         
         """
-
+        
         if not noDB:
             action = self.daofactory(classname = 'Task.Exists')
             id = action.execute(name = self.data['name'],
@@ -112,13 +112,12 @@ class Task(DbObject):
         return id
 
 
-
     ####################################################################
 
     @dbTransaction
-    def save(self):
+    def save(self, deep = True):
         """
-        Save the task if there is new information in it.
+        Save the task if there is new information in it.    
         """
         
         status = 0
@@ -128,14 +127,14 @@ class Task(DbObject):
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-            
         else:
             self.create()
         
-        for job in self.jobs:
-                job.save()
-                status += 1
-                
+        if deep : 
+            for job in self.jobs:
+                    job.save()
+                    status += 1
+                    
         return status
 
     #########################################################################
@@ -143,27 +142,24 @@ class Task(DbObject):
     @dbTransaction
     def create(self):
         """
-        Create a new task in the database
-        -> at this time, no information about the 'id' is stored inside 
-        the new object, to fix (NdFilippo)
-        
+        Create a new task in the database      
         """
+        
         action = self.daofactory(classname = "Task.New")
         action.execute(binds = self.data,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction)
 
-        return
+        return self.exists()
 
     ###########################################################################
 
     @dbTransaction
-    def load(self, deep = False):
+    def load(self, deep = True):
         """
-        Load a task
-        -> 'deep = True' is the default (NdFilippo)
+        Load a task     
+        """
         
-        """
         if self.data['id'] > 0:
             action = self.daofactory(classname = "Task.SelectTask")
             result = action.execute(value = self.data['id'],
@@ -203,9 +199,8 @@ class Task(DbObject):
     def loadJobs(self):
         """
         Load jobs from the database
-
         """
-        # uh?
+        
         if self.data['id'] < 0:
             self.exists()
         
@@ -228,19 +223,11 @@ class Task(DbObject):
 
     def update(self, deep = True):
         """
-        update task object from database (with all jobs)
+        update task object from database (with all jobs)       
         """
         
-        status = 0
-
-        self.save()
-
-        # probably redundant...
-        if deep:
-            for job in self.jobs:
-                job.update(deep)
-                status += 1
-
+        status = self.save(deep)
+        
         # return number of entries updated
         return status
 
@@ -251,6 +238,7 @@ class Task(DbObject):
         """
         remove task object from database (with all jobs)
         """
+        
         action = self.daofactory(classname = 'Task.Delete')
 
         # verify data is complete
@@ -272,17 +260,7 @@ class Task(DbObject):
         return 1
 
     
-
     ########################################################################
-    #  This is where I stopped doing anything
-    ########################################################################
-
-
-
-
-
-
-
 
     def appendJob(self, job):
         """

@@ -2,9 +2,10 @@
 """
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
-__revision__ = "$Id: WMBSHelper.py,v 1.3 2009/05/21 18:22:54 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.4 2009/06/25 16:47:48 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
+from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
@@ -21,40 +22,38 @@ class WMBSHelper:
         self.wmSpec = wmSpec
         self.fileset = None
         self.workflow = None
+        self.subscription = None
         
-        # un pickle the object 
-        #self.wmSpec = unpickled wmspeck
-        pass
-    
-    def createWorkflow(self, name):
+    def createWorkflow(self):
         # create workflow
-        # make up workflow name from task name 
+        # make up workflow name from task name
+        workflowName = ("%s-%s-%s" % (self.wmSpec.name, self.wmSpec.topLevelTaskName,
+                                     self.wmSpec.owner))
         self.workflow = Workflow(self.wmSpec.specUrl, 
-                                 self.wmSpec.owner, name, 
-                                 self.wmSpec.topLevelTask)
+                                 self.wmSpec.owner, workflowName, 
+                                 self.wmSpec.topLevelTaskName)
         self.workflow.create()
         
         return self.workflow
     
-    def createFilesset(self, name):
+    def createFilesset(self):
         # create fileset
         # make up fileset name from task name 
-        self.fileset = Fileset(name)
+        filesetName = ("%s-%s" % (self.wmSpec.name, self.wmSpec.topLevelTaskName))
+        self.fileset = Fileset(filesetName)
         self.fileset.create()
         return self.fileset
         
         
-    def createSubscription(self, filesetName=None, workflowName=None):
+    def createSubscription(self):
         """
         _createSubscription_
         
         create the wmbs subscription by a given fileset name and workflow name
         """
-        if self.fileset == None:
-            self.createFilesset(filesetName)
-        if self.workflow == None:
-            self.createWorkflow(workflowName)
-        self.subscription = Subscription(fileset, workflow)
+        self.createFilesset()
+        self.createWorkflow()
+        self.subscription = Subscription(self.fileset, self.workflow)
         return self.subscription
     
     def createFiles(self, dbsFiles, locations):

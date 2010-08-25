@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.31 2009/06/05 18:38:18 mnorman Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: DBCore.py,v 1.32 2010/01/19 17:29:10 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -58,29 +58,15 @@ class DBInterface(WMObject):
         
         returns a list of sqlalchemy.engine.base.ResultProxy objects
         """
-        try:
-            WMCore.WMLogging.sqldebug ('DBInterface.executebinds - sql : %s' % s)
-            WMCore.WMLogging.sqldebug ('DBInterface.executebinds - binds : %s' % b)
-            
-            result = ResultSet()
-            resultproxy = None
-            if b == None: 
-                resultproxy = connection.execute(s)
-            else: 
-                resultproxy = connection.execute(s, b)
-            result.add(resultproxy)
-            resultproxy.close()
-            return result
-        
-        except Exception, e:
-            self.logger.exception('DBInterface.executebinds - exception:%s' % e)
-            WMCore.WMLogging.sqldebug('DBInterface.executebinds - connection type: %s' % type(connection))
-            WMCore.WMLogging.sqldebug('DBInterface.executebinds - connection %s' % connection)
-            WMCore.WMLogging.sqldebug('DBInterface.executebinds - connection dialect %s' % connection.dialect)
-            self.logger.debug('DBInterface.executebinds - sql : %s' % s)
-            self.logger.debug('DBInterface.executebinds - binds : %s' % b)
-            raise
-        
+        result = ResultSet()
+        resultproxy = None
+        if b == None: 
+            resultproxy = connection.execute(s)
+        else: 
+            resultproxy = connection.execute(s, b)
+        result.add(resultproxy)
+        resultproxy.close()
+        return result
 
     def executemanybinds(self, s=None, b=None, connection=None):
         """
@@ -116,26 +102,13 @@ class DBInterface(WMObject):
         """
         Now inserting or updating many
         """
-        try:
-            WMCore.WMLogging.sqldebug ('%s DBInterface.executemanybinds - sql : %s' % (connection.dialect, s))
-            WMCore.WMLogging.sqldebug ('%s DBInterface.executemanybinds - binds : %s' % (connection.dialect, b))
-            #Maybe need to get the cursor???
-            result = connection.execute(s, b)
-            return self.makelist(result)
-        except Exception, e:
-            self.logger.exception('DBInterface.executemanybinds - exception:%s' % e)
-            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection type: %s' % type(connection))
-            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection %s' % connection)
-            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
-            self.logger.debug('DBInterface.executemanybinds - sql : %s' % s)
-            self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
-            raise
+        result = connection.execute(s, b)
+        return self.makelist(result)
     
     def connection(self):
         """
         Return a connection to the engine (from the connection pool)
         """
-
         return self.engine.connect()
 
     
@@ -163,68 +136,41 @@ class DBInterface(WMObject):
             if not transaction: 
                 WMCore.WMLogging.sqldebug("transaction created in DBInterface")
                 trans = connection.begin()
-            try:
-                for i in sqlstmt:
-                    WMCore.WMLogging.sqldebug('''The following statement is not using binds!! \n 
-                        %s''' % i)
+
+            for i in sqlstmt:
+                r = self.executebinds(i, connection=connection)
+                result.append(r)
                     
-                    r = self.executebinds(i, connection=connection)
-                    result.append(r)
-                    
-                if not transaction: 
-                    WMCore.WMLogging.sqldebug("committing transaction in DBInterface")
-                    trans.commit()
-            except Exception, e:
-                if not transaction: 
-                    WMCore.WMLogging.sqldebug("rolling back in DBInterface")
-                    trans.rollback()
-                self.logger.exception(e)
-                raise 
+            if not transaction: 
+                trans.commit()
             
         elif len(binds) > len(sqlstmt) and len(sqlstmt) == 1:
             #Run single SQL statement for a list of binds - use execute_many()
             if not transaction: 
-                WMCore.WMLogging.sqldebug("transaction created in DBInterface")
                 trans = connection.begin()
             while(len(binds) > self.maxBindsPerQuery):
                 result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
                                                conn=connection, transaction = True))
                 binds = binds[self.maxBindsPerQuery:]
-            try:
-                for i in sqlstmt:
-                    result.extend(self.executemanybinds(i, binds, connection=connection))
-                if not transaction: 
-                    WMCore.WMLogging.sqldebug("committing transaction in DBInterface")
-                    trans.commit()
-            except Exception, e:
-                if not transaction: 
-                    WMCore.WMLogging.sqldebug("rolling back in DBInterface")
-                    trans.rollback()
-                self.logger.exception(e)
-                raise
-            
+
+            for i in sqlstmt:
+                result.extend(self.executemanybinds(i, binds, connection=connection))
+            if not transaction: 
+                trans.commit()
+
         elif len(binds) == len(sqlstmt):
             # Run a list of SQL for a list of binds
             if not transaction: 
-                WMCore.WMLogging.sqldebug("DBInterface.processData transaction created")
                 trans = connection.begin()
-            try:
-                for i, s in enumerate(sqlstmt):
-                    b = binds[i]
+
+            for i, s in enumerate(sqlstmt):
+                b = binds[i]
                     
-                    r = self.executebinds(s, b, connection=connection)
-                    result.append(r)
+                r = self.executebinds(s, b, connection=connection)
+                result.append(r)
                     
-                if not transaction: 
-                    WMCore.WMLogging.sqldebug("DBInterface.processData committing transaction")
-                    trans.commit()
-            except Exception, e:
-                if not transaction: 
-                    WMCore.WMLogging.sqldebug("DBInterface.processData rolling back transaction")
-                    trans.rollback()
-                self.logger.exception(e)
-                raise
-            
+            if not transaction: 
+                trans.commit()
         else:
             self.logger.exception(
                 "DBInterface.processData Nothing executed, problem with your arguments")

@@ -6,13 +6,13 @@ MySQL implementation of BossLite.Jobs.Save
 """
 
 __all__ = []
-__revision__ = "$Id: GetJobs.py,v 1.1 2010/03/30 10:20:49 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetJobs.py,v 1.2 2010/04/15 20:52:22 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetJobs(DBFormatter):
-    sql = """SELECT job_id as jobId, task_id as taskId,
+    sql = """SELECT id as id, job_id as jobId, task_id as taskId,
                 name as name, executable as executable, events as events,
                 arguments as arguments, stdin as StandardInput,
                 stdout as StandardOutput, stderr as StandardError,
@@ -32,6 +32,7 @@ class GetJobs(DBFormatter):
         final = []
         for entry in form:
             result = {}
+            result['id']               = entry['id']
             result['jobId']            = entry['jobid']
             result['taskId']           = entry['taskid']
             result['name']             = entry['name']

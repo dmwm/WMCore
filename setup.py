@@ -5,10 +5,11 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser
 import os, sys
-
+import coverage
 try:
     from pylint import lint
-    #PyLinter
+    import coverage
+    #PyLinter and coverage aren't standard, but aren't strictly necessary
 except:
     pass
 
@@ -38,13 +39,51 @@ def lint_files(files):
               '--output-format=parseable', 
               '--reports=n', ]
     input.extend(files)
-    try:
-        lint_result = lint.Run(input)
-    except NameError:
-        print "In order to run lint, you must have pylint installed"
-        print "lint failure."
-        sys.exit(1)
+    lint_result = lint.Run(input)
     return lint_result.linter.stats
+
+def runUnitTests():
+    # runs all the unittests, returning the testresults object
+    testfiles = []
+    # Add the test and src directory to the python path
+    mydir = os.getcwd()
+    # todo: not portable
+    testspypath = '/'.join([mydir, 'test/python/'])
+    srcpypath = '/'.join([mydir, 'src/python/']) 
+    sys.path.append(testspypath)
+    sys.path.append(srcpypath)
+    
+    # Walk the directory tree
+    for dirpath, dirnames, filenames in os.walk('./test/python/WMCore_t'):
+        # skipping CVS directories and their contents
+        pathelements = dirpath.split('/')
+        if not 'CVS' in pathelements:
+            # to build up a list of file names which contain tests
+            for file in filenames:
+                if file not in ['__init__.py']:
+                    if file.endswith('_t.py'):
+                        testmodpath = pathelements[3:]
+                        testmodpath.append(file.replace('.py', ''))
+                        testfiles.append('.'.join(testmodpath))
+                        
+    sys.stderr = open('/dev/null', 'w')
+    sys.stdout = open('/dev/null', 'w')
+    
+    testsuite = TestSuite()
+    failedTestFiles = []
+    for test in testfiles:
+        try:
+            testsuite.addTest(TestLoader().loadTestsFromName(test))
+        except Exception, e:
+            failedTestFiles.append(test)
+            
+    
+    t = TextTestRunner(verbosity=1)
+    result = t.run(testsuite)
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    return (result, failedTestFiles)
+
 
 class TestCommand(Command):
     """
@@ -74,44 +113,7 @@ class TestCommand(Command):
         '''
         testfiles = [ ]
         
-        # Add the test and src directory to the python path
-        testspypath = '/'.join([self._dir, 'test/python/'])
-        srcpypath = '/'.join([self._dir, 'src/python/']) 
-        sys.path.append(testspypath)
-        sys.path.append(srcpypath)
-        
-        # Walk the directory tree
-        for dirpath, dirnames, filenames in os.walk('./test/python/WMCore_t'):
-            # skipping CVS directories and their contents
-            pathelements = dirpath.split('/')
-            if not 'CVS' in pathelements:
-                # to build up a list of file names which contain tests
-                for file in filenames:
-                    if file not in ['__init__.py']:
-                        if file.endswith('_t.py'):
-                            testmodpath = pathelements[3:]
-                            testmodpath.append(file.replace('.py',''))
-                            testfiles.append('.'.join(testmodpath))
-                            
-        oldstdout = sys.stdout
-        oldstderr = sys.stderr
-
-        sys.stdout = None
-        
-        testsuite = TestSuite()
-        failedTestFiles = []
-        for test in testfiles:
-            try:
-                testsuite.addTest(TestLoader().loadTestsFromName(test))
-            except Exception, e:
-                failedTestFiles.append(test)
-                #print "Could not load %s test - fix it!\n %s" % (test, e)
-        #print "Running %s tests" % testsuite.countTestCases()
-        
-        t = TextTestRunner(verbosity = 1)
-        result = t.run(testsuite)
-        sys.stdout = oldstdout
-        sys.stderr = oldstderr
+        result, failedTestFiles = runUnitTests()
         if not result.wasSuccessful():
             print "Tests unsuccessful. There were %s failures and %s errors"\
                       % (len(result.failures), len(result.errors))
@@ -228,22 +230,26 @@ class ReportCommand(Command):
         cfg.read('standards/.pylintrc')
         
         # Supress stdout/stderr
-        err_bak = sys.stderr
-        out_bak = sys.stdout
         sys.stderr = open('/dev/null', 'w')
         sys.stdout = open('/dev/null', 'w')
-        
-        # lint the code
-        for stats in lint_files(files):
-            error += stats['error']
-            warning += stats['warning']
-            refactor += stats['refactor']
-            convention += stats['convention'] 
-            statement += stats['statement']
+        # wrap it in an exception handler, otherwise we can't see why it fails
+        try:
+            # lint the code
+            for stats in lint_files(files):
+                error += stats['error']
+                warning += stats['warning']
+                refactor += stats['refactor']
+                convention += stats['convention'] 
+                statement += stats['statement']
+        except Exception,e:
+            # and restore the stdout/stderr
+            sys.stderr = sys.__stderr__
+            sys.stdout = sys.__stderr__
+            raise e
         
         # and restore the stdout/stderr
-        sys.stderr = err_bak
-        sys.stdout = out_bak
+        sys.stderr = sys.__stderr__
+        sys.stdout = sys.__stderr__ 
         
         stats = {'error': error,
             'warning': warning,
@@ -283,7 +289,15 @@ class ReportCommand(Command):
             
 class CoverageCommand(Command):
     """
-    Run code coverage tests    
+    Run code coverage tests
+      to do this, we need to run all the unittests within the coverage
+      framework to record all the lines(and branches) executed
+    unfortunately, we have multiple code paths per database schema, so
+    we need to find a way to merge them.
+      
+    TODO: modify the test command to have a flag to record code coverage
+          the file thats used can then be used here, saving us from running
+          our tests twice    
     """
     
     user_options = [ ]
@@ -300,6 +314,15 @@ class CoverageCommand(Command):
         
         http://nedbatchelder.com/code/coverage/
         """
+        files = generate_filelist()
+        cov = coverage.coverage(branch = True, )
+        cov.start()
+        runUnitTests()
+        cov.stop()
+        
+        # we have our coverage information, now let's do something with it
+        # get a list of modules
+        coverage.report(morfs = files, file=open('coverage.txt','w'))
         return 0.0
     
 class DumbCoverageCommand(Command):

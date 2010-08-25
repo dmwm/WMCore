@@ -6,8 +6,8 @@ MySQL implementation of BossLite.RunningJob.LoadByParameters
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByParameters.py,v 1.1 2010/03/30 10:25:19 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LoadByParameters.py,v 1.2 2010/05/12 09:49:11 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -71,7 +71,6 @@ class LoadByParameters(DBFormatter):
             result['closed']                = entry['closed']
             final.append(result)
 
-
         return final
 
     def execute(self, taskID, jobID, submission, conn = None, transaction = False):
@@ -86,5 +85,6 @@ class LoadByParameters(DBFormatter):
         
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
+        
         return self.format(result)
     

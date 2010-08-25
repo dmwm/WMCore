@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Task.Delete
 """
 
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.2 2010/05/10 12:54:43 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Delete.py,v 1.3 2010/05/12 09:49:13 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,22 +16,27 @@ class Delete(DBFormatter):
     BossLite.Task.Delete
     """
     
-    sql = """DELETE FROM bl_task WHERE %s = :value"""
-
-    def execute(self, value, column = 'id', conn = None, transaction = False):
+    sql = """DELETE FROM bl_task WHERE %s """
+    
+    def execute(self, binds, conn = None, transaction = False):
         """
-        This is a generic delete mechanism which allows you to set the column to
-        delete by, and pass in a list to value.
+        This is a generic delete mechanism which allows you to 
+        set the columns to delete by
         """
 
-        sql = self.sql % (column)
-
-        if type(value) == list:
-            binds = value
-        else:
-            binds = {'value': value}
+        whereStatement = []
         
-        self.dbi.processData(sql, binds, conn = conn,
+        for x in binds:
+            if type(binds[x]) == str :
+                whereStatement.append( "%s = '%s'" % (x, binds[x]) )
+            else:
+                whereStatement.append( "%s = %s" % (x, binds[x]) )
+                
+        whereClause = ' AND '.join(whereStatement)
+
+        sqlFilled = self.sql % (whereClause)
+        
+        self.dbi.processData(sqlFilled, {}, conn = conn,
                                       transaction = transaction)
         
         # try to catch error code?

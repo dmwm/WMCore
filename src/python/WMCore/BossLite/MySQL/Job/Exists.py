@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.Exists
 """
 
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.2 2010/05/10 12:57:39 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Exists.py,v 1.3 2010/05/12 09:49:10 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,12 +18,12 @@ class Exists(DBFormatter):
     
     sql = """SELECT id FROM bl_job WHERE name = :name"""
 
-    def execute(self, name, conn = None, transaction = False):
+    def execute(self, binds, conn = None, transaction = False):
         """
         Expects unique name
         """
         
-        result = self.dbi.processData(self.sql, {'name': name}, conn = conn,
+        result = self.dbi.processData(self.sql, binds , conn = conn,
                                       transaction = transaction)
         res = self.format(result)
 

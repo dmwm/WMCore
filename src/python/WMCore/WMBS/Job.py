@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.50 2010/05/04 20:12:49 mnorman Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: Job.py,v 1.51 2010/05/13 18:09:44 sryu Exp $"
+__version__ = "$Revision: 1.51 $"
 
 import datetime
 
@@ -236,7 +236,6 @@ class Job(WMBSBase, WMJob):
         files are at.
         """
 
-        existingTransaction = self.beginTransaction()
         locAction = self.daofactory(classname = "Jobs.LoadFileLocations")
         locations = locAction.execute(self["id"], conn = self.getDBConn(),
                                       transaction = self.existingTransaction())

@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.3 2010/02/25 21:45:30 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.4 2010/03/04 16:01:30 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import re
@@ -35,7 +35,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         if self.retrieveCondition():
             try:
                 workLoads = self.retrieveWorkLoadFromReqMgr()
-            except StandardError, ex:
+            except Exception, ex:
                 msg = "Error contacting RequestManager: %s" % str(ex)
                 self.wq.logger.warning(msg)
                 return
@@ -47,21 +47,27 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             #TODO: Same functionality as WorkQueue.pullWork() - combine
             work = 0
             for reqName, workLoadUrl in workLoads.items():
-                wmspec = WMWorkloadHelper()
-                wmspec.load(workLoadUrl)
-                units = self.wq._splitWork(wmspec)
+                try:
+                    self.wq.logger.info("Processing request %s" % reqName)
+                    wmspec = WMWorkloadHelper()
+                    wmspec.load(workLoadUrl)
+                    units = self.wq._splitWork(wmspec)
 
-                # Process each request in a new transaction - performance hit?
-                # Done as reporting back to ReqMgr is done per request not bulk
-                with self.wq.transactionContext():
-                    for unit in units:
-                        self.wq._insertWorkQueueElement(unit)
-                    try:
-                        self.reqMgr.postAssignment(reqName)
-                    except StandardError, ex:
-                        self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
-                        self.wq.logger.error('Request "%s" not queued' % reqName)
-                work += len(units)
+                    # Process each request in a new transaction - performance hit?
+                    # Done as reporting back to ReqMgr is done per request not bulk
+                    with self.wq.transactionContext():
+                        for unit in units:
+                            self.wq._insertWorkQueueElement(unit)
+                        try:
+                            self.reqMgr.postAssignment(reqName)
+                        except Exception, ex:
+                            self.wq.logger.error("Unable to update ReqMgr state: %s" % str(ex))
+                            self.wq.logger.error('Request "%s" not queued' % reqName)
+                            raise
+
+                    work += len(units)
+                except Exception, ex:
+                    self.wq.logger.exception("Error processing request %s" % reqName)
 
             self.logger.info("%s element(s) obtained from RequestManager" % work)
         return

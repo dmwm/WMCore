@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: MockPhedexService.py,v 1.4 2010/03/23 14:32:54 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: MockPhedexService.py,v 1.5 2010/04/06 20:39:11 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 # need to clean this up at some point
 
@@ -28,9 +28,9 @@ class MockPhedexService:
         blocks = data['phedex']['block']
         for dataset in self.datasets:
             blocks.append({"files":"5", "name": dataset + '#1',
-                          'replica' : [{'node' : x } for x in self.locations[dataset + '#1']]})
+                          'replica' : [{'se' : x } for x in self.locations[dataset + '#1']]})
             blocks.append({"files":"10", "name": dataset + '#2',
-                          'replica' : [{'node' : x } for x in self.locations[dataset + '#2']]})
+                          'replica' : [{'se' : x } for x in self.locations[dataset + '#2']]})
         return data
 
     def subscriptions(self, **args):
@@ -47,7 +47,7 @@ class MockPhedexService:
                                               'subscription' : []})
                 subs = data['phedex']['dataset'][-1]['subscription']
                 #FIXME: Take from self.locations
-                subs.append({'node': 'SiteA', 'custodial': 'n', 'suspend_until': None,
+                subs.append({'se': 'SiteA', 'custodial': 'n', 'suspend_until': None,
                                                                  'level': 'dataset', 'move': 'n', 'request': '47983',
                                                                  'time_created': '1232989000', 'priority': 'low',
                                                                  'time_update': None, 'node_id': '781',
@@ -62,7 +62,7 @@ class MockPhedexService:
                 blocks.append({"bytes":"10438786614", "files":"5", "is_open":"n",
                                                     "name": dataset + '#1',
                                                     "id":"454370", "subscription"
-                                                                                :[ {'node' : x,
+                                                                                :[ {'se' : x,
                                                                                     "suspended" : "n"} for x in self.locations[dataset + '#1']]
                                                                                 #{"priority":"normal", "request":"51253", "time_created":"1245165314",
                                                                                 #   "move":"n", "suspend_until":None, "node":"SiteA",
@@ -72,7 +72,7 @@ class MockPhedexService:
                 blocks.append({"bytes":"10438786614", "files":"10", "is_open":"n",
                                                     "name": dataset + '#2',
                                                     "id":"454370", "subscription"
-                                                                                :[ {'node' : x,
+                                                                                :[ {'se' : x,
                                                                                     "suspended" : "n" } for x in self.locations[dataset + '#2']]
                                                                                 #{"priority":"normal", "request":"51253", "time_created":"1245165314",
                                                                                 #   "move":"n", "suspend_until":None, "node":"SiteA",

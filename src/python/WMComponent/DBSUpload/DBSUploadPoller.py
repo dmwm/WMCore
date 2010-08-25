@@ -3,8 +3,8 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.14 2009/11/24 21:39:17 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.15 2009/12/07 21:55:09 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import threading
 import logging
@@ -78,10 +78,6 @@ class DBSUploadPoller(BaseWorkerThread):
                                    globalDBSUrl  = self.config.DBSUpload.globalDBSUrl, \
                                    globalVersion =  self.config.DBSUpload.globalDBSVer)
         self.dbsreader = DBSReader(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion)
-
-
-
-
 
         return
 
@@ -173,7 +169,7 @@ class DBSUploadPoller(BaseWorkerThread):
                     locations = []
                     for loc in info:
                         locations.append(loc['Name'])
-                    dbinterface.setBlockStatus(block['Name'], locations, block['OpenForWriting'])
+                    dbinterface.setBlockStatus(block['Name'], locations, block['OpenForWriting'], int(block['CreationDate']))
                     if "files" in block.keys():
                         myThread.transaction.begin()
                         for file in block["files"]:
@@ -183,7 +179,18 @@ class DBSUploadPoller(BaseWorkerThread):
 
                 #Update the file status, and then recount UnMigrated Files
             	dbinterface.updateFilesStatus(fileLFNs, "InDBS")
-            
+
+
+
+        #Now it's time to do a block check
+        blocks=dbinterface.findOpenBlocks()
+        for block in blocks:
+            if time.time() - block['create_time'] > self.DBSBlockTimeout:
+                timedOut = self.dbswriter.manageFileBlock(block['blockname'], maxFiles = self.DBSMaxFiles,
+                                                          maxSize = self.DBSMaxSize, timeOut = self.DBSBlockTimeout)
+                if timedOut:
+                    dbinterface.setBlockStatus(block['blockname'], locations = None, openStatus = 0, time = block['create_time'])
+
 
         return
 

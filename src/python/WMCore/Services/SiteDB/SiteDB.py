@@ -6,10 +6,10 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.8 2009/07/15 19:19:26 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: SiteDB.py,v 1.9 2009/08/06 19:24:51 ewv Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from WMCore.Services.Service import Service
+from WMCore.Services.AuthorisedService import AuthorisedService
 import urllib
 import logging
 import os
@@ -24,7 +24,7 @@ from WMCore.Services.JSONParser.JSONParser import JSONParser
     # Prior to 2.6 requires simplejson
     #import simplejson as json
 
-class SiteDBJSON(Service):
+class SiteDBJSON(AuthorisedService):
 
     """
     API for dealing with retrieving information from SiteDB
@@ -49,7 +49,7 @@ class SiteDBJSON(Service):
                     filename=dict['cachepath'] + '/sitedbjsonparser.log',
                     filemode='w')
             dict['logger'] = logging.getLogger('SiteDBParser')
-        Service.__init__(self, dict)
+        AuthorisedService.__init__(self, dict)
 
 
     def getJSON(self, callname, file='result.json', clearCache=False, **args):

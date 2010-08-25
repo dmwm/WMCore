@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.41 2010/01/22 19:02:44 diego Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Root.py,v 1.42 2010/02/01 11:13:14 metson Exp $"
+__version__ = "$Revision: 1.42 $"
 
 # CherryPy
 import cherrypy
@@ -32,8 +32,6 @@ import logging
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 
-from WMCore.WebTools.OidConsumer import OidConsumer 
-
 class Root(WMObject):
     def __init__(self, config):
         self.config = config.section_("Webtools")
@@ -41,6 +39,8 @@ class Root(WMObject):
         self.app = self.config.application
         self.homepage = None
         self.secconfig = getattr(config, "SecurityModule", None)
+        if self.secconfig:
+            from WMCore.WebTools.OidConsumer import OidConsumer 
     
     def validateConfig(self):
         # Check that the configuration has the required sections

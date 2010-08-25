@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.34 2009/11/05 13:33:16 diego Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Page.py,v 1.35 2009/11/23 20:48:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import urllib
 import cherrypy
@@ -262,11 +262,14 @@ def runDas(self, func, *args, **kwds):
     results    = func(self, *args, **kwds)
     call_time  = time.time() - start_time
     if  type(results) is types.ListType:
-        row = results[0]
+        if len(results) > 0:
+            row = results[0]
+        else:
+            row = None
     else:
         row = results
     if  type(row) is types.StringType:
-        row = eval(row)
+        row = '"%s"' % row
     if  type(row) is types.DictType and row.has_key('expire'):
         res_expire = make_timestamp(row['expire'])
     else:

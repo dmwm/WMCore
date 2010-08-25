@@ -7,8 +7,8 @@ Inherit from CreateWorkQueueBase, and add MySQL specific substitutions (e.g. add
 INNODB).
 """
 
-__revision__ = "$Id: Create.py,v 1.18 2010/02/08 19:05:46 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Create.py,v 1.19 2010/02/11 19:20:49 sryu Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -33,6 +33,7 @@ class Create(CreateWorkQueueBase):
              url         VARCHAR(255) NOT NULL,
              owner       VARCHAR(255) NOT NULL,
              PRIMARY KEY(id),
+             UNIQUE (url),
              UNIQUE (name)
              )"""
         

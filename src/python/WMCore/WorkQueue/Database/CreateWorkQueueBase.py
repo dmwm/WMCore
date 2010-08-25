@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.22 2010/02/08 19:05:45 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.23 2010/02/11 19:20:49 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import threading
 
@@ -56,6 +56,7 @@ class CreateWorkQueueBase(DBCreator):
              owner       VARCHAR(255) NOT NULL,
              PRIMARY KEY(id),
              UNIQUE (url)
+             UNIQUE (name)
              )"""
 
         self.create["02wq_wmtask"] = \

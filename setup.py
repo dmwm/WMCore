@@ -4,7 +4,7 @@ from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser
-import os, sys, os.sys.path
+import os, sys, os.path
 #PyLinter and coverage aren't standard, but aren't strictly necessary
 can_lint = False
 can_coverage = False

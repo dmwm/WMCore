@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.4 2009/05/12 10:21:06 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ChangeState.py,v 1.5 2009/05/12 10:32:21 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -15,6 +15,9 @@ from WMCore.DataStructs.WMObject import WMObject
 from sets import Set
 
 class Transitions(dict):
+    """
+    All allowed state transitions in the JSM.
+    """
     def __init__(self):
         self.setdefault('none', ['new'])
         self.setdefault('new', ['created', 'createfailed'])
@@ -42,7 +45,12 @@ class Transitions(dict):
                 knownstates.add(i)
         return list(knownstates)
 
+
+
 class ChangeState(WMObject):
+    """
+    Propagate the state of a job through the JSM.
+    """
     def __init__(self, config={}):
         WMObject.__init__(self, config)
         self.myThread = threading.currentThread()

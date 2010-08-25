@@ -25,7 +25,8 @@ class CernOidConsumer(cherrypy.Tool):
             self.store = filestore.FileOpenIDStore(self.config.store_path)
         
         self.session_name = self.config.session_name
-        self.base_path = '/' # base_path + '/'
+
+        self.base_path = cherrypy.url()
         self.login_path = '%s/login' % self.base_path
         self.failed_path = '%s/failure' % self.base_path
         self.cancel_path = '%s/cancelled' % self.base_path

@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.12 2009/08/24 15:15:44 sryu Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.13 2009/08/27 21:05:24 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 
@@ -132,13 +132,7 @@ class CreateWorkQueueBase(DBCreator):
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_sub
                  FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""
 
-        #TODO: need to find the better way to handle this        
-        #block magic string for no block (production work)
-        #Currently production fake block name is generated
-#        self.inserts["80wq_block_insert"]=\
-#                """INSERT INTO wq_block (name, block_size, num_files, num_events) 
-#                   VALUES ('NoBlock', 0, 0, 0)
-#                """
+
     def execute(self, conn = None, transaction = None):
         """
         _execute_

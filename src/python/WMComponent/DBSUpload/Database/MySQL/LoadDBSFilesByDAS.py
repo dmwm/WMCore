@@ -5,8 +5,8 @@ _LoadDBSFilesByDAS_
 MySQL implementation of LoadDBSFilesByDAS
 """
 
-__revision__ = "$Id: LoadDBSFilesByDAS.py,v 1.2 2010/08/09 15:42:40 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadDBSFilesByDAS.py,v 1.3 2010/08/09 15:54:18 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 
@@ -27,7 +27,11 @@ class LoadDBSFilesByDAS(DBFormatter):
              INNER JOIN dbsbuffer_dataset ON
                dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
              WHERE dbsbuffer_algo_dataset_assoc.id = :das
-             AND files.status = :status ORDER BY files.id"""
+             AND files.status = :status
+             AND NOT EXISTS (SELECT parent FROM dbsbuffer_file_parent dbfp
+                              INNER JOIN dbsbuffer_file dbf2 ON dbfp.parent = dbf2.id
+                              WHERE dbfp.child = files.id AND dbf2.status = :status)
+             ORDER BY files.id"""
 
     getLocationSQL = """SELECT dbsbuffer_location.se_name as location, dbsbuffer_file.id as id
                           FROM dbsbuffer_location

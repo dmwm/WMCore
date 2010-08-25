@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.3 2009/12/16 18:47:28 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.4 2009/12/16 18:53:56 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -249,7 +249,7 @@ class EventBasedTest(unittest.TestCase):
         jobGroups  = jobFactory(size_per_job = 500)
 
         self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 11)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
 
         return
 

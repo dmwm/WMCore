@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.29 2009/09/19 11:32:00 metson Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Root.py,v 1.30 2009/09/22 15:46:51 metson Exp $"
+__version__ = "$Revision: 1.30 $"
 
 # CherryPy
 import cherrypy
@@ -36,7 +36,6 @@ from WMCore.WebTools.CernOidConsumer import CernOidConsumer
 
 class Root(WMObject):
     def __init__(self, config):
-        self.config = config
         self.config = config.section_("Webtools")
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application

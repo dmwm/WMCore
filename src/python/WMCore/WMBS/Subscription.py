@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.53 2009/12/15 15:20:47 mnorman Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: Subscription.py,v 1.54 2009/12/30 20:10:40 mnorman Exp $"
+__version__ = "$Revision: 1.54 $"
 
 import logging
 
@@ -362,7 +362,7 @@ class Subscription(WMBSBase, WMSubscription):
  
     def getJobGroups(self):
         """
-            Returns a list of job group IDs associated with the subscription
+            Returns a list of job group IDs associated with the subscription with new jobs
 
         """
         # first, make sure we have all the necessary data
@@ -371,6 +371,16 @@ class Subscription(WMBSBase, WMSubscription):
         action = self.daofactory( classname = "Subscriptions.GetJobGroups" )
         return action.execute(self['id'], conn = self.getDBConn(),
                                           transaction = self.existingTransaction())
+
+    def getAllJobGroups(self):
+        """
+        Returns a list of ALL jobGroups associated with the subscription
+
+        """
+        action = self.daofactory( classname = "Subscriptions.GetAllJobGroups" )
+        return action.execute(self['id'], conn = self.getDBConn(),
+                                          transaction = self.existingTransaction())
+
 
 
     def deleteEverything(self):
@@ -384,9 +394,9 @@ class Subscription(WMBSBase, WMSubscription):
         Nothing except the taskArchiver should be calling this.
         """
 
-        self.loadData()
+        self.load()
 
-        jobGroups = self.getJobGroups()
+        jobGroups = self.getAllJobGroups()
 
         existingTransaction = self.beginTransaction()
 
@@ -403,8 +413,6 @@ class Subscription(WMBSBase, WMSubscription):
                              transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
-
-
 
 
         #Next Fileset

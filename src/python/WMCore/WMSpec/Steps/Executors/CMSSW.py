@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.16 2010/03/31 18:46:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: CMSSW.py,v 1.17 2010/04/09 15:56:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -208,28 +208,7 @@ class CMSSW(Executor):
                                      "CmsRunFailure", msg)
 
         self.report.parse(jobReportXML)
-        
-
-
-        #TODO: Move all this stuff to the CMSSW diagnostic
-        ##if (spawnedChild.returncode == 70):
-##            raise WMException("Wrong number of arguments to cmssw wrapper"
-##                              ,None,**argsDump)
-##        elif (spawnedChild.returncode == 71):
-##            raise WMException("Failure in scram project"
-##                              ,None,**argsDump)
-##        elif (spawnedChild.returncode == 72):
-##            raise WMException("Failed to chdir to the cmssw directory"
-##                              ,None,**argsDump)
-##        elif (spawnedChild.returncode == 73):
-##            raise WMException("Failed to execute the scram runtime"
-##                              ,None,**argsDump)
-##        elif (spawnedChild.returncode != 0):
-##            raise WMException("Unknown error in cmsRun. Code: %i" % spawnedChild.returncode, None, **argsDump)
-
-
         return
-
 
     def post(self, emulator = None):
         """

@@ -5,8 +5,8 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
-__revision__ = "$Id: ResourceControl.py,v 1.5 2010/07/15 16:57:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: ResourceControl.py,v 1.6 2010/07/15 19:21:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
@@ -41,9 +41,12 @@ class ResourceControl(WMConnectionBase):
         given site.
         """
         listAction = self.wmbsDAOFactory(classname = "Locations.GetSiteInfo")
-        return listAction.execute(siteName = siteName,
+        result = listAction.execute(siteName = siteName,
                                   conn = self.getDBConn(),
-                                  transaction = self.existingTransaction())[0]
+                                  transaction = self.existingTransaction())
+        if len(result) == 0:
+            return None
+        return result[0]
 
     def insertThreshold(self, siteName, taskType, maxSlots):
         """

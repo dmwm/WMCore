@@ -9,10 +9,15 @@ Placeholder for ideas at present....
 
 """
 
+__revision__ = "$Id: Persistency.py,v 1.7 2010/02/12 20:34:22 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
+
 import pickle
 from urllib import urlopen
-from WMCore.Wrappers import JsonWrapper
-from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+
+#from WMCore.Wrappers import JsonWrapper
+#from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+
 
 class PersistencyHelper:
     """

@@ -9,8 +9,8 @@ wrapper class), a retry count for that state, and an id for the couchdb record
 """
 
 __all__ = []
-__revision__ = "$Id: ChangeState.py,v 1.6 2009/07/29 16:25:57 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ChangeState.py,v 1.7 2009/08/11 20:11:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -21,7 +21,6 @@ class ChangeState(DBFormatter):
                 couch_record = :couch_record,
                 state_time = :time 
             WHERE wmbs_job.id = :job      
-                AND wmbs_job.state = (select id from wmbs_job_state where name = :oldstate)
             """
 
     def getBinds(self, jobs = []):
@@ -32,7 +31,6 @@ class ChangeState(DBFormatter):
         def function(job):
             dict = {'job': job['id'],
                     'state': job['state'],
-                    'oldstate': job['oldstate'],
                     'time': self.timestamp(),
                     'retry': job['retry_count'],
                     'couch_record': job['couch_record']}

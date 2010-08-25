@@ -1,17 +1,22 @@
 #!/usr/bin/env python
 """
-_Create_
+_New_
 
-MySQL implementation of BossLite.Jobs.Create
+MySQL implementation of BossLite.Task.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.1 2010/03/30 10:18:16 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2010/05/10 12:54:43 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.BossLite.DbObjects.Task import TaskDBFormatter
 
 class New(DBFormatter):
+    """
+    Task.New
+    """
+    
     sql = """INSERT INTO bl_task (name, dataset, start_dir, output_dir,
                 global_sandbox, cfg_name, server_name, job_type,
                 user_proxy, outfile_basename, common_requirements)
@@ -22,14 +27,19 @@ class New(DBFormatter):
                 :outfileBasename, :commonRequirements)
                 """
 
-
     def execute(self, binds, conn = None, transaction = False):
         """
         This assumes that you are passing in binds in the same format
         as BossLite.DbObjects.Task.
         """
         
-        self.dbi.processData(self.sql, binds, conn = conn,
+        objFormatter = TaskDBFormatter()
+        
+        ppBinds = objFormatter.preFormat(binds)
+        
+        self.dbi.processData(self.sql, ppBinds, conn = conn,
                              transaction = transaction)
+        
+        # try to catch error code?
         return
     

@@ -6,15 +6,17 @@ MySQL implementation of BossLite.Task.Delete
 """
 
 __all__ = []
-__revision__ = "$Id: Delete.py,v 1.1 2010/04/19 17:57:21 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Delete.py,v 1.2 2010/05/10 12:54:43 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class Delete(DBFormatter):
+    """
+    BossLite.Task.Delete
+    """
+    
     sql = """DELETE FROM bl_task WHERE %s = :value"""
-
-
 
     def execute(self, value, column = 'id', conn = None, transaction = False):
         """
@@ -29,5 +31,8 @@ class Delete(DBFormatter):
         else:
             binds = {'value': value}
         
-        result = self.dbi.processData(sql, binds, conn = conn,
+        self.dbi.processData(sql, binds, conn = conn,
                                       transaction = transaction)
+        
+        # try to catch error code?
+        return

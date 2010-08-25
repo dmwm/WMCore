@@ -31,6 +31,13 @@ class TestCommand(Command):
         Finds all the tests modules in test/python/WMCore_t, and runs them.
         '''
         testfiles = [ ]
+        
+        # Add the test and src directory to the python path
+        testspypath = '/'.join([self._dir, 'test/python/'])
+        srcpypath = '/'.join([self._dir, 'src/python/']) 
+        oldpypath = os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = ':'.join([oldpypath, testspypath, srcpypath])
+        print os.environ['PYTHONPATH']
         # Walk the directory tree
         for dirpath, dirnames, filenames in os.walk('./test/python/WMCore_t'):
             # skipping CVS directories and their contents
@@ -54,7 +61,10 @@ class TestCommand(Command):
         
         t = TextTestRunner(verbosity = 1)
         t.run(testsuite)
-
+        
+        # Reset the python path
+        os.environ['PYTHONPATH'] = oldpypath
+        
 class CleanCommand(Command):
     """
     Clean up (delete) compiled files
@@ -99,6 +109,11 @@ class LintCommand(Command):
         Find the code and run lint on it
         '''
         files = [ ]
+        
+        srcpypath = '/'.join([self._dir, 'src/python/'])
+        oldpypath = os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = ':'.join([oldpypath, srcpypath])
+        
         # Walk the directory tree
         for dirpath, dirnames, filenames in os.walk('./src/python/'):
             # skipping CVS directories and their contents
@@ -114,7 +129,8 @@ class LintCommand(Command):
         #input = ['--rcfile=standards/.pylintrc']
         #input.extend(files)
         #lint.Run(input)
-                    
+        
+        os.environ['PYTHONPATH'] = oldpypath          
                     
 def getPackages(package_dirs = []):
     packages = []

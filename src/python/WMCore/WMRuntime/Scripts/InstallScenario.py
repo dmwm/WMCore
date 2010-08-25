@@ -89,11 +89,6 @@ class InstallScenario(ScriptInterface):
             outTweak = makeOutputTweak(mod, self.job)
             applyTweak(process, outTweak)
 
-        # revlimiter for testing
-        if hasattr(process, "maxEvents"):
-            if hasattr(process.maxEvents, "input"):
-                process.maxEvents.input = 2
-        
         configFile = self.step.data.application.command.configuration
         workingDir = self.stepSpace.location
         handle = open("%s/%s" % (workingDir, configFile), 'w')

@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.16 2009/04/28 21:21:46 metson Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: CMSCouch.py,v 1.17 2009/04/29 19:16:06 metson Exp $"
+__version__ = "$Revision: 1.17 $"
 
 try:
     # Python 2.6
@@ -275,11 +275,19 @@ class CouchServer(CouchDBRequests):
     """
     An object representing the CouchDB server, use it to list, create, delete 
     and connect to databases. 
+    
+    More info http://wiki.apache.org/couchdb/HTTP_database_API
     """    
     def listDatabases(self):
         return self.get('/_all_dbs')
     
     def createDatabase(self, db):
+        """
+        A database must be named with all lowercase characters (a-z), 
+        digits (0-9), or any of the _$()+-/ characters and must end with a slash
+        in the URL - TODO assert this with a regexp
+        """
+        db = urllib.quote_plus(db)
         self.put("/%s" % db)
         return self.connectDatabase(db)
     

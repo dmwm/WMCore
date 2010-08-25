@@ -78,5 +78,7 @@ setup (name='wmcore',
                  'WMCore.SiteScreening',
                  'WMCore.Database',
                  'WMCore.WebTools',
+                 'WMCore.HTTPFrontEnd.WMBS',
+                 'WMCore.HTTPFrontEnd',
                  'WMCore'],)
 

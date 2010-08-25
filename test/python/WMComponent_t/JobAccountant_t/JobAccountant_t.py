@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.31 2010/05/25 15:26:34 sfoulkes Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.32 2010/05/25 20:16:59 mnorman Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import logging
 import os.path
@@ -16,6 +16,8 @@ import time
 import copy
 import random
 import tempfile
+import cProfile
+import pstats
 
 import WMCore.WMInit
 from WMCore.FwkJobReport.Report import Report
@@ -53,6 +55,8 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database",
+        #                                        "WMCore.WMBS"])
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
@@ -477,6 +481,7 @@ class JobAccountantTest(unittest.TestCase):
             assert dbsFile.exists() != False, \
                    "Error: File is not in DBSBuffer: %s" % fwkJobReportFile["lfn"]
 
+
             dbsFile.load(parentage = 1)
 
             assert dbsFile["events"] == fwkJobReportFile["events"], \
@@ -681,6 +686,15 @@ class JobAccountantTest(unittest.TestCase):
         testFileset.create()
         testFileset.addFile(inputFile)
         testFileset.commit()
+
+        # Insert parent
+        pFile = DBSBufferFile(lfn = "/path/to/some/lfn", size = 600000, events = 60000)
+        pFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
+                           appFam = "RECO", psetHash = "GIBBERISH",
+                           configContent = "MOREGIBBERISH")
+        pFile.setDatasetPath("/bogus/dataset/path")
+        pFile.addRun(Run(1, *[45]))
+        pFile.create()
         
         self.testSubscription = Subscription(fileset = testFileset,
                                              workflow = self.testWorkflow,
@@ -819,6 +833,16 @@ class JobAccountantTest(unittest.TestCase):
         inputFileA.addChild(unmergedFileA["lfn"])
         inputFileB.addChild(unmergedFileB["lfn"])
         inputFileC.addChild(unmergedFileC["lfn"])
+
+        # Create parent files in DBSBuffer
+        for plfn in ["/path/to/some/lfnA", "/path/to/some/lfnB", "/path/to/some/lfnC"]:
+            pFile = DBSBufferFile(lfn = plfn, size = 600000, events = 60000)
+            pFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+            pFile.setDatasetPath("/bogus/dataset/path")
+            pFile.addRun(Run(1, *[45]))
+            pFile.create()
 
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -1009,6 +1033,9 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
+
+        return
+        
         print("  Filling DB...")
 
         self.setupDBForLoadTest()
@@ -1103,9 +1130,23 @@ class JobAccountantTest(unittest.TestCase):
         masterFile2.addChild(inputFileB['lfn'])
         masterFile2.addChild(inputFileC['lfn'])
 
+
+        
+
         inputFileA.addChild(unmergedFileA["lfn"])
         inputFileB.addChild(unmergedFileB["lfn"])
         inputFileC.addChild(unmergedFileC["lfn"])
+
+        # Now you have to create files in DBS for parents
+        # NOTE: There should only be one parent
+        for plfn in ["/path/to/some/lfn1"]:
+            pFile = DBSBufferFile(lfn = plfn, size = 600000, events = 60000)
+            pFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+            pFile.setDatasetPath("/bogus/dataset/path")
+            pFile.addRun(Run(1, *[45]))
+            pFile.create()
 
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -1210,7 +1251,7 @@ class JobAccountantTest(unittest.TestCase):
 
         Inject jobs that have a large amount of input files into WMBS.
         """
-        totalJobs = 25
+        totalJobs = 1
         inputFilesPerJob = 50
 
         inputFileset = Fileset(name = "TestFileset")
@@ -1240,6 +1281,7 @@ class JobAccountantTest(unittest.TestCase):
 
         self.jobs = []
         inputFileCounter = 0
+        parentCounter = 0
         for i in range(totalJobs):
             testJob = Job(name = makeUUID())
             testJob.create(group = testJobGroup)
@@ -1252,11 +1294,20 @@ class JobAccountantTest(unittest.TestCase):
                 newFile.create()
                 
                 for k in range(3):
-                    parentFile = File(lfn = makeUUID(), size = 600000, events = 60000,
+                    lfn = makeUUID()
+                    parentFile = File(lfn = lfn, size = 600000, events = 60000,
                                       locations = "cmssrm.fnal.gov", merged = True)
                     parentFile.create()
                     newFile.addParent(parentFile["lfn"])
 
+                    pFile = DBSBufferFile(lfn = lfn, size = 600000, events = 60000)
+                    pFile.setAlgorithm(appName = "cmsRun", appVer = "UNKNOWN",
+                                       appFam = "RECO", psetHash = "GIBBERISH",
+                                       configContent = "MOREGIBBERISH")
+                    pFile.setDatasetPath("/bogus/dataset/path")
+                    pFile.addRun(Run(1, *[45]))
+                    pFile.create()
+                    parentCounter += 1
                 inputFileset.addFile(newFile)
                 testJob.addFile(newFile)
 
@@ -1268,15 +1319,21 @@ class JobAccountantTest(unittest.TestCase):
             self.jobs.append((testJob["id"], fwjrPath))
             self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
 
+        print "Created parents"
+        print parentCounter
+
         inputFileset.commit()
         return
 
-    def testBigHeritage(self):
+    def testZ_BigHeritage(self):
         """
         _testBigHeritage_
 
         Run the big heritage test.
         """
+
+        print "Starting Heritage Test"
+        
         print("  Filling DB...")
 
         self.setupDBForHeritageTest()
@@ -1288,8 +1345,12 @@ class JobAccountantTest(unittest.TestCase):
         print("  Running accountant...")
 
         startTime = time.time()
-        accountant.algorithm()
+        #accountant.algorithm()
+        cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
+
+        
         endTime = time.time()
+        print("  Time: %f" %(endTime - startTime))
         print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
 
         for (jobID, fwjrPath) in self.jobs:
@@ -1302,6 +1363,10 @@ class JobAccountantTest(unittest.TestCase):
             #self.verifyDBSBufferContents("Processing",
             #                             ["/some/lfn/for/job/%s" % jobID],
             #                             jobReport.getAllFilesFromStep("cmsRun1"))
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('cumulative')
+        #p.print_stats()
 
         return
 

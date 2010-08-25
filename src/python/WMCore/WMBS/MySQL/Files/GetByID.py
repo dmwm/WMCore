@@ -7,9 +7,9 @@ class GetByID(DBFormatter):
     sql = """SELECT id, lfn, size, events, cksum, first_event, last_event, merged
              FROM wmbs_file_details WHERE id = :fileid"""
 
-    def formatDict(self, result):
+    def formatOneDict(self, result):
         """
-        _formatDict_
+        _formatOneDict_
 
         Cast the integer attributes of the file object to integers as
         formatDict() will turn everything into a string.
@@ -32,8 +32,53 @@ class GetByID(DBFormatter):
             del formattedResult["filesize"]
             
         return formattedResult
+
+    def formatBulkDict(self, result):
+        """
+        _formatBulkDict_
+
+        Formats a whole list of dictionaries
+        """
+
+        formattedResult = {}
+        listOfDicts     = DBFormatter.formatDict(self, result)
+
+        for entry in listOfDicts:
+            tmpDict = {}
+            tmpDict["id"]          = int(entry["id"])
+            tmpDict["lfn"]         = entry["lfn"]
+            tmpDict["events"]      = int(entry["events"])
+            tmpDict["cksum"]       = int(entry["cksum"])
+            tmpDict["first_event"] = int(entry["first_event"])
+            tmpDict["last_event"]  = int(entry["last_event"])
+            if "size" in entry.keys():
+                tmpDict["size"]    = int(entry["size"])
+            else:
+                tmpDict["size"]    = int(entry["filesize"])
+                del entry["filesize"]
+            formattedResult[tmpDict['id']] = tmpDict
+
+        return formattedResult
     
     def execute(self, file = None, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, {"fileid": file}, 
-                         conn = conn, transaction = transaction)
-        return self.formatDict(result)
+
+        #Making some modifications to allow it to load a whole list of files
+        #This DAO object should be called directly, not through WMBSFile
+        if type(file) == list:
+            #Then we have a list of the form [fileid, fileid, etc.]
+            if len(file) == 0:
+                #Ignore empty lists
+                return {}
+            binds = []
+            for id in file:
+                binds.append({'fileid': id})
+                
+            result = self.dbi.processData(self.sql, binds, 
+                                          conn = conn, transaction = transaction)
+            return self.formatBulkDict(result)
+        else:
+            #We only have one file ID
+            binds = {"fileid": file}
+            result = self.dbi.processData(self.sql, binds, 
+                                          conn = conn, transaction = transaction)
+            return self.formatOneDict(result)

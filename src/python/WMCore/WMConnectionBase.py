@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.4 2009/12/04 15:11:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.5 2010/01/27 16:49:08 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 
@@ -27,18 +27,9 @@ class WMConnectionBase:
         create one but leave the transaction closed.
         """
         myThread = threading.currentThread()
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = myThread.logger
-        if dbi:
-            self.dbi = dbi
-        else:
-            self.dbi = myThread.dbi
-        
-        self.daofactory = DAOFactory(package = daoPackage,
-                                     logger = self.logger,
-                                     dbinterface = self.dbi)
+        myThread.daoFactory = DAOFactory(package = daoPackage,
+                                         logger = myThread.logger,
+                                         dbinterface = myThread.dbi)
 
         if "transaction" not in dir(myThread):
             myThread.transaction = Transaction(self.dbi)
@@ -108,3 +99,14 @@ class WMConnectionBase:
             myThread.transaction.commit()
             
         return
+
+    def daofactory(self, classname):
+        """
+        _daofactory_
+
+        The DAOFactory object moved into the thread storage so that we can
+        actually pickle objects that inherit from this (we don't want to
+        pickle any database code). 
+        """
+        myThread = threading.currentThread()
+        return myThread.daoFactory(classname = classname)

@@ -33,9 +33,22 @@ class ResultSetTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                    useDefault = False)
+        #self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+        #                           useDefault = False)
 
+        self.mydialect = self.testInit.getConfiguration().CoreDatabase.dialect
+        
+        self.myThread = threading.currentThread()
+        
+        if self.mydialect.lower() == 'mysql':
+            create_sql = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB "
+        elif self.mydialect.lower() == 'sqlite':
+            create_sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
+        else:
+            create_sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
+        
+        #Create a table and insert several pieces
+        self.myThread.dbi.processData(create_sql)
         return
 
     def tearDown(self):
@@ -43,7 +56,8 @@ class ResultSetTest(unittest.TestCase):
         Delete the ResultSet test class
 
         """
-        self.testInit.clearDatabase()
+        sql    = 'drop table test'
+        self.myThread.dbi.processData(sqlstmt = sql, conn = self.myThread.dbi.connection())
         return
 
 
@@ -60,14 +74,6 @@ class ResultSetTest(unittest.TestCase):
         #create a ResultSet, fill it with data, and then read it
         #out, all in one go.
 
-        myThread = threading.currentThread()
-
-        if self.mydialect.lower() == 'mysql':
-            create_sql = "create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB "
-        elif self.mydialect.lower() == 'sqlite':
-            create_sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
-        else:
-            create_sql = "create table test (bind1 varchar(20), bind2 varchar(20))"
         
         testSet = ResultSet()
         
@@ -76,24 +82,48 @@ class ResultSetTest(unittest.TestCase):
                      {'bind1':'value3b', 'bind2': 'value2b'},
                      {'bind1':'value3c', 'bind2': 'value2c'}]
 
-        #Create a table and insert several pieces
-        myThread.dbi.processData(create_sql)
-        myThread.dbi.processData('insert into test (bind1, bind2) values (:bind1, :bind2)', testDict)
-        myThread.dbi.processData('insert into test (bind1, bind2) values (:bind1, :bind2)', binds)
-        testProxy = myThread.dbi.connection().execute('select * from test')
-
+       
+        self.myThread.dbi.processData('insert into test (bind1, bind2) values (:bind1, :bind2)', testDict)
+        self.myThread.dbi.processData('insert into test (bind1, bind2) values (:bind1, :bind2)', binds)
+        testProxy = self.myThread.dbi.connection().execute('select * from test')
+        
+        #import pdb
+        #pdb.set_trace()
         testSet.add(testProxy)
-            
+        self.assertEqual(testProxy.rowcount, 4)
+        self.assertEqual(testSet.rowcount, 4)    
         #Test to make sure fetchone and fetchall both work
         self.assertEqual(str(testSet.fetchone()[0]), 'value1')
         self.assertEqual(str(testSet.fetchall()[-1][1]), 'value2c')
 
-        #Then delete the table and go home
-        sql    = 'drop table test'
-        result = myThread.dbi.processData(sqlstmt = sql, binds = None, conn = myThread.dbi.connection())
-
-
-
+    def testRowCount(self):
+        
+        testSet = ResultSet()
+        insertProxy = self.myThread.dbi.connection().execute("insert into test (bind1, bind2) values ('a', 'b')")
+        testSet.add(insertProxy)
+        self.assertEqual(testSet.rowcount, 1)    
+        
+        updateProxy = self.myThread.dbi.connection().execute("update test set bind1 = 'c'")
+        testSet.add(updateProxy)
+        self.assertEqual(testSet.rowcount, 2)
+        
+        updateProxy = self.myThread.dbi.connection().execute("update test set bind1 = 'c' where bind1 = 'a'")
+        testSet.add(updateProxy)
+        self.assertEqual(testSet.rowcount, 2)
+        
+        insertProxy = self.myThread.dbi.connection().execute("insert into test (bind1, bind2) values ('a', 'b')")
+        testSet.add(insertProxy)
+        self.assertEqual(testSet.rowcount, 3)
+        
+        selectProxy = self.myThread.dbi.connection().execute("select * from test")
+        testSet.add(selectProxy)
+        self.assertEqual(testSet.rowcount, 5)
+        
+        selectProxy = self.myThread.dbi.connection().execute("delete from test")
+        testSet.add(selectProxy)
+        self.assertEqual(testSet.rowcount, 7)   
+        
+    def test1000Binds(self):
 
         testSet2 = ResultSet()
 
@@ -103,19 +133,16 @@ class ResultSetTest(unittest.TestCase):
         largeInsert  = [ ]
         times = 1000
                          
-        myThread.dbi.processData(create_sql)
-
-
         #For now I don't want to get too dependent on processData() with many binds, since right now
         #it doesn't work.  That does make things awkward though.
         for i in range(times):
             binds = {'bind1': 'value1'+str(i), 'bind2':'value2'+str(i)}
-            myThread.dbi.processData("insert into test (bind1, bind2) values (:bind1, :bind2)", binds)
+            self.myThread.dbi.processData("insert into test (bind1, bind2) values (:bind1, :bind2)", binds)
 
 
 
         sql = "select bind1 from test"
-        testProxy = myThread.dbi.connection().execute(sql)
+        testProxy = self.myThread.dbi.connection().execute(sql)
 
         testSet2.add(testProxy)
 
@@ -126,7 +153,10 @@ class ResultSetTest(unittest.TestCase):
         elif self.mydialect.lower() == 'mysql':
             self.assertEqual(str(testSet2.fetchall()[1][0]), 'value11')
             self.assertEqual(testSet2.fetchone()[0], 'value10')
-
+        elif self.mydialect.lower() == 'oracle':
+            self.assertEqual(str(testSet2.fetchall()[1][0]), 'value11')
+            self.assertEqual(testSet2.fetchone()[0], 'value10')
+        
 
         return
 

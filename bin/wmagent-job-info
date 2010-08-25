@@ -147,19 +147,16 @@ def printFWJRInfo():
     logArchiveLFNs = {}
 
     for retryNumber in fwjrDocs.keys():
-        for stepName in fwjrDocs[retryNumber].keys():
-            if fwjrDocs[retryNumber][stepName] == "Unknown":
-                continue
-            
-            if fwjrDocs[retryNumber][stepName]["status"] != 0:
+        for stepName in fwjrDocs[retryNumber]["steps"].keys():
+            if fwjrDocs[retryNumber]["steps"][stepName]["status"] != 0:
                 print "Rerty %s, step %s failed:" % (retryNumber, stepName)
 
-                for error in fwjrDocs[retryNumber][stepName]["errors"]:
+                for error in fwjrDocs[retryNumber]["steps"][stepName]["errors"]:
                     print "  Type: %s" % error["type"]
                     print "  Details: %s" % error["details"]
                     print "  Exit Code: %s" % error["exitCode"]
             if stepName == "logArch1":
-                logArchStep = fwjrDocs[retryNumber][stepName]
+                logArchStep = fwjrDocs[retryNumber]["steps"][stepName]
                 logArchiveLFNs[retryNumber] = logArchStep["output"]["logArchive"][0]["lfn"]
 
     logArchiveRetries = logArchiveLFNs.keys()

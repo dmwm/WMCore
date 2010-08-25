@@ -55,11 +55,14 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.Services.BossLite"],
-                                useDefault = False)
+        #self.testInit.setSchema(customModules = ["WMCore.Services.BossLite"],
+        #                        useDefault = False)
         self.testInit.setSchema(customModules = ["WMCore.MsgService"],
+                                useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.ThreadPool"],
                                 useDefault = False)
 
         myThread = threading.currentThread()
@@ -74,19 +77,10 @@ class JobCreatorTest(unittest.TestCase):
             locationAction.execute(siteName = site)
 
 
-        testWorkflow = Workflow(spec = "faketest", owner = "mnorman",
-                                name = "whatever", task="Test")
-        testWorkflow.create()
-        
-        testFileset = Fileset(name = "NullFileset")
-        testFileset.create()
-        
-        testFileset.commit()
-        #testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
-        #testSubscription.create()
-        
         self._setup = True
+        self._teardown = False
 
+        self.cwd = '/home/mnorman/WMCORE/test/python/WMComponent_t/JobCreator_t/'
 
         return
 
@@ -104,8 +98,8 @@ class JobCreatorTest(unittest.TestCase):
         
         myThread = threading.currentThread()
         
-        if self._teardown:
-            return
+        #if self._teardown:
+        #    return
         
         factory = WMFactory("WMBS", "WMCore.WMBS")
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
@@ -123,13 +117,23 @@ class JobCreatorTest(unittest.TestCase):
             raise Exception("Could not complete MsgService tear down.")
         myThread.transaction.commit()
 
-        factory2 = WMFactory("WMBS", "WMCore.Services.BossLite")
-        destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
+        factory = WMFactory("Threadpool", "WMCore.ThreadPool")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
-        destroyworked = destroy2.execute(conn = myThread.transaction.conn)
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
         if not destroyworked:
-            raise Exception("Could not complete BossLite tear down.")
+            raise Exception("Could not complete ThreadPool tear down.")
         myThread.transaction.commit()
+
+        #factory2 = WMFactory("WMBS", "WMCore.Services.BossLite")
+        #destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
+        #myThread.transaction.begin()
+        #destroyworked = destroy2.execute(conn = myThread.transaction.conn)
+        #if not destroyworked:
+        #    raise Exception("Could not complete BossLite tear down.")
+        #myThread.transaction.commit()
+
+        os.popen3('rm -r test/Test*')
         
         self._teardown = True
 
@@ -150,40 +154,30 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
+        testWorkflow = Workflow(spec = "TestHugeWorkload/TestHugeTask", owner = "mnorman",
+                                name = "wf001", task="Merge")
+        testWorkflow.create()
+
         for i in range(0, nSubs):
 
             nameStr = str(instance) + str(i)
 
             myThread.transaction.begin()
 
-            testWorkflow = Workflow(spec = "TestHugeWorkload%s/TestHugeTask" %(nameStr), owner = "mnorman",
-                                    name = "wf001"+nameStr, task="Merge")
-            testWorkflow.create()
-        
             testFileset = Fileset(name = "TestFileset"+nameStr)
             testFileset.create()
         
-
-
-            #testJobGroup = JobGroup(subscription = testSubscription)
-            #testJobGroup.create()
-
             for j in range(0,100):
                 #pick a random site
                 site = random.choice(self.sites)
                 testFile = File(lfn = "/this/is/a/lfn"+nameStr+str(j), size = 1024, events = 10)
                 testFile.setLocation(site)
                 testFile.create()
-                #testFile.setLocation(site)
                 testFileset.addFile(testFile)
 
             testFileset.commit()
             testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
             testSubscription.create()
-            #testSubscription.commit()
-            #print testSubscription.filesOfStatus('Available')
-            print 'Created subscription %s' %(testSubscription['id'])
-
 
             myThread.transaction.commit()
 
@@ -207,25 +201,26 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
+        if not workloadSpec:
+            workloadSpec = "TestSingleWorkload/TestHugeTask"
+
+
+        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
+                                name = "wf001", task="Merge")
+        testWorkflow.create()
+
         for i in range(0, nSubs):
 
             nameStr = str(instance) + str(i)
 
-            if not workloadSpec:
-                workloadSpec = "TestSingleWorkload%s/TestHugeTask" %(nameStr)
-
             myThread.transaction.begin()
 
-            testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                    name = "wf001"+nameStr, task="Merge")
-            testWorkflow.create()
-        
             testFileset = Fileset(name = "TestFileset"+nameStr)
             testFileset.create()
         
 
             for j in range(0,100):
-                #pick a random site
+                #pick the first site
                 site = self.sites[0]
                 testFile = File(lfn = "/singleLfn"+nameStr+str(j), size = 1024, events = 10)
                 testFile.setLocation(site)
@@ -235,11 +230,8 @@ class JobCreatorTest(unittest.TestCase):
             testFileset.commit()
             testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
             testSubscription.create()
-            print 'Created subscription %s' %(testSubscription['id'])
-
 
             myThread.transaction.commit()
-
 
         return
 
@@ -255,18 +247,23 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
+        nameStr = str(instance)
+
+
+        if not workloadSpec:
+            workloadSpec = "TestSingleWorkload%s/TestHugeTask" %(nameStr)
+
+
+        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman2",
+                                name = "wf001"+nameStr, task="Merge")
+        testWorkflow.create()
+
         for i in range(0, nSubs):
 
             nameStr = str(instance) + str(i)
 
-            if not workloadSpec:
-                workloadSpec = "TestSingleWorkload%s/TestHugeTask" %(nameStr)
-
             myThread.transaction.begin()
 
-            testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                    name = "wf001"+nameStr, task="Merge")
-            testWorkflow.create()
         
             testFileset = Fileset(name = "TestFileset"+nameStr)
             testFileset.create()
@@ -283,8 +280,52 @@ class JobCreatorTest(unittest.TestCase):
             testFileset.commit()
             testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
             testSubscription.create()
-            print 'Created subscription %s' %(testSubscription['id'])
 
+            myThread.transaction.commit()
+
+
+        return
+
+
+    def getAbsolutelyMassiveJobGroup(self, instance, nSubs, workloadSpec = None):
+        """
+
+        Creates a giant block of jobs at multiple sites
+
+
+        """
+
+
+
+        myThread = threading.currentThread()
+
+        if not workloadSpec:
+            workloadSpec = "TestSingleWorkload/TestReallyHugeTask" 
+
+        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman3",
+                                name = "afmwf001", task="Merge")
+        testWorkflow.create()
+
+        for i in range(0, nSubs):
+
+            nameStr = str(instance) + str(i)
+
+            myThread.transaction.begin()
+        
+            testFileset = Fileset(name = "TestFileset"+nameStr)
+            testFileset.create()
+
+            for j in range(0,2000):
+                #pick a random site
+                site = self.sites[0]
+                testFile = File(lfn = "/multLfn"+nameStr+str(j), size = 1024, events = 10)
+                testFile.setLocation(self.sites)
+                testFile.create()
+                testFileset.addFile(testFile)
+
+            testFileset.commit()
+            testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
+            testSubscription.create()
 
             myThread.transaction.commit()
 
@@ -301,7 +342,7 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/JobStateMachine/DefaultConfig.py'))
+        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
 
         config.section_("General")
         
@@ -346,6 +387,8 @@ class JobCreatorTest(unittest.TestCase):
         Test for whether or not the job will actually run
 
         """
+
+        #return
 
         myThread = threading.currentThread()
 
@@ -394,6 +437,8 @@ class JobCreatorTest(unittest.TestCase):
 
         """
 
+        #return
+        
         myThread = threading.currentThread()
 
         nSubs = 5
@@ -406,8 +451,8 @@ class JobCreatorTest(unittest.TestCase):
         testJobCreator = JobCreator(config)
         testJobCreator.prepareToStart()
 
-        time.sleep(10)
-
+        #time.sleep(10)
+        
 
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
@@ -426,6 +471,7 @@ class JobCreatorTest(unittest.TestCase):
             print "Waiting for threads to finish"
             time.sleep(1)
 
+        #os.chdir(self.cwd)
 
         return
 
@@ -435,6 +481,8 @@ class JobCreatorTest(unittest.TestCase):
         This one actually tests whether we can read the WMSpec
 
         """
+
+        #return
 
         if not os.path.exists("basicWorkload.pcl"):
             print "Could not find local WMWorkload file"
@@ -476,7 +524,7 @@ class JobCreatorTest(unittest.TestCase):
         testJobCreator = JobCreator(config)
         testJobCreator.prepareToStart()
 
-        time.sleep(60)
+        #time.sleep(20)
 
 
         print "Killing"
@@ -502,6 +550,10 @@ class JobCreatorTest(unittest.TestCase):
             print "Waiting for threads to finish"
             time.sleep(1)
 
+        #os.chdir(self.cwd)
+
+        os.popen3('rm -r test/*')
+
 
 
         return
@@ -514,6 +566,11 @@ class JobCreatorTest(unittest.TestCase):
 
         """
 
+        #return
+
+        print "Starting testD"
+        print os.getcwd()
+
         if not os.path.exists("basicWorkload.pcl"):
             print "Could not find local WMWorkload file"
             print "Aborting!"
@@ -525,20 +582,23 @@ class JobCreatorTest(unittest.TestCase):
         nSubs = 5
 
         self.createSingleSiteCollection("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
+        
 
         config = self.getConfig()
+
+        print "Should have jobs in: "
+        print config.JobCreator.jobCacheDir
 
 
         testJobCreator = JobCreator(config)
         testJobCreator.prepareToStart()
 
-        time.sleep(60)
+        #time.sleep(20)
 
 
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
 
-        
         result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
 
         self.assertEqual(len(result[0].fetchall()), nSubs*100)
@@ -553,12 +613,7 @@ class JobCreatorTest(unittest.TestCase):
 
         self.assertEqual(len(result[0].fetchall()), nSubs * 10)
 
-        result = myThread.dbi.processData('SELECT site_name FROM wmbs_location WHERE id IN (SELECT location FROM wmbs_job)')
-
-        assert len(result[0].fetchall()) > 0, "Had no locations!"
-
-        for i in result[0].fetchall():
-            assert i.values()[0] in self.sites, "Bad site value %s" %(i.values()[0])
+        self.assertEqual(os.listdir('test/BasicProduction/Merge/JobCollection_1_0/job_1'), ['baggage.pcl'])
 
         while (threading.activeCount() > 1):
             #We should never trigger this, but something weird is going on
@@ -566,12 +621,50 @@ class JobCreatorTest(unittest.TestCase):
             time.sleep(1)
 
 
-
+        print myThread.dbi.processData("SELECT * FROM wmbs_location")[0].fetchall()
         return
 
 
+    def testAbsoFuckingLoutelyHugeJob(self):
+        """
+        This one takes a long time to run, but it runs
+        """
+
+        #return
+
+        print "This should take about twelve to fifteen minutes"
+
+        
+        if not os.path.exists("basicWorkload.pcl"):
+            print "Could not find local WMWorkload file"
+            print "Aborting!"
+            raise Exception
 
 
+        myThread = threading.currentThread()
+
+        nSubs = 5
+
+        self.getAbsolutelyMassiveJobGroup("first", nSubs, os.getcwd() + "/basicWorkload.pcl")
+
+        config = self.getConfig()
+
+        startTime = time.clock()
+        testJobCreator = JobCreator(config)
+        testJobCreator.prepareToStart()
+
+        print "Killing"
+        myThread.workerThreadManager.terminateWorkers()
+        stopTime = time.clock()
+
+        print "Time taken: "
+        print stopTime - startTime
+
+        result = myThread.dbi.processData('SELECT id FROM wmbs_job')
+
+        self.assertEqual(len(result[0].fetchall()), nSubs * 200)
+
+        return
 
 
 if __name__ == "__main__":

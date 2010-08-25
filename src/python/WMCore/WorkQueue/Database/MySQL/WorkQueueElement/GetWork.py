@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.5 2009/09/18 13:42:42 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: GetWork.py,v 1.6 2009/09/22 19:40:18 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import random
 import time
@@ -20,13 +20,13 @@ class GetWork(DBFormatter):
     # get elements that match each site resource ordered by priority
     # elements which do not process any data have their input_id set to NULL
     sql = """SELECT we.subscription_id, wsite.name site_name, valid,
-                    wmbs_location.site_name wmbs_site_name,
+                    wmbs_location.site_name AS wmbs_site_name,
                     we.num_jobs, we.input_id, we.parent_flag
             FROM wq_element we
             LEFT JOIN wq_data_site_assoc wbmap ON
                     wbmap.data_id = we.input_id
             LEFT JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
-            LEFT JOIN wmbs_location ON (wsite.name = wmbs_site_name)
+            LEFT JOIN wmbs_location ON (wsite.name = wmbs_location.site_name)
             LEFT JOIN wmbs_subscription_location wmbs_bl ON
                     (we.subscription_id = wmbs_bl.subscription AND
                      wmbs_location.id = wmbs_bl.location)

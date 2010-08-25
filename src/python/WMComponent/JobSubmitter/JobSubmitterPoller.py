@@ -7,8 +7,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.4 2009/11/17 16:52:47 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.5 2010/01/20 17:30:19 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -115,7 +115,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             idList.append({'jobid': job['id'], 'location': job['location']})
         setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
         setLocationAction.execute(bulkList = idList)
-                          
 
         return
 
@@ -233,15 +232,17 @@ class JobSubmitterPoller(BaseWorkerThread):
         count = 0
 
         while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
-            listForSub = [listOfJobs[:self.config.JobSubmitter.jobsPerWorker]]
+            listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]
             listOfJobs = listOfJobs[self.config.JobSubmitter.jobsPerWorker:]
-            self.processPool.enqueue(listForSub)
+            self.processPool.enqueue([{'jobs': listForSub}])
             count += 1
         if len(listOfJobs) > 0:
-            self.processPool.enqueue([listOfJobs])
+            self.processPool.enqueue([{'jobs': listOfJobs}])
             count += 1
 
         #result = self.processPool.dequeue(len(jobList))
+        result = []
+        #for i in range(0, count):
         result = self.processPool.dequeue(count)
 
         #This will return a list of dictionaries of job ids

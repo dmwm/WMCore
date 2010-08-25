@@ -27,9 +27,12 @@ class TestPlugin(PluginBase):
         If this class actually did something, this would handle submissions
         """
 
-        jobList = parameters
+        logging.error("Called")
+        logging.error(parameters)
 
-        if parameters == {} or parameters == []:
+        jobList = parameters.get('jobs', [])
+
+        if parameters == {} or parameters == [] or jobList == []:
             return {'NoResult': [0]}
 
         if type(jobList) == dict:

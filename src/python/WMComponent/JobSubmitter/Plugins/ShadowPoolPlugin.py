@@ -8,8 +8,8 @@ cms-sleepgw.fnal.gov
 
 """
 
-__revision__ = "$Id: ShadowPoolPlugin.py,v 1.1 2009/11/17 16:55:36 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ShadowPoolPlugin.py,v 1.2 2010/01/20 17:30:19 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -38,10 +38,10 @@ class ShadowPoolPlugin(PluginBase):
         If this class actually did something, this would handle submissions
         """
 
-        jobList = parameters
-
-        if parameters == {} or parameters == []:
+        if parameters == {} or parameters == [] or not 'jobs' in parameters.keys():
             return {'NoResult': [0]}
+
+        jobList = parameters.get('jobs')
 
         if type(jobList) == dict:
             #We only got one of them
@@ -137,7 +137,7 @@ class ShadowPoolPlugin(PluginBase):
 
 
         jdl.append("+WMAgent_JobName = \"%s\"\n" % job['name'])
-        jdl.append("+WMAgent_JobID = \"%s\"\n" % job['id'])
+        jdl.append("+WMAgent_JobID = %s\n" % job['id'])
         
         jdl.append("Queue 1\n")
         

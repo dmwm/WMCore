@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetWork.py,v 1.9 2009/11/30 21:43:00 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: GetWork.py,v 1.10 2009/12/01 15:39:57 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import random
 import time
@@ -22,11 +22,8 @@ class GetWork(DBFormatter):
     sql = """SELECT we.id, we.wmtask_id, we.subscription_id, wsite.name site_name, 
                     valid, we.num_jobs, we.input_id, we.parent_flag
             FROM wq_element we
-            LEFT JOIN 
-             (wq_data_site_assoc wbmap 
-                 INNER JOIN wq_site wsite ON (wbmap.site_id = wsite.id)
-              ) ON wbmap.data_id = we.input_id
-              
+            LEFT JOIN  wq_data_site_assoc wbmap ON wbmap.data_id = we.input_id
+            LEFT JOIN wq_site wsite ON wbmap.site_id = wsite.id 
             LEFT JOIN wq_element_site_validation wsv ON
                     (we.id = wsv.element_id AND
                      wbmap.site_id = wsv.site_id)

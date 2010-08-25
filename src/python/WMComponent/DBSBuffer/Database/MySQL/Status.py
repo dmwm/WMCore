@@ -5,8 +5,8 @@ _Status_
 MySQL implementation of DBSBuffer.Status
 """
 
-__revision__ = "$Id: Status.py,v 1.1 2010/05/26 21:04:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Status.py,v 1.2 2010/06/15 21:50:29 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -27,7 +27,17 @@ class Status(DBFormatter):
                  dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
                WHERE dbsbuffer_dataset.path != "bogus"
                GROUP BY dbsbuffer_dataset.path, dbsbuffer_algo.app_name, dbsbuffer_algo.app_ver"""
+    
+    def converDecimalToInt(self, results):
+        for result in results:
+            if result['events'] != None:
+                result['events'] = int(result['events'])
+            if result['filesize'] != None:
+                result['filesize'] = int(result['filesize'])
+        return results
                              
     def execute(self, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
-        return self.formatDict(result)
+        results = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
+        results = self.formatDict(results)
+        self.converDecimalToInt(results)
+        return results

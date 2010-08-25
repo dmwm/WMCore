@@ -19,13 +19,13 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.28 2009/11/19 14:47:48 metson Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: RESTApi.py,v 1.29 2009/12/22 19:47:21 metson Exp $"
+__version__ = "$Revision: 1.29 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml, make_rfc_timestamp
 from WMCore.WMFactory import WMFactory
-from cherrypy import expose, request, response
+from cherrypy import expose, request, response, HTTPError
 from cherrypy.lib.cptools import accept
 try:
     # Python 2.6
@@ -100,22 +100,30 @@ class RESTApi(WebAPI):
                                  types = types,
                                  title = self.config.title,
                                  description = self.config.description)
+        try:
+            data, expires = self.methods['handler']['call'](request.method, args, kwargs)
+            return self.formatResponse(data, expires, kwargs.get('return_type', None))
+            
+        except HTTPError, h:
+            response.status = h[0]
+            
+            return self.formatResponse({'exception': h[0],
+                                        'type': 'HTTPError',
+                                        'message': h[1]},
+                                        format=kwargs.get('return_type', None))
+        except Exception, e:
+            response.status = 500
+            return self.formatResponse({'exception': 500,
+                                        'type': type(e), 
+                                        'message': e.message},
+                                        format=kwargs.get('return_type', None))
     
-        data = self.methods['handler']['call'](request.method, args, kwargs)
-        if 'return_type' in kwargs:
-            return self.formatResponse(data, kwargs['return_type'])
-        else:
-            return self.formatResponse(data)
-    
-    def formatResponse(self, data, format=None):
+    def formatResponse(self, data, expires=False, format=None):
         """
         
         data format can be anything API provides, but it will make sense 
         to have either dict format or list of dict format.
         
-        However is data contains constraint for expiration it should have dict
-        format of  {'data': data (any data content user API provide),
-                    'expire': expiration time}  
         """
         
         acchdr = request.headers.elements('Accept')
@@ -126,9 +134,10 @@ class RESTApi(WebAPI):
         else:
             datatype = accept(self.supporttypes)
 
-        if type(data) == dict and 'expire' in data.keys():
-            response.headers['Expires'] = make_rfc_timestamp(data['expire'])
+        if expires:
+            response.headers['Expires'] = make_rfc_timestamp(expires)
         else:
+            #TODO: pick up the default expires from config
             response.headers['Expires'] = make_rfc_timestamp(5*60)
             
         data = self.formatter.format(data, datatype)

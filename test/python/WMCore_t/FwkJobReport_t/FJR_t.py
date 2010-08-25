@@ -6,8 +6,8 @@ General test for FJR
 
 """
 
-__revision__ = "$Id: FJR_t.py,v 1.3 2009/02/09 21:00:15 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FJR_t.py,v 1.4 2009/08/10 16:51:18 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -121,6 +121,46 @@ class FJRTest(unittest.TestCase):
         newReportLocation = os.path.join(os.getenv("TESTDIR"),"fjr2.xml")
         print('Merging reports')
         FJRUtils.mergeReports(newReportLocation, reportLocation)
+
+        aFJR = fjr[0]
+
+        #Did we get the checksum out?  How about the dataset?
+        for fjrFile in aFJR.files:
+            self.assertEqual(fjrFile['Checksum'], '12345')
+            ds = fjrFile.dataset[0]
+            self.assertEqual(ds['PSetHash'], "a long hash")
+            self.assertEqual(ds['ProcessedDataset'], "RECO1")
+            self.assertEqual(ds['OutputModuleName'], "output module name")
+
+        return
+
+    def testC(self):
+        """
+        Read multiple jobReports and measure parsing time
+        
+        Depends on FJRs in WMComponent_t.DBSBuffer_t
+        """
+
+        reportDir = os.path.join(os.getenv('WMCOREBASE'), 'test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports')
+        if not os.path.isdir(reportDir):
+            print "Could not find test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports"
+            print "Aborting this test without error"
+            return
+        dirlist   = os.listdir(reportDir)
+
+        for report in dirlist:
+            if not report.endswith('.xml') or not report.startswith('FrameworkJobReport'):
+                continue
+            reportLocation = os.path.join(reportDir, report)
+            jobReports     = readJobReport(reportLocation)
+
+            for aFJR in jobReports:
+                for fjrFile in aFJR.files:
+                    ds = fjrFile.dataset[0]
+                    self.assertEqual(ds['PSetHash'], None)
+                    self.assertEqual(ds['ApplicationName'], 'cmsRun')
+                    self.assertEqual(ds['ProcessedDataset'].find('Commissioning08-v1'), 0)
+        return
 
     def runTest(self):
         """

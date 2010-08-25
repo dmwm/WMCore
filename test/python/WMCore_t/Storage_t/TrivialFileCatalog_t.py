@@ -5,8 +5,8 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
-__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.4 2010/07/13 13:17:44 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.5 2010/07/13 13:20:46 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import unittest
@@ -76,7 +76,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         phedex_pfn = phedex_dom.getElementsByTagName("mapping")[0].getAttribute('pfn') 
         
         pfn = tfc.matchLFN(protocol, lfn)
-        msg = 'TFC pfn (%s) did not match PhEDEx pfn (%)' % (pfn, phedex_pfn)
+        msg = 'TFC pfn (%s) did not match PhEDEx pfn (%s)' % (pfn, phedex_pfn)
         assert phedex_pfn == pfn,  msg
     
 if __name__ == "__main__":

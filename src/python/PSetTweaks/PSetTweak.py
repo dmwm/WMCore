@@ -7,7 +7,6 @@ independent python structure
 
 """
 
-
 import inspect
 import pickle
 import StringIO

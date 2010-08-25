@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.25 2009/09/09 19:09:18 mnorman Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Job_t.py,v 1.26 2009/09/10 16:47:51 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import unittest
 import logging
@@ -627,7 +627,7 @@ class JobTest(unittest.TestCase):
 
         value = testJobA.getCache()
 
-        self.assertEqual(value, 'None')
+        self.assertEqual(value, None)
 
         testJobA.setCache('UnderTheDeepBlueSea')
 

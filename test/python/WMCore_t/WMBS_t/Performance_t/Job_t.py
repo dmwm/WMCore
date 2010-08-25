@@ -8,7 +8,8 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.File import File
 from WMCore.DataStructs.Run import Run
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class JobTest(unittest.TestCase, WMBSBase):
     """
     __JobTest__

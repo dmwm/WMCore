@@ -5,7 +5,8 @@ import unittest
 import time
 from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.Database.DBFactory import DBFactory
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class LocationTest(unittest.TestCase, WMBSBase):
     """
     __LocationTest__

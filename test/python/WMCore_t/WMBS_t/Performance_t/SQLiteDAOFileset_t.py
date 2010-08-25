@@ -12,7 +12,8 @@ import unittest
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.Fileset_t import FilesetTest
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class SQLiteDAOFilesetTest(FilesetTest, SQLiteDAOTest, TestCase):
     """
     __SQLiteDAOFilesetTest__

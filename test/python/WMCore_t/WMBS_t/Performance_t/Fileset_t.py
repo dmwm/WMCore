@@ -28,7 +28,8 @@ from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.File import File
 
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class FilesetTest(TestCase, WMBSBase):
     """
     __FilesetTest__

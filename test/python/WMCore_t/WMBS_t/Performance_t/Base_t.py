@@ -9,7 +9,8 @@ from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class BaseTest:
     """
     __BaseTest__

@@ -12,7 +12,8 @@ import unittest
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.Location_t import LocationTest
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class MySQLDAOLocationTest(LocationTest, MySQLDAOTest, TestCase):
     """
     __MySQLDAOLocationTest__

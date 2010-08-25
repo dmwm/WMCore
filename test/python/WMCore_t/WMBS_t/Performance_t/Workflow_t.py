@@ -18,7 +18,8 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore_t.WMBS_t.Workflow_t import WorkflowTest as WorkflowTestBase
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class WorkflowTest(unittest.TestCase, WMBSBase):
     """
     __WorkflowTest__

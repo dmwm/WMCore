@@ -2,6 +2,8 @@
 
 import commands, os
 from ConfigParser import ConfigParser
+from nose.plugins.attrib import attr
+@attr('performance')
 class SQLiteDAOTest:
     """
     __SQLiteDAOTest__

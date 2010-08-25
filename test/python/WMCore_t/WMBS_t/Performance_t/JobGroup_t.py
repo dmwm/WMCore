@@ -14,7 +14,8 @@ from WMCore.WMBS.File import File
 from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Fileset import Fileset as WMBSFileset
 
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class JobGroupTest(unittest.TestCase, WMBSBase):
     """
     __JobGroupTest__

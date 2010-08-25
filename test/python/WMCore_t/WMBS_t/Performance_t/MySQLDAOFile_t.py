@@ -12,7 +12,8 @@ import unittest
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.File_t import PerformanceFileTest
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class MySQLDAOFile_t(PerformanceFileTest, MySQLDAOTest, TestCase):
     """
     __MySQLDAOFileTest__

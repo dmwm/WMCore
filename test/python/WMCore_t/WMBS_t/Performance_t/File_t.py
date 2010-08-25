@@ -31,7 +31,8 @@ from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.WMBS.File import File
 from WMCore.DataStructs.Run import Run
 
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class PerformanceFileTest(TestCase, WMBSBase):
     """
     __SQLiteDAOFileTest__

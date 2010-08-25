@@ -11,7 +11,8 @@ import unittest
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
 from WMCore_t.WMBS_t.Performance_t.JobGroup_t import JobGroupTest
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class MySQLDAOJobGroupTest(JobGroupTest, MySQLDAOTest, TestCase):
     """
     __MySQLDAOJobGroupTest__

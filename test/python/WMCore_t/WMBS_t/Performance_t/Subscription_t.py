@@ -16,7 +16,8 @@ import time
 from WMCore_t.WMBS_t.Performance_t.WMBSBase import WMBSBase
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMBS.Subscription import Subscription
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class SubscriptionTest(unittest.TestCase, WMBSBase):
     """
     __SubscriptionTest__

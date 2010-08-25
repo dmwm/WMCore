@@ -12,7 +12,8 @@ import unittest
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.SQLiteDAO_t import SQLiteDAOTest
 from WMCore_t.WMBS_t.Performance_t.JobGroup_t import JobGroupTest
-
+from nose.plugins.attrib import attr
+@attr('performance')
 class SQLiteDAOJobGroupTest(JobGroupTest, SQLiteDAOTest, TestCase):
     """
     __SQLiteDAOJobGroupTest__

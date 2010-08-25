@@ -7,8 +7,8 @@ or a a set of files for each job.
 
 """
 
-__revision__ = "$Id: SizeBased.py,v 1.4 2009/12/15 14:07:09 spiga Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: SizeBased.py,v 1.5 2009/12/16 18:49:12 mnorman Exp $"
+__version__  = "$Revision: 1.5 $"
 
 import logging
 
@@ -36,24 +36,29 @@ class SizeBased(JobFactory):
         for location in locationDict.keys():
             self.newGroup()
             fileList     = locationDict[location]
+            self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
             currentSize = 0
             
             for f in fileList:
                 sizeOfFile = f['size']
                 if sizeOfFile > sizePerJob:
-                    logging.error("File %s is too big for a job!" %(f['lfn']))
-                    continue
-                
-                if currentSize + sizeOfFile > sizePerJob:
-                    #Create new jobs, because we are out of room
+                    if currentSize > 0:
+                        self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                    self.currentJob.addFile(f)
                     self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
                     currentSize = 0
 
-                if currentSize + sizeOfFile <= sizePerJob:
-                    
-                    if not self.currentJob:
+                else:
+                    if currentSize + sizeOfFile > sizePerJob:
+                        #Create new jobs, because we are out of room
                         self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
-                    #Add if it will be smaller
-                    self.currentJob.addFile(f)
-                    currentSize += sizeOfFile
+                        currentSize = 0
+
+                    if currentSize + sizeOfFile <= sizePerJob:
+                    
+                        #if not self.currentJob:
+                        #    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                        #Add if it will be smaller
+                        self.currentJob.addFile(f)
+                        currentSize += sizeOfFile
 

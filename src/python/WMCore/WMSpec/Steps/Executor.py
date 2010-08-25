@@ -15,6 +15,9 @@ class Executor:
     Define API for a step during execution
 
     """
+    
+    def __init__(self):
+        pass
 
     def pre(self, step):
         """

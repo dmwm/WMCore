@@ -5,8 +5,8 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.10 2010/05/11 10:47:55 spigafi Exp $"
-__revision__ = "$Revision: 1.10 $"
+__version__ = "$Id: RunningJob.py,v 1.11 2010/05/11 22:34:22 spigafi Exp $"
+__revision__ = "$Revision: 1.11 $"
 
 # imports
 # import logging
@@ -14,7 +14,8 @@ __revision__ = "$Revision: 1.10 $"
 from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 
 from WMCore.BossLite.Common.Exceptions import JobError
-from WMCore.BossLite.Common.System import strToList, listToStr, strToTimestamp
+from WMCore.BossLite.Common.System import strToList, listToStr
+from WMCore.BossLite.Common.System import encodeTimestamp, decodeTimestamp
 
 class RunningJob(DbObject):
     """
@@ -73,15 +74,15 @@ class RunningJob(DbObject):
                  'status' : None,
                  'statusReason' : None,
                  'destination' : None,
-                 'lbTimestamp' : None,
-                 'submissionTime' : None,
-                 'scheduledAtSite' : None,
-                 'startTime' : None,
-                 'stopTime' : None,
-                 'stageOutTime' : None,
-                 'getOutputTime' : None,
-                 'outputRequestTime' : None,
-                 'outputEnqueueTime' : None,
+                 'lbTimestamp' : 0,
+                 'submissionTime' : 0,
+                 'scheduledAtSite' : 0,
+                 'startTime' : 0,
+                 'stopTime' : 0,
+                 'stageOutTime' : 0,
+                 'getOutputTime' : 0,
+                 'outputRequestTime' : 0,
+                 'outputEnqueueTime' : 0,
                  'getOutputRetry' : 0,
                  'outputDirectory' : None,
                  'storage' : [],
@@ -248,7 +249,7 @@ class RunningJobDBFormatter(DbObjectDBFormatter):
         
         result = {}  
         
-        # result['id']                    = entry['id']
+        # result['id']                   = entry['id']
         result['jobId']                 = res['jobId']
         result['taskId']                = res['taskId']
         result['submission']            = res['submission']
@@ -262,18 +263,24 @@ class RunningJobDBFormatter(DbObjectDBFormatter):
         result['status']                = res['status']
         result['statusReason']          = res['statusReason']
         result['destination']           = res['destination']
-        result['lbTimestamp']           = strToTimestamp(res['lbTimestamp'])
-        result['submissionTime']        = strToTimestamp(res['submissionTime'])
+        result['lbTimestamp']           = \
+                            encodeTimestamp(res['lbTimestamp'])
+        result['submissionTime']        = \
+                            encodeTimestamp(res['submissionTime'])
         result['scheduledAtSite']       = \
-                                    strToTimestamp(res['scheduledAtSite'])
-        result['startTime']             = strToTimestamp(res['startTime'])
-        result['stopTime']              = strToTimestamp(res['stopTime'])
-        result['stageOutTime']          = strToTimestamp(res['stageOutTime'])
-        result['getOutputTime']         = strToTimestamp(res['getOutputTime'])
+                            encodeTimestamp(res['scheduledAtSite'])
+        result['startTime']             = \
+                            encodeTimestamp(res['startTime'])
+        result['stopTime']              = \
+                            encodeTimestamp(res['stopTime'])
+        result['stageOutTime']          = \
+                            encodeTimestamp(res['stageOutTime'])
+        result['getOutputTime']         = \
+                            encodeTimestamp(res['getOutputTime'])
         result['outputRequestTime']     = \
-                                    strToTimestamp(res['outputRequestTime'])
+                            encodeTimestamp(res['outputRequestTime'])
         result['outputEnqueueTime']     = \
-                                    strToTimestamp(res['outputEnqueueTime'])
+                            encodeTimestamp(res['outputEnqueueTime'])
         result['getOutputRetry']        = res['getOutputRetry']
         result['outputDirectory']       = res['outputDirectory']
         result['storage']               = listToStr(res['storage'])
@@ -308,15 +315,24 @@ class RunningJobDBFormatter(DbObjectDBFormatter):
             result['status']                = entry['status']
             result['statusReason']          = entry['statusreason']
             result['destination']           = entry['destination']
-            result['lbTimestamp']           = entry['lbtimestamp']
-            result['submissionTime']        = entry['submissiontime']
-            result['scheduledAtSite']       = entry['scheduledatsite']
-            result['startTime']             = entry['starttime']
-            result['stopTime']              = entry['stoptime']
-            result['stageOutTime']          = entry['stageouttime']
-            result['getOutputTime']         = entry['getoutputtime']
-            result['outputRequestTime']     = entry['outputrequesttime']
-            result['outputEnqueueTime']     = entry['outputenqueuetime']
+            result['lbTimestamp']           = \
+                                decodeTimestamp(entry['lbtimestamp'])
+            result['submissionTime']        = \
+                                decodeTimestamp(entry['submissiontime'])
+            result['scheduledAtSite']       = \
+                                decodeTimestamp(entry['scheduledatsite'])
+            result['startTime']             = \
+                                decodeTimestamp(entry['starttime'])
+            result['stopTime']              = \
+                                decodeTimestamp(entry['stoptime'])
+            result['stageOutTime']          = \
+                                decodeTimestamp(entry['stageouttime'])
+            result['getOutputTime']         = \
+                                decodeTimestamp(entry['getoutputtime'])
+            result['outputRequestTime']     = \
+                                decodeTimestamp(entry['outputrequesttime'])
+            result['outputEnqueueTime']     = \
+                                decodeTimestamp(entry['outputenqueuetime'])
             result['getOutputRetry']        = entry['getoutputretry']
             result['outputDirectory']       = entry['outputdirectory']
             result['storage']               = strToList(entry['storage'])

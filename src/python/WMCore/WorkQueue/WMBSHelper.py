@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.20 2010/04/07 19:19:25 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.21 2010/04/08 16:48:46 sryu Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import logging
 
@@ -111,7 +111,7 @@ class WMBSHelper:
         self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
     
-    def addFiles(self, dbsBlock, locations):
+    def addFiles(self, dbsBlock):
         """
         _createFiles_
         
@@ -121,7 +121,7 @@ class WMBSHelper:
 
         for dbsFile in dbsBlock['Files']:
             self.topLevelFileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
-                                            locations))
+                                              dbsBlock['StorageElements']))
                     
         self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)

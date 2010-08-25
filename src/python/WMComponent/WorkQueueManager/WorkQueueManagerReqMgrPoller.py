@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.7 2010/05/27 15:54:28 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.8 2010/06/07 19:04:46 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import re
 import os
@@ -59,7 +59,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                         for unit in units:
                             self.wq._insertWorkQueueElement(unit)
                         try:
-                            self.reqMgr.postAssignment(reqName)
+                            self.reqMgr.postAssignment(reqName, 
+                                            self.config.get('monitorURL', ''))
                         except Exception, ex:
                             # added for debuging but should be removed since remote call 
                             # doesn't make send to trace the stack.

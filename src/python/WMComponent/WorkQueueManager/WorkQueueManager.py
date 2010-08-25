@@ -6,11 +6,12 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: WorkQueueManager.py,v 1.9 2010/04/15 21:00:21 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WorkQueueManager.py,v 1.10 2010/06/07 19:04:46 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import logging
 import threading
+
 from os import path
 
 from WMCore.Agent.Harness import Harness
@@ -29,6 +30,7 @@ from WMCore.Services.RequestManager.RequestManager \
 
 # Should probably import this but don't want to create the dependency
 WORKQUEUE_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
+WORKQUEUE_MONITOR_NAMESPACE = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
 
 class WorkQueueManager(Harness):
 
@@ -59,37 +61,45 @@ class WorkQueueManager(Harness):
         if not hasattr(wqManager, 'pollInterval'):
             wqManager.pollInterval = 600
 
-        # ReqMgr params
-        if not hasattr(wqManager, 'reqMgrConfig'):
-            wqManager.reqMgrConfig = {}
-        if not hasattr(wqManager.reqMgrConfig, 'teamName') and \
-                                            hasattr(config.Agent, 'teamName'):
-            wqManager.reqMgrConfig['teamName'] = config.Agent.teamName
-
         # WorkQueue config
         if not hasattr(wqManager, 'queueParams'):
             wqManager.queueParams = {}
         qConfig = wqManager.queueParams
         qConfig.setdefault('CacheDir', path.join(wqManager.componentDir, 'wf'))
 
-        # find http endpoint if not set
-        if "QueueURL" not in qConfig.keys():
-            try:
-                for webapp in config.listWebapps_():
-                    webapp = config.webapp_(webapp)
-                    for page in webapp.section_('views').section_('active'):
-                        if page.section_('model').object == WORKQUEUE_REST_NAMESPACE:
-                            qConfig['QueueURL'] = 'http://%s:%s/%s' % (webapp.server.host,
-                                                                      webapp.server.port,
-                                                                      page._internal_name)
-                            break
-                    else:
-                        raise RuntimeError
-            except RuntimeError:
-                msg = """Unable to determine WorkQueue QueueURL, Either:
-                Configure a WorkQueueRESTModel webapp_ section or,
-                Add a WorkQueueManager.queueParams.QueueURL setting."""
-                raise RuntimeError, msg
+        try:
+            monitorURL = ''
+            queueFlag = False
+            for webapp in config.listWebapps_():
+                webapp = config.webapp_(webapp)
+                for page in webapp.section_('views').section_('active'):
+                    if not queueFlag and page.section_('model').object == WORKQUEUE_REST_NAMESPACE:
+                        qConfig['QueueURL'] = 'http://%s:%s/%s' % (webapp.server.host,
+                                                                  webapp.server.port,
+                                                                  page._internal_name)
+                        queueFlag = True
+                        
+                    if page.object == WORKQUEUE_MONITOR_NAMESPACE:
+                        monitorURL = 'http://%s:%s/%s' % (webapp.server.host,
+                                                          webapp.server.port,
+                                                          page._internal_name)
+            if not queueFlag:
+                raise RuntimeError
+            
+        except RuntimeError:
+            msg = """Unable to determine WorkQueue QueueURL, Either:
+            Configure a WorkQueueRESTModel webapp_ section or,
+            Add a WorkQueueManager.queueParams.QueueURL setting."""
+            raise RuntimeError, msg
+    
+        # ReqMgr params
+        if not hasattr(wqManager, 'reqMgrConfig'):
+            wqManager.reqMgrConfig = {}
+        if not hasattr(wqManager.reqMgrConfig, 'teamName') and \
+                                            hasattr(config.Agent, 'teamName'):
+            wqManager.reqMgrConfig['teamName'] = config.Agent.teamName
+        
+        wqManager.reqMgrConfig['monitorURL'] = monitorURL
 
         return config
 

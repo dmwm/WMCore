@@ -292,13 +292,11 @@ class JSONThunker:
                 toThunk2 = toThunk.__to_json__(self)
                 self.unrecurse(toThunk)
                 return toThunk2
-            elif ( (toThunk.__class__.__module__, toThunk.__class__.__name__) in
-                   self.dictSortOfObjects ):
+            elif ( isinstance(toThunk, dict) ):
                 toThunk2 = self.handleDictObjectThunk( toThunk )
                 self.unrecurse(toThunk)
                 return toThunk2
-            elif ( (toThunk.__class__.__module__, toThunk.__class__.__name__) in
-                   self.listSortOfObjects ):
+            elif ( isinstance(toThunk, list) ):
                 toThunk2 = self.handleListObjectThunk( toThunk )
                 self.unrecurse(toThunk)
                 return toThunk2
@@ -320,27 +318,43 @@ class JSONThunker:
     
     def handleDictObjectThunk(self, data):
         tempDict = {'json_hack_mod_' : data.__class__.__module__,
-                                'json_hack_name_': data.__class__.__name__, }
+                    'json_hack_name_': data.__class__.__name__,
+                    'json_hack_in_dict_' : {} }
+        
+        for k,v in data.__dict__.iteritems():
+            tempDict[k] = self._thunk(v)
         for k,v in data.iteritems():
-            tempDict[k] = self._thunk(v)            
+            tempDict['json_hack_in_dict_'][k] = self._thunk(v)
+            
         return tempDict
     
     def handleDictObjectUnThunk(self, value, data):
         for k,v in data.iteritems():
-            value[k] = self._unthunk(v)
+            if (k == 'json_hack_in_dict_'):
+                for k2,v2 in data['json_hack_in_dict_'].iteritems():
+                    value[k2] = self._unthunk(v2)
+            else:
+                value.__dict__[k] = self._unthunk(v)
         return value
     
     def handleListObjectThunk(self, data):
         tempDict = {'json_hack_mod_' : data.__class__.__module__,
                                 'json_hack_name_': data.__class__.__name__, 'json_list_data_' : [] }
         for k,v in enumerate(data):
-            tempDict['json_list_data_'].append(self._thunk(v))            
+            tempDict['json_list_data_'].append(self._thunk(v)) 
+        for k,v in data.__dict__.iteritems():
+            tempDict[k] = self._thunk(v)           
         return tempDict
     
     def handleListObjectUnThunk(self, value, data):
         for k,v in enumerate(data['json_list_data_']):
             data['json_list_data_'][k] = self._unthunk(v)
         value.extend(data['json_list_data_'])
+        
+        for k,v in data.iteritems():
+            if (k == 'json_list_data_'):
+                continue
+            value.__dict__ = self._unthunk(v)
         return value
     
     def unthunk(self, data):
@@ -389,13 +403,13 @@ class JSONThunker:
                     except:
                         value = ourClass()
                     value = ourClass.__from_json__(value, data, self)
-                elif ( (module, name) in self.dictSortOfObjects ):  
+                elif ( 'json_hack_in_dict_' in data ):  
                     try:
                         value.__class__ = ourClass
                     except:
                         value = ourClass()
                     value = self.handleDictObjectUnThunk( value, data )
-                elif ( (module, name) in self.listSortOfObjects ):  
+                elif ( 'json_list_data_' in data ):  
                     try:
                         value.__class__ = ourClass
                     except:

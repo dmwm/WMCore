@@ -7,6 +7,7 @@ import unittest
 import WMCore.Services.Requests as Requests
 import os
 import threading
+import pprint
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from sets import Set
@@ -105,7 +106,11 @@ class TestWMBSJSON(unittest.TestCase):
     def roundTrip(self,data):
         encoded = self.request.encode(data)
         decoded = self.request.decode(encoded)
-        self.assertEqual( data, decoded )
+        pp = pprint.PrettyPrinter()
+        datapp = pp.pformat(data)
+        decodedpp = pp.pformat(decoded)
+        encodedpp = pp.pformat(encoded)
+        self.assertEqual( data, decoded, "%s \n\n!= %s \n\n(encoded is %s)" %(datapp,decodedpp,encodedpp) )
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

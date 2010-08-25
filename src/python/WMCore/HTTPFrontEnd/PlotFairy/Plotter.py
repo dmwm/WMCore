@@ -36,7 +36,7 @@ class Plotter(RESTModel):
                                  'WMCore.HTTPFrontEnd.PlotFairy.Plots')
         
     def plot(self, *args, **kwargs):
-        input = self.sanitise_input(*args, **kwargs)
+        input = self.sanitise_input(args, kwargs, 'plot')
         if not input['data']:
             # We have a URL for some json - we hope!
             jr = JSONRequests(input['url'])

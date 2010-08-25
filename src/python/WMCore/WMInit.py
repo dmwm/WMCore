@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.10 2009/07/17 14:22:16 swakef Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WMInit.py,v 1.11 2009/07/22 21:55:15 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -98,7 +98,7 @@ class WMInit:
 
 
 
-    def setSchema(self, modules = []):
+    def setSchema(self, modules = [], params = None):
         """
         Creates the schema in the database based on the modules
         input.
@@ -108,6 +108,14 @@ class WMInit:
         """
         myThread = threading.currentThread()
 
+        parameters = None
+        flag = False
+        #Set up for typical DBCreator format: logger, dbi, params
+        if not params == None:
+            parameters = [None, None, params]
+            flag = True
+        
+
         # filter out unique modules
 
         myThread.transaction.begin()
@@ -116,7 +124,8 @@ class WMInit:
             # notice the default structure: <dialect>/Create
             factory = WMFactory(factoryName, factoryName + "." + \
                 myThread.dialect)
-            create = factory.loadObject("Create")
+
+            create = factory.loadObject("Create", args = parameters, listFlag = flag)
             createworked = create.execute(conn = myThread.transaction.conn,
                                           transaction = myThread.transaction)
             if createworked:

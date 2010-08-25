@@ -6,8 +6,8 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.9 2009/07/15 22:31:03 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WMFactory.py,v 1.10 2009/07/22 21:55:15 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -41,7 +41,7 @@ namespace (package): %s """ % (name, str(namespace))
         myThread.factory[name] = self 
 
     def loadObject(self, classname, args = None, storeInCache = True, \
-        getFromCache = False):
+        getFromCache = False, listFlag = False):
         """
         Dynamically loads the object from file.        
         For this to work the class name has to 
@@ -72,8 +72,15 @@ namespace (package): %s """ % (name, str(namespace))
         obj = getattr(module, classname.split('.')[-1])
         if args == None:
             classinstance = obj()
-        else:  
-            classinstance = obj(args)
+        else:
+            #This handles the passing of list-style arguments instead of dicts
+            #Primarily for setting the schema
+            #Or anywhere you need arguments of the form (a,b,c,...)
+            if type(args) == list and listFlag:
+                classinstance = obj(*args)
+            else:
+                #But if you actually need to pass a list, better do it the old fashioned way
+                classinstance = obj(args)
         if storeInCache:
             self.objectList[classname] = classinstance
         logging.debug("Created instance for class: "+classname)
@@ -81,3 +88,4 @@ namespace (package): %s """ % (name, str(namespace))
         #except Exception,ex:
         #    raise ex
             #raise WMException(WMEXCEPTION['WMCORE-4']+' '+errModule+' : '+ str(ex), 'WMCORE-4')
+

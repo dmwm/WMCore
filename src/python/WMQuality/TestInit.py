@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.12 2009/07/13 20:02:55 meloam Exp $"
+    "$Id: TestInit.py,v 1.13 2009/07/22 21:55:15 mnorman Exp $"
 __version__ = \
-    "$Revision: 1.12 $"
+    "$Revision: 1.13 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -63,7 +63,7 @@ class TestInit:
         self.init.setDatabaseConnection(os.getenv("DATABASE"), \
             self.backend, os.getenv("DBSOCK"))
 
-    def setSchema(self, customModules = [], useDefault = True):
+    def setSchema(self, customModules = [], useDefault = True, params = None):
         """
         Creates the schema in the database for the default 
         tables/services: trigger, message service, threadpool.
@@ -83,7 +83,7 @@ class TestInit:
         modules = {}
         for module in (defaultModules + customModules):
             modules[module] = 'done'
-        self.init.setSchema(modules.keys())
+        self.init.setSchema(modules.keys(), params = params)
 
     def initializeSchema(self, modules = []):
         """

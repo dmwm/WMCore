@@ -6,10 +6,11 @@ MySQL implementation of BossLite.RunningJob.Load
 """
 
 __all__ = []
-__revision__ = "$Id: Load.py,v 1.2 2010/05/10 13:00:10 spigafi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Load.py,v 1.3 2010/05/28 11:29:13 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 from WMCore.BossLite.DbObjects.RunningJob import RunningJobDBFormatter
 
 class Load(DBFormatter):
@@ -61,9 +62,9 @@ class Load(DBFormatter):
         
         for x in binds:
             if type(binds[x]) == str :
-                whereStatement.append( "%s = '%s'" % (x, binds[x]) )
+                whereStatement.append( "%s = '%s'" % (RunningJob.fields[x], binds[x]) )
             else:
-                whereStatement.append( "%s = %s" % (x, binds[x]) )
+                whereStatement.append( "%s = %s" % (RunningJob.fields[x], binds[x]) )
             
         whereClause = ' AND '.join(whereStatement)
 

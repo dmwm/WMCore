@@ -9,11 +9,11 @@ from WMCore.WMSpec.Seeders.SeederInterface import SeederInterface
 class RunAndLumiSeeder(SeederInterface):
 
     def __init__(self, **options):
-        self.initialRun = options.get("initial_run", 1)
-        self.runIncrement = options.get("run_increment", 1)
-        self.initialLumi = options.get("initial_lumi", 0)
-        self.lumiIncrement = options.get("lumi_increment", 1)
-        self.lumiPerRun = options.get("lumi_per_run", 10)
+        self.initialRun    = int(options.get("initial_run",   1))
+        self.runIncrement  = int(options.get("run_increment", 1))
+        self.initialLumi   = int(options.get("initial_lumi",  0))
+        self.lumiIncrement = int(options.get("lumi_increment",1))
+        self.lumiPerRun    = int(options.get("lumi_per_run", 10))
 
         self.currentRun = self.initialRun
         self.currentLumi = self.initialLumi

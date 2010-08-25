@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.30 2010/05/24 19:32:44 mnorman Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.31 2010/05/25 15:26:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import logging
 import os.path
@@ -16,9 +16,6 @@ import time
 import copy
 import random
 import tempfile
-import pdb
-import gc
-#import cProfile, pstats
 
 import WMCore.WMInit
 from WMCore.FwkJobReport.Report import Report
@@ -46,9 +43,6 @@ class JobAccountantTest(unittest.TestCase):
 
     Unit tests for the WMAgent JobAccountant.
     """
-    def runTest(self):
-        return
-    
     def setUp(self):
         """
         _setUp_
@@ -59,7 +53,6 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database", "WMCore.WMBS"])
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
@@ -103,14 +96,14 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit.delWorkDir()
         return
 
-    def createConfig(self, workerThreads):
+    def createConfig(self):
         """
         _createConfig_
 
-        Create a config for the JobAccountant with the given number of worker
-        threads.  This config needs to include information for connecting to the
-        database as the component will create it's own database connections.
-        These parameters are still pulled from the environment.
+        Create a config for the JobAccountant.  This config needs to include
+        information for connecting to the database as the component will create
+        it's own database connections.  These parameters are still pulled from
+        the environment.
         """
         config = self.testInit.getConfiguration()
         self.testInit.generateWorkDir(config)
@@ -121,10 +114,8 @@ class JobAccountantTest(unittest.TestCase):
 
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60
-        config.JobAccountant.workerThreads = workerThreads
         config.JobAccountant.componentDir = os.getcwd()
         config.JobAccountant.logLevel = 'SQLDEBUG'
-
         return config
 
     def setupDBForJobFailure(self, jobName, fwjrName):
@@ -187,14 +178,13 @@ class JobAccountantTest(unittest.TestCase):
         assert testJob["outcome"] == "failure", \
                "Error: test job has wrong outcome: %s" % testJob["outcome"]
 
-        # We know longer mark files as failed in the Accountant
+        # We no longer mark files as failed in the Accountant
         self.assertEqual(len(self.testSubscription.filesOfStatus("Acquired")),
-                         1,  "Error: There not be any acquired files.")
+                         1,  "Error: Wrong number of acquired files.")
         self.assertEqual(len(self.testSubscription.filesOfStatus("Failed")), 0,
                          "Error: Wrong number of failed files: %s" \
                          % len(self.testSubscription.filesOfStatus("Failed")))
         return
- 
 
     def testFailedJob(self):
         """
@@ -203,11 +193,10 @@ class JobAccountantTest(unittest.TestCase):
         Run a failed job that has a vaid job report through the accountant.
         Verify that it functions correctly.
         """
-
         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
                                   fwjrName = "SkimFailure.pkl")
-        config = self.createConfig(workerThreads = 1)
 
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
         accountant.algorithm()
@@ -222,11 +211,10 @@ class JobAccountantTest(unittest.TestCase):
         Run an empty framework job report through the accountant.  Verify that
         it functions correctly.
         """
-
         self.setupDBForJobFailure(jobName = "T0Skim-Run2-Skim2-Jet-631",
                                   fwjrName = "EmptyJobReport.pkl")
-        config = self.createConfig(workerThreads = 1)
-
+        
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
         accountant.algorithm()
@@ -241,18 +229,16 @@ class JobAccountantTest(unittest.TestCase):
         Run a framework job report that has invalid XML through the accountant.
         Verify that it functions correctly.
         """
-
         self.setupDBForJobFailure(jobName = "T0Merge-Run1-Mu-AOD-722",
                                   fwjrName = "MergeSuccessBadPKL.pkl")
-        config = self.createConfig(workerThreads = 1)
 
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
         accountant.algorithm()
 
         self.verifyJobFailure("T0Merge-Run1-Mu-AOD-722")
         return
-
 
     def setupDBForSplitJobSuccess(self):
         """
@@ -369,7 +355,6 @@ class JobAccountantTest(unittest.TestCase):
 
         Note that fwkJobReportFiles is a list of DataStructs File objects.
         """
-        
         testJob = Job(id = jobID)
         testJob.loadData()
 
@@ -381,8 +366,6 @@ class JobAccountantTest(unittest.TestCase):
 
         for fwkJobReportFile in fwkJobReportFiles:
             outputFile = File(lfn = fwkJobReportFile["lfn"])
-            #print myThread.dbi.processData("SELECT lfn FROM wmbs_file_details")[0].fetchall()
-            #print fwkJobReportFile['lfn']
             outputFile.load()
             outputFile.loadData(parentage = 1)
 
@@ -422,7 +405,6 @@ class JobAccountantTest(unittest.TestCase):
             for outputParent in outputFile["parents"]:
                 assert outputParent["lfn"] in inputLFNs, \
                        "Error: Unknown parent file: %s" % outputParent["lfn"]
-
 
             fwjrRuns = {}
             for run in fwkJobReportFile["runs"]:
@@ -570,7 +552,6 @@ class JobAccountantTest(unittest.TestCase):
             
         return
         
-
     def testSplitJobs(self):
         """
         _testSplitJobs_
@@ -579,9 +560,8 @@ class JobAccountantTest(unittest.TestCase):
         mainly to verify that the input for a series of split jobs is not marked
         as complete until all the split jobs are complete.
         """
-
         self.setupDBForSplitJobSuccess()
-        config = self.createConfig(workerThreads = 1)
+        config = self.createConfig()
 
         accountant = JobAccountantPoller(config)
         accountant.setup()
@@ -647,7 +627,6 @@ class JobAccountantTest(unittest.TestCase):
                 assert fwjrFile["lfn"] in self.alcaOutputFileset.getFiles(type = "lfn"), \
                        "Error: file is missing from alca output fileset."
 
-
         assert len(self.testSubscription.filesOfStatus("Completed")) == 1, \
                "Error: The input file should be complete."
 
@@ -660,7 +639,6 @@ class JobAccountantTest(unittest.TestCase):
                "Error: Wrong number of files in alca output fileset."
 
         return
-
 
     def setupDBForMergedSkimSuccess(self):
         """
@@ -745,10 +723,9 @@ class JobAccountantTest(unittest.TestCase):
         Test how the accounant handles a skim that produces merged out.  Verify
         that merged files are inserted into the correct output filesets.
         """
-
         self.setupDBForMergedSkimSuccess()
-        config = self.createConfig(workerThreads = 1)
 
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
         accountant.algorithm()
@@ -897,10 +874,9 @@ class JobAccountantTest(unittest.TestCase):
 
         Test the accountant's handling of a merge job.
         """
-
         self.setupDBForMergeSuccess()
-        config = self.createConfig(workerThreads = 1)
 
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
         accountant.algorithm()
@@ -943,10 +919,9 @@ class JobAccountantTest(unittest.TestCase):
         
         See that the Accountant does not crash if there are no files.
         """
-
         self.setupDBForMergeSuccess()
-        config = self.createConfig(workerThreads = 1)
 
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
         accountant.algorithm()
@@ -966,8 +941,6 @@ class JobAccountantTest(unittest.TestCase):
         the DBSBuffer directory.  The job reports are from repack jobs that have
         several outputs, so configure the workflows accordingly.
         """
-        config = self.createConfig(workerThreads = 1)
-
         inputFileset = Fileset(name = "TestFileset")
         inputFileset.create()
 
@@ -1036,14 +1009,11 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
-
-        return
-
         print("  Filling DB...")
 
         self.setupDBForLoadTest()
-        config = self.createConfig(workerThreads = 1)
-
+        
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
 
@@ -1066,172 +1036,6 @@ class JobAccountantTest(unittest.TestCase):
                                          jobReport.getAllFilesFromStep("cmsRun1"))
 
         return
-
-
-    def testTwoProcessLoadTest(self):
-        """
-        _testTwoProcessLoadTest_
-        
-        Run the load test using two worker processes.
-        """
-
-        return
-
-        print("  Filling DB...")
-        
-        self.setupDBForLoadTest()
-        config = self.createConfig(workerThreads = 2)
-        
-        accountant = JobAccountantPoller(config)
-        accountant.setup()
-        
-        print("  Running accountant...")
-        
-        startTime = time.time()
-        accountant.algorithm()
-        endTime = time.time()
-        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
-
-        #gc.collect()
-        #pdb.set_trace()
-        
-        for (jobID, fwjrPath) in self.jobs:
-            print("  Validating %s, %s" % (jobID, fwjrPath))
-            jobReport = Report()
-            jobReport.unpersist(fwjrPath)
-            
-            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
-            self.verifyJobSuccess(jobID)
-            self.verifyDBSBufferContents("Processing",
-                                         ["/some/lfn/for/job/%s" % jobID],
-                                         jobReport.getAllFilesFromStep("cmsRun1"))
-
-        return    
-
-
-#     def testFourProcessLoadTest(self):
-#         """
-#         WMComponent.JobAccountant_t.JobAccountant_t:testFourProcessLoadTest()        
-
-#         Run the load test using four workers processes.
-#         """
-#         logging.debug("Four process load test:")
-#         logging.debug("  Filling DB...")
-
-#         self.setupDBForLoadTest()
-#         config = self.createConfig(workerThreads = 4)
-
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-
-#         logging.debug("  Running accountant...")
-
-#         startTime = time.time()
-#         accountant.algorithm()
-#         endTime = time.time()
-#         logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
-
-#         for (jobID, fwjrPath) in self.jobs:
-#             logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
-#             jobReports = readJobReport(fwjrPath)
-
-#             # There are some job reports missing, so we'll just ignore the
-#             # reports that don't parse correctly.  There are other unit tests
-#             # that verify that the accountant handles this case correctly.
-#             if len(jobReports) == 0:
-#                 continue
-            
-#             self.verifyFileMetaData(jobID, jobReports[0].files)
-#             self.verifyJobSuccess(jobID)
-#             self.verifyDBSBufferContents("Processing",
-#                                          ["/some/lfn/for/job/%s" % jobID],
-#                                          jobReports[0].files)
-
-#         return
-
-#     def testEightProcessLoadTest(self):
-#         """
-#         WMComponent.JobAccountant_t.JobAccountant_t:testEightProcessLoadTest()
-
-#         Run the load test using eight workers processes.
-#         """
-
-#         logging.debug("Eight process load test:")
-#         logging.debug("  Filling DB...")
-
-#         self.setupDBForLoadTest()
-#         config = self.createConfig(workerThreads = 8)
-
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-
-#         logging.debug("  Running accountant...")
-
-#         startTime = time.time()
-#         accountant.algorithm()
-#         endTime = time.time()
-#         logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
-
-#         for (jobID, fwjrPath) in self.jobs:
-#             logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
-#             jobReports = readJobReport(fwjrPath)myWorker.__call__(
-
-#             # There are some job reports missing, so we'll just ignore the
-#             # reports that don't parse correctly.  There are other unit tests
-#             # that verify that the accountant handles this case correctly.
-#             if len(jobReports) == 0:
-#                 continue
-            
-#             self.verifyFileMetaData(jobID, jobReports[0].files)
-#             self.verifyJobSuccess(jobID)
-#             self.verifyDBSBufferContents("Processing",
-#                                          ["/some/lfn/for/job/%s" % jobID],
-#                                          jobReports[0].files)
-
-#         return
-
-#     def testSixteenProcessLoadTest(self):
-#         """
-#         WMComponent.JobAccountant_t.JobAccountant_t:testSixteenProcessLoadTest()
-
-#         Run the load test using sixteen workers processes.
-#         """
-
-#         logging.debug("Sixteen process load test:")
-#         logging.debug("  Filling DB...")
-
-#         self.setupDBForLoadTest()
-#         config = self.createConfig(workerThreads = 16)
-
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-
-#         logging.debug("  Running accountant...")
-
-#         startTime = time.time()
-#         accountant.algorithm()
-#         endTime = time.time()
-#         logging.debug("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
-
-#         for (jobID, fwjrPath) in self.jobs:
-#             logging.debug("  Validating %s, %s" % (jobID, fwjrPath))
-#             jobReports = readJobReport(fwjrPath)
-
-#             # There are some job reports missing, so we'll just ignore the
-#             # reports that don't parse correctly.  There are other unit tests
-#             # that verify that the accountant handles this case correctly.
-#             if len(jobReports) == 0:
-#                 continue
-            
-#             self.verifyFileMetaData(jobID, jobReports[0].files)
-#             self.verifyJobSuccess(jobID)
-#             self.verifyDBSBufferContents("Processing",
-#                                          ["/some/lfn/for/job/%s" % jobID],
-#                                          jobReports[0].files)
-
-#         return
-
-
 
     def setupDBFor4GMerge(self):
         """
@@ -1360,8 +1164,8 @@ class JobAccountantTest(unittest.TestCase):
         Test the accountant's handling of a merge job.
         """
         self.setupDBFor4GMerge()
-        config = self.createConfig(workerThreads = 1)
 
+        config = self.createConfig()
         accountant = JobAccountantPoller(config)
         accountant.setup()
         accountant.algorithm()
@@ -1400,7 +1204,106 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
+    def setupDBForHeritageTest(self):
+        """
+        _setupDBForHeritageTest_
+
+        Inject jobs that have a large amount of input files into WMBS.
+        """
+        totalJobs = 25
+        inputFilesPerJob = 50
+
+        inputFileset = Fileset(name = "TestFileset")
+        inputFileset.create()
+
+        outputModules = ["outputModule1", "outputModule2", "outputModule3",
+                         "outputModule4", "outputModule5", "outputModule6",
+                         "outputModule7", "outputModule8", "outputModule9",
+                         "outputModule10"]
+
+        testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
+                                name = "TestWF", task = "None")
+        testWorkflow.create()
+
+        for outputModuleName in outputModules:
+            outputFileset = Fileset(name = outputModuleName)
+            outputFileset.create()
+            testWorkflow.addOutput(outputModuleName, outputFileset)
+        
+        self.testSubscription = Subscription(fileset = inputFileset,
+                                             workflow = testWorkflow,
+                                             split_algo = "FileBased",
+                                             type = "Processing")
+        self.testSubscription.create()
+        testJobGroup = JobGroup(subscription = self.testSubscription)
+        testJobGroup.create()
+
+        self.jobs = []
+        inputFileCounter = 0
+        for i in range(totalJobs):
+            testJob = Job(name = makeUUID())
+            testJob.create(group = testJobGroup)
+            testJob["state"] = "complete"
+            self.stateChangeAction.execute(jobs = [testJob])
+
+            for j in range(inputFilesPerJob):
+                newFile = File(lfn = "input%i" % inputFileCounter, size = 600000, events = 60000,
+                               locations = "cmssrm.fnal.gov", merged = False)
+                newFile.create()
+                
+                for k in range(3):
+                    parentFile = File(lfn = makeUUID(), size = 600000, events = 60000,
+                                      locations = "cmssrm.fnal.gov", merged = True)
+                    parentFile.create()
+                    newFile.addParent(parentFile["lfn"])
+
+                inputFileset.addFile(newFile)
+                testJob.addFile(newFile)
+
+            testJob.associateFiles()
+            fwjrPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                                    "test/python/WMComponent_t/JobAccountant_t/fwjrs",
+                                    "HeritageTest%02d.pkl" % i)
+            
+            self.jobs.append((testJob["id"], fwjrPath))
+            self.setFWJRAction.execute(jobID = testJob["id"], fwjrPath = fwjrPath)
+
+        inputFileset.commit()
+        return
+
+    def testBigHeritage(self):
+        """
+        _testBigHeritage_
+
+        Run the big heritage test.
+        """
+        print("  Filling DB...")
+
+        self.setupDBForHeritageTest()
+        
+        config = self.createConfig()
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+
+        print("  Running accountant...")
+
+        startTime = time.time()
+        accountant.algorithm()
+        endTime = time.time()
+        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+
+        for (jobID, fwjrPath) in self.jobs:
+            print("  Validating %s, %s" % (jobID, fwjrPath))
+            jobReport = Report()
+            jobReport.unpersist(fwjrPath)
+
+            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
+            self.verifyJobSuccess(jobID)
+            #self.verifyDBSBufferContents("Processing",
+            #                             ["/some/lfn/for/job/%s" % jobID],
+            #                             jobReport.getAllFilesFromStep("cmsRun1"))
+
+        return
+
 if __name__ == '__main__':
     unittest.main()
-
-

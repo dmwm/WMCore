@@ -5,8 +5,10 @@ _ReportEmu_
 Class for creating bogus framework job reports.
 """
 
-__revision__ = "$Id: ReportEmu.py,v 1.4 2010/03/09 20:34:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ReportEmu.py,v 1.5 2010/03/19 15:28:25 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
+
+import os.path
 
 from WMCore.Services.UUID import makeUUID 
 from WMCore.FwkJobReport.Report import Report
@@ -95,14 +97,24 @@ class ReportEmu(object):
         """
         (outputSize, outputEvents) = self.determineOutputSize()
 
+        if not os.path.exists('ReportEmuTestFile.txt'):
+            f = open('ReportEmuTestFile.txt', 'w')
+            f.write('A Shubbery')
+            f.close()
+
         for outputModuleName in self.step.listOutputModules():
+
             outputModuleSection = self.step.getOutputModule(outputModuleName)
+            outputModuleSection.fixedLFN    = False
+            outputModuleSection.disableGUID = False
 
             outputLFN = "%s/%s.root" % (outputModuleSection.lfnBase,
                                         str(makeUUID()))
             outputFile = File(lfn = outputLFN, size = outputSize, events = outputEvents,
-                              checksums = {"adler32": "1234", "cksum": "5678"}, merged = False)
+                              merged = False)
             outputFile.setLocation(self.job["location"])
+            outputFile['PFN'] = "ReportEmuTestFile.txt"
+            outputFile['GUID'] = "ThisIsGUID"
             outputFile["dataset"] = {"primaryDataset": outputModuleSection.primaryDataset,
                                      "processedDataset": outputModuleSection.processedDataset,
                                      "dataTier": outputModuleSection.dataTier,
@@ -112,6 +124,9 @@ class ReportEmu(object):
             outputFileSection = report.addOutputFile(outputModuleName, outputFile)
             for inputFile in self.job["input_files"]:
                 addRunsToFile(outputFileSection, inputFile["runs"])
+
+
+            
             
         return
         

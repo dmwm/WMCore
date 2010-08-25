@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.11 2010/04/22 20:30:41 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.12 2010/06/10 16:01:02 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 
 
 
@@ -196,21 +196,11 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
 #        dataPrefix =  "date/time:"
 #        errMsg = "Expect data starting with '%s', got '%s'" % (dataPrefix, data)
 #        assert data["results"].startswith(dataPrefix), errMsg
-
-
-         
-    def testElementStatus(self):
-        testName = inspect.stack()[0][3]
-        data, exp = self._tester(testName, "GET", 200, "status")
-        r = data["results"]
-        self.assertEqual(len(r), 2, "Only 2 element need to be back, got '%s'" % len(r))
-        self.assertEqual(r[0]["Id"], 1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"])
-        
                 
 
-    def testElementsDAO(self):
+    def testElementsInfoDAO(self):
         testName = inspect.stack()[0][3]
-        data, exp = self._tester(testName, "GET", 200, "elements")
+        data, exp = self._tester(testName, "GET", 200, "elementsinfo")
         r = data["results"]           
         self.assertEqual(len(r) ,  2, "Only 2 elements need to be back, got '%s'" % len(r))
         self.assertEqual(data["request_method"] ,  "GET", "'request_method' not matching")

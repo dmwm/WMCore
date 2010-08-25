@@ -44,7 +44,7 @@ class DummyRESTModel(RESTModel):
         '''
         RESTModel.__init__(self, config)
         
-        self.addWrappedMethod('GET', 'list', self.list, args=['int', 'str'], 
+        self.addMethod('GET', 'list', self.list, args=['int', 'str'], 
                               validation=[self.val_0,
                                           self.val_1,
                                           self.val_2, 
@@ -54,7 +54,7 @@ class DummyRESTModel(RESTModel):
         
         self.addMethod('GET', 'list1', self.list1)
         self.addMethod('GET', 'list2', self.list2, args=['num0', 'num1', 'num2'])
-        self.addWrappedMethod('GET', 'list3', self.list3, args=['a', 'b'])
+        self.addMethod('GET', 'list3', self.list3, args=['a', 'b'])
         self.addMethod('POST', 'list3', self.list3, args=['a', 'b'])
         
         self.daofactory = DummyDAOFac()

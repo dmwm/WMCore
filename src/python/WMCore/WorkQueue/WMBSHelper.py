@@ -9,8 +9,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.39 2010/08/16 19:20:39 sryu Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.40 2010/08/18 13:27:52 mnorman Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import logging
 import threading
@@ -337,8 +337,10 @@ class WMBSHelper(WMConnectionBase):
             
 
         if len(fileLFNs) > 0:
+            logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
+                                                                   self.topLevelFileset.id))
             self.addToFileset.execute(file = fileLFNs,
-                                      fileset = self.topLevelFileset.name,
+                                      fileset = self.topLevelFileset.id,
                                       conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
 

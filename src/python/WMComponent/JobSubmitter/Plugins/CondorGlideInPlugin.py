@@ -14,8 +14,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.14 2010/07/29 18:44:13 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.15 2010/08/05 14:38:20 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import os.path
@@ -29,6 +29,23 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import getWMBASE
 
 from WMComponent.JobSubmitter.Plugins.PluginBase import PluginBase
+
+
+def parseError(error):
+    """
+    Do some basic condor error parsing
+
+    """
+
+    errorCondition = False
+    errorMsg       = ''
+
+    if 'ERROR: proxy has expired\n' in error:
+        errorCondition = True
+        errorMsg += 'CRITICAL ERROR: Your proxy has expired!'
+
+
+    return errorCondition, errorMsg
 
 class CondorGlideInPlugin(PluginBase):
     """
@@ -82,8 +99,8 @@ class CondorGlideInPlugin(PluginBase):
             self.unpacker   = os.path.join(getWMBASE(),
                                            'src/python/WMCore/WMRuntime/Unpacker.py')
 
-            logging.error("I have jobs")
-            logging.error(jobList[0])
+            logging.info("I have %i jobs for sandbox %s" % (len(jobList), self.sandbox))
+            logging.debug(jobList[0])
             
             if type(jobList) == dict:
                 # We only got one of them
@@ -107,20 +124,35 @@ class CondorGlideInPlugin(PluginBase):
 
 
             # Now submit them
-            logging.error("About to submit %i jobs" %(len(jobList)))
+            logging.info("About to submit %i jobs" %(len(jobList)))
             command = ["condor_submit", jdlFile]
             pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-            pipe.wait()
-
-            
+            output, error = pipe.communicate()
 
 
-            for job in jobList:
-                if job == {}:
-                    continue
-                result['Success'].append(job['id'])
-                job['couch_record'] = None
-                successList.append(job)
+
+            if not error == '':
+                logging.error("Printing out command stderr")
+                logging.error(error)
+
+            errorCheck, errorMsg = parseError(error = error)
+
+
+            if not errorCheck:
+                for job in jobList:
+                    if job == {}:
+                        continue
+                    result['Success'].append(job['id'])
+                    job['couch_record'] = None
+                    successList.append(job)
+            else:
+                logging.error("JobSubmission failed due to error")
+                for job in jobList:
+                    if job == {}:
+                        continue
+                    job['couch_record'] = None
+                    failList.append(job)
+
 
         if len(successList) > 0:
             self.passJobs(jobList = successList)

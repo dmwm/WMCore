@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.91 2010/03/30 17:40:08 sryu Exp $"
-__version__ = "$Revision: 1.91 $"
+__revision__ = "$Id: WorkQueue.py,v 1.92 2010/03/30 18:18:21 sryu Exp $"
+__version__ = "$Revision: 1.92 $"
 
 
 import time
@@ -238,10 +238,14 @@ class WorkQueue(WorkQueueBase):
                 if self.params['PopulateFilesets']:
                     self._wmbsPreparation(match, wmSpecInfo)
                     self.setStatus('Acquired', match['id'], 'id', pullingQueueUrl)
+                    self.logger.debug("""WMBS subscriptin created
+                                         Upated queue status for %s 'Acquired'""" 
+                                         % match['id'])       
                 else:
                     status = pullingQueueUrl and 'Negotiating' or 'Acquired'
                     self.setStatus(status, match['id'], 'id', pullingQueueUrl)
-
+                    self.logger.debug("Upated status for %s '%s'" % (match['id'], status))       
+                
                 wmSpecInfo['element_id'] = match['id']
                 results.append(wmSpecInfo)
 

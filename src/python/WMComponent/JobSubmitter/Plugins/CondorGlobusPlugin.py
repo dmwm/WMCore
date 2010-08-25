@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.2 2010/03/03 16:32:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.3 2010/03/09 21:03:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import os.path
@@ -205,7 +205,7 @@ class CondorGlobusPlugin(PluginBase):
         This is how you get the name of a CE for a job
         """
 
-        if not jobSite in self.locationDict:
+        if not jobSite in self.locationDict.keys():
             siteInfo = self.locationAction.execute(siteName = jobSite)
             self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
             logging.error("About to get jobSite info")

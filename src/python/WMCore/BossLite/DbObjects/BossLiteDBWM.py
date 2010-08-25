@@ -4,8 +4,8 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.6 2010/05/12 09:53:01 spigafi Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.7 2010/05/14 11:24:06 spigafi Exp $"
+__revision__ = "$Revision: 1.7 $"
 
 from copy import deepcopy
 import threading
@@ -56,8 +56,6 @@ class BossLiteDBWM(BossLiteDBInterface):
     This class is *strongly* specialized to use WMCore DB back-end
     """
 
-    ##########################################################################
-
     def __init__(self):
         """
         __init__
@@ -73,7 +71,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
         
     ##########################################################################
-    # Methods for BossLiteAPI
+    # Old Method
     ##########################################################################
     
     def insert(self, obj):
@@ -96,8 +94,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         # done, return number of updated rows - is this true?
         return rows
 
-    ##########################################################################
-
+    
     def select(self, template, strict = True):
         """
         _select_
@@ -152,8 +149,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         # return the list
         return theList
 
-    ##########################################################################
-
+    
     def selectDistinct(self, template, distinctAttr, strict = True):
         """
         _select_
@@ -209,8 +205,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         # return the list
         return theList
     
-    ##########################################################################
-
+    
     def selectJoin(self, template, jTemplate, 
                    jMap=None, less=None, more=None, options=None ):
         """
@@ -371,7 +366,6 @@ class BossLiteDBWM(BossLiteDBInterface):
         # return the list
         return theList
 
-    ##########################################################################
     
     def update(self, template, skipAttributes = None):
         """
@@ -428,7 +422,6 @@ class BossLiteDBWM(BossLiteDBInterface):
         # return number of modified rows - is this true?
         return rows
 
-    ##########################################################################
     
     def delete(self, template):
         """
@@ -457,8 +450,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         # return number of rows removed - is this true?
         return rows
         
-    ##########################################################################
-
+    
     def getFields(self, obj):
         """
         prepare field sections in query
@@ -476,8 +468,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         # return it
         return fields
     
-    ##########################################################################
-
+    
     def fillObject( self, dbRow, template, objectFields ):
         """
         fillObject method
@@ -512,7 +503,6 @@ class BossLiteDBWM(BossLiteDBInterface):
  
         return obj
 
-    ##########################################################################
     
     def distinctAttr(self, template, value1 , value2, alist ,  strict = True):
         """
@@ -603,7 +593,6 @@ class BossLiteDBWM(BossLiteDBInterface):
         # return the list
         return theList
 
-    ##########################################################################
     
     def distinct(self, template, value1 , strict = True):
         """
@@ -693,7 +682,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         return theList
     
     ##########################################################################
-    # Methods for DbObjects
+    # Methods for DbObjects (basic)
     ##########################################################################
     
     @dbTransaction
@@ -725,7 +714,6 @@ class BossLiteDBWM(BossLiteDBInterface):
         
         return tmpId
         
-    ##########################################################################
     
     @dbTransaction
     def objSave(self, obj):
@@ -749,7 +737,8 @@ class BossLiteDBWM(BossLiteDBInterface):
                        conn = self.engine.getDBConn(),
                        transaction = self.existingTransaction)
         
-    ##########################################################################
+        return
+    
     
     @dbTransaction
     def objCreate(self, obj):
@@ -773,7 +762,8 @@ class BossLiteDBWM(BossLiteDBInterface):
                        conn = self.engine.getDBConn(),
                        transaction = self.existingTransaction)
         
-    ##########################################################################
+        return
+    
     
     @dbTransaction
     def objLoad(self, obj, classname= None):
@@ -855,7 +845,8 @@ class BossLiteDBWM(BossLiteDBInterface):
         else :
             raise NotImplementedError        
         
-    ##########################################################################
+        return
+    
     
     @dbTransaction
     def objUpdate(self, obj):
@@ -875,7 +866,8 @@ class BossLiteDBWM(BossLiteDBInterface):
         else :
             raise NotImplementedError        
         
-    ##########################################################################
+        return
+    
     
     @dbTransaction
     def objRemove(self, obj):
@@ -919,7 +911,48 @@ class BossLiteDBWM(BossLiteDBInterface):
         action.execute(binds = binds,
                        conn = self.engine.getDBConn(),
                        transaction = self.existingTransaction)  
+
+    ##########################################################################
+    # Methods for DbObjects (advanced)
+    ##########################################################################
+    
+    @dbTransaction
+    def objAdvancedLoad(self, obj, binds, classname= None):
+        """
+        put your description here
+        """
         
+        if type(obj) == Task : 
+            
+            action = self.engine.daofactory(classname = "Task.SelectTask")
+            result = action.execute(binds = binds,
+                                    conn = self.engine.getDBConn(),
+                                    transaction = self.existingTransaction)
+            
+            return result
+        
+        elif type(obj) == Job :
+            
+            # action = self.engine.daofactory(classname = "Job.Load")
+            action = self.engine.daofactory(classname = "Job.SelectJob")
+            result = action.execute(binds = binds, 
+                                    conn = self.engine.getDBConn(),
+                                    transaction = self.existingTransaction)
+            
+            return NotImplementedError
+        
+        elif type(obj) == RunningJob :
+
+            action = self.engine.daofactory( classname = "RunningJob.Load" )
+            result = action.execute(binds = binds,
+                                    conn = self.engine.getDBConn(),
+                                    transaction = self.existingTransaction)
+            
+            return NotImplementedError
+        
+        else :
+            raise NotImplementedError 
+    
     ##########################################################################
     # Method for execute raw SQL statements through general-purpose DAO
     ##########################################################################

@@ -137,7 +137,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     for dbsResult in dbsResults:
         myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
                       events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
-                      locations = "T1_US_FNAL")
+                      locations = "cmssrm.fnal.gov")
         myRun = Run(runNumber = dbsResult["LumiList"][0]["RunNumber"])
         for lumi in dbsResult["LumiList"]:
             myRun.lumis.append(lumi["LumiSectionNumber"])

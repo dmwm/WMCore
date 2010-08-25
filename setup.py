@@ -619,3 +619,4 @@ setup (name = 'wmcore',
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
 
+# dummy

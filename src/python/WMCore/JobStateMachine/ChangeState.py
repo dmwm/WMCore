@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.3 2009/05/11 11:58:25 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ChangeState.py,v 1.4 2009/05/12 10:21:06 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -45,8 +45,16 @@ class Transitions(dict):
 class ChangeState(WMObject):
     def __init__(self, config={}):
         WMObject.__init__(self, config)
+        self.myThread = threading.currentThread()
+        self.logger = self.myThread.logger
+        self.dialect = self.myThread.dialect
+        self.dbi = self.myThread.dbi
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = self.logger,
+                                     dbinterface = self.dbi)
+
         server = CouchServer(self.config.JobStateMachine.couchurl)
-        self.db = server.connectDatabase('JSM/JobHistory')
+        self.couchdb = server.connectDatabase('JSM/JobHistory')
 
     def propagate(self, jobs, newstate, oldstate):
         """
@@ -60,18 +68,20 @@ class ChangeState(WMObject):
         # 2. Document the state transition
         jobs = self.recordInCouch(jobs, newstate, oldstate)
         # 3. Make the state transition
-        self.persist(jobs, newstate, oldstate)
-        # TODO: decide if I should update the doc created in step 2.
+        self.persist(jobs, newstate)
+        # TODO: decide if I should update the doc created in step 2 after
+        # completing step 3.
 
     def check(self, newstate, oldstate):
         """
         check that the transition is allowed. return a tuple of the transition
         if it is allowed, throw up an exception if not.
         """
-
+        # Check for wrong transitions
         transitions = Transitions()
         assert newstate in transitions[oldstate], \
                             "Illegal state transition requested"
+
 
     def recordInCouch(self, jobs, newstate, oldstate):
         """
@@ -83,9 +93,11 @@ class ChangeState(WMObject):
             doc = {'type': 'state change'}
             doc['oldstate'] = oldstate
             doc['newstate'] = newstate
+            if job['couch_record']:
+                doc['parent'] = job['couch_record']
             doc['job'] = job
-            self.db.queue(doc, True)
-        result = self.db.commit()
+            self.couchdb.queue(doc, True)
+        result = self.couchdb.commit()
         assert len(jobs) == len(result), \
                     "Got less than I was expecting from CouchDB"
         if oldstate == 'none':
@@ -95,8 +107,12 @@ class ChangeState(WMObject):
             jobs = map(function, jobs, result)
         return jobs
 
-    def persist(self, jobs, newstate, oldstate):
+
+    def persist(self, jobs, newstate):
         """
         Write the state change to WMBS, via DAO
         """
-        pass
+        for job in jobs:
+            job['state'] = newstate
+        dao = self.daofactory(classname = "Jobs.ChangeState")
+        dao.execute(jobs)

@@ -1,64 +1,41 @@
 #!/usr/bin/env python
 # pylint: disable-msg=W0104
 """
-_WorkQueue_
+_WorkQueueImpl_
 
 container representing work queue
 
 """
-__revision__ = "$Id: WorkQueue.py,v 1.2 2009/05/08 13:59:59 fisk Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueue.py,v 1.3 2009/05/08 15:32:32 sryu Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 import time
-
-class WQElement(WMObject):
-    """
-    _WQElement_
-
-    WQElement container
-
-    """
-    def __init__(self, idnumber = None, blocks = [ ], locations = [ ], priority = 0, 
-                 online = 0, njobs = 0):
-        WMObject.__init__(self)
-        self.idnumber = idnumber 
-        self.blocks = blocks
-        self.locations = locations
-        self.priority = priority
-        self.online = online
-        self.njobs = njobs
-        self.time = time.time()
-
-    def __cmp__(x, y):
-        tfactor = x.time
-        current = time.time()
-        weight = 0.01
-        return (x.priority + weight*(current - x.time)) - (y.priority + weight*(current - y.time))
-        
-
-class WorkQueue(WMObject):
-    def __init__(self):
-        self.elements = [ ]
-
-    def AddElement(self, idnumber = None, blocks = [ ],  priority = 0,  njobs = 0):
-        locations = [ ] # Should be automated 
-        online = 1 # Should be automated 
-        x = WQElement(idnumber, blocks, locations, priority, online, njobs)
-        self.elements = self.elements + [ x ] 
-
-    def ReorderList(self):
-        self.elements.sort()    
-
-    def SetPriority(self, idnumber, newpriority):
-        found = 0
-        count = 0
-        while (len(self.elements) < count or found):
-            if (self.elements[count].idnumber == idnumber):
-                found=1
-                self.elements[count].priority = newpriority
-            if (not found):
-                print "Element not found nothing changed"
-            else:
-                self.ReorderList
              
+class WorkQueue(Harness):
+    """
+    _WorkQueueManager_
+    
+    Manages the creation, running and destruction of Feeders and associated
+    Filesets
+    """
+
+    def __init__(self, config):
+        # call the base class
+        Harness.__init__(self, config)
+    
+    def preInitialization(self):
+        """
+        Add required worker modules to work threads
+        """
+        # in case nothing was configured we have a fallback.
+        if not hasattr(self.config.WorkQueueManager, "GiveWork"):
+            logging.warning("Using default WorkQueueManager handler")
+            self.config.WorkQueueManager.addDatasetWatchHandler =  \
+                'WMComponent.WorkQueueManager.Handler.DefaultAddDatasetWatch'
+
+        # use a factory to dynamically load handlers.
+        factory = WMFactory('generic')
+        self.messages['GiveWork'] = \
+            factory.loadObject(\
+                self.config.WorkQueueManager.jobQueueHandler, self)

@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.10 2009/11/13 15:55:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.11 2009/12/03 17:41:58 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import logging
 import os.path
@@ -47,7 +47,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-
+        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database", "WMCore.WMBS"] )
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
@@ -59,7 +59,7 @@ class JobAccountantTest(unittest.TestCase):
 
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "cmssrm.fnal.gov")
-        locationAction.execute(siteName = "srm.cern.ch")        
+        locationAction.execute(siteName = "srm.cern.ch")
 
         self.stateChangeAction = self.daofactory(classname = "Jobs.ChangeState")
         self.setFWJRAction = self.daofactory(classname = "Jobs.SetFWJRPath")
@@ -367,7 +367,7 @@ class JobAccountantTest(unittest.TestCase):
             assert outputFile["size"] == int(fwkJobReportFile["Size"]), \
                    "Error: Output file has wrong size: %s, %s" % \
                    (outputFile["size"], fwkJobReportFile["Size"])            
-            assert outputFile["cksum"] == int(fwkJobReportFile["Checksum"]), \
+            assert outputFile["cksum"] == fwkJobReportFile["Checksum"], \
                    "Error: Output file has wrong cksum: %s, %s" % \
                    (outputFile["cksum"], fwkJobReportFile["Checksum"])
 
@@ -437,6 +437,9 @@ class JobAccountantTest(unittest.TestCase):
         the DBS buffer correctly.  Compare the metadata in the DBS buffer to
         the files in the framework job report.  Also verify file parentage.
         """
+
+        myThread = threading.currentThread()
+        
         for fwkJobReportFile in fwkJobReportFiles:
             if fwkJobReportFile["MergedBySize"] != "True" and subType != "Merge":
                 continue
@@ -448,13 +451,15 @@ class JobAccountantTest(unittest.TestCase):
 
             dbsFile.load(parentage = 1)
 
+            print myThread.dbi.processData("SELECT * FROM dbsbuffer_file_checksums")[0].fetchall()
+
             assert dbsFile["events"] == int(fwkJobReportFile["TotalEvents"]), \
                    "Error: DBS file has wrong events: %s, %s" % \
                    (dbsFile["events"], fwkJobReportFile["TotalEvents"])
             assert dbsFile["size"] == int(fwkJobReportFile["Size"]), \
                    "Error: DBS file has wrong size: %s, %s" % \
                    (dbsFile["size"], fwkJobReportFile["Size"])            
-            assert dbsFile["cksum"] == int(fwkJobReportFile["Checksum"]), \
+            assert dbsFile["cksum"] == fwkJobReportFile["Checksum"], \
                    "Error: DBS file has wrong cksum: %s, %s" % \
                    (dbsFile["cksum"], fwkJobReportFile["Checksum"])
 

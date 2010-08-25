@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.16 2010/06/18 18:10:22 mnorman Exp $"
-__version__  = "$Revision: 1.16 $"
+__revision__ = "$Id: LumiBased.py,v 1.17 2010/06/21 21:25:45 sfoulkes Exp $"
+__version__  = "$Revision: 1.17 $"
 
 import operator
 
@@ -33,7 +33,7 @@ class LumiBased(JobFactory):
         """
 
 
-        lumisPerJob  = kwargs.get('lumis_per_job', None)
+        lumisPerJob  = kwargs.get('lumis_per_job', 1)
         splitFiles   = kwargs.get('split_files_between_job', False)
 
         lDict = self.sortByLocation()

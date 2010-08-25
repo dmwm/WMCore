@@ -1,0 +1,378 @@
+<?xml version="1.0" ?>
+<JobReports>
+	<FrameworkJobReport DashboardId="ProdAgent_Tier0Repacker@cmssrv60.fnal.gov_T0Merge-Run1-Mu-AOD-722_0" JobSpecID="T0Merge-Run1-Mu-AOD-722" JobType="Merge" Name="cmsRun1" Status="Success" WorkflowSpecID="Merge-Run1-AOD-Mu-IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD-PreScaleThingy10-v9_29_pre14replaythingy_v5">
+		<ExitCode Value="0"/>
+		<SiteDetail Parameter="SiteName" Value="T1_US_FNAL"/>
+		<SiteDetail Parameter="ce-name" Value="cmsosgce4.fnal.gov"/>
+		<SiteDetail Parameter="HostName" Value="cmswn575.fnal.gov"/>
+		<SiteDetail Parameter="se-name" Value="cmssrm.fnal.gov"/>
+		<File>
+			<SEName>
+				cmssrm.fnal.gov
+			</SEName>
+			<DataType>
+				MC
+			</DataType>
+			<ModuleLabel>
+				merged
+			</ModuleLabel>
+			<FileType>
+				EDM
+			</FileType>
+			<LFN>
+				/some/path/to/a/merged/reco/file/2.root
+			</LFN>
+			<TotalEvents>
+				19590
+			</TotalEvents>
+			<PFN>
+				srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/backfill/2/data/IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD/Mu/AOD/v9_29_pre14replaythingy_v5/000/000/001/AC85AB0C-C4AD-DE11-813B-001731AF66A1.root
+			</PFN>
+			<MergedBySize>
+				False
+			</MergedBySize>
+			<Catalog>
+				Merged-Catalog.xml
+			</Catalog>
+			<OutputModuleClass>
+				PoolOutputModule
+			</OutputModuleClass>
+			<Checksum>
+				656158312
+			</Checksum>
+			<BranchHash>
+				df798e910fe6bb68cd27369a696c0ed6
+			</BranchHash>
+			<GUID>
+				AC85AB0C-C4AD-DE11-813B-001731AF66A1
+			</GUID>
+			<Size>
+				988034846
+			</Size>
+			<Checksum Algorithm="adler32">
+				b2bda058
+			</Checksum>
+			<Checksum Algorithm="cksum">
+				656158312
+			</Checksum>
+			<State Value="closed"/>
+			<Datasets>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="ApplicationVersion">
+						CMSSW_3_1_2
+					</Entry>
+					<Entry Name="ParentDataset">
+						/Mu/IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD-PreScaleThingy10-v9_29_pre14replaythingy_v5/AOD
+					</Entry>
+					<Entry Name="PhysicalFileName">
+						Merged.root
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						Mu
+					</Entry>
+					<Entry Name="DataTier">
+						AOD
+					</Entry>
+					<Entry Name="OutputModuleName">
+						Merged
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/backfill/2/data/IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD/Mu/AOD/v9_29_pre14replaythingy_v5/000/000/001/
+					</Entry>
+					<Entry Name="Catalog">
+						Merged-Catalog.xml
+					</Entry>
+					<Entry Name="ApplicationProject">
+						CMSSW
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD-PreScaleThingy10-v9_29_pre14replaythingy_v5
+					</Entry>
+					<Entry Name="LogicalFileName">
+						/store/backfill/2/data/IansMagicMushroomSoup-T0Test-AnalyzeThisAndGetAFreePhD/Mu/AOD/v9_29_pre14replaythingy_v5/000/000/001/Merged.root
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						Merged
+					</Entry>
+				</DatasetInfo>
+			</Datasets>
+		</File>
+		<TimingService>
+			<AppEndTime Value="1254318212"/>
+			<StageOutStart Value="1254318231"/>
+			<AppStartTime Value="1254316813"/>
+			<StageOutEnd Value="1254318258"/>
+		</TimingService>
+		<GeneratorInfo/>
+		<PerformanceReport>
+			<CPU>
+				<CPUCore Core="1">
+					<Property Name="Speed">
+						2000.022
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 270
+					</Property>
+				</CPUCore>
+				<CPUCore Core="0">
+					<Property Name="Speed">
+						2000.022
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 270
+					</Property>
+				</CPUCore>
+				<CPUCore Core="3">
+					<Property Name="Speed">
+						2000.022
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 270
+					</Property>
+				</CPUCore>
+				<CPUCore Core="2">
+					<Property Name="Speed">
+						2000.022
+					</Property>
+					<Property Name="Description">
+						Dual Core AMD Opteron(tm) Processor 270
+					</Property>
+				</CPUCore>
+			</CPU>
+			<Memory>
+				<Property Name="MemTotal">
+					4050256
+				</Property>
+			</Memory>
+			<PerformanceSummary Metric="StorageParams">
+				<Metric Name="stats" Value="true"/>
+				<Metric Name="cache-hint" Value="application-only"/>
+				<Metric Name="enabled" Value="true"/>
+				<Metric Name="read-hint" Value="direct-unbuffered"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="PhysicalMemory">
+				<Metric Name="AvgPhysicalMemory" Value="12.8408602151"/>
+				<Metric Name="MaxPhysicalMemory" Value="21.5"/>
+				<Metric Name="MinPhysicalMemory" Value="2.6"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="StorageTiming">
+				<Metric Name="tstoragefile-read-actual-total-msecs" Value="949626"/>
+				<Metric Name="tstoragefile-write-actual-total-msecs" Value="310074"/>
+				<Metric Name="dcap-position-total-megabytes" Value="0"/>
+				<Metric Name="file-prefetch-total-msecs" Value="0"/>
+				<Metric Name="tstoragefile-write-via-cache-num-operations" Value="257740"/>
+				<Metric Name="tstoragefile-read-actual-max-msecs" Value="188.377"/>
+				<Metric Name="dcap-prefetch-max-msecs" Value="0"/>
+				<Metric Name="tstoragefile-write-actual-num-operations" Value="257740"/>
+				<Metric Name="tstoragefile-seek-max-msecs" Value="49.4451"/>
+				<Metric Name="file-position-num-successful-operations" Value="257780"/>
+				<Metric Name="file-construct-total-msecs" Value="0.002048"/>
+				<Metric Name="dcap-prefetch-total-megabytes" Value="0"/>
+				<Metric Name="file-write-num-operations" Value="257740"/>
+				<Metric Name="file-prefetch-max-msecs" Value="0"/>
+				<Metric Name="file-readv-num-operations" Value="0"/>
+				<Metric Name="dcap-read-num-operations" Value="265595"/>
+				<Metric Name="tstoragefile-write-actual-min-msecs" Value="0.147968"/>
+				<Metric Name="file-readv-total-megabytes" Value="0"/>
+				<Metric Name="file-flush-total-msecs" Value="0.036608"/>
+				<Metric Name="dcap-read-total-megabytes" Value="983.248"/>
+				<Metric Name="file-flush-num-successful-operations" Value="4"/>
+				<Metric Name="tstoragefile-write-via-cache-total-megabytes" Value="0"/>
+				<Metric Name="file-destruct-total-msecs" Value="0.02688"/>
+				<Metric Name="file-close-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-read-actual-num-operations" Value="265595"/>
+				<Metric Name="tstoragefile-read-total-megabytes" Value="983.248"/>
+				<Metric Name="tstoragefile-write-actual-max-msecs" Value="73.6389"/>
+				<Metric Name="file-flush-max-msecs" Value="0.022016"/>
+				<Metric Name="dcap-construct-total-msecs" Value="0.033536"/>
+				<Metric Name="tstoragefile-write-via-cache-max-msecs" Value="0"/>
+				<Metric Name="file-writev-max-msecs" Value="0"/>
+				<Metric Name="file-construct-max-msecs" Value="0.002048"/>
+				<Metric Name="file-readv-num-successful-operations" Value="0"/>
+				<Metric Name="file-write-max-msecs" Value="73.632"/>
+				<Metric Name="dcap-stagein-max-msecs" Value="186.823"/>
+				<Metric Name="file-destruct-num-operations" Value="1"/>
+				<Metric Name="dcap-close-num-operations" Value="11"/>
+				<Metric Name="file-write-total-megabytes" Value="942.278"/>
+				<Metric Name="dcap-prefetch-min-msecs" Value="0"/>
+				<Metric Name="dcap-stagein-num-operations" Value="11"/>
+				<Metric Name="file-open-total-megabytes" Value="0"/>
+				<Metric Name="file-open-num-operations" Value="1"/>
+				<Metric Name="file-close-min-msecs" Value="0.101888"/>
+				<Metric Name="file-destruct-num-successful-operations" Value="1"/>
+				<Metric Name="tstoragefile-write-max-msecs" Value="73.6448"/>
+				<Metric Name="tstoragefile-write-via-cache-total-msecs" Value="0"/>
+				<Metric Name="tstoragefile-seek-num-successful-operations" Value="523335"/>
+				<Metric Name="dcap-position-max-msecs" Value="49.44"/>
+				<Metric Name="tstoragefile-write-actual-total-megabytes" Value="942.278"/>
+				<Metric Name="file-prefetch-min-msecs" Value="0"/>
+				<Metric Name="file-open-max-msecs" Value="0.236032"/>
+				<Metric Name="dcap-destruct-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-stat-min-msecs" Value="0.022016"/>
+				<Metric Name="tstoragefile-stat-max-msecs" Value="0.384"/>
+				<Metric Name="dcap-write-num-operations" Value="0"/>
+				<Metric Name="file-read-total-msecs" Value="0"/>
+				<Metric Name="tstoragefile-write-total-megabytes" Value="942.278"/>
+				<Metric Name="dcap-prefetch-num-successful-operations" Value="0"/>
+				<Metric Name="dcap-readv-num-successful-operations" Value="0"/>
+				<Metric Name="tstoragefile-read-actual-min-msecs" Value="0.291072"/>
+				<Metric Name="dcap-construct-min-msecs" Value="0.001792"/>
+				<Metric Name="dcap-read-min-msecs" Value="0.286976"/>
+				<Metric Name="dcap-construct-num-operations" Value="11"/>
+				<Metric Name="file-read-num-successful-operations" Value="0"/>
+				<Metric Name="dcap-readv-min-msecs" Value="0"/>
+				<Metric Name="tstoragefile-flush-total-megabytes" Value="0"/>
+				<Metric Name="dcap-writev-num-operations" Value="0"/>
+				<Metric Name="dcap-writev-min-msecs" Value="0"/>
+				<Metric Name="file-writev-min-msecs" Value="0"/>
+				<Metric Name="file-close-total-msecs" Value="0.101888"/>
+				<Metric Name="file-write-num-successful-operations" Value="257740"/>
+				<Metric Name="file-destruct-total-megabytes" Value="0"/>
+				<Metric Name="dcap-open-total-megabytes" Value="0"/>
+				<Metric Name="dcap-writev-total-megabytes" Value="0"/>
+				<Metric Name="file-write-min-msecs" Value="0.142848"/>
+				<Metric Name="file-close-num-successful-operations" Value="1"/>
+				<Metric Name="file-position-max-msecs" Value="0.45696"/>
+				<Metric Name="tstoragefile-close-total-megabytes" Value="0"/>
+				<Metric Name="dcap-destruct-num-operations" Value="11"/>
+				<Metric Name="file-flush-min-msecs" Value="0.004864"/>
+				<Metric Name="tstoragefile-write-via-cache-min-msecs" Value="0"/>
+				<Metric Name="dcap-construct-num-successful-operations" Value="11"/>
+				<Metric Name="tstoragefile-write-total-msecs" Value="311661"/>
+				<Metric Name="file-prefetch-num-operations" Value="0"/>
+				<Metric Name="tstoragefile-write-min-msecs" Value="0.154112"/>
+				<Metric Name="dcap-stagein-min-msecs" Value="70.0961"/>
+				<Metric Name="dcap-stagein-num-successful-operations" Value="11"/>
+				<Metric Name="dcap-position-min-msecs" Value="0.001792"/>
+				<Metric Name="file-open-min-msecs" Value="0.236032"/>
+				<Metric Name="dcap-position-num-operations" Value="265683"/>
+				<Metric Name="tstoragefile-read-actual-total-megabytes" Value="983.248"/>
+				<Metric Name="dcap-stagein-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-stat-num-successful-operations" Value="32"/>
+				<Metric Name="dcap-open-min-msecs" Value="126.392"/>
+				<Metric Name="dcap-write-total-msecs" Value="0"/>
+				<Metric Name="dcap-writev-total-msecs" Value="0"/>
+				<Metric Name="tstoragefile-close-max-msecs" Value="5.2329"/>
+				<Metric Name="file-readv-total-msecs" Value="0"/>
+				<Metric Name="file-readv-min-msecs" Value="0"/>
+				<Metric Name="dcap-readv-total-msecs" Value="0"/>
+				<Metric Name="tstoragefile-construct-num-successful-operations" Value="12"/>
+				<Metric Name="file-construct-num-operations" Value="1"/>
+				<Metric Name="file-close-max-msecs" Value="0.101888"/>
+				<Metric Name="tstoragefile-construct-min-msecs" Value="9.13485"/>
+				<Metric Name="file-write-total-msecs" Value="308950"/>
+				<Metric Name="tstoragefile-read-num-operations" Value="265595"/>
+				<Metric Name="dcap-close-min-msecs" Value="2.91302"/>
+				<Metric Name="tstoragefile-read-num-successful-operations" Value="265595"/>
+				<Metric Name="file-prefetch-num-successful-operations" Value="0"/>
+				<Metric Name="dcap-write-min-msecs" Value="0"/>
+				<Metric Name="tstoragefile-read-total-msecs" Value="950686"/>
+				<Metric Name="file-position-num-operations" Value="257780"/>
+				<Metric Name="tstoragefile-close-num-operations" Value="12"/>
+				<Metric Name="tstoragefile-seek-total-msecs" Value="3907.07"/>
+				<Metric Name="dcap-open-total-msecs" Value="2358.65"/>
+				<Metric Name="tstoragefile-stat-num-operations" Value="32"/>
+				<Metric Name="dcap-position-total-msecs" Value="972.582"/>
+				<Metric Name="dcap-readv-total-megabytes" Value="0"/>
+				<Metric Name="dcap-writev-max-msecs" Value="0"/>
+				<Metric Name="dcap-destruct-num-successful-operations" Value="11"/>
+				<Metric Name="dcap-destruct-total-msecs" Value="0.141568"/>
+				<Metric Name="dcap-readv-max-msecs" Value="0"/>
+				<Metric Name="file-construct-total-megabytes" Value="0"/>
+				<Metric Name="dcap-open-num-operations" Value="11"/>
+				<Metric Name="dcap-open-num-successful-operations" Value="11"/>
+				<Metric Name="file-destruct-max-msecs" Value="0.02688"/>
+				<Metric Name="tstoragefile-construct-num-operations" Value="12"/>
+				<Metric Name="dcap-read-total-msecs" Value="948499"/>
+				<Metric Name="file-writev-total-msecs" Value="0"/>
+				<Metric Name="file-readv-max-msecs" Value="0"/>
+				<Metric Name="dcap-read-max-msecs" Value="188.37"/>
+				<Metric Name="tstoragefile-read-actual-num-successful-operations" Value="265595"/>
+				<Metric Name="dcap-close-total-msecs" Value="41.9758"/>
+				<Metric Name="file-position-total-msecs" Value="747.959"/>
+				<Metric Name="file-open-num-successful-operations" Value="1"/>
+				<Metric Name="tstoragefile-seek-num-operations" Value="523335"/>
+				<Metric Name="file-read-max-msecs" Value="0"/>
+				<Metric Name="dcap-close-max-msecs" Value="5.20602"/>
+				<Metric Name="tstoragefile-close-num-successful-operations" Value="12"/>
+				<Metric Name="file-read-num-operations" Value="0"/>
+				<Metric Name="tstoragefile-seek-total-megabytes" Value="0"/>
+				<Metric Name="dcap-write-max-msecs" Value="0"/>
+				<Metric Name="dcap-prefetch-num-operations" Value="0"/>
+				<Metric Name="dcap-destruct-min-msecs" Value="0.00384"/>
+				<Metric Name="file-position-min-msecs" Value="0.001792"/>
+				<Metric Name="dcap-write-num-successful-operations" Value="0"/>
+				<Metric Name="tstoragefile-close-total-msecs" Value="42.4922"/>
+				<Metric Name="file-flush-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-read-min-msecs" Value="0.293888"/>
+				<Metric Name="dcap-write-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-construct-max-msecs" Value="16529.8"/>
+				<Metric Name="tstoragefile-construct-total-megabytes" Value="0"/>
+				<Metric Name="dcap-open-max-msecs" Value="399.88"/>
+				<Metric Name="tstoragefile-stat-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-read-max-msecs" Value="188.381"/>
+				<Metric Name="dcap-construct-max-msecs" Value="0.007168"/>
+				<Metric Name="dcap-construct-total-megabytes" Value="0"/>
+				<Metric Name="dcap-close-num-successful-operations" Value="11"/>
+				<Metric Name="dcap-position-num-successful-operations" Value="265683"/>
+				<Metric Name="tstoragefile-flush-min-msecs" Value="0.013056"/>
+				<Metric Name="dcap-close-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-close-min-msecs" Value="0.141056"/>
+				<Metric Name="file-position-total-megabytes" Value="0"/>
+				<Metric Name="dcap-read-num-successful-operations" Value="265595"/>
+				<Metric Name="tstoragefile-write-actual-num-successful-operations" Value="257740"/>
+				<Metric Name="dcap-stagein-total-msecs" Value="1361.8"/>
+				<Metric Name="tstoragefile-construct-total-msecs" Value="19854.6"/>
+				<Metric Name="tstoragefile-seek-min-msecs" Value="0.005888"/>
+				<Metric Name="dcap-destruct-max-msecs" Value="0.098816"/>
+				<Metric Name="tstoragefile-flush-num-operations" Value="4"/>
+				<Metric Name="tstoragefile-write-via-cache-num-successful-operations" Value="0"/>
+				<Metric Name="file-read-total-megabytes" Value="0"/>
+				<Metric Name="file-close-num-operations" Value="1"/>
+				<Metric Name="dcap-prefetch-total-msecs" Value="0"/>
+				<Metric Name="tstoragefile-flush-max-msecs" Value="0.027904"/>
+				<Metric Name="file-read-min-msecs" Value="0"/>
+				<Metric Name="file-flush-num-operations" Value="4"/>
+				<Metric Name="file-construct-num-successful-operations" Value="1"/>
+				<Metric Name="tstoragefile-write-num-successful-operations" Value="257740"/>
+				<Metric Name="tstoragefile-stat-total-msecs" Value="7.38867"/>
+				<Metric Name="tstoragefile-flush-num-successful-operations" Value="4"/>
+				<Metric Name="file-writev-num-operations" Value="0"/>
+				<Metric Name="tstoragefile-flush-total-msecs" Value="0.070912"/>
+				<Metric Name="dcap-writev-num-successful-operations" Value="0"/>
+				<Metric Name="file-destruct-min-msecs" Value="0.02688"/>
+				<Metric Name="file-prefetch-total-megabytes" Value="0"/>
+				<Metric Name="file-construct-min-msecs" Value="0.002048"/>
+				<Metric Name="file-writev-num-successful-operations" Value="0"/>
+				<Metric Name="tstoragefile-write-num-operations" Value="257740"/>
+				<Metric Name="dcap-readv-num-operations" Value="0"/>
+				<Metric Name="file-open-total-msecs" Value="0.236032"/>
+				<Metric Name="file-writev-total-megabytes" Value="0"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="StorageRoot">
+				<Metric Name="tfile-read-total-megabytes" Value="0"/>
+				<Metric Name="tfile-write-total-megabytes" Value="0"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="VSizeMemory">
+				<Metric Name="MaxVSizeMemory" Value="1007044"/>
+				<Metric Name="AvgVSizeMemory" Value="821354"/>
+				<Metric Name="MinVSizeMemory" Value="155204"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="Timing"/>
+			<PerformanceSummary Metric="RSSMemory">
+				<Metric Name="AvgRSSMemory" Value="522590"/>
+				<Metric Name="MaxRSSMemory" Value="870888"/>
+				<Metric Name="MinRSSMemory" Value="107788"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="TrigReport"/>
+			<PerformanceSummary Metric="PercentCPU">
+				<Metric Name="AvgPercentCPU" Value="77.8562724014"/>
+				<Metric Name="MaxPercentCPU" Value="98.4"/>
+				<Metric Name="MinPercentCPU" Value="10.9"/>
+			</PerformanceSummary>
+		</PerformanceReport>
+	</FrameworkJobReport>
+</JobReports>

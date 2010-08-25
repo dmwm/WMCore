@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.14 2009/09/24 14:50:00 sryu Exp $"
-__revision__ = "$Revision: 1.14 $"
+__version__ = "$Id: WMTask.py,v 1.15 2009/09/24 20:13:57 sryu Exp $"
+__revision__ = "$Revision: 1.15 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -351,12 +351,30 @@ class WMTaskHelper(TreeHelper):
             if opt == 'dbsurl':
                 self.data.input.dataset.dbsurl = arg
             # all other options
-            if opt == 'totalevents':
-                self.data.input.dataset.totalEvents = arg
                 
             setattr(self.data.input.dataset, opt, arg)
 
         return
+    
+    def addProduction(self, **options):
+        """
+        _addProduction_
+        
+        Add details of production job related information.
+        
+        options should contain at least:
+        TODO: Not sure what is necessary data ask Dave
+        optional
+        - totalevents - total events in dataset
+
+        """
+        self.data.section_("production")
+        
+        for opt, arg in options.items():
+            if opt == 'totalevents':
+                self.data.production.totalEvents = arg
+                
+            setattr(self.data.production, opt, arg)
 
     def inputDataset(self):
         """
@@ -399,7 +417,9 @@ class WMTaskHelper(TreeHelper):
         
         accessor for total events in the given dataset
         """
-        return self.data.input.dataset.totalEvents
+        #TODO: save the total events for  the production job
+        return self.data.production.totalEvents 
+        #return self.data.input.dataset.totalEvents
     
     def dbsUrl(self):
         """
@@ -407,8 +427,10 @@ class WMTaskHelper(TreeHelper):
         if local dbs url is set for the task, return it
         otherwise return None
         """
-        return getattr(self.data.input.dataset, "dbsurl", None)
-        
+        if getattr(self.data.input, "dataset", False):
+            return getattr(self.data.input.dataset, "dbsurl", None)
+        else:
+            return None
 
 class WMTask(ConfigSectionTree):
     """

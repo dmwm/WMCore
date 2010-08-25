@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-from cherrypy import expose, session
+from cherrypy import expose
+import cherrypy
 
 DEFAULT_SESSION_NAME = 'CernOpenIdTool'
 
@@ -24,8 +25,8 @@ class CernOidDefaultHandler:
 
     @expose
     def logout(self):
-        if session.has_key(self.session_name):
-            del session[self.session_name]
+        if cherrypy.session.has_key(self.session_name):
+            del cherrypy.session[self.session_name]
         return "Disconnected"
 
     @expose
@@ -45,7 +46,7 @@ class CernOidDefaultHandler:
                % self.getSessionInfo()
 
     def getSessionInfo(self):
-        sessreg = session.get(self.session_name,None)
+        sessreg = cherrypy.session.get(self.session_name,None)
         if sessreg:
-            return session[self.session_name].get('info',None)
+            return cherrypy.session[self.session_name].get('info',None)
         return None

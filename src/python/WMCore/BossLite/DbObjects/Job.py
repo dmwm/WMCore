@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.13 2010/05/03 15:40:28 spigafi Exp $"
-__revision__ = "$Revision: 1.13 $"
+__version__ = "$Id: Job.py,v 1.14 2010/05/03 20:37:58 spigafi Exp $"
+__revision__ = "$Revision: 1.14 $"
 
 
 # imports
@@ -149,6 +149,8 @@ class Job(DbObject):
         else:
             db.objSave(self)
             
+        self.existsInDataBase = True
+        
         # create entry for runningJob
         if deep and self.runningJob is not None:
             # consistency?
@@ -190,6 +192,7 @@ class Job(DbObject):
         if deep :
             self.getRunningInstance(db)
         
+        # consistency?
         self.existsInDataBase = True
         
         return
@@ -205,11 +208,12 @@ class Job(DbObject):
                       'taskId': self.data['taskId'],
                       'submission': self.data['submissionNumber']}
         runJob = RunningJob(parameters = parameters)
+        
         runJob.load(db)
         
         # Not happy with this call because it's slow.  Maybe use ID?
         # keep track with a boolean variable could be a valid solution (NdFilip)
-        if not runJob.exists(db):  
+        if not runJob.existsInDataBase:  
             self.runningJob = None
         else:
             self.runningJob = runJob
@@ -295,12 +299,6 @@ class Job(DbObject):
         update job information in database
         """
         
-        """
-        if deep and self.runningJob:
-            self.updateRunningInstance()
-            status += 1
-        """
-        
         return self.save(db, deep)
 
     ###########################################################################
@@ -310,7 +308,8 @@ class Job(DbObject):
         remove job object from database
         """
 
-        if not self.exists(db):
+        if not self.existsInDataBase:
+            # could this message be changed?
             raise JobError("The following job instance cannot be removed," + \
                      " since it is not completely specified: %s" % self) 
         
@@ -339,16 +338,17 @@ class Job(DbObject):
             runningJob['jobId'] = self.data['jobId']
         if not runningJob.valid(['submission']) :
             runningJob['submission'] = self.data['submissionNumber']
-
+        
         # check consistency
         if runningJob['taskId'] != self.data['taskId'] or \
                runningJob['jobId'] != self.data['jobId'] or \
                runningJob['submission'] != self.data['submissionNumber'] :
             raise JobError("Invalid running instance with keys %s.%s.%s " + \
                            " instead of %s.%s.%s" % ( \
-            runningJob['taskId'], runningJob['jobId'],
-            runningJob['submission'], self.data['taskId'], \
-            self.data['jobId'], self.data['submissionNumber'] ) )
+            str(runningJob['taskId']), str(runningJob['jobId']),
+            str(runningJob['submission']), str(self.data['taskId']), \
+            str(self.data['jobId']), str(self.data['submissionNumber']) ) )
+        
         
         # store instance
         self.runningJob = runningJob

@@ -28,23 +28,22 @@ class PersistencyHelper:
 
     """
         
-    def save(self, filename, mode="pickle"):
+    def save(self, filename):
         """
         _save_
 
-        Pickle data to a file
-
+        Save data to a file
+        Saved format is defined depending on the extension
         """
-        
-        if mode.lower() == "pickle":
-            handle = open("%s.pkl" % filename, 'w')
+        handle = open(filename, 'w')
+        extension = filename.split(".")[-1].lower()
+        if extension == "pkl":
             pickle.dump(self.data, handle)
-        elif mode.lower() == "json":
-            handle = open("%s.json" % filename, 'w')
+        elif extension == 'json':
             JsonWrapper.dump(self.data, handle)
         else:
-            handle = open(filename, 'w')
             handle.write(self.data)
+            
         handle.close()
         return
 
@@ -59,7 +58,7 @@ class PersistencyHelper:
         #TODO: currently support both loading from file path or url
         #if there are more things to filter may be separate the load function
         handle = urlopen(filename)
-        extension = filename.split(".")[-1]
+        extension = filename.split(".")[-1].lower()
         if extension == "pkl":
             self.data = pickle.load(handle)
         elif extension == 'json':

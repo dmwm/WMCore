@@ -62,6 +62,15 @@ class Test(unittest.TestCase):
         os.write(self.fileobj2, testDocument2 )
         os.close( self.fileobj2 )
         
+    def testSerialize(self):
+        """
+        makes sure the serialization works okay. will throw an exception
+        otherwise
+        """
+        newid1, newrev1   = self.cache.addConfig( self.filename1 )
+        testString1 = self.cache.getConfigByDocID(newid1)
+        
+    
     def testDuplicate(self):
         """ 
         Adding duplicate configs. the class should just add it once to the DB

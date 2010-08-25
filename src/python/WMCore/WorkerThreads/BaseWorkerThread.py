@@ -9,13 +9,15 @@ to perform thread-specific setup and clean-up operations
 """
 
 __revision__ = \
-        "$Id: BaseWorkerThread.py,v 1.15 2009/08/13 00:05:16 meloam Exp $"
-__version__ = "$Revision: 1.15 $"
+        "$Id: BaseWorkerThread.py,v 1.16 2009/08/22 10:58:59 meloam Exp $"
+__version__ = "$Revision: 1.16 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
 import logging
 import time
+import traceback
+import sys
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
@@ -100,7 +102,7 @@ class BaseWorkerThread:
         myThread.transactions = {}
         logging.info("Initialising default transaction")
         myThread.transaction = Transaction(myThread.dbi)
-        
+        print "DIALECT IS %s " % myThread.dialect
         # Set up message service and trigger
         logging.info("Instantiating message queue for thread")
         factory = WMFactory("msgService", "WMCore.MsgService."+ \
@@ -147,8 +149,12 @@ class BaseWorkerThread:
                         try:
                             self.algorithm(parameters)
                         except Exception, ex:
-                            msg = "Error in worker algorithm:"
+                            msg = "Error in worker algorithm (1):\nBacktrace:\n "
                             msg += (" %s %s" % (str(self), str(ex)))
+                            stackTrace = traceback.format_tb(sys.exc_info()[2], None)
+                            for stackFrame in stackTrace:
+                                msg += stackFrame
+                    
                             logging.error(msg)
                 
                         # Put the thread to sleep
@@ -158,8 +164,11 @@ class BaseWorkerThread:
             self.terminate(parameters)
         except Exception, ex:
             # Notify error
-            msg = "Error in event loop: %s %s"
+            msg = "Error in event loop (2): %s %s\nBacktrace:\n"
             msg = msg % (str(self), str(ex))
+            stackTrace = traceback.format_tb(sys.exc_info()[2], None)
+            for stackFrame in stackTrace:
+                msg += stackFrame
             logging.error(msg)
         
         # Indicate to manager that thread is done

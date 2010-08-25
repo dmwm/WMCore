@@ -9,6 +9,8 @@ import os.path
 import time
 import shutil
 import pickle
+import cProfile
+import pstats
 
 import WMCore.WMInit
 from WMQuality.TestInit import TestInit
@@ -20,7 +22,8 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Job import Job
-from WMComponent.JobSubmitter.JobSubmitter import JobSubmitter
+from WMComponent.JobSubmitter.JobSubmitter       import JobSubmitter
+from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from subprocess import Popen, PIPE
 
@@ -64,14 +67,14 @@ class JobSubmitterTest(unittest.TestCase):
         locationSlots  = daofactory(classname = "Locations.SetJobSlots")
 
         for site in self.sites:
-            locationAction.execute(siteName = site)
+            locationAction.execute(siteName = site, seName = site, ceName = 'cms-sleepgw.fnal.gov/jobmanager-condor')
             locationSlots.execute(siteName = site, jobSlots = 1000)
 
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = site, ceName = site)
+            resourceControl.insertSite(siteName = site, seName = site, ceName = 'cms-sleepgw.fnal.gov/jobmanager-condor')
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             minSlots = 1000, maxSlots = 10000)
 
@@ -85,6 +88,7 @@ class JobSubmitterTest(unittest.TestCase):
         Standard tearDown
 
         """
+        #self.testInit.clearDatabase(modules = ['WMCore.ResourceControl', 'WMCore.WMBS', 'WMCore.MsgService'])
         self.testInit.clearDatabase()
 
         self.testInit.delWorkDir()
@@ -214,7 +218,7 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
         config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/JobSubmitter_t', 'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
-        config.JobSubmitter.workerThreads = 1
+        config.JobSubmitter.workerThreads = 5
         config.JobSubmitter.jobsPerWorker = 100
         config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/JobSubmitter_t', 'FrameworkJobReport-4540.xml')
 
@@ -488,7 +492,7 @@ class JobSubmitterTest(unittest.TestCase):
         #    os.remove(os.path.join(os.getcwd(), 'FrameworkJobReport.xml'))
 
         config = self.getConfig()
-        config.JobSubmitter.pluginName    = 'ShadowPoolPlugin'
+        config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
         if not os.path.isdir(config.JobSubmitter.submitDir):
             self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
 
@@ -504,6 +508,9 @@ class JobSubmitterTest(unittest.TestCase):
 
         #Give it three minutes to get on a node and do its 120 second of sleeping
         time.sleep(90)
+
+
+        print myThread.dbi.processData("SELECT * FROM wmbs_location")[0].fetchall()
         
         username = os.getenv('USER')
         pipe = Popen(['condor_q', username], stdout = PIPE, stderr = PIPE, shell = True)
@@ -526,7 +533,91 @@ class JobSubmitterTest(unittest.TestCase):
         fileStats = os.stat('%s/CacheDir/Job_8/Report.pkl' %self.testDir)
         self.assertEqual(int(fileStats.st_size) > 0, True, "Job returned zero-length file")
 
-        #shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
+        if os.path.isdir('CacheDir'):
+            shutil.rmtree('CacheDir')
+        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
+        
+
+        return
+
+
+
+    def testE_shadowPoolLongTest(self):
+        """
+        If you run this, Burt will hunt you down and kill you
+
+        """
+
+        return
+
+        workload = self.createTestWorkload()
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+        config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
+        if not os.path.isdir(config.JobSubmitter.submitDir):
+            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
+
+        #Right now only works with 1
+        jobGroupList = self.createJobGroup(1, config, 'second', workloadSpec = 'basicWorkload', task = workload.getTask('Production'), nJobs = 950)
+
+
+        startTime = time.clock()
+
+        # some general settings that would come from the general default 
+        # config file
+
+        testJobSubmitter = JobSubmitter(config)
+        testJobSubmitter.prepareToStart()
+
+        #Should run twice and end
+        myThread.workerThreadManager.terminateWorkers()
+
+
+        stopTime = time.clock()
+
+        print "Job took %f seconds" %(stopTime - startTime)
+        
+        return
+
+
+
+    def testF_shadowPoolTiming(self):
+        """
+        If you run this, Burt will hunt you down and kill you
+
+        """
+
+        #return
+
+        workload = self.createTestWorkload()
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+        config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
+        if not os.path.isdir(config.JobSubmitter.submitDir):
+            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
+
+        #Right now only works with 1
+        jobGroupList = self.createJobGroup(1, config, 'second', workloadSpec = 'basicWorkload', task = workload.getTask('Production'), nJobs = 10)
+
+
+        startTime = time.clock()
+
+        # some general settings that would come from the general default 
+        testJobSubmitter = JobSubmitterPoller(config = config)
+        
+        cProfile.runctx("testJobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat") 
+
+        stopTime = time.clock()
+
+        print "Job took %f seconds" % (stopTime - startTime)
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('time')
+        p.print_stats()
 
         return
 

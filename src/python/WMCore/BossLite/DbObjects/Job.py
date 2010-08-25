@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.4 2010/04/19 18:00:41 mnorman Exp $"
-__revision__ = "$Revision: 1.4 $"
+__version__ = "$Id: Job.py,v 1.5 2010/04/20 15:08:20 spigafi Exp $"
+__revision__ = "$Revision: 1.5 $"
 
 
 # imports
@@ -310,11 +310,9 @@ class Job(DbObject):
 
         return
 
-
-
     ###########################################################################
 
-    def update(self, db, deep = True):
+    def update(self, deep = False):
         """
         update job information in database
         """

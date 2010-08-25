@@ -3,8 +3,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.14 2009/07/27 20:11:28 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.15 2009/08/13 19:41:16 meloam Exp $"
+__version__ = "$Revision: 1.15 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -55,7 +55,7 @@ class DBSBufferTest(unittest.TestCase):
 
         #self.tearDown()
         
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
+        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database", 'WMCore.ThreadPool','WMCore.MsgService','WMCore.Trigger'],
                                 useDefault = True)
 
         #myThread.transaction = None
@@ -158,30 +158,28 @@ class DBSBufferTest(unittest.TestCase):
         Mimics creation of component and handles JobSuccess messages.
         """
         print "1"
-
+        
         testDBSBuffer = DBSBuffer(self.config)
-
+        
         print "2a"
         
         testDBSBuffer.prepareToStart()
-
+        
         print "3"
- 
+         
         fjr_path = 'FmwkJobReports'
         count = 0;
-	for aFJR in os.listdir(fjr_path):
+        for aFJR in os.listdir(fjr_path):
             print "weee..."
             if aFJR.endswith('.xml') and aFJR.startswith('FrameworkJobReport'):
                 count = count + 1
                 testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
                 
         while threading.activeCount() > 1:
-
+        
             print('Currently: '+str(threading.activeCount())+\
-                ' Threads. Wait until all our threads have finished')
+                    ' Threads. Wait until all our threads have finished')
             time.sleep(1)
-            
-        DBSBufferTest._teardown = True
 
     def testSingleJobFrameworkReport(self):
         """
@@ -190,7 +188,6 @@ class DBSBufferTest(unittest.TestCase):
         
         """
 
-        return
         
         myThread = threading.currentThread()
 
@@ -206,11 +203,11 @@ class DBSBufferTest(unittest.TestCase):
         myThread.transaction = Transaction(myThread.dbi)
 
         #Find the test job
-        FJR = os.getcwd() + '/testFrameworkJobReport.xml'
+        FJR = os.getcwd() + '/FmwkJobReports/FrameworkJobReport-4562.xml'
         if not os.path.exists(FJR):
             print "ERROR: Test Framework Job Report %s missing!" %(FJR)
             print "ABORT: Cannot test without test Job Report!"
-            raise 'exception'
+            raise Exception
         testDBSBuffer.handleMessage('JobSuccess', FJR)
 
         while threading.activeCount() > 1:
@@ -222,9 +219,6 @@ class DBSBufferTest(unittest.TestCase):
 
         return
 
-
-    def runTest(self):
-        self.testA()
 if __name__ == '__main__':
     unittest.main()
 

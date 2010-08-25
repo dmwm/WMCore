@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.21 2009/08/18 23:18:15 swakef Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: WorkQueue.py,v 1.22 2009/08/20 15:35:28 swakef Exp $"
+__version__ = "$Revision: 1.22 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -236,7 +236,7 @@ class WorkQueue(WorkQueueBase):
                             events = dbsFile["NumberOfEvents"],
                             cksum = dbsFile["Checksum"],
                             parents = dbsFile["ParentList"],
-                            locations = dbsBlock['StorageElements'])
+                            locations = set(dbsBlock['StorageElements']))
                     fileset.addFile(wmbsFile)
                 fileset.commit()
             results.append(sub)

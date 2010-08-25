@@ -43,40 +43,27 @@ class DummyRESTModel(RESTModel):
         Initialise the RESTModel and add some methods to it.
         '''
         RESTModel.__init__(self, config)
-        self.methods['GET'] = {'list':{'args':['int', 'str'],
-                                        'call': self.list,
-                                        'version': 2,
-                                        'validation': [self.val_0,
-                                                       self.val_1,
-                                                       self.val_2, 
-                                                       self.val_3,
-                                                       self.val_4 
-                                                       ]},
-                                'list1':{'args':[],
-                                         'call': self.list1,
-                                         'version': 2,
-                                         'validation': []},
-                                         
-                                'list2':{'args':['num0', 'num1', 'num2'],
-                                         'call': self.list2,
-                                         'version': 2,
-                                         'validation': []},
-                                         
-                                'list3':{'args':['a', 'b'],
-                                         'call': self.list3,
-                                         'version': 2,
-                                         'validation': []}         
-                                }
+        
+        self.addWrappedMethod('GET', 'list', self.list, args=['int', 'str'], 
+                              validation=[self.val_0,
+                                          self.val_1,
+                                          self.val_2, 
+                                          self.val_3,
+                                          self.val_4 ], 
+                              version=2)
+        
+        self.addMethod('GET', 'list1', self.list1)
+        self.addMethod('GET', 'list2', self.list2, args=['num0', 'num1', 'num2'])
+        self.addWrappedMethod('GET', 'list3', self.list3, args=['a', 'b'])
         
         self.daofactory = DummyDAOFac()
         self.addDAO('GET', 'data1', 'DummyDAO1', [])
         self.addDAO('GET', 'data2', 'DummyDAO2', ['num'])
         self.addDAO('GET', 'data3', 'DummyDAO3', ['num', 'thing'])
         
-    def list(self, *args, **kwargs):
+    def list(self, int, str):
         """ if sanitise needed to be called method signature of callee should be 
             (*args, **kwargs) """
-        input = self.sanitise_input(args, kwargs, method = 'list')
         return input
 
     def list1(self):

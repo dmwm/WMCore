@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: PhEDEx.py,v 1.6 2010/04/13 18:51:38 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: PhEDEx.py,v 1.7 2010/08/09 20:20:00 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 # need to clean this up at some point
 
@@ -29,7 +29,7 @@ class PhEDEx:
             files = self.dataBlocks.getFiles(block)
             locations = self.dataBlocks.getLocation(block)
             blocks.append({"files": len(files), "name": block,
-                           'replica' : [{'se' : x } for x in locations]})
+                           'replica' : [{'node' : x } for x in locations]})
         return data
 
     def subscriptions(self, **args):

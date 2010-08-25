@@ -436,12 +436,12 @@ def makeOutputTweak(outMod, job):
     """
     result = PSetTweak()
     # output filenames
-    modName = getattr(outMod, "_internal_name")
+    modName = str(getattr(outMod, "_internal_name"))
     fileName = "%s.root" % modName
 
     result.addParameter("process.%s.fileName" % modName, fileName)
 
-    lfnBase = getattr(outMod, "lfnBase", None)
+    lfnBase = str(getattr(outMod, "lfnBase", None))
     if lfnBase != None:
         lfn = "%s/%s/%s.root" % (lfnBase, lfnGroup(job), modName)
         result.addParameter("process.%s.logicalFileName" % modName, lfn)

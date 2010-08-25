@@ -77,7 +77,9 @@ class TestReqMgr(unittest.TestCase):
             self.assertTrue(requestName in self.jsonSender.get('/reqMgr/user/me')[0])
 
             # jusrt use the ReRecoRequest for these tests
-            self.assertTrue(self.jsonSender.put('/reqMgr/request/%s?priority=2' % requestName)[1] == 200)
+            self.assertTrue(self.jsonSender.put('/reqMgr/request/%s?priority=5' % requestName)[1] == 200)
+            # default priority of group and user of 1
+            self.assertEqual(self.jsonSender.get('/reqMgr/request/'+requestName)[0]['RequestPriority'], 5+2)
             self.jsonSender.put('/reqMgr/request/%s?status=assignment-approved' % requestName)
             # only certain transitions allowed
             #self.assertEqual(self.jsonSender.put('/reqMgr/request/%s?status=running' % requestName)[1], 400)
@@ -108,6 +110,9 @@ class TestReqMgr(unittest.TestCase):
             self.jsonSender.put('/reqMgr/message/'+requestName, message)
             messages = self.jsonSender.get('/reqMgr/message/'+requestName)
             self.assertEqual(messages[0][0][0], message)
+            for status in ['running', 'aborted', 'rejected']:
+              self.jsonSender.put('/reqMgr/request/%s?status=%s' % (requestName, status))
+
 
     def tearDown(self):
         for requestType in self.requestTypes:

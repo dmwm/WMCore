@@ -176,7 +176,7 @@ def rerecoWorkload(workloadName, arguments):
 
     # Emulation
     if emulationMode:
-        #rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
+        rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
         rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
         rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
@@ -224,8 +224,8 @@ def rerecoWorkload(workloadName, arguments):
             mergeRecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
     if "ALCARECO" in writeDataTiers:
-        mergeAlca = rereco.addTask("MergeAlca")
-        mergeAlcaCmssw = mergeAlca.makeStep("mergeAlca")    
+        mergeAlca = rereco.addTask("MergeAlcaReco")
+        mergeAlcaCmssw = mergeAlca.makeStep("mergeAlcaReco")    
         mergeAlcaCmssw.setStepType("CMSSW")
         mergeAlcaStageOut = mergeAlcaCmssw.addStep("stageOut1")
         mergeAlcaStageOut.setStepType("StageOut")

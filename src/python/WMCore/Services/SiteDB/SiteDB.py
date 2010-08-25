@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.5 2009/03/31 14:53:45 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SiteDB.py,v 1.6 2009/05/06 14:46:15 ewv Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Services.Service import Service
 import urllib
@@ -23,7 +23,7 @@ from WMCore.Services.JSONParser.JSONParser import JSONParser
 #except:
     # Prior to 2.6 requires simplejson
     #import simplejson as json
-    
+
 class SiteDBJSON(Service):
 
     """
@@ -33,8 +33,10 @@ class SiteDBJSON(Service):
     def __init__(self, dict={}):
         dict['endpoint'] = "https://cmsweb.cern.ch/sitedb/json/index/"
         self.parser = JSONParser()
-        
-        if os.getenv('HOME'):
+
+        if os.getenv('CMS_SITEDB_CACHE_DIR'):
+            dict['cachepath'] = os.getenv('CMS_SITEDB_CACHE_DIR') + '/.cms_sitedbcache'
+        elif os.getenv('HOME'):
             dict['cachepath'] = os.getenv('HOME') + '/.cms_sitedbcache'
         else:
             dict['cachepath'] = '/tmp/sitedbjson_' + pwd.getpwuid(os.getuid())[0]
@@ -56,7 +58,7 @@ class SiteDBJSON(Service):
 
         retrieve JSON formatted information given the service name and the
         argument dictionaries
-        
+
         TODO: Probably want to move this up into Service
         """
         params = urllib.urlencode(args)

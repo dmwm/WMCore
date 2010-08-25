@@ -9,8 +9,8 @@ to perform thread-specific setup and clean-up operations
 """
 
 __revision__ = \
-        "$Id: BaseWorkerThread.py,v 1.22 2010/05/14 18:52:52 sryu Exp $"
-__version__ = "$Revision: 1.22 $"
+        "$Id: BaseWorkerThread.py,v 1.23 2010/06/23 18:11:09 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -39,9 +39,11 @@ class BaseWorkerThread:
         self.notifyResume = None
 
         # Reference to the owner component and arguments
+        # this will be set when addWorker is called in WorkerThreadManager
         self.component = None
         self.args = {}
-
+        self.heartbeatAPI = None
+        
         # Termination callback function
         self.terminateCallback = None
 
@@ -57,7 +59,8 @@ class BaseWorkerThread:
         self.procid = 0
         if hasattr(myThread, 'msgService'):
             self.procid = myThread.msgService.procid
-
+            
+        
     def setup(self, parameters):
         """
         Called when thread is being run for the first time. Optional in derived
@@ -140,8 +143,11 @@ class BaseWorkerThread:
 
             msg = "Worker thread %s started" % str(self)
             logging.info(msg)
+            
+            # heartbeat needed to be called after self.initInThread 
+            # to get the right name
             myThread = threading.currentThread()
-
+            self.heartbeatAPI.updateWorkerHeartbeat(myThread.getName())
             # Run event loop while termination is not flagged
             while not self.notifyTerminate.isSet():
                 # Check manager hasn't paused threads
@@ -153,6 +159,9 @@ class BaseWorkerThread:
                     if not self.notifyTerminate.isSet():
                         # Do some work!
                         try:
+                            # heartbeat needed to be called after self.initInThread 
+                            # to get the right name
+                            self.heartbeatAPI.updateWorkerHeartbeat(myThread.getName(), "Running")
                             self.algorithm(parameters)
 
                             # Catch if someone forgets to commit/rollback
@@ -170,9 +179,9 @@ class BaseWorkerThread:
                             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
                             for stackFrame in stackTrace:
                                 msg += stackFrame
-
+                            
                             logging.error(msg)
-
+                            self.heartbeatAPI.updateWorkerError(myThread.getName(), msg)
                         # Put the thread to sleep
                         time.sleep(self.idleTime)
 

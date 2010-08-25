@@ -5,8 +5,8 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.11 2009/10/14 14:55:28 riahi Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.12 2010/06/23 18:11:09 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -14,6 +14,7 @@ import logging
 import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 
 # keep track of a unique WTM number
 wtmcount = 0
@@ -73,6 +74,8 @@ class WorkerThreadManager:
         worker.terminateCallback = self.slaveTerminateCallback
         worker.notifyPause = self.pauseSlaves
         worker.notifyResume = self.resumeSlaves
+        worker.heartbeatAPI = HeartbeatAPI(self.component.config.Agent.componentName)
+        
 
     def addWorker(self, worker, idleTime = 60, parameters = None):
         """

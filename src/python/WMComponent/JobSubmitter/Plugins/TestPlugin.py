@@ -30,63 +30,65 @@ class TestPlugin(PluginBase):
         logging.error("Called")
         logging.error(parameters)
 
-        jobList = parameters.get('jobs', [])
+        result = {'Success': []}        
 
-        if parameters == {} or parameters == [] or jobList == []:
-            return {'NoResult': [0]}
+        for entry in parameters:
+            jobList = entry.get('jobs', [])
 
-        if type(jobList) == dict:
-            #We only got one of them
-            #Retain list functionality for possibiity of future multi-jobs
-            jobList = [jobList]
-
-
-
-
-
-        myThread = threading.currentThread()
-
-        if not os.path.isdir(self.config['submitDir']):
-            if not os.path.exists(self.config['submitDir']):
-                os.mkdir(self.config['submitDir'])
+            if entry == {} or entry == [] or jobList == []:
+                return {'NoResult': [0]}
+            
+            if type(jobList) == dict:
+                # We only got one of them
+                # Retain list functionality for possibiity of future multi-jobs
+                jobList = [jobList]
 
 
-        baseConfig = self.initSubmit()
-
-        jobSubmitFiles = []
-        for job in jobList:
-            logging.error('Have job separated out')
-            logging.error(job)
-            if job == {}:
-                continue
-            tmpList = []
-            tmpList.extend(baseConfig)
-            tmpList.extend(self.makeSubmit(job))
-            jdlFile = "%s/submit_%i.jdl" %(self.config['submitDir'], job['id'])
-            handle = open(jdlFile, 'w')
-            handle.writelines(tmpList)
-            handle.close()
-
-            jobSubmitFiles.append(jdlFile)
-
-        #Now submit them
-
-        for submit in jobSubmitFiles:
-            #submit = jobSubmitFiles[0]
-            command = ["condor_submit", submit]
-            pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-            pipe.wait()
-            logging.error("I have submitted a job to condor")
 
 
-        result = {'Success': []}
 
-        for job in jobList:
-            if job == {}:
-                continue
-            result['Success'].append(job['id'])
+            myThread = threading.currentThread()
 
-        #We must return a list of jobs successfully submitted, and a list of jobs failed
+            if not os.path.isdir(self.config['submitDir']):
+                if not os.path.exists(self.config['submitDir']):
+                    os.mkdir(self.config['submitDir'])
+
+
+            baseConfig = self.initSubmit()
+
+            jobSubmitFiles = []
+            for job in jobList:
+                logging.error('Have job separated out')
+                logging.error(job)
+                if job == {}:
+                    continue
+                tmpList = []
+                tmpList.extend(baseConfig)
+                tmpList.extend(self.makeSubmit(job))
+                jdlFile = "%s/submit_%i.jdl" %(self.config['submitDir'], job['id'])
+                handle = open(jdlFile, 'w')
+                handle.writelines(tmpList)
+                handle.close()
+                
+                jobSubmitFiles.append(jdlFile)
+                
+            # Now submit them
+
+            for submit in jobSubmitFiles:
+                # submit = jobSubmitFiles[0]
+                command = ["condor_submit", submit]
+                pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+                pipe.wait()
+                logging.error("I have submitted a job to condor")
+
+
+
+            for job in jobList:
+                if job == {}:
+                    continue
+                result['Success'].append(job['id'])
+
+        # We must return a list of jobs successfully submitted, and a list of jobs failed
         return result
 
 

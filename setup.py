@@ -203,7 +203,11 @@ def lint_files(files, reports=False):
     
     rcfile=os.path.join(get_relative_path(),'standards/.pylintrc')
     
-    arguements = ['-rn', '--rcfile=%s' % rcfile]
+    arguements = ['--rcfile=%s' % rcfile]
+    
+    if not reports:
+        arguements.append('-rn')
+    
     arguements.extend(files)
     
     lntr = LinterRun(arguements)
@@ -417,15 +421,18 @@ class LintCommand(Command):
     more buildbot friendly.    
     """
     
-    user_options = [ ('package=', 'p', 'package to lint, default to None')]
+    user_options = [ ('package=', 'p', 'package to lint, default to None'),
+                ('report', 'r', 'return a detailed lint report, default False')]
     
     def initialize_options(self):
         self._dir = get_relative_path()
         self.package = None
+        self.report = False
         
     def finalize_options(self):
-        pass
-    
+        if self.report:
+            self.report = True
+
     def run(self):
         '''
         Find the code and run lint on it
@@ -437,6 +444,8 @@ class LintCommand(Command):
             
             files_to_lint = []
             
+            
+            
             if self.package:
                 if self.package.endswith('.py'):
                     cnt = self.package.count('.') - 1
@@ -445,8 +454,8 @@ class LintCommand(Command):
                     files_to_lint = generate_filelist(self.package.replace('.', '/'))
             else:
                 files_to_lint = generate_filelist()
-                
-            results, evaluation = lint_files(files_to_lint)
+            
+            results, evaluation = lint_files(files_to_lint, self.report)
             ln = len(results)
             scr = 0
             print

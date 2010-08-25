@@ -38,28 +38,3 @@ class PhEDExInjector(Harness):
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(PhEDExInjectorPoller(self.config), pollInterval)
         
-        return
-
-
-#
-#    def preInitialization(self):
-#        """
-#        Initializes plugins for different messages
-#        """
-#                # use a factory to dynamically load handlers.
-#        factory = WMFactory('generic')
-#        
-#        
-#        # Add event loop to worker manager
-#        myThread = threading.currentThread()
-#        
-#        pollInterval = self.config.PhEDExInjector.pollInterval
-#        logging.info("Setting poll interval to %s seconds" % pollInterval)
-#        myThread.workerThreadManager.addWorker(PhEDExInjectorPoller(self.config), pollInterval)
-#        
-#        self.messages['PhEDExInjectorNewInjection'] = \
-#            factory.loadObject('WMComponent.PhEDExInjectorPoller.NewInjectionHandler', self) 
-
-    def inject(self, event, payload):
-        print "event is %s, payload is %s " % (event, payload)
-        

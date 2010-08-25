@@ -4,8 +4,8 @@
 The PhEDExInjector algorithm
 """
 __all__ = []
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.3 2009/08/13 23:58:47 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.4 2009/08/24 11:10:03 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -36,7 +36,8 @@ from WMCore.Services.DBS.DBSWriter import DBSWriter
 from WMCore.Services.DBS           import DBSWriterObjects
 from WMCore.Services.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from WMCore.Services.DBS.DBSReader import DBSReader
-
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx as phedexApi
+from WMCore.DAOFactory import DAOFactory
 
 
 class PhEDExInjectorPoller(BaseWorkerThread):
@@ -46,7 +47,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
     """
 
 
-    def __init__(self, config):
+    def __init__(self, config, noclue = None):
         """
         Initialise class members
         """
@@ -54,8 +55,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         myThread.dialect = os.getenv('DIALECT')
         BaseWorkerThread.__init__(self)
         self.config     = config
-        #self.dbsurl     = self.config.DBSUpload.dbsurl
-        #self.dbsversion = self.config.DBSUpload.dbsversion
+        self.phedex     = phedexApi({'endpoint': config.PhEDExInjector.phedexurl}, 'json' )
+        self.dbsUrl     = config.DBSUpload.dbsurl 
         self.uploadFileMax = 10
     
     def setup(self, parameters):
@@ -68,23 +69,33 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # overwrite that so we can use the factory for PhEDExInjector objects.
         self.daofactory = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
                                      logger = self.logger,
-                                     dbinterface = self.dbi)
-#        bufferFactory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database.Interface")
-#        self.addToBuffer=bufferFactory.loadObject("AddToBuffer")
-
-#        logging.info("DBSURL %s"%self.dbsurl)
-#        args = { "url" : self.dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : self.dbsversion }
-#        self.dbsapi = DbsApi(args)
-#        self.dbswriter = DBSWriter(self.dbsurl, level='ERROR', user='NORMAL', version=self.dbsversion)
+                                     dbinterface = myThread.dbi)
 
         return
 
     def inject(self):
-        print "Oh yeah, we're injecting"
+        myThread = threading.currentThread()
+
         action = self.daofactory(classname = "GetUninjectedBlocks")
-        print action.execute( conn = self.getDBConn(),
-                              transaction = self.existingTransaction())
-        
+        setAction = self.daofactory(classname = "SetBlocksInjected")
+        rows = action.execute( )
+        print rows
+        condensed = {}
+        for row in rows:
+            if not row['location'] in condensed:
+                condensed[row['location']] = []
+            condensed[row['location']].append(row['blockname'])
+            self.phedex.injectBlocks(self.dbsUrl, row['location'], row['blockname'])
+            setAction.execute( [ {'location': row['location'], 'blockname':row['blockname']} ],
+                               conn= myThread.transaction.conn,
+                               transaction=myThread.transaction )
+            
+#        for loc,blocks in condensed.iteritems():
+#            print self.phedex.injectBlocks(self.dbsUrl, 
+#                                         loc,
+#                                         0,
+#                                         1,
+#                                         *blocks)   
         pass
     
     def terminate(self,params):

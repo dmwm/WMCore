@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.42 2009/12/04 20:59:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.43 2009/12/21 19:56:43 mnorman Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import threading
 
@@ -28,6 +28,14 @@ class CreateWMBSBase(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
+
+        tablespaceTable = ""
+        tablespaceIndex = ""
+        if params:
+            if params.has_key("tablespace_table"):
+                tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
+            if params.has_key("tablespace_index"):
+                tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
         DBCreator.__init__(self, logger, dbi)
 
@@ -80,15 +88,12 @@ class CreateWMBSBase(DBCreator):
              fileset     INTEGER   NOT NULL,
              insert_time INTEGER   NOT NULL,
              UNIQUE (file, fileset),
-             INDEX  (fileset),
              FOREIGN KEY(fileset) references wmbs_fileset(id))"""
 
         self.create["04wmbs_file_parent"] = \
           """CREATE TABLE wmbs_file_parent (
              child  INTEGER NOT NULL,
              parent INTEGER NOT NULL,
-             INDEX (child),
-             INDEX (parent),
              FOREIGN KEY (child)  references wmbs_file_details(id)
                ON DELETE CASCADE,
              FOREIGN KEY (parent) references wmbs_file_details(id),
@@ -99,7 +104,6 @@ class CreateWMBSBase(DBCreator):
              file    INTEGER NOT NULL,
              run     INTEGER NOT NULL,
              lumi    INTEGER NOT NULL,
-             INDEX (file),
              FOREIGN KEY (file) references wmbs_file_details(id)
                ON DELETE CASCADE)"""
 
@@ -115,8 +119,6 @@ class CreateWMBSBase(DBCreator):
              file     INTEGER NOT NULL,
              location INTEGER NOT NULL,
              UNIQUE(file, location),
-             INDEX (file),
-             INDEX (location),
              FOREIGN KEY(file)     REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE,
              FOREIGN KEY(location) REFERENCES wmbs_location(id)
@@ -137,8 +139,6 @@ class CreateWMBSBase(DBCreator):
              output_identifier VARCHAR(255) NOT NULL,
              output_fileset    INTEGER NOT NULL,
              output_parent     VARCHAR(255),
-             INDEX (workflow_id),
-             INDEX (output_fileset),
              FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)
                ON DELETE CASCADE,
              FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)
@@ -159,9 +159,6 @@ class CreateWMBSBase(DBCreator):
              split_algo  VARCHAR(255) NOT NULL DEFAULT 'File',
              subtype     INTEGER      NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
-             INDEX (fileset),
-             INDEX (workflow),
-             INDEX (subtype),
              FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE,
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
@@ -175,8 +172,6 @@ class CreateWMBSBase(DBCreator):
              subscription     INTEGER      NOT NULL,
              location         INTEGER      NOT NULL,
              valid            BOOLEAN      NOT NULL DEFAULT TRUE,
-             INDEX (subscription),
-             INDEX (location),
              FOREIGN KEY(subscription)  REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY(location)     REFERENCES wmbs_location(id)
@@ -186,8 +181,6 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_acquired (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
-             INDEX (subscription),
-             INDEX (file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -198,8 +191,6 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_failed (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
-             INDEX (subscription),
-             INDEX (file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -207,14 +198,12 @@ class CreateWMBSBase(DBCreator):
 
         self.create["12wmbs_sub_files_complete"] = \
           """CREATE TABLE wmbs_sub_files_complete (
-          subscription INTEGER NOT NULL,
-          file         INTEGER NOT NULL,
-          INDEX (subscription),
-          INDEX (file),
-          FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-            ON DELETE CASCADE,
-          FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
-            ON DELETE CASCADE)"""
+             subscription INTEGER NOT NULL,
+             file         INTEGER NOT NULL,
+             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE)"""
 
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
@@ -225,8 +214,6 @@ class CreateWMBSBase(DBCreator):
              last_update  INTEGER      NOT NULL,
              location     INTEGER,
              UNIQUE(uid),
-             INDEX (subscription),
-             INDEX (output),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
@@ -252,9 +239,6 @@ class CreateWMBSBase(DBCreator):
              cache_dir    VARCHAR(255)  DEFAULT 'None',
              fwjr_path    VARCHAR(255),
              UNIQUE (name),
-             INDEX (jobgroup),
-             INDEX (state),
-             INDEX (location),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE,
              FOREIGN KEY (state) REFERENCES wmbs_job_state(id),
@@ -264,8 +248,6 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_job_assoc (
              job    INTEGER NOT NULL,
              file   INTEGER NOT NULL,
-             INDEX (job),
-             INDEX (file),
              FOREIGN KEY (job)  REFERENCES wmbs_job(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file) REFERENCES wmbs_file_details(id)
@@ -281,7 +263,6 @@ class CreateWMBSBase(DBCreator):
               FirstRun      INTEGER,
               LastRun       INTEGER,
               inclusivemask BOOLEAN DEFAULT TRUE,
-              INDEX (job),
               FOREIGN KEY (job)       REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
 
@@ -298,12 +279,101 @@ class CreateWMBSBase(DBCreator):
               typeid        INTEGER,
               cksum         VARCHAR(100),
               UNIQUE (fileid, typeid),
-              INDEX (fileid),
-              INDEX (typeid),
               FOREIGN KEY (typeid) REFERENCES wmbs_checksum_type(id)
                 ON DELETE CASCADE,
               FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
                 ON DELETE CASCADE)"""
+
+
+        self.constraints["01_idx_wmbs_fileset_files"] = \
+          """CREATE INDEX wmbs_fileset_files_idx_fileset ON wmbs_fileset_files(fileset) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_fileset_files"] = \
+          """CREATE INDEX wmbs_fileset_files_idx_fileid ON wmbs_fileset_files(file) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_file_runlumi_map"] = \
+          """CREATE INDEX wmbs_file_runlumi_map_fileid ON wmbs_file_runlumi_map(file) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_file_location"] = \
+          """CREATE INDEX wmbs_file_location_fileid ON wmbs_file_location(file) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_file_location"] = \
+          """CREATE INDEX wmbs_file_location_location ON wmbs_file_location(location) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_file_parent"] = \
+          """CREATE INDEX wmbs_file_parent_parent ON wmbs_file_parent(parent) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_file_parent"] = \
+          """CREATE INDEX wmbs_file_parent_child ON wmbs_file_parent(child) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_workflow_output"] = \
+          """CREATE INDEX idx_wmbs_workf_out_workflow ON wmbs_workflow_output(workflow_id) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_workflow_output"] = \
+          """CREATE INDEX idx_wmbs_workf_out_fileset ON wmbs_workflow_output(output_fileset) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_subscription"] = \
+          """CREATE INDEX idx_wmbs_subscription_fileset ON wmbs_subscription(fileset) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_subscription"] = \
+          """CREATE INDEX idx_wmbs_subscription_subtype ON wmbs_subscription(subtype) %s""" % tablespaceIndex
+
+        self.constraints["03_idx_wmbs_subscription"] = \
+          """CREATE INDEX idx_wmbs_subscription_workflow ON wmbs_subscription(workflow) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_subscription_location"] = \
+          """CREATE INDEX idx_wmbs_subscription_loc_sub ON wmbs_subscription_location(subscription) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_subscription_location"] = \
+          """CREATE INDEX idx_wmbs_subscription_loc_loc ON wmbs_subscription_location(location) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_sub_files_acquired"] = \
+          """CREATE INDEX idx_wmbs_sub_files_acq_sub ON wmbs_sub_files_acquired(subscription) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_sub_files_acquired"] = \
+          """CREATE INDEX idx_wmbs_sub_files_acq_file ON wmbs_sub_files_acquired(file) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_sub_files_failed"] = \
+          """CREATE INDEX idx_wmbs_sub_files_fail_sub ON wmbs_sub_files_failed(subscription) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_sub_files_failed"] = \
+          """CREATE INDEX idx_wmbs_sub_files_fail_file ON wmbs_sub_files_failed(file) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_sub_files_complete"] = \
+          """CREATE INDEX idx_wmbs_sub_files_comp_sub ON wmbs_sub_files_complete(subscription) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_sub_files_complete"] = \
+          """CREATE INDEX idx_wmbs_sub_files_comp_file ON wmbs_sub_files_complete(file) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_sub_jobgroup"] = \
+          """CREATE INDEX idx_wmbs_jobgroup_sub ON wmbs_jobgroup(subscription) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_sub_jobgroup"] = \
+          """CREATE INDEX idx_wmbs_jobgroup_out ON wmbs_jobgroup(output) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_job"] = \
+          """CREATE INDEX idx_wmbs_job_jobgroup ON wmbs_job(jobgroup) %s""" % tablespaceIndex
+        
+        self.constraints["02_idx_wmbs_job"] = \
+          """CREATE INDEX idx_wmbs_job_loc ON wmbs_job(location) %s""" % tablespaceIndex
+
+        self.constraints["03_idx_wmbs_job"] = \
+          """CREATE INDEX idx_wmbs_job_state ON wmbs_job(state) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_job_assoc"] = \
+          """CREATE INDEX idx_wmbs_job_assoc_job ON wmbs_job_assoc(job) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_job_assoc"] = \
+          """CREATE INDEX idx_wmbs_job_assoc_file ON wmbs_job_assoc(file) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_job_mask"] = \
+          """CREATE INDEX idx_wmbs_job_mask_job ON wmbs_job_mask(job) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_file_checksums"] = \
+          """CREATE INDEX idx_wmbs_file_checksums_type ON wmbs_file_checksums(typeid) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_file_checksums"] = \
+          """CREATE INDEX idx_wmbs_file_checksums_file ON wmbs_file_checksums(fileid) %s""" % tablespaceIndex
 
 
 

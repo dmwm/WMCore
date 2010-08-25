@@ -6,8 +6,8 @@ Unit tests for the Transaction class
 
 """
 
-__revision__ = "$Id: Transaction_t.py,v 1.11 2010/08/02 17:50:11 meloam Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Transaction_t.py,v 1.12 2010/08/03 06:17:32 meloam Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import commands
 import logging
@@ -57,8 +57,7 @@ class TransactionTest(unittest.TestCase):
 
     
         # call the script we use for cleaning:
-        print('Clear database')
-        self.testInit.clearDatabase()
+        #self.testInit.clearDatabase()
         myThread.transaction.begin()
         myThread.transaction.processData(self.destroy[myThread.dialect])
         myThread.transaction.commit()

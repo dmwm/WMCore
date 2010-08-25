@@ -204,6 +204,7 @@ class OidConsumer(cherrypy.Tool):
             raise cherrypy.HTTPRedirect(self.failed_path)
         elif info.status == consumer.CANCEL:
             # Indicates that the user cancelled the OpenID authentication request
+            cherrypy.session[self.session_name]['info'] = info.identity_url
             raise cherrypy.HTTPRedirect(self.cancel_path)
         elif info.status == consumer.SETUP_NEEDED:
             # Means that the request was in immediate mode and the server was

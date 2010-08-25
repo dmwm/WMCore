@@ -80,7 +80,7 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
                 "step": "notsure",
                 "reason": traceback
             }
-        curlcall = subprocess.Popen( [ 'curl', '-X', 'PUT', couchURL, '-H', 'Content-Type: application/json',
+        curlcall = subprocess.Popen( [ 'curl', '-X', 'POST', couchURL, '-H', 'Content-Type: application/json',
                      '-d', urllib.quote(json.dumps(myData, separators=(',',':')))],
                      stdout = sys.stdout,
                      stderr = sys.stderr)

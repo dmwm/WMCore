@@ -14,7 +14,7 @@ class Group_t(unittest.TestCase):
 
     def setUp(self):
         self.database = "groupuser"
-        self.url = "127.0.0.1:5984"
+        self.url = "http://127.0.0.1:5984"
 
 
     def testA(self):

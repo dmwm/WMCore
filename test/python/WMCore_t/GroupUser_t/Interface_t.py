@@ -14,7 +14,7 @@ from WMCore.GroupUser.Interface import Interface
 class Interface_t(unittest.TestCase):
 
     def setUp(self):
-         self.url = "127.0.0.1:5984"
+         self.url = "http://127.0.0.1:5984"
          self.database = "groupuser"
     
     def testA(self):

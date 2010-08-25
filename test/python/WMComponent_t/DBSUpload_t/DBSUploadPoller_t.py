@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.5 $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -101,9 +101,6 @@ class DBSUploadTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         
-#        if self._teardown:
-#            return
-
         factory2 = WMFactory("MsgService", "WMCore.MsgService")
         destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()

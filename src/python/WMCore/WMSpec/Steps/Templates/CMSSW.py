@@ -11,6 +11,7 @@ from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
 
+
 class CMSSWStepHelper(CoreHelper):
     """
     _CMSSWStepHelper_
@@ -80,6 +81,9 @@ class CMSSWStepHelper(CoreHelper):
 
 
 
+
+
+
     def cmsswSetup(self, cmsswVersion, **options):
         """
         _cmsswSetup_
@@ -132,6 +136,7 @@ class CMSSW(Template):
         step.application.command.executable = "cmsRun"
         step.application.command.configuration = "PSet.py"
         step.application.command.configurationHash = None
+        step.application.command.psetTweak = "PSetTweak.json"
         step.application.command.arguments = ""
         step.output.jobReport = "FrameworkJobReport.xml"
         step.output.stdout = "%s-stdout.log" % stepname

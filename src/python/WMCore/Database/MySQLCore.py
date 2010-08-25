@@ -1,7 +1,13 @@
+#!/usr/bin/env python
+"""
+_MySQLCore_
+
+Handle bind variable parsing for MySQL.
+"""
+
 import copy
 
 from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.Dialects import MySQLDialect
 from WMCore.Database.ResultSet import ResultSet
 
 def bindVarCompare(a, b):
@@ -129,5 +135,6 @@ class MySQLInterface(DBInterface):
         Transform the bind variables into the format that MySQL expects.        
         """
         newsql, binds = self.substitute(s, b)
+
         return DBInterface.executemanybinds(self, newsql, binds, connection,
                                             returnCursor)

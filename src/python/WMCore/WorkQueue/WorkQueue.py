@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.47 2009/12/16 17:45:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: WorkQueue.py,v 1.48 2009/12/16 20:46:44 sryu Exp $"
+__version__ = "$Revision: 1.48 $"
 
 # pylint: disable-msg = W0104, W0622
 # pylint: enable-msg = W0104, W0622
@@ -22,6 +22,8 @@ try:
     from collections import defaultdict    #python2.6 doesn't work fully yet
 except (NameError, ImportError):
     pass
+
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -807,4 +809,5 @@ class WorkQueue(WorkQueueBase):
             return self.remote_queues[queue]
         except KeyError:
             #TODO: instantiate REST connector here, add to dict
-            pass
+            self.remote_queues[queue] = WorkQueueDS({'endpoint':queue})
+            return self.remote_queues[queue]

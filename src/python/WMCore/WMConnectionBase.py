@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.8 2010/02/25 18:15:53 swakef Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.9 2010/02/27 12:12:55 swakef Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import copy
@@ -14,7 +14,10 @@ import copy
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
 
-from contextlib import contextmanager
+try:
+    from contextlib import contextmanager
+except (ImportError, NameError):
+    pass
 
 class WMConnectionBase:
     """
@@ -125,7 +128,6 @@ class WMConnectionBase:
         return self.__dict__
 
 
-    @contextmanager
     def transactionContext(self):
         """
         Returns a transaction as a ContextManager
@@ -150,3 +152,7 @@ class WMConnectionBase:
         else:
             # only commits if transaction started by this invocation
             self.commitTransaction(existingTransaction)
+    try:
+        transactionContext = contextmanager(transactionContext)
+    except NameError:
+        pass

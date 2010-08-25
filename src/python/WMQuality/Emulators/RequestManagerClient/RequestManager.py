@@ -3,10 +3,10 @@ from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 class RequestManager(object):
     
     def __init__(self, *args, **kwargs):
-        print "Using RequestManager Emulator"
+        print "Using RequestManager Emulator ..."
         self.specGenerator = WMSpecGenerator()
         self.count = 0
-        self.maxWmSpec = 10
+        self.maxWmSpec = 2
     
     def getAssignment(self, teamName=None, request=None):
         if self.count < self.maxWmSpec:

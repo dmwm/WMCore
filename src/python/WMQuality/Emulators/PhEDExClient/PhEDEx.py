@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: PhEDEx.py,v 1.5 2010/04/07 17:51:32 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: PhEDEx.py,v 1.6 2010/04/13 18:51:38 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 # need to clean this up at some point
 
@@ -16,7 +16,7 @@ class PhEDEx:
     """
     """
     def __init__(self, *args, **kwargs):
-        print "Using PhEDEx Emulator"
+        print "Using PhEDEx Emulator ...."
         self.dataBlocks = DataBlockGenerator()
 
     def getReplicaInfoForBlocks(self, **args):
@@ -75,5 +75,5 @@ class PhEDEx:
             return data
         
     def emulator(self):
-        return "PhEDEx emulator"
+        return "PhEDEx emulator ...."
 # pylint: enable-msg=W0613,R0201

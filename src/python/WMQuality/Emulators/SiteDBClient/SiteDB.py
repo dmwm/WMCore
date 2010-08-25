@@ -12,6 +12,7 @@ class SiteDBJSON(object):
     """
 
     def __init__(self, dict={}):
+        print "Using RequestManager Emulator ..."
         pass
 
     def phEDExNodetocmsName(self, node):

@@ -17,7 +17,7 @@ def emulatorSwitch(name):
         config = _getConfiguration()
         if config:
             if getattr(config.Emulator, name, False):
-                logging.info("Using %s Emulator" %  name)
+                logging.info("Using %s Emulator ..." %  name)
                 return True
         return False
 

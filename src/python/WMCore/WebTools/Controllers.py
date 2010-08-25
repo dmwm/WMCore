@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.9 2009/02/13 11:46:50 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Controllers.py,v 1.10 2009/03/25 13:32:30 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
@@ -96,6 +96,21 @@ minimising setting appropriate headers and etags and gzip.
             self.cache[id] = data
         return self.cache[id] 
     
+    @exposejs
+    def yui(self, *args, **kwargs):
+        """
+        cat together the specified YUI files. args[0] should be the YUI version,
+        and the scripts should be specified in the kwargs s=scriptname
+        TODO: support scripts as path args
+        TODO: support for CSS & images
+        TODO: check that the script/css/image exists - we'll just assume you 
+        have a working YUI install for now....
+        """
+        cherryconf.update ({'tools.encode.on': True, 'tools.gzip.on': True})
+        version = args[0]
+        scripts = self.makelist(kwargs['s'])
+        
+        
     def checkScripts(self, scripts, map):
         """
         Check a script is known to the map and that the script actually exists   

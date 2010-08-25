@@ -31,6 +31,7 @@ class DefaultConfig(Configuration):
         active.rest.section_('database')
         active.rest.database.connectUrl = 'sqlite://'
         #active.rest.database = 'sqlite:////tmp/resttest.db'
+        active.rest.database.socket = None
         active.rest.section_('model')
         active.rest.model.object = model or 'WMCore.WebTools.RESTModel'
         active.rest.section_('formatter')

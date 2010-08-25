@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.46 2009/09/14 20:10:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: CMSCouch.py,v 1.47 2009/09/18 13:26:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.47 $"
 
 try:
     # Python 2.6
@@ -33,7 +33,19 @@ class Document(dict):
 
     def delete(self):
         self['_deleted'] = True
-    
+
+    def __to_json__(self, thunker):
+        """
+        __to_json__
+
+        This is here to prevent the serializer from attempting to serialize
+        this object and adding a bunch of keys that couch won't understand.
+        """
+        jsonDict = {}
+        for key in self.keys():
+            jsonDict[key] = self[key]
+
+        return jsonDict
     
 class CouchDBRequests(BasicAuthJSONRequests):
     """

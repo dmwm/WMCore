@@ -5,23 +5,25 @@ import cherrypy
 DEFAULT_SESSION_NAME = 'CernOpenIdTool'
 
 class CernOidDefaultHandler:
-    def __init__(self, session_name=DEFAULT_SESSION_NAME):
-        self.session_name=session_name
+    def __init__(self, config):
+        print '>>>>>> CernOidDefaultHandler: %s' % config
+        self.config = config
+        self.session_name = self.config.session_name
 
     @expose
-    def login(self):
+    def login(self, url='/'):
         return """\
 <html>
   <head />
   <body>
     <p>Enter your OpenID:</p>
-    <form method="get" action="/">
+    <form method="get" action="%s">
       <input type="text" name="openid_url" value="" />
       <input type="submit" />
     </form>
   </body>
 </html>
-"""
+""" % (url)
 
     @expose
     def logout(self):

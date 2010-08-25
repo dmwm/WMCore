@@ -7,7 +7,7 @@ Filesets and Feeders manager
 __all__ = []
 __revision__ = "$Id: FeederManagerPoller.py,\
      v 1.4 2009/11/06 12:08:15 riahi Exp $" 
-__version__ = "$Revision: 1.7 $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
@@ -60,6 +60,7 @@ class FeederManagerPoller(BaseWorkerThread):
 
         FILESET_WATCH_temp = []
         listFileset = {}
+        FILESET_NEW = {}
 
         myThread = threading.currentThread()
         myThread.transaction.begin()

@@ -5,11 +5,12 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.10 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.10 2009/01/12 23:02:34 afaq Exp $"
+__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.11 2009/05/15 16:50:48 mnorman Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
+import os
 import threading
 from WMCore.WMFactory import WMFactory
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
@@ -18,7 +19,11 @@ from WMCore.DataStructs.Run import Run
 class AddToBuffer:
 
     def __init__(self, logger=None, dbfactory = None):
-        pass
+        
+        myThread = threading.currentThread()
+        myThread.transaction.begin()
+
+        myThread.dialect = os.getenv("DIALECT")
     
     def addFile(self, file, dataset=0):
 
@@ -30,18 +35,20 @@ class AddToBuffer:
 
 	runLumiList=file.getLumiSections()
 	runList=[x['RunNumber'] for x in runLumiList]
+
 	for runNumber in runList:
 		lumis = [int(y['LumiSectionNumber']) for y in runLumiList if y['RunNumber']==runNumber]
 		run=Run(runNumber, *lumis)
 		bufferFile.addRun(run)
-
-        if bufferFile.exists() == False: 
-		bufferFile.create()
- 		bufferFile.setLocation(se=file['SEName'], immediateSave = True)
-	else: 
-		bufferFile.load()
+                
+        if bufferFile.exists() == False:
+            bufferFile.create()
+            bufferFile.setLocation(se=file['SEName'], immediateSave = True)
+	else:
+            bufferFile.load()
 	# Lets add the file to DBS Buffer as well
         #UPDATE File Count
+
 	self.updateDSFileCount(dataset=dataset)
 
 	#Parent files
@@ -60,6 +67,7 @@ class AddToBuffer:
                                 pass
                         else:
                                 raise ex
+
         myThread.transaction.commit()
         return
 
@@ -81,7 +89,7 @@ class AddToBuffer:
         # dataset object contains the algo information
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         factory = WMFactory("dbsBuffer", "WMComponent.DBSBuffer.Database."+ \
                         myThread.dialect)
         newDS = factory.loadObject("NewAlgo")

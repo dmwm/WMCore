@@ -5,7 +5,7 @@ _Tier1ReRecoWorkload_
 
 
 """
-import os, pickle, sys
+import os, pickle, sys, shutil
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
@@ -24,8 +24,10 @@ workload.setEndPolicy('SingleShot')
 rereco = workload.newTask("ReReco")
 rerecoCmssw = rereco.makeStep("cmsRun1")
 rerecoCmssw.setStepType("CMSSW")
-#skimStageOut = rerecoCmssw.addStep("stageOut1")
-#skimStageOut.setStepType("StageOut")
+skimStageOut = rerecoCmssw.addStep("stageOut1")
+skimStageOut.setStepType("StageOut")
+skimLogArch = rerecoCmssw.addStep("logArch1")
+skimLogArch.setStepType("LogArchive")
 rereco.applyTemplates()
 rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
 rereco.addInputDataset(
@@ -33,6 +35,7 @@ rereco.addInputDataset(
     processed = "CRAFT09-PromptReco-v1",
     tier = "RECO",
     dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
+
 
 
 
@@ -58,6 +61,10 @@ rerecoCmsswHelper.addOutputModule(
     "outputRECO", primaryDataset = "Primary",
     processedDataset = "Processed",
     dataTier = "RECO")
+
+#Add a stageOut step
+skimStageOutHelper = skimStageOut.getTypeHelper()
+skimLogArchHelper  = skimLogArch.getTypeHelper()
 
 
 rereco.addGenerator("BasicNaming")
@@ -110,6 +117,13 @@ if not os.path.exists(workingDir):
 if os.path.exists(workloadDir):
     os.system("rm -rf %s" % workloadDir)
 
+#siteConfigPath = '%s/SITECONF/local/JobConfig/' %(workingDir)
+#if not os.path.exists(siteConfigPath):
+#    os.makedirs(siteConfigPath)
+#shutil.copy('site-local-config.xml', siteConfigPath)
+#environment = rereco.data.section_('environment')
+#environment.CMS_PATH = workingDir
+
 
 taskMaker = TaskMaker(workload, workingDir)
 taskMaker.skipSubscription = True
@@ -133,7 +147,7 @@ def testSubscription():
 
     """
     from DBSAPI.dbsApi import DbsApi
-    dbs = DbsApi({"url" : "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"})
+    dbs = DbsApi({"url" : "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet", "version" : "DBS_2_0_8" })
 
 
     fileset1 = Fileset(name = 'SkimFiles')

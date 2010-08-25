@@ -2,8 +2,8 @@
 """
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
-__revision__ = "$Id: WMBSHelper.py,v 1.10 2009/09/28 21:03:32 sryu Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.11 2009/10/12 15:07:50 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 from sets import Set
 
 from WMCore.WMBS.File import File
@@ -15,15 +15,15 @@ from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 
 class WMBSHelper:
 
-    def __init__(self, task, blockName):
+    def __init__(self, wmspec, blockName):
         #TODO: 
         # 1. get the top level task.
         # 2. get the top level step and input
         # 3. generated the spec, owner, name from task
         # 4. get input file list from top level step
         # 5. generate the file set from work flow.
-        self.wmSpec = getWorkloadFromTask(task)
-        self.topLevelTask = task
+        self.wmSpec = wmspec
+        self.topLevelTask = self.wmSpec.taskIterator().next()
         self.block = blockName or None
         self.fileset = None
         self.workflow = None
@@ -33,7 +33,7 @@ class WMBSHelper:
         # create workflow
         # make up workflow name from task name
         workflowName = self.wmSpec.name()
-        
+
         #if self.workflow == None:
         self.workflow = Workflow(self.wmSpec.specUrl(),
                              self.wmSpec.owner(), workflowName,

@@ -3,12 +3,13 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.14 2009/09/24 20:18:16 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.15 2009/10/12 15:07:50 swakef Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import pickle
 import os
+
 from WMCore.WorkQueue.WorkQueue import WorkQueue
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMTask import makeWMTask
@@ -21,11 +22,12 @@ def createSpec(name, path, dataset = None,
     create a wmspec object and save to disk
     """
     wmspec = newWorkload(name)
+    wmspec.data.owner = 'WorkQueueTest'
     task = makeWMTask('task1')
     if dataset:
         task.addInputDataset(**dataset)
-        task.setSplittingAlgorithm("FileBased", size=1)
-        
+        task.setSplittingAlgorithm("FileBased", size = 1)
+
         #FixMe? need setter for blocklist and whitelist
         if blacklist:
             task.data.constraints.sites.blacklist = blacklist
@@ -33,13 +35,13 @@ def createSpec(name, path, dataset = None,
             task.data.constraints.sites.whitelist = whitelist
         wmspec.data.dbs = 'http://example.com'
     else:
-        task.setSplittingAlgorithm("EventBased", size=100)
+        task.setSplittingAlgorithm("EventBased", size = 100)
         #FIXME need to add WMSpec to save total event properly for production j
-        task.addProduction(totalevents=1000)
+        task.addProduction(totalevents = 1000)
     wmspec.addTask(task)
     wmspec.setSpecUrl(path)
     wmspec.save(path)
-    
+
 
 
 # //  mock dbs info - ignore a lot of arguments
@@ -108,7 +110,78 @@ class MockDBSReader:
         result = {}
         result['number_of_events'] = sum([x['NumEvents'] for x in self.blocks[dataset]])
         result['number_of_files'] = sum([x['NumFiles'] for x in self.blocks[dataset]])
+        result['path'] = dataset
         return result
+
+#TODO: This is horrible and needs to be replaced
+class MockPhedexService:
+    """
+    TODO: Move to a proper mocking libs for this
+    """
+    def __init__(self):
+        self.dbs = MockDBSReader('')
+        self.locations = {'/fake/test/RAW#1' : ['SiteA'],
+                '/fake/test/RAW#2' : ['SiteA', 'SiteB']}
+
+    def blockreplicas(self, **args):
+        """
+        Where are blocks located
+        """
+        #blocks = [ {'bytes' : bytes, 'files' : files, 'name' : name      ]
+        data = {"phedex":{"request_timestamp":1254762796.13538,
+                          "block" : [{"files":"5", "name": '/fake/test/RAW#1',
+                                      'replica' : ['SiteA']},
+                                     {"files":"10", "name": '/fake/test/RAW#2',
+                                      'replica' : ['SiteA', 'SiteB']},
+                                    ]
+                          }
+        }
+        return data
+
+    def subscriptions(self, **args):
+        """
+        Where is data subscribed - for now just replicate blockreplicas
+        """
+        if args.has_key('dataset') and args['dataset']:
+            data = {'phedex' : {"request_timestamp" : 1254850198.15418,
+                                'dataset' : [{'name' : '/fake/test/RAW', 'files' : 5,
+                                              'subscription' : [{'node': 'SiteA', 'custodial': 'n', 'suspend_until': None,
+                                                                 'level': 'dataset', 'move': 'n', 'request': '47983',
+                                                                 'time_created': '1232989000', 'priority': 'low',
+                                                                 'time_update': None, 'node_id': '781',
+                                                                 'suspended': 'n', 'group': None}
+                                                                ]
+                                              }]
+                                }
+                    }
+            return data
+        else:
+            data = {"phedex":{"request_timestamp":1254920053.14921,
+                              "dataset":[{"bytes":"10438786614", "files":"10", "is_open":"n",
+                                          "name":"/fake/test/RAW",
+                                          "block":[{"bytes":"10438786614", "files":"5", "is_open":"n",
+                                                    "name":"/fake/test/RAW#1",
+                                                    "id":"454370", "subscription"
+                                                                                :[ {'node' : x } for x in self.locations['/fake/test/RAW#1']]
+                                                                                #{"priority":"normal", "request":"51253", "time_created":"1245165314",
+                                                                                #   "move":"n", "suspend_until":None, "node":"SiteA",
+                                                                                #   "time_update":"1228905272", "group":None, "level":"block",
+                                                                                #   "node_id":"641", "custodial":"n", "suspended":"n"}]
+                                                    },
+                                                     {"bytes":"10438786614", "files":"10", "is_open":"n",
+                                                    "name":"/fake/test/RAW#2",
+                                                    "id":"454370", "subscription"
+                                                                                :[ {'node' : x } for x in self.locations['/fake/test/RAW#2']]
+                                                                                #{"priority":"normal", "request":"51253", "time_created":"1245165314",
+                                                                                #   "move":"n", "suspend_until":None, "node":"SiteA",
+                                                                                #   "time_update":"1228905272", "group":None, "level":"block",
+                                                                                #   "node_id":"641", "custodial":"n", "suspended":"n"}]
+                                                    }]
+                                        }], "instance":"prod"
+                                }
+                    }
+            return data
+
 # pylint: enable-msg=W0613,R0201
 
 
@@ -130,15 +203,15 @@ class WorkQueueTest(WorkQueueTestCase):
         self.blacklistSpecName = 'testBlacklist'
         self.whitelistSpecName = 'testWhitelist'
         self.processingSpecFile = os.path.join(os.getcwd(),
-                                            self.processingSpecName + ".pckl")
+                                            self.processingSpecName)
         self.blacklistSpecFile = os.path.join(os.getcwd(),
-                                            self.blacklistSpecName + ".pckl")
+                                            self.blacklistSpecName)
         self.whitelistSpecFile = os.path.join(os.getcwd(),
-                                            self.whitelistSpecName + ".pckl")
-        
-        dataset = {'primary':'fake', 'processed':'test', 'tier':'RAW', 
+                                            self.whitelistSpecName)
+
+        dataset = {'primary':'fake', 'processed':'test', 'tier':'RAW',
                    'dbsurl':'http://example.com', 'totalevents':10000}
-        
+
         createSpec(self.processingSpecName,
                    self.processingSpecFile, dataset)
         createSpec(self.blacklistSpecName,
@@ -148,17 +221,24 @@ class WorkQueueTest(WorkQueueTestCase):
                    self.whitelistSpecFile, dataset,
                    whitelist = ['SiteB'])
 
-
-        self.globalQueue = WorkQueue(SplitByBlock = False) # Global queue
-        self.midQueue = WorkQueue(SplitByBlock = False,
-                            ParentQueue = self.globalQueue) # mid-level queue
-        self.localQueue = WorkQueue(SplitByBlock = True,
-                            ParentQueue = self.midQueue) # local queue
-        self.queue = WorkQueue() # standalone queue for unit tests
+        self.globalQueue = WorkQueue(SplitByBlock = False, # Global queue
+                                     PopulateFilesets = False,
+                                     CacheDir = None)
+        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
+                            PopulateFilesets = False,
+                            ParentQueue = self.globalQueue,
+                            CacheDir = None)
+        # ignore mid queue as it causes database duplication's
+        self.localQueue = WorkQueue(SplitByBlock = True, # local queue
+                            ParentQueue = self.globalQueue,
+                            CacheDir = None)
+        # standalone queue for unit tests
+        self.queue = WorkQueue(CacheDir = None)
         mockDBS = MockDBSReader('http://example.com')
         for queue in (self.queue, self.localQueue,
                       self.midQueue, self.globalQueue):
             queue.dbsHelpers['http://example.com'] = mockDBS
+            queue.phedexService = MockPhedexService()
 
 
     def tearDown(self):
@@ -169,6 +249,11 @@ class WorkQueueTest(WorkQueueTestCase):
                   self.blacklistSpecFile, self.whitelistSpecFile):
             try:
                 os.unlink(f)
+            except OSError:
+                pass
+        for dir in ('global', 'mid', 'local'):
+            try:
+                os.rmdir(dir)
             except OSError:
                 pass
 
@@ -275,6 +360,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         fakeDBS = self.queue.dbsHelpers['http://example.com']
         fakeDBS.locations['/fake/test/RAW#1'] = ['SiteA', 'SiteB']
+        self.queue.phedexService.locations.update(fakeDBS.locations)
         self.queue.updateLocationInfo()
 
         # SiteA still blacklisted for all blocks
@@ -322,6 +408,11 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(self.processingSpecFile)
         self.assertEqual(1, len(self.globalQueue))
         self.globalQueue.updateLocationInfo()
+
+        # check work isn't passed down to the wrong agent
+        work = self.localQueue.getWork({'SiteB' : 1000}) # Not in subscription
+        self.assertEqual(0, len(work))
+        self.assertEqual(1, len(self.globalQueue))
 
         # pull work down to the lowest queue
         # check work passed down to lower queue where it was acquired

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.31 2009/09/28 21:03:42 sryu Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: WorkQueue.py,v 1.32 2009/10/12 15:07:50 swakef Exp $"
+__version__ = "$Revision: 1.32 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -18,8 +18,17 @@ try:
 except NameError:
     from sets import Set as set
 # pylint: enable-msg = W0104, W0622
+try:
+    from collections import defaultdict    #python2.6 doesn't work fully yet
+except (NameError, ImportError):
+    pass
+import time
+import os
+from urllib import urlopen
 
 from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -48,11 +57,38 @@ class WorkQueue(WorkQueueBase):
         self.wmSpecs = {}
         self.elements = {}
         self.dbsHelpers = {}
+        self.lastLocationUpdate = 0
         self.params = params
         self.params.setdefault('ParentQueue', None) # Get more work from here
         self.params.setdefault('QueueDepth', 100) # when less than this locally
         self.params.setdefault('SplitByBlock', True)
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
+        self.params.setdefault('FullLocationRefreshInterval', 3600)
+        self.params.setdefault('TrackLocationOrSubscription', 'subscription')
+        self.params.setdefault('ReleaseIncompleteBlocks', True)
+        self.params.setdefault('ReleaseRequireSubscribed', True)
+        self.params.setdefault('PhEDExEndpoint', None)
+        self.params.setdefault('PopulateFilesets', True)
+        self.params.setdefault('CacheDir', os.path.join(os.getcwd(),
+                                                        'wf_cache'))
+
+        assert(self.params['TrackLocationOrSubscription'] in ('subscription',
+                                                              'location'))
+        # Can only release blocks on location
+        if self.params['TrackLocationOrSubscription'] == 'location':
+            assert(self.params['SplitByBlock'],
+                   'Only blocks can be released on location')
+
+        phedexArgs = {}
+        if self.params.get('PhEDExEndpoint'):
+            phedexArgs['endpoint'] = self.params['PhEDExEndpoint']
+        self.phedexService = PhEDEx(phedexArgs)
+
+        if self.params['CacheDir']:
+            try:
+                os.makedirs(self.params['CacheDir'])
+            except OSError:
+                pass
 
 
     def __len__(self):
@@ -72,10 +108,11 @@ class WorkQueue(WorkQueueBase):
 
         wqAction = self.daofactory(classname = "WorkQueueElement.New")
         parentFlag = parentInputs and 1 or 0
+        priority = wmspec.priority() or 1
         wqAction.execute(wmspec.name(), primaryInput, nJobs,
-                             wmspec.priority(), parentFlag, subscription,
-                             parentQueueId, conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
+                         priority, parentFlag, subscription,
+                         parentQueueId, conn = self.getDBConn(),
+                         transaction = self.existingTransaction())
 
 
     def _insertWMSpec(self, wmSpec):
@@ -182,24 +219,102 @@ class WorkQueue(WorkQueueBase):
                                       transaction = self.existingTransaction())
         if not blocks:
             return
-        result = {}
-        dbs = self.dbsHelpers.values()[0] #FIXME!!!
-        uniqueLocations = set()
-        for block in blocks:
-            locations = dbs.listFileBlockLocation(block['name'])
-            result[block['name']] = locations
-            for location in locations:
-                uniqueLocations.add(location)
+
+        fullResync = time.time() > self.lastLocationUpdate + \
+                                self.params['FullLocationRefreshInterval']
+
+        mapping = self._getLocations([x['name'] for x in blocks], fullResync)
+        uniqueLocations = set(sum(mapping.values(), []))
 
         if uniqueLocations:
             siteAction = self.daofactory(classname = "Site.New")
             siteAction.execute(tuple(uniqueLocations), conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
-        # map blocks to locations (in one call?)
-        mappingAct.execute(result, conn = self.getDBConn(),
+        mappingAct.execute(mapping, fullResync, conn = self.getDBConn(),
                            transaction = self.existingTransaction())
         #self.commitTransaction(self.existingTransaction())
+
+
+    def _getLocations(self, dataNames, fullRefresh):
+        """
+        Return mapping of item to location as given by phedex
+        """
+
+        args = {}
+        if self.params['TrackLocationOrSubscription'] == 'subscription':
+            return self._getPhEDExSubscriptions(dataNames, fullRefresh)
+        elif self.params['TrackLocationOrSubscription'] == 'location':
+            args['block'] = dataNames
+            if not self.params['ReleaseIncompleteBlocks']:
+                args['complete'] = 'y'
+            if not self.params['ReleaseRequireSubscribed']:
+                args['subscribed'] = 'y'
+            if not fullRefresh:
+                args['update_since'] = self.lastLocationUpdate
+            response = self.phedexService.blockreplicas(**args)['phedex']
+            self.lastLocationUpdate = response['request_timestamp']
+            result = defaultdict(list)
+            [ result[block['name']].append(ses['se']) for ses in block['replica'] for block in response['block'] ]
+            return result
+        else:
+            raise RuntimeError, "invalid selection"
+
+
+    def _getPhEDExSubscriptions(self, dataNames, fullRefresh):
+        """
+        Return mapping of block/dataset to subscribed locations
+        """
+        args = {}
+        args['suspended'] = 'n' # require subscription to be active
+        if not fullRefresh:
+            args['update_since'] = self.lastLocationUpdate
+        args['block'], args['dataset'] = [], []
+        for item in dataNames:
+            if item.find('#') != -1:
+                args['block'].append(item)
+            else:
+                args['dataset'].append(item)
+
+        response = self.phedexService.subscriptions(**args)['phedex']
+        self.lastLocationUpdate = response['request_timestamp']
+        result = {}
+
+        # iterate over response as can't jump to specific datasets
+        for dset in response['dataset']:
+
+            if dset['name'] in args['dataset']:
+
+                # we have work for the dataset
+                if dset['subscription']:
+                    # dataset level subscription
+                    result[dset['name']] = [x['node'] for x in dset['subscription']]
+                else:
+                    # block level subscription
+                    # Create dataset level subscription from ensemble
+                    # of block level subscriptions
+                    #TODO: Does this check all blocks not just those updated
+                    commonSites = set()
+                    for block in dset['block']:
+                        commonSites = commonSites & set([x['node'] for x in block['subscription']])
+                    result[dset['name']] = list(commonSites)
+
+            else:
+                # have work for some blocks in this dataset
+                if dset.has_key('subscription'):
+                    # work for block and have dataset level subscription
+                    subs = [x['node'] for x in dset['subscription']]
+                    for block in dset['block']:
+                        if block['name'] in args['block']:
+                            result[block['name']] = [x['node'] for x in block['subscription']]
+                else:
+                    # block level subscriptions
+                    for block in dset['block']:
+                        # record blocks we have work for
+                        if block['name'] in args['block']:
+                            result[block['name']] = [x['node'] for x in block['subscription']]
+
+        return result
 
     def getWork(self, siteJobs):
         """
@@ -241,12 +356,12 @@ class WorkQueue(WorkQueueBase):
             sub.load()
             sub['workflow'].load()
 
-            if match['input_id']:
+            if match['input_id'] and self.params['PopulateFilesets']:
                 dbs = self.dbsHelpers.values()[0] #FIXME!!!
                 block = blockLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
-                
+
                 if match['parent_flag']:
                     dbsBlock = dbs.getFileBlockWithParents(block["name"])[block['name']]
                 else:
@@ -294,29 +409,61 @@ class WorkQueue(WorkQueueBase):
         """
         Take and queue work from a WMSpec
         """
+
+        if self.params['CacheDir']:
+            inp = urlopen(wmspecUrl).read()
+            tmp = os.path.join(self.params['CacheDir'],
+                               os.path.split(wmspecUrl)[1])
+            out = open(tmp, 'w')
+            out.write(inp)
+            out.close()
+            wmspecUrl = tmp
+
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
-        
-        for topLevelTask in wmspec.taskIterator():
-            specPaser = WorkSpecParser(topLevelTask)
-            dbsUrl = topLevelTask.dbsUrl()
-            if dbsUrl and not self.dbsHelpers.has_key(dbsUrl):
-                self.dbsHelpers[dbsUrl] = DBSReader(dbsUrl)
-    
-            units = specPaser.split(split = self.params['SplitByBlock'],
-                                    dbs_pool = self.dbsHelpers)
-    
-            #TODO: Look at db transactions - try to minimize time active
-            self.beginTransaction()
-    
-            for primaryBlock, blocks, jobs in units:
-                wmbsHelper = WMBSHelper(topLevelTask, primaryBlock)
-                sub = wmbsHelper.createSubscription()
-    
-                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
-                                             blocks, sub['id'], parentQueueId)
-    
-            self.commitTransaction(self.existingTransaction())
+        dbs_url = wmspec.taskIterator().next().dbsUrl()
+
+        specSplitter = WorkSpecParser(wmspec)
+
+        if dbs_url and not self.dbsHelpers.has_key(dbs_url):
+            self.dbsHelpers[dbs_url] = DBSReader(dbs_url)
+
+        units = specSplitter.split(split = self.params['SplitByBlock'],
+                           dbs_pool = self.dbsHelpers)
+
+        #TODO: Look at db transactions - try to minimize time active
+        self.beginTransaction()
+
+        for primaryBlock, blocks, jobs in units:
+            wmbsHelper = WMBSHelper(wmspec, primaryBlock)
+            sub = wmbsHelper.createSubscription()
+
+            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+                                         blocks, sub['id'], parentQueueId)
+
+        self.commitTransaction(self.existingTransaction())
+
+
+#        for topLevelTask in wmspec.taskIterator():
+#            specPaser = WorkSpecParser(topLevelTask)
+#            dbsUrl = topLevelTask.dbsUrl()
+#            if dbsUrl and not self.dbsHelpers.has_key(dbsUrl):
+#                self.dbsHelpers[dbsUrl] = DBSReader(dbsUrl)
+#
+#            units = specPaser.split(split = self.params['SplitByBlock'],
+#                                    dbs_pool = self.dbsHelpers)
+#
+#            #TODO: Look at db transactions - try to minimize time active
+#            self.beginTransaction()
+#
+#            for primaryBlock, blocks, jobs in units:
+#                wmbsHelper = WMBSHelper(topLevelTask, primaryBlock)
+#                sub = wmbsHelper.createSubscription()
+#
+#                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+#                                             blocks, sub['id'], parentQueueId)
+#
+#            self.commitTransaction(self.existingTransaction())
 
 
     def pullWork(self, resources):
@@ -333,4 +480,6 @@ class WorkQueue(WorkQueueBase):
         for element in work:
             self.queueWork(element['workflow'].spec,
                            parentQueueId = element['id'])
-        self.params['ParentQueue'].setStatus('Acquired', *([x['id'] for x in work]))
+        if work:
+            self.params['ParentQueue'].setStatus('Acquired',
+                                                 *([x['id'] for x in work]))

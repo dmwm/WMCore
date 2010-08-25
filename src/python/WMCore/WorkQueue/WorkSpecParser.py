@@ -6,12 +6,11 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.14 2009/09/24 20:16:22 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.15 2009/10/12 15:07:50 swakef Exp $"
+__version__ = "$Revision: 1.15 $"
 
-from urllib import urlopen
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
+
 #TODO: Pull useful stuff out of wmspec then free it - large data structure
 #TODO: Cleanup, logArchive etc. WorkflowTypes needed???
 
@@ -22,34 +21,11 @@ class WorkSpecParser:
     Helper object to parse a WMSpec and return chunks of work
     """
 
-    def __init__(self, task):
-        self.wmspec = getWorkloadFromTask(task)
-        self.initialTask = task
+    def __init__(self, wmspec):
+        self.wmspec = wmspec
+        self.initialTask = self.wmspec.taskIterator().next()
         self.splitAlgo = self.initialTask.jobSplittingAlgorithm()
         self.splitSize = self.initialTask.jobSplittingParameters()["size"]
-
-#TODO: Resume this kind of thing at some point
-#    def parse(self):
-#        """Parse spec file & cache useful info"""
-#        import pickle
-#        input = open(self.specUrl)
-#        spec = pickle.load(input) #TODO: Replace by WMSpec load method
-#        initialTask = spec.taskIterator().next()
-#        
-#        self.validateWorkflow(spec, initialTask)
-#        
-#        # get useful stuff
-#        params = self.specParams
-#        params['whitelist'] = getattr(initialTask,
-#                                      'constraints.sites.whitelist', ())
-#        params['blacklist'] = getattr(initialTask,
-#                                      'constraints.sites.blacklist', ())
-#        params['priority'] = getattr(spec.data, 'Priority', 1)
-#        params['dbs'] = getattr(spec.data, 'dbs', globalDBS)
-#        params['input_datasets'] = getattr(initialTask.data.parameters,
-#                                           'inputDatasets', ())
-#        del initialTask, spec
-#        input.close()
 
 
     def split(self, split = True, dbs_pool = None):
@@ -62,12 +38,12 @@ class WorkSpecParser:
         defaultBlockSize is used for WMSpecs that don't contain 
         splitting criteria i.e. Generation jobs
         """
-        #self.validateWorkflow()
+        self.validateWorkflow()
         results = []
         inputDataset = self.initialTask.inputDataset()
         if not inputDataset:
             # we don't have any input data - divide into one chunk
-            jobs = self.__estimateJobs(self.splitSize, 
+            jobs = self.__estimateJobs(self.splitSize,
                                        self.initialTask.totalEvents())
             results.append((None, [], jobs))
             return results
@@ -79,8 +55,8 @@ class WorkSpecParser:
         else:
             dbs = DBSReader(dbsUrl)
 
-        datasetPath = "/%s/%s/%s" % (inputDataset.primary, 
-                                     inputDataset.processed, 
+        datasetPath = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
                                      inputDataset.tier)
         # prob don't need to handle multiple input datasets but just in case
         if not split:
@@ -158,41 +134,42 @@ class WorkSpecParser:
         return count
 
 
-#TODO: validation code needs to move to WMWorkloadHelper
-#    def validateWorkflow(self):
-#        """Check necessary params set"""
+    def validateWorkflow(self):
+        """Check necessary params set"""
 #        required = ('splitType', 'splitSize')
 #        for key in required:
 #            try:
 #                getattr(self, key)
 #            except AttributeError:
 #                msg = "Required parameter \'%s\' missing from %s"
-#                raise RuntimeError, msg % (key, self.specUrl)
-#        for site in self.whitelist:
-#            if site in self.blacklist:
-#                msg = "Site \'%s\' in both white & black lists"
-#                raise RuntimeError, msg
-#        if self.inputDatasets:
-#            return self.validateForProcessing()
-#        else:
-#            return self.validateForProduction()
-#
-#
-#    def validateForProduction(self):
-#        """Check for needed production params"""
-#        if self.splitType != 'Event':
-#            msg = "splitType == %s, only \'Event\' valid for workflows with no input" % self.splitType
-#            raise RuntimeError, msg
-#        if not self.totalEvents:
-#            msg = "Production type workflow missing \'totalEvents\' parameter"
-#            raise RuntimeError, msg
-#
-#
-#    def validateForProcessing(self):
-#        """Check for needed processing params"""
-#        if self.totalEvents:
+#                raise RuntimeError, msg % (key, self.wmspec.specUrl())
+        for site in self.initialTask.siteWhitelist():
+            if site in self.initialTask.siteBlacklist():
+                msg = "Site \'%s\' in both white & black lists"
+                raise RuntimeError, msg
+
+        if self.initialTask.inputDataset():
+            return self.validateForProcessing()
+        else:
+            return self.validateForProduction()
+
+
+    def validateForProduction(self):
+        """Check for needed production params"""
+        if self.splitAlgo != 'EventBased':
+            msg = "splitType == %s, only \'EventBased\' valid for workflows with no input" % self.splitAlgo
+            raise RuntimeError, msg
+        if not self.initialTask.totalEvents():
+            msg = "Production type workflow missing \'totalEvents\' parameter"
+            raise RuntimeError, msg
+
+
+    def validateForProcessing(self):
+        """Check for needed processing params"""
+#        if self.initialTask.totalEvents():
 #            msg = "Processing type workflow cannot have totalEvents parameter"
 #            raise RuntimeError, msg
+        pass
 
 
 #    def simpleMemoize(self, name, obj, item, default = None):

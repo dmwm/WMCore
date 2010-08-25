@@ -1,51 +1,35 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101
+#E1101 doesn't allow you to define config sections using .section_()
 """
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.2 2009/11/06 19:50:04 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.3 2010/01/22 22:11:16 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
-import re
 import os
 import os.path
-import time
-import random
-import inspect
 #import cProfile, pstats
 
 import pickle
 
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
-
-from WMCore.WMFactory                       import WMFactory
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
-                                            
 from WMCore.WMBS.Subscription               import Subscription
-from WMCore.WMBS.Fileset                    import Fileset
 from WMCore.WMBS.Workflow                   import Workflow
-from WMCore.WMBS.Job                        import Job
-                                            
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
-
 from WMCore.ThreadPool                      import WorkQueue
 from WMCore.Database.Transaction            import Transaction
                                             
                                             
-from WMComponent.JobCreator.JobCreatorSiteDBInterface   import JobCreatorSiteDBInterface as JCSDBInterface
-
 from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
-from WMCore.ResourceControl.ResourceControl             import ResourceControl
 from WMCore.JobStateMachine.ChangeState                 import ChangeState
-
-from WMCore.WMSpec.Makers.JobMaker                      import JobMaker
 from WMCore.WMSpec.Makers.Interface.CreateWorkArea      import CreateWorkArea
-from WMCore.ProcessPool.ProcessPool                     import ProcessPool
 
 from WMCore.Agent.Configuration import Configuration
 
@@ -127,17 +111,18 @@ class JobCreatorWorker:
                 seederList = []
 
         #My hope is that the job factory is smart enough only to split un-split jobs
-        wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = wmbsSubscription, generators=seederList)
-        splitParams = self.retrieveJobSplitParams(wmWorkload)
+        wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS", \
+                                              subscription = wmbsSubscription, generators=seederList)
+        splitParams = self.retrieveJobSplitParams(wmWorkload, workflow.task)
         wmbsJobGroups = wmbsJobFactory(**splitParams)
 
         myThread.transaction.commit()
 
-        jobGroupConfig = {}
         for wmbsJobGroup in wmbsJobGroups:
-            self.createJobGroup(wmbsJobGroup, jobGroupConfig, wmbsSubscription, wmWorkload)
+            self.createJobGroup(wmbsJobGroup)
             #Create a directory
-            self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(), startDir = self.jobCacheDir)
+            self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(), \
+                                            startDir = self.jobCacheDir)
 
             for job in wmbsJobGroup.jobs:
                 #Now, if we had the seeder do something, we save it
@@ -156,7 +141,7 @@ class JobCreatorWorker:
 
 
 
-    def retrieveJobSplitParams(self, wmWorkload):
+    def retrieveJobSplitParams(self, wmWorkload, task):
         """
         _retrieveJobSplitParams_
 
@@ -177,18 +162,15 @@ class JobCreatorWorker:
         foundParams = True
 
         if not wmWorkload:
-            foundParams = False
-        elif not type(wmWorkload.data.split.splitParams) == dict:
-            foundParams = False
-
-
-        if not foundParams:
+            return {"files_per_job": 5}
+        task = wmWorkload.getTask(task)
+        if not task:
             return {"files_per_job": 5}
         else:
-            return wmWorkload.data.split.splitParams
+            return task.jobSplittingParameters()
 
 
-    def createJobGroup(self, wmbsJobGroup, jobGroupConfig, wmbsSubscription, wmWorkload):
+    def createJobGroup(self, wmbsJobGroup):
         """
         Pass this on to the jobCreator, which actually does the work
         

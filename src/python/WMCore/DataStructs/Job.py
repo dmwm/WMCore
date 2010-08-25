@@ -10,9 +10,10 @@ JobGroup which knows the subscription and corresponding workflow. A Job is not a
 job in a batch system, it's more abstract - it's the piece of 
 work that needs to get done.
 """
+
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.18 2009/01/13 17:34:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: Job.py,v 1.19 2009/03/20 14:42:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 
 from WMCore.DataStructs.Pickleable import Pickleable
 from WMCore.DataStructs.Fileset import Fileset
@@ -26,13 +27,14 @@ class Job(Pickleable):
     def __init__(self, name = None, files = None):
         """
         A job has a jobgroup which gives it its subscription and workflow.
-        file_set is a Fileset containing files associated to a job
+        inputFiles is a list containing files associated to a job
         last_update is the time the job last changed
         """
         if files == None:
-            self.file_set = Fileset()
+            self.inputFiles = []
         else:
-            self.file_set = files
+            self.inputFiles = files
+
         self.last_update = datetime.datetime.now()
         self.job_group = -1
         self.status = 'QUEUED'
@@ -42,22 +44,42 @@ class Job(Pickleable):
         self.report = None
         self.mask = Mask()
 
-    def getFiles(self, type='list'):
-        if type == 'list':
-            return self.file_set.getFiles(type='list')
-        elif type == 'set':
-            return self.file_set.getFiles(type='set')
-        elif type == 'lfn':
-            return self.file_set.getFiles(type='lfn')
-        elif type == 'id':
-            return self.file_set.getFiles(type='id')
+    def getFiles(self, type = "list"):
+        """
+        _getFiles_
+
+        Retrieve information about the input files for the job.  The type
+        parameter can be set to one of the following:
+          list - A list of File objects will be returned
+          set - A set of File objects will be returned
+          lfn - A list of LFNs will be returned
+          id - A list if File IDs will be returned
+        """
+        if type == "list":
+            return self.inputFiles
+        elif type == "set":
+            return self.makeset(self.inputFiles)
+        elif type == "lfn":
+            def getLFN(file):
+                return file["lfn"]
+
+            lfns = map(getLFN, self.inputFiles)
+            return lfns
+        elif type == "id":
+            def getID(file):
+                return file["id"]
+
+            ids = map(getID, self.inputFiles)
+            return ids
 
     def addFile(self, file):
         """
-        add a file to self.file_set
+        _addFile_
+
+        Add a to the job's input.
         """
-        self.file_set.addFile(file)
-        self.file_set.commit()
+        self.inputFiles.append(file)
+        return
 
     def addOutput(self, file):
         """

@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.13 2009/01/26 20:54:34 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Job_t.py,v 1.14 2009/03/20 14:42:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import logging
@@ -108,11 +108,7 @@ class JobTest(unittest.TestCase):
         testFileA.create()
         testFileB.create()
 
-        testFileset = Fileset(name = "TestFileset",
-                              files = Set([testFileA, testFileB]))
-        testFileset.commit()
-
-        testJob = Job(name = "TestJob", files = testFileset)
+        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
         testJob.create(group = testJobGroup)
 
         return testJob
@@ -146,7 +142,7 @@ class JobTest(unittest.TestCase):
 
         testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
 
-        testJob = Job(name = "TestJob", files = testFileset)
+        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
        
         assert testJob.exists() == False, \
                "ERROR: Job exists before it was created"
@@ -194,7 +190,7 @@ class JobTest(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        testJob = Job(name = "TestJob", files = testFileset)
+        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
 
         assert testJob.exists() == False, \
                "ERROR: Job exists before it was created"
@@ -241,7 +237,7 @@ class JobTest(unittest.TestCase):
 
         testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
 
-        testJob = Job(name = "TestJob", files = testFileset)
+        testJob = Job(name = "TestJob", files = [testFileA, testFileB])
 
         assert testJob.exists() == False, \
                "ERROR: Job exists before it was created"
@@ -385,7 +381,7 @@ class JobTest(unittest.TestCase):
                "ERROR: Job mask did not load properly"        
 
         goldenFiles = testJobA.getFiles()
-        for testFile in testJobB.file_set.getFiles():
+        for testFile in testJobB.getFiles():
             assert testFile in goldenFiles, \
                    "ERROR: Job loaded an unknown file"
             goldenFiles.remove(testFile)
@@ -394,7 +390,7 @@ class JobTest(unittest.TestCase):
                "ERROR: Job didn't load all files"
 
         goldenFiles = testJobA.getFiles()
-        for testFile in testJobC.file_set.getFiles():
+        for testFile in testJobC.getFiles():
             assert testFile in goldenFiles, \
                    "ERROR: Job loaded an unknown file"
             goldenFiles.remove(testFile)

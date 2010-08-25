@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.24 2009/03/10 19:26:46 sryu Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Job.py,v 1.25 2009/03/20 14:42:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import datetime
 from sets import Set
@@ -65,8 +65,7 @@ class Job(WMBSBase, WMJob):
         ___init___
         
         jobgroup object is used to determine the workflow. 
-        file_set is a set that contains the id's of all files 
-        the job should use.
+        inputFiles is a list of files that the job will process.
         """
         WMBSBase.__init__(self)
         WMJob.__init__(self, name = name, files = files)
@@ -178,20 +177,18 @@ class Job(WMBSBase, WMJob):
         if self.id < 0 or self.name == None:
             self.load()
         
-        # load mask
         self.getMask()
         
         fileAction = self.daofactory(classname = "Jobs.LoadFiles")
         files = fileAction.execute(self.id, conn = self.getReadDBConn(),
-                                     transaction = self.existingTransaction())
+                                   transaction = self.existingTransaction())
 
-        self.file_set = Fileset()
+        self.inputFiles = []
         for file in files:
             newFile = File(id = file["id"])
             newFile.loadData(parentage = 0)
-            self.file_set.addFile(newFile)
+            self.addFile(newFile)
 
-        self.file_set.commit()
         return
     
     def getMask(self):
@@ -216,52 +213,34 @@ class Job(WMBSBase, WMJob):
         Retrieve the files that are associated with this job.  If the id of the
         job is -1 this will skip loading from the database and return whatever
         files currently exist in the object.  If the id has been set this will
-        make sure that the files in this object's file_set match the files that
+        make sure that the files in this object's input files match the files that
         are associated to the job in the database.  If the two do not match then
         this object's fileset will be re-populated with files from the database.
         """
         if self.id < 0:
             return WMJob.getFiles(self, type)
     
-        fileIDs = self.getFileIDs()
-        if fileIDs == None:
-            return None
-        
-        if fileIDs != WMJob.getFiles(self, type = "id"):
-            self.loadData()
+        idAction = self.daofactory(classname = "Jobs.LoadFiles")
+        fileIDs = idAction.execute(self.id, conn = self.getWriteDBConn(),
+                                   transaction = self.existingTransaction())
 
+        currentFileIDs = WMJob.getFiles(self, type = "id") 
+        for fileID in fileIDs:
+            if fileID["id"] not in currentFileIDs:
+                self.loadData()
+                break
+        
         return WMJob.getFiles(self, type)
 
-    def getFileIDs(self, type="list"):
-        """
-        _getFileIDs_
-
-        Retrieve a list of the file IDs that are associated with this job.  The
-        ID of the job must be set before this is called.
-        """
-        if self.id < 0:
-            self.logger.error("Need to set job id before files can be retrieved")
-            return None
-        
-        fileAction = self.daofactory(classname = "Jobs.LoadFiles")
-        fileIDs = fileAction.execute(self.id, conn = self.getReadDBConn(),
-                                     transaction = self.existingTransaction())        
-        if type == "list":
-            fileIDList = []
-            for id in fileIDs:
-                fileIDList.append(id["id"])
-            return fileIDList
-        elif type == "dict":
-            return fileIDs
-        
-    
     def addOutput(self, file):
         """
         add output file to job groups groupoutput file set.
         then, update the file parentage
         also add run-lumi information
         take wmbs file object as a argument (doesn't have to be loaded). 
-        """ 
+        """
+        self.beginTransaction()
+        
         # this requires Jobgroup to call addOutput to commit to database
         WMJob.addOutput(self, file)
         
@@ -297,19 +276,9 @@ class Job(WMBSBase, WMJob):
                     newRunSet.add(inputRun)
         
         file.addRunSet(newRunSet)
-                
-         # if the performance is the problem use following to access directly 
-#        # DOA. Still need to add the code to AddRunLimi
-#        #set the parentage
-#        inputFileIDs = self.getFileIDs()
-#        
-#        fileAction = self.daofactory(classname = "Files.Heritage")
-#        
-#        for inputFileID in inputFileIDs:
-#            fileAction.execute(parent=inputFileID, child=file["id"],
-#                               conn = self.getReadDBConn(),
-#                               transaction = self.existingTransaction())
-#            
+
+        self.commitIfNew()
+        return
            
     def submit(self, name = None):
         """
@@ -330,10 +299,10 @@ class Job(WMBSBase, WMJob):
         """
         _associateFiles_
         
-        Update the wmbs_job_assoc table with the files in the file_set for the
+        Update the wmbs_job_assoc table with the files in the inputFiles for the
         job.
         """
-        files = self.file_set.getFiles(type = "id")
+        files = WMJob.getFiles(self, type = "id")
 
         if len(files) > 0:
             addAction = self.daofactory(classname = "Jobs.AddFiles")

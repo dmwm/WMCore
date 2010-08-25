@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.1 2009/03/09 19:04:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.2 2009/03/20 14:42:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
@@ -253,9 +253,9 @@ class EventBasedTest(unittest.TestCase):
         assert len(result[0].jobs) == 1, \
                "ERROR: One job should have been returned."
 
-        fileset = list(result[0].jobs)[0].file_set
+        jobFiles = list(result[0].jobs)[0].getFiles()
 
-        assert len(fileset.files) == 11, \
+        assert len(jobFiles) == 11, \
                "ERROR: Merge job should contain 11 files."
 
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
@@ -297,16 +297,16 @@ class EventBasedTest(unittest.TestCase):
         goldenFilesC = ["fileI", "fileII", "fileIII", "fileIV"]
 
         for job in result[0].jobs:
-            fileset = job.file_set
+            jobFiles = job.getFiles()
             
-            if list(fileset.files)[0]["lfn"] in goldenFilesA:
+            if jobFiles[0]["lfn"] in goldenFilesA:
                 goldenFiles = goldenFilesA
-            elif list(fileset.files)[0]["lfn"] in goldenFilesB:
+            elif jobFiles[0]["lfn"] in goldenFilesB:
                 goldenFiles = goldenFilesB
             else:
                 goldenFiles = goldenFilesC
 
-            for file in fileset.files:
+            for file in jobFiles:
                 assert file["lfn"] in goldenFiles, \
                        "ERROR: Unknown file in merge jobs."
 
@@ -346,9 +346,9 @@ class EventBasedTest(unittest.TestCase):
         goldenFilesB = ["fileA", "fileB", "fileC"]
         goldenFilesC = ["fileI", "fileII", "fileIII", "fileIV"]
 
-        fileset = list(result[0].jobs)[0].file_set
+        jobFiles = list(result[0].jobs)[0].getFiles()
             
-        for file in fileset.files:
+        for file in jobFiles:
             if file["lfn"] in goldenFilesA:
                 goldenFilesA.remove(file["lfn"])
             elif file["lfn"] in goldenFilesB:
@@ -390,16 +390,16 @@ class EventBasedTest(unittest.TestCase):
         goldenFilesC = ["fileI", "fileII", "fileIII", "fileIV"]
 
         for job in result[0].jobs:
-            fileset = job.file_set
+            jobFiles = job.getFiles()
             
-            if list(fileset.files)[0]["lfn"] in goldenFilesA:
+            if jobFiles[0]["lfn"] in goldenFilesA:
                 goldenFiles = goldenFilesA
-            elif list(fileset.files)[0]["lfn"] in goldenFilesB:
+            elif jobFiles[0]["lfn"] in goldenFilesB:
                 goldenFiles = goldenFilesB
             else:
                 goldenFiles = goldenFilesC
 
-            for file in fileset.files:
+            for file in jobFiles:
                 assert file["lfn"] in goldenFiles, \
                        "ERROR: Unknown file in merge jobs."
 
@@ -439,9 +439,9 @@ class EventBasedTest(unittest.TestCase):
         goldenFilesB = ["fileA", "fileB", "fileC"]
         goldenFilesC = ["fileI", "fileII", "fileIII", "fileIV"]
 
-        fileset = list(result[0].jobs)[0].file_set
+        jobFiles = list(result[0].jobs)[0].getFiles()
             
-        for file in fileset.files:
+        for file in jobFiles:
             if file["lfn"] in goldenFilesA:
                 goldenFilesA.remove(file["lfn"])
             elif file["lfn"] in goldenFilesB:

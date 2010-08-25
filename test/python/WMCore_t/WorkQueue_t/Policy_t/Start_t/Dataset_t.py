@@ -3,24 +3,24 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-__revision__ = "$Id: Dataset_t.py,v 1.7 2010/03/22 09:59:47 swakef Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Dataset_t.py,v 1.8 2010/07/14 14:46:38 swakef Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import shutil
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
+#from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload, getTestArguments
+from WMCore_t.WorkQueue_t.WorkQueue_t import TestReRecoFactory, rerecoArgs
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 
 class DatasetTestCase(unittest.TestCase):
 
-    splitArgs = dict(SliceType = 'number_of_files', SliceSize = 10)
+    splitArgs = dict(SliceType = 'NumberOfFiles', SliceSize = 10)
 
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
-        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload',
-                {"InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW"})
+        Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
         inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,

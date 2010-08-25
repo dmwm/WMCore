@@ -3,13 +3,11 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.8 2009/11/06 10:52:24 riahi Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Feeder.py,v 1.9 2009/12/15 23:07:28 riahi Exp $"
+__version__ = "$Revision: 1.9 $"
 
-# DBS
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
-from DBSAPI.dbsApiException import DbsConnectionError 
 
 import logging
 import time
@@ -20,6 +18,12 @@ from WMCore.WMBSFeeder.FeederImpl import FeederImpl
 from WMCore.WMBS.File import File
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import WMInit
+
+from DBSAPI.dbsApiException import DbsConnectionError 
+from DBSAPI.dbsApi import DbsApi
+
+#from DBSAPI.dbsException import *
+#from DBSAPI.dbsApiException import *
 
 class Feeder(FeederImpl):
     """
@@ -35,9 +39,11 @@ class Feeder(FeederImpl):
         FeederImpl.__init__(self)
 
         # DBS parameter
+        self.args = { "url" : dbsUrl, "level" : 'ERROR'}
+        self.dbs = DbsApi(self.args)
+
         self.dbsReader = DBSReader(dbsUrl)
         self.connectionAttempts = 5 
- 
         self.myThread = threading.currentThread()
 
         # Get configuration       
@@ -50,7 +56,7 @@ class Feeder(FeederImpl):
               logger = self.myThread.logger, \
               dbinterface = self.myThread.dbi)
         self.locationNew = self.daofactory(classname = "Locations.New")
-
+        self.getFileLoc = self.daofactory(classname = "Files.GetLocation")
     
     def __call__(self, filesetToProcess):
         """
@@ -71,6 +77,7 @@ class Feeder(FeederImpl):
 
                 blocks = self.dbsReader.getFiles(\
               (filesetToProcess.name).split(":")[0])
+
                 now = time.time()  
                 filesetToProcess.last_update = now
                 logging.debug("DBS queries done ...")
@@ -91,7 +98,7 @@ class Feeder(FeederImpl):
                 if tries > self.connectionAttempts: #too many errors - bail out
                     return  
                 tries = tries + 1
-
+           
 
         # check for empty datasets
         if blocks == {}:
@@ -100,33 +107,73 @@ class Feeder(FeederImpl):
   
         # get all file blocks
         blockList = blocks.keys()
-    
+
+        # Get the start Run if asked
+        startRun = (filesetToProcess.name).split(":")[3]    
+
         # process all file blocks
         for fileBlock in blockList:
-    
+
+            try:
+  
+                files = self.dbs.listFiles("", "", "", [], "", fileBlock, \
+                details = None,retriveList = ['retrive_run' ])
+
+            #except DbsException, ex:
+            except:
+ 
+                msg = "Error in "
+                msg += "listFilesRun(%s)\n" % (
+                    fileBlock, )
+                raise DBSReaderError(msg)
+
+            if int(startRun) > int(\
+          files[0]['RunsList'][0]['RunNumber']) :                  
+                continue
+
             # get fileBlockId SE information
             seList = blocks[fileBlock]['StorageElements']
-
+ 
             # add files for non blocked SE
             if seList is None or seList == []:
                 logging.info("fileblock %s - no SE's associated" % \
-                       fileBlock)
+                        fileBlock)
                 continue
 
             else:
-
+ 
                 for loc in seList:
                     self.locationNew.execute(siteName = loc)
-     
+ 
             for files in blocks[fileBlock]['Files']:
-                
+
                 # Assume parents and LumiSection aren't asked 
                 newfile = File(files['LogicalFileName'], size=files['FileSize'],
                                  events=files['NumberOfEvents'])
-                                 #lumi=files['LumiList']), locations=seList)
+                               #lumi=files['LumiList']), locations=seList)
+ 
+                if newfile.exists() == False :
+                    newfile.create()
 
-                newfile.create()
-                newfile.setLocation(seList)
+                fileLoc = self.getFileLoc.execute(\
+                file = files['LogicalFileName'])
+
+                if fileLoc:
+
+                    for loc in seList:
+
+                        if loc not in fileLoc: 
+  
+                            newfile.setLocation(loc)
+
+                        else:
+
+                            logging.debug("File already associated to %s" %loc)
+
+                else:
+
+                    newfile.setLocation(seList) 
+
                 filesetToProcess.addFile(newfile)
 
         # Close fileset

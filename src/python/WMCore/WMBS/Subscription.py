@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.36 2009/04/08 18:56:46 sryu Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Subscription.py,v 1.37 2009/04/16 18:47:45 sryu Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from sets import Set
 import logging
@@ -288,3 +288,20 @@ class Subscription(WMBSBase, WMSubscription):
 
         self.commitIfNew()
         return
+    
+    def isCompleteOnRun(self, runID):
+        """
+        _isComplete_
+        
+        Check all the files in the given subscripton and the given run are completed.
+        
+        To: check query whether performance can be improved
+        """
+        statusAction = self.daofactory(classname = "Subscriptions.IsCompleteOnRun")
+        fileCount = statusAction.execute(self["id"], runID,
+                                      conn = self.getReadDBConn(),
+                                      transaction = self.existingTransaction())
+        if fileCount == 0:
+            return True
+        else:
+            return False

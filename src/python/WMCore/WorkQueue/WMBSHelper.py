@@ -9,8 +9,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.34 2010/08/10 15:24:22 mnorman Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.35 2010/08/13 16:47:06 mnorman Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import logging
 import threading
@@ -91,7 +91,7 @@ class WMBSHelper(WMConnectionBase):
 
 
         # DAOs from WMBS for file commit
-        self.setParentageByJob       = self.daofactory(classname = "Files.SetParentageByJob")
+        self.setParentage            = self.daofactory(classname = "Files.SetParentage")
         self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
         self.setFileLocation         = self.daofactory(classname = "Files.SetLocationByLFN")
         self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
@@ -110,6 +110,7 @@ class WMBSHelper(WMConnectionBase):
         # Added for file creation bookkeeping
         self.dbsFilesToCreate     = []
         self.addedLocations       = []
+        self.wmbsFilesToCreate    = []
         self.insertedBogusDataset = -1
 
 
@@ -207,8 +208,7 @@ class WMBSHelper(WMConnectionBase):
         self.beginTransaction()
 
         for dbsFile in self.validFiles(dbsBlock['Files']):
-            self.topLevelFileset.addFile(self._convertDBSFileToWMBSFile(dbsFile, 
-                                              dbsBlock['StorageElements']))
+            self._convertDBSFileToWMBSFile(dbsFile, dbsBlock['StorageElements'])
 
 
         # Add files to WMBS
@@ -231,7 +231,7 @@ class WMBSHelper(WMConnectionBase):
         Do a bulk addition of files into WMBS
         """
 
-        if len(self.topLevelFileset.newfiles) == 0:
+        if len(self.wmbsFilesToCreate) == 0:
             # Nothing to do
             return
 
@@ -244,18 +244,24 @@ class WMBSHelper(WMConnectionBase):
         fileLFNs       = []
 
         
-        for wmbsFile in self.topLevelFileset.newfiles:
+        for wmbsFile in self.wmbsFilesToCreate:
+            lfn           = wmbsFile['lfn']
 
+            if wmbsFile['inFileset']:
+                fileLFNs.append(lfn)
+                for parent in wmbsFile['parents']:
+                    parentageBinds.append({'child': lfn, 'parent': parent['lfn']})
+            
             if wmbsFile.exists():
                 continue
 
 
             
-            lfn           = wmbsFile['lfn']
+
             selfChecksums = wmbsFile['checksums']
-            parentageBinds.append({'child': lfn, 'jobid': wmbsFile['id']})
+            #parentageBinds.append({'child': lfn, 'jobid': wmbsFile['id']})
             runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
-            fileLFNs.append(lfn)
+
 
             if len(wmbsFile['newlocations']) < 1:
                 # Then we're in trouble
@@ -282,6 +288,21 @@ class WMBSHelper(WMConnectionBase):
                                wmbsFile["last_event"],
                                wmbsFile['merged']])
 
+
+        if len(fileLFNs) > 0:
+            self.addToFileset.execute(file = fileLFNs,
+                                      fileset = self.topLevelFileset.id,
+                                      conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
+
+        if len(parentageBinds) > 0:
+            self.setParentage.execute(binds = parentageBinds,
+                                      conn = self.getDBConn(),
+                                      transaction = self.existingTransaction())
+
+
+
+
         if len(fileCreate) < 1:
             # If we have no files, ditch
             return
@@ -290,9 +311,7 @@ class WMBSHelper(WMConnectionBase):
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
         
-        self.setParentageByJob.execute(binds = parentageBinds,
-                                       conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+        
 
         self.setFileRunLumi.execute(file = runLumiBinds,
                                     conn = self.getDBConn(),
@@ -308,10 +327,7 @@ class WMBSHelper(WMConnectionBase):
                                      transaction = self.existingTransaction())
 
 
-        self.addToFileset.execute(file = fileLFNs,
-                                  fileset = self.topLevelFileset.id,
-                                  conn = self.getDBConn(),
-                                  transaction = self.existingTransaction())
+        
 
         return
 
@@ -423,7 +439,7 @@ class WMBSHelper(WMConnectionBase):
         #dbsBuffer.create()
         return
     
-    def _convertDBSFileToWMBSFile(self, dbsFile, storageElements):
+    def _convertDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset = True):
         """
         There are two assumptions made to make this method behave properly,
         1. DBS returns only one level of ParentList.
@@ -436,7 +452,7 @@ class WMBSHelper(WMConnectionBase):
         wmbsParents = []
         
         for parent in dbsFile["ParentList"]:
-            wmbsParents.append(self._convertDBSFileToWMBSFile(parent, storageElements))
+            wmbsParents.append(self._convertDBSFileToWMBSFile(parent, storageElements, inFileset = False))
         
         checksums = {}
         if dbsFile.get('Checksum'):
@@ -460,6 +476,14 @@ class WMBSHelper(WMConnectionBase):
             
         logging.info("WMBS File: %s\n on Location: %s" 
                      % (wmbsFile['lfn'], wmbsFile['newlocations']))
+
+        if inFileset:
+            wmbsFile['inFileset'] = True
+        else:
+            wmbsFile['inFileset'] = False
+            
+        self.wmbsFilesToCreate.append(wmbsFile)
+        
         return wmbsFile
         
         

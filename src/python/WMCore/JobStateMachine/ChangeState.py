@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.28 2009/09/21 16:35:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: ChangeState.py,v 1.29 2009/10/12 19:23:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.29 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -116,13 +116,15 @@ class ChangeState(WMObject, WMConnectionBase):
 
         getCouchDAO = self.daoFactory("Jobs.GetCouchID")
         setCouchDAO = self.daoFactory("Jobs.SetCouchID")
-        
+
         for job in jobs:
             doc = None
             couchRecord = None
             
             if job["couch_record"] == None:
-                couchRecord = getCouchDAO.execute(jobID = job["id"])
+                couchRecord = getCouchDAO.execute(jobID = job["id"],
+                                                  conn = self.getDBConn(),
+                                                  transaction = self.existingTransaction())
 
                 if couchRecord == None:
                     doc = job
@@ -130,7 +132,10 @@ class ChangeState(WMObject, WMConnectionBase):
                     job["couch_record"] = doc["_id"]
                     doc["state_changes"] = []
                     doc["fwkjrs"] = []
-                    setCouchDAO.execute(jobID = job["id"], couchID = doc["_id"])
+
+                    setCouchDAO.execute(jobID = job["id"], couchID = doc["_id"],
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
                     couchRecord = doc["_id"]
             else:
                 couchRecord = job["couch_record"]
@@ -146,11 +151,10 @@ class ChangeState(WMObject, WMConnectionBase):
             if job.has_key("fwjr"):
                 doc["fwkjrs"].append(job["fwjr"])
                 del job["fwjr"]
-                
-            self.database.queue(doc)
-            
-        docsCommitted = self.database.commit()
 
+            self.database.queue(doc)
+
+        docsCommitted = self.database.commit()
         assert len(jobs) == len(docsCommitted), \
                "Got less than I was expecting from CouchDB: \n %s" %\
                         (goodresult,)

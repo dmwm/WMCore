@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.6 2010/02/10 17:05:50 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.7 2010/02/11 17:09:48 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -29,6 +29,8 @@ class JobTrackerPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
 
+        myThread = threading.currentThread()
+
         #I'm not entirely happy with this
         #But I think we need to keep global track of the failed jobs
         self.failedJobs    = {}
@@ -39,17 +41,15 @@ class JobTrackerPoller(BaseWorkerThread):
 
         self.trackerInst   = None
         self.changeState   = None
+
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
     
     def setup(self, parameters):
         """
         Load DB objects required for queries
         """
-
-        myThread = threading.currentThread()
-
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
 
         self.trackerInst = self.loadTracker()
         self.changeState = ChangeState(self.config)
@@ -114,9 +114,9 @@ class JobTrackerPoller(BaseWorkerThread):
 
         passedJobs, failedJobs = self.parseJobs(trackDict)
 
-        logging.error("In trackJobs")
-        logging.error(passedJobs)
-        logging.error(failedJobs)
+        #logging.error("In trackJobs")
+        #logging.error(passedJobs)
+        #logging.error(failedJobs)
 
         self.failJobs(failedJobs)
         self.passJobs(passedJobs)
@@ -217,11 +217,11 @@ class JobTrackerPoller(BaseWorkerThread):
             listOfJobs.append(job)
             job.setFWJRPath(os.path.join(job.getCache(), \
                                          'Report.pkl'))
-            logging.error("Job %i has finished on site" %(jobID))
+            #logging.error("Job %i has finished on site" %(jobID))
 
         myThread.transaction.begin()
         logging.error("Propagating jobs in jobTracker")
-        logging.error(listOfJobs)
+        #logging.error(listOfJobs)
         self.changeState.propagate(listOfJobs, 'complete', 'executing')
         myThread.transaction.commit()
 

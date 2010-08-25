@@ -6,23 +6,25 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: JobTracker.py,v 1.1 2009/10/02 21:28:45 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobTracker.py,v 1.2 2010/02/11 17:09:48 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
 
 from WMCore.Agent.Harness import Harness
-from WMCore.WMFactory import WMFactory
+#from WMCore.WMFactory import WMFactory
 
 from WMComponent.JobTracker.JobTrackerPoller import JobTrackerPoller
-
-#from WMCore.WorkQueue.WorkQueue import WorkQueue
-
 
 
 
 class JobTracker(Harness):
+    """
+    Checks for finished subscriptions
+    Upon finding finished subscriptions, notifies WorkQueue and kills them
+
+    """
 
     def __init__(self, config):
         # call the base class
@@ -31,16 +33,20 @@ class JobTracker(Harness):
 
         self.config = config
         
-	print "JobTracker.__init__"
+        print "JobTracker.__init__"
 
     def preInitialization(self):
-	print "JobTracker.preInitialization"
+        """
+        Sets up the worker thread
+
+        """
+        logging.info("JobTracker.preInitialization")
 
         # Add event loop to worker manager
         myThread = threading.currentThread()
 
         pollInterval = self.config.JobTracker.pollInterval
-        logging.info("Setting poll interval to %s seconds" % pollInterval)
+        logging.info("Setting poll interval to %s seconds" %pollInterval)
         myThread.workerThreadManager.addWorker(JobTrackerPoller(self.config), pollInterval)
 
         return

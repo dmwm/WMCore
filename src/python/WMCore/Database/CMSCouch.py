@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.40 2009/07/13 20:01:13 meloam Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: CMSCouch.py,v 1.41 2009/07/21 19:05:50 meloam Exp $"
+__version__ = "$Revision: 1.41 $"
 
 try:
     # Python 2.6
@@ -17,7 +17,7 @@ except:
     # Prior to 2.6 requires simplejson
     import simplejson as json
 import urllib
-from httplib import HTTPConnection
+from httplib import HTTPConnection, BadStatusLine
 import time
 import datetime
 import thread
@@ -124,30 +124,38 @@ class CouchDBRequests(JSONRequests):
         Make the request, handle any failed status, return just the data (for 
         compatibility).
         """
-        result, status, reason = JSONRequests.makeRequest(self, uri, data, type, encode, decode)
-        self.checkForCouchError(status, reason, data)
+        try:
+            result, status, reason, response = JSONRequests.makeRequest(
+                                        self, uri, data, type, encode, decode)
+        except BadStatusLine,e:
+            print "BadStatusLine failure: %s" % e
+            print "     at uri: %s" % uri
+            print "  with data: %s" % data
+            raise
+        self.checkForCouchError(status, reason, data, result)
         return result
     
-    def checkForCouchError(self, status, reason, data = None):
+    def checkForCouchError(self, status, reason, data = None, result = None):
         """
         Check the HTTP status and raise an appropriate exception 
         """
         if (status == 400 ):
-            raise CouchBadRequestError( reason, data )
+            raise CouchBadRequestError( reason, result, data )
         elif (status == 404):
-            raise CouchNotFoundError( reason, data )
+            raise CouchNotFoundError( reason, result,  data )
         elif (status == 405):
-            raise CouchNotAllowedError( reason, data )
+            raise CouchNotAllowedError( reason,  result, data )
         elif (status == 409):
-            raise CouchConflictError( reason, data )
+            raise CouchConflictError( reason, result,  data )
         elif (status == 412):
-            raise CouchPreconditionFailedError( reason, data )
+            raise CouchPreconditionFailedError( reason, result,  data )
         elif (status == 500):
-            raise CouchInternalServerError( reason, data )
+            raise CouchInternalServerError( reason, result,  data )
         elif (status >= 400):
             # we have a new error status, log it
             raise CouchError("""NEW ERROR STATUS! UPDATE CMSCOUCH.PY! 
-            status: %s reason: %s data: %s""" % (status, reason, data))
+            status: %s reason: %s data: %s result: %s""" % 
+                            (status, reason, data, result))
         else:
             return
         
@@ -308,9 +316,13 @@ class Database(CouchDBRequests):
             options[k] = self.encode(v)
         # the following is CouchDB 090 only, this is the reference platform
         if len(keys):
-            data = urllib.urlencode(options)
-            retval = self.post('/%s/_design/%s/_view/%s?%s' % \
+            if (options):
+                data = urllib.urlencode(options)
+                retval = self.post('/%s/_design/%s/_view/%s?%s' % \
                             (self.name, design, view, data), {'keys':keys})
+            else:
+                retval = self.post('/%s/_design/%s/_view/%s' % \
+                            (self.name, design, view), {'keys':keys})
         else:
             retval = self.get('/%s/_design/%s/_view/%s' % \
                             (self.name, design, view), options)
@@ -402,15 +414,17 @@ class CouchServer(CouchDBRequests):
 #  http://wiki.apache.org/couchdb/HTTP_status_list
 
 class CouchError(Exception):
-    def __init__(self, reason, data):
+    def __init__(self, reason, data, result):
         self.reason = reason
         self.data = data
+        self.result = result
         self.type = "CouchError"
     
     def __str__(self):
-        return "%s - reason: %s, data: %s" % (self.type, 
+        return "%s - reason: %s, data: %s result: %s" % (self.type, 
                                              self.reason, 
-                                             repr(self.data))
+                                             repr(self.data),
+                                             self.result)
     
 class CouchBadRequestError(CouchError):
     def __init__(self, reason, data):
@@ -418,26 +432,26 @@ class CouchBadRequestError(CouchError):
         self.type = "CouchBadRequestError"
                 
 class CouchNotFoundError(CouchError):
-    def __init__(self, reason, data):
-        CouchError.__init__(self, reason, data)
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
         self.type = "CouchNotFoundError"
         
 class CouchNotAllowedError(CouchError):
-    def __init__(self, reason, data):
-        CouchError.__init__(self, reason, data)
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
         self.type = "CouchNotAllowedError"
         
 class CouchConflictError(CouchError):
-    def __init__(self, reason, data):
-        CouchError.__init__(self, reason, data)
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
         self.type = "CouchConflictError"
         
 class CouchPreconditionFailedError(CouchError):
-    def __init__(self, reason, data):
-        CouchError.__init__(self, reason, data)
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
         self.type = "CouchPreconditionFailedError"
         
 class CouchInternalServerError(CouchError):
-    def __init__(self, reason, data):
-        CouchError.__init__(self, reason, data)
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
         self.type = "CouchInternalServerError"

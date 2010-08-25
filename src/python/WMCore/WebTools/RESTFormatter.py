@@ -11,8 +11,8 @@ from WMCore.WebTools.Page import exposejson, exposexml, exposeatom
 from WMCore.WebTools.Page import DEFAULT_EXPIRE
 from cherrypy import response, HTTPError, expose
 
-__revision__ = "$Id: RESTFormatter.py,v 1.19 2009/12/31 14:06:08 sryu Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: RESTFormatter.py,v 1.20 2010/01/06 19:13:13 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
@@ -45,7 +45,7 @@ class RESTFormatter(TemplatedPage):
     def format(self, data, datatype, expires=DEFAULT_EXPIRE):
         if datatype not in self.supporttypes.keys():
             response.status = 406
-            return self.supporttypes[text/plain]({'exception': 406,
+            return self.supporttypes['text/plain']({'exception': 406,
                                                 'type': 'HTTPError',
             'message': '%s is not supported. Valid accept headers are: %s' %\
                     (datatype, self.supporttypes.keys())})
@@ -61,4 +61,4 @@ class RESTFormatter(TemplatedPage):
             response.status = 500
             return self.supporttypes[datatype]({'exception': 500,
                                                 'type': type(e),
-                                                'message': e.message})
+                                                'message': str(e)})

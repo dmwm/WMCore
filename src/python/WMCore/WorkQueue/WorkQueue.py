@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.24 2009/08/24 16:33:14 sryu Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: WorkQueue.py,v 1.25 2009/09/03 13:27:17 swakef Exp $"
+__version__ = "$Revision: 1.25 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -260,17 +260,19 @@ class WorkQueue(WorkQueueBase):
                     fileset.addFile(wmbsFile)
                 fileset.commit()
             results.append(sub)
+        if results:
+            self.setStatus('Acquired', *results)
         return results
 
 
-    def gotWork(self, *subscriptions):
-        """
-        _gotWork_
-
-        this is called by JSM
-        update the WorkQueue status table and remove from further consideration
-        """
-        self.setStatus('Acquired', *subscriptions)
+#    def gotWork(self, *subscriptions):
+#        """
+#        _gotWork_
+#
+#        this is called by JSM
+#        update the WorkQueue status table and remove from further consideration
+#        """
+#        self.setStatus('Acquired', *subscriptions)
 
 
     def doneWork(self, *subscriptions):

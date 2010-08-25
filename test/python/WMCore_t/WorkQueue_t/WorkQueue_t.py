@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.9 2009/08/18 23:18:18 swakef Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.10 2009/09/03 13:27:17 swakef Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import pickle
@@ -155,11 +155,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : njobs[0]})
         self.assertEqual(len(work), 1)
-        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), numBlocks)
-
         # claim all work
-        self.queue.gotWork(*work)
+        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
+        self.assertEqual(len(work), numBlocks - 1)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
@@ -181,14 +179,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.setPriority(50, self.specName)
         self.assertRaises(RuntimeError, self.queue.setPriority, 50, 'blahhhhh')
 
-        # check work still available if not claimed
-        work = self.queue.getWork({'SiteA' : total})
-        self.assertEqual(len(work), numBlocks)
-
         # claim all work
         work = self.queue.getWork({'SiteA' : total})
         self.assertEqual(len(work), numBlocks)
-        self.queue.gotWork(*work)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
@@ -215,10 +208,9 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'SiteB' : total})
         self.assertEqual(len(work), 1)
 
-        # claim all work
+        # claim remaining work
         work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), 2)
-        self.queue.gotWork(*work)
+        self.assertEqual(len(work), 1)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))

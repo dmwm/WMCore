@@ -4,17 +4,16 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.16 2010/05/03 20:36:28 spigafi Exp $"
-__revision__ = "$Revision: 1.16 $"
+__version__ = "$Id: Task.py,v 1.17 2010/05/10 12:45:06 spigafi Exp $"
+__revision__ = "$Revision: 1.17 $"
 
 import os.path
-# import threading # seems unused
-# import logging
 
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.BossLite.DbObjects.DbObject import DbObject
+from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 from WMCore.BossLite.DbObjects.Job      import Job
+
 from WMCore.BossLite.Common.Exceptions  import TaskError
 
 class Task(DbObject):
@@ -369,3 +368,58 @@ class Task(DbObject):
             return name
 
         return os.path.join(path, name)
+
+
+class TaskDBFormatter(DbObjectDBFormatter):
+    """
+    TaskDBFormatter 
+    """
+    
+    def preFormat(self, res):
+        """
+        It maps database fields with object dictionary and it translate python 
+        List and timestamps in well formatted string. This is useful for any 
+        kind of database engine!
+        """
+        
+        result = {}
+        
+        # result['id']               = entry['id']
+        result['startDirectory']     = res['startDirectory']
+        result['outputDirectory']    = res['outputDirectory']
+        result['globalSandbox']      = res['globalSandbox']
+        result['cfgName']            = res['cfgName']
+        result['serverName']         = res['serverName']
+        result['jobType']            = res['jobType']
+        result['outfileBasename']    = res['outfileBasename']
+        result['commonRequirements'] = res['commonRequirements']
+        result['name']               = res['name']
+        result['dataset']            = res['dataset']
+        result['user_proxy']         = res['user_proxy']
+            
+        return result
+    
+    def postFormat(self, res):
+        """
+        Format the results into the right output. This is useful for any 
+        kind of database engine!
+        """
+        
+        final = []
+        for entry in res:
+            result = {}
+            result['id']                 = entry['id']
+            result['startDirectory']     = entry['startdirectory']
+            result['outputDirectory']    = entry['outputdirectory']
+            result['globalSandbox']      = entry['globalsandbox']
+            result['cfgName']            = entry['cfgname']
+            result['serverName']         = entry['servername']
+            result['jobType']            = entry['jobtype']
+            result['outfileBasename']    = entry['outfilebasename']
+            result['commonRequirements'] = entry['commonrequirements']
+            result['name']               = entry['name']
+            result['dataset']            = entry['dataset']
+            result['user_proxy']         = entry['user_proxy']
+            final.append(result)
+
+        return final

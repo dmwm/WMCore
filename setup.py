@@ -73,11 +73,15 @@ if can_nose:
                          'If you set this I WILL DELETE YOUR DATABASE AFTER EVERY TEST. DO NOT RUN ON A PRODUCTION SYSTEM'),
                          ('buildBotMode=',
                           None,
-                          'Are we running inside buildbot?')]
+                          'Are we running inside buildbot?'),
+                         ('workerNodeTestsOnly=',
+                          None,
+                          "Are we testing WN functionality? (Only runs WN-specific tests)")]
 
         def initialize_options(self):
             self.reallyDeleteMyDatabaseAfterEveryTest = False
             self.buildBotMode = False
+            self.workerNodeTestsOnly = False
             pass
         
         def finalize_options(self):
@@ -91,13 +95,17 @@ if can_nose:
                 import WMQuality.TestInit
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
-            
-            if not self.buildBotMode:
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)'])
+            if self.workerNodeTestsOnly:
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest'],
+                                    addplugins=[DetailedOutputter()])
+            elif not self.buildBotMode:
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python', '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest'])
             else:    
                 print "### We are in buildbot mode ###"
                 sys.stdout.flush()
-                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a','!integration,!performance,!__integration__,!__performance__'],
+                retval =  nose.run(argv=[__file__,'--with-xunit', '-v','test/python','-m', '(_t.py$)|(_t$)|(^test)','-a',
+                                         '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
+                                         '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase'],
                                     addplugins=[DetailedOutputter()])
                 
             if retval:

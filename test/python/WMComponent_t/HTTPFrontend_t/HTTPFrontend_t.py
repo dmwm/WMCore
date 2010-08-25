@@ -60,7 +60,7 @@ class MsgServiceApp(unittest.TestCase):
         
     def testA(self):
         config = self.testInit.getConfiguration(WMCore.WMInit.getWMBASE(), \
-                        'src/python/WMComponent/ErrorHandler/DefaultConfig.py'))
+                        'src/python/WMComponent/ErrorHandler/DefaultConfig.py')
         self.testInit.generateWorkDir(config)
         
         harness = HTTPFrontEnd(config)

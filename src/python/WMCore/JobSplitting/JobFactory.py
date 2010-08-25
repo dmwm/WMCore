@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.24 2010/04/05 13:40:33 mnorman Exp $"
-__version__  = "$Revision: 1.24 $"
+__revision__ = "$Id: JobFactory.py,v 1.25 2010/04/05 19:26:01 mnorman Exp $"
+__version__  = "$Revision: 1.25 $"
 
 
 import logging
@@ -147,6 +147,10 @@ class JobFactory(WMObject):
 
         for file in fileset:
             locSet = frozenset(file['locations'])
+
+            if len(locSet) == 0:
+                msg = 'File %s has no locations!' %(file['lfn'])
+                logging.error(msg)
 
             if locSet in fileDict.keys():
                 fileDict[locSet].append(file)

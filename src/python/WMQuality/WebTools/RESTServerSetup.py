@@ -29,7 +29,7 @@ class DefaultConfig(Configuration):
         active.section_('rest')
         active.rest.application = 'UnitTestRESTApp'
         active.rest.object = 'WMCore.WebTools.RESTApi'
-        active.rest.templates = '/tmp'
+        #active.rest.templates = '/tmp'
         active.rest.section_('database')
         active.rest.database.connectUrl = 'sqlite://'
         #active.rest.database = 'sqlite:////tmp/resttest.db'

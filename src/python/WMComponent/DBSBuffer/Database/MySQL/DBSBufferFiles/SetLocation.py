@@ -1,14 +1,20 @@
+#!/usr/bin/env python
 """
-MySQL implementation of SetLocation
+_SetLocation_
+
+MySQL implementation of DBSBuffer.SetLocation
 """
+
 from WMCore.Database.DBFormatter import DBFormatter
 from sets import Set
 
 class SetLocation(DBFormatter):
-    sql = """insert dbsbuffer_file_location (filename, location) 
-             select dbsbuffer_file.id, dbsbuffer_location.id from dbsbuffer_file, dbsbuffer_location 
-             where dbsbuffer_file.lfn = :lfn
-             and dbsbuffer_location.se_name = :location"""
+    sql = """INSERT INTO dbsbuffer_file_location (filename, location) 
+               SELECT dbsbuffer_file.id, dbsbuffer_location.id from dbsbuffer_file, dbsbuffer_location 
+             WHERE dbsbuffer_file.lfn = :lfn
+             AND dbsbuffer_location.se_name = :location
+             AND NOT EXISTS (SELECT * FROM dbsbuffer_file_location WHERE filename = dbsbuffer_file.id
+             and location = dbsbuffer_location.id)"""
                 
     def getBinds(self, file = None, location = None):
         if type(location) == type('string'):
@@ -24,13 +30,8 @@ class SetLocation(DBFormatter):
             raise Exception, "Type of location argument is not allowed: %s" \
                                 % type(location)
     
-    def format(self, result):
-        return True
-        
     def execute(self, file, location, conn = None, transaction = None):
         binds = self.getBinds(file, location)
-
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
-        
-        return self.format(result)
+        return

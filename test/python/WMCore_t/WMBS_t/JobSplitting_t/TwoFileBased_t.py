@@ -5,14 +5,12 @@ _TwoFileBased_t_
 File based splitting test with parentage.
 """
 
-__revision__ = "$Id: TwoFileBased_t.py,v 1.1 2010/06/08 20:04:38 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TwoFileBased_t.py,v 1.2 2010/06/28 14:48:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import os
 import threading
-import hotshot, hotshot.stats
-import cProfile, pstats
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset

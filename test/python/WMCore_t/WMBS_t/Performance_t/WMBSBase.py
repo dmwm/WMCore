@@ -28,7 +28,7 @@ from sets import Set
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.17 2009/05/09 12:05:28 sryu Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.18 2009/05/13 18:09:43 mnorman Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -118,7 +118,7 @@ class WMBSBase(Performance):
         list = self.genLocationObjects(number = number, name = name)
 
         for x in list:
-            self.dao(classname = 'Locations.New').execute(sename = x)      
+            self.dao(classname = 'Locations.New').execute(siteName = x)      
         
         return list
 
@@ -234,14 +234,14 @@ class WMBSBase(Performance):
             rangemax = number
 
         fileset = self.genFileset(number = rangemax, name = name+'Job')
-        jobset = Set()
+        jobset = []
 
         for i in range(rangemax):        
          
             job = Job(name = name+'Job'+str(i), files = fileset[i] )
-            jobset.add(job)
+            jobset.append(job)
 
-        return list(jobset) 
+        return jobset
 
     def genJob(self, number = 0, name = 'Test'):
         """
@@ -261,8 +261,8 @@ class WMBSBase(Performance):
 
         subscription = self.genSubscription(number = 1, name = name+'Job')[0]
 
-        jobset = set(joblist)
-        jobgroup = JobGroup(subscription = subscription, jobs = jobset)
+        #jobset = set(joblist)
+        jobgroup = JobGroup(subscription = subscription, jobs = joblist)
         jobgroup.create()
 
         for job in joblist:                    
@@ -280,7 +280,7 @@ class WMBSBase(Performance):
 
         list = []
         jobs = []
-        set = Set()
+        set  = []
 
         if number == 0:
             rangemax = random.randint(1000, 3000)
@@ -293,7 +293,7 @@ class WMBSBase(Performance):
         for i in range(rangemax):        
             jobs = self.genJobObjects(number = 1, name = name+'JobGroup'+str(i))
             for j in jobs:
-                set.add(j)
+                set.append(j)
 
             jobgroup = JobGroup(subscription = subscription, jobs = set, id = 1)
             list.append(jobgroup)
@@ -323,8 +323,8 @@ class WMBSBase(Performance):
                                 dbinterface = myThread.dbi)
 
         locationAction = self.dao(classname = "Locations.New")
-        locationAction.execute(sename = "se1.cern.ch")
-        locationAction.execute(sename = "se1.fnal.gov")
+        locationAction.execute(siteName = "se1.cern.ch")
+        locationAction.execute(siteName = "se1.fnal.gov")
 
 
         #Total time counter for Performance tests

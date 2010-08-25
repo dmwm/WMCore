@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.23 2009/09/17 09:56:27 metson Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: RESTModel.py,v 1.24 2009/09/21 20:51:32 metson Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -24,12 +24,14 @@ class RESTModel(WebAPI):
                                'ping': {'default_data':1234, 
                                         'call':self.ping,
                                         'version': 1,
-                                        'args': []}
+                                        'args': [],
+                                        'validation': []}
                                },
                         'POST':{
                                'echo': {'call':self.echo,
                                         'version': 1,
-                                        'args': ['message']},
+                                        'args': ['message'],
+                                        'validation': []},
                                }
                          }
         
@@ -103,4 +105,7 @@ class RESTModel(WebAPI):
         Apply some checks to the input data. This needs to be over ridden by any
         subclass. You should throw exceptions if the data is invalid. 
         """
-        return input
+        result = {}
+        for fnc in self.makelist(getattr(self.methods[verb][method]['validation'], [])):
+            result.update(fnc(input))
+        return result

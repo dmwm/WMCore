@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: REST_t.py,v 1.2 2009/11/23 17:41:55 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: REST_t.py,v 1.3 2009/11/23 18:09:12 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os
@@ -20,6 +20,23 @@ from httplib import HTTPConnection
 from WMQuality.TestInit import TestInit
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.Configuration import Configuration
+
+class DummyDAO1():
+    def execute(self, input={}):
+        return {'data': 123, 'input': input}
+
+class DummyDAO2():
+    def execute(self, input={}):
+        return {'data': 456, 'input': input}
+
+class DummyDAOFac():
+    def __call__(self, classname='DummyDAO1'):
+        dao = None
+        if classname == 'DummyDAO1':
+            dao = DummyDAO1()
+        elif classname == 'DummyDAO2':
+            dao = DummyDAO2()
+        return dao
 
 class DummyRESTModel(RESTModel):
     def __init__(self, config):
@@ -34,9 +51,12 @@ class DummyRESTModel(RESTModel):
                                                        self.val_2, 
                                                        self.val_3, 
                                                        self.val_4]}}
+        self.daofactory = DummyDAOFac()
+        self.addDAO('GET', 'data1', 'DummyDAO1', ['num'])
+        self.addDAO('GET', 'data2', 'DummyDAO2', ['num'])
         
     def list(self, args, kwargs):
-        input = self.sanitise_input('list', args, kwargs)
+        input = self.sanitise_input(args, kwargs, 'list')
         return input
     
     def val_1(self, input):
@@ -147,6 +167,31 @@ class RESTTest(unittest.TestCase):
         self.assertRaises(KeyError, drm.list, [], {})
         # Out of order input data
         self.assertRaises(KeyError, drm.list, ['abc'], {'int':123})
+    
+    def testDAOBased(self):
+        config = Configuration()
+        component = config.component_('UnitTests')
+        component.application = 'UnitTests'
+        component.database = 'sqlite://'
+                
+        drm = DummyRESTModel(component)
+        
+        result = drm.methods['GET']['data1']['call']([], {})
+        assert result['data'] == 123
+        assert result['input'] == {}
+        
+        result =  drm.methods['GET']['data1']['call']([123], {})
+        assert result['data'] == 123
+        assert result['input'] == {'num': 123}
+        
+        result =  drm.methods['GET']['data2']['call']([], {})
+        assert result['data'] == 456
+        assert result['input'] == {}
+        
+        result =  drm.methods['GET']['data2']['call']([456], {})
+        assert result['data'] == 456
+        assert result['input'] == {'num': 456}
+        
         
 if __name__ == "__main__":
     unittest.main() 

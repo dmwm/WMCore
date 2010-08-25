@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.3 2009/09/02 20:12:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: wmcoreD,v 1.4 2009/10/07 20:04:46 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -172,7 +172,7 @@ def connectionTest(configFile):
                                              config.CoreDatabase.hostname)
         socketLoc = None
     else:
-        databaseStr = "%s://%s:%s@%s/%s" % (config.CoreDatabase.dialect,
+        databaseStr = "%s://%s:%s@%s/%s" % (config.CoreDatabase.dialect.lower(),
                                             config.CoreDatabase.masterUser,
                                             config.CoreDatabase.masterPasswd,
                                             config.CoreDatabase.hostname,

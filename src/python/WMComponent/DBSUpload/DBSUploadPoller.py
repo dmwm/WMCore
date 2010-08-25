@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613
 """
 The DBSUpload algorithm
 """
-__all__ = []
-__revision__ = "$Id: DBSUploadPoller.py,v 1.7 2009/09/02 22:18:21 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
-__author__ = "mnorman@fnal.gov"
+
+__revision__ = "$Id: DBSUploadPoller.py,v 1.8 2009/09/03 15:22:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
@@ -26,9 +24,6 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 
 from DBSAPI.dbsApi import DbsApi
-#from DBSAPI.dbsException import *
-#from DBSAPI.dbsApiException import *
-#from DBSAPI.dbsAlgorithm import DbsAlgorithm
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
@@ -36,8 +31,6 @@ from WMCore.Services.DBS.DBSWriter import DBSWriter
 from WMCore.Services.DBS           import DBSWriterObjects
 from WMCore.Services.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from WMCore.Services.DBS.DBSReader import DBSReader
-
-
 
 class DBSUploadPoller(BaseWorkerThread):
     """
@@ -92,10 +85,6 @@ class DBSUploadPoller(BaseWorkerThread):
         It essentially replaces BufferSuccess
 
         """
-
-        logging.debug('Beginning DBSUploadPoller.uploadDatasets')
-
-        #Initialize
         dbinterface = self.dbinterface
         addToBuffer = self.addToBuffer
 
@@ -193,6 +182,3 @@ class DBSUploadPoller(BaseWorkerThread):
         except:
             myThread.transaction.rollback()
             raise
-
-
-

@@ -7,8 +7,8 @@ etc..
 
 """
 
-__revision__ = "$Id: REST_t.py,v 1.9 2009/12/29 12:33:26 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: REST_t.py,v 1.10 2009/12/29 12:46:40 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import os
@@ -284,32 +284,22 @@ class RESTTest(unittest.TestCase):
         drm = DummyRESTModel(component)
         
         # Wrong type for input args
-        self.assertRaises(HTTPError, drm.list, [123, 123], {})
-        self.assertRaises(HTTPError, drm.list, ['abc', 'abc'], {})
-        self.assertRaises(HTTPError, drm.list, [], {'str':123, 'int':'abc'})
-        self.assertRaises(HTTPError, drm.list, [], {'str':'abc', 'int':'abc'})
-        self.assertRaises(HTTPError, drm.list, ['abc', 123], {})
-        self.assertRaises(HTTPError, drm.list, ['abc', 'abc'], {})
-        self.assertRaises(HTTPError, drm.list, [], {'str':123, 'int':'abc'})
-        self.assertRaises(HTTPError, drm.list, [], {'str':123, 'int':123})
-        self.assertRaises(HTTPError, drm.list, [], {'str':'abc', 'int':'abc'})
+        self.assertRaises(AssertionError, drm.list, [123, 123], {})
+        self.assertRaises(AssertionError, drm.list, ['abc', 'abc'], {})
+        self.assertRaises(AssertionError, drm.list, [], {'str':123, 'int':'abc'})
+        self.assertRaises(AssertionError, drm.list, [], {'str':'abc', 'int':'abc'})
+        self.assertRaises(AssertionError, drm.list, ['abc', 123], {})
+        self.assertRaises(AssertionError, drm.list, ['abc', 'abc'], {})
+        self.assertRaises(AssertionError, drm.list, [], {'str':123, 'int':'abc'})
+        self.assertRaises(AssertionError, drm.list, [], {'str':123, 'int':123})
+        self.assertRaises(AssertionError, drm.list, [], {'str':'abc', 'int':'abc'})
         
         # Incorrect values for input args
-        self.assertRaises(HTTPError, drm.list, [1234, 'abc'], {})
-        self.assertRaises(HTTPError, drm.list, [123, 'abcd'], {})
-        
-    def testSanitiseKeyFail(self):
-        config = Configuration()
-        component = config.component_('UnitTests')
-        component.application = 'UnitTests'
-        component.database = 'sqlite://'
-                
-        drm = DummyRESTModel(component)
+        self.assertRaises(AssertionError, drm.list, [1234, 'abc'], {})
+        self.assertRaises(AssertionError, drm.list, [123, 'abcd'], {})
         
         # Empty input data, when data is required
-        self.assertRaises(HTTPError, drm.list, [], {})
-        # Out of order input data
-        self.assertRaises(HTTPError, drm.list, ['abc'], {'int':123})
+        self.assertRaises(AssertionError, drm.list, [], {})
         
     def testDAOBased(self):
         config = Configuration()

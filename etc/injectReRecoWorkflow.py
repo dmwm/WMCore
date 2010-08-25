@@ -119,7 +119,9 @@ def injectFilesFromDBS(inputFileset, datasetPath):
             myRun.lumis.append(lumi["LumiSectionNumber"])
         myFile.addRun(myRun)
         myFile.create()
-
+        inputFileset.addFile(myFile)
+        
+    inputFileset.commit()
     return
 
 for workloadTask in workload.taskIterator():

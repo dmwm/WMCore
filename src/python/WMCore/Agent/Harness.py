@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.23 2009/09/28 15:16:48 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Harness.py,v 1.24 2009/09/30 23:39:32 meloam Exp $"
+__version__ = "$Revision: 1.24 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -129,7 +129,7 @@ class Harness:
             myThread.transactions = {}
             options = {}
             coreSect = self.config.CoreDatabase
-            if hasattr(coreSect, "socket"):
+            if ( hasattr(coreSect, "socket") and coreSect.socket ):
                 options['unix_socket'] = coreSect.socket
             logging.info(">>>Building database connection string")
             # check if there is a premade string if not build it yourself.

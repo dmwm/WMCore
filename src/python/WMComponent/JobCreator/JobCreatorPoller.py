@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.18 2010/04/29 20:14:51 mnorman Exp $"
-__version__  = "$Revision: 1.18 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.19 2010/07/06 15:56:05 sfoulkes Exp $"
+__version__  = "$Revision: 1.19 $"
 
 import threading
 import logging
@@ -155,14 +155,14 @@ class JobCreatorPoller(BaseWorkerThread):
             #Create a dictionary
             tmpDict = {'subscription': subscription}
             listOfWork.append(tmpDict)
+
+        logging.info("Subscriptions enqueued: %s" % listOfWork)
             
         if listOfWork != []:
             # Only enqueue if we have work to do!
             self.processPool.enqueue(listOfWork)
             self.processPool.dequeue(totalItems = len(listOfWork))
-        
-        logging.info("Number of subscription enqueued is %i" % len(listOfWork))
-
+    
         return
 
 

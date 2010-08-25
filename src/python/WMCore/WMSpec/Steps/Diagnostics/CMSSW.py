@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0212
+# W0212: Names are not accessible for WMTask objects, etc.
 """
 _CMSSW_
 
@@ -15,18 +17,30 @@ from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
 class Exit127(DiagnosticHandler):
+    """
+    Handle non-existant executable
+
+    """
     def __call__(self, errCode, executor, **args):
         msg = "Executable Not Found"
         executor.report.addError(executor.step._internal_name,
                                  50110, "ExecutableNotFound", msg)
         
 class Exit126(DiagnosticHandler):
+    """
+    Handle bad permissions
+
+    """
     def __call__(self, errCode, executor, **args):
         msg = "Executable permissions not executable"
         executor.report.addError(executor.step._internal_name,
                                  50111, "ExecutableBadPermissions", msg)
 
 class Exit60515(DiagnosticHandler):
+    """
+    Handle SCRAM script failure
+
+    """
     def __call__(self, errCode, executor, **args):
         """
         Added for Steve to handle SCRAM script failure
@@ -109,6 +123,9 @@ class EDMExceptionHandler(DiagnosticHandler):
         """
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)
+
+        errLog = os.path.join(os.path.dirname(jobRepXml),
+                              '%s-stderr.log' % (executor.step.name()))
 
 
         addOn = '\n'

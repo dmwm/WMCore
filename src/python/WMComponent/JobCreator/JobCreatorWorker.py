@@ -11,8 +11,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.11 2010/04/29 20:07:08 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.12 2010/06/10 21:03:46 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 import logging
@@ -181,7 +181,7 @@ class JobCreatorWorker:
             splitParams = retrieveJobSplitParams(wmWorkload, workflow.task)
             logging.debug("Split Params: %s" % splitParams)
             wmbsJobGroups = wmbsJobFactory(**splitParams)
-            logging.debug("Job Groups %s" % wmbsJobGroups)
+            #logging.debug("Job Groups %s" % wmbsJobGroups)
             logging.info("Have jobGroups")
             
             # Now we get to find out what job they are.
@@ -191,7 +191,7 @@ class JobCreatorWorker:
             myThread.transaction.commit()
             
             for wmbsJobGroup in wmbsJobGroups:
-                self.createJobGroup(wmbsJobGroup)
+
                 # Create a directory
                 self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(),
                                                 startDir = self.jobCacheDir)
@@ -212,7 +212,9 @@ class JobCreatorWorker:
                     output = open(os.path.join(cacheDir, 'job.pkl'),'w')
                     cPickle.dump(job, output)
                     output.close()
-                
+
+                # Only create jobGroups and jobs when we're done
+                self.createJobGroup(wmbsJobGroup)
 
                 logging.info("Finished call for jobGroup %i" \
                              %(wmbsJobGroup.exists()))

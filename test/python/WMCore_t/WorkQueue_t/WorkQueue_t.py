@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.36 2010/06/11 19:23:24 sryu Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.37 2010/06/11 20:40:27 sryu Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import unittest
 import os
@@ -133,23 +133,22 @@ class WorkQueueTest(WorkQueueTestCase):
         Enqueue and get work for a production WMSpec.
         """
         specfile = self.spec.specUrl()
-        numBlocks = 2
-        njobs = [1] * numBlocks # array of jobs per block
-        total = sum(njobs)
-
-        # Queue Work & check accepted
-        for _ in range (0, numBlocks):
+        numUnit = 2
+        jobSlot = [1] * numUnit # array of jobs per block
+        total = sum(jobSlot)
+        
+        for _ in range(numUnit):
             self.queue.queueWork(specfile)
-        self.assertEqual(numBlocks, len(self.queue))
+        self.assertEqual(20, len(self.queue))
 
         # try to get work
         work = self.queue.getWork({'SiteA' : 0})
         self.assertEqual([], work)
-        work = self.queue.getWork({'SiteA' : njobs[0]})
-        self.assertEqual(len(work), 1)
+        work = self.queue.getWork({'SiteA' : jobSlot[0]})
+        self.assertEqual(len(work), 10)
         # claim all work
         work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), numBlocks - 1)
+        self.assertEqual(len(work), 10)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
@@ -159,24 +158,22 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Test priority change functionality
         """
-        numBlocks = 2
-        njobs = [10] * numBlocks # array of jobs per block
-        total = sum(njobs)
+        # default queue is set to get 10 times more jobs than slot size
+        totalJobs = 10
+        jobSlot = 1 
 
-        # Queue Work & check accepted
-        for _ in range (0, numBlocks):
-            self.queue.queueWork(self.spec.specUrl())
+        self.queue.queueWork(self.spec.specUrl())
 
         # priority change
         self.queue.setPriority(50, self.spec.name())
         self.assertRaises(RuntimeError, self.queue.setPriority, 50, 'blahhhhh')
 
         # claim all work
-        work = self.queue.getWork({'SiteA' : total})
-        self.assertEqual(len(work), numBlocks)
+        work = self.queue.getWork({'SiteA' : jobSlot})
+        self.assertEqual(len(work), totalJobs)
 
         #no more work available
-        self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
+        self.assertEqual(0, len(self.queue.getWork({'SiteA' : jobSlot})))
 
 
     def testProcessing(self):
@@ -417,18 +414,18 @@ class WorkQueueTest(WorkQueueTestCase):
         njobs = [1] * numElements # array of jobs per block
         total = sum(njobs)
 
-        # Queue Work & check accepted
+        # Queue Work &njobs check accepted
         self.queue.queueWork(specfile)
-        self.assertEqual(numElements, len(self.queue))
+        self.assertEqual(numElements * 10, len(self.queue))
 
         # try to get work
         work = self.queue.getWork({'SiteA' : 0})
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : njobs[0]})
-        self.assertEqual(len(work), 1)
+        self.assertEqual(len(work), 10)
         # claim all work
         work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), numElements - 1)
+        self.assertEqual(len(work), 20)
 
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))

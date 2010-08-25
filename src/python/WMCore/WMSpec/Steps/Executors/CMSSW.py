@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
-__revision__ = "$Id: CMSSW.py,v 1.24 2010/07/12 15:28:08 meloam Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: CMSSW.py,v 1.25 2010/07/22 21:36:54 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import tempfile
 import subprocess
@@ -78,8 +78,8 @@ class CMSSW(Executor):
         cmsswConfig    = self.step.application.command.configuration
         cmsswArguments = self.step.application.command.arguments
         
-        logging.info("Executing CMSSW step with following parameters")
-        logging.info(self.step)
+        logging.info("Executing CMSSW step")
+
         #
         # scram bootstrap
         #

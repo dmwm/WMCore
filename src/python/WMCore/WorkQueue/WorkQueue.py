@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.128 2010/07/30 16:51:31 swakef Exp $"
-__version__ = "$Revision: 1.128 $"
+__revision__ = "$Id: WorkQueue.py,v 1.129 2010/07/30 20:13:16 sryu Exp $"
+__version__ = "$Revision: 1.129 $"
 
 
 import time
@@ -165,7 +165,7 @@ class WorkQueue(WorkQueueBase):
 
         self.SiteDB = SiteDB()
 
-        if self.params['Teams'] in types.StringTypes:
+        if type(self.params['Teams']) in types.StringTypes:
             self.params['Teams'] = [x.strip() for x in \
                                     self.params['Teams'].split(',')]
         #only import WMBSHelper when it needed

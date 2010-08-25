@@ -44,8 +44,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.25 2009/03/20 14:42:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: Job.py,v 1.26 2009/04/29 23:19:57 sryu Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import datetime
 from sets import Set
@@ -53,6 +53,7 @@ from sets import Set
 from WMCore.DataStructs.Job import Job as WMJob
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset as WMBSFileset
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.Services.UUID import makeUUID
 
@@ -140,8 +141,9 @@ class Job(WMBSBase, WMJob):
                                   transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname='Jobs.Exists')
-            return action.execute(name = self.name, conn = self.getReadDBConn(),
+            self.id = action.execute(name = self.name, conn = self.getReadDBConn(),
                                   transaction = self.existingTransaction())
+            return self.id
                 
     def load(self):
         """
@@ -232,27 +234,16 @@ class Job(WMBSBase, WMJob):
         
         return WMJob.getFiles(self, type)
 
-    def addOutput(self, file):
+    def processSuccessfulJob(self, file):
         """
-        add output file to job groups groupoutput file set.
-        then, update the file parentage
+        _processSuccessfulJob_
+        should be used internally by the job group. 
+        update the file parentage
         also add run-lumi information
         take wmbs file object as a argument (doesn't have to be loaded). 
         """
-        self.beginTransaction()
-        
-        # this requires Jobgroup to call addOutput to commit to database
+        # doesn't need this process but use as the output file temporary holder
         WMJob.addOutput(self, file)
-        
-        # This dosen't require JobGreoup to call addOutput separately but need 
-        # to import JobGroup with in the job which might be worse than calling 
-        # JobGroup.addOutput after Job.addOutput
-#        from WMCore.WMBS.JobGroup import JobGroup
-#        
-#        jobGroup = JobGroup(id=self.job_group)
-#        jobGroup.load()
-#        jobGroup.groupoutput.addFile(file)
-#        jobGroup.groupoutput.commit()
         
         inputFiles = self.getFiles()
         
@@ -276,8 +267,8 @@ class Job(WMBSBase, WMJob):
                     newRunSet.add(inputRun)
         
         file.addRunSet(newRunSet)
-
         self.commitIfNew()
+        
         return
            
     def submit(self, name = None):
@@ -334,3 +325,26 @@ class Job(WMBSBase, WMJob):
 
         self.commitIfNew()
         return
+
+    def getStatus(self):
+        """
+        The status of the job
+        
+        The status of the jobs can be correctly inferred by comparing the start,
+        complete and update times. The groups status is the sum of these 
+        statuses.
+        
+        return: ACTIVE, COMPLETE, FAILED
+        """
+        statusAction = self.daofactory(classname = "Jobs.Status")
+        ac, fa, cm = statusAction.execute(self.id,
+                                          conn = self.getReadDBConn(),
+                                          transaction = self.existingTransaction())
+        
+        # if it returns other than one some thing is wrong
+        if cm == 1:
+            return 'COMPLETE'
+        if fa == 1:
+            return 'FAILED'
+        else:
+            return 'ACTIVE'

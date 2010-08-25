@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.14 2009/04/23 10:09:02 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: CMSCouch.py,v 1.15 2009/04/28 06:57:53 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 try:
     # Python 2.6
@@ -19,6 +19,8 @@ except:
 import urllib
 from httplib import HTTPConnection
 import uuid
+import time
+import datetime
 
 class Document(dict):
     def __init__(self, id=None):
@@ -154,11 +156,30 @@ class Database(CouchDBRequests):
         self._queue = []
         self.name = dbname
         JSONRequests.__init__(self, url)
+    
+    def timestamp(self, data):
+        """
+        Time stamp each doc in a list - should really edit in place, something 
+        is up with the references...
+        """
+        print 'timestamping'
+        if type(data) == type({}):
+            data['timestamp'] = str(datetime.datetime.now())
+            return data
+        for doc in data:
+            if 'timestamp' not in doc.keys():
+                doc['timestamp'] = str(datetime.datetime.now())
+        return list
         
-    def queue(self, doc):
+    def queue(self, doc, timestamp = False):
         """
-        Queue up a doc for bulk insert
+        Queue up a doc for bulk insert. If timestamp = True add a timestamp 
+        field if one doesn't exist. Use this over commit(timestamp=True) if you 
+        want to timestamp when a document was added to the queue instead of when
+        it was committed  
         """
+        if timestamp:
+            doc = self.timestamp(doc)
         self._queue.append(doc)
         
     def queuedelete(self, doc):
@@ -169,19 +190,28 @@ class Database(CouchDBRequests):
         doc['_deleted'] = True
         self.queue(doc)
         
-    def commit(self, doc=None, returndocs = False):
+    def commit(self, doc=None, returndocs = False, timestamp = False):
         """
         Add doc and/or the contents of self._queue to the database. If returndocs
-        is true, return document objects representing what has been committed.
+        is true, return document objects representing what has been committed. If
+        timestamp is true timestamp all documents with a date formatted like:
+        2009/01/30 18:04:11 - this will be the timestamp of when the commit was 
+        called, it will not override an existing timestamp field.   
         """
+        print "committing", doc, returndocs, timestamp
         result = ()
         if len(self._queue) > 0:
             if doc:
                 self.queue(doc)
+            if timestamp:
+                self._queue = self.timestamp(self._queue)
             result = self.post('/%s/_bulk_docs/' % self.name, {'docs': self._queue})
             self._queue = []
             return result
         elif doc:
+            if timestamp:
+                doc = self.timestamp(doc)
+            print doc
             if  '_id' in doc.keys():
                 return self.put('/%s/%s' % (self.name, 
                                             urllib.quote_plus(doc['_id'])), 

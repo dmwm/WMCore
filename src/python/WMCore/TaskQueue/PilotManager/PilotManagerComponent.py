@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 """
-_PilotManagerComponent_
+_JobQueueComponent_
 
 
 
 """
 
-__revision__ = "$Id: PilotManagerComponent.py,v 1.1 2009/07/30 22:29:11 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PilotManagerComponent.py,v 1.2 2009/09/11 01:32:49 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -25,6 +25,7 @@ from WMCore.WMFactory import WMFactory
 
 
 import ProdAgent
+from ProdAgentCore.Configuration import loadProdAgentConfiguration
 #from Handler.PilotManagerHandler import PilotManagerHandler
 from CommonUtil import executeCommand
 
@@ -35,15 +36,26 @@ class PilotManagerComponent(Harness):
     
     """
     def __init__(self, config):
-        self.jobs = {}
+        """ 
+        __init__ 
+        """
+
         self.jobavaliableflag = False
         self.tarPath = config.PilotManagerComponent.tarPath
         self.pilotcodeDir = config.PilotManagerComponent.pilotCode 
         self.tqServer = config.PilotManagerComponent.tqAddress
         self.emulationMode = config.PilotManagerComponent.emulationMode
+        self.pilotParams = None
+        try:
+            cfg = loadProdAgentConfiguration()
+            pilot = cfg.getConfig("Pilot")
+            self.pilotParams = pilot
+        except:
+            logging.debug("could not load PRODAGENT_CONFIG file")
+        if ( not self.pilotParams ):
+            self.pilotParams={'badAttempts':6,'noTaskAttempts':6}
 
         Harness.__init__(self, config)
-        #print (config)
 	
     def preInitialization(self):
         """ 
@@ -68,11 +80,18 @@ class PilotManagerComponent(Harness):
         """
         pass
 
+ 
     def createPilotTar(self):
-        """ __createPiloTar__ """
-        tarCommand = "tar -cvf %s/Pilot.tar -C %s Pilot" %(self.tarPath, self.pilotcodeDir)
+        """ 
+        __createPiloTar__ 
+
+        it will create the tar ball of pilot code
+        """
+
+        #change tar to tar.gz
+        fileName = self.config.PilotManagerComponent.pilotTar
+        tarCommand = "tar -czvf %s/%s -C %s Pilot" %(self.tarPath, fileName, self.pilotcodeDir)
+
         print tarCommand
         #myThread.logging.debug(tarCommand)
         output = executeCommand(tarCommand)
-        #print output 
-

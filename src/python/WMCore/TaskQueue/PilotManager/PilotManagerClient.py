@@ -7,8 +7,8 @@ _PilotManagerClient_
 
 """
 
-__revision__ = "$Id: PilotManagerClient.py,v 1.1 2009/07/30 22:29:10 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PilotManagerClient.py,v 1.2 2009/09/11 01:32:49 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os

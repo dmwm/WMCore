@@ -70,6 +70,7 @@ class PilotBossSubmitter:
 
 	if ( self.schedType == 'LSF' ):
 	    #schedConfig = {'user_proxy' : '', 'service' : '', 'config' : '' }
+            #schedConfig = {'cpCmd': 'rfcp', 'rfioSer': '%s:' % self.host}
             schedConfig = {'cpCmd': 'rfcp', 'rfioSer': '%s:' % self.host}
 	    self.scheduler = Scheduler.Scheduler('SchedulerLsf', schedConfig)
 	    self.lsfPilotTask(taskName, exe, exePath, inpSandbox, bulkSize)
@@ -94,16 +95,16 @@ class PilotBossSubmitter:
         lsfLogDir = os.path.join(logDir, outdir )
           
         taskCount = self.taskCount()
-        taskName = "%s_%s" % (taskName, taskCount+1)
+        taskName = "%s_%s" % (taskName, taskCount + 1)
 	#task object
         try:
             os.mkdir(lsfLogDir)
            
             self.bossTask = Task()
             self.bossTask['name'] = taskName
-            self.bossTask['globalSandbox']= exePath+'/'+exe+','+ inpSandbox
-            self.bossTask['jobType'] = 'PilotJob' 
-            self.bossTask['outputDirectory']=lsfLogDir 
+            self.bossTask['jobType'] = 'PilotJob'
+            self.bossTask['globalSandbox'] = exePath+'/'+exe+','+ inpSandbox
+            self.bossTask['outputDirectory'] = lsfLogDir 
             self.bossLiteSession.saveTask( self.bossTask )
 
         except BossLiteError, ex:
@@ -116,15 +117,27 @@ class PilotBossSubmitter:
                 job = Job()
                 job['name'] = '%s_pilot'%j 
                 #these arguments are passed to the submission script
-                job['arguments'] =  'pilot'
-                job['standardOutput'] =  '%s/pilot_%s.log'%(lsfLogDir, j)
-                job['standardError']  =  '%s/piloterr_%s.log'%(lsfLogDir, j)
+                # ANTO: job must output to its working dir
+                #       LSF will copy result back to logDir
+                #       Get std.out and std.err
+#                job['standardOutput'] =  '%s/pilot_%s.log'%(lsfLogDir, j)
+#                job['standardOutput'] =  'pilot_%s.log' % (j)
+                job['standardOutput'] =  '%s_std.out' % j
+#                job['standardError']  =  '%s/piloterr_%s.log'%(lsfLogDir, j)
+#                job['standardError']  =  'piloterr_%s.log' % (j)
+                job['standardError']  =  '%s_std.err' % j
                 job['executable']     =  exe
-                job['outputFiles'] = [ '%s/pilot_%s.log'%(lsfLogDir, j), \
-                                       '%s/pilot_%s.tgz'%(lsfLogDir, j)]
+#                job['outputFiles'] = [ '%s/pilot_%s.log'%(lsfLogDir, j), \
+#                                       '%s/pilot_%s.tgz'%(lsfLogDir, j)]
+#                job['outputFiles'] = [ 'pilot_%s.log' % (j), \
+#                                       'pilot_%s.tgz' % (j)]
+                job['outputFiles'] = [ '*std.out', '*std.err']
+#                job['outputDirectory'] =  lsfLogDir + '/%s' % (j)
 
                 self.bossLiteSession.getNewRunningInstance( job )
-                job.runningJob['outputDirectory'] =  lsfLogDir
+#                job.runningJob['outputDirectory'] =  lsfLogDir + '/%s' % (j)
+#                os.mkdir(job.runningJob['outputDirectory'])
+                # END ANTO
                 self.bossTask.addJob( job )
                 self.bossLiteSession.updateDB( self.bossTask )
 

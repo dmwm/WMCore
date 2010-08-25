@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.25 2009/03/24 22:02:08 sryu Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: JobGroup.py,v 1.26 2009/04/29 23:21:56 sryu Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
@@ -222,7 +222,9 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         if jobs == None:
             jobs = self.getJobIDs(type = "JobList")
-
+        
+        if type(jobs) != list:
+            jobs = [jobs]
         self.beginTransaction()
         for job in jobs:
             job.changeStatus("Active")
@@ -234,7 +236,49 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.commitIfNew()
         return True
     
-    def recordComplete(self, jobs = None):
+    def _recordFileStatusUponCompletion(self):
+        """
+        _recordFileStatusUponCompletion_
+        
+        This checks whether job group is completed 
+        (complete status means all the jobs are processed regardless their 
+        status (failed, or complete (succeed)) then update the input files'
+        status on those jobs if a input file is shared by more than a job, 
+        and one of the jobs are failed it will be marked as failed.
+        A file is marked as successful only if all the jobs using that file
+        as input succeed 
+        
+        if job group is in complete status return status, if not, False 
+        """
+        status = self._completeStatus()
+        
+        if status == "COMPLETE" or status == "FailComplete":
+            jobs = self.getJobIDs(type = "JobList")
+            inputFiles = []
+            failFiles = []
+            if status == "COMPLETE":
+                for job in jobs:
+                    inputFiles.extend(job.getFiles())
+            else:
+                for job in jobs:
+                    if job.getStatus() == "FAIED":
+                        failFiles.extend(job.getFile())
+                    else:
+                        inputFiles.extend(job.getFiles())
+                        
+            if len(inputFiles) > 0:
+                self.subscription.completeFiles(inputFiles)
+                
+            if len(failFiles) > 0:
+                self.subscription.completeFiles(failFiles)
+            # Don't commit here this function is only supposed to be used within
+            # other function in the class
+            #self.commitIfNew()
+            return status
+        
+        return False
+    
+    def recordComplete(self, job, outputFiles):
         """
         _recordComplete_
 
@@ -246,21 +290,31 @@ class JobGroup(WMBSBase, WMJobGroup):
         JobGroup is completed. but it will be responsible the one who calls this 
         function to check jobGroup complete status
         """
-        if jobs == None:
-            jobs = self.getJobIDs(type = "JobList")
-
-        self.beginTransaction()
-        for job in jobs:
-            job.changeStatus("Complete")            
-            inputFiles = job.getFiles()
-
-            if len(inputFiles) > 0:
-                self.subscription.completeFiles(inputFiles)
-
+        #self.beginTransaction()
+        #print self.existingTransaction()
+        job.changeStatus("Complete")
+        #self.myThread.transaction.commit()
+        #self.beginTransaction()
+        if type(outputFiles) != list:
+            outputFiles = [outputFiles]
+        for file in outputFiles:
+            # add file parentage and run lumi
+            job.processSuccessfulJob(file)
+            # add output file to group out put
+            self.groupoutput.addFile(file)
+        self.groupoutput.commit()
+        #T0DO check whether it is needed to be committed for 
+        #updating the job status
+        status = self._recordFileStatusUponCompletion()                
+        if status == "COMPLETE":
+            output = self.output()
+        else:
+            output = False
+        self.myThread.transaction.commit()
         self.commitIfNew()
-        return True
+        return output
     
-    def recordFail(self, jobs = None):
+    def recordFail(self, job):
         """
         _recordFail_
 
@@ -272,19 +326,10 @@ class JobGroup(WMBSBase, WMJobGroup):
         JobGroup is failed. but it will be responsible the one who calls this 
         function to check jobGroup failed status
         """
-        if jobs == None:
-            jobs = self.getJobIDs(type = "JobList")
-
-        self.beginTransaction()
-        for job in jobs:
-            job.changeStatus("Failed")            
-            inputFiles = job.getFiles()
-
-            if len(inputFiles) > 0:
-                self.subscription.failFiles(inputFiles)
-
+        job.changeStatus("Failed")            
+        status = self._recordFileStatusUponCompletion()
         self.commitIfNew()
-        return True
+        return status
     
     def status(self, detail = False):
         """
@@ -316,9 +361,22 @@ class JobGroup(WMBSBase, WMJobGroup):
                 # all the file status should be acquired at this point
                 return 'ACTIVE%s' % report
     
-    def isComplete(self):
+    def isSuccessful(self):
         """
-        _isComplete_
+         _isSuccessful_
+        
+        Check all the jobs in the group are successfully completed.
+        self.status can be used for this, but for the fast performance. 
+        use this function
+        """
+        if self._completeStatus() == "COMPLETE":
+            return True
+        else:
+            return False
+        
+    def _completeStatus(self):
+        """
+        _isSuccessful_
         
         Check all the jobs in the group are completed.
         self.status can be used for this, but for the fast performance. 
@@ -327,22 +385,28 @@ class JobGroup(WMBSBase, WMJobGroup):
         To: check query whether performance can be improved
         """
         statusAction = self.daofactory(classname = "JobGroup.IsComplete")
-        all, cm = statusAction.execute(self.id,
+        all, cm, fa = statusAction.execute(self.id,
                                       conn = self.getReadDBConn(),
                                       transaction = self.existingTransaction())
         if all == cm:
-            return True
+            return "COMPLETE"
+        elif all == cm + fa:
+            return "FailComplete"
+        elif fa > 0:
+            return "FailIncomplete"
         else:
-            return False
+            return "Incomplete"
         
     def output(self):
         """
         The output is the files produced by the jobs in the group - these must
         be merged up together.
+        getting output doesn't make sense if all the jobs are successful in the
+        given job group. But it is the caller's responsibility to check where 
+        the job group is successfully finished using isSuccessful() function
         """
-        if self.isComplete():
-            # output only makes sense if the group is completed
-            # load output from DB 
-            self.groupoutput.load()
-            return self.groupoutput
-        return False
+        # output only makes sense if the group is completed
+        # load output from DB 
+        self.groupoutput.load()
+        return self.groupoutput
+        

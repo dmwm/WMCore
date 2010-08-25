@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.46 2010/02/09 18:26:52 meloam Exp $"
+    "$Id: TestInit.py,v 1.47 2010/02/09 19:59:33 meloam Exp $"
 __version__ = \
-    "$Revision: 1.46 $"
+    "$Revision: 1.47 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -283,6 +283,17 @@ class TestInit:
         modules.reverse()
         self.init.clearDatabase(modules)
         
+        myThread = threading.currentThread()
+
+        try:
+            myThread.dbi.close()
+        except Exception, e:
+            print "tried to close DBI %s" % e
+        
+        try:
+            del myThread.dbFactory 
+        except Exception, e:
+            print "tried to delete factory %s" % e
 
 
 

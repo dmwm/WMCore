@@ -79,5 +79,33 @@ class WMStepTest(unittest.TestCase):
         self.assertEqual(typeOrder, checkType)
 
 
+    def testC_testGetSetOverrides(self):
+        """
+        Test whether we can use the override manipulation tools in StepTypeHelper
+
+        """
+
+
+        wmStep = makeWMStep("step2")
+
+        output = wmStep.getOverrides()
+
+        # This should be empty since we haven't put anything in it
+        self.assertEqual(output, {})
+
+        wmStep.addOverride(override = 'test', overrideValue = 'nonsense')
+
+        self.assertTrue(hasattr(wmStep.data, 'override'))
+        self.assertTrue(hasattr(wmStep.data.override, 'test'))
+        self.assertEqual(wmStep.data.override.test, 'nonsense')
+
+        output = wmStep.getOverrides()
+
+        self.assertEqual(output, {'test': 'nonsense'})
+
+        return
+        
+
+
 if __name__ == '__main__':
     unittest.main()

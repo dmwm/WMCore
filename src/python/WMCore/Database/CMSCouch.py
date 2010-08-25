@@ -7,8 +7,8 @@ A simple API to CouchDB that sends HTTP requests to the REST interface.
 http://wiki.apache.org/couchdb/API_Cheatsheet
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.71 2010/07/30 11:13:42 metson Exp $"
-__version__ = "$Revision: 1.71 $"
+__revision__ = "$Id: CMSCouch.py,v 1.72 2010/08/03 10:16:26 swakef Exp $"
+__version__ = "$Revision: 1.72 $"
 
 import urllib
 import datetime
@@ -413,7 +413,7 @@ class Database(CouchDBRequests):
             name = "attachment"
         return self.put('/%s/%s/%s?rev=%s' % (self.name, id, name, rev),
                          value,
-                         False)
+                         encode = False)
     
     def getAttachment(self, id, name = "attachment"):
         """
@@ -422,7 +422,7 @@ class Database(CouchDBRequests):
         Retrieve an attachment for a couch document.
         """
         url = "/%s/%s/%s" % (self.name, id, name)
-        attachment = self.get(url, None, False, False)
+        attachment = self.get(url, None, encode = False, decode = False)
         
         # there has to be a better way to do this but if we're not de-jsoning
         # the return values, then this is all I can do for error checking,

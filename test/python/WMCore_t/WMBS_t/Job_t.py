@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.31 2009/10/13 23:06:11 meloam Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Job_t.py,v 1.32 2009/10/14 16:45:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import unittest
 import logging
@@ -19,10 +19,9 @@ from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
-from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset as WMBSFileset
+from WMCore.WMBS.Fileset import Fileset as Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Workflow import Workflow
@@ -84,7 +83,7 @@ class JobTest(unittest.TestCase):
                                 name = makeUUID(), task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
@@ -122,7 +121,7 @@ class JobTest(unittest.TestCase):
                                 name = "wf001", task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
@@ -165,7 +164,7 @@ class JobTest(unittest.TestCase):
                                 name = "wf001", task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
@@ -213,7 +212,7 @@ class JobTest(unittest.TestCase):
                                 name = "wf001", task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
@@ -266,7 +265,7 @@ class JobTest(unittest.TestCase):
                                 name = "wf001", task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
@@ -545,7 +544,7 @@ class JobTest(unittest.TestCase):
                                 name = "wf001", task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
@@ -624,7 +623,7 @@ class JobTest(unittest.TestCase):
                                 name = "wf001", task="Test")
         testWorkflow.create()
         
-        testWMBSFileset = WMBSFileset(name = "TestFileset")
+        testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
         
         testSubscription = Subscription(fileset = testWMBSFileset,
@@ -761,8 +760,8 @@ class JobTest(unittest.TestCase):
         testWorkflow.create()
         bogusWorkflow.create()
 
-        testFileset = WMBSFileset(name = "TestFileset")
-        bogusFileset = WMBSFileset(name = "BogusFileset")
+        testFileset = Fileset(name = "TestFileset")
+        bogusFileset = Fileset(name = "BogusFileset")
         testFileset.create()
         bogusFileset.create()
 
@@ -850,8 +849,8 @@ class JobTest(unittest.TestCase):
         testWorkflow.create()
         bogusWorkflow.create()
 
-        testFileset = WMBSFileset(name = "TestFileset")
-        bogusFileset = WMBSFileset(name = "BogusFileset")
+        testFileset = Fileset(name = "TestFileset")
+        bogusFileset = Fileset(name = "BogusFileset")
         testFileset.create()
         bogusFileset.create()
 
@@ -958,6 +957,138 @@ class JobTest(unittest.TestCase):
                "Error: GetJobType DAO returned the wrong job type."
 
         return        
+
+    def testGetOutputMapDAO(self):
+        """
+        _testGetOutputMapDAO_
+
+        Verify the proper behavior of the GetOutputMapDAO for a variety of
+        different processing chains.
+        """
+        recoOutputFileset = Fileset(name = "RECO")
+        recoOutputFileset.create()
+        mergedRecoOutputFileset = Fileset(name = "MergedRECO")
+        mergedRecoOutputFileset.create()        
+        alcaOutputFileset = Fileset(name = "ALCA")
+        alcaOutputFileset.create()
+        dqmOutputFileset = Fileset(name = "DQM")
+        dqmOutputFileset.create()        
+
+        testWorkflow = Workflow(spec = "wf001.xml", owner = "Steve",
+                                name = "TestWF", task = "None")
+        testWorkflow.create()
+        testWorkflow.addOutput("output", recoOutputFileset)
+        testWorkflow.addOutput("ALCARECOStreamCombined", alcaOutputFileset)
+        testWorkflow.addOutput("DQM", dqmOutputFileset)        
+
+        testRecoMergeWorkflow = Workflow(spec = "wf002.xml", owner = "Steve",
+                                         name = "TestRecoMergeWF", task = "None")
+        testRecoMergeWorkflow.create()
+        testRecoMergeWorkflow.addOutput("anything", mergedRecoOutputFileset)
+
+        testRecoProcWorkflow = Workflow(spec = "wf004.xml", owner = "Steve",
+                                         name = "TestRecoProcWF", task = "None")
+        testRecoProcWorkflow.create()
+
+        testAlcaChildWorkflow = Workflow(spec = "wf003.xml", owner = "Steve",
+                                         name = "TestAlcaChildWF", task = "None")
+        testAlcaChildWorkflow.create()
+
+        inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
+                         locations = "cmssrm.fnal.gov")
+        inputFile.create()
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testFileset.addFile(inputFile)
+        testFileset.commit()
+        
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "EventBased",
+                                        type = "Processing")
+
+        testMergeRecoSubscription = Subscription(fileset = recoOutputFileset,
+                                                 workflow = testRecoMergeWorkflow,
+                                                 split_algo = "WMBSMergeBySize",
+                                                 type = "Merge")
+        testProcRecoSubscription = Subscription(fileset = recoOutputFileset,
+                                                workflow = testRecoProcWorkflow,
+                                                split_algo = "FileBased",
+                                                type = "Processing")
+
+        testChildAlcaSubscription = Subscription(fileset = alcaOutputFileset,
+                                                 workflow = testAlcaChildWorkflow,
+                                                 split_algo = "FileBased",
+                                                 type = "Processing")
+        testSubscription.create()
+        testMergeRecoSubscription.create()
+        testProcRecoSubscription.create()
+        testChildAlcaSubscription.create()
+        testSubscription.acquireFiles()
+
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+        
+        testJob = Job(name = "SplitJobA", files = [inputFile])
+        testJob.create(group = testJobGroup)
+        testJob["state"] = "complete"
+        testJob.save()
+
+        outputMapAction = self.daoFactory(classname = "Jobs.GetOutputMap")
+        outputMap = outputMapAction.execute(jobID = testJob["id"])
+
+        assert len(outputMap.keys()) == 3, \
+               "Error: Wrong number of outputs for primary workflow."
+
+        assert outputMap.has_key("output"), \
+               "Error: Output map is missing 'output' key."
+        assert outputMap.has_key("ALCARECOStreamCombined"), \
+               "Error: Output map is missing 'ALCARECOStreamCombined' key."
+        assert outputMap.has_key("DQM"), \
+               "Error: Output map is missing 'DQM' key."        
+
+        dqmMap = outputMap["DQM"]
+        assert len(dqmMap["children"]) == 0, \
+               "Error: DQM output map shouldn't have any child workflows."
+        assert dqmMap["fileset"] == dqmOutputFileset.id
+
+        alcaMap = outputMap["ALCARECOStreamCombined"]
+        assert len(alcaMap["children"]) == 1, \
+               "Error: ALCA output map should have one child workflow."
+        assert alcaMap["fileset"] == alcaOutputFileset.id, \
+               "Error: Wrong output fileset for ALCA."
+
+        alcaChild = alcaMap["children"][0]
+        assert alcaChild["child_sub_output_id"] == None, \
+               "Error: ALCA workflow shouldn't have child subscription."
+        assert alcaChild["child_sub_output_fset"] == None, \
+               "Error: ALCA workflow shouldn't have child output fileset."
+        assert alcaChild["child_sub_type"] == "Processing", \
+               "Error: ALCA child subscription type should be processing."
+
+        recoMap = outputMap["output"]
+        assert len(recoMap["children"]) == 2, \
+               "Error: RECO output map should have two children."
+        assert recoMap["fileset"] == recoOutputFileset.id, \
+               "Error: Wrong output fileset for RECO."
+
+        goldenRecoOutput = [{"child_sub_output_id": None,
+                             "child_sub_output_fset": None,
+                             "child_sub_type": "Processing"},
+                            {"child_sub_output_id": "anything",
+                             "child_sub_output_fset": mergedRecoOutputFileset.id,
+                             "child_sub_type": "Merge"}]
+        for outputChild in recoMap["children"]:
+            assert outputChild in goldenRecoOutput, \
+                   "Error: Extra output for RECO: %s" % outputChild
+
+            goldenRecoOutput.remove(outputChild)
+
+        assert len(goldenRecoOutput) == 0, \
+               "Error: Missing outputs in output map for RECO."
+        
+        return
 
 if __name__ == "__main__":
     unittest.main() 

@@ -7,7 +7,7 @@ Implementation of an Executor for a StageOut step
 """
 
 from WMCore.WMSpec.Steps.Executor import Executor
-
+import WMCore.Storage.StageOutMgr as StageOutMgr
 
 class StageOut(Executor):
     """
@@ -15,8 +15,7 @@ class StageOut(Executor):
 
     Execute a StageOut Step
 
-    """
-
+    """        
 
     def pre(self, step):
         """
@@ -29,13 +28,29 @@ class StageOut(Executor):
         return None
 
 
-    def execute(self, step, wmbsJob, emulator = None):
+    def execute(self, step, wmbsJob, emulator = None, **overrides):
         """
         _execute_
 
 
         """
-        print "Steps.Executors.StageOut.execute called"
+        # are we faking it?
+        if (emulator != None):
+            return emulator.emulate( step )
+        
+        # naw man, this is real
+        # iterate over all the incoming files
+        manager = StageOutMgr.StageOutMgr(**overrides)
+        manager.numberOfRetries = step.retryCount
+        manager.retryPauseTime  = step.retryDelay
+        
+        for currFile in step.files:
+            try:
+                manager(LFN = 'lfn', PFN = 'pfn')
+            except:
+                print "Exception raised in stageout executor, how do we handle that?"
+                raise
+    
 
 
     def post(self, step):

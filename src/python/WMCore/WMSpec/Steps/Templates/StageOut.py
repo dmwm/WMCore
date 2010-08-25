@@ -22,11 +22,17 @@ class StageOutStepHelper(CoreHelper):
         """
             Enqueues(sp?) a file to the StageOut step
         """
-        target = self.data.files.section_(self.data.filecount)
+        target = self.data.files.section_("file%i" % self.data.filecount)
         target.input  = infile
         target.output = outfile
         self.data.filecount += 1 
-
+    
+    def disableRetries(self):
+        """
+            handy for testing, without the 10 minute retry loop
+        """
+        self.data.retryCount = 1
+        self.data.retryDelay = 0
 
 
 class StageOut(Template):
@@ -42,6 +48,8 @@ class StageOut(Template):
         step.stepType = "StageOut"
         step.section_("files")
         step.filecount = 0
+        step.retryCount = 3
+        step.retryDelay = 300
 
 
     def helper(self, step):

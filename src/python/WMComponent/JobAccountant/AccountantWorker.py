@@ -9,8 +9,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.28 2010/05/04 21:31:43 mnorman Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.29 2010/05/07 22:09:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import os
 import threading
@@ -424,7 +424,7 @@ class AccountantWorker:
         if fwjrFile["last_event"] == None:
             fwjrFile["last_event"] = fwjrFile["events"]
 
-        if jobType == "Merge":
+        if jobType == "Merge" and fwjrFile["module_label"] != "logArchive":
             fwjrFile["merged"] = True
 
         wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)
@@ -462,7 +462,7 @@ class AccountantWorker:
         for fwjrFile in fileList:
             wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
                                           jobID = jobID)
-            merged = wmbsFile['merged']
+            merged = fwjrFile['merged']
             moduleLabel = fwjrFile["module_label"]
             if not wmbsFile and not moduleLabel:
                 # Something got screwed up in addFileToWMBS.  Send job to FAIL

@@ -5,10 +5,9 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.4 2009/12/16 18:53:56 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.5 2009/12/16 19:02:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
-from sets import Set
 import unittest
 import threading
 import os
@@ -58,7 +57,7 @@ class EventBasedTest(unittest.TestCase):
         self.multipleFileFileset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = Set(["somese.cern.ch"]))
+                           locations = set(["somese.cern.ch"]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
@@ -66,7 +65,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = Set(["somese.cern.ch"]))
+                       locations = set(["somese.cern.ch"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -137,8 +136,6 @@ class EventBasedTest(unittest.TestCase):
         exactly the same as the number of events in the input file.
         """
 
-        print "testExactEvents"
-        
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
 
@@ -167,8 +164,6 @@ class EventBasedTest(unittest.TestCase):
         a variety of different arguments.
         """
 
-        print "testMultipleFiles"
-
         splitter   = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
@@ -190,8 +185,6 @@ class EventBasedTest(unittest.TestCase):
         a variety of different arguments.
         """
 
-        print "testMultipleFiles2000"
-
         splitter   = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
         #Test it with two files per job
@@ -212,8 +205,6 @@ class EventBasedTest(unittest.TestCase):
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
-
-        print "testMultipleFiles2500"
 
         splitter   = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
@@ -238,8 +229,6 @@ class EventBasedTest(unittest.TestCase):
         a variety of different arguments.
         """
 
-        print "testMultipleFiles500"
-
         splitter   = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
@@ -260,8 +249,6 @@ class EventBasedTest(unittest.TestCase):
 
         Tests how to break up files at different locations
         """
-
-        print "testMultipleSites"
 
         splitter   = SplitterFactory()
         jobFactory = splitter(self.multipleSiteSubscription)

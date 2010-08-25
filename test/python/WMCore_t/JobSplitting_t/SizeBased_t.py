@@ -5,10 +5,9 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.3 2009/10/13 22:42:55 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.4 2009/12/16 19:02:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from sets import Set
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -84,8 +83,6 @@ class EventBasedTest(unittest.TestCase):
         exactly the same as the number of events in the input file.
         """
 
-        print "testExactEvents"
-        
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
 
@@ -113,8 +110,6 @@ class EventBasedTest(unittest.TestCase):
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
-
-        print "testMultipleFiles"
 
         splitter   = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
@@ -158,8 +153,6 @@ class EventBasedTest(unittest.TestCase):
 
         Tests how to break up files at different locations
         """
-
-        print "testMultipleSites"
 
         splitter   = SplitterFactory()
         jobFactory = splitter(self.multipleSiteSubscription)

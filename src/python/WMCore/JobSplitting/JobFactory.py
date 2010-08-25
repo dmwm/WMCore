@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.26 2010/05/03 14:30:35 mnorman Exp $"
-__version__  = "$Revision: 1.26 $"
+__revision__ = "$Id: JobFactory.py,v 1.27 2010/05/03 15:58:01 mnorman Exp $"
+__version__  = "$Revision: 1.27 $"
 
 
 import logging
@@ -32,6 +32,7 @@ class JobFactory(WMObject):
         self.jobGroups = []
         self.currentGroup = None
         self.currentJob = None
+        self.nJobs  = 0
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
 
 
@@ -48,6 +49,9 @@ class JobFactory(WMObject):
         self.jobGroups = []
         self.currentGroup = None
         self.currentJob = None
+
+        # Every time we restart, re-zero the jobs
+        self.nJobs = 0
 
 
         module = "%s.%s" % (self.package, jobtype)
@@ -92,7 +96,8 @@ class JobFactory(WMObject):
         """
         self.currentJob = self.jobInstance(name, files)
         self.currentJob["task"] = self.subscription.taskName()
-        self.currentJob["workflow"] = self.subscription.workflowName()        
+        self.currentJob["workflow"] = self.subscription.workflowName()
+        self.nJobs += 1
         for gen in self.generators:
             gen(self.currentJob)
         self.currentGroup.add(self.currentJob)
@@ -160,13 +165,16 @@ class JobFactory(WMObject):
         return fileDict
 
 
-    def getJobName(self, length):
+    def getJobName(self, length = None):
         """
         _getJobName_
 
         Creates a job name based on workflow and task
         Uses a passed in integer length that MUST be unique!
         """
+
+        if not length:
+            length = self.nJobs
 
         name = '%s-%s-%i' % (self.subscription.taskName(),
                              self.subscription.workflowName(),

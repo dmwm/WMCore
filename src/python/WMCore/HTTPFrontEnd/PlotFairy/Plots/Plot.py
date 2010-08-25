@@ -11,63 +11,99 @@ new plots should override the plot(self, data) method. Plots should be
 instantiated via a factory, and be stateless.
 '''
 from matplotlib import pyplot 
-class Plot(object):
-    def __call__(self, input):
-        '''
-        Plot objects will be instantiated either directly or via a factory. 
-        They will then be called to create the plot for some given input data.
-        We use the __call__ method as a way of enforcing good behaviour, and 
-        hopefully minimising memory leakage. 
-        '''
-        self.validate_input(input)
-        plot = self.plot(input)
-        
-        #watermark
-        
-        if input.get('watermark',False):
-        	plot = self.watermark(input,plot)    
+
+from Utils import *
+
+
+
+class Plot(type):
+    def __new__(cls, name, bases, attrs):
+        def _validate(self,input):
+            for v in self.validators:
+                if not v.validate(input):
+                    print 'failed: %s'%v.element_name
+                    return False
+            return super(self.__class__,self).validate(input) and self.validate(input)
+        attrs['_validate']=_validate
+        if not 'validate' in attrs:
+            attrs['validate']=lambda self,input: True
+        def _extract(self,input):
+            for v in self.validators:
+                if hasattr(self.props,v.element_name):
+                    val = v.extract(input)
+                    if isinstance(val,dict):
+                        getattr(self.props,v.element_name).update(val)
+                    else:
+                        setattr(self.props,v.element_name,val)
+                else:
+                    setattr(self.props,v.element_name,v.extract(input))
+            super(self.__class__,self).extract(input)
+            self.extract(input)
+        attrs['_extract']=_extract
+        if not 'extract' in attrs:
+            attrs['extract']=lambda self,input: None
+        def _construct(self):
+            super(self.__class__,self).construct()
+            self.construct()
+        attrs['_construct']=_construct
+        if not 'construct' in attrs:
+            attrs['construct']=lambda self: None
+        def _predata(self):
+            super(self.__class__,self).predata()
+            self.predata()
+        attrs['_predata']=_predata
+        if not 'predata' in attrs:
+            attrs['predata']=lambda self: None
+        def _data(self):
+            super(self.__class__,self).data()
+            self.data()
+        attrs['_data']=_data
+        if not 'data' in attrs:
+            attrs['data']=lambda self: None
+        def _postdata(self):
+            super(self.__class__,self).postdata()
+            self.postdata()
+        attrs['_postdata']=_postdata
+        if not 'postdata' in attrs:
+            attrs['postdata']=lambda self: None
+        def _finalise(self):
+            super(self.__class__,self).finalise()
+            self.finalise()
+        attrs['_finalise']=_finalise
+        if not 'finalise' in attrs:
+            attrs['finalise']=lambda self: None
+        def __call__(self,input):
+            print self.__class__
+            print self.__class__.__bases__
+            print self.__class__.__metaclass__
+            print self.__class__.__mro__
             
-        pyplot.close()
-        return plot
+            if self._validate(input):
+                self._extract(input)
+                self._construct()
+                self._predata()
+                self._data()
+                self._postdata()
+                self._finalise()
+                return self.figure
+            return None
+        attrs['__call__']=__call__
+        def __init__(self):
+            super(self.__class__,self).__init__()
+        if not '__init__' in attrs:
+            attrs['__init__']=__init__
         
-    def plot(self):
-        '''
-        Create the matplotlib object and return it - override!
-        '''
-        raise NotImplemented
-    
-    def watermark(self,input,figure):
-    
-    	valid_watermarks = {'cms':'cmslogo.png'}
-    
-        watermark = input.get('watermark',False)
-        watermark_alpha = input.get('watermark_alpha',0.5)
-        watermark_rect = input.get('watermark_rect',(0.05,0.8,0.15,0.15))
-        
-        if watermark in valid_watermarks:
-            try:
-                im = matplotlib.image.imread(valid_watermarks[watermark]) #this only supports PNG, but actually works
-                im[:,:,-1] = watermark_alpha
-                axes = figure.add_axes(watermark_rect)
-                axes.set_axis_off()
-                axes.imshow(im)
-            except:
-                pass
-            
-        return figure
-    
-    def validate_input(self, input):
-        """
-        Dummy function to override to validate specific input for a plot.
-        """
-        return input
-    
-    def getfig(self, input):
-        xy = (input['width']/input.get('dpi',96), 
-              input['height']/input.get('dpi',96))
-        fig = figure(figsize=xy, dpi=input.get('dpi',96))
-        return fig
-    
+        class Props:
+            def get(self,name,default=None):
+                if not hasattr(self,name):
+                    return default
+                return getattr(self,name)
+        attrs['props']=Props()
+        attrs['validators']=[]
+        attrs['figure']=None
+        return super(Plot,cls).__new__(cls, name, bases, attrs)
+
+
 def siformat(val, unit='', long=False):
     suffix = [(1e18,'E','exa'), (1e15,'P','peta'), (1e12,'T','tera'),
                   (1e9,'G','giga'), (1e6,'M','mega'), (1e3,'k','kilo'),

@@ -283,35 +283,38 @@ class BinaryMaxNLocator(matplotlib.ticker.MaxNLocator):
             val += bin_width
         return result
         
-class Mixin:
-    validators = []
-    def __init__(self,props):
-        self.props = props
-        for v in self.validators:
-            setattr(self,v.element_name,v)
+class Mixin(object):
     def validate(self,input):
-        if all([v.validate(input) for v in self.validators]):
-            for v in self.validators:
-                self.props[v.element_name]=v.extract(input)
-            return self._validate(input)
-        return False
-    def _validate(self,input):
         return True
-    def apply(self,figure):
-        return figure
+    def extract(self,input):
+        pass
+    def construct(self,*args,**kwargs):
+        pass
+    def predata(self,*args,**kwargs):
+        pass
+    def data(self,*args,**kwargs):
+        pass
+    def postdata(self,*args,**kwargs):
+        pass
+    def finalise(self,*args,**kwargs):
+        pass
 
 class FigureMixin(Mixin):
-    def __init__(self,props):
-        self.validators = [IntBase('height',min=1,max=5000,default=600),
+    def __init__(self,*args,**kwargs):
+        self.validators += [IntBase('height',min=1,max=5000,default=600),
                            IntBase('width',min=1,max=5000,default=800),
                            FloatBase('dpi',min=1,max=300,default=96.)] 
-        Mixin.__init__(self,props)
-    def apply(self,figure):
-        return matplotlib.pyplot.figure(figsize=(self.props['width']/self.props['dpi'],self.props['height']/self.props['dpi']),dpi=self.props['dpi'])
+        super(FigureMixin,self).__init__(*args,**kwargs)
+    #def _apply(self,figure):
+    #    return matplotlib.pyplot.figure(figsize=(self.props['width']/self.props['dpi'],self.props['height']/self.props['dpi']),dpi=self.props['dpi'])
+    def construct(self,*args,**kwargs):
+        self.figure = matplotlib.pyplot.figure(figsize=(self.props.width/self.props.dpi,self.props.height/self.props.dpi),
+                                               dpi=self.props.dpi)
+        super(FigureMixin,self).construct(*args,**kwargs)
 
 class TitleMixin(Mixin):
-    def __init__(self,props,*args):
-        self.validators = [ElementBase('notitle',bool,default=False),
+    def __init__(self,*args,**kwargs):
+        self.validators += [ElementBase('notitle',bool,default=False),
                   ElementBase('title',(str,unicode),default=''),
                   FontSize('title_size',default=14),
                   FontSize('subtitle_size',default=12),
@@ -323,40 +326,54 @@ class TitleMixin(Mixin):
                   ColourBase('subtitle_colour',default='black'),
                   IntBase('padding',min=0,default=40),
                   IntBase('linepadding',min=0,default=10)]    
-        Mixin.__init__(self,props)
-    def apply(self,figure):
-        self.props['topbound'] = self.props['height']-self.props['padding']
-        if not self.props['notitle']:
-            title = self.props['title'].split('\n')
+        super(TitleMixin,self).__init__(*args,**kwargs)
+    def construct(self,*args,**kwargs):
+        self.props.topbound = self.props.height-self.props.padding
+        if not self.props.notitle:
+            title = self.props.title.split('\n')
             
-            tx,ty = text_size(title[0],self.props['title_size'],self.props['dpi'])
-            h = self.props['height']
-            ch = h-self.props['linepadding']
-            figure.text(0.5,(ch-(ty*0.5))/h,title[0],color=self.props['title_colour'],family=self.props['title_font'],weight=self.props['title_weight'],size=self.props['title_size'],ha='center',va='center')
+            tx,ty = text_size(title[0],self.props.title_size,self.props.dpi)
+            h = self.props.height
+            ch = h-self.props.linepadding
+            self.figure.text(0.5,(ch-(ty*0.5))/h,title[0],
+                        color=self.props.title_colour,
+                        family=self.props.title_font,
+                        weight=self.props.title_weight,
+                        size=self.props.title_size,
+                        ha='center',
+                        va='center')
             ch -= ty
-            ch -= self.props['linepadding']
+            ch -= self.props.linepadding
             
             for subtitle in title[1:]:
-                tx,ty = text_size(subtitle,self.props['subtitle_size'],self.props['dpi'])
-                figure.text(0.5,(ch-(ty*0.5))/h,subtitle,color=self.props['subtitle_colour'],family=self.props['subtitle_font'],weight=self.props['subtitle_weight'],size=self.props['subtitle_size'],ha='center',va='center')
+                tx,ty = text_size(subtitle,self.props.subtitle_size,self.props.dpi)
+                self.figure.text(0.5,(ch-(ty*0.5))/h,
+                            subtitle,color=self.props.subtitle_colour,
+                            family=self.props.subtitle_font,
+                            weight=self.props.subtitle_weight,
+                            size=self.props.subtitle_size,
+                            ha='center',
+                            va='center')
                 ch -= ty
-                ch -= self.props['linepadding']
+                ch -= self.props.linepadding
                 
-            self.props['topbound'] = ch
-        return figure    
+            self.props.topbound = ch
+        super(TitleMixin,self).construct(*args,**kwargs)
+    
+        
 
 class FigAxesMixin(Mixin):
-    def __init__(self,props,*args):
-        self.validators = [StringBase('projection',('aitoff','hammer','lambert','mollweide','polar'),'rectilinear'),
+    def __init__(self,*args,**kwargs):
+        self.validators += [StringBase('projection',('aitoff','hammer','lambert','mollweide','polar'),'rectilinear'),
                   ElementBase('square',bool,default=False),
                   IntBase('padding',min=0,default=40)]    
-        Mixin.__init__(self,props)
-    def apply(self,figure):
-        w,h = self.props['width'],self.props['height']
+        super(FigAxesMixin,self).__init__(*args,**kwargs)
+    def construct(self,*args,**kwargs):
+        w,h = self.props.width,self.props.height
         topbound = self.props.get('topbound',h)
-        padding = self.props['padding']
-        square = self.props['square']
-        projection = self.props['projection']
+        padding = self.props.padding
+        square = self.props.square
+        projection = self.props.projection
         if h-topbound<padding:
             topbound = h-padding
         
@@ -367,184 +384,182 @@ class FigAxesMixin(Mixin):
             max_dim = min(avail_width,avail_height)
             left = 0.5*w - 0.5*max_dim
             bottom = 0.5*topbound - 0.5*max_dim
-            figure.add_axes((float(left)/w,float(bottom)/h,float(max_dim)/w,float(max_dim)/h),projection=projection)
+            self.figure.add_axes((float(left)/w,float(bottom)/h,float(max_dim)/w,float(max_dim)/h),projection=projection)
         else:
-            figure.add_axes((float(padding)/w,float(padding)/h,float(avail_width)/w,float(avail_height)/h),projection=projection)
-        return figure
+            self.figure.add_axes((float(padding)/w,float(padding)/h,float(avail_width)/w,float(avail_height)/h),projection=projection)
+        super(FigAxesMixin,self).construct(*args,**kwargs)
         
 class StyleMixin(Mixin):
-    
-    def __init__(self,props,*args):
-        self.validators = [ColourBase('background',default=None),
+    def __init__(self,*args,**kwargs):
+        self.validators += [ColourBase('background',default=None),
                   ColourMap('colourmap',default=None),
                   ElementBase('gridlines',bool,default=True)]
-        Mixin.__init__(self,props)    
-    def apply(self,figure):
-        if not self.props['background']==None:
-            figure.set_facecolor(self.props['background'])
-        if self.props['gridlines']:
-            figure.gca().grid()
-        return figure
+        super(StyleMixin,self).__init__(*args,**kwargs)    
+    def construct(self,*args,**kwargs):
+        if not self.props.background==None:
+            self.figure.set_facecolor(self.props.background)
+        if self.props.gridlines:
+            self.figure.gca().grid()
+        super(StyleMixin,self).construct(*args,**kwargs)
 
-class NumericAxisMixin(Mixin):
-    
-    def __init__(self,props,axis):
-        self.axis = axis
-        self.validators = [DictElementBase(self.axis,True,[StringBase('label',None,default=''),
+
+
+class NumericAxisMixin(Mixin):    
+    def __init__(self,*args,**kwargs):
+        self.validators += [DictElementBase(self.axis,True,[StringBase('label',None,default=''),
                                                      FloatBase('min',default=None),
                                                      FloatBase('max',default=None),
                                                      ElementBase('log',bool,default=False),
+                                                     FloatBase('logbase',min=1,default=10),
+                                                     StringBase('logerror',('mask','clip'),default='clip'),
+                                                     StringBase('timeformat',None,default=None),
                                                      StringBase('format',('num','time','binary','si'),default='num')])]
-        Mixin.__init__(self,props)
-    def apply(self,figure):
-        axes = figure.gca()
-        axis = self.props[self.axis]
-        if self.axis == 'xaxis':
-            if axis['min']!=None:
-                axes.set_xlim(xmin=axis['min'])
-            if axis['max']!=None:
-                axes.set_xlim(xmax=axis['max'])
-            axes.set_xlabel(axis['label'])
-            if axis['log']:
-                axes.set_xscale('log')
-            if axis['format']=='si':
-                axes.xaxis.set_major_formatter(SIFormatter())
-            elif axis['format']=='time':
-                axes.xaxis.set_major_formatter(TimeFormatter())
-                axes.xaxis.set_major_locator(TimeLocator())
-            elif axis['format']=='binary':
-                axes.xaxis.set_major_formatter(BinFormatter())
-                axes.xaxis.set_major_locator(BinaryMaxNLocator())
-                
-                
-        elif self.axis == 'yaxis':
-            if axis['min']!=None:
-                axes.set_ylim(ymin=axis['min'])
-            if axis['max']!=None:
-                axes.set_ylim(ymax=axis['max'])
-            axes.set_ylabel(axis['label'])
-            if axis['log']:
-                axes.set_yscale('log')
-            if axis['format']=='si':
-                axes.yaxis.set_major_formatter(SIFormatter())
-            elif axis['format']=='time':
-                axes.yaxis.set_major_formatter(TimeFormatter())
-            elif axis['format']=='binary':
-                axes.yaxis.set_major_formatter(BinFormatter())
-        return figure
+        super(NumericAxisMixin,self).__init__(*args,**kwargs)
+    def validate(self,input):
+        return super(NumericAxisMixin,self).validate(input)
+    def predata(self,*args,**kwargs):
+        axes = self.figure.gca()
+        axis = getattr(axes,self.axis)
+        data = self.props.get(self.axis)
         
-class BinnedNumericAxisMixin(Mixin):
+        if data['format']=='si':
+            axis.set_major_formatter(SIFormatter())
+        elif data['format']=='time':
+            if not data['timeformat']==None:
+                axis.set_major_formatter(TimeFormatter(data['timeformat']))
+            else:
+                axis.set_major_formatter(TimeFormatter())
+            axis.set_major_locator(TimeLocator())
+        elif data['format']=='binary':
+            axis.set_major_formatter(BinFormatter())
+            axis.set_major_locator(BinaryMaxNLocator())
+        
+        axis.set_label(data['label'])
+        
+        if data['log']:
+            axis.set_scale('log',base=data['logbase'],nonpos=data['logerror'])
+            setattr(self.props,self.axis+'_log',True)
+        else:
+            setattr(self.props,self.axis+'_log',False)
+        super(NumericAxisMixin,self).predata(*args,**kwargs)
     
-    def __init__(self,props,axis):
-        self.axis = axis
-        self.validators = [DictElementBase(self.axis,False,[StringBase('label',None,default=''),
-                                                     FloatBase('min',default=None),
-                                                     FloatBase('max',default=None),
-                                                     FloatBase('width',default=None),
-                                                     ElementBase('log',bool,default=False),
-                                                     StringBase('format',('num','time','binary','si'),default='num')])]
-        Mixin.__init__(self,props)
-    def _validate(self,input):
-        axis = self.props[self.axis]
-        if axis['min']!=None and axis['max']!=None and axis['width']!=None:
-            if axis['min']<axis['max']:
-                if axis['log']==True:
-                    if not (axis['min']>0 and axis['max']>0):
-                        return False
-                    nbins = int(abs(math.log10(axis['max'])-math.log10(axis['min']))/axis['width'])
-                    axis['_bins'] = nbins
-                    axis['_edges'] = [10.**(math.log10(axis['min'])+i*axis['width']) for i in range(nbins+1)]
-                    return True
-                else:
-                    nbins = int(float(axis['max']-axis['min'])/axis['width'])
-                    axis['_bins'] = nbins
-                    axis['_edges'] = [axis['min']+axis['width']*i for i in range(nbins+1)]
-                    return True
-        return False
-    def apply(self,figure):
-        axes = figure.gca()
-        axis = self.props[self.axis]
-        if self.axis == 'xaxis':
-            if axis['log']:
-                axes.set_xscale('log')
-            axes.set_xlim(xmin=axis['min'],xmax=axis['max'])
-            axes.set_xlabel(axis['label'])
-            if axis['format']=='si':
-                axes.xaxis.set_major_formatter(SIFormatter())
-            elif axis['format']=='time':
-                axes.xaxis.set_major_formatter(TimeFormatter())
-            elif axis['format']=='binary':
-                axes.xaxis.set_major_formatter(BinFormatter())
-        elif self.axis == 'yaxis':
-            if axis['log']:
-                axes.set_yscale('log')
-            axes.set_ylim(ymin=axis['min'],ymax=axis['max'])
-            axes.set_ylabel(axis['label'])
-            if axis['format']=='si':
-                axes.yaxis.set_major_formatter(SIFormatter())
-            elif axis['format']=='time':
-                axes.yaxis.set_major_formatter(TimeFormatter())
-            elif axis['format']=='binary':
-                axes.yaxis.set_major_formatter(BinFormatter())
-        return figure
-            
+    def postdata(self,*args,**kwargs):
+        axes = self.figure.gca()
+        axis = getattr(axes,self.axis)
+        data = self.props.get(self.axis)
+        
+        if data['min'] or data['max']:
+            axis.set_view_interval(data['min'],data['max'])
+        
+        super(NumericAxisMixin,self).postdata(*args,**kwargs)
+        
+class XNumericAxisMixin(NumericAxisMixin):
+    axis='xaxis'
+class YNumericAxisMixin(NumericAxisMixin):
+    axis='yaxis'
+        
+class BinnedNumericAxisMixin(NumericAxisMixin):
+    def __init__(self,*args,**kwargs):
+        self.validators += [DictElementBase(self.axis,False,[FloatBase('min',default=0),
+                                                     FloatBase('max',default=1),
+                                                     FloatBase('width',min=0,default=1)])]
+        super(BinnedNumericAxisMixin,self).__init__(*args,**kwargs)
+    def validate(self,input):
+        return super(BinnedNumericAxisMixin,self).validate(input)
+    def predata(self,*args,**kwargs):
+        data = self.props.get(self.axis)
+        if data['log']:
+            if not (data['min']>0 and data['max']>0):
+                data['bins'] = 0
+                data['edges'] = (0,0)
+            else:
+                data['bins'] = int(abs(math.log(data['min'],data['logbase'])-math.log(data['max'],data['logbase']))/data['width'])
+                data['edges'] = [data['logbase']**(math.log(data['min'],data['logbase'])+i*data['width']) for i in range(data['bins']+1)]    
+        else:
+            data['bins'] = int(float(data['max']-data['min'])/data['width'])
+            data['edges'] = [data['min']+data['width']*i for i in range(data['bins']+1)]
+        
+        super(BinnedNumericAxisMixin,self).predata(*args,**kwargs)
+
+class XBinnedNumericAxisMixin(BinnedNumericAxisMixin):
+    axis='xaxis'
+class YBinnedNumericAxisMixin(BinnedNumericAxisMixin):
+    axis='yaxis'          
         
 class LabelledAxisMixin(Mixin):
-    def __init__(self,props,axis):
-        self.axis = axis
-        self.validators = [DictElementBase(axis,False,[StringBase('label',None,default=''),
-                                                     ListElementBase('labels',(str,unicode),min=1,default=None)])]
-        Mixin.__init__(self,props)    
-    def _validate(self,input):
-        axis = self.props[self.axis]
-        return axis['labels']!=None
-    def apply(self,figure):
+    def __init__(self,*args,**kwargs):
+        self.validators += [DictElementBase(self.axis,False,[StringBase('label',None,default=''),
+                                                     ListElementBase('labels',(str,unicode),min=1,default=('default',))])]
+        super(LabelledAxisMixin,self).__init__(*args,**kwargs)   
+    def predata(self,*args,**kwargs):
         axes = figure.gca()
-        axis = self.props[self.axis]
-        if self.axis == 'xaxis':
-            axes.set_xticklabels(axis['labels'])
-            axes.set_xticks([i+0.5 for i in range(len(axis['labels']))])
-        elif self.axis == 'yaxis':
-            axes.set_yticklabels(axis['labels'])
-            axes.set_yticks([i+0.5 for i in range(len(axis['labels']))])
-        return figure
-    
+        axis = getattr(axes,self.axis)
+        data = self.props.get(self.axis)
+        
+        axis.set_label(data['label'])
+        axis.set_ticklabels(data['labels'])
+        axis.set_ticks([i+0.5 for i in range(len(axis['labels']))])
+        
+        data['bins'] = len(data['labels'])
+        data['edges'] = range(len(data['labels'])+1)
+        
+        super(LabelledAxisMixin,self).predata(*args,**kwargs)
+
+class XLabelledAxisMixin(LabelledAxisMixin):
+    axis='xaxis'
+class YLabelledAxisMixin(LabelledAxisMixin):
+    axis='yaxis'
+        
 class AutoLabelledAxisMixin(Mixin):
-    def __init__(self,props,axis):
-        self.axis = axis
-        self.validators = [DictElementBase(axis,True,[StringBase('label',None,default='')])]
-        Mixin.__init__(self,props)
+    def __init__(self,*args,**kwargs):
+        self.validators += [DictElementBase(self.axis,True,[StringBase('label',None,default='')])]
+        super(AutoLabelledAxisMixin,self).__init__(*args,**kwargs)
+
+class XAutoLabelledAxisMixin(AutoLabelledAxisMixin):
+    axis='xaxis'
+class YAutoLabelledAxisMixin(AutoLabelledAxisMixin):
+    axis='yaxis'
             
+
 class NumericSeriesMixin(Mixin):
-    def __init__(self,props):
-        self.validators = [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),ListElementBase('values',(int,float),allow_missing=False),ColourBase('colour',default=None)]),allow_missing=False)]
-        Mixin.__init__(self,props)
-    def _validate(self,input):
-        cmap = self.props['colourmap']
-        xbins = self.props['xaxis']['_bins']
-        for i,series in enumerate(self.props['series']):
+    def __init__(self,*args,**kwargs):
+        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),ListElementBase('values',(int,float),allow_missing=False),ColourBase('colour',default=None)]),allow_missing=False)]
+        super(NumericSeriesMixin,self).__init__(*args,**kwargs)
+    def data(self,*args,**kwargs):
+        cmap = self.props.colourmap
+        xbins = self.props.xaxis['bins']
+        for i,series in enumerate(self.props.series):
             if series['colour']==None:
                 series['colour']=cmap(float(i)/len(self.props['series']))
             if len(series['values'])>xbins:
-                self.props['series'][i]['values'] = series['values'][:xbins]
+                self.props.series[i]['values'] = series['values'][:xbins]
             elif len(series['values'])<xbins:
-                self.props['series'][i]['values'] = series['values'] + [0]*xbins-len(series['values'])
-            series['_min'] = min(series['values'])
-            series['_max'] = max(series['values'])
-        
-        return True
+                self.props.series[i]['values'] = series['values'] + [0]*xbins-len(series['values'])
+            series['min'] = min(series['values'])
+            series['max'] = max(series['values'])
+        super(NumericSeriesMixin,self).data(*args,**kwargs)
     
 class LabelledSeriesMixin(Mixin):
-    def __init__(self,props):
-        self.validators = [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),FloatBase('value',allow_missing=False),ColourBase('colour',default=None),ElementBase('explode',(bool,int,float,str,unicode),default=0)]),allow_missing=False)]
-        Mixin.__init__(self,props)
-    def _validate(self,input):
-        cmap = self.props['colourmap']
-        for i,series in enumerate(self.props['series']):
+    def __init__(self,*args,**kwargs):
+        self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),FloatBase('value',allow_missing=False),ColourBase('colour',default=None),ElementBase('explode',(int,float),default=0)]),allow_missing=False)]
+        super(LabelledSeriesMixin,self).__init__(*args,**kwargs)
+    def data(self,*args,**kwargs):
+        cmap = self.props.colourmap
+        for i,series in enumerate(self.props.series):
             if series['colour']==None:
-                series['colour']=cmap(float(i)/len(self.props['series']))
-        return True
+                series['colour']=cmap(float(i)/len(self.props.series))
+        super(LabelledSeriesMixin,self).data(*args,**kwargs)
         
+class DataMixin(Mixin):
+    def __init__(self,*args,**kwargs):
+        self.validators += [ListElementBase('data',(list,tuple),ListElementBase('listitem',(int,float),FloatBase('listitem',min=0.,max=1.),allow_missing=False),allow_missing=False)]
+        super(DataMixin,self).__init__(*args,**kwargs)
+    def validate(self,input):
+        lengths = set([len(line) for lin in self.props.data])
+        if not len(lengths)==1:
+            return False
+        return super(DataMixin,self).validate(input)
+            
     
 class CleanLogSeries:
     def __init__(self,series):
@@ -582,8 +597,7 @@ class CleanLogSeries:
                 return 10**(l+1)
         else:
             return None
-            
-        
+             
     
     
         

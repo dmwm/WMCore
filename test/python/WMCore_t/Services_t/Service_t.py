@@ -7,6 +7,7 @@ import logging.config
 import socket
 import time
 import tempfile
+import shutil
 from httplib import HTTPException
 from WMCore.Services.Service import Service
 
@@ -27,6 +28,7 @@ class ServiceTest(unittest.TestCase):
         
         self.logger = logging.getLogger(logger_name)
         dict = {'logger': self.logger, 
+                'cachepath' : tempfile.mkdtemp(),
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi'}
         
         self.myService = Service(dict)
@@ -34,6 +36,7 @@ class ServiceTest(unittest.TestCase):
 
     def tearDown(self):
         testname = self.id().split('.')[-1]
+        shutil.rmtree(self.myService['cachepath'], ignore_errors = True)
 
         if self._exc_info()[0] == None:
             self.logger.info('test "%s" passed' % testname)
@@ -50,6 +53,22 @@ class ServiceTest(unittest.TestCase):
         
         self.myService.clearCache('testClear')
         assert not os.path.exists(f.name)
+
+    def testClearAndRepopulate(self):
+        """
+        Populate the cache, and then check that it's deleted
+        """
+        f = self.myService.refreshCache('testClear', '/COMP/WMCORE/src/python/WMCore/Services/Service.py?view=markup')
+        assert os.path.exists(f.name)
+        f.close()
+        
+        self.myService.clearCache('testClear')
+        assert not os.path.exists(f.name)
+
+        f = self.myService.refreshCache('testClear', '/COMP/WMCORE/src/python/WMCore/Services/Service.py?view=markup')
+        assert os.path.exists(f.name)
+        f.close()
+
         
     def testCachePath(self):
         dict = {'logger': self.logger, 
@@ -74,9 +93,10 @@ class ServiceTest(unittest.TestCase):
         
     def testSocketTimeout(self):
         dict = {'logger': self.logger, 
-                'endpoint':'http://cmssw.cvs.cern.ch',
+                'endpoint':'http://cmssw.cvs.cern.ch/',
                 'cacheduration': None,
-                'timeout': 10}
+                'timeout': 10,
+                'cachepath' : self.myService['cachepath']}
         service = Service(dict)
         deftimeout = socket.getdefaulttimeout()
         service.getData('/tmp/socketresettest', '/cgi-bin/cmssw.cgi')
@@ -89,7 +109,8 @@ class ServiceTest(unittest.TestCase):
                 'cacheduration': 0.0002,
                 'maxcachereuse': 0.001,
                 'timeout': 10,
-                'usestalecache': True}
+                'usestalecache': True,
+                'cachepath' : self.myService['cachepath']}
         service = Service(dict)
         
         cache = 'stalecachetest'
@@ -142,7 +163,7 @@ class ServiceTest(unittest.TestCase):
                      ]
         for data in inputdata:
             thishash = self.myService.cacheFileName('bob', inputdata = data)
-            self.assert_(thishash not in hashes)
+            self.assert_(thishash not in hashes, '%s is not unique' % thishash)
             hashes[thishash] = None
 
 

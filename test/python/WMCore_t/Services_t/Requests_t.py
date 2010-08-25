@@ -8,6 +8,8 @@ import WMCore.Services.Requests as Requests
 import os
 import threading
 import pprint
+import tempfile
+import shutil
 from httplib import HTTPException
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
@@ -39,7 +41,7 @@ def runboth(testcase):
         for impl in implementations:
             json_wrap._module = impl
             testcase(self)
-            #print testcase.__name__, ' passed using ', impl
+            ##print testcase.__name__, ' passed using ', impl
     return decorated_test
 
 class testThunking(unittest.TestCase):
@@ -73,18 +75,36 @@ class testThunking(unittest.TestCase):
         self.roundTrip(set([123, 'abc']))
         
 class testRequestExceptions(unittest.TestCase):
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.request_dict = {'req_cache_path' : self.tmp}
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors = True)
+
     def test404Error(self):
-        endp = "cmsweb.cern.ch"
+        endp = "http://cmsweb.cern.ch"
         url = "/thispagedoesntexist/"
-        req = Requests.Requests(endp)
+        req = Requests.Requests(endp, self.request_dict)
         for v in ['GET', 'POST']:
             self.assertRaises(HTTPException, req.makeRequest, url, verb=v)
             try:
                 req.makeRequest(url, verb='GET')
             except HTTPException, e:
-                print e
+                #print e
                 self.assertEqual(e.status, 404)
-        
+
+# comment out so we don't ddos someone else's server
+#    def test408Error(self):
+#        endp = "http://bitworking.org/projects/httplib2/test"
+#        url = "/timeout/timeout.cgi"
+#        self.request_dict['timeout'] = 1
+#        req = Requests.Requests(endp, self.request_dict) # takes 3 secs to respond
+#        self.assertRaises(HTTPException, req.makeRequest, url, verb='GET',
+#                          incoming_headers = {'cache-control': 'no-cache'})
+
+
 class testJSONRequests(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)
@@ -94,14 +114,15 @@ class testJSONRequests(unittest.TestCase):
             # memory sqlite one if none is configured. 
             os.environ['DATABASE'] = 'sqlite://'
         self.testInit.setDatabaseConnection()
-        self.request = Requests.JSONRequests()
+        tmp = self.testInit.generateWorkDir()
+        self.request = Requests.JSONRequests(dict={'req_cache_path' : tmp})
     
     def roundTrip(self,data):
         encoded = self.request.encode(data)
-        print encoded
-        print encoded.__class__.__name__
+        #print encoded
+        #print encoded.__class__.__name__
         decoded = self.request.decode(encoded)
-        print decoded.__class__.__name__
+        #print decoded.__class__.__name__
         self.assertEqual( data, decoded ) 
        
     def roundTripLax(self,data):
@@ -112,7 +133,7 @@ class testJSONRequests(unittest.TestCase):
         for k in decoded.keys():
             assert k in datakeys
             datakeys.pop(datakeys.index(k)) 
-        print 'the following keys were dropped\n\t',datakeys
+        #print 'the following keys were dropped\n\t',datakeys
     
     @runboth
     def testSet1(self):

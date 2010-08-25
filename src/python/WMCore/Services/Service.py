@@ -31,24 +31,39 @@ dict, set to None if you want to turn off the timeout.
 If you just want to retrieve the data without caching use the Requests class
 directly.
 
-TODO: support etags, respect server expires (e.g. update self['cacheduration'] 
-to the expires set on the server if server expires > self['cacheduration'])   
+The Service class provides two layers of caching:
+    1. Caching from httplib2 is provided via Request, this respectsetag and 
+    expires, but the cache will be lost if the service raises an exception or 
+    similar.
+    2. Internal caching which respects an internal cache duration. If the remote
+    service fails to respond the second layer cache will be used until the cache
+    dies.
+
+In tabular form:
+
+httplib2 cache  |   yes    |   yes    |    no    |     no     |
+----------------+----------+----------+----------+------------+
+service cache   |    no    |   yes    |   yes    |     no     |
+----------------+----------+----------+----------+------------+
+result          |  cached  |  cached  |  cached  | not cached |
 """
 
-__revision__ = "$Id: Service.py,v 1.54 2010/07/15 11:09:20 swakef Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: Service.py,v 1.55 2010/07/29 11:15:37 metson Exp $"
+__version__ = "$Revision: 1.55 $"
 
 SECURE_SERVICES = ('https',)
 
 import datetime
 import os
-import urllib
+import httplib2
+from httplib import InvalidURL
 from urlparse import urlparse
 import time
 import socket
 from httplib import HTTPException
 from WMCore.Services.Requests import Requests
 from WMCore.WMException import WMException
+from WMCore.Wrappers import JsonWrapper as json
 
 class Service(dict):
     
@@ -62,15 +77,15 @@ class Service(dict):
         path = ''
         
         # then split the endpoint into netloc and basepath
-        endpoint = urlparse(dict['endpoint'])
+        endpoint_components = urlparse(dict['endpoint'])
         
         try:
             #Only works on python 2.5 or above
-            scheme = endpoint.scheme
-            netloc = endpoint.netloc
-            path = endpoint.path
+            scheme = endpoint_components.scheme
+            netloc = endpoint_components.netloc
+            path = endpoint_components.path
         except AttributeError:
-            scheme, netloc, path = endpoint[:3]
+            scheme, netloc, path = endpoint_components[:3]
 
         #set up defaults
         self.setdefault("inputdata", {})
@@ -87,7 +102,6 @@ class Service(dict):
 
         # then update with the incoming dict
         self.update(dict)
-
         # Get the request class, to instatiate later
         # Is this a secure service - add other schemes as we need them
         if self.get('secure', False) or scheme in SECURE_SERVICES:
@@ -98,11 +112,11 @@ class Service(dict):
             requests = Requests
 
         try:
-            if path and not path.endswith('/'):
-                path += '/'
-            self.setdefault("basepath", path)
+            # we want the request object to cache to a known location
+            dict['req_cache_path'] = self['cachepath'] + '/requests'
+            
             # Instantiate a Request
-            self.setdefault("requests", requests(netloc, dict))
+            self.setdefault("requests", requests(dict['endpoint'], dict))
         except WMException, ex:
             msg = str(ex)
             self["logger"].exception(msg)
@@ -110,37 +124,18 @@ class Service(dict):
         
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours, max reuse %s hours)""" %
-                  (self, self["requests"]["host"], self["basepath"],
+                  (self, self["requests"]["host"], self["endpoint"],
                    self["requests"]["accept_type"], self["cachepath"],
                    self["cacheduration"], self["maxcachereuse"]))
     
     def _makeHash(self, inputdata, hash):
         """
-        make hash from complex data combination of list and dict.
-        TODO: maybe it is better just jsonize and make hash for json string. 
+        Turn the input data into json and hash the string. This is simple and 
+        means that the input data must be json-serialisable, which is good.
         """
-        for key, value in inputdata.items():
-            hash += key.__hash__()
-            if type(value) == list:
-                hash += self._makeHashFromList(value, hash)
-            elif type(value) == dict:
-                hash += self._makeHash(value, hash)
-            else:
-                hash += value.__hash__()
-        return hash     
-    
-    def _makeHashFromList(self, inputList, hash):
-        hash = 0
-        for value in inputList:
-            if type(value) == dict:
-                hash += self._makeHash(value, hash)
-            elif type(value) == list:
-                hash += self._makeHashFromList(value, hash)
-            else:
-                #assuming non other complex value come here
-                hash += value.__hash__()
-        return hash
-    
+        json_hash = json.dumps(inputdata)
+        return json_hash.__hash__()     
+        
     def cacheFileName(self, cachefile, verb='GET', inputdata = {}):
         """
         Calculate the cache filename for a given query.
@@ -179,22 +174,24 @@ class Service(dict):
                      decoder = True, verb = 'GET', contentType = None):
         """
         Make a new request to the service for the input data, regardless of the 
-        cache statue. Return the cachefile as an open file object.  
+        cache state. Return the cachefile as an open file object.  
         """
         verb = self._verbCheck(verb)
         
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url, inputdata, encoder, decoder, verb, contentType)
+        self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'}, 
+                     encoder, decoder, verb, contentType)
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile, inputdata = {}, verb = 'GET'):
         """
-        Delete the cache file.
+        Delete the cache file and the httplib2 cache.
         """
+        
         verb = self._verbCheck(verb)
-
+        os.system("/bin/rm %s/*" % self['requests']['req_cache_path'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
         try:
             os.remove(cachefile)
@@ -209,70 +206,66 @@ class Service(dict):
         here.
         """
         verb = self._verbCheck(verb)
-        # Set the timeout
-        deftimeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(self['timeout'])
-
+        
         # Nested form for version < 2.5 
+        
         try:
-            try:
-                # Get the data
-                if not inputdata:
-                    inputdata = self["inputdata"]
-                #prepend the basepath
-                url = self["basepath"] + str(url)
-                self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
-                                     (url, inputdata))
-                data, status, reason = self["requests"].makeRequest(uri = url,
-                                                        verb = verb,
-                                                        data = inputdata,
-                                                        encoder = encoder,
-                                                        decoder = decoder,
-                                                        contentType = contentType)
-                
+            # Get the data
+            if not inputdata:
+                inputdata = self["inputdata"]
+            self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
+                                 (url, inputdata))
+            data, status, reason, from_cache = self["requests"].makeRequest(uri = url,
+                                                    verb = verb,
+                                                    data = inputdata,
+                                                    encoder = encoder,
+                                                    decoder = decoder,
+                                                    contentType = contentType)
+            if from_cache:
+                # If it's coming from the cache we don't need to write it to the
+                # second cache, or do we?
+                self['logger'].debug('Data is from the httplib2 cache')
+            else:
                 # Don't need to prepend the cachepath, the methods calling 
                 # getData have done that for us 
                 f = open(cachefile, 'w')
                 f.write(str(data))
                 f.close()
-            except HTTPException, he:
-                if not os.path.exists(cachefile):
-                    msg = 'The cachefile %s does not exist and the service at %s is'
-                    msg += ' unavailable - it returned %s because %s'
-                    msg = msg % (cachefile, he.url, he.status, he.reason)
-                    self['logger'].warning(msg)
-                    raise he
+        except HTTPException, he:
+            if not os.path.exists(cachefile):
+                
+                msg = 'The cachefile %s does not exist and the service at %s is'
+                msg += ' unavailable - it returned %s because %s'
+                msg = msg % (cachefile, he.url, he.status, he.reason)
+                self['logger'].warning(msg)
+                raise he
+            else:
+                cache_age = os.path.getmtime(cachefile)
+                t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
+                cache_dead = cache_age < time.mktime(t.timetuple())
+                if self.get('usestalecache', False) and not cache_dead:
+                    # If usestalecache is set the previous version of the cache file 
+                    # should be returned, with a suitable message in the log
+                    self['logger'].warning('Returning stale cache data')
+                    self['logger'].info('%s returned %s because %s' % (he.url, 
+                                                                       he.status,
+                                                                       he.reason))
+                    self['logger'].info('cache file (%s) was created on %s' % (
+                                                                        cachefile,
+                                                                        cache_age))
                 else:
-                    cache_age = os.path.getmtime(cachefile)
-                    t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
-                    cache_dead = cache_age < time.mktime(t.timetuple())
-                    if self.get('usestalecache', False) and not cache_dead:
-                        # If usestalecache is set the previous version of the cache file 
-                        # should be returned, with a suitable message in the log
-                        self['logger'].warning('Returning stale cache data')
-                        self['logger'].info('%s returned %s because %s' % (he.url, 
-                                                                           he.status,
-                                                                           he.reason))
-                        self['logger'].info('cache file (%s) was created on %s' % (
-                                                                            cachefile,
-                                                                            cache_age))
-                    else:
-                        if cache_dead:
-                            msg = 'The cachefile %s is dead (5 times older than cache '
-                            msg += 'duration), and the service at %s is unavailable - '
-                            msg += 'it returned %s because %s'
-                            msg = msg % (cachefile, he.url, he.status, he.reason)
-                            self['logger'].warning(msg)
-                        elif self.get('usestalecache', False) == False:
-                            msg = 'The cachefile %s is stale and the service at %s is'
-                            msg += ' unavailable - it returned %s because %s'
-                            msg = msg % (cachefile, he.url, he.status, he.reason)
-                            self['logger'].warning(msg)
-                        raise he
-                    
-        finally:
-            # Reset the timeout to it's original value
-            socket.setdefaulttimeout(deftimeout)
+                    if cache_dead:
+                        msg = 'The cachefile %s is dead (5 times older than cache '
+                        msg += 'duration), and the service at %s is unavailable - '
+                        msg += 'it returned %s because %s'
+                        msg = msg % (cachefile, he.url, he.status, he.reason)
+                        self['logger'].warning(msg)
+                    elif self.get('usestalecache', False) == False:
+                        msg = 'The cachefile %s is stale and the service at %s is'
+                        msg += ' unavailable - it returned %s because %s'
+                        msg = msg % (cachefile, he.url, he.status, he.reason)
+                        self['logger'].warning(msg)
+                    raise he
             
     def _verbCheck(self, verb='GET'):
         if verb.upper() in self.supportVerbList:

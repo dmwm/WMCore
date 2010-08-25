@@ -4,17 +4,18 @@ _Requests_
 
 A set of classes to handle making http and https requests to a remote server and
 deserialising the response.
+
+The response from the remote server is cached if expires/etags are set. 
 """
 
-__revision__ = "$Id: Requests.py,v 1.35 2010/02/26 11:42:58 metson Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Requests.py,v 1.36 2010/07/29 11:15:37 metson Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import urllib
 from urlparse import urlunparse
 import os
 import base64
-from httplib import HTTPConnection
-from httplib import HTTPSConnection
+import httplib2
 from httplib import HTTPException
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
@@ -26,7 +27,7 @@ class Requests(dict):
     Generic class for sending different types of HTTP Request to a given URL
     """
 
-    def __init__(self, url = 'localhost', dict={}):
+    def __init__(self, url = 'http://localhost', dict={}):
         """
         url should really be host - TODO fix that when have sufficient code 
         coverage
@@ -35,6 +36,8 @@ class Requests(dict):
         self.setdefault("accept_type", 'text/html')
         self.setdefault("content_type", 'application/x-www-form-urlencoded')
         self.setdefault("host", url)
+        self.setdefault("req_cache_path", '.cache')
+        self.setdefault("timeout", 30)
         
         # then update with the incoming dict
         self.update(dict)
@@ -44,31 +47,39 @@ class Requests(dict):
         self.additionalHeaders = {}
         return
 
-    def get(self, uri=None, data={}, encode = True, decode=True, contentType=None):
+    def get(self, uri=None, data={}, incoming_headers={}, 
+               encode = True, decode=True, contentType=None):
         """
         GET some data
         """
-        return self.makeRequest(uri, data, 'GET', encode, decode, contentType)
+        return self.makeRequest(uri, data, 'GET', incoming_headers, 
+                                encode, decode, contentType)
 
-    def post(self, uri=None, data={}, encode = True, decode=True, contentType=None):
+    def post(self, uri=None, data={}, incoming_headers={}, 
+               encode = True, decode=True, contentType=None):
         """
         POST some data
         """
-        return self.makeRequest(uri, data, 'POST', encode, decode, contentType)
+        return self.makeRequest(uri, data, 'POST', incoming_headers, 
+                                encode, decode, contentType)
 
-    def put(self, uri=None, data={}, encode = True, decode=True, contentType=None):
+    def put(self, uri=None, data={}, incoming_headers={}, 
+               encode = True, decode=True, contentType=None):
         """
         PUT some data
         """
-        return self.makeRequest(uri, data, 'PUT', encode, decode, contentType)
+        return self.makeRequest(uri, data, 'PUT', incoming_headers, 
+                                encode, decode, contentType)
        
-    def delete(self, uri=None, data={}, encode = True, decode=True, contentType=None):
+    def delete(self, uri=None, data={}, incoming_headers={}, 
+               encode = True, decode=True, contentType=None):
         """
         DELETE some data
         """
-        return self.makeRequest(uri, data, 'DELETE', encode, decode, contentType)
+        return self.makeRequest(uri, data, 'DELETE', incoming_headers, 
+                                encode, decode, contentType)
 
-    def makeRequest(self, uri=None, data={}, verb='GET',
+    def makeRequest(self, uri=None, data={}, verb='GET', incoming_headers={},
                      encoder=True, decoder=True, contentType=None):
         """
         Make a request to the remote database. for a give URI. The type of
@@ -84,6 +95,7 @@ class Requests(dict):
         as a string.
         
         """
+        #TODO: User agent should be: 
         # $client/$client_version (CMS) $http_lib/$http_lib_version $os/$os_version ($arch)
         if contentType:
             headers = {"Content-type": contentType,
@@ -98,6 +110,15 @@ class Requests(dict):
         for key in self.additionalHeaders.keys():
             headers[key] = self.additionalHeaders[key]
         
+        #And now overwrite any headers that have been passed into the call:
+        headers.update(incoming_headers)
+        
+        #And now overwrite any headers that have been passed into the call:
+        headers.update(incoming_headers)
+
+        # httpib2 requires absolute url
+        uri = self['host'] + uri
+
         # If you're posting an attachment, the data might not be a dict
         #   please test against ConfigCache_t if you're unsure.
         #assert type(data) == type({}), \
@@ -125,40 +146,31 @@ class Requests(dict):
             #encode the data as a get string
             uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
             
-        headers["Content-length"] = len(encoded_data)
-        self['conn'].connect()
+        headers["Content-length"] = str(len(encoded_data))
+        
         assert type(encoded_data) == type('string'), \
                     "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
         
-        self['conn'].request(verb, uri, encoded_data, headers)
-        response = self['conn'].getresponse()
-        result = response.read()
-        self['conn'].close()
+        response, result = self['conn'].request(uri, method = verb, 
+                                    body = encoded_data, headers = headers)
+        
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', encoded_data)
             setattr(e, 'req_headers', headers)
-            setattr(e, 'url', self.buildURL(uri)) 
+            setattr(e, 'url', uri) 
             setattr(e, 'result', result)
             setattr(e, 'status', response.status)
             setattr(e, 'reason', response.reason)
-            setattr(e, 'headers', response.getheaders())
+            setattr(e, 'headers', response)
             raise e
               
         if type(decoder) == type(self.makeRequest) or type(decoder) == type(f):
             result = decoder(result)
         elif decoder != False:
             result = self.decode(result)
-        
-        return result, response.status, response.reason
-    
-    def buildURL(self, uri):
-        scheme = 'http'
-        if self['conn'].__class__.__name__.startswith('HTTPS'):
-            scheme = 'https'
-        netloc = '%s:%s' % (self['conn'].host, self['conn'].port)
-        return urlunparse([scheme, netloc, uri, '', '', ''])
-         
+        #TODO: maybe just return result and response...
+        return result, response.status, response.reason, response.fromcache
     
     def encode(self, data):
         """
@@ -178,15 +190,15 @@ class Requests(dict):
         that a sub class can override it to have different type of connection
         i.e. - if it needs authentication, or some fancy handler 
         """
-        return HTTPConnection(self['host'])
+        return httplib2.Http(self['req_cache_path'], self['timeout'])
 
                    
 class JSONRequests(Requests):
     """
     Example implementation of Requests that encodes data to/from JSON.
     """
-    def __init__(self, url = 'localhost:8080'):
-        Requests.__init__(self, url)
+    def __init__(self, url = 'localhost:8080', dict={}):
+        Requests.__init__(self, url, dict={})
         self['accept_type'] = "application/json"
         self['content_type'] = "application/json"
 
@@ -221,14 +233,14 @@ class BasicAuthJSONRequests(JSONRequests):
     be embedded into the url in the following form:
         username:password@hostname
     """
-    def __init__(self, url = "localhost:8080"):
+    def __init__(self, url = "http://localhost:8080", dict={}):
         if url.find("@") == -1:
-            JSONRequests.__init__(self, url)
+            JSONRequests.__init__(self, url, dict={})
             return
 
         (auth, hostname) = url.split("@", 2)
 
-        JSONRequests.__init__(self, hostname)
+        JSONRequests.__init__(self, hostname, dict)
         self.additionalHeaders["Authorization"] = \
             "Basic " + base64.encodestring(auth).strip()
 
@@ -243,7 +255,7 @@ class SSLRequests(Requests):
         """
         method getting a secure (HTTPS) connection
         """
-        return HTTPSConnection(self['host'])
+        return httplib2.Http(self['req_cache_path'], self['timeout'])
 
 class SSLJSONRequests(JSONRequests):
     """
@@ -258,7 +270,8 @@ class SSLJSONRequests(JSONRequests):
         
         Retrieve a secure (HTTPS) connection.
         """
-        return HTTPSConnection(self["host"])    
+        return httplib2.Http(self['req_cache_path'], self['timeout'])
+
     
 class SecureRequests(Requests):
     """
@@ -270,7 +283,9 @@ class SecureRequests(Requests):
         method getting a secure (HTTPS) connection
         """
         key, cert = self.getKeyCert()
-        return HTTPSConnection(self['host'], key_file=key, cert_file=cert)
+        http = httplib2.Http(self['req_cache_path'], self['timeout'])
+        http.add_certificate(key=key, cert=cert, domain=self['host'])
+        return http
     
     def getKeyCert(self):
         """

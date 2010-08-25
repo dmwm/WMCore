@@ -5,8 +5,8 @@ _Status_
 MySQL implementation of Workflow.Status
 """
 
-__revision__ = "$Id: Status.py,v 1.3 2010/05/27 20:20:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Status.py,v 1.4 2010/06/15 21:33:34 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -29,7 +29,17 @@ class Status(DBFormatter):
                LEFT OUTER JOIN wmbs_job_state ON
                  wmbs_job.state = wmbs_job_state.id
                GROUP BY wmbs_workflow.owner, wmbs_workflow.task, wmbs_job_state.name"""
-        
+    
+    def converDecimalToInt(self, results):
+        for result in results:
+            if result['open'] != None:
+                result['open'] = int(result['open'])
+            if result['success'] != None:
+                result['success'] = int(result['success'])
+        return results
+    
     def execute(self, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
-        return self.formatDict(result)
+        results = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
+        results = self.formatDict(results)
+        self.converDecimalToInt(results)
+        return results

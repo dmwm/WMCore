@@ -71,6 +71,9 @@ class TaskSpace:
             # TODO: Dedicated Exception class
             msg = "No stepSpace Attribute in module %s" % modName
             raise RuntimeError, msg
+
+        setattr(stepSpace, "taskSpace", self)
+
         return stepSpace
 
 

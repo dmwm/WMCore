@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: Destroy.py,v 1.1 2009/06/05 17:04:32 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Destroy.py,v 1.2 2009/07/17 14:25:30 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WorkQueue.Database.DestroyWorkQueueBase import DestroyWorkQueueBase
 #from WMCore.WorkQueue.Database.Oracle.Create import Create
@@ -17,6 +17,5 @@ class Destroy(DestroyWorkQueueBase):
 
         Call the base class's constructor and add all necessary tables for 
         deletion,
-        """
-        print "----"        
+        """      
         DestroyWorkQueueBase.__init__(self, logger, dbi)

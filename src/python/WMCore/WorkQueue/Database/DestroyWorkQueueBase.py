@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: DestroyWorkQueueBase.py,v 1.1 2009/06/05 17:04:33 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DestroyWorkQueueBase.py,v 1.2 2009/07/17 14:25:30 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import string
@@ -39,5 +39,3 @@ class DestroyWorkQueueBase(DBCreator):
             tableName = requiredTable[2:]
             prefix = string.zfill(i, 2)
             self.create[prefix + tableName] = "DROP TABLE %s" % tableName
-            
-        print self.create

@@ -1,80 +1,66 @@
 from matplotlib.pyplot import figure
-import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
 import numpy as np
 import math
-from Plot import Plot, validate_axis, validate_series_item
+from Plot import Plot
+
+import Utils
 
 class Cumulative(Plot):
+    def __init__(self):
+        self.props = {}
+        self.mixins = [Utils.FigureMixin(self.props),Utils.TitleMixin(self.props),Utils.FigAxesMixin(self.props),Utils.StyleMixin(self.props),Utils.BinnedNumericAxisMixin(self.props,'xaxis'),Utils.NumericAxisMixin(self.props,'yaxis'),Utils.NumericSeriesMixin(self.props)]
     def validate_input(self,input):
-        if not 'xaxis' in input:
-            input['xaxis']={}
-        input['xaxis']=validate_axis(input['xaxis'])
-        if not 'yaxis' in input:
-            input['yaxis']={}
-        if not 'series' in input:
-            input['series']=[]
-        else:
-            newseries=[]
-            for i,item in enumerate(input['series']):
-                newseries.append(validate_series_item(item,default_colour=cm.Dark2(float(i)/len(input['series']))))
-            input['series']=newseries
-        return input
-        
+        for mixin in self.mixins:
+            res = mixin.validate(input)
+            if res==True:
+                continue
+            else:
+                return res
+        return True
     def plot(self,input):
-        """
-        Draw a cumulative plot. The argument and optional arguments for this are identical to the numerical bar chart case above.
-        """
-        fig = self.getfig(input)
+        figure = None
+        for mixin in self.mixins:
+            figure = mixin.apply(figure)
         
-        axes = fig.add_axes([0.1,0.1,0.8,0.8])
-        axes.set_title(input.get('title',''))
-        xaxis = input['xaxis']
-        yaxis = input['yaxis']
-    
-        axes.set_xlabel(xaxis.get('label',''))
-        axes.set_ylabel(yaxis.get('label',''))
-
-        xtype = xaxis['type']
-        series = input['series']
+        axes = figure.gca()
         
-        y_min = 0
-        y_max = 0
-        if yaxis.get('log',False):
-            axes.set_yscale('log')
-            if len(series)>0:
-                y_min = min(filter(lambda x: x>0, series[0]['values']))
-                y_min = 10**int(math.log10(y_min))
+        nbins = self.props['xaxis']['_bins']
+        edges = self.props['xaxis']['_edges']
         
-        x_min = xaxis.get('min',0)
-        x_max = xaxis.get('max',1)
-        x_width = xaxis.get('width',1)
-        x_range = x_max-x_min
-        x_bins = int(x_range/x_width)
+        logmin = 0
+        if self.props['yaxis']['log']:
+            cls = Utils.CleanLogSeries(self.props['series'][0]['values'])
+            if cls.minpos:
+                logmin = cls.roundmin()
+            else:
+                return figure
         
-        y0 = [y_min for i in range(x_bins)]
-        x = [x_min+(i+1)*x_width for i in range(x_bins)]
+        bottom = [logmin]*nbins
+        left = edges[:-1]
+        width = [edges[i+1]-edges[i] for i in range(nbins)]
         
-        for s in series:
-            height = s['values']
-            assert len(height)==x_bins
-            colour = s['colour']
-            y1 = [y+h for y,h in zip(y0,height)]
-            y_max = max(y1)
-            axes.fill_between(x,y1,y0,label=s['label'],facecolor=colour)
-            y0 = y1
+        
+        for series in self.props['series']:
+            top = series['values']
+            if self.props['yaxis']['log']:
+                cls = Utils.CleanLogSeries(top)
+                top = cls.remove_negative()
             
-        if yaxis.get('log',False):
-            y_max = 10**int(math.log10(y_max))+1
+            colour = series['colour']
+            label = series['label']
+            
+            top = [t+b for t,b in zip(top,bottom)]
+            
+            axes.fill_between(left,bottom,top,label=label,facecolor=colour)
+            bottom = top
         
-        if xtype=='time':
-            axes.xaxis_date()                
-        axes.set_xbound(x_min,x_max)
-        axes.set_ybound(y_min,y_max)
+        axes.set_ybound(logmin)
         
-        if input.get('grid',False):
-            axes.grid()
-        
-        if input.get('legend',False):
+        return figure
+
+"""
+     if input.get('legend',False):
             axes.legend([Rectangle((0,0),1,1,fc=s['colour']) for s in series],[s['label'] for s in series],loc=0)
         return fig
+"""

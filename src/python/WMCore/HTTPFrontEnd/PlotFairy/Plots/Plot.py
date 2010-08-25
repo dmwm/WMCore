@@ -3,6 +3,7 @@ import re
 import matplotlib
 import matplotlib.colors
 import matplotlib.image
+import matplotlib.ticker
 from matplotlib.pyplot import figure
 '''
 The Plot class is a base class for PlotFairy plots to inherit from. Authors of
@@ -18,7 +19,7 @@ class Plot(object):
         We use the __call__ method as a way of enforcing good behaviour, and 
         hopefully minimising memory leakage. 
         '''
-        input = self.validate_input(input)
+        self.validate_input(input)
         plot = self.plot(input)
         
         #watermark
@@ -141,7 +142,8 @@ def validate_axis(a,default_label='',default_type='num'):
             a['labels'] = []
     return a
 
-		
+    
+
 	
 	
     	

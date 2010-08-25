@@ -107,7 +107,7 @@ class DCCPFNALImpl(StageOutImplV2):
             (exitCode, output) = self.doWrapped(['/opt/d-cache/dcap/bin/check_dCachefilecksum.sh',
                                                     pnfsPfn(targetPFN),
                                                     sourcePFN])
-            if not exitCode:
+            if exitCode:
                 logging.error("Checksum verify failed")
                 try:
                     self.doDelete(targetPFN,None,None,None,None)

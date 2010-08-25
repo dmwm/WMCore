@@ -4,8 +4,8 @@
 Handler for add workflow
 """
 __all__ = []
-__revision__ = "$Id: AddWorkflowToManage.py,v 1.2 2009/02/05 23:21:44 jacksonj Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: AddWorkflowToManage.py,v 1.3 2009/05/21 14:46:39 riahi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Agent.BaseHandler import BaseHandler
 from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -30,4 +30,5 @@ class AddWorkflowToManage(BaseHandler):
         Handles the event with payload, by sending it to the threadpool.
         """
         # Add item to the thread pool and return
-        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload})
+
+        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload['payload']})

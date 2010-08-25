@@ -3,8 +3,8 @@
 Default handler for add dataset to watch
 """
 __all__ = []
-__revision__ = "$Id: DefaultAddDatasetWatch.py,v 1.1 2009/02/02 23:06:49 jacksonj Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultAddDatasetWatch.py,v 1.2 2009/05/21 14:45:23 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -30,4 +30,5 @@ class DefaultAddDatasetWatch(BaseHandler):
         """
         # as we defined a threadpool we can enqueue our item
         # and move to the next.
-        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload})
+
+        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload['payload']})

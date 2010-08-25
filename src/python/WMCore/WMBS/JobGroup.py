@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.29 2009/05/12 16:19:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: JobGroup.py,v 1.30 2009/07/21 14:10:56 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
 
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -58,13 +58,16 @@ class JobGroup(WMBSBase, WMJobGroup):
     """
     A group (set) of Jobs
     """
-    def __init__(self, subscription = None, jobs = None, id = -1, uid = None):
+    def __init__(self, subscription = None, jobs = None, id = -1, uid = None, location = None):
         WMBSBase.__init__(self)
         WMJobGroup.__init__(self, subscription=subscription, jobs = jobs)
 
         self.id = id
         self.lastUpdate = None
         self.uid = uid
+
+        if location != None:
+            self.setSite(location)
 
         return
     
@@ -198,3 +201,31 @@ class JobGroup(WMBSBase, WMJobGroup):
         WMJobGroup.commit(self)
         self.commitTransaction(existingTransaction)
         return
+
+
+    def setSite(self, site_name = None):
+        """
+        Updates the jobGroup with a site_name from the wmbs_location table
+        """
+        if not self.exists():
+            return
+        
+        action = self.daofactory(classname = "JobGroup.SetSite")
+        result = action.execute(site_name = site_name, jobGroupID = self.id,
+                                conn = self.getDBConn(), transaction = self.existingTransaction())
+
+        return result
+
+
+    def getSite(self):
+        """
+        Updates the jobGroup with a site_name from the wmbs_location table
+        """
+        if not self.exists():
+            return
+        
+        action = self.daofactory(classname = "JobGroup.GetSite")
+        result = action.execute(jobGroupID = self.id, conn = self.getDBConn(),
+                                transaction = self.existingTransaction())
+
+        return result

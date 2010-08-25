@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.4 2009/12/02 20:22:32 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.5 2010/01/22 20:50:39 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
@@ -97,8 +97,6 @@ class JobTrackerPoller(BaseWorkerThread):
         and passes that off to tracking.
         """
 
-        print "In JobTrackerPoller.trackJobs"
-
         jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         jobList       = jobListAction.execute(state = "Executing")
 
@@ -110,7 +108,7 @@ class JobTrackerPoller(BaseWorkerThread):
             jobDictList.append({'jobid': job})
 
         locListAction = self.daoFactory(classname = "Jobs.GetLocation")
-        locDict = locListAction.execute(id = jobDictList)
+        locDict = locListAction.execute(jobid = jobDictList)
 
         trackDict = self.getInfo(locDict)
 

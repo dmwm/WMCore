@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.4 $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -344,6 +344,9 @@ class DBSUploadTest(unittest.TestCase):
         #Check that the final file has three parents
         self.assertEqual(len(fileParents[3]), 3)
 
+        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
+
+        self.assertEqual(len(result), 1)
 
         return
 

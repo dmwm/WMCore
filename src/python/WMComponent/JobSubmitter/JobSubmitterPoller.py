@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.24 2010/06/03 21:32:30 mnorman Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.25 2010/06/08 14:47:30 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -34,7 +34,7 @@ from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
 from WMCore.ProcessPool.ProcessPool           import ProcessPool
 from WMCore.ResourceControl.ResourceControl   import ResourceControl
 from WMCore.DataStructs.JobPackage            import JobPackage
-from WMCore.WMBase import getWMBASE
+from WMCore.WMBase        import getWMBASE
 
 def sortListOfDictsByKey(inList, key):
     """
@@ -126,7 +126,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             msg += str(ex)
             msg += str(traceback.format_exc())
             msg += "\n\n"
-            if hasattr(myThread, 'transaction') and myThread.transaction != None:
+            if hasattr(myThread, 'transaction') and myThread.transaction != None \
+                   and hasattr(myThread.transaction, 'transaction') \
+                   and myThread.transaction.transaction != None:
                 myThread.transaction.rollback()
             raise
 
@@ -179,6 +181,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                 binds.append({"jobid": jobID})
 
             results = loadAction.execute(jobID = binds)
+
+            # You have to have a list
+            if type(results) == dict:
+                results = [results]
 
             listOfJobs = []
             for entry in results:
@@ -342,6 +348,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             index = 0
 
 
+
+
+
             while len(finalList) > self.config.JobSubmitter.jobsPerWorker:
                 listForSub = finalList[:self.config.JobSubmitter.jobsPerWorker]
                 finalList = finalList[self.config.JobSubmitter.jobsPerWorker:]
@@ -352,6 +361,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                            'agentName': self.config.Agent.agentName}])
                 count += 1
                 index += len(listForSub)
+                
             if len(finalList) > 0:
                 self.processPool.enqueue([{'jobs': finalList,
                                            'packageDir': packagePath,

@@ -1,0 +1,349 @@
+<?xml version="1.0" ?>
+<JobReports>
+	<FrameworkJobReport DashboardId="ProdAgent_Tier0Repacker@vocms39.cern.ch_Repack-Run67838-54236_0" JobSpecID="Repack-Run67838-54236" JobType="Processing" Name="cmsRun1" Status="Success" WorkflowSpecID="Repack-Run67838">
+		<ExitCode Value="0"/>
+		<SiteDetail Parameter="SiteName" Value="T1_CH_CERN"/>
+		<SiteDetail Parameter="ce-name" Value="lxb7662.cern.ch"/>
+		<SiteDetail Parameter="HostName" Value="lxb7662.cern.ch"/>
+		<SiteDetail Parameter="se-name" Value="srm.cern.ch"/>
+		<File>
+			<SEName>
+				srm.cern.ch
+			</SEName>
+			<MergedBySize>
+				False
+			</MergedBySize>
+			<ModuleLabel>
+				write_Calibration_TestEnables_RAW
+			</ModuleLabel>
+			<LFN>
+				/store/temp/data/Commissioning08/TestEnables/RAW/v1/000/067/838/EC12541F-40A5-DD11-8A4E-000423D99E46.root
+			</LFN>
+			<TotalEvents>
+				9363
+			</TotalEvents>
+			<PFN>
+				/castor/cern.ch/cms/store/temp/data/Commissioning08/TestEnables/RAW/v1/000/067/838/EC12541F-40A5-DD11-8A4E-000423D99E46.root
+			</PFN>
+			<Catalog/>
+			<OutputModuleClass>
+				PoolOutputModule
+			</OutputModuleClass>
+			<Checksum>
+				2708699488
+			</Checksum>
+			<GUID>
+				EC12541F-40A5-DD11-8A4E-000423D99E46
+			</GUID>
+			<Size>
+				1059874968
+			</Size>
+			<Checksum Algorithm="cksum">
+				2708699488
+			</Checksum>
+			<State Value="closed"/>
+			<Inputs/>
+			<Runs>
+				<Run ID="67838">
+					<LumiSection ID="442"/>
+				</Run>
+			</Runs>
+			<Datasets>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="ApplicationVersion">
+						CMSSW_2_1_9
+					</Entry>
+					<Entry Name="PhysicalFileName">
+						write_Calibration_TestEnables_RAW.root
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						TestEnables
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/TestEnables/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_Calibration_TestEnables_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/TestEnables/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="ApplicationProject">
+						CMSSW
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="LogicalFileName">
+						/store/temp/data/Commissioning08/TestEnables/RAW/v1/000/067/838/write_Calibration_TestEnables_RAW.root
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_Calibration_TestEnables_RAW
+					</Entry>
+				</DatasetInfo>
+			</Datasets>
+			<Branches>
+				<Branch>
+					FEDRawDataCollection_source__HLT.
+				</Branch>
+				<Branch>
+					edmTriggerResults_TriggerResults__HLT.
+				</Branch>
+				<Branch>
+					triggerTriggerEvent_hltTriggerSummaryAOD__HLT.
+				</Branch>
+				<Branch>
+					edmTriggerResults_TriggerResults__REPACKER.
+				</Branch>
+			</Branches>
+		</File>
+		<LogFile SEName="srm.cern.ch">
+			/store/unmerged/logs/prod/2008/10/Repack-Run67838/Repack-Run67838-54236/Repack-Run67838-54236-1225233773-LogArch.tgz
+		</LogFile>
+		<TimingService>
+			<AppEndTime Value="1225233753"/>
+			<StageOutStart Value="1225233759"/>
+			<AppStartTime Value="1225233041"/>
+			<StageOutEnd Value="1225233773"/>
+		</TimingService>
+		<GeneratorInfo/>
+		<PerformanceReport>
+			<CPU>
+				<CPUCore Core="1">
+					<Property Name="Speed">
+						2997.000
+					</Property>
+					<Property Name="Description">
+						Intel(R) Xeon(R) CPU            5160  @ 3.00GHz
+					</Property>
+				</CPUCore>
+				<CPUCore Core="0">
+					<Property Name="Speed">
+						2997.000
+					</Property>
+					<Property Name="Description">
+						Intel(R) Xeon(R) CPU            5160  @ 3.00GHz
+					</Property>
+				</CPUCore>
+				<CPUCore Core="3">
+					<Property Name="Speed">
+						2997.000
+					</Property>
+					<Property Name="Description">
+						Intel(R) Xeon(R) CPU            5160  @ 3.00GHz
+					</Property>
+				</CPUCore>
+				<CPUCore Core="2">
+					<Property Name="Speed">
+						2997.000
+					</Property>
+					<Property Name="Description">
+						Intel(R) Xeon(R) CPU            5160  @ 3.00GHz
+					</Property>
+				</CPUCore>
+			</CPU>
+			<Memory>
+				<Property Name="MemTotal">
+					8162216
+				</Property>
+			</Memory>
+			<PerformanceSummary Metric="StorageRoot">
+				<Metric Name="tfile-read-total-megabytes" Value="0"/>
+				<Metric Name="tfile-write-total-megabytes" Value="0"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="StorageParams">
+				<Metric Name="stats" Value="true"/>
+				<Metric Name="cache-hint" Value="application-only"/>
+				<Metric Name="enabled" Value="true"/>
+				<Metric Name="read-hint" Value="direct-unbuffered"/>
+			</PerformanceSummary>
+			<PerformanceSummary Metric="TrigReport"/>
+			<PerformanceSummary Metric="Timing"/>
+			<PerformanceSummary Metric="StorageTiming">
+				<Metric Name="rfio-check-total-msecs" Value="143.918"/>
+				<Metric Name="tstoragefile-write-actual-total-msecs" Value="58544.3"/>
+				<Metric Name="rfio-readv-num-operations" Value="0"/>
+				<Metric Name="file-prefetch-total-msecs" Value="0"/>
+				<Metric Name="tstoragefile-write-via-cache-num-operations" Value="10093"/>
+				<Metric Name="rfio-close-min-msecs" Value="31.455"/>
+				<Metric Name="rfio-destruct-total-msecs" Value="0.12416"/>
+				<Metric Name="rfio-write-total-megabytes" Value="0"/>
+				<Metric Name="rfio-write-max-msecs" Value="0"/>
+				<Metric Name="tstoragefile-write-total-megabytes" Value="1010.81"/>
+				<Metric Name="tstoragefile-seek-max-msecs" Value="0.147968"/>
+				<Metric Name="file-position-num-successful-operations" Value="10093"/>
+				<Metric Name="file-construct-total-msecs" Value="0.001024"/>
+				<Metric Name="file-write-num-operations" Value="10093"/>
+				<Metric Name="file-prefetch-max-msecs" Value="0"/>
+				<Metric Name="rfio-check-num-operations" Value="4"/>
+				<Metric Name="rfio-readv-total-megabytes" Value="0"/>
+				<Metric Name="rfio-position-max-msecs" Value="0"/>
+				<Metric Name="rfio-construct-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-write-actual-min-msecs" Value="0.158976"/>
+				<Metric Name="rfio-check-total-megabytes" Value="0"/>
+				<Metric Name="file-flush-total-msecs" Value="0.028416"/>
+				<Metric Name="file-open-num-successful-operations" Value="1"/>
+				<Metric Name="file-flush-num-successful-operations" Value="7"/>
+				<Metric Name="tstoragefile-write-via-cache-total-megabytes" Value="0"/>
+				<Metric Name="file-destruct-total-msecs" Value="0.023808"/>
+				<Metric Name="file-close-total-megabytes" Value="0"/>
+				<Metric Name="rfio-close-total-msecs" Value="598.88"/>
+				<Metric Name="rfio-open-min-msecs" Value="2969.04"/>
+				<Metric Name="tstoragefile-write-actual-max-msecs" Value="1984.72"/>
+				<Metric Name="file-flush-max-msecs" Value="0.01408"/>
+				<Metric Name="rfio-write-min-msecs" Value="0"/>
+				<Metric Name="tstoragefile-write-via-cache-max-msecs" Value="0"/>
+				<Metric Name="rfio-prefetch-total-msecs" Value="0"/>
+				<Metric Name="file-writev-max-msecs" Value="0"/>
+				<Metric Name="file-construct-max-msecs" Value="0.001024"/>
+				<Metric Name="file-readv-num-successful-operations" Value="0"/>
+				<Metric Name="rfio-destruct-num-operations" Value="3"/>
+				<Metric Name="file-write-max-msecs" Value="1984.72"/>
+				<Metric Name="tstoragefile-close-num-successful-operations" Value="1"/>
+				<Metric Name="file-destruct-num-operations" Value="1"/>
+				<Metric Name="rfio-writev-total-msecs" Value="0"/>
+				<Metric Name="file-write-total-megabytes" Value="1010.81"/>
+				<Metric Name="rfio-writev-num-successful-operations" Value="0"/>
+				<Metric Name="file-open-total-megabytes" Value="0"/>
+				<Metric Name="file-open-num-operations" Value="1"/>
+				<Metric Name="file-close-min-msecs" Value="0.071936"/>
+				<Metric Name="file-destruct-num-successful-operations" Value="1"/>
+				<Metric Name="tstoragefile-write-max-msecs" Value="1984.73"/>
+				<Metric Name="tstoragefile-write-via-cache-total-msecs" Value="0"/>
+				<Metric Name="rfio-read-num-operations" Value="18738"/>
+				<Metric Name="rfio-close-max-msecs" Value="519.334"/>
+				<Metric Name="rfio-read-max-msecs" Value="839.549"/>
+				<Metric Name="tstoragefile-write-actual-total-megabytes" Value="1010.81"/>
+				<Metric Name="file-prefetch-min-msecs" Value="0"/>
+				<Metric Name="file-open-max-msecs" Value="0.185088"/>
+				<Metric Name="file-write-total-msecs" Value="58518.7"/>
+				<Metric Name="rfio-prefetch-max-msecs" Value="0"/>
+				<Metric Name="rfio-open-max-msecs" Value="11756.3"/>
+				<Metric Name="rfio-prefetch-num-operations" Value="0"/>
+				<Metric Name="rfio-position-num-successful-operations" Value="0"/>
+				<Metric Name="file-read-total-msecs" Value="0"/>
+				<Metric Name="rfio-construct-max-msecs" Value="0.002048"/>
+				<Metric Name="rfio-construct-num-operations" Value="4"/>
+				<Metric Name="rfio-position-total-msecs" Value="0"/>
+				<Metric Name="rfio-close-num-operations" Value="3"/>
+				<Metric Name="file-read-num-successful-operations" Value="0"/>
+				<Metric Name="file-prefetch-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-flush-total-megabytes" Value="0"/>
+				<Metric Name="rfio-write-total-msecs" Value="0"/>
+				<Metric Name="file-writev-min-msecs" Value="0"/>
+				<Metric Name="file-close-total-msecs" Value="0.071936"/>
+				<Metric Name="rfio-open-num-successful-operations" Value="4"/>
+				<Metric Name="file-write-num-successful-operations" Value="10093"/>
+				<Metric Name="file-destruct-total-megabytes" Value="0"/>
+				<Metric Name="file-write-min-msecs" Value="0.157952"/>
+				<Metric Name="file-close-num-successful-operations" Value="1"/>
+				<Metric Name="tstoragefile-seek-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-write-actual-num-operations" Value="10093"/>
+				<Metric Name="file-position-max-msecs" Value="0.06912"/>
+				<Metric Name="tstoragefile-close-total-megabytes" Value="0"/>
+				<Metric Name="rfio-construct-min-msecs" Value="0.001024"/>
+				<Metric Name="file-flush-min-msecs" Value="0.002048"/>
+				<Metric Name="rfio-writev-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-write-via-cache-min-msecs" Value="0"/>
+				<Metric Name="tstoragefile-write-total-msecs" Value="58566.3"/>
+				<Metric Name="file-prefetch-num-operations" Value="0"/>
+				<Metric Name="tstoragefile-write-min-msecs" Value="0.161024"/>
+				<Metric Name="rfio-construct-num-successful-operations" Value="4"/>
+				<Metric Name="file-open-min-msecs" Value="0.185088"/>
+				<Metric Name="rfio-check-num-successful-operations" Value="4"/>
+				<Metric Name="rfio-writev-max-msecs" Value="0"/>
+				<Metric Name="rfio-destruct-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-close-num-operations" Value="1"/>
+				<Metric Name="tstoragefile-close-max-msecs" Value="0.100864"/>
+				<Metric Name="file-readv-total-msecs" Value="0"/>
+				<Metric Name="file-readv-min-msecs" Value="0"/>
+				<Metric Name="file-readv-num-operations" Value="0"/>
+				<Metric Name="tstoragefile-construct-num-successful-operations" Value="1"/>
+				<Metric Name="file-construct-num-operations" Value="1"/>
+				<Metric Name="file-close-max-msecs" Value="0.071936"/>
+				<Metric Name="rfio-open-num-operations" Value="4"/>
+				<Metric Name="tstoragefile-construct-min-msecs" Value="53.58"/>
+				<Metric Name="tstoragefile-seek-num-successful-operations" Value="10093"/>
+				<Metric Name="file-prefetch-num-successful-operations" Value="0"/>
+				<Metric Name="file-readv-total-megabytes" Value="0"/>
+				<Metric Name="file-position-num-operations" Value="10093"/>
+				<Metric Name="rfio-read-total-megabytes" Value="1460.29"/>
+				<Metric Name="rfio-close-num-successful-operations" Value="3"/>
+				<Metric Name="rfio-readv-max-msecs" Value="0"/>
+				<Metric Name="rfio-read-min-msecs" Value="0.428032"/>
+				<Metric Name="tstoragefile-seek-total-msecs" Value="79.646"/>
+				<Metric Name="rfio-close-total-megabytes" Value="0"/>
+				<Metric Name="rfio-construct-total-msecs" Value="0.00512"/>
+				<Metric Name="rfio-readv-total-msecs" Value="0"/>
+				<Metric Name="file-construct-total-megabytes" Value="0"/>
+				<Metric Name="rfio-position-num-operations" Value="0"/>
+				<Metric Name="rfio-prefetch-num-successful-operations" Value="0"/>
+				<Metric Name="file-destruct-max-msecs" Value="0.023808"/>
+				<Metric Name="tstoragefile-construct-num-operations" Value="1"/>
+				<Metric Name="file-writev-total-msecs" Value="0"/>
+				<Metric Name="file-readv-max-msecs" Value="0"/>
+				<Metric Name="tstoragefile-flush-total-msecs" Value="0.051712"/>
+				<Metric Name="file-position-total-msecs" Value="36.2573"/>
+				<Metric Name="rfio-destruct-max-msecs" Value="0.111104"/>
+				<Metric Name="rfio-writev-num-operations" Value="0"/>
+				<Metric Name="rfio-writev-min-msecs" Value="0"/>
+				<Metric Name="rfio-position-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-seek-num-operations" Value="10093"/>
+				<Metric Name="file-read-max-msecs" Value="0"/>
+				<Metric Name="rfio-destruct-num-successful-operations" Value="3"/>
+				<Metric Name="file-construct-num-successful-operations" Value="1"/>
+				<Metric Name="file-read-num-operations" Value="0"/>
+				<Metric Name="rfio-readv-min-msecs" Value="0"/>
+				<Metric Name="rfio-prefetch-min-msecs" Value="0"/>
+				<Metric Name="file-position-min-msecs" Value="0.000768"/>
+				<Metric Name="tstoragefile-close-total-msecs" Value="0.100864"/>
+				<Metric Name="file-flush-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-construct-max-msecs" Value="53.58"/>
+				<Metric Name="tstoragefile-construct-total-megabytes" Value="0"/>
+				<Metric Name="rfio-prefetch-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-flush-min-msecs" Value="0.004096"/>
+				<Metric Name="tstoragefile-close-min-msecs" Value="0.100864"/>
+				<Metric Name="file-position-total-megabytes" Value="0"/>
+				<Metric Name="tstoragefile-write-actual-num-successful-operations" Value="10093"/>
+				<Metric Name="rfio-write-num-operations" Value="0"/>
+				<Metric Name="tstoragefile-construct-total-msecs" Value="53.58"/>
+				<Metric Name="tstoragefile-seek-min-msecs" Value="0.001792"/>
+				<Metric Name="rfio-position-min-msecs" Value="0"/>
+				<Metric Name="tstoragefile-flush-num-operations" Value="7"/>
+				<Metric Name="tstoragefile-write-via-cache-num-successful-operations" Value="0"/>
+				<Metric Name="file-read-total-megabytes" Value="0"/>
+				<Metric Name="file-close-num-operations" Value="1"/>
+				<Metric Name="rfio-open-total-msecs" Value="21461.2"/>
+				<Metric Name="tstoragefile-flush-max-msecs" Value="0.017152"/>
+				<Metric Name="file-read-min-msecs" Value="0"/>
+				<Metric Name="file-flush-num-operations" Value="7"/>
+				<Metric Name="rfio-destruct-min-msecs" Value="0.002048"/>
+				<Metric Name="tstoragefile-write-num-successful-operations" Value="10093"/>
+				<Metric Name="rfio-write-num-successful-operations" Value="0"/>
+				<Metric Name="tstoragefile-flush-num-successful-operations" Value="7"/>
+				<Metric Name="rfio-check-max-msecs" Value="43.126"/>
+				<Metric Name="file-writev-num-operations" Value="0"/>
+				<Metric Name="rfio-read-total-msecs" Value="57001.7"/>
+				<Metric Name="rfio-read-num-successful-operations" Value="18738"/>
+				<Metric Name="file-destruct-min-msecs" Value="0.023808"/>
+				<Metric Name="rfio-check-min-msecs" Value="29.8729"/>
+				<Metric Name="file-construct-min-msecs" Value="0.001024"/>
+				<Metric Name="file-writev-num-successful-operations" Value="0"/>
+				<Metric Name="tstoragefile-write-num-operations" Value="10093"/>
+				<Metric Name="rfio-open-total-megabytes" Value="0"/>
+				<Metric Name="rfio-readv-num-successful-operations" Value="0"/>
+				<Metric Name="file-open-total-msecs" Value="0.185088"/>
+				<Metric Name="file-writev-total-megabytes" Value="0"/>
+			</PerformanceSummary>
+		</PerformanceReport>
+	</FrameworkJobReport>
+</JobReports>

@@ -1,0 +1,643 @@
+<WorkflowSpec>
+	<Parameter Name="ProdRequestID">
+		67838
+	</Parameter>
+	<Parameter Name="WorkflowRunNumber">
+		1
+	</Parameter>
+	<Parameter Name="RequestTimestamp">
+		1225211789
+	</Parameter>
+	<Parameter Name="RunNumber">
+		67838
+	</Parameter>
+	<Parameter Name="RequestCategory">
+		data
+	</Parameter>
+	<Parameter Name="ScramArch">
+		slc4_ia32_gcc345
+	</Parameter>
+	<Parameter Name="WorkflowName">
+		Repack-Run67838
+	</Parameter>
+	<Parameter Name="CMSSWVersion">
+		CMSSW_2_1_9
+	</Parameter>
+	<Parameter Name="WorkflowType">
+		Processing
+	</Parameter>
+	<Parameter Name="CMSPath">
+		/afs/cern.ch/cms/sw
+	</Parameter>
+	<Parameter Name="RequestLabel">
+		Repack-Run67838
+	</Parameter>
+	<PythonLibraries>
+		<PythonLibrary Name="T0.DataStructs"/>
+		<PythonLibrary Name="T0.LumiData"/>
+		<PythonLibrary Name="LumiWebClient"/>
+	</PythonLibraries>
+	<Payload>
+		<PayloadNode Name="cmsRun1" Type="CMSSW" Workflow="Repack-Run67838">
+			<Application>
+				<Project Value="CMSSW"/>
+				<Executable Value="cmsRun"/>
+				<Version Value="CMSSW_2_1_9"/>
+				<Architecture Value="slc4_ia32_gcc345"/>
+			</Application>
+			<ApplicationControl/>
+			<ScriptControls>
+				<ScriptList Name="PreExe">
+					<Script Value="T0.RepackerInjector.RuntimeRepacker"/>
+				</ScriptList>
+				<ScriptList Name="PostTask"/>
+				<ScriptList Name="PostExe"/>
+				<ScriptList Name="PreTask"/>
+			</ScriptControls>
+			<InputDatasets/>
+			<OutputDatasets>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						Calo
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/Calo/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_A_Calo_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/Calo/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_A_Calo_RAW
+					</Entry>
+				</DatasetInfo>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						TestEnables
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/TestEnables/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_Calibration_TestEnables_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/TestEnables/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_Calibration_TestEnables_RAW
+					</Entry>
+				</DatasetInfo>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						HcalHPDNoise
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/HcalHPDNoise/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_A_HcalHPDNoise_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/HcalHPDNoise/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_A_HcalHPDNoise_RAW
+					</Entry>
+				</DatasetInfo>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						Monitor
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/Monitor/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_HLTDEBUG_Monitor_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/Monitor/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_HLTDEBUG_Monitor_RAW
+					</Entry>
+				</DatasetInfo>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						RandomTriggers
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/RandomTriggers/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_A_RandomTriggers_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/RandomTriggers/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_A_RandomTriggers_RAW
+					</Entry>
+				</DatasetInfo>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						Cosmics
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/Cosmics/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_A_Cosmics_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/Cosmics/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_A_Cosmics_RAW
+					</Entry>
+				</DatasetInfo>
+				<DatasetInfo>
+					<Entry Name="ApplicationName">
+						cmsRun
+					</Entry>
+					<Entry Name="PrimaryDataset">
+						MinimumBias
+					</Entry>
+					<Entry Name="MergedLFNBase">
+						/store/data/Commissioning08/MinimumBias/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="DataTier">
+						RAW
+					</Entry>
+					<Entry Name="OutputModuleName">
+						write_A_MinimumBias_RAW
+					</Entry>
+					<Entry Name="LFNBase">
+						/store/temp/data/Commissioning08/MinimumBias/RAW/v1/000/067/838/
+					</Entry>
+					<Entry Name="PhysicsGroup">
+						Tier0
+					</Entry>
+					<Entry Name="ProcessedDataset">
+						Commissioning08-v1
+					</Entry>
+					<Entry Name="ApplicationFamily">
+						write_A_MinimumBias_RAW
+					</Entry>
+				</DatasetInfo>
+			</OutputDatasets>
+			<PileupDatasets/>
+			<InputLinks/>
+			<CMSSWConfig>
+				<Source>
+					<SourceType Value="NewEventStreamFileReader"/>
+				</Source>
+				<Seeds>
+					<RequiredSeeds Value="0"/>
+				</Seeds>
+				<Pileup/>
+				<Output>
+					<OutputModule Name="write_A_Calo_RAW">
+						<primaryDataset>
+							Calo
+						</primaryDataset>
+						<MergedLFNBase>
+							/store/data/Commissioning08/Calo/RAW/v1/000/067/838/
+						</MergedLFNBase>
+						<dataTier>
+							RAW
+						</dataTier>
+						<processingVersion>
+							v1
+						</processingVersion>
+						<fileName>
+							write_A_Calo_RAW.root
+						</fileName>
+						<aquisitionEra>
+							Commissioning08
+						</aquisitionEra>
+						<LFNBase>
+							/store/temp/data/Commissioning08/Calo/RAW/v1/000/067/838/
+						</LFNBase>
+						<stream>
+							A
+						</stream>
+						<SelectEvents>
+							['HLT_EgammaSuperClusterOnly_L1R:HLT', 'HLT_Jet30:HLT', 'PhysicsNoMuonPath:HLT', 'HLTStoppedHSCPPath:HLT']
+						</SelectEvents>
+						<processedDataset>
+							Commissioning08-v1
+						</processedDataset>
+						<logicalFileName>
+							/store/temp/data/Commissioning08/Calo/RAW/v1/000/067/838/write_A_Calo_RAW.root
+						</logicalFileName>
+					</OutputModule>
+					<OutputModule Name="write_Calibration_TestEnables_RAW">
+						<primaryDataset>
+							TestEnables
+						</primaryDataset>
+						<MergedLFNBase>
+							/store/data/Commissioning08/TestEnables/RAW/v1/000/067/838/
+						</MergedLFNBase>
+						<dataTier>
+							RAW
+						</dataTier>
+						<processingVersion>
+							v1
+						</processingVersion>
+						<fileName>
+							write_Calibration_TestEnables_RAW.root
+						</fileName>
+						<aquisitionEra>
+							Commissioning08
+						</aquisitionEra>
+						<LFNBase>
+							/store/temp/data/Commissioning08/TestEnables/RAW/v1/000/067/838/
+						</LFNBase>
+						<stream>
+							Calibration
+						</stream>
+						<SelectEvents>
+							['CalibrationPath:HLT']
+						</SelectEvents>
+						<processedDataset>
+							Commissioning08-v1
+						</processedDataset>
+						<logicalFileName>
+							/store/temp/data/Commissioning08/TestEnables/RAW/v1/000/067/838/write_Calibration_TestEnables_RAW.root
+						</logicalFileName>
+					</OutputModule>
+					<OutputModule Name="write_A_HcalHPDNoise_RAW">
+						<primaryDataset>
+							HcalHPDNoise
+						</primaryDataset>
+						<MergedLFNBase>
+							/store/data/Commissioning08/HcalHPDNoise/RAW/v1/000/067/838/
+						</MergedLFNBase>
+						<dataTier>
+							RAW
+						</dataTier>
+						<processingVersion>
+							v1
+						</processingVersion>
+						<fileName>
+							write_A_HcalHPDNoise_RAW.root
+						</fileName>
+						<aquisitionEra>
+							Commissioning08
+						</aquisitionEra>
+						<LFNBase>
+							/store/temp/data/Commissioning08/HcalHPDNoise/RAW/v1/000/067/838/
+						</LFNBase>
+						<stream>
+							A
+						</stream>
+						<SelectEvents>
+							['GlobalRunHPDNoise:HLT']
+						</SelectEvents>
+						<processedDataset>
+							Commissioning08-v1
+						</processedDataset>
+						<logicalFileName>
+							/store/temp/data/Commissioning08/HcalHPDNoise/RAW/v1/000/067/838/write_A_HcalHPDNoise_RAW.root
+						</logicalFileName>
+					</OutputModule>
+					<OutputModule Name="write_HLTDEBUG_Monitor_RAW">
+						<primaryDataset>
+							Monitor
+						</primaryDataset>
+						<MergedLFNBase>
+							/store/data/Commissioning08/Monitor/RAW/v1/000/067/838/
+						</MergedLFNBase>
+						<dataTier>
+							RAW
+						</dataTier>
+						<processingVersion>
+							v1
+						</processingVersion>
+						<fileName>
+							write_HLTDEBUG_Monitor_RAW.root
+						</fileName>
+						<aquisitionEra>
+							Commissioning08
+						</aquisitionEra>
+						<LFNBase>
+							/store/temp/data/Commissioning08/Monitor/RAW/v1/000/067/838/
+						</LFNBase>
+						<stream>
+							HLTDEBUG
+						</stream>
+						<SelectEvents>
+							['HLT_HFThreshold:HLT', 'HLT_L1Mu:HLT', 'HLT_EgammaSuperClusterOnly_L1R:HLT', 'HLT_PixelFEDSize:HLT', 'PhysicsPath:HLT', 'CalibrationPath:HLT', 'HLT_TrackerCosmics_CTF:HLT', 'HLT_L1MuOpen:HLT', 'HLT_Jet30:HLT', 'HLT_L2Mu3:HLT']
+						</SelectEvents>
+						<processedDataset>
+							Commissioning08-v1
+						</processedDataset>
+						<logicalFileName>
+							/store/temp/data/Commissioning08/Monitor/RAW/v1/000/067/838/write_HLTDEBUG_Monitor_RAW.root
+						</logicalFileName>
+					</OutputModule>
+					<OutputModule Name="write_A_RandomTriggers_RAW">
+						<primaryDataset>
+							RandomTriggers
+						</primaryDataset>
+						<MergedLFNBase>
+							/store/data/Commissioning08/RandomTriggers/RAW/v1/000/067/838/
+						</MergedLFNBase>
+						<dataTier>
+							RAW
+						</dataTier>
+						<processingVersion>
+							v1
+						</processingVersion>
+						<fileName>
+							write_A_RandomTriggers_RAW.root
+						</fileName>
+						<aquisitionEra>
+							Commissioning08
+						</aquisitionEra>
+						<LFNBase>
+							/store/temp/data/Commissioning08/RandomTriggers/RAW/v1/000/067/838/
+						</LFNBase>
+						<stream>
+							A
+						</stream>
+						<SelectEvents>
+							['RandomPath:HLT']
+						</SelectEvents>
+						<processedDataset>
+							Commissioning08-v1
+						</processedDataset>
+						<logicalFileName>
+							/store/temp/data/Commissioning08/RandomTriggers/RAW/v1/000/067/838/write_A_RandomTriggers_RAW.root
+						</logicalFileName>
+					</OutputModule>
+					<OutputModule Name="write_A_Cosmics_RAW">
+						<primaryDataset>
+							Cosmics
+						</primaryDataset>
+						<MergedLFNBase>
+							/store/data/Commissioning08/Cosmics/RAW/v1/000/067/838/
+						</MergedLFNBase>
+						<dataTier>
+							RAW
+						</dataTier>
+						<processingVersion>
+							v1
+						</processingVersion>
+						<fileName>
+							write_A_Cosmics_RAW.root
+						</fileName>
+						<aquisitionEra>
+							Commissioning08
+						</aquisitionEra>
+						<LFNBase>
+							/store/temp/data/Commissioning08/Cosmics/RAW/v1/000/067/838/
+						</LFNBase>
+						<stream>
+							A
+						</stream>
+						<SelectEvents>
+							['HLT_TrackerCosmics_CTF:HLT', 'HLT_L1_CSCMuonHalo:HLT', 'HLT_L1Mu:HLT', 'HLT_L2Mu3:HLT', 'HLT_L1MuOpen:HLT']
+						</SelectEvents>
+						<processedDataset>
+							Commissioning08-v1
+						</processedDataset>
+						<logicalFileName>
+							/store/temp/data/Commissioning08/Cosmics/RAW/v1/000/067/838/write_A_Cosmics_RAW.root
+						</logicalFileName>
+					</OutputModule>
+					<OutputModule Name="write_A_MinimumBias_RAW">
+						<primaryDataset>
+							MinimumBias
+						</primaryDataset>
+						<MergedLFNBase>
+							/store/data/Commissioning08/MinimumBias/RAW/v1/000/067/838/
+						</MergedLFNBase>
+						<dataTier>
+							RAW
+						</dataTier>
+						<processingVersion>
+							v1
+						</processingVersion>
+						<fileName>
+							write_A_MinimumBias_RAW.root
+						</fileName>
+						<aquisitionEra>
+							Commissioning08
+						</aquisitionEra>
+						<LFNBase>
+							/store/temp/data/Commissioning08/MinimumBias/RAW/v1/000/067/838/
+						</LFNBase>
+						<stream>
+							A
+						</stream>
+						<SelectEvents>
+							['HLT_L1_BPTX:HLT', 'HLT_L1_BSC:HLT', 'HLT_L1_HFtech:HLT', 'HLT_HFThreshold:HLT', 'HLT_PixelFEDSize:HLT']
+						</SelectEvents>
+						<processedDataset>
+							Commissioning08-v1
+						</processedDataset>
+						<logicalFileName>
+							/store/temp/data/Commissioning08/MinimumBias/RAW/v1/000/067/838/write_A_MinimumBias_RAW.root
+						</logicalFileName>
+					</OutputModule>
+				</Output>
+				<MaxEvents/>
+				<ConditionsTag/>
+				<ConfigMetadata>
+					<version Value="repacker-config"/>
+					<annotation Value="auto generated repacked config"/>
+					<name Value="28-Oct-2008-17:36:30"/>
+				</ConfigMetadata>
+				<ConfigData Encoding="base64">
+					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
+					BzwwJBiq7nwzHpU167bmk5IVfR3mzf8AzM7/lQ==
+				</ConfigData>
+				<Extensions/>
+			</CMSSWConfig>
+			<PayloadNode Name="stageOut1" Type="StageOut" Workflow="Repack-Run67838">
+				<Application>
+					<Project Value=""/>
+					<Executable Value="RuntimeStageOut.py"/>
+					<Version Value=""/>
+					<Architecture Value=""/>
+				</Application>
+				<ApplicationControl/>
+				<ScriptControls>
+					<ScriptList Name="PreExe"/>
+					<ScriptList Name="PostTask"/>
+					<ScriptList Name="PostExe"/>
+					<ScriptList Name="PreTask"/>
+				</ScriptControls>
+				<InputDatasets/>
+				<OutputDatasets/>
+				<PileupDatasets/>
+				<InputLinks/>
+				<Configuration Encoding="base64"/>
+			</PayloadNode>
+			<PayloadNode Name="logArchive" Type="LogArchive" Workflow="Repack-Run67838">
+				<Application>
+					<Project Value=""/>
+					<Executable Value="RuntimeLogArch.py"/>
+					<Version Value=""/>
+					<Architecture Value=""/>
+				</Application>
+				<ApplicationControl/>
+				<ScriptControls>
+					<ScriptList Name="PreExe"/>
+					<ScriptList Name="PostTask"/>
+					<ScriptList Name="PostExe"/>
+					<ScriptList Name="PreTask"/>
+				</ScriptControls>
+				<InputDatasets/>
+				<OutputDatasets/>
+				<PileupDatasets/>
+				<InputLinks/>
+				<Configuration Encoding="base64"/>
+			</PayloadNode>
+		</PayloadNode>
+	</Payload>
+</WorkflowSpec>

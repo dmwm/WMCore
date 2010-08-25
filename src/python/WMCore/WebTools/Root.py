@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.40 2010/01/21 15:41:11 metson Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Root.py,v 1.41 2010/01/22 19:02:44 diego Exp $"
+__version__ = "$Revision: 1.41 $"
 
 # CherryPy
 import cherrypy
@@ -40,7 +40,7 @@ class Root(WMObject):
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
         self.homepage = None
-        self.secconfig = config.section_("SecurityModule")
+        self.secconfig = getattr(config, "SecurityModule", None)
     
     def validateConfig(self):
         # Check that the configuration has the required sections
@@ -50,7 +50,7 @@ class Root(WMObject):
             msg  = "Application configuration '%s' does not contain '%s' key"\
                     % (self.app, key)
             assert config_dict.has_key(key), msg
-            
+
     def configureCherryPy(self):
         #Configure CherryPy
         try:
@@ -103,10 +103,17 @@ class Root(WMObject):
         #cpconfig.update ({'proxy.tool.base': '%s:%s' % (socket.gethostname(), opts.port)})
 
         # SecurityModule config
-        if hasattr(self.secconfig, 'enabled'):
+        if self.secconfig:
             cpconfig.update({'tools.sessions.on': True,
                              'tools.sessions.name': 'oidconsumer_sid'})
             tools.cernoid = OidConsumer(self.secconfig)
+            if hasattr(self.secconfig, "default"):
+                # The following will force the auth stuff to be called
+                # even for non-decorated methods
+                cpconfig.update({'tools.cernoid.on': True})
+                cpconfig.update({'tools.cernoid.role': self.secconfig.default.role})
+                cpconfig.update({'tools.cernoid.group': self.secconfig.default.group})
+                cpconfig.update({'tools.cernoid.site': self.secconfig.default.site})
             pagecfg = self.secconfig
             pagecfg.object = pagecfg.handler
             self.mountPage(pagecfg, 

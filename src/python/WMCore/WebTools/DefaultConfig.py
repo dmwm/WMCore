@@ -43,15 +43,19 @@ config.WebtoolsDocs.section_('views')
 active = config.WebtoolsDocs.views.section_('active')
 # This is the Security config the application will use
 config.component_('SecurityModule')
-config.SecurityModule.enabled = True
-config.SecurityModule.use_decorators = True
+#config.SecurityModule.app_url = 'https://cmsweb.cern.ch/myapp'
+#config.SecurityModule.app_url = 'http://%s:%d' % (config.Webtools.host,config.Webtools.port)
 config.SecurityModule.mount_point = 'auth'
 config.SecurityModule.store = 'filestore'
-config.SecurityModule.store_path = environ['WMCORE_ROOT'] + '/src/security-store'
+config.SecurityModule.store_path = '/tmp/security-store'
 #config.CernOpenID.store.database = 'sqlite://'
 config.SecurityModule.session_name = 'SecurityModule'
 config.SecurityModule.oid_server = 'http://localhost:8400/'
 config.SecurityModule.handler = 'WMCore.WebTools.OidDefaultHandler'
+default = config.SecurityModule.section_('default')
+default.role = ['Admin']
+default.group = ['CMS']
+default.site = ['T2_BR_UERJ']
 
 # The section name is also the location the class will be located
 # e.g. http://localhost:8080/documentation

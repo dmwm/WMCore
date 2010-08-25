@@ -34,11 +34,16 @@ class OidConsumer(cherrypy.Tool):
         if self.config.store == 'filestore':
             self.store = filestore.FileOpenIDStore(self.config.store_path)
         
-        
         self.session_name = getattr(self.config, 'session_name', DEFAULT_SESSION_NAME)
         self.oidserver = getattr(self.config, 'oid_server', DEFAULT_OID_SERVER)
 
-        self.base_path = '%s/%s' % (cherrypy.url(), self.config.mount_point)
+        # The full URL of this app (without mount points or views)
+        # The app_url takes place of cherrypy.request.base
+        if hasattr(config,'app_url'):
+            self.app_url = config.app_url.rstrip('/') # without trailing '/'
+        else:
+            self.app_url = cherrypy.url()
+        self.base_path = '%s/%s' % (self.app_url, self.config.mount_point.rstrip('/'))
         self.login_path = '%s/login' % self.base_path
         self.failed_path = '%s/failure' % self.base_path
         self.cancel_path = '%s/cancelled' % self.base_path
@@ -58,12 +63,19 @@ class OidConsumer(cherrypy.Tool):
         This is the method that is called in the cherrypy hook point (whenever
         the user-agent requests a page
         """
+        # It is allways allowed access to 'auth' URLs like the page that requests
+        # the user login (pages under the config.mount_point)
+        if cherrypy.request.script_name.startswith('/'+self.config.mount_point.rstrip('/')):
+            return # skip config.mount_point pages
+
+        # These methods are responsible for achieving auth and authz
+        # before allowing access to any other page
         self.verify()
-        if isinstance(cherrypy.request.handler,cherrypy._cpdispatch.LateParamPageHandler):
-            self.process()
-            self.check_authorization(role, group, site, authzfunc)
-            self.defaults()
-        # Now cherrypy calls the handler()
+        self.process()
+        self.check_authorization(role, group, site, authzfunc)
+        
+        # User authenticated and authorized. Now cherrypy calls the app handler to
+        # show the requested page
     
     def get_session(self):
         oidsession = cherrypy.session.get(self.session_name, None)
@@ -102,15 +114,9 @@ class OidConsumer(cherrypy.Tool):
         return False
 
     def verify(self):
-        current_url = cherrypy.request.script_name + (cherrypy.request.path_info or '/')
-        # Do not verify auth URLs like the page that requests the user login
-        if cherrypy.request.path_info.startswith(self.base_path):
-            return
-
         # We could force the url of the server here somehow, but it needs to be
         # unset if the user isn't logged in...
-        openid_url = cherrypy.request.params.get('openid_url',None)
-        
+        openid_url = cherrypy.request.params.get('openid_url',None)        
         try:
             # ...so instead we assert that the url to be used is the one
             # configured
@@ -132,7 +138,8 @@ class OidConsumer(cherrypy.Tool):
         # Do not start the verification process if it is was already started
         if self.is_processing():
             return
-
+        
+        current_url = cherrypy.url(base=self.app_url)
         # If the user didn't inform his ID yet, redirect him to the login page
         if not openid_url:
             raise cherrypy.HTTPRedirect('%s?url=%s' % (self.login_path, current_url))
@@ -152,11 +159,10 @@ class OidConsumer(cherrypy.Tool):
         else:
             # Then finally the auth begins...
             # Set the return URL to be the one requested by the user
-            return_to = cherrypy.url(cherrypy.request.path_info)
-            trust_root = cherrypy.request.base
+            return_to = current_url # was cherrypy.url(cp.path_info)
+            trust_root = self.app_url # was cherrypy.request.base
             cherrypy.session[self.session_name]['return_to'] = return_to
             cherrypy.session[self.session_name]['status'] = PROCESSING
-
 
             # Extends the OpenID request using SREG. Uses it to get authoriztion
             # data. Since this extension makes part of the original OpenID
@@ -188,10 +194,6 @@ class OidConsumer(cherrypy.Tool):
         the user-agent back to here. This request contains the status of the
         user authentication in the oid server
         """
-        # Do not process auth URLs like the page that requests the user login
-        if cherrypy.request.path_info.startswith(self.base_path):
-            return
-
         # Also ignores if the authentication process already completed
         if self.is_authenticated():
             return
@@ -212,8 +214,6 @@ class OidConsumer(cherrypy.Tool):
                 msg += '<br><br><b>%s</b>' % info.message
             else:
                 msg += '<br><br><b>Authentication failed for an unknown reason</b>'
-                #msg += '<br><br><b>The application %s' % cherrypy.request.script_name
-                #msg += ' is not registered to use the OpenID server.</b>'
             cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.failed_path)
         elif info.status == consumer.CANCEL:
@@ -222,11 +222,10 @@ class OidConsumer(cherrypy.Tool):
                 msg = '<br><br><b>The authentication for %s' % info.identity_url
                 msg += ' was cancelled.</b>'
             else:
-                #msg = '<br><br><b>Authentication request cancelled.</b>'
                 msg =  '<br><br>Authentication failed due to one of '
                 msg += 'the following reasons:<br>'
                 msg += '<menu>'
-                msg += '<li>The application %s' % cherrypy.request.base
+                msg += '<li>The application %s' % self.app_url # cherrypy.request.base
                 msg += ' is not registered to use the OpenID server;</li>'
                 msg += '<li>Username and password did not verify;</li>'
                 msg += '<li>The user cancelled the authentication.</li>'
@@ -264,7 +263,8 @@ class OidConsumer(cherrypy.Tool):
             cherrypy.request.params = {} # empty request parameters
 
             # Finally redirects the user-agent to the URL initially requested
-            raise cherrypy.HTTPRedirect(cherrypy.url(cherrypy.request.path_info))
+            #raise cherrypy.HTTPRedirect(cherrypy.url(cherrypy.request.path_info))
+            raise cherrypy.HTTPRedirect(current_url)
 
         # If the code reaches here, an unknown error happened
         msg = '<br><br><b>Invalid response from the server.</b>'
@@ -274,9 +274,6 @@ class OidConsumer(cherrypy.Tool):
         # End of process()
 
     def check_authorization(self, role=[], group=[], site=[], authzfunc=None):
-        # Do not process auth URLs like the page that requests the user login
-        if cherrypy.request.path_info.startswith(self.base_path):
-            return
         if authzfunc == None:
             authzfunc = self.defaultAuth
 
@@ -350,23 +347,3 @@ class OidConsumer(cherrypy.Tool):
    
         return False
         
-    def defaults(self):
-        if not cherrypy.request.path_info.startswith(self.base_path):
-            return # We only need to worry about handlers for the auth path
-
-        # Perhaps there is another (safe) way to check if a handler was found
-        if isinstance(cherrypy.request.handler,cherrypy._cpdispatch.LateParamPageHandler):
-            return # Ok. A handler was found
-
-        if cherrypy.request.path_info.startswith(self.login_path):
-            cherrypy.request.handler = self.defhandler.login
-        elif cherrypy.request.path_info.startswith(self.logout_path):
-            cherrypy.request.handler = self.defhandler.logout
-        elif cherrypy.request.path_info.startswith(self.failed_path):
-            cherrypy.request.handler = self.defhandler.failure
-        elif cherrypy.request.path_info.startswith(self.cancel_path):
-            cherrypy.request.handler = self.defhandler.cancelled
-        elif cherrypy.request.path_info.startswith(self.error_path):
-            cherrypy.request.handler = self.defhandler.error
-        else:
-            pass # don't know how to handle it at all

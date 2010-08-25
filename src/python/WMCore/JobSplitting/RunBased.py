@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.15 2009/06/03 19:04:09 mnorman Exp $"
-__version__  = "$Revision: 1.15 $"
+__revision__ = "$Id: RunBased.py,v 1.16 2009/07/13 18:36:46 mnorman Exp $"
+__version__  = "$Revision: 1.16 $"
 
 from sets import Set
 
@@ -59,6 +59,10 @@ class RunBased(JobFactory):
         runDict = {}
         
         for f in fileset:
+
+            #If it is a WMBS object, load all data
+            if hasattr(f, "loadData"):
+                f.loadData()
 
             #Die if there are no runs
             if len(f['runs']) < 1:

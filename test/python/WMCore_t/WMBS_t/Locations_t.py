@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.6 2009/07/01 18:01:24 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Locations_t.py,v 1.7 2009/09/10 16:03:49 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import unittest
@@ -152,6 +152,41 @@ class LocationsTest(unittest.TestCase):
         self.assertEqual("Satsuma" in sites, True)
         self.assertEqual("Choshu" in sites, True)
         self.assertEqual("Tosa" in sites, True)
+
+
+    def testJobSlots(self):
+        """
+        _testJobSlots_
+        
+        Test our ability to set jobSlots
+        """
+
+        print "testJobSlots"
+
+        myThread = threading.currentThread()        
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        locationNew = daoFactory(classname = "Locations.New")
+
+        locationNew.execute("Satsuma")
+        locationNew.execute("Choshu")
+        locationNew.execute("Tosa")
+
+        setSlots = daoFactory(classname = "Locations.SetJobSlots")
+        setSlots.execute(siteName = 'Satsuma', jobSlots = 1868)
+        setSlots.execute(siteName = 'Choshu',  jobSlots = 1868)
+        setSlots.execute(siteName = 'Tosa',    jobSlots = 1868)
+
+        locationList = daoFactory(classname = "Locations.List")
+        currentLocations = locationList.execute()
+
+        for location in currentLocations:
+            self.assertEqual(location[2], 1868)
+
+        return
+
+        
         
 if __name__ == "__main__":
         unittest.main()

@@ -11,11 +11,12 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.30 2010/05/10 21:11:15 mnorman Exp $"
-__revision__ = "$Revision: 1.30 $"
+__version__ = "$Id: WMTask.py,v 1.31 2010/05/12 19:44:53 mnorman Exp $"
+__revision__ = "$Revision: 1.31 $"
 
 import os
 import os.path
+import time
 
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -26,6 +27,7 @@ from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 import WMCore.FwkJobReport.Report as Report
+
 
 def getTaskFromStep(stepRef):
     """
@@ -59,6 +61,8 @@ class WMTaskHelper(TreeHelper):
     """
     def __init__(self, wmTask):
         TreeHelper.__init__(self, wmTask)
+        self.startTime = None
+        self.endTime   = None
 
     
     def addTask(self, taskName):
@@ -309,9 +313,11 @@ class WMTaskHelper(TreeHelper):
         TODO: emulator is now deprecated, remove from API
         
         """
+        self.startTime = time.time()
         self.setupEnvironment()
         master = ExecuteMaster()
         master(self, wmbsJob)
+        self.endTime   = time.time()
         return
 
     
@@ -513,6 +519,18 @@ class WMTaskHelper(TreeHelper):
         
         """
         return getattr(self.data.input, "dataset", None)
+
+    def getInputDatasetPath(self):
+        """
+        _getInputDatasetPath_
+
+        Get the input dataset path because it's useful
+        """
+
+        if hasattr(self.data.input, 'dataset'):
+            ds = getattr(self.data.input, 'dataset')
+            return '%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
+        return None
     
     def siteWhitelist(self):
         """
@@ -579,11 +597,13 @@ class WMTaskHelper(TreeHelper):
         """
         return self.data.taskType
 
-    def combineLogs(self, jobLocation, logLocation):
+    def completeTask(self, jobLocation, logLocation, wmbsJob, dashboardExport = False):
         """
-        _combineLogs_
+        _completeTask_
 
         Combine all the logs from all the steps in the task to a single log
+
+        If necessary, output to Dashboard
         """
 
         finalReport = Report.Report()
@@ -594,8 +614,21 @@ class WMTaskHelper(TreeHelper):
                 stepReport = Report.Report(taskStep)
                 stepReport.unpersist(reportPath)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
-
+                
         finalReport.persist(logLocation)
+
+
+        if dashboardExport:
+            # Import this here to avoid circular imports
+            from WMCore.WMSpec.DashboardInterface import DashboardInterface
+            dashboard = DashboardInterface()
+            dashboard(job = wmbsJob, report = finalReport,
+                      task = self, export = True,
+                      startTime = self.startTime,
+                      endTime = self.endTime)
+
+
+        return
 
 
 

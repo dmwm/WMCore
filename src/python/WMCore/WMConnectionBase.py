@@ -5,8 +5,8 @@ _WMBSBase_
 Generic methods used by all of the WMBS classes.
 """
 
-__revision__ = "$Id: WMConnectionBase.py,v 1.9 2010/02/27 12:12:55 swakef Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WMConnectionBase.py,v 1.10 2010/04/28 20:05:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 import copy
@@ -48,7 +48,6 @@ class WMConnectionBase:
 
         if "transaction" not in dir(myThread):
             myThread.transaction = Transaction(self.dbi)
-            myThread.transaction.commit()
 
         return
 

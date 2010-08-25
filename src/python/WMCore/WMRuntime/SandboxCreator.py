@@ -4,15 +4,14 @@
     
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.4 2009/06/15 15:52:10 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.5 2009/06/15 15:58:19 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 import os
 import re
 import tarfile
-import pickle
 import tempfile
 import WMCore.WMSpec.WMStep as WMStep
-
+import urllib
 
 class SandboxCreator:
     
@@ -46,7 +45,9 @@ class SandboxCreator:
             if (hasattr(t.data.application.configuration,'configCacheUrl')):
                 fileTarget = "%s/%s" % (stepPath,
                                     t.data.application.command.configuration)
-                urllib.urlretrieve(fileInfo.src, fileTarget)
+                urllib.urlretrieve(
+                                t.data.application.configuration.configCacheUrl
+                               ,fileTarget)
             
             # within the step, the sandbox section has files to be imported
             # TODO: do we need a function to wrap this data call?

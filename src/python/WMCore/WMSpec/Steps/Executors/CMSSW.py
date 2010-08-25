@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.15 2010/03/19 15:50:47 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: CMSSW.py,v 1.16 2010/03/31 18:46:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -123,6 +123,8 @@ class CMSSW(Executor):
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 )
+            # BADPYTHON
+            scriptProcess.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
             invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
                 sys.executable,
                 stepModule,

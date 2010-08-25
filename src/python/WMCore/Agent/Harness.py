@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.31 2010/02/10 16:33:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Harness.py,v 1.32 2010/02/11 17:18:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.32 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -63,6 +63,9 @@ class Harness:
             compName = self.__class__.__name__
         if not compName in self.config.listComponents_():
             raise WMException(WMEXCEPTION['WMCORE-8']+compName, 'WMCORE-8')
+        if not hasattr(self.config, "Agrent"):
+            self.config.section_("Agent")
+        
         self.config.Agent.componentName = compName 
         compSect = getattr(self.config, compName, None) 
         # check if componentDir is set if not assign.

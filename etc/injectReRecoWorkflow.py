@@ -18,7 +18,6 @@ from DBSAPI.dbsApi import DbsApi
 
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
-
 if not os.environ.has_key("WMAGENT_CONFIG"):
     print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
     sys.exit(0)
@@ -38,7 +37,7 @@ myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
 
 
 arguments = {
-    "OutputTiers" : ["RECO", "ALCA", "AOD"],
+    "OutputTiers" : ["RECO", "ALCARECO"],
     "AcquisitionEra" : "WMAgentCommissioining10",
     "GlobalTag" :"GR09_R_34X_V5::All",
     "LFNCategory" : "/store/backfill/2",
@@ -50,14 +49,14 @@ arguments = {
     "Emulate" : False,
     }
 
-workload = rerecoWorkload("Tier1ReReco", arguments)
+workload = rerecoWorkload("Tier1ReReco-v1", arguments)
 
 # Build a sandbox using TaskMaker
 taskMaker = TaskMaker(workload, os.getcwd())
 taskMaker.skipSubscription = True
 taskMaker.processWorkload()
 
-workload.save("rereco.pkl")
+workload.save("rereco-v1.pkl")
 
 def doIndent(level):
     myStr = ""
@@ -67,7 +66,7 @@ def doIndent(level):
 
     return myStr
 
-def injectTaskIntoWMBS(specUrl, task, inputFileset, indent = 0):
+def injectTaskIntoWMBS(specUrl, workflowName, ask, inputFileset, indent = 0):
     """
     _injectTaskIntoWMBS_
 
@@ -76,7 +75,7 @@ def injectTaskIntoWMBS(specUrl, task, inputFileset, indent = 0):
     print "%s  input fileset: %s" % (doIndent(indent), inputFileset.name)
 
     myWorkflow = Workflow(spec = specUrl, owner = "sfoulkes@fnal.gov",
-                          name = task.getPathName(), task = task.getPathName())
+                          name = workflowName, task = task.getPathName())
     myWorkflow.create()
     mySubscription = Subscription(fileset = inputFileset, workflow = myWorkflow,
                                   split_algo = task.jobSplittingAlgorithm(),
@@ -104,7 +103,7 @@ def injectTaskIntoWMBS(specUrl, task, inputFileset, indent = 0):
         print "%s    searching for child tasks..." % (doIndent(indent))
         for childTask in task.childTaskIterator():
             if childTask.data.input.outputModule == outputModuleName:
-                injectTaskIntoWMBS(specUrl, childTask, outputFileset, indent + 4)                
+                injectTaskIntoWMBS(specUrl, workflowName, childTask, outputFileset, indent + 4)                
 
 def injectFilesFromDBS(inputFileset, datasetPath):
     """
@@ -132,6 +131,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
         inputFileset.addFile(myFile)
         
     inputFileset.commit()
+    inputFileset.markOpen(False)
     return
 
 for workloadTask in workload.taskIterator():
@@ -144,7 +144,7 @@ for workloadTask in workload.taskIterator():
                                       inputDataset.tier)
     injectFilesFromDBS(inputFileset, inputDatasetPath)
 
-    injectTaskIntoWMBS("/storage/local/data1/wmagent/install/WMCORE/etc/rereco.pkl", workloadTask,
+    injectTaskIntoWMBS("/storage/local/data1/wmagent2/install/WMCORE/etc/rereco-v1/rereco-v1.pkl", "Tier1ReReco-v1", workloadTask,
                        inputFileset)
 
 

@@ -13,7 +13,7 @@ class Add(DBFormatter):
                  first_event = 0, last_event = 0, merged = False):
         # Can't use self.dbi.buildbinds here...
         binds = {}
-        if type(files) == type('string'):
+        if type(files) != list:
             binds = {'lfn': files, 
                      'filesize': size, 
                      'events': events,
@@ -21,8 +21,8 @@ class Add(DBFormatter):
                      'first_event' : first_event,
                      'last_event' : last_event,
                      'merged' : int(merged)} 
-        elif type(files) == type([]):
-        # files is a list of tuples containing lfn, size, events, run and lumi
+        else:
+            # files is a list of tuples containing lfn, size, events, run and lumi
             binds = []
             for f in files:
                 binds.append({'lfn': f[0], 

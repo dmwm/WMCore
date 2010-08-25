@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.30 2010/04/06 21:01:08 sryu Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.31 2010/04/09 21:27:53 sryu Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import unittest
 import os
@@ -23,6 +23,12 @@ from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
 
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
+
+class fakeSiteDB:
+    def phEDExNodetocmsName(self, node):
+        return node.replace('_MSS',
+                            '').replace('_Buffer',
+                                        '').replace('_Export', '')
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
@@ -96,6 +102,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         for queue in (self.queue, self.localQueue, self.globalQueue):
             queue.phedexService = MockPhedexService(dataset)
+            queue.SiteDB = fakeSiteDB()
             
     def tearDown(self):
         """tearDown"""

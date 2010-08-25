@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.16 $"
-__revision__ = "$Id: Report.py,v 1.16 2010/04/06 15:19:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Report.py,v 1.17 2010/04/06 21:43:03 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -424,6 +424,7 @@ class Report:
         _setStep_
 
         """
+        self.data.steps.append(stepName)        
         self.data.section_(stepName)
         setattr(self.data, stepName, stepSection)
         return

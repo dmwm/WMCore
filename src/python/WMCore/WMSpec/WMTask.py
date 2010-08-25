@@ -11,8 +11,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.26 2010/04/12 16:50:56 sfoulkes Exp $"
-__revision__ = "$Revision: 1.26 $"
+__version__ = "$Id: WMTask.py,v 1.27 2010/04/12 18:00:41 sryu Exp $"
+__revision__ = "$Revision: 1.27 $"
 
 import os
 
@@ -111,9 +111,9 @@ class WMTaskHelper(TreeHelper):
         """
         return self.data.pathName
 
-    def getTaskName(self):
+    def name(self):
         """
-        _getTaskName_
+        _name_
 
         Retrieve the name of this task.
         """

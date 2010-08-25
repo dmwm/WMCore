@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: BuildMaster.py,v 1.8 2010/04/12 16:50:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: BuildMaster.py,v 1.9 2010/04/12 18:01:17 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 
@@ -84,5 +84,5 @@ class BuildMaster:
         for step in task.steps().nodeIterator():
             stepType = step.stepType
             builder = StepFactory.getStepBuilder(stepType)
-            builder(step, task.getTaskName(), self.taskSpace)
+            builder(step, task.name(), self.taskSpace)
 

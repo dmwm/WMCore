@@ -29,8 +29,8 @@ wmcoreD --shutdown --config=WMCoreConfig.py --cleanup-all
 
 """
 
-__revision__ = "$Id: wmcoreD,v 1.1 2009/02/06 15:26:34 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: wmcoreD,v 1.2 2009/09/02 16:00:38 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -163,12 +163,25 @@ def connectionTest(configFile):
 
     """
     config = loadConfigurationFile(configFile)
+    wmInit = WMInit()    
     print 'checking default database connection'
-    wmInit = WMInit()
-    databaseStr = config.CoreDatabase.dialect +'://'+config.CoreDatabase.user+':'+config.CoreDatabase.passwd+'@'+config.CoreDatabase.hostname+'/'+config.CoreDatabase.name
+
+    if config.CoreDatabase.dialect == "oracle":
+        databaseStr = "oracle://%s:%s@%s" % (config.CoreDatabase.masterUser,
+                                             config.CoreDatabase.masterPasswd,
+                                             config.CoreDatabase.hostname)
+    else:
+        databaseStr = "%s://%s:%s@%s/%s" % (config.CoreDatabase.dialect,
+                                            config.CoreDatabase.masterUser,
+                                            config.CoreDatabase.masterPasswd,
+                                            config.CoreDatabase.hostname,
+                                            config.CoreDatabase.name)
+        
     try:
        wmInit.setLogging('wmcoreD', 'wmcoreD', logExists = False, logLevel = logging.DEBUG)
-       wmInit.setDatabaseConnection(dbConfig = databaseStr, dialect = config.CoreDatabase.dialect, socketLoc = config.CoreDatabase.socket)
+       wmInit.setDatabaseConnection(dbConfig = databaseStr,
+                                    dialect = config.CoreDatabase.dialect,
+                                    socketLoc = config.CoreDatabase.socket)
     except Exception, ex:
         msg = "Unable to make connection to using \n"
         msg += "parameters provided in %s\n" % databaseStr 

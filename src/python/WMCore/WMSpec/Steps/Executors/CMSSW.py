@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
-__revision__ = "$Id: CMSSW.py,v 1.23 2010/07/05 00:42:02 meloam Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: CMSSW.py,v 1.24 2010/07/12 15:28:08 meloam Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import tempfile
 import subprocess
@@ -96,13 +96,15 @@ class CMSSW(Executor):
         if projectOutcome > 0:
             msg = scram.diagnostic()
             #self.report.addError(60513, "ScramSetupFailure", msg)
-            print msg
+            logging.critical("Error running SCRAM")
+            logging.critical(msg)
             raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
         runtimeOutcome = scram.runtime()
         if runtimeOutcome > 0:
             msg = scram.diagnostic()
             #self.report.addError(60513, "ScramSetupFailure", msg)
-            print msg
+            logging.critical("Error running SCRAM")
+            logging.critical(msg)
             raise WMExecutionFailure(60513, "ScramSetupFailure", msg)
 
 
@@ -131,6 +133,8 @@ class CMSSW(Executor):
             if retCode > 0:
                 msg = "Error running command\n%s\n" % invokeCommand
                 msg += "%s\n %s\n %s\n" % (retCode, stdout, stderr)
+                logging.critical("Error running command")
+                logging.critical(msg)
                 raise WMExecutionFailure(60514, "PreScriptFailure", msg)
 
 
@@ -150,6 +154,7 @@ class CMSSW(Executor):
                 msg = "Error running command\n%s\n" % invokeCommand
                 msg += "%s\n " % retCode
                 msg += scram.diagnostic()
+                logging.critical(msg)
                 raise WMExecutionFailure(60515, "PreScriptScramFailure", msg)
 
 
@@ -204,7 +209,7 @@ class CMSSW(Executor):
 
         if spawnedChild.returncode != 0:
             msg = "Error running cmsRun\n%s\n" % argsDump
-            msg += "%s\n" % spawnedChild.returncode
+            msg += "Return code: %s\n" % spawnedChild.returncode
             logging.critical(msg)
             raise WMExecutionFailure(spawnedChild.returncode,
                                      "CmsRunFailure", msg)
@@ -230,9 +235,6 @@ class CMSSW(Executor):
 
         return "NotNone"
 
-
-    
-
 configBlob = """#!/bin/bash
 
 # Check to make sure the argument count is correct
@@ -257,12 +259,16 @@ CONFIGURATION=$8
 shift;shift;shift
 shift;shift;shift;shift;shift;
 
+echo "Beginning CMSSW wrapper script"
 echo "$SCRAM_SETUP $SCRAM_ARCHIT $SCRAM_COMMAND $SCRAM_PROJECT"
 
+echo "Performing SCRAM setup..."
 $SCRAM_SETUP
+echo "Completed SCRAM setup"
 
 export SCRAM_ARCH=$SCRAM_ARCHIT
 
+echo "Retrieving SCRAM project..."
 # do the actual executing
 $SCRAM_COMMAND project $SCRAM_PROJECT $CMSSW_VERSION
 if [ $? -ne 0 ]; then echo "Scram failed"; exit 71; fi
@@ -270,13 +276,16 @@ cd $CMSSW_VERSION
 if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 eval `$SCRAM_COMMAND runtime -sh`
 if [ $? -ne 0 ]; then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
+echo "Completed SCRAM project"
 cd ..
+echo "Executing CMSSW"
 echo "$EXECUTABLE  -j $JOB_REPORT $CONFIGURATION"
 $EXECUTABLE  -j $JOB_REPORT $CONFIGURATION &
 PROCID=$!
 echo $PROCID > process.id
 wait $PROCID
 EXIT_STATUS=$?
+echo "Complete"
 echo "process id is $PROCID status is $EXIT_STATUS"
 exit $EXIT_STATUS
 

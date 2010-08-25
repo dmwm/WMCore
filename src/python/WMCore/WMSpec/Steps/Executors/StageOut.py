@@ -11,8 +11,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.25 2010/07/05 00:46:05 meloam Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: StageOut.py,v 1.26 2010/07/05 00:54:18 meloam Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import os
 import os.path
@@ -75,7 +75,7 @@ class StageOut(Executor):
         # Set wait to 15 minutes
         waitTime = overrides.get('waitTime', 900)
         
-        self.info("StageOut override is: %s " % self.step)
+        logging.info("StageOut override is: %s " % self.step)
 
         # Pull out StageOutMgr Overrides
         

@@ -10,8 +10,8 @@ try:
     from sqlalchemy.databases.oracle import OracleDialect
 except:
     from sqlalchemy.dialects.mysql.base import MySQLDialect
-    from sqlalchemy.dialects.databases.sqlite.base import SQLiteDialect 
-    from sqlalchemy.dialects.databases.oracle.base import OracleDialect
+    from sqlalchemy.dialects.sqlite.base import SQLiteDialect 
+    from sqlalchemy.dialects.oracle.base import OracleDialect
 
 
 __all__ = [MySQLDialect, SQLiteDialect, OracleDialect]

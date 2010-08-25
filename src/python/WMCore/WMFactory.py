@@ -6,8 +6,8 @@ caches them (or not). It is a generalized factory object. If needed this class
 can be made threadsafe.
 """
 
-__revision__ = "$Id: WMFactory.py,v 1.12 2009/09/04 16:39:05 evansde Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WMFactory.py,v 1.13 2010/02/02 21:41:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -34,7 +34,7 @@ class WMFactory:
         msg = """
 Creating factory with name: %s associated to
 namespace (package): %s """ % (name, str(namespace))
-        logging.debug(msg)
+        #logging.debug(msg)
         myThread = threading.currentThread()
         if not hasattr(myThread, "factory"):
             myThread.factory = {}
@@ -57,7 +57,7 @@ namespace (package): %s """ % (name, str(namespace))
                 logging.debug("Object in cache")
                 return self.objectList[classname]
             logging.debug("Not in cache")
-        logging.debug("Searching class name: "+ classname)
+        #logging.debug("Searching class name: "+ classname)
         #try:
         # check if we need to include the namespace
         if self.namespace == '':
@@ -67,7 +67,7 @@ namespace (package): %s """ % (name, str(namespace))
         else:
             module = "%s.%s" % (self.namespace, classname)
             errModule = "%s.%s" % (self.namespace, classname)
-        logging.debug("Trying to load: "+module)
+        #logging.debug("Trying to load: "+module)
         module = __import__(module, globals(), locals(), [classname])
         obj = getattr(module, classname.split('.')[-1])
         if args == None:
@@ -85,7 +85,7 @@ namespace (package): %s """ % (name, str(namespace))
                 classinstance = obj(args)
         if storeInCache:
             self.objectList[classname] = classinstance
-        logging.debug("Created instance for class: "+classname)
+        #logging.debug("Created instance for class: "+classname)
         return classinstance
         #except Exception,ex:
         #    raise ex

@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.4 2009/05/09 12:05:29 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.5 2009/08/27 16:48:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 import unittest
@@ -54,7 +54,11 @@ class EventBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
         return
 
     def tearDown(self):
@@ -90,6 +94,8 @@ class EventBasedTest(unittest.TestCase):
         injected.  Also files are added to the "Mergeable" subscription as well
         as to the output fileset for their jobgroups.
         """
+        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+
         bunkFileset = Fileset(name = "bunkFileset")
         bunkFileset.create()
 
@@ -105,17 +111,37 @@ class EventBasedTest(unittest.TestCase):
         jobGroup1.create()
         newJob = Job()
         newJob.create(jobGroup1)
-        newJob.changeStatus("COMPLETE")
+        newJob["state"] = "complete"
+        newJob["oldstate"] = "new"
+        newJob["couch_record"] = "somejive"
+        newJob["retry_count"] = 0
+        newJob["outcome"] = "success"
+        newJob.save()
+        changeStateDAO.execute([newJob])
+        
         jobGroup2 = JobGroup(subscription = bunkSubscription)
         jobGroup2.create()
         newJob = Job()
         newJob.create(jobGroup2)
-        newJob.changeStatus("COMPLETE")        
+        newJob["state"] = "complete"
+        newJob["oldstate"] = "new"
+        newJob["couch_record"] = "somejive"
+        newJob["retry_count"] = 0
+        newJob["outcome"] = "success"
+        newJob.save()        
+        changeStateDAO.execute([newJob])
+
         jobGroup3 = JobGroup(subscription = bunkSubscription)
         jobGroup3.create()
         newJob = Job()
         newJob.create(jobGroup3)
-        newJob.changeStatus("COMPLETE")
+        newJob["state"] = "complete"
+        newJob["oldstate"] = "new"
+        newJob["couch_record"] = "somejive"
+        newJob["retry_count"] = 0
+        newJob["outcome"] = "success"
+        newJob.save()        
+        changeStateDAO.execute([newJob])        
         jobGroup4 = JobGroup(subscription = bunkSubscription)
         jobGroup4.create()
         newJob = Job()
@@ -153,27 +179,27 @@ class EventBasedTest(unittest.TestCase):
         fileZ = File(lfn = "badFileC", size = 1024, events = 1024, first_event = 2048)
         fileZ.addRun(Run(1, *[47]))
 
-        jobGroup1.groupoutput.addFile(file1)
-        jobGroup1.groupoutput.addFile(file2)
-        jobGroup1.groupoutput.addFile(file3)
-        jobGroup1.groupoutput.addFile(file4)        
-        jobGroup1.groupoutput.commit()
+        jobGroup1.output.addFile(file1)
+        jobGroup1.output.addFile(file2)
+        jobGroup1.output.addFile(file3)
+        jobGroup1.output.addFile(file4)        
+        jobGroup1.output.commit()
 
-        jobGroup2.groupoutput.addFile(fileA)
-        jobGroup2.groupoutput.addFile(fileB)
-        jobGroup2.groupoutput.addFile(fileC)
-        jobGroup2.groupoutput.commit()
+        jobGroup2.output.addFile(fileA)
+        jobGroup2.output.addFile(fileB)
+        jobGroup2.output.addFile(fileC)
+        jobGroup2.output.commit()
 
-        jobGroup3.groupoutput.addFile(fileI)
-        jobGroup3.groupoutput.addFile(fileII)
-        jobGroup3.groupoutput.addFile(fileIII)
-        jobGroup3.groupoutput.addFile(fileIV)        
-        jobGroup3.groupoutput.commit()                
+        jobGroup3.output.addFile(fileI)
+        jobGroup3.output.addFile(fileII)
+        jobGroup3.output.addFile(fileIII)
+        jobGroup3.output.addFile(fileIV)        
+        jobGroup3.output.commit()                
 
-        jobGroup4.groupoutput.addFile(fileX)
-        jobGroup4.groupoutput.addFile(fileY)
-        jobGroup4.groupoutput.addFile(fileZ)
-        jobGroup4.groupoutput.commit()
+        jobGroup4.output.addFile(fileX)
+        jobGroup4.output.addFile(fileY)
+        jobGroup4.output.addFile(fileZ)
+        jobGroup4.output.commit()
 
         self.mergeFileset = Fileset(name = "mergeFileset")
         self.mergeFileset.create()
@@ -222,11 +248,8 @@ class EventBasedTest(unittest.TestCase):
         result = jobFactory(min_merge_size = 20000, max_merge_size = 200000,
                             max_merge_events = 20000)
 
-        assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
-
-        assert len(result[0].jobs) == 0, \
-               "ERROR: No jobs should have been returned."
+        assert len(result) == 0, \
+               "ERROR: No job groups should be returned."
 
         return
 

@@ -6,8 +6,8 @@ Oracle implementation of Subscription.GetFilesForMerge
 """
 
 __all__ = []
-__revision__ = "$Id: GetFilesForMerge.py,v 1.1 2009/03/09 18:37:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetFilesForMerge.py,v 1.2 2009/08/27 16:48:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFilesForMerge import GetFilesForMerge as GetFilesForMergeMySQL
 
@@ -35,25 +35,31 @@ class GetFilesForMerge(GetFilesForMergeMySQL):
              INNER JOIN wmbs_jobgroup
                ON wmbs_fileset_files.fileset = wmbs_jobgroup.output
              WHERE wmbs_file_details.id IN
-               (SELECT fileid FROM wmbs_fileset_files INNER JOIN wmbs_subscription
+               (SELECT file FROM wmbs_fileset_files INNER JOIN wmbs_subscription
                   ON wmbs_fileset_files.fileset = wmbs_subscription.fileset
                 WHERE wmbs_subscription.id = :p_1)
                AND wmbs_jobgroup.id IN
-                 (SELECT jobgroup FROM
-                   (SELECT jobgroup, count(*) AS total_jobs FROM wmbs_job GROUP BY jobgroup) all_jobs
-                     INNER JOIN
-                       (SELECT jobgroup, count(*) AS complete_jobs FROM wmbs_group_job_complete GROUP BY jobgroup) complete_jobs
-                       USING (jobgroup) WHERE total_jobs = complete_jobs)
+                 (SELECT all_jobgroups.id FROM
+                    (SELECT wmbs_jobgroup.id AS id, COUNT(*) as total_jobs,
+                            complete_jobs.total AS total_complete FROM wmbs_jobgroup
+                       INNER JOIN
+                         (SELECT wmbs_jobgroup.id AS id, count(*) AS total FROM wmbs_jobgroup
+                            INNER JOIN wmbs_job ON wmbs_job.jobgroup = wmbs_jobgroup.id
+                            INNER JOIN wmbs_job_state ON wmbs_job.state = wmbs_job_state.id
+                          WHERE wmbs_job.outcome = 1 AND wmbs_job_state.name = 'complete'
+                          GROUP BY wmbs_jobgroup.id) complete_jobs USING(id)
+                     GROUP BY wmbs_jobgroup.id) all_jobgroups
+                  WHERE all_jobgroups.total_jobs = all_jobgroups.total_complete)
                AND NOT EXISTS
                  (SELECT * FROM wmbs_sub_files_acquired WHERE
-                   wmbs_file_details.id = wmbs_sub_files_acquired.fileid AND
+                   wmbs_file_details.id = wmbs_sub_files_acquired.file AND
                    :p_1 = wmbs_sub_files_acquired.subscription)
                AND NOT EXISTS
                  (SELECT * FROM wmbs_sub_files_complete WHERE
-                   wmbs_file_details.id = wmbs_sub_files_complete.fileid AND
+                   wmbs_file_details.id = wmbs_sub_files_complete.file AND
                    :p_1 = wmbs_sub_files_complete.subscription)
                AND NOT EXISTS
                  (SELECT * FROM wmbs_sub_files_failed WHERE
-                   wmbs_file_details.id = wmbs_sub_files_failed.fileid AND
+                   wmbs_file_details.id = wmbs_sub_files_failed.file AND
                    :p_1 = wmbs_sub_files_failed.subscription)
              """

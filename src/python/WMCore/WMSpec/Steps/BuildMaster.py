@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: BuildMaster.py,v 1.6 2009/05/22 20:20:09 evansde Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: BuildMaster.py,v 1.7 2010/02/20 18:44:45 evansde Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 
@@ -79,7 +79,7 @@ class BuildMaster:
         TODO: Exception handling
 
         """
-        taskName = task.name()
+        taskName = task.getPathName()
         self.taskSpace = initialiseWMTaskSpace(self.workDir, taskName)
         for step in task.steps().nodeIterator():
             stepType = step.stepType

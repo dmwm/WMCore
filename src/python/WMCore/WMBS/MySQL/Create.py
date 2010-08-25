@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: Create.py,v 1.11 2009/07/01 19:16:55 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Create.py,v 1.12 2009/07/29 21:11:09 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
@@ -78,10 +78,10 @@ class Create(CreateWMBSBase):
         
         self.constraints["uniquewfspecowner"] = \
           """CREATE UNIQUE INDEX uniq_wf_spec_owner on
-             wmbs_workflow (spec, owner)"""
+             wmbs_workflow (spec, owner, task)"""
         
-        self.constraints["uniquelfn"] = \
-          "CREATE UNIQUE INDEX uniq_lfn on wmbs_file_details (lfn)"
+        #self.constraints["uniquelfn"] = \
+        #  "CREATE UNIQUE INDEX uniq_lfn on wmbs_file_details (lfn)"
 
         self.constraints["uniquefilerunlumi"] = \
           """CREATE UNIQUE INDEX uniq_wmbs_file_run_lumi on

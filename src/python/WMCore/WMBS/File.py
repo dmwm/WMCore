@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.56 2009/12/09 17:25:39 mnorman Exp $"
-__version__ = "$Revision: 1.56 $"
+__revision__ = "$Id: File.py,v 1.57 2009/12/09 17:51:36 sryu Exp $"
+__version__ = "$Revision: 1.57 $"
 
 import threading
 import time
@@ -22,12 +22,12 @@ class File(WMBSBase, WMFile):
     """
     A simple object representing a file in WMBS
     """
-    def __init__(self, lfn = "", id = -1, size = 0, events = 0, cksums = {},
+    def __init__(self, lfn = "", id = -1, size = 0, events = 0, checksums = {},
                  parents = None, locations = None, first_event = 0,
                  last_event = 0, merged = True):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events, 
-                        cksums = cksums, parents = parents, merged = merged)
+                        checksums = checksums, parents = parents, merged = merged)
 
         if locations == None:
             self.setdefault("newlocations", Set())
@@ -66,7 +66,7 @@ class File(WMBSBase, WMFile):
         Return the files attributes as a tuple
         """
         return self['lfn'], self['id'], self['size'], self['events'], \
-               self['cksums'], list(self['runs']), list(self['locations']), \
+               self['checksums'], list(self['runs']), list(self['locations']), \
                list(self['parents'])
 
     def getLocations(self):
@@ -284,10 +284,10 @@ class File(WMBSBase, WMFile):
         self.updateLocations()
         self.load()
         self.commitTransaction(existingTransaction)
-        if self['cksums']:
+        if self['checksums']:
             #Add a checksum
-            for entry in self['cksums'].keys():
-                self.setCksum(cksum = self['cksums'][entry], cktype = entry)
+            for entry in self['checksums'].keys():
+                self.setCksum(cksum = self['checksums'][entry], cktype = entry)
         return
     
     def delete(self):
@@ -433,8 +433,7 @@ class File(WMBSBase, WMFile):
                     "lfn": self["lfn"],
                     "locations": list(self["locations"]),
                     "id": self["id"],
-                    "cksums": self["cksums"],
-                    "cktype": self["cktype"],
+                    "checksums": self["checksums"],
                     "events": self["events"],
                     "merged": self["merged"],
                     "size": self["size"],

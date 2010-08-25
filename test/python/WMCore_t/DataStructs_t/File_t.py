@@ -34,15 +34,15 @@ class FileTest(unittest.TestCase):
         testLFN     = "lfn"
         testSize    = "1024"
         testEvents  = "100"
-        testCksum   = "1"
+        testCksum   = {"cksum": "1"}
         testParents = "parent"
 
-        testFile = File(lfn = testLFN, size = testSize, events = testEvents, cksums = testCksum, parents = testParents)
+        testFile = File(lfn = testLFN, size = testSize, events = testEvents, checksums = testCksum, parents = testParents)
 
         self.assertEqual(testFile['lfn'],     testLFN)
         self.assertEqual(testFile['size'],    testSize)
         self.assertEqual(testFile['events'],  testEvents)
-        self.assertEqual(testFile['cksums'],   testCksum)
+        self.assertEqual(testFile['checksums'],   testCksum)
         self.assertEqual(testFile['parents'], testParents)
 
 
@@ -65,7 +65,7 @@ class FileTest(unittest.TestCase):
         testLumi      = 1
         testRunNumber = 1000000
 
-        testFile = File(lfn = testLFN, size = testSize, events = testEvents, cksums = testCksum, parents = testParents)
+        testFile = File(lfn = testLFN, size = testSize, events = testEvents, checksums = testCksum, parents = testParents)
         testRun = Run(testRunNumber, testLumi)
 
         testFile.addRun(testRun)

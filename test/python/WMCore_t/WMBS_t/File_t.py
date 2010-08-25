@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.32 2009/12/09 17:27:35 mnorman Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: File_t.py,v 1.33 2009/12/09 17:51:17 sryu Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import unittest
 import logging
@@ -70,7 +70,7 @@ class FileTest(unittest.TestCase):
         by creating and deleting a file.  The exists() method will be
         called before and after creation and after deletion.
         """
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksums={'cksum':1111})
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, checksums={'cksum':1111})
 
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
@@ -100,7 +100,7 @@ class FileTest(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksums={'cksum':1111})
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, checksums={'cksum':1111})
 
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
@@ -128,7 +128,7 @@ class FileTest(unittest.TestCase):
         transaction is rolled back.
         """
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksums={'cksum': 1111})
+                        checksums={'cksum': 1111})
 
         assert testFile.exists() == False, \
                "ERROR: File exists before it was created"
@@ -161,11 +161,11 @@ class FileTest(unittest.TestCase):
         returns the correct information.
         """
         testFileParent = File(lfn = "/this/is/a/parent/lfn", size = 1024,
-                              events = 20, cksums={'cksum': 1111})
+                              events = 20, checksums={'cksum': 1111})
         testFileParent.addRun(Run(1, *[45]))
         testFileParent.create()
 
-        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksums={'cksum': 222})
+        testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, checksums={'cksum': 222})
         testFile.addRun(Run(1, *[45]))
         testFile.addRun(Run(2, *[46, 47]))
         testFile.addRun(Run(2, *[47, 48]))
@@ -188,7 +188,7 @@ class FileTest(unittest.TestCase):
         assert info[3] == testFile["events"], \
                "ERROR: File returned wrong events"
         
-        assert info[4] == testFile["cksums"], \
+        assert info[4] == testFile["checksums"], \
                "ERROR: File returned wrong cksum"
         
         assert len(info[5]) == 2, \
@@ -223,13 +223,13 @@ class FileTest(unittest.TestCase):
         LFNs.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                               events = 20, cksums = {'cksum': 1})
+                               events = 20, checksums = {'cksum': 1})
         testFileParentA.addRun(Run(1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                               events = 20, cksums = {'cksum': 2})
+                               events = 20, checksums = {'cksum': 2})
         testFileParentB.addRun(Run(1, *[45]))
         testFileParentC = File(lfn = "/this/is/a/parent/lfnC", size = 1024,
-                               events = 20, cksums = {'cksum': 3})
+                               events = 20, checksums = {'cksum': 3})
         testFileParentC.addRun(Run( 1, *[45]))
 
         testFileParentA.create()
@@ -237,7 +237,7 @@ class FileTest(unittest.TestCase):
         testFileParentC.create()
 
         testFile = File(lfn = "/this/is/a/lfn", size = 1024,
-                        events = 10, cksums = {'cksum': 1})
+                        events = 10, checksums = {'cksum': 1})
         testFile.addRun(Run( 1, *[45]))
         testFile.create()
 
@@ -272,7 +272,7 @@ class FileTest(unittest.TestCase):
         LFN of a file.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksums = {'cksum': 101}, first_event = 2, last_event = 3, merged = True)
+                        checksums = {'cksum': 101}, first_event = 2, last_event = 3, merged = True)
         testFileA.create()
                                                         
         testFileB = File(lfn = testFileA["lfn"])
@@ -292,7 +292,7 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileB["events"]) == int, \
                "ERROR: File events is not an integer type."
-        assert type(testFileB["cksums"]) == dict, \
+        assert type(testFileB["checksums"]) == dict, \
                "ERROR: File cksum is not a string type."
         assert type(testFileB["first_event"]) == int, \
                "ERROR: File first_event is not an integer type."
@@ -305,14 +305,14 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileC["events"]) == int, \
                "ERROR: File events is not an integer type."
-        assert type(testFileC["cksums"]) == dict, \
+        assert type(testFileC["checksums"]) == dict, \
                "ERROR: File cksum is not an string type."
         assert type(testFileC["first_event"]) == int, \
                "ERROR: File first_event is not an integer type."
         assert type(testFileC["last_event"]) == int, \
                "ERROR: File last_event is not an integer type."
 
-        self.assertEqual(testFileC['cksums'], {'cksum': '101'})
+        self.assertEqual(testFileC['checksums'], {'cksum': '101'})
 
         testFileA.delete()
         return
@@ -325,16 +325,16 @@ class FileTest(unittest.TestCase):
         associations, location information and parentage information.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, cksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1})
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, cksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1})
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksums = {'cksum':1})
+                        checksums = {'cksum':1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileA.setLocation(se = "se1.fnal.gov", immediateSave = False)
@@ -367,16 +367,16 @@ class FileTest(unittest.TestCase):
         information is loaded/stored correctly from the database.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, cksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1})
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, cksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1})
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                         cksums = {'cksum':1})
+                         checksums = {'cksum':1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
@@ -406,16 +406,16 @@ class FileTest(unittest.TestCase):
         have one parent.
         """
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, cksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1})
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, cksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1})
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                         cksums = {'cksum': 1})
+                         checksums = {'cksum': 1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
@@ -460,7 +460,7 @@ class FileTest(unittest.TestCase):
         database to make sure that the locations were set correctly.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksums = {'cksum':1})
+                        checksums = {'cksum':1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
@@ -492,7 +492,7 @@ class FileTest(unittest.TestCase):
         again reload the file.  Verify that the original locations are back.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksums = {'cksum':1})
+                        checksums = {'cksum':1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileA.setLocation(["se1.fnal.gov"])
@@ -541,12 +541,12 @@ class FileTest(unittest.TestCase):
         single string instead of a set.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksums = {'cksum':1}, locations = Set(["se1.fnal.gov"]))
+                        checksums = {'cksum':1}, locations = Set(["se1.fnal.gov"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
         testFileB = File(lfn = "/this/is/a/lfn2", size = 1024, events = 10,
-                        cksums = {'cksum':1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum':1}, locations = "se1.fnal.gov")
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()        
 
@@ -608,7 +608,7 @@ class FileTest(unittest.TestCase):
         Test the ability to add run and lumi information to a file.
         """
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        cksums = {'cksum':1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum':1}, locations = "se1.fnal.gov")
         testFile.create()
         runSet = Set()
         runSet.add(Run( 1, *[45]))
@@ -629,27 +629,27 @@ class FileTest(unittest.TestCase):
         correctly.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
         testFileA.create()
         
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
         testFileB.create()
         
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
         testFileC.create()
         
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
         testFileD.create()
         
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
         testFileE.create()
         
         testFileE = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
         testFileE.create()
         
         testFileA.addParent(lfn = "/this/is/a/lfnB")
@@ -710,27 +710,27 @@ class FileTest(unittest.TestCase):
         locationAction.execute(siteName = "se6.fnal.gov")
         
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
         testFileA.create()
         
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se2.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se2.fnal.gov")
         testFileB.create()
         
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se3.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se3.fnal.gov")
         testFileC.create()
         
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se4.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se4.fnal.gov")
         testFileD.create()
         
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se5.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se5.fnal.gov")
         testFileE.create()
         
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
-                        cksums = {'cksum': 1}, locations = "se6.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "se6.fnal.gov")
         testFileF.create()
 
         files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]

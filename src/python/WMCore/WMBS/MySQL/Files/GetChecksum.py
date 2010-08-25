@@ -5,8 +5,8 @@ MySQL implementation of GetChecksum
 """
 
 
-__revision__ = "$Id: GetChecksum.py,v 1.2 2009/12/09 17:26:57 mnorman Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: GetChecksum.py,v 1.3 2009/12/09 17:52:14 sryu Exp $"
+__version__  = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -36,9 +36,9 @@ class GetChecksum(DBFormatter):
                 tmpDict = {}
                 for entry in dictVersion:
                     tmpDict.update({entry.get('cktype', 'Default'): entry.get('cksum', None)})
-                formattedResult['cksums']  = tmpDict
+                formattedResult['checksums']  = tmpDict
         else:
-            formattedResult['cksums']  = {'Default': dictVersion.get('cksum', None)}
+            formattedResult['checksums']  = {'Default': dictVersion.get('cksum', None)}
             if formattedResult == {'Default': None}:
                 #Then the thing was empty anyway
                 return None

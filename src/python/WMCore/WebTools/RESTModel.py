@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.2 2009/03/10 02:02:48 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RESTModel.py,v 1.3 2009/03/16 13:00:04 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WebTools.Page import DatabasePage
 
@@ -35,10 +35,3 @@ class RESTModel(DatabasePage):
        data = {"args": args, "kwargs": kwargs}
        self.debug(str(data))
        return data
-   
-   def handle_update(self, args, kwargs):
-       """Example of handle_update implementation"""
-       data = {"args": args, "kwargs": kwargs}
-       self.debug(str(data))
-       return data
-   

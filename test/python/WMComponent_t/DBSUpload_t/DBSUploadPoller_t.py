@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.9 $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -294,7 +294,7 @@ class DBSUploadTest(unittest.TestCase):
         testFileParentB.create()
         testFileParentC.create()
 
-        for i in range(0,300):
+        for i in range(0,200):
                 testFile = DBSBufferFile(lfn = makeUUID(), size = 1024,
                                          events = 10, cksum = 1, locations = "malpaquet")
                 testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
@@ -422,7 +422,7 @@ class DBSUploadTest(unittest.TestCase):
         result = myThread.dbi.processData("SELECT open_status FROM dbsbuffer_block")[0].fetchall()
 
         self.assertEqual(result[0].values()[0], 0)
-        self.assertEqual(result[1].values()[0], 1)
+        self.assertEqual(result[1].values()[0], 0)
 
         return
 
@@ -445,14 +445,14 @@ class DBSUploadTest(unittest.TestCase):
             file_ids1.extend(dbinterface.findUploadableFiles(dataset, 1000))
 
 
-        self.assertEqual(len(file_ids1), 303)
+        self.assertEqual(len(file_ids1), 203)
 
         testDBSUpload = DBSUpload(config)
         testDBSUpload.prepareToStart()
 
-        time.sleep(360)
 
-        #self.addSecondBatch()
+        time.sleep(30)
+
         myThread.workerThreadManager.terminateWorkers()
         datasets=dbinterface.findUploadableDatasets()
 
@@ -508,7 +508,7 @@ class DBSUploadTest(unittest.TestCase):
         files = dbswriter.listDatasetFiles(datasetPath = datasetPath)
 
         #Check that there are four files
-        self.assertEqual(len(files), 303)
+        self.assertEqual(len(files), 203)
 
         fileParents = []
 
@@ -522,7 +522,7 @@ class DBSUploadTest(unittest.TestCase):
 
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
 
-        self.assertEqual(len(result), 152)
+        self.assertEqual(len(result), 102)
 
         #Is the algo listed as being in DBS?
         result = myThread.dbi.processData("SELECT in_dbs FROM dbsbuffer_algo")[0].fetchall()[0].values()[0]

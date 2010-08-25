@@ -7,8 +7,8 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True. 
 """
 
-__revision__ = "$Id: Lexicon.py,v 1.4 2009/10/14 17:38:30 metson Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Lexicon.py,v 1.5 2009/11/18 16:51:49 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import re
 
@@ -25,7 +25,7 @@ def cmsname(candidate):
     """
     #remove any trailing _'s
     candidate = candidate.rstrip('_')
-    return check("^T[0-3%]((_[A-Z]{2})(_[A-Za-z]+)?)?", candidate)
+    return check("^T[0-3%]((_[A-Z]{2}(_[A-Za-z]+)*)?)$", candidate)
 
 def countrycode(candidate):
     #TODO: do properly with a look up table

@@ -5,8 +5,8 @@ WorkerNode unittest for WMRuntime/WMSpec
 
 """
 
-__revision__ = "$Id: WorkerNodeSimulation_t.py,v 1.3 2010/03/19 17:37:55 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkerNodeSimulation_t.py,v 1.4 2010/04/14 16:53:54 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 # Basic libraries
 import unittest
@@ -26,7 +26,7 @@ from WMCore.WMInit      import getWMBASE
 
 # Builders
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload
+from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, outputModule
 from WMCore.DataStructs.JobPackage  import JobPackage
 
 # Factories
@@ -174,7 +174,6 @@ class basicWNTest(unittest.TestCase):
         monitoring.TestMonitor.softTimeOut   = 30000
         monitoring.TestMonitor.hardTimeOut   = 60000
 
-
         # Set environment and site-local-config
         siteConfigPath = '%s/SITECONF/local/JobConfig/' %(workloadDir)
         if not os.path.exists(siteConfigPath):
@@ -187,14 +186,10 @@ class basicWNTest(unittest.TestCase):
             for task in primeTask.taskIterator():
                 task.setSplittingAlgorithm("FileBased", files_per_job = 1)
         
-
-
-
         taskMaker = TaskMaker(workload, workloadDir)
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
 
-        
         return workload
 
 
@@ -248,7 +243,7 @@ class basicWNTest(unittest.TestCase):
         # This is sort of awkward
         type    = task.name().split('Merge')[1]
         helper  = rereco.getStep('cmsRun1').getTypeHelper()
-        output  = helper.getOutputModule("output%sRECO" %(type.upper()))
+        output  = helper.getOutputModule(outputModule(key = type.upper()))
         lfnBase = output.lfnBase
 
         fileset = Fileset(name = 'Merge%s' %(type))
@@ -388,6 +383,8 @@ class basicWNTest(unittest.TestCase):
             for task in primeTask.taskIterator():
                 listOfTasks.append(task)
 
+        sandbox  = workload.data.sandbox
+
         for task in listOfTasks:
             # We have to create a directory, unpack in it, and then get out
             jobName = task.name()
@@ -395,10 +392,9 @@ class basicWNTest(unittest.TestCase):
             if not os.path.exists(taskDir):
                 # Well then we have to make it
                 os.makedirs(taskDir)
-                
             os.chdir(taskDir)
             # Now that we're here, run the unpacker
-            sandbox  = task.data.sandboxArchivePath
+
             package  = os.path.join(self.workloadDir, '%sJobPackage.pkl' %(jobName))
             jobIndex = 0
 
@@ -472,10 +468,7 @@ class basicWNTest(unittest.TestCase):
         siteConfigDir = os.path.join(workloadDir, 'SITECONF/local/JobConfig/')
         # A list of files we expect in the workloadDir
         listOfWorkloadDirFiles = ['SITECONF', 'Tier1ReReco',
-                                  'ReReco-Sandbox.tar.bz2',
-                                  'MergeReco-Sandbox.tar.bz2',
-                                  'MergeAlcaReco-Sandbox.tar.bz2',
-                                  'MergeAod-Sandbox.tar.bz2',
+                                  'Tier1ReReco-Sandbox.tar.bz2',
                                   'ReRecoJobPackage.pkl',
                                   'MergeRecoJobPackage.pkl',
                                   'MergeAlcaRecoJobPackage.pkl',
@@ -490,8 +483,8 @@ class basicWNTest(unittest.TestCase):
 
         self.unpackComponents(workload = workload)
 
-        sandboxContents = ['stageOut1', 'logArch1', '__init__.py',
-                           'WMWorkload.pkl', 'JobPackage.pcl', 'JobIndex.py']
+        sandboxContents = ['stageOut1', 'logArch1', '__init__.py']
+        # 'WMWorkload.pkl', 'JobPackage.pcl', 'JobIndex.py']
         WMCoreContents  = os.listdir(os.path.join(getWMBASE(), 'src/python/WMCore'))
         PSetContents    = ['CVS', '__init__.pyc', 'PSetTweak.py',
                            'WMTweak.py', '__init__.py', 'PSetTweak.pyc']
@@ -503,7 +496,10 @@ class basicWNTest(unittest.TestCase):
             self.assertEqual(os.listdir(taskPath), ['WMSandbox', 'WMCore', 'PSetTweaks'])
             for item in sandboxContents:
                 # All the files in sandboxContents should be here
-                self.assertTrue(item in os.listdir(os.path.join(taskPath, 'WMSandbox')))
+                print "printing item"
+                print item
+                print os.listdir(os.path.join(taskPath, 'WMSandbox', dir))
+                self.assertTrue(item in os.listdir(os.path.join(taskPath, 'WMSandbox', dir)))
             # WMCore should be the same as WMCore
             self.assertEqual(os.listdir(os.path.join(taskPath, 'WMCore')), WMCoreContents)
             self.assertEqual(os.listdir(os.path.join(taskPath, 'PSetTweaks')),
@@ -527,7 +523,7 @@ class basicWNTest(unittest.TestCase):
 
         """
 
-        #return
+        return
         
         workloadName = 'basicWorkload'
 
@@ -588,7 +584,7 @@ class basicWNTest(unittest.TestCase):
         Waiting for future work on that.
         """
 
-        return
+        #return
 
         workloadName = 'basicWorkload'
 

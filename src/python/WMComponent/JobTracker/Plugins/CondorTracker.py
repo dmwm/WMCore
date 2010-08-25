@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: CondorTracker.py,v 1.6 2010/06/23 23:29:35 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: CondorTracker.py,v 1.7 2010/07/26 19:49:11 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 
 import logging
@@ -13,6 +13,7 @@ import os
 import subprocess
 import re
 import time
+import traceback
 
 #from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
@@ -21,7 +22,13 @@ from WMComponent.JobTracker.Plugins.TrackerPlugin  import TrackerPlugin
 from WMComponent.JobTracker.Plugins.CondorQHandler import CondorQHandler
 
 
-command = command = ['condor_q', '-format', '\"(JobStatus: \%s)\"  ', 'JobStatus', ' -format', '\"(RejectedReason: \%s)\"  ', 'LastRejMatchReason']
+class CondorError(Exception):
+    """
+    Silly exception that doesn't do anything
+    except signal
+
+    """
+    pass
 
 
 class CondorTracker(TrackerPlugin):
@@ -57,10 +64,12 @@ class CondorTracker(TrackerPlugin):
         Grab classAds from condor_q using xml parsing
         """
 
+
         constraint = "\"WMAgent_JobID =!= UNDEFINED\""
 
 
         jobInfo = {}
+
         if hasattr(self.config.JobTracker, 'CondorPoolHost'):
             command = ['condor_q', '-pool', self.config.JobTracker.CondorPoolHost, '-global',
                        '-constraint', 'WMAgent_JobID =!= UNDEFINED',
@@ -74,8 +83,10 @@ class CondorTracker(TrackerPlugin):
                        '-format', '(JobStatus:\%s)  ', 'JobStatus',
                        '-format', '(stateTime:\%s)  ', 'EnteredCurrentStatus',
                        '-format', '(WMAgentID:\%d):::',  'WMAgent_JobID']
-        logging.debug("Attempting to call condor_q to track jobs")
-        logging.debug("Command: %s" % command)           
+
+        logging.debug('Executing tracker command:')
+        logging.debug(command)
+
         pipe = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
         stdout, stderr = pipe.communicate()
         logging.debug("condor_q returned the following stdout")
@@ -83,6 +94,27 @@ class CondorTracker(TrackerPlugin):
         logging.debug("condor_q returned the following stderr")
         logging.debug(stderr)
         classAdsRaw = stdout.split(':::')
+
+        if not stderr == '':
+            # Then we have an error
+            # I don't know what the error is, but we can't
+            # trust the output.
+            logging.error("Have stderr.  Aborting output.")
+            logging.error(stderr)
+            raise CondorError
+
+        if stdout == '':
+            # You could have an error here.
+            # condor_q should still produce the header
+            pipe = subprocess.Popen(['condor_q'], stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
+            stdout, stderr = pipe.communicate()
+
+            if stdout == '':
+                # Then condor is broken
+                logging.error("condor_q not returning anything.")
+                logging.error("Aborting this pass, will wait until next one.")
+                raise CondorError
+
 
 
         if classAdsRaw == '':
@@ -131,7 +163,17 @@ class CondorTracker(TrackerPlugin):
         trackDict = {}
 
         # Get the job
-        jobInfo = self.getClassAds()
+        try:
+            jobInfo = self.getClassAds()
+        except CondorError:
+            return {'TrackerFailure': 'CondorQError'}
+        except Exception, ex:
+            msg = 'Experienced exception in jobTracker\n'
+            msg += str(ex)
+            msg += 'Traceback:\n'
+            msg += str(traceback.format_exc())
+            logging.error(msg)
+            raise Exception(msg)
 
         for job in jobDict:
             # Now go over the jobs from WMBS and see what we have

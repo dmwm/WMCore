@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.13 2010/06/08 14:39:40 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.14 2010/07/26 19:49:10 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import threading
 import logging
@@ -120,6 +120,15 @@ class JobTrackerPoller(BaseWorkerThread):
         #trackDict = self.getInfo(locDict)
         trackDict = self.getInfo(jobDictList)
 
+        if 'TrackerFailure' in trackDict.keys():
+            # Then we experienced a tracker failure
+            # Do NOTHING
+            # The tracker could just be overloaded.
+            # Wait for it to sort itself out.
+            logging.error('Experienced tracker failure of type %s' % (trackDict['TrackerFailure']))
+            logging.error('Passing for this round')
+            return
+
         #logging.error("Have info")
         #logging.info(trackDict)
         
@@ -172,7 +181,7 @@ class JobTrackerPoller(BaseWorkerThread):
                 failedJobs.append(job)
             elif trackDict[job]['Status'] == 'Unknown' and trackDict[job]['StatusTime'] > self.unknTimeLimit:
                 failedJobs.append(job)
-            elif trackDict[job]['Status'] == 'NA':
+            elif trackDict[job]['Status'] == 'NA' or trackDict[job]['Status'] == 'Complete':
                 # Well, then we're not sure what happened to it.
                 # Pass this on to the JobAccountant on
                 # the assumption that it finished

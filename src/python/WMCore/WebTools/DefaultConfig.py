@@ -10,7 +10,6 @@
 from WMCore.Configuration import Configuration
 from WMCore.WMBase import getWMBASE
 import os.path
-from os import environ
 
 config = Configuration()
 
@@ -91,7 +90,10 @@ maint = config.WebtoolsDocs.views.section_('maintenance')
 #active.rest.object = 'WMCore.WebTools.RESTApi'
 #active.rest.templates =os.path.join(WMCore.WMInit.getWMBASE(), '/src/templates/WMCore/WebTools/' )
 # Dummy in memory SQLite DB
-#active.rest.database = 'sqlite://'
+#active.rest.database.connectUrl = 'sqlite://'
+# for more option check 
+# http://www.sqlalchemy.org/docs/reference/sqlalchemy/connections.html
+#active.rest.database.engineParameters = {'pool_size': 10, 'max_overflow': 10}
 #active.rest.section_('model')
 #active.rest.model.object = 'RESTModel'
 #active.rest.section_('formatter')

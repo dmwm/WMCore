@@ -42,7 +42,10 @@ active.plotfairy.object = 'WMCore.WebTools.RESTApi'
 active.plotfairy.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
 # Bit of a hack here we don't have a database so the baseclass throws
 # an AssertionError - passing in an empty sqlite one is harmless here.
-active.plotfairy.database = 'sqlite://'
+active.plotfairy.section_('database')
+active.plotfairy.database.connectUrl = 'sqlite://'
+# http://www.sqlalchemy.org/docs/reference/sqlalchemy/connections.html
+#active.plotfairy.database.engineParameters = {'pool_size': 10, 'max_overflow': 0}
 active.plotfairy.section_('model')
 active.plotfairy.model.object = 'WMCore.HTTPFrontEnd.PlotFairy.Plotter'
 active.plotfairy.section_('formatter')

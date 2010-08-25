@@ -10,13 +10,22 @@ from WMCore.Database.Dialects import OracleDialect
 class DBFactory(object):
     
     # class variable
-    engineMap = {}
+    _engineMap = {}
+    _defaultEngineParams = {"convert_unicode" : True, 
+                            "strategy": 'threadlocal',
+                            "pool_size": 10}
     
     def __init__(self, logger, dburl=None, options={}):
         self.logger = logger
+        # get the engine parameter from option
+        if 'engine_parameters' in options.keys():
+            self._defaultEngineParams.update(options['engine_parameters'])    
+            del options['engine_parameters']
+        
         if dburl:
             self.dburl = dburl
         else:
+            #This will be deprecated.
             """
             Need to make the dburl here. Possible formats are:
             
@@ -70,18 +79,13 @@ class DBFactory(object):
                 del options['database']
             elif 'sid' in options.keys():
                 self.dburl = '%s/%s' % (self.dburl, options['sid'])
-                del options['sid']    
+                del options['sid']
                 
-           
-        self.engine = self.engineMap.setdefault(self.dburl,     
+                
+        self.engine = self._engineMap.setdefault(self.dburl,     
                                          create_engine(self.dburl, 
-                                                       #echo_pool=True,
-                                                       convert_unicode=True, 
-                                                       encoding='utf-8',
-                                                       strategy='threadlocal',
-                                                       #TODO: make configurable
-                                                       pool_size = 5,
-                                                       connect_args = options)
+                                                       connect_args = options,
+                                                       **self._defaultEngineParams)
                                                   )
         self.dia = self.engine.dialect
         self.lock = threading.Condition()

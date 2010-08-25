@@ -20,7 +20,10 @@ wmbs = active.section_('wmbs')
 # The class to load for this view/page
 wmbs.object = 'WMCore.WebTools.RESTApi'
 wmbs.templates = path.join( WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
-wmbs.database = 'mysql://metson@localhost/wmbs'
+wmbs.section_('database')
+wmbs.database.connectUrl = 'mysql://metson@localhost/wmbs'
+# http://www.sqlalchemy.org/docs/reference/sqlalchemy/connections.html
+#wmbs.database.database.engineParameters = {'pool_size': 10, 'max_overflow': 0}
 
 wmbs.section_('model')
 wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'

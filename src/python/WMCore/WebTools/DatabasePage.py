@@ -3,8 +3,8 @@
 A page that knows how to format DB queries
 """
 
-__revision__ = "$Id: DatabasePage.py,v 1.5 2010/02/15 21:12:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DatabasePage.py,v 1.6 2010/02/25 16:05:38 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import threading
@@ -13,6 +13,7 @@ from WMCore.WebTools.Page import TemplatedPage
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
+from WMCore.WebTools.ConfigDBMap import ConfigDBMap
 
 class DatabasePage(TemplatedPage, DBFormatter):
     """
@@ -42,21 +43,9 @@ class DatabasePage(TemplatedPage, DBFormatter):
         exposed that passes the database connection to all the DAO's.
         """
         TemplatedPage.__init__(self, config)
-        assert hasattr(self.config, 'database'), "No database configured"
-        option = {}
-
-        if type(self.config.database) == str:
-            connectUrl = self.config.database
-            if hasattr(self.config, "dbsocket"):
-                option["unix_socket"] = self.config.dbsocket
-	    elif os.environ.get("DBSOCK", "") != "":
-                option["unix_socket"] = os.environ["DBSOCK"]            
-        else:
-            connectUrl = self.config.database.connectUrl
-            if hasattr(self.config.database, "socket"):
-                option["unix_socket"] = self.config.database.socket
-        
-        conn = DBFactory(self, connectUrl, option).connect()
+        dbConfig = ConfigDBMap(config)
+        print dbConfig.getOption()
+        conn = DBFactory(self, dbConfig.getDBUrl(), dbConfig.getOption()).connect()
         DBFormatter.__init__(self, self, conn)
         myThread = threading.currentThread()
         myThread.transaction = Transaction(conn)

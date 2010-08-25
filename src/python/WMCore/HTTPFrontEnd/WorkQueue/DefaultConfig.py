@@ -20,7 +20,11 @@ workqueue = active.section_('workqueue')
 # The class to load for this view/page
 workqueue.object = 'WMCore.WebTools.RESTApi'
 workqueue.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools/')
-#workqueue.database = 'mysql://username@hostname.fnal.gov:3306/TestDB'
+workqueue.section_('database')
+workqueue.database.connectUrl = 'mysql://username@hostname.fnal.gov:3306/TestDB'
+#If you want to set up engineParameters take a look at 
+# http://www.sqlalchemy.org/docs/reference/sqlalchemy/connections.html
+#workqueue.database.engineParameters = {'pool_size': 10, 'max_overflow': 0}
 #only needs to specify when mysql db is used
 #if it is not specified gets the value from environment variable. (DBSOCK)
 #workqueue.dbsocket = '/var//mysql.sock'

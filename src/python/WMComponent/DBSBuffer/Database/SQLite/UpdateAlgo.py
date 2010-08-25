@@ -5,8 +5,8 @@ _DBSBuffer.UpdateAlgo_
 Add PSetHash to Algo in DBS Buffer
 
 """
-__revision__ = "$Id: UpdateAlgo.py,v 1.1 2009/05/14 16:18:57 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: UpdateAlgo.py,v 1.2 2009/07/13 19:36:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -20,7 +20,4 @@ class UpdateAlgo(MySQLUpdateAlgo):
     Add PSetHash to Algo in DBS Buffer
 
     """
-
-    def GetUpdateAlgoDialect(self):
-
-        return 'SQLite'
+    pass

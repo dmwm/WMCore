@@ -25,8 +25,8 @@ sample usage:
 
 """
 
-__revision__ = "$Id: Scram.py,v 1.4 2010/04/26 20:05:43 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Scram.py,v 1.5 2010/06/18 19:29:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import os.path
@@ -98,7 +98,7 @@ class Scram:
             )
 
         # BADPYTHON
-        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write(self.preCommand())
         proc.stdin.write("%s project CMSSW %s\n" % (self.command, self.version))
         proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 3; fi\n""")
@@ -142,7 +142,7 @@ class Scram:
             return 1
 
         # BADPYTHON
-        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write(self.preCommand())
         proc.stdin.write("%s ru -sh\n" % self.command)
         proc.stdin.write("""if [ "$?" -ne "0" ]; then exit 4; fi\n""")
@@ -189,7 +189,7 @@ class Scram:
                                 )
 
         # BADPYTHON
-        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:/uscmst1/prod/sw/cms/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        proc.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
         proc.stdin.write("%s\n" % self.preCommand())
         # scram fucks up the python environment from the parent shell
         proc.stdin.write(

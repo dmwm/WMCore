@@ -12,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.32 2010/05/13 18:32:19 mnorman Exp $"
-__revision__ = "$Revision: 1.32 $"
+__version__ = "$Id: WMTask.py,v 1.33 2010/05/14 22:49:23 sfoulkes Exp $"
+__revision__ = "$Revision: 1.33 $"
 
 import os
 import os.path
@@ -630,14 +630,14 @@ class WMTaskHelper(TreeHelper):
         finalReport.persist(logLocation)
 
 
-        if dashboardExport:
-            # Import this here to avoid circular imports
-            from WMCore.WMSpec.DashboardInterface import DashboardInterface
-            dashboard = DashboardInterface()
-            dashboard(job = wmbsJob, report = finalReport,
-                      task = self, export = True,
-                      startTime = self.startTime,
-                      endTime = self.endTime)
+#         if dashboardExport:
+#             # Import this here to avoid circular imports
+#             from WMCore.WMSpec.DashboardInterface import DashboardInterface
+#             dashboard = DashboardInterface()
+#             dashboard(job = wmbsJob, report = finalReport,
+#                       task = self, export = True,
+#                       startTime = self.startTime,
+#                       endTime = self.endTime)
 
 
         return

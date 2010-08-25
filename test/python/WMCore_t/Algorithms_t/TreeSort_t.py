@@ -3,8 +3,8 @@
 
 """
 
-__revision__ = "$Id: TreeSort_t.py,v 1.3 2009/06/19 12:37:13 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TreeSort_t.py,v 1.4 2009/10/01 15:11:17 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 from WMCore.Algorithms.TreeSort import TreeSort
@@ -112,15 +112,6 @@ class TreeSortTest(unittest.TestCase):
         results = TreeSort(_name, _parents, items).sort()
         self.assertEqual(results, items)
 
-
-    def runTest(self):
-        self.testNullOp() 
-        self.testSimpleCase()
-        self.testMultipleParents()
-        self.testExternalParent()
-        self.testUnsorteable()
-        self.testParentageNonList()
-        self.testParentIsSelf()
 
 if __name__ == "__main__":
     unittest.main()

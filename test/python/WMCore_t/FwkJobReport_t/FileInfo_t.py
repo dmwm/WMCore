@@ -6,8 +6,8 @@ General test for FileInfo
 
 """
 
-__revision__ = "$Id: FileInfo_t.py,v 1.3 2009/02/09 21:00:15 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FileInfo_t.py,v 1.4 2009/10/01 15:15:21 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -67,13 +67,6 @@ class FileInfoTest(unittest.TestCase):
         f4.load(f3.save())
         lumis = f4.getLumiSections()
         assert lumis == []
- 
-    def runTest(self):
-        """
-        Run test methods.
-        """
-
-        self.testA()
             
 if __name__ == "__main__":
     unittest.main()     

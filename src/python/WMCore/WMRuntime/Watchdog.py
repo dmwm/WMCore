@@ -6,11 +6,12 @@ _Watchdog_
 This cleverly named object is the thread that handles the monitoring of individual jobs
 """
 
-__version__ = "$Revision: 1.2 $"
-__revision__ = "$Id: Watchdog.py,v 1.2 2009/12/21 17:18:40 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Watchdog.py,v 1.3 2010/05/17 20:37:50 mnorman Exp $"
 
 import threading
 import logging
+import traceback
 
 from WMCore.WMFactory   import WMFactory
 from WMCore.WMException import WMException
@@ -46,11 +47,12 @@ class Watchdog(threading.Thread):
         self._Interval    = 20.0
         self._Monitors    = []
 
+
         self.factory    = WMFactory(self.__class__.__name__, "WMCore.WMRuntime.Monitors")
 
 
     def setupMonitors(self, task, wmbsJob):
-        print "In Watchdog.setupMonitors"
+        logging.info("In Watchdog.setupMonitors")
         if not hasattr(task.data, 'watchdog'):
             msg = "Could not find watchdog in spec"
             logging.error(msg)
@@ -92,7 +94,7 @@ class Watchdog(threading.Thread):
         """
         Set the monitor interval
         """
-        print "Set Interval to %s" % interval
+        logging.info("Set Watchdog interval to %s" % interval)
         self._Interval = interval
 
     def disableMonitoring(self):
@@ -111,7 +113,7 @@ class Watchdog(threading.Thread):
         """
         Shutdown the monitor.
         """
-        print "MonitorState: Shutdown called"
+        logging.info("MonitorState: Shutdown called")
         self._Finished.set()
         return
 
@@ -125,7 +127,7 @@ class Watchdog(threading.Thread):
         """
         Start the job.
         """
-        print "MonitorThread: JobStarted"
+        logging.info("MonitorThread: JobStarted")
         if self.doMonitoring:
             self.setDaemon(1)
             self.start()
@@ -135,6 +137,7 @@ class Watchdog(threading.Thread):
             except Exception, ex:
                 msg = "Error in notifyJobStart for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
+                msg += str(traceback.format_exc())
                 raise WatchdogException(msg)
         return
     #  //
@@ -151,23 +154,25 @@ class Watchdog(threading.Thread):
             except Exception, ex:
                 msg = "Error in notifyTaskStart for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
+                msg += str(traceback.format_exc())
                 raise WatchdogException(msg)
         return
 
     #  //
     # // notify Monitors of task completion
     #//
-    def notifyStepEnd(self, step, exitCode = 0):
+    def notifyStepEnd(self, step, exitCode = 0, stepReport = None):
         """
         notify Monitors of task completion.
         """
         self._RunUpdate.clear()
         for monitor in self._Monitors:
             try:
-                monitor.stepEnd(step)
+                monitor.stepEnd(step = step, stepReport = stepReport)
             except Exception, ex:
                 msg = "Error in notifyTaskEnd for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
+                msg += str(traceback.format_exc())
                 raise WatchdogException(msg)
         #print "Task Ended: %s with Exit Code:%s" % (task, exitCode)
         #self._MonMgr.taskEnd(task, exitCode)
@@ -181,13 +186,14 @@ class Watchdog(threading.Thread):
         notify monitors of Job Completion, stops the periodic
         updating.
         """
-        print "MonitorThread: JobEnded"
+        logging.info("MonitorThread: JobEnded")
         for monitor in self._Monitors:
             try:
                 monitor.jobEnd(task)
             except Exception, ex:
                 msg = "Error in notifyJobEnd for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
+                msg += str(traceback.format_exc())
                 raise WatchdogException(msg)
         #self._MonMgr.jobEnd()
         self.shutdown()
@@ -199,13 +205,14 @@ class Watchdog(threading.Thread):
         """
         Interrupt Notifiers, Job has been killed.
         """
-        print "MonitorThread: JobKilled"
+        logging.info("MonitorThread: JobKilled")
         for monitor in self._Monitors:
             try:
                 monitor.jobKilled()
             except Exception, ex:
                 msg = "Error in notifyKillJob for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
+                msg += str(traceback.format_exc())
                 raise WatchdogException(msg)
         #self._MonMgr.jobKilled()
         self.shutdown()
@@ -216,13 +223,14 @@ class Watchdog(threading.Thread):
         """
         Task has been killed.
         """
-        print "MonitorThread: TaskKilled"
+        logging.info("MonitorThread: TaskKilled")
         for monitor in self._Monitors:
             try:
                 monitor.stepKilled(step)
             except Exception, ex:
                 msg = "Error in notifyKillTask for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
+                msg += str(traceback.format_exc())
                 raise WatchdogException(msg)
         #self._MonMgr.taskKilled()
         
@@ -251,6 +259,7 @@ class Watchdog(threading.Thread):
                     except Exception, ex:
                         msg = "Error in periodicUpdate for monitor class %s in Watchdog:\n" % monitor.__class__
                         msg += str(ex)
+                        msg += str(traceback.format_exc())
                         raise WatchdogException(msg)
                 #self._MonMgr.periodicUpdate()
 

@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.14 2010/05/24 17:19:03 swakef Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.15 2010/05/24 18:01:38 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import WMCore.WMInit
@@ -140,9 +140,9 @@ config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = "DEBUG"
 config.TaskArchiver.pollInterval = 10
 config.TaskArchiver.timeOut      = 0
-config.TaskArchiver.WorkQueueParams = {"PopulateFilesets": True,
-                                       "ParentQueue": "http://%s/workqueue/" % 'cmssrv52.fnal.gov:9996',
-                                       "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
+# TaskArchiver workQueueParams should be empty.
+# Or both ParentQueue and QueueURL need to be set (Although they are not used)
+config.TaskArchiver.WorkQueueParams = {}
 config.TaskArchiver.useWorkQueue = True
 
 config.webapp_('WorkQueueService')

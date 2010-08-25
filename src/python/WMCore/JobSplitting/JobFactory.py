@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.20 2009/12/15 14:07:09 spiga Exp $"
-__version__  = "$Revision: 1.20 $"
+__revision__ = "$Id: JobFactory.py,v 1.21 2010/02/25 19:45:17 mnorman Exp $"
+__version__  = "$Revision: 1.21 $"
 
 
 import logging
@@ -105,17 +105,20 @@ class JobFactory(WMObject):
         if self.currentGroup \
                 and (self.currentGroup.jobs + self.currentGroup.newjobs) > 0:
             self.currentGroup.commitBulk()
+            for job in self.currentGroup.jobs:
+                self.subscription.acquireFiles(job["input_files"])
+                job.save()
             self.jobGroups.append(self.currentGroup)
             logging.debug('I have committed a jobGroup with id %i' %
                                 (self.currentGroup.id))
             self.currentGroup = None
 
-        for jobGroup in self.jobGroups:
-            for job in jobGroup.jobs:
-                self.subscription.acquireFiles(job["input_files"])
-                job.save()
 
         return
+
+
+
+        
 
     def sortByLocation(self):
         """

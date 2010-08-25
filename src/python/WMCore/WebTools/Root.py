@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.48 2010/02/18 15:09:31 metson Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: Root.py,v 1.49 2010/02/18 19:11:17 rpw Exp $"
+__version__ = "$Revision: 1.49 $"
 
 # CherryPy
 import cherrypy
@@ -252,9 +252,6 @@ if __name__ == "__main__":
     parser.add_option("-s", "--status",
                       action="store_true", dest="status", default=False,
                       help="Return the status of the daemon")
-    parser.add_option("-k", "--kill",
-                      action="store_true", dest="kill", default=False,
-                      help="Kill the daemon")
     parser.add_option("-k", "--kill",
                       action="store_true", dest="kill", default=False,
                       help="Kill the daemon")

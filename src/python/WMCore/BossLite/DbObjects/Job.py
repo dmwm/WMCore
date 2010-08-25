@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.17 2010/05/11 10:44:54 spigafi Exp $"
-__revision__ = "$Revision: 1.17 $"
+__version__ = "$Id: Job.py,v 1.18 2010/05/19 09:50:47 spigafi Exp $"
+__revision__ = "$Revision: 1.18 $"
 
 
 # imports
@@ -168,12 +168,6 @@ class Job(DbObject):
         """
         Load the job info from the database
         """
-        
-        # consistency check
-        if not self.valid(['jobId', 'taskId', 'name']):
-            raise JobError("The following job instance cannot be loaded," + \
-                     " since it is not completely specified: %s" % self)
-        
         
         result = db.objLoad(self)
         
@@ -351,6 +345,9 @@ class Job(DbObject):
         self.runningJob = runningJob
         
 class JobDBFormatter(DbObjectDBFormatter):
+    """
+    JobDBFormatter
+    """
 
     def preFormat(self, res):
         """

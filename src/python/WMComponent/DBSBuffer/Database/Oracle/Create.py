@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.7 2009/08/13 22:57:12 meloam Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Create.py,v 1.8 2009/08/24 09:24:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 
@@ -175,9 +175,7 @@ class Create(DBCreator):
           id        INTEGER      PRIMARY KEY AUTO_INCREMENT,
           blockname VARCHAR(250) NOT NULL,
           location  INTEGER      NOT NULL,
-          is_in_phedex INTEGER NOT NULL DEFAULT 0,
-          CONSTRAINT dbsbuffer_block_pk     PRIMARY KEY (id),
-          CONSTRAINT dbsbuffer_block_unique UNIQUE (blockname, location)"""
+          is_in_phedex INTEGER NOT NULL DEFAULT 0) %s""" % (params["tablespace_table"])
 
         self.create["10dbsbuffer_block_seq"] = \
           """CREATE SEQUENCE dbsbuffer_block_seq
@@ -197,7 +195,8 @@ class Create(DBCreator):
         self.indexes["1_pk_dbsbuffer_dataset"] = \
           """ALTER TABLE dbsbuffer_dataset ADD
                (CONSTRAINT dbsbuffer_dataset_pk     PRIMARY KEY (id) %s),
-               (CONSTRAINT dbsbuffer_dataset_unique UNIQUE (Path) %s)""" %(params["tablespace_index"], params["tablespace_index"])
+               (CONSTRAINT dbsbuffer_dataset_unique UNIQUE (Path) %s)""" % (params["tablespace_index"],
+                                                                            params["tablespace_index"])
         
         self.indexes["1_pk_dbsbuffer_algo"] = \
           """ALTER TABLE dbsbuffer_algo ADD
@@ -220,7 +219,14 @@ class Create(DBCreator):
         self.indexes["1_pk_dbsbuffer_location"] = \
           """ALTER TABLE dbsbuffer_location ADD
                (CONSTRAINT pk_dbsbuffer_location_pk     PRIMARY KEY (id) %s)
-               (CONSTRAINT pk_dbsbuffer_location_unique UNIQUE (se_name) %s)""" %(params["tablespace_index"], params["tablespace_index"])
+               (CONSTRAINT pk_dbsbuffer_location_unique UNIQUE (se_name) %s)""" % (params["tablespace_index"],
+                                                                                   params["tablespace_index"])
+
+        self.indexes["1_pk_dbsbuffer_block"] = \
+          """ALTER TABLE dbsbuffer_block ADD
+               (CONSTRAINT dbsbuffer_block_pk     PRIMARY KEY (id) %s)
+               (CONSTRAINT dbsbuffer_block_unique UNIQUE (blockname, location) %s)""" % (params["tablespace_index"],
+                                                                                         params["tablespace_index"])
 
         #FOREIGN KEYS sometimes have to be done after the uniqueness of their target is established
         #Do them down here.

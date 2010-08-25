@@ -77,11 +77,11 @@ class JobCreatorTest(unittest.TestCase):
 
 
         #Create sites in resourceControl
-        resourceControl = ResourceControl()
-        for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = site, ceName = site)
-            resourceControl.insertThreshold(thresholdName = 'ProcessingThreshold', \
-                                            thresholdValue = 1000, siteNames = site)
+        #resourceControl = ResourceControl()
+        #for site in self.sites:
+        #    resourceControl.insertSite(siteName = site, seName = site, ceName = site)
+        #    resourceControl.insertThreshold(thresholdName = 'ProcessingThreshold', \
+        #                                    thresholdValue = 1000, siteNames = site)
 
         self._setup = True
         self._teardown = False

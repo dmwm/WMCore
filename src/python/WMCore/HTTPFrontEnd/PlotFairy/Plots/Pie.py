@@ -18,7 +18,8 @@ class Pie(Plot):
         }
         """
         
-        xy = (input['width']/input.get('dpi',96), input['height']/input.get('dpi',96))
+        xy = (input['width']/input.get('dpi',96), 
+              input['height']/input.get('dpi',96))
         fig = figure(figsize = xy)
         axis = fig.add_axes([0.1, 0.1, 0.8, 0.8])
         
@@ -28,11 +29,12 @@ class Pie(Plot):
         for s in input['series']:
             labels.append(s['label'])
             fracs.append(s['value'])
-            colours.append(s['colour'])
+            colours.append('#%s' % ['colour'])
             explode = [0] * len(fracs)
         if 'explode' in input:
             ind = input['explode'] - 1
             explode[ind] = 0.05
-        axis.pie(fracs, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True,colors=colours)
+        axis.pie(fracs, explode=explode, labels=labels, autopct='%1.1f%%', 
+                 shadow=True, colors=colours)
         
         return fig    

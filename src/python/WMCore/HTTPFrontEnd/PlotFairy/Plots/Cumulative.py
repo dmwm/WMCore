@@ -41,7 +41,7 @@ class Cumulative(Plot):
         for s in series:
             height = s['values']
             assert len(height)==x_bins
-            colour = s['colour']
+            colour = '#%s' % s['colour']
             y1 = [y+h for y,h in zip(y0,height)]
             axes.fill_between(x,y1,y0,label=s['label'],facecolor=colour)
             y0 = y1
@@ -51,5 +51,5 @@ class Cumulative(Plot):
         axes.set_xbound(x_min,x_max)
         
         if input.get('legend',False):
-            axes.legend([Rectangle((0,0),1,1,fc=s['colour']) for s in series],[s['label'] for s in series],loc=0)
+            axes.legend([Rectangle((0,0),1,1,fc='#%s' % s['colour']) for s in series],[s['label'] for s in series],loc=0)
         return fig

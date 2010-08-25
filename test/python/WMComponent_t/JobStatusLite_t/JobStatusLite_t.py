@@ -31,7 +31,7 @@ from WMCore.BossLite.Common.Exceptions      import SchedulerError
 #import threading
 import unittest
 import os
-from nose.plugins.attrib import nose
+from nose.plugins.attrib import attr
 
 def fakeTask( db, numjob ):
     """

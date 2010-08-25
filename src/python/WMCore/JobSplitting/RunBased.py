@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.19 2009/12/15 14:07:09 spiga Exp $"
-__version__  = "$Revision: 1.19 $"
+__revision__ = "$Id: RunBased.py,v 1.20 2010/01/26 14:53:04 riahi Exp $"
+__version__  = "$Revision: 1.20 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
@@ -31,7 +31,7 @@ class RunBased(JobFactory):
         filesPerJob = kwargs.get("files_per_job", 300)
         requireRunClosed = kwargs.get("require_run_closed", False)
 
-        baseName = makeUUID()
+        #baseName = makeUUID()
                 
         # Select all primary files for the first present run
         curRun = None
@@ -75,6 +75,7 @@ class RunBased(JobFactory):
                 #Find the runs in the dictionary we assembled and split the files in them
             
                 self.newGroup()
+                baseName = makeUUID()
 
                 #Now split them into sections according to files per job
                 while len(runDict[run]) > 0:
@@ -85,5 +86,6 @@ class RunBased(JobFactory):
                             jobFiles.addFile(runDict[run].pop())
 
                     # Create the job
-                    currentJob = self.newJob('%s-%s' % (baseName, len(self.currentGroup.jobs)), 
+                    currentJob = self.newJob('%s-%s' % (baseName, len(self.currentGroup.newjobs)), 
                                              files = jobFiles)
+

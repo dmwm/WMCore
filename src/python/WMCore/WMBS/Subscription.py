@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.51 2009/10/15 19:47:25 mnorman Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: Subscription.py,v 1.52 2009/10/19 16:35:31 sfoulkes Exp $"
+__version__ = "$Revision: 1.52 $"
 
 from sets import Set
 import logging
@@ -184,7 +184,9 @@ class Subscription(WMBSBase, WMSubscription):
                                   transaction = self.existingTransaction())
         
         fileInfoAct  = self.daofactory(classname = "Files.GetByID")
-        fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList])
+        fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList],
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
         
         #Run through all files
         for f in fileList:

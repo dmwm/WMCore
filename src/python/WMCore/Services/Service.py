@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.52 2010/06/25 20:26:23 sryu Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: Service.py,v 1.53 2010/07/12 16:19:04 metson Exp $"
+__version__ = "$Revision: 1.53 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -122,17 +122,20 @@ class Service(dict):
         for key, value in inputdata.items():
             hash += key.__hash__()
             if type(value) == list:
-                self._makeHashFromList(value, hash)
+                hash += self._makeHashFromList(value, hash)
             elif type(value) == dict:
-                self._makeHash(value, hash)
+                hash += self._makeHash(value, hash)
+            else:
+                hash += value.__hash__()
         return hash     
     
     def _makeHashFromList(self, inputList, hash):
+        hash = ''
         for value in inputList:
             if type(value) == dict:
-                self._makeHash(value, hash)
+                hash += self._makeHash(value, hash)
             elif type(value) == list:
-                self._makeHashFromList(value, hash)
+                hash += self._makeHashFromList(value, hash)
             else:
                 #assuming non other complex value come here
                 hash += value.__hash__()
@@ -162,7 +165,6 @@ class Service(dict):
         
         t = datetime.datetime.now() - datetime.timedelta(hours = self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
-        
         
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)

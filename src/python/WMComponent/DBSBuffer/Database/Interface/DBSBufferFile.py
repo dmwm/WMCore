@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.8 2009/12/03 19:20:00 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.9 2009/12/10 17:25:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from sets import Set
 import time
@@ -23,11 +23,11 @@ from WMCore.WMBS.WMBSBase import WMBSBase
 
 class DBSBufferFile(WMBSBase, WMFile):
     def __init__(self, lfn = None, id = -1, size = None,
-                 events = None, cksum = None, parents = None, locations = None,
-                 status = "NOTUPLOADED", cktype = 'cksum'):
+                 events = None, checksums = {}, parents = None, locations = None,
+                 status = "NOTUPLOADED"):
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events, 
-                        cksum = cksum, parents = parents, cktype = 'cksum')
+                        checksums = checksums, parents = parents, merged = True)
         self.setdefault("status", status)
         self.setdefault("id", id)
         self.setdefault("location", Set())
@@ -113,12 +113,10 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         self.update(result)
 
-        #Now get the checksum
         action = self.daoFactory(classname = 'DBSBufferFiles.GetChecksum')
         result = action.execute(fileid = self['id'], conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
-        if result:
-            self.update(result)
+        self["checksums"] = result
 
         action = self.daoFactory(classname = "DBSBufferFiles.GetRunLumiFile")
         runs = action.execute(self["lfn"], conn = self.getDBConn(),
@@ -209,9 +207,10 @@ class DBSBufferFile(WMBSBase, WMFile):
         self["id"] = self.exists()
         self.updateLocations()
         self.commitTransaction(existingTransaction)
-        if self['cksum'] and self['cktype']:
-            #Add the primary checksum
-            self.setCksum(cksum = self['cksum'], cktype = self['cktype'])
+
+        for checksumType in self["checksums"]:
+            self.setCksum(cksum = self["checksums"][checksumType],
+                          cktype = checksumType)
         return
     
     def delete(self):
@@ -449,12 +448,8 @@ class DBSBufferFile(WMBSBase, WMFile):
         
         Set the Checksum
         """
-
-        myThread = threading.currentThread()
-
         if self['id'] < 0:
-            #You haven't bothered to create the file!
-            return
+            self.create()
 
         existingTransaction = self.beginTransaction()
 

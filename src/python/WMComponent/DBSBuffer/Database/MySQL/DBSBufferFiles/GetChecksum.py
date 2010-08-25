@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-
 """
-MySQL implementation of GetChecksum
+_GetChecksum_
+
+MySQL implementation of DBSBufferFiles.GetChecksum
 """
 
-
-__revision__ = "$Id: GetChecksum.py,v 1.1 2009/12/02 20:04:59 mnorman Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: GetChecksum.py,v 1.2 2009/12/10 17:25:18 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -19,48 +19,27 @@ class GetChecksum(DBFormatter):
 
     def formatResult(self, result):
         """
-        I need the result in a reasonable list.
-        This will return None if there is no cksum
+        _formatResult_
 
+        Turn the query results into a dictionary that is keyed by
+        checksum type.
         """
         formattedResult = {}
 
         dictVersion = DBFormatter.formatDict(self, result)
-        if type(dictVersion) == type([]):
-            if len(dictVersion) == 0:
-                #Then it's empty
-                return None
-            elif len(dictVersion) == 1:
-                #There's only one entry
-                formattedResult['cktype'] = dictVersion[0].get('cktype', None)
-                formattedResult['cksum']  = dictVersion[0].get('cksum', None)
-            else:
-                #Otherwise there are several, and we have to record each one
-                #I don't know how to do this yet.
-                tmpList = []
-                for entry in dictVersion:
-                    tmpList.append({'cktype': entry.get('cktype', None), 'cksum': entry.get('cksum', None)})
-                formattedResult['cktype'] = tmpList
-                formattedResult['cksum']  = tmpList
-        else:
-            formattedResult['cktype'] = dictVersion.get('cktype', None)
-            formattedResult['cksum']  = dictVersion.get('cksum', None)
-            if formattedResult == {'cktype': None, 'cksum': None}:
-                #Then the thing was empty anyway
-                return None
+
+        for resultRow in dictVersion:
+            formattedResult[resultRow["cktype"]] = resultRow["cksum"]
 
         return formattedResult
-                
-                
-    def execute(self, fileid = None, bulkList = None, conn = None, transaction = False):
 
-        if bulkList:
-            #Would need to accept a bulk list of form [{fileid: fileid}]
-            binds = bulkList
-        else:
-            binds = {'fileid': fileid}
+    def execute(self, fileid, conn = None, transaction = False):
+        """
+        _execute_
 
-        result = self.dbi.processData(self.sql, binds, 
-                                      conn = conn, transaction = transaction)
-
+        Retrieve checksum information for a file.  The result is returned in
+        the form of a dict that is keyed by checksum type.
+        """
+        result = self.dbi.processData(self.sql, {"fileid": fileid}, conn = conn,
+                                      transaction = transaction)
         return self.formatResult(result)

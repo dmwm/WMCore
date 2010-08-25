@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.12 2010/01/13 19:23:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.13 2010/01/26 17:44:57 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import logging
 import os.path
@@ -47,7 +47,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-
+        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database", "WMCore.WMBS"]) 
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
                                                 "WMCore.WMBS"],
                                 useDefault = False)
@@ -1944,7 +1944,31 @@ class JobAccountantTest(unittest.TestCase):
                                          ["/some/lfn/for/job/%s" % jobID],
                                          jobReports[0].files)
 
-        return    
+        return
+
+
+    def testNoFileReport(self):
+        """
+        _testNoFileReport_
+        
+        See that the Accountant does not crash if there are no files.
+        """
+
+
+        self.setupDBForMergeSuccess()
+        config = self.createConfig(workerThreads = 1)
+
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        accountant.algorithm()
+
+        jobReports = readJobReport(os.path.join(os.getenv("WMCOREBASE"),
+                                                "test/python/WMComponent_t/JobAccountant_t/",
+                                                "MergeSuccessNoFiles.xml"))
+        self.verifyJobSuccess(self.testJob["id"])
+
+
+
     
 if __name__ == '__main__':
     unittest.main()

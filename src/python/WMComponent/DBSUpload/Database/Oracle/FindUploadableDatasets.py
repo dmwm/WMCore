@@ -5,8 +5,8 @@ _DBSUpload.FindUploadableDatasets_
 Find the datasets that have files that needs to be uploaded to DBS
 
 """
-__revision__ = "$Id: FindUploadableDatasets.py,v 1.1 2009/06/04 21:50:25 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FindUploadableDatasets.py,v 1.2 2009/07/20 18:07:26 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 from WMComponent.DBSUpload.Database.MySQL.FindUploadableDatasets import FindUploadableDatasets as MySQLFindUploadableDatasets
@@ -18,19 +18,9 @@ Oracle implementation for finding datasets that have files that need to be uploa
     """
 
 
-    def makeDS(self, results):
-        ret=[]
-        for r in results:
-            entry={}
-            entry['ID']       = r['id']
-            entry['Path']     = r['path']
-            if not r['algo']  == None:
-                entry['Algo'] = int(r['algo'])
-            else:
-                entry['Algo'] = None
-            if not r['algoindbs']  == None:
-                entry['AlgoInDBS'] = int(r['algoindbs'])
-            else:
-                entry['AlgoInDBS'] = None
-            ret.append(entry)
-        return ret
+    sql = """SELECT das.dataset_id as ID, ds.Path as Path, das.algo_id as Algo, das.in_dbs as in_dbs 
+             FROM dbsbuffer_algo_dataset_assoc das
+             INNER JOIN dbsbuffer_dataset ds
+               ON das.dataset_id = ds.ID
+             WHERE das.ID IN (SELECT df.dataset_algo FROM dbsbuffer_file df WHERE df.status = 'NOTUPLOADED')
+             """

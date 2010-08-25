@@ -5,8 +5,8 @@ _DBSUpload.FindUploadableFiles_
 Find the files in a datasets that needs to be uploaded to DBS
 
 """
-__revision__ = "$Id: FindUploadableFiles.py,v 1.1 2009/06/04 21:50:25 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FindUploadableFiles.py,v 1.2 2009/07/20 18:07:26 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 from WMComponent.DBSUpload.Database.MySQL.FindUploadableFiles import FindUploadableFiles as MySQLFindUploadableFiles
@@ -17,13 +17,8 @@ class FindUploadableFiles(MySQLFindUploadableFiles):
 Oracle implementation to find files in datasets that need to be uploaded to DBS
     """
     
-    sql = """SELECT dbsfile.id as ID FROM dbsbuffer_file dbsfile where dbsfile.dataset=:dataset and dbsfile.status =:status AND ROWNUM < :maxfiles""" 
 
-
-    def makeFile(self, results):
-        ret=[]
-        for r in results:
-                entry={}
-                entry['ID']=r['id']
-                ret.append(entry)
-        return ret
+    sql = """SELECT id as ID FROM (SELECT id, status, dataset_algo, ROWNUM rn FROM dbsbuffer_file)
+             WHERE dataset_algo = (SELECT ID FROM dbsbuffer_algo_dataset_assoc WHERE dataset_id =:dataset)
+             AND status =:status
+             AND rn <= :maxfiles""" 

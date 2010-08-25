@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.6 2009/06/25 15:56:59 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.7 2009/07/02 18:30:46 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import pickle
@@ -124,9 +124,11 @@ class WorkQueueTest(WorkQueueTestCase):
         # commented out for now queueWork only update the database for now
         #self.assertEqual(numBlocks, len(self.queue))
         
+        elements = self.queue.listWQElementBySpec(self.specName)
+        self.assertEqual(numBlocks, len(elements))
+        
         # try to get work - Note hardcoded values - bah.
         work = self.queue.getWork({'SiteA' : 0})
-        #self.assertEqual(numBlocks, len(self.queue))
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : njobs[0]})
         self.assertEqual(len(work), 1)

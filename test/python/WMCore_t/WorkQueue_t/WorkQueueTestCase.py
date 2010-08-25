@@ -4,8 +4,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: WorkQueueTestCase.py,v 1.1 2009/06/05 17:05:20 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueTestCase.py,v 1.2 2009/07/02 18:30:46 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -35,10 +35,8 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"], useDefault = False)
+        self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database"], useDefault = False)
 
         myThread = threading.currentThread()
                 

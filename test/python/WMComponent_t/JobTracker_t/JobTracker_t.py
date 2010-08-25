@@ -17,9 +17,9 @@ import shutil
 import subprocess
 import getpass
 import time
-
 import cProfile
 import pstats
+from nose.plugins.attrib import attr
 
 import WMCore.WMInit
 from WMQuality.TestInit   import TestInit
@@ -256,7 +256,7 @@ class JobTrackerTest(unittest.TestCase):
 
         
 
-
+    @attr('integration')
     def testA_CondorTest(self):
         """
         _CondorTest_
@@ -388,7 +388,7 @@ class JobTrackerTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testB_ReallyLongTest(self):
         """
         _ReallyLongTest_

@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.6 2010/05/03 19:22:32 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.7 2010/05/11 19:10:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import os.path
@@ -128,7 +128,7 @@ class CondorGlideInPlugin(PluginBase):
 
         
         jdl.append("universe = vanilla\n")
-        jdl.append('(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\")\n')
+        jdl.append(requirements = '(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_Site, DESIRED_Sites)\n')
         jdl.append("should_transfer_executable = TRUE\n")
         jdl.append("transfer_output_files = Report.pkl\n")
         jdl.append("should_transfer_files = YES\n")

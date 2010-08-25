@@ -6,8 +6,8 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.5 2009/10/01 01:13:24 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Daemon_t.py,v 1.6 2009/10/01 01:16:41 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -16,6 +16,8 @@ import logging
 import os
 import threading
 import time
+import shutil
+import tempfile
 
 from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
@@ -44,6 +46,7 @@ class DaemonTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(['WMCore.Agent.Daemon'])
+        self.tempDir = tempfile.mkdtemp()
 
 
     def tearDown(self):
@@ -51,6 +54,7 @@ class DaemonTest(unittest.TestCase):
         Deletion of the databases 
         """
         self.testInit.clearDatabase()
+        shutil.rmtree( self.tempDir, True )
 
                
     def testA(self):
@@ -60,12 +64,12 @@ class DaemonTest(unittest.TestCase):
         Test deamon creation
         """
         # keep the parent alive
-        pid = createDaemon(os.getenv("TESTDIR"), True)
+        pid = createDaemon(self.tempDir, True)
         if pid != 0 :
             print('Deamon created I am the parent')
             time.sleep(2)
             print('Going to destroy my daemon')
-            details = Details(os.path.join(os.getenv("TESTDIR"),"Daemon.xml"))
+            details = Details(os.path.join(self.tempDir,"Daemon.xml"))
             print('Found Deamon details (sleeping for 10 secs.)')
             print(str(details.isAlive()))
             time.sleep(10)

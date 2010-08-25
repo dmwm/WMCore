@@ -12,8 +12,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.35 2010/06/08 14:26:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.36 2010/07/04 23:27:13 meloam Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import os
 import threading
@@ -150,11 +150,11 @@ class AccountantWorker:
 
         if not os.path.exists(jobReportPath):
             logging.error("Bad FwkJobReport Path: %s" % jobReportPath)
-            return self.createMissingFWKJR(parameters, 99999, 'Cannot find file in jobReport path')
+            return self.createMissingFWKJR(parameters, 99999, 'Cannot find file in jobReport path: %s' % jobReportPath)
 
         if os.path.getsize(jobReportPath) == 0:
             logging.error("Empty FwkJobReport: %s" % jobReportPath)
-            return self.createMissingFWKJR(parameters, 99998, 'jobReport of size 0')
+            return self.createMissingFWKJR(parameters, 99998, 'jobReport of size 0: %s ' % jobReportPath)
 
         jobReport = Report()
 

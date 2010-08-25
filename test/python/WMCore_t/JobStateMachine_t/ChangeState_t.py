@@ -22,6 +22,7 @@ from WMCore.WMBS.JobGroup import JobGroup
 from sets import Set
 import time
 import urllib
+
 # Framework for this code written automatically by Inspect.py
 
 
@@ -284,67 +285,60 @@ class TestChangeState(unittest.TestCase):
 
 
     def testAddAttachment(self):
-        print "addattachment"
-        try:
-            (testSubscription, testFileset, testWorkflow, testFileA,\
-                testFileB, testFileC) = self.createSubscriptionWithFileABC()
-            
-    
-            self.assertFalse(testSubscription.exists() , \
-                   "ERROR: Subscription exists before it was created")
-    
-            testSubscription.create()
-            
-            assert testSubscription.exists() >= 0, \
-                   "ERROR: Subscription does not exist after it was created"
-                   
-            testJobGroupA = JobGroup(subscription = testSubscription)
-            testJobGroupA.create()
-    
-            testJobA = Job(name = "TestJobA")
-            testJobA.create(testJobGroupA)
-            testJobA.addFile(testFileA)
-            
-            testJobB = Job(name = "TestJobB")
-            testJobB.create(testJobGroupA)
-            testJobB.addFile(testFileB)
-            
-            testJobC = Job(name = "TestJobC")
-            testJobC.create(testJobGroupA)
-            
-            testJobGroupA.add(testJobA)
-            testJobGroupA.add(testJobB)
-            testJobGroupA.add(testJobC)
-            
-            testJobGroupA.commit()
-            
-            self.change.addAttachment('hosts', testJobA['id'], '/etc/hosts')
-            self.change.addAttachment('hosts', testJobC['id'], '/etc/hosts')
-            self.change.addAttachment('passwd', testJobA['id'], '/etc/passwd')
-            self.change.addAttachment('passwd', testJobB['id'], '/etc/passwd')
-            jobs = self.change.propagate([testJobA,testJobB,testJobC], 'created', 'new')
-            hostTest = urllib.urlopen( '/etc/hosts' ).read(-1)
-            passwdTest = urllib.urlopen( '/etc/passwd' ).read(-1)
-            for job in jobs:
-                if job['id'] == testJobA['id']:
-                    hosts = self.change.getAttachment(job['couch_record'],'hosts')
-                    passwd = self.change.getAttachment(job['couch_record'],'passwd')
-                    self.assertEquals(hostTest, hosts)
-                    self.assertEquals(passwdTest, passwd)
-                if job['id'] == testJobB['id']:
-                    passwd = self.change.getAttachment(job['couch_record'],'passwd')
-                    self.assertEquals(passwdTest, passwd)
-                    self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'hosts')
-                if job['id'] == testJobC['id']:
-                    hosts = self.change.getAttachment(job['couch_record'],'hosts')
-                    self.assertEquals(hostTest, hosts)
-                    self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'passwd')
-            print "/addattachment"
-        except Exception,e :
-            print "what the hell %s" % e
-            print "type is %s " % type(e)
-            print "info is %s " % e.__slots__
-        return
+        (testSubscription, testFileset, testWorkflow, testFileA,\
+            testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        
+
+        self.assertFalse(testSubscription.exists() , \
+               "ERROR: Subscription exists before it was created")
+
+        testSubscription.create()
+        
+        assert testSubscription.exists() >= 0, \
+               "ERROR: Subscription does not exist after it was created"
+               
+        testJobGroupA = JobGroup(subscription = testSubscription)
+        testJobGroupA.create()
+
+        testJobA = Job(name = "TestJobA")
+        testJobA.create(testJobGroupA)
+        testJobA.addFile(testFileA)
+        
+        testJobB = Job(name = "TestJobB")
+        testJobB.create(testJobGroupA)
+        testJobB.addFile(testFileB)
+        
+        testJobC = Job(name = "TestJobC")
+        testJobC.create(testJobGroupA)
+        
+        testJobGroupA.add(testJobA)
+        testJobGroupA.add(testJobB)
+        testJobGroupA.add(testJobC)
+        
+        testJobGroupA.commit()
+        
+        self.change.addAttachment('hosts', testJobA['id'], '/etc/hosts')
+        self.change.addAttachment('hosts', testJobC['id'], '/etc/hosts')
+        self.change.addAttachment('passwd', testJobA['id'], '/etc/passwd')
+        self.change.addAttachment('passwd', testJobB['id'], '/etc/passwd')
+        jobs = self.change.propagate([testJobA,testJobB,testJobC], 'created', 'new')
+        hostTest = urllib.urlopen( '/etc/hosts' ).read(-1)
+        passwdTest = urllib.urlopen( '/etc/passwd' ).read(-1)
+        for job in jobs:
+            if job['id'] == testJobA['id']:
+                hosts = self.change.getAttachment(job['couch_record'],'hosts')
+                passwd = self.change.getAttachment(job['couch_record'],'passwd')
+                self.assertEquals(hostTest, hosts)
+                self.assertEquals(passwdTest, passwd)
+            if job['id'] == testJobB['id']:
+                passwd = self.change.getAttachment(job['couch_record'],'passwd')
+                self.assertEquals(passwdTest, passwd)
+                self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'hosts')
+            if job['id'] == testJobC['id']:
+                hosts = self.change.getAttachment(job['couch_record'],'hosts')
+                self.assertEquals(hostTest, hosts)
+                self.assertRaises(CMSCouch.CouchNotFoundError, self.change.getAttachment, job['couch_record'], 'passwd')
+
 
     def testStates(self):
     	"""

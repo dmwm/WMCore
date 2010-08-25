@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.44 2009/08/11 15:53:34 meloam Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: CMSCouch.py,v 1.45 2009/08/11 19:24:53 meloam Exp $"
+__version__ = "$Revision: 1.45 $"
 
 try:
     # Python 2.6
@@ -97,18 +97,6 @@ class Document(dict):
     def delete(self):
         self['_deleted'] = True
     
-    def __to_json__(self, thunker):
-        tmpDict = {}
-        for k,v in self.iteritems():
-            tmpDict[k] = v
-        return tmpDict
-    
-    def __from_json__(self, input, thunker):
-        if ('json_hack_mod_' in input):
-            del input['json_hack_mod']
-        if ('json_hack_name_' in input):
-            del input['json_hack_name']
-        return Document( dict = input )
     
 class CouchDBRequests(JSONRequests):
     """

@@ -12,6 +12,7 @@ from httplib import HTTPSConnection
 from sets import Set
 from WMCore.WMException import WMException
 import types
+import pprint
 
 class Requests(dict):
     """
@@ -173,6 +174,15 @@ class JSONThunker:
                                  types.StringType,
                                  types.UnicodeType
                                  )
+        # objects that inherit from dict should be treated as a dict
+        #   they don't store their data in __dict__. There was enough
+        #   of those classes that it warrented making a special case
+        self.dictSortOfObjects = ( ('WMCore.Datastructs.Job', 'Job'),
+                                   ('WMCore.WMBS.Job', 'Job'),
+                                   ('WMCore.Database.CMSCouch', 'Document' ))
+        # ditto above, but for lists
+        self.listSortOfObjects = ( ('WMCore.DataStructs.JobPackage', 'JobPackage' ),
+                                   ('WMCore.WMBS.JobPackage', 'JobPackage' ),)
         
         self.foundIDs = {}
         # modules we don't want JSONed
@@ -182,6 +192,9 @@ class JSONThunker:
                                    'WMCore.DAOFactory',
                                    'WMCore.WMFactory',
                                    'WMFactory',
+                                   'WMCore.Configuration',
+                                   'WMCore.Database.Transaction',
+                                   'threading',
                                    'datetime')
         
     def checkRecursion(self, data):
@@ -228,8 +241,14 @@ class JSONThunker:
         """
         Thunk - turns an arbitrary object into a JSONable object
         """
+#        print "entering thunk"
+#        pp = pprint.PrettyPrinter(indent = 4)
+#        pp.pprint(toThunk)
         self.foundIDs = {}
-        return self._thunk(toThunk)
+        data = self._thunk(toThunk)
+#        print "leaving thunk"
+#        pp.pprint(data)
+        return data
     
     def _thunk(self, toThunk):
         """
@@ -269,8 +288,20 @@ class JSONThunker:
                 # things that got blacklisted
                 return toThunk
             if (hasattr(toThunk, '__to_json__')):
+                print "tojson on %s " % toThunk.__class__.__module___
+                toThunk2 = toThunk.__to_json__(self)
                 self.unrecurse(toThunk)
-                return toThunk.__to_json__(self)
+                return toThunk2
+            elif ( (toThunk.__class__.__module__, toThunk.__class__.__name__) in
+                   self.dictSortOfObjects ):
+                toThunk2 = self.handleDictObjectThunk( toThunk )
+                self.unrecurse(toThunk)
+                return toThunk2
+            elif ( (toThunk.__class__.__module__, toThunk.__class__.__name__) in
+                   self.listSortOfObjects ):
+                toThunk2 = self.handleListObjectThunk( toThunk )
+                self.unrecurse(toThunk)
+                return toThunk2
             else:
                 try:
                     tempDict = {'json_hack_mod_' : toThunk.__class__.__module__,
@@ -286,11 +317,39 @@ class JSONThunker:
         else:
             self.unrecurse(toThunk)
             raise RuntimeError, type(toThunk)
-     
+    
+    def handleDictObjectThunk(self, data):
+        tempDict = {'json_hack_mod_' : data.__class__.__module__,
+                                'json_hack_name_': data.__class__.__name__, }
+        for k,v in data.iteritems():
+            tempDict[k] = self._thunk(v)            
+        return tempDict
+    
+    def handleDictObjectUnThunk(self, value, data):
+        for k,v in data.iteritems():
+            value[k] = self._unthunk(v)
+        return value
+    
+    def handleListObjectThunk(self, data):
+        tempDict = {'json_hack_mod_' : data.__class__.__module__,
+                                'json_hack_name_': data.__class__.__name__, 'json_list_data_' : [] }
+        for k,v in enumerate(data):
+            tempDict['json_list_data_'].append(self._thunk(v))            
+        return tempDict
+    
+    def handleListObjectUnThunk(self, value, data):
+        for k,v in enumerate(data['json_list_data_']):
+            data['json_list_data_'][k] = self._unthunk(v)
+        value.extend(data['json_list_data_'])
+        return value
+    
     def unthunk(self, data):
         """
         unthunk - turns a previously 'thunked' object back into a python object
         """
+#        print "entering unthunk"
+#        pp = pprint.PrettyPrinter(indent = 4)
+#        pp.pprint(data)
         return self._unthunk(data)
     
     def _unthunk(self, data):
@@ -319,7 +378,8 @@ class JSONThunker:
                 except:
                     print "failed to get %s from %s" % (mod, name)
                     raise
-                
+                if (module == 'WMCore.Services.Requests') and (name == JSONThunker):
+                    raise RuntimeError, "Attempted to unthunk a JSONThunker.."
                 value = _EmptyClass()
                 del data['json_hack_mod_']
                 del data['json_hack_name_']
@@ -329,6 +389,18 @@ class JSONThunker:
                     except:
                         value = ourClass()
                     value = ourClass.__from_json__(value, data, self)
+                elif ( (module, name) in self.dictSortOfObjects ):  
+                    try:
+                        value.__class__ = ourClass
+                    except:
+                        value = ourClass()
+                    value = self.handleDictObjectUnThunk( value, data )
+                elif ( (module, name) in self.listSortOfObjects ):  
+                    try:
+                        value.__class__ = ourClass
+                    except:
+                        value = ourClass()
+                    value = self.handleListObjectUnThunk( value, data )
                 else:
                     if (type(ourClass) == types.ClassType):
                         value.__class__ = ourClass
@@ -336,6 +408,7 @@ class JSONThunker:
                     else:
                         value = ourClass()
                         value.__dict__ = data
+                
                 return value
             else:
                 for k,v in data.iteritems():

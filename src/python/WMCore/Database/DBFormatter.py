@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.15 2009/03/09 16:17:36 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: DBFormatter.py,v 1.16 2009/03/18 13:23:13 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 import datetime
 import time
 
@@ -52,6 +52,9 @@ class DBFormatter(WMObject):
                     for j in i:
                         row.append(j)
                     out.append(row)
+                    
+            r.close()
+                    
         return out
                 
     def formatOne(self, result):
@@ -82,9 +85,11 @@ class DBFormatter(WMObject):
                     entry[str(descriptions[index].lower())] = str(i[index])
                 dictOut.append(entry) 
                 #dictOut.append(dict(zip(description, i)))
+
+            r.close()
+            
         return dictOut 
     
- 
     def formatOneDict(self, result):
         """
         Return a dictionary representing the first record

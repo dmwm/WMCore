@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.3 $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -19,10 +19,9 @@ import unittest
 import random
 
 from WMComponent.DBSUpload.DBSUpload import DBSUpload
-import WMComponent.DBSUpload.DBSUpload
 from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
-
+import WMComponent.DBSUpload.DBSUpload
 from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction

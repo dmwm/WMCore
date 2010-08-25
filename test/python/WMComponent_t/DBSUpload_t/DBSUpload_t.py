@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.11 $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -16,19 +16,20 @@ import time
 import unittest
 
 from WMComponent.DBSUpload.DBSUpload import DBSUpload
-
+import WMComponent.DBSUpload.DBSUpload
 from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
+from WMQuality.TestInit import TestInit
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMException import WMException
 
 class DBSUploadTest(unittest.TestCase):
     """
     TestCase for DBSUpload module 
     """
 
-    _setup_done = False
-    _teardown = False
     _maxMessage = 10
 
     def setUp(self):
@@ -36,55 +37,60 @@ class DBSUploadTest(unittest.TestCase):
         setup for test.
         """
 
-	if not DBSUploadTest._setup_done:
-		logging.basicConfig(level=logging.NOTSET,
-                	format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                	datefmt='%m-%d %H:%M',
-                	filename='%s.log' % __file__,
-                	filemode='w')
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
 
-            	myThread = threading.currentThread()
-            	myThread.logger = logging.getLogger('DBSUploadTest')
+        #if (os.getenv("DIALECT").lower() != 'sqlite'):
+        #    print "About to tear down"
+        #    self.tearDown()
+        try:
+            self.testInit.setSchema(customModules = ["WMCore.ThreadPool","WMCore.MsgService","WMComponent.DBSBuffer.Database"],
+                                useDefault = False)
+        except WMException, e:
+            self.tearDown()
+            raise
 
-                if not os.getenv("DIALECT") == None:
-                    myThread.dialect = os.getenv("DIALECT")
-                else:
-                    myThread.dialect = 'MySQL'
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
 
-            	options = {}
-                if not os.getenv("DBSOCK") == None:
-                    options['unix_socket'] = os.getenv("DBSOCK")
-            	dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                	options)
-
-
-
-
-            	myThread.dbi = dbFactory.connect()
-            	myThread.transaction = Transaction(myThread.dbi)
-                myThread.transaction.begin()
-                myThread.transaction.commit()
-                DBSUploadTest._setup_done = True
-
+        locationAction = daofactory(classname = "DBSBufferFiles.AddLocation")
+        locationAction.execute(siteName = "se1.cern.ch")
+        locationAction.execute(siteName = "se1.fnal.gov")
+        locationAction.execute(siteName = "malpaquet") 
+		
     def tearDown(self):
         """
         Database deletion
         """
-        """
-        Database deletion
-        """
-        
-        return True # I do not want to remove my database
-        
         myThread = threading.currentThread()
-        if DBSUploadTest._teardown and myThread.dialect == 'MySQL':
-            # call the script we use for cleaning:
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
-            result = commands.getstatusoutput(command)
-            for entry in result:
-                print(str(entry))
+        factory2 = WMFactory("MsgService", "WMCore.MsgService")
+        destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy2.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete MsgService tear down.")
+        myThread.transaction.commit()
+        
+        factory = WMFactory("Threadpool", "WMCore.ThreadPool")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete ThreadPool tear down.")
+        myThread.transaction.commit()
 
-        DBSUploadTest._teardown = False
+        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        myThread.transaction.begin()
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete DBSBuffer tear down.")
+        myThread.transaction.commit()
+        
+
 
     def testA(self):
         
@@ -95,8 +101,8 @@ class DBSUploadTest(unittest.TestCase):
         #return True
         
         # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
-            'src/python/WMComponent/DBSUpload/DefaultConfig.py'))
+        config = loadConfigurationFile(os.path.join(os.path.dirname(\
+                        WMComponent.DBSUpload.DBSUpload.__file__), 'DefaultConfig.py'))
 
         # some general settings that would come from the general default 
         # config file
@@ -129,6 +135,9 @@ class DBSUploadTest(unittest.TestCase):
         else:
             config.CoreDatabase.name = os.getenv("DATABASE")
         if not os.getenv("DATABASE") == None:
+            if os.getenv("DATABASE") == 'sqlite://':
+                raise RuntimeError,\
+                    "These tests will not work using in-memory SQLITE"
             config.CoreDatabase.connectUrl = os.getenv("DATABASE")
 
         testDBSUpload = DBSUpload(config)
@@ -138,8 +147,8 @@ class DBSUploadTest(unittest.TestCase):
         # for testing purposes we use this method instead of the 
         # StartComponent one.
 
-        testDBSUpload.handleMessage('BufferSuccess', \
-				'NoPayLoad')
+#        testDBSUpload.handleMessage('BufferSuccess', \
+#				'NoPayLoad')
 
         #I don't know what this does so I commented it
         #Especially since it breaks things
@@ -152,7 +161,6 @@ class DBSUploadTest(unittest.TestCase):
                 ' Threads. Wait until all our threads have finished')
             time.sleep(1)
 
-        DBSUploadTest._teardown = True
 
     def runTest(self):
         self.testA()

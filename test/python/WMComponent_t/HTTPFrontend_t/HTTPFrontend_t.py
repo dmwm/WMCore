@@ -10,6 +10,8 @@ import threading
 from WMCore.WMFactory import WMFactory
 from WMCore.Database.Transaction import Transaction
 from WMComponent.HTTPFrontend.HTTPFrontEnd import HTTPFrontEnd
+from WMQuality.TestInit import TestInit
+
 
 class MsgServiceApp(unittest.TestCase):
     """
@@ -25,6 +27,7 @@ class MsgServiceApp(unittest.TestCase):
         setup for test.
         """
         
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = 

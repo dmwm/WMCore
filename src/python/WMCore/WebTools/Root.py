@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.44 2010/02/10 16:33:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: Root.py,v 1.45 2010/02/11 22:04:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.45 $"
 
 # CherryPy
 import cherrypy
@@ -127,7 +127,7 @@ class Root(WMObject, Harness):
                            pagecfg.mount_point, 
                            self.appconfig.dictionary_(), 
                            WMFactory('webtools_factory'))    
-            root.auth = tools.cernoid.defhandler
+            self.auth = tools.cernoid.defhandler
 
         log("loading config: %s" % cpconfig, 
                                    context=self.app, 

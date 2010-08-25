@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: API_t.py,v 1.6 2010/05/14 11:35:29 spigafi Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: API_t.py,v 1.7 2010/05/17 13:07:43 spigafi Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import threading
+import string
 
 # Import key features
 from WMQuality.TestInit import TestInit
-
 
 # Import BossLite DBObjects
 from WMCore.BossLite.DbObjects.Job         import Job
@@ -192,7 +192,7 @@ class APITest(unittest.TestCase):
 
         return
 
-"""
+
     def testC_APIJobMethods(self):
 
         testAPI = BossLiteAPI()
@@ -218,31 +218,34 @@ class APITest(unittest.TestCase):
         for key in job.data.keys():
             self.assertEqual(job2.data[key], job.data[key])
 
-        # TEMPORARY DISABLED
         # this test is not interesting because we usually load a job AFTER 
         # the source task is loaded. Call "testAPI.loadJobByName" breaks 
         # consistency checks over "taskId,jobId,name" 
-        #job3 = testAPI.loadJobByName(jobName = 'Hadrian')
-        #for key in job.data.keys():
-        #    self.assertEqual(job3.data[key], job.data[key])
-
+        try:
+            job3 = testAPI.loadJobByName(jobName = 'Hadrian')
+        except Exception, ex:
+            msg = str(ex)
+            self.assertTrue( (string.find(msg, "it is not completely specified")) != -1 )
+        
         # "loadJobsByAttr" calls directly "Job.SelectJob" DAO... is this the
         # right approach? Cross-check with original implementation...
-        job4 = testAPI.loadJobsByAttr( jobAttribute = 'name', value = 'Hadrian')[0]
+        jobs = testAPI.loadJobsByAttr( binds = {'name' : 'Hadrian'})
+        
+        self.assertEqual(len(jobs), 1)
         
         for key in job.data.keys():
-            self.assertEqual(job4.data[key], job.data[key])
+            self.assertEqual(jobs[0].data[key], job.data[key])
         
 
-        task2 = testAPI.getTaskFromJob(job = job4)
+        task2 = testAPI.getTaskFromJob(job = jobs[0])
 
-        testAPI.removeJob(job = job4)
+        testAPI.removeJob(job = jobs[0])
         
-        self.assertFalse(job4.exists(db))
+        self.assertFalse(jobs[0].exists(db))
 
         return
-"""
-
+    
+    
 """
     def testD_APIRunningJobMethods(self):
 

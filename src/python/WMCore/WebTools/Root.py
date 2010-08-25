@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.52 2010/04/26 21:16:09 sryu Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: Root.py,v 1.53 2010/07/23 13:58:07 metson Exp $"
+__version__ = "$Revision: 1.53 $"
 
 # CherryPy
 import cherrypy
@@ -76,6 +76,14 @@ class Root(WMObject, Harness):
         configDict = self.serverConfig.dictionary_()
 
         cpconfig["server.environment"] = configDict.get("environment", "production")
+        if cpconfig["server.environment"] == "production":
+            # If we're production these should be set regardless
+            cpconfig["request.show_tracebacks"] = False
+            cpconfig["engine.autoreload_on"] = False
+        else:
+            cpconfig["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
+            cpconfig["engine.autoreload_on"] = configDict.get("autoreload", False)
+        
         cpconfig["server.thread_pool"] = configDict.get("thread_pool", 10)
         cpconfig["server.socket_port"] = configDict.get("port", 8080)
         cpconfig["server.socket_host"] = configDict.get("host", "localhost")
@@ -96,7 +104,7 @@ class Root(WMObject, Harness):
                           'tools.etags.on':True,
                           'tools.etags.autotags':True,
                           'tools.encode.on': True,
-                          'tools.gzip.on': True
+                          'tools.gzip.on': True,
                           })
 
         # SecurityModule config

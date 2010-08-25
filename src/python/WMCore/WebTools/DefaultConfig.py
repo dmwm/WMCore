@@ -17,6 +17,8 @@ config = Configuration()
 config.component_('Webtools')
 # We could change port, set logging etc here like so:
 #config.Webtools.port = 8011
+#config.Webtools.show_tracebacks = True
+#config.Webtools.autoreload = True
 #config.Webtools.environment = development
 #config.Webtools.thread_pool = 10
 # etc. Check Root.py for all configurables

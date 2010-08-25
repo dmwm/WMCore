@@ -3,15 +3,15 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: WMAgentTasks.py,v 1.1 2010/02/08 22:21:08 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMAgentTasks.py,v 1.2 2010/03/03 22:16:15 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
 import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.WorkQueue.WorkQueue import WorkQueue 
+from WMCore.WorkQueue.WorkQueue import WorkQueue, localQueue
 
 class WMAgentTasks(BaseWorkerThread):
     """
@@ -23,16 +23,22 @@ class WMAgentTasks(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.resources = resources
-        self.wq = WorkQueue()
+        self.wq = localQueue()
         
     def algorithm(self, parameters):
         """
         """
         
         data = self.wq.getWork(self.resources)
-        self.wq.gotWork(data["subscriptionIDs"])
-        time.sleep(1)
-        self.wq.doneWork(data["subscriptionIDs"])
+        print "Data back from workqueue"
+        print "%s, %s" % data
+        if len(data) != 0:
+            elementIDs = []
+            for element in data:
+                elementIDs.append(element['element_id'])
+            self.wq.gotWork(elementIDs)
+        time.sleep(5)
+        self.wq.doneWork(elementIDs)
         #self.wq.failWork(elementIDs)
         #self.wq.cancelWork(elementIDs)
         

@@ -9,7 +9,7 @@ import logging
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
 from WMAgentTasks import WMAgentTasks
-
+from WMQuality.Emulators.DataBlockGenerator import Globals
 class WMAgentEmulator(Harness):
 
 
@@ -33,5 +33,8 @@ class WMAgentEmulator(Harness):
         emulating resource db which can represent
         {site: job} format
         """
-        return {'SiteA': 100, 'SiteB': 100}
+        jobSites = {}
+        for site in Globals.SITES:
+            jobSites[site] = 100
+        return jobSites
     

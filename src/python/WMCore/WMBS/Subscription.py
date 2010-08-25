@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.35 2009/03/24 16:32:23 sfoulkes Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Subscription.py,v 1.36 2009/04/08 18:56:46 sryu Exp $"
+__version__ = "$Revision: 1.36 $"
 
 from sets import Set
 import logging
@@ -183,9 +183,15 @@ class Subscription(WMBSBase, WMSubscription):
         acquire all files (default behaviour). Return a list of files objects 
         for those acquired.
         """
+        deleteAction = self.daofactory(classname = "Subscriptions.ClearFileStatus")
         action = self.daofactory(classname = "Subscriptions.AcquireFiles")
         if files:
             files = self.makelist(files)
+            deleteAction.execute(subscription = self["id"],
+                                 file = [x["id"] for x in files],
+                                 conn = self.getWriteDBConn(),
+                                 transaction = self.existingTransaction())
+        
             action.execute(self['id'], [x['id'] for x in files],
                            conn = self.getWriteDBConn(),
                            transaction = self.existingTransaction())
@@ -205,7 +211,12 @@ class Subscription(WMBSBase, WMSubscription):
         while i < size:
             l.add(files.pop()['id'])
             i = i + 1
-
+        
+        deleteAction.execute(subscription = self["id"],
+                             file = [x["id"] for x in files],
+                             conn = self.getWriteDBConn(),
+                             transaction = self.existingTransaction())
+    
         action.execute(self['id'], [x for x in l], conn = self.getWriteDBConn(),
                        transaction = self.existingTransaction())
 
@@ -219,18 +230,18 @@ class Subscription(WMBSBase, WMSubscription):
         Mark a (set of) file(s) as completed.
         """
         files = self.makelist(files)
+        
+        deleteAction = self.daofactory(classname = "Subscriptions.ClearFileStatus")
+        deleteAction.execute(subscription = self["id"],
+                             file = [x["id"] for x in files],
+                             conn = self.getWriteDBConn(),
+                             transaction = self.existingTransaction())
 
         completeAction = self.daofactory(classname = "Subscriptions.CompleteFiles")
         completeAction.execute(subscription = self["id"],
                                file = [x["id"] for x in files],
                                conn = self.getWriteDBConn(),
                                transaction = self.existingTransaction())
-        deleteAction = self.daofactory(classname = "Subscriptions.DeleteAcquiredFiles")
-        deleteAction.execute(subscription = self["id"],
-                             file = [x["id"] for x in files],
-                             conn = self.getWriteDBConn(),
-                             transaction = self.existingTransaction())
-
         self.commitIfNew()
         return
     
@@ -239,17 +250,19 @@ class Subscription(WMBSBase, WMSubscription):
         Mark a (set of) file(s) as failed. 
         """
         files = self.makelist(files)
-
+        
+        deleteAction = self.daofactory(classname = "Subscriptions.ClearFileStatus")
+        deleteAction.execute(subscription = self["id"],
+                             file = [x["id"] for x in files],
+                             conn = self.getWriteDBConn(),
+                             transaction = self.existingTransaction())
+        
         failAction = self.daofactory(classname = "Subscriptions.FailFiles")
         failAction.execute(subscription = self["id"],
                            file = [x["id"] for x in files],
                            conn = self.getWriteDBConn(),
                            transaction = self.existingTransaction())
-        deleteAction = self.daofactory(classname = "Subscriptions.DeleteAcquiredFiles")
-        deleteAction.execute(subscription = self["id"],
-                             file = [x["id"] for x in files],
-                             conn = self.getWriteDBConn(),
-                             transaction = self.existingTransaction())
+        
 
         self.commitIfNew()
         return

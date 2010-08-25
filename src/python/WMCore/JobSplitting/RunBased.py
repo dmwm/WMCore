@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.13 2009/05/28 16:48:30 sfoulkes Exp $"
-__version__  = "$Revision: 1.13 $"
+__revision__ = "$Id: RunBased.py,v 1.14 2009/05/28 17:00:33 sfoulkes Exp $"
+__version__  = "$Revision: 1.14 $"
 
 from sets import Set
 
@@ -78,6 +78,5 @@ class RunBased(JobFactory):
         jobGroup = groupInstance(subscription = self.subscription)
         jobGroup.add(jobs)
         jobGroup.commit()
-        jobGroup.recordAcquire(jobs)
 
         return jobGroup

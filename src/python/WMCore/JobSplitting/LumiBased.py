@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.12 2009/12/15 14:07:09 spiga Exp $"
-__version__  = "$Revision: 1.12 $"
+__revision__ = "$Id: LumiBased.py,v 1.13 2010/04/07 15:41:51 mnorman Exp $"
+__version__  = "$Revision: 1.13 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
@@ -43,8 +43,8 @@ class LumiBased(JobFactory):
 
         #Get a dictionary of sites, files
         locationDict = self.sortByLocation()
-        fileSet = set() 
         for location in locationDict.keys():
+            lumiDict = {}
             for f in locationDict[location]:
                 if hasattr(f, "loadData"):
                     f.loadData()
@@ -63,7 +63,6 @@ class LumiBased(JobFactory):
                         lumiDict[fileLumi] = []
                     lumiDict[fileLumi].append(f)
                     
-                fileSet.add(f)
                 
             if not lumisPerJob == None:
                 self.LumiBasedJobSplitting(lumiDict, lumisPerJob, location)
@@ -71,6 +70,8 @@ class LumiBased(JobFactory):
                 self.EventBasedJobSplitting(lumiDict, eventsPerJob, location)
             else:
                 self.FileBasedJobSplitting(lumiDict, filesPerJob, location)
+
+        return
             
 
     def FileBasedJobSplitting(self, lumiDict, filesPerJob, location):

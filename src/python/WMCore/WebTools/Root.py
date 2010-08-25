@@ -8,10 +8,11 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.26 2009/09/19 09:45:05 metson Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Root.py,v 1.27 2009/09/19 10:41:16 metson Exp $"
+__version__ = "$Revision: 1.27 $"
 
 # CherryPy
+import cherrypy
 from cherrypy import quickstart, expose, server, log, tree, engine, dispatch, tools
 from cherrypy import config as cpconfig
 # configuration and arguments
@@ -31,7 +32,7 @@ import logging
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 
-import WMCore.WebTools.CernOidConsumer
+from WMCore.WebTools.CernOidConsumer import CernOidConsumer 
 
 class Root(WMObject):
     def __init__(self, config):
@@ -96,11 +97,11 @@ class Root(WMObject):
         # SecurityModule config
         if hasattr(self.secconfig, 'enabled'):
             cpconfig.update({'tools.sessions.on': True})
-            if not self.secconfig.use_decorators:
-                # do not enable it if you intend to use auth decorators
-                cpconfig.update({'tools.cernoid.on': True}) 
-                cherrypy.tools.cernoid = CernOidConsumer(self.secconfig)
-
+            #if self.secconfig.use_decorators:
+            # do not enable it if you intend to use auth decorators
+            tools.cernoid = CernOidConsumer(self.secconfig)
+            cpconfig.update({'tools.cernoid.on': True}) 
+            root.auth = tools.cernoid.defhandler
         log("loading config: %s" % cpconfig, 
                                    context=self.app, 
                                    severity=logging.DEBUG, 
@@ -200,13 +201,7 @@ if __name__ == "__main__":
     cfg = loadConfigurationFile(opts.inifile)
     root = Root(cfg)
     root.configureCherryPy()
-    root.loadPages()
-    if hasattr(cfg, "SecurityModule"):
-        if hasattr(cfg.SecurityModule, "handler"):
-            root.auth = cfg.SecurityModule.handler
-        else: 
-            print tools
-            root.auth = tools.cernoid.defhandler
+    root.loadPages()        
     root.makeIndex()
     engine.start()
     engine.block()

@@ -6,7 +6,6 @@ _ProcessPool_
 
 import subprocess
 import sys
-import simplejson
 import logging
 import os
 import threading

@@ -225,7 +225,4 @@ class TestChangeState(unittest.TestCase):
 
 
 if __name__ == "__main__":
-#export DATABASE="mysql://sfoulkes:@localhost/ProdAgentDB_sfoulkes"
-#export DIALECT="MySQL"
-#export DBSOCK="/var/lib/mysql/mysql.sock"
     unittest.main()

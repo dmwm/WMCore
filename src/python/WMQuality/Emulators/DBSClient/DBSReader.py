@@ -3,8 +3,8 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
-__revision__ = "$Id: DBSReader.py,v 1.1 2010/02/08 22:21:02 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBSReader.py,v 1.2 2010/02/16 20:55:11 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
@@ -14,7 +14,7 @@ class DBSReader:
     """
     Mock up dbs access
     """
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.dataBlocks = DataBlockGenerator()
         
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True):

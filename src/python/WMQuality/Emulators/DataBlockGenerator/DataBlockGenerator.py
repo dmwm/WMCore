@@ -1,22 +1,23 @@
+import Globals
+
 class DataBlockGenerator(object):
     
     def __init__(self):
-        self.sites = ['SiteA', 'SiteB', 'SiteC']
         self.blocks = {}        
         self.locations = {}
         self.files = {}
-     
+        
     def _dataGenerator(self, dataset):
         
-        #some simple process to generate blockw with consistency
+        #some simple process to generate block with consistency
         
         self.blocks[dataset] = []
-        numOfBlocks =  len(dataset) % 3 + 3
-        for i in numOfBlocks:
+        
+        for i in range(Globals.NUM_OF_BLOCKS_PER_DATASET):
             blockName = "%s#%s" % (dataset, i)
-            numOfFiles = i
-            numOfEvents = i * 100
-            size = i * 100000
+            numOfFiles = Globals.NUM_OF_FILES_PER_BLOCK
+            numOfEvents = Globals.NUM_OF_FILES_PER_BLOCK * Globals.NUM_OF_EVENTS_PER_FILE
+            size = Globals.NUM_OF_FILES_PER_BLOCK * Globals.SIZE_OF_FILE
             
             self.blocks[dataset].append(
                                     {'Name' : blockName,
@@ -25,35 +26,34 @@ class DataBlockGenerator(object):
                                      'Size' : size,
                                      'Parents' : ()}
                                      )
-            self.locations[blockName] = self.sites[i%len(self.sites)]
-            for fileID in numOfFiles:
+            
+            for fileID in range(numOfFiles):
+                if not self.files.has_key(blockName):
+                    self.files[blockName] = []
                 self.files[blockName].append(
                                 {'Checksum': "123456",
                                  'LogicalFileName': "/store/data/%s/file%s" % (blockName, fileID),
-                                 'NumberOfEvents': numOfEvents / numOfFiles,
-                                 'FileSize': size / numOfFiles,
+                                 'NumberOfEvents': Globals.NUM_OF_EVENTS_PER_FILE,
+                                 'FileSize': Globals.SIZE_OF_FILE,
                                  'ParentList': []
                                  })
         return self.blocks[dataset]
     
     def getBlocks(self, dataset):
         
-        if not self.blocks.has_key[dataset]:
+        if not self.blocks.has_key(dataset):
             self._dataGenerator(dataset)
         return  self.blocks[dataset]
         
     def getFiles(self, block):
-        if not self.files.has_key[block]:
+        if not self.files.has_key(block):
             dataset = self.getDataset(block)
             self._dataGenerator(dataset)
         return  self.files[block]
     
     def getLocation(self, block):
         
-        if not self.locations.has_key[block]:
-            dataset = self.getDataset(block)
-            self._dataGenerator(dataset)
-        return  self.locations[block]
+        return Globals.getSites(block)
     
     def getDataset(self, block):
         return block.split('#')[0]

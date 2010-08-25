@@ -10,11 +10,15 @@ import simplejson
 import logging
 import os
 import threading
+import sys
 
 from logging.handlers import RotatingFileHandler
 
 from WMCore.WMFactory import WMFactory
-from WMCore.WMInit import WMInit
+from WMCore.WMInit    import WMInit
+from WMCore           import WMLogging
+
+from WMCore.Services.Requests import JSONRequests
 
 class ProcessPool:
     def __init__(self, slaveClassName, totalSlaves, componentDir,
@@ -24,7 +28,7 @@ class ProcessPool:
 
         Constructor for the process pool.  The slave class name must be based
         inside the WMComponent namespace.  For examples, the JobAccountant would
-        pass in "JobAccountant.AccountantWorker" to run the AccountantWorker
+        pass in 'JobAccountant.AccountantWorker' to run the AccountantWorker
         class.  All log files will be stored in the component directory that is
         passed in.  Each slave will have its own log file.
 
@@ -36,28 +40,42 @@ class ProcessPool:
         self.enqueueIndex = 0
         self.dequeueIndex = 0
 
-        self.jsonDecoder = simplejson.JSONDecoder()
-        self.jsonEncoder = simplejson.JSONEncoder()
+        #Use the Services.Requests JSONizer, which handles __to_json__ calls
+        self.jsonHandler = JSONRequests()
+
+
+        #Grab the python version from the current version
+        #Assume naming convention pythonA.B, i.e., python2.4 for v2.4.X
+        majorVersion = sys.version_info[0]
+        minorVersion = sys.version_info[1]
+
+        if majorVersion and minorVersion:
+            versionString = "python%i.%i" %(majorVersion, minorVersion)
+        else:
+            versionString = "python2.4"
 
         self.workers = []
-        slaveArgs = ["python2.4", __file__, slaveClassName]
+        slaveArgs = [versionString, __file__, slaveClassName]
         if hasattr(config.CoreDatabase, "socket"):
             socket = config.CoreDatabase.socket
         else:
             socket = None
-            
+
         dbConfig = {"dialect": config.CoreDatabase.dialect,
                     "connectUrl": config.CoreDatabase.connectUrl,
                     "socket": socket,
                     "componentDir": componentDir}
-        encodedDBConfig = self.jsonEncoder.encode(dbConfig)
+        encodedDBConfig = self.jsonHandler.encode(dbConfig)
 
         if slaveInit == None:
             encodedSlaveInit = None
         else:
-            encodedSlaveInit = self.jsonEncoder.encode(slaveInit)
+            encodedSlaveInit = self.jsonHandler.encode(slaveInit)
             
         while totalSlaves > 0:
+            #For each worker you want create a slave process
+            #That process calls this code (WMCore.ProcessPool) and opens
+            #A process pool that loads the designated class
             slaveProcess = subprocess.Popen(slaveArgs, stdin = subprocess.PIPE,
                                             stdout = subprocess.PIPE)
             slaveProcess.stdin.write("%s\n" % encodedDBConfig)
@@ -94,7 +112,8 @@ class ProcessPool:
         list where each item in the list can be serialized into JSON.
         """
         for someWork in work:
-            encodedWork = self.jsonEncoder.encode(someWork)
+            
+            encodedWork = self.jsonHandler.encode(someWork)
 
             worker = self.workers[self.enqueueIndex]
             self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
@@ -122,7 +141,7 @@ class ProcessPool:
                 if output == None:
                     continue
 
-                completedWork.append(self.jsonDecoder.decode(output))
+                completedWork.append(self.jsonHandler.decode(output))
                 totalItems -= 1
             except Exception, e:
                 logging.error("Exception while getting slave output: %s" % e)
@@ -144,6 +163,9 @@ def setupLogging(componentDir):
     logHandler.setFormatter(logFormatter)
     logging.getLogger().addHandler(logHandler)
     logging.getLogger().setLevel(logging.INFO)
+    #This is left in as a reminder for debugging purposes
+    #SQLDEBUG turns your log files into horrible messes
+    #logging.getLogger().setLevel(logging.SQLDEBUG)
 
     myThread = threading.currentThread()
     myThread.logger = logging.getLogger()
@@ -179,37 +201,43 @@ if __name__ == "__main__":
     """
     slaveClassName = sys.argv[1]
 
-    jsonEncoder = simplejson.JSONEncoder()
-    jsonDecoder = simplejson.JSONDecoder()
+    jsonHandler = JSONRequests()
 
     encodedConfig = sys.stdin.readline()
-    config = jsonDecoder.decode(encodedConfig)
+    config = jsonHandler.decode(encodedConfig)
 
     encodedSlaveInit = sys.stdin.readline()
     if encodedSlaveInit != "\n":
-        slaveInit = jsonDecoder.decode(encodedSlaveInit)
+        slaveInit = jsonHandler.decode(encodedSlaveInit)
     else:
         slaveInit = None
-        
+
     wmInit = WMInit()
     setupLogging(config["componentDir"])
     setupDB(config, wmInit)
+
+
 
     wmFactory = WMFactory(name = "slaveFactory", namespace = "WMComponent")
     slaveClass = wmFactory.loadObject(classname = slaveClassName, args = slaveInit)
 
     while(True):
+        #Parameters for each job passed in from ProcessPool.enqueue()
+        #Decoded by WMCore.Services.Requests class JSONRequests
         encodedInput = sys.stdin.readline()
 
         try:
-            input = jsonDecoder.decode(encodedInput)
+            input = jsonHandler.decode(encodedInput)
         except Exception, e:
             break
 
+        #Run one piece of work
+        #Wait for output
         output = slaveClass(parameters = input)
 
         if output != None:
-            encodedOutput = jsonEncoder.encode(output)
+            encodedOutput = jsonHandler.encode(output)
             sys.stdout.write("%s\n" % encodedOutput)
             sys.stdout.flush()
 
+    logging.info("Process with PID %s finished" %(os.getpid()))

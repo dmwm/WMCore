@@ -13,6 +13,9 @@ WMCore.WebTools.createDataSource = function (dataUrl, dataSchema) {
     myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
     myDataSource.responseSchema = dataSchema;
 	
+	//Always send accept type as text/json
+	YAHOO.util.Connect.initHeader("Accept", "text/json", true)
+	
 	return myDataSource;
 };
 
@@ -34,8 +37,10 @@ WMCore.WebTools.defaultTableConfig = {
     }),
     // Set up initial sort state
     sortedBy: {
-        key: "id"
-	}
+        key: "id", dir:YAHOO.widget.DataTable.CLASS_ASC
+	}//,
+	
+	//initialRequest: "startIndex=0&results=25", // Initial request for first page of data 
 	
     // Sorting and pagination will be routed to the server via generateRequest
     //dynamicData: true
@@ -70,17 +75,3 @@ WMCore.WebTools.createDataTable = function (container, dataSource, columnDefs,
 	return myDataTable;
 };
 
-WMCore.WebTools.createChart = function (dataSource, container, pollingCycle) {
-	
-	YAHOO.widget.Chart.SWFURL = "http://yui.yahooapis.com/2.8.0r4/build/charts/assets/charts.swf";
-	
-	var yAxis = new YAHOO.widget.NumericAxis();
-	yAxis.minimum = 0;
-	yAxis.maximum = 100;
-
-	var mychart = new YAHOO.widget.ColumnChart( "chart", dataSource, dataSource.responseShema);
-	return mychart;
-};
-
-
-YAHOO.util.Connect.initHeader("Accept", "text/json", true)

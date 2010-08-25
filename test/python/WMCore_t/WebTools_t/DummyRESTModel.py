@@ -43,7 +43,6 @@ class DummyRESTModel(RESTModel):
         Initialise the RESTModel and add some methods to it.
         '''
         RESTModel.__init__(self, config)
-        
         self.addMethod('GET', 'list', self.list, args=['int', 'str'], 
                               validation=[self.val_0,
                                           self.val_1,
@@ -56,6 +55,10 @@ class DummyRESTModel(RESTModel):
         self.addMethod('GET', 'list2', self.list2, args=['num0', 'num1', 'num2'])
         self.addMethod('GET', 'list3', self.list3, args=['a', 'b'])
         self.addMethod('POST', 'list3', self.list3, args=['a', 'b'])
+        
+        # a will take list of numbers. i.e. a[1,2,3]
+        self.addMethod('GET', 'listTypeArgs', self.listTypeArgs, args=['aList'],
+                       validation = [self.listTypeValidate])
         
         self.daofactory = DummyDAOFac()
         self.addDAO('GET', 'data1', 'DummyDAO1', [])
@@ -79,6 +82,17 @@ class DummyRESTModel(RESTModel):
     def list3(self, *args, **kwargs):
         """ test sanitise without any validation specified """
         return kwargs
+        
+    def listTypeArgs(self, aList):
+        """ test whether it handles ?aList=1&aList=2 types of query """
+        return aList
+        
+    def listTypeValidate(self, input):
+        if type(input["aList"]) != list:
+            input["aList"] = [int(input["aList"])]
+        else:
+            input["aList"] = map(int, input["aList"])
+        return input
         
     def val_0(self, input):
         # checks whether input is right number
@@ -126,6 +140,3 @@ class DummyRESTModel(RESTModel):
             raise HTTPError(400, 'val_4 failed: %s != "abc"' % input['str'])
         
         return input
-    
-        
-        

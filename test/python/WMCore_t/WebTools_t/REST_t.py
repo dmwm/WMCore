@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.23 2010/03/17 18:26:21 sryu Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: REST_t.py,v 1.24 2010/03/18 18:23:09 sryu Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import unittest
 try:
@@ -336,7 +336,7 @@ class RESTTest(unittest.TestCase):
                 'dao without args failed: ' +\
                 '. Got a return code != 200 (got %s)' % response[1] +\
                 '. Returned data: %s' % response[0]
-        self.assertEqual( response[0] ,  '123', response[0]         )
+        self.assertEqual( response[0] ,  '123', response[0])
         
         # 2 query string args (e.g. url?int=arg1&str=arg2)
         url = self.urlbase + 'data2'
@@ -362,6 +362,29 @@ class RESTTest(unittest.TestCase):
         #Should use encoded and decoded format
         self.assertEqual( response[0] ,  "{'thing': 'abc', 'num': '123'}", "should be {'thing': 'abc', 'num': '123'} but got %s" % response[0] )
         
-
+    
+    @setUpDummyRESTModel
+    @serverSetup
+    def testListTypeArgs(self):
+        """
+        """
+        # 2 positional args (e.g. url/arg1/arg2)
+        url = self.urlbase + 'listTypeArgs?aList=1'
+        response = makeRequest(url=url)
+        assert response[1] == 200 and response[0] == "[1]", \
+                'list args failed: ' +\
+                '. Got a return code != 200 (got %s)' % response[1] +\
+                '. Returned data: %s' % response[0]
+        
+        
+        # 2 values with the same keywords (e.g. url/arg1/arg2)
+        url = self.urlbase + 'listTypeArgs?aList=1&aList=2'
+        response = makeRequest(url=url)
+        assert response[1] == 200 and response[0] == "[1, 2]", \
+                'list args failed: ' +\
+                '. Got a return code != 200 (got %s)' % response[1] +\
+                '. Returned data: %s' % response[0]
+        
+        
 if __name__ == "__main__":
     unittest.main() 

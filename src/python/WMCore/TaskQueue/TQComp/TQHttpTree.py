@@ -10,8 +10,8 @@ messages and act on them according to configuration (see the 'RemoteMsg'
 module documentation).
 """
 
-__revision__ = "$Id: TQHttpTree.py,v 1.3 2009/06/01 09:57:08 delgadop Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TQHttpTree.py,v 1.4 2009/08/11 14:09:26 delgadop Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import threading
@@ -21,7 +21,7 @@ import sys
 from cherrypy import expose, request
 from cherrypy.lib.static import serve_file
 from CommonUtil import undojson
-from Constants import sandboxUrlDir, specUrlDir, reportUrlDir
+from Constants import sandboxUrlDir, specUrlDir, reportUrlDir, pilotLogUrlDir
 
 from WMCore.Database.Transaction import Transaction
 
@@ -94,14 +94,31 @@ class HttpTree(object):
     def upload(self, *params):
         self.mylogger.debug("Received upload request with params as follows")
 
-        # TODO: Delete next line
-#        self.params['reportBasePath'] = '/pool/TaskQueue/playground/reports'
-        if params[0] == reportUrlDir:
+        path = None
+        
+        # Pilot logs
+        if params[0] == pilotLogUrlDir:
+            subpath = params[1]
+            path = self.params['pilotErrorLogPath'] + '/' + subpath
+            
+        # Task reports
+        elif params[0] == reportUrlDir:
+            # This may contain subdirs, that get here as extra params
             subpath = ""
             for p in params[1:]:
                 self.mylogger.debug("Param: %s" % p)
                 subpath = subpath + '/' + p
             path = self.params['reportBasePath'] + subpath
+
+        # If no known message, return an error
+        else:
+            messg = "Base URL dir is unkwon: %s" % (params[0])
+            data = {'msgType': 'Error', \
+                    'payload': {'Error': messg}}
+            return self.params['formatter'].format({'msg': data})
+
+        # If there is a file to store, do it
+        if path:
             try:
                 # Note: The parent dirs must be created beforehand by TQ
                 # e.g. when job was enqueued, or when it's assigned to a pilot
@@ -124,7 +141,7 @@ class HttpTree(object):
                 return self.params['formatter'].format({'msg': data})
             except:
                 ttype, val, tb = sys.exc_info()
-                messg = "Problem storing file %s: %s - %s" % (path, ttype, val)
+                messg = "Problem storing file %s: %s - %s" % (subpath, ttype, val)
                 data = {'msgType': 'Error', \
                         'payload': {'Error': messg}}
                 return self.params['formatter'].format({'msg': data})

@@ -44,16 +44,25 @@ EXAMPLE
 =======
 
 $> matcherclient -c $TQCONF  TQComp.FlexPyMatchmaker matchTask "{'id': 25, \
-'se': 'srm.cern.ch', 'cache': ['f1']}"
+'se': 'storm.ifca.es', 'swarch': 'slc4_ia32_gcc345', 'cmssw': ['CMSSW_2_1_11'],\
+'cache': ['f1']}"
 
-{'state': 0L, 'creat_time': datetime.datetime(2009, 6, 1, 11, 31, 33), 'spec':
-'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_T
-estPA01/0000/5/Test-QCDpt_0_15-IDEAL_V9_TestPA01-5-JobSpec.xml',
-'reqs': "se=='srm.cern.ch' and 'f1' in cache", 'sandbox':
-'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_T
-estPA01/Processing/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
-'wkflow': 'prod_A', 'current_state_time': None, 'type': 5L, 'id': 2692L,
-'pilot': None}
+[
+{'state': 0, 'creat_time': datetime.datetime(2009, 7, 30, 11, 40, 59), 'spec':
+'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_TestPA01/0001/1693/ANTO_3_QCDpt_0_15-IDEAL_V9_TestPA01-1693-JobSpec.xml',
+'reqs': "(swarch == 'slc4_ia32_gcc345') and ('CMSSW_2_1_11' in cmssw) and (se in ['storm.ifca.es'])", 'req_se':
+'storm.ifca.es', 'sandbox':
+'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_TestPA01/Processing/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
+'wkflow': 'Test-QCDpt_0_15-IDEAL_V9_TestPA01', 'current_state_time': datetime.datetime(2009, 8, 3, 17, 34, 35), 'type':
+'Processing', 'id': 'ANTO_3_QCDpt_0_15-IDEAL_V9_TestPA01-1693', 'pilot': None},
+{'state': 0, 'creat_time': datetime.datetime(2009, 7, 30, 11, 40, 59), 'spec':
+'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_TestPA01/0001/1692/ANTO_3_QCDpt_0_15-IDEAL_V9_TestPA01-1692-JobSpec.xml',
+'reqs': "(swarch == 'slc4_ia32_gcc345') and ('CMSSW_2_1_11' in cmssw) and (se in ['storm.ifca.es'])", 'req_se':
+'storm.ifca.es', 'sandbox':
+'/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/Test-QCDpt_0_15-IDEAL_V9_TestPA01/Processing/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
+'wkflow': 'Test-QCDpt_0_15-IDEAL_V9_TestPA01', 'current_state_time': datetime.datetime(2009, 8, 3, 17, 34, 35), 'type':
+'Processing', 'id': 'ANTO_3_QCDpt_0_15-IDEAL_V9_TestPA01-1692', 'pilot': None}
+]
 
 """
 

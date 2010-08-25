@@ -3,8 +3,8 @@
 Base handler for getTask.
 """
 __all__ = []
-__revision__ = "$Id: GetTaskHandler.py,v 1.4 2009/07/08 17:28:08 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetTaskHandler.py,v 1.5 2009/08/11 14:09:27 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 
 #from WMCore.Agent.BaseHandler import BaseHandler
 #from WMCore.ThreadPool.ThreadPool import ThreadPool
@@ -42,7 +42,7 @@ class GetTaskHandler(object):
         self.logger = myThread.logger
 
         required = ["downloadBaseUrl", "sandboxBasePath", "specBasePath",\
-                    "uploadBaseUrl", "matcherPlugin"]
+                    "uploadBaseUrl", "matcherPlugin", "maxThreads"]
         for param in required:
             if not param in params:
                 messg = "GetTaskHandler object requires params['%s']" % param
@@ -54,12 +54,13 @@ class GetTaskHandler(object):
         self.sandboxBasePath = params["sandboxBasePath"]
         self.specBasePath = params["specBasePath"]
         self.uploadBaseUrl = params["uploadBaseUrl"]
+        self.maxThreads = params["maxThreads"]
         try:
             self.matcher = factory.loadObject(params["matcherPlugin"],\
                            {'queries': self.queries, 'logger': self.logger})
         except:
             ttype, val, tb = sys.exc_info()
-            myThread.transaction.rollback()
+#            myThread.transaction.rollback()
             messg = 'Could not load matcher plugin, due to: %s - %s '% (ttype, val)
             # TODO: What number?
             numb = 0
@@ -80,12 +81,21 @@ class GetTaskHandler(object):
     
             self.logger.debug('GetTaskHandler:GetTask:payload: %s' % payload)
            
+            # Extract message attributes
+            required = ['pilotId']
+            for param in required:
+                if not param in payload:
+                    result = 'Error'
+                    fields = {'Error': "errorReport message requires \
+'%s' field in payload" % param}
+#                    myThread.transaction.rollback()
+                    return {'msgType': result, 'payload': fields}
+
+            pilotId = payload['pilotId']
+
+
             try:
                 myThread.transaction.begin()
-
-                # Extract the task attributes
-                # Here we should check that all arguments are given correctly...
-                pilotId = payload['pilotId']
 
                 # Get pilot info from DB (check that it's registered)
                 res = self.queries.getPilotsWithFilter({'id': pilotId}, \
@@ -107,50 +117,19 @@ class GetTaskHandler(object):
                    payload['cache'] = self.queries.getCacheAtHost(\
                                     payload['host'], payload['se'])
              
+                # Update heartbeat of the pilot (in any case)
+                vars = {'last_heartbeat': None}
+#               self.logger.debug("updatePilot vars: %s" % (vars))
+                self.queries.updatePilot(pilotId, vars)
+
                 # Select a task to assign to this pilot 
+                res = self.matcher.matchTask(payload, self.maxThreads)
 #                self.logger.debug("From SELECT query: %s" % res)
-#                res = self.queries.getTaskAtState(taskStates['Queued'])
-                res = self.matcher.matchTask(payload)
              
                 if not res:
                     result = 'NoTaskAvailable'
                     myThread.transaction.rollback()
                     return {'msgType': result, 'payload': fields}
-             
-                taskId = res['id']
-                taskSpecFile = res['spec']
-                taskSandbox = res['sandbox']
-                taskWkflow = res['wkflow']
-#                messg = "taskId, taskSpecFile, taskSandbox:"
-#                messg += " %s, %s, %s" %(taskId,taskSpecFile,taskSandbox)
-#                self.logger.debug(messg)
-             
-                # Update task table with this assignment
-                vars = {'pilot': pilotId, 'state': taskStates['Running']}
-#                vars = {'pilot': pilotId, 'state': taskStates['Assigned']}
-                self.logger.debug("updateOneTask vars: %s" % (vars))
-                self.queries.updateOneTask(taskId, vars)
-               
-                # In principle, pilot should have registered before 
-                # (so no host update should occur here)
-                # but we update the hearbeat
-#                  # Update pilot table with his host
-#                vars = {'host': host}
-                vars = {'last_heartbeat': None}
-#                self.logger.debug("updatePilot vars: %s" % (vars))
-                self.queries.updatePilot(pilotId, vars)
-             
-                self.logger.info("Assigning task %s to pilot %s" % (taskId, pilotId))
-                
-                # Give the result back
-                fields['taskId'] = taskId
-                fields['sandboxUrl'] = self.__buildSandboxUrl(taskSandbox)
-                fields['specUrl'] = self.__buildSpecUrl(taskSpecFile)
-                fields['workflowType'] = taskWkflow
-                # (By now) store report in the same dir as spec (like PA)
-                reportUrl = self.__buildReportUrl(taskSpecFile)
-                fields['reportUrl'] = reportUrl 
-                result = 'TaskAssigned'
 
                 # Commit
                 myThread.transaction.commit()
@@ -162,6 +141,80 @@ class GetTaskHandler(object):
                 self.logger.warning(messg + "Trace: %s"% extract_tb(tb,limit=5))
                 result = 'Error'
                 fields = {'Error': messg}
+                return {'msgType': result, 'payload': fields}
+
+             
+            # Now try with each of the returned tasks in order
+            # Find one that has not been assigned yet
+            taskId = None
+            for t in res:
+                taskId = t['id']
+                taskSpecFile = t['spec']
+                taskSandbox = t['sandbox']
+                taskWkflow = t['wkflow']
+#                    messg = "taskId, taskSpecFile, taskSandbox:"
+#                    messg += " %s, %s, %s" %(taskId,taskSpecFile,taskSandbox)
+#                    self.logger.debug(messg)
+             
+                try:
+                    myThread.transaction.begin()
+
+                    # Check & lock the state of the task (not yet running)
+                    resLock = self.queries.lockTask(taskId)
+                    if resLock[0]['state'] != taskStates['Queued']:
+                        raise Exception('Task not in Queued state')
+                    
+                    # Update task table with this assignment
+                    vars = {'pilot': pilotId, 'state': taskStates['Running']}
+                    self.logger.debug("update task %s, vars: %s" %(taskId,vars))
+                    self.queries.updateOneTask(taskId, vars)
+
+                    # Commit
+                    myThread.transaction.commit()
+                    break
+                  
+                except:
+                    ttype, val, tb = sys.exc_info()
+                    myThread.transaction.rollback()
+                    messg = 'Not assigning task %s to pilot %s, due to:' % \
+                            (taskId, pilotId)
+                    self.logger.warning('%s %s - %s'% (messg, ttype, val))
+                    taskId = None
+
+
+
+            # See if we found a task
+            if not taskId:
+                result = 'NoTaskAvailable'
+                return {'msgType': result, 'payload': fields}
+
+            # Take note of assignment in the logs
+            try:
+                myThread.transaction.begin()
+                
+                # Log in the tq_pilot_log table
+                self.queries.logPilotEvent(pilotId, 'GetTask', None, taskId)
+                self.logger.info("Assigning task %s to pilot %s" % (taskId, pilotId))
+
+                # Commit
+                myThread.transaction.commit()
+              
+            except:
+                ttype, val, tb = sys.exc_info()
+                myThread.transaction.rollback()
+                messg = 'Error when writing pilot %s log' % (pilotId)
+                self.logger.warning('%s %s - %s'% (messg, ttype, val))
+               
+            # Give the result back
+            fields['taskId'] = taskId
+            fields['sandboxUrl'] = self.__buildSandboxUrl(taskSandbox)
+            fields['specUrl'] = self.__buildSpecUrl(taskSpecFile)
+            fields['workflowType'] = taskWkflow
+            # (By now) store report in the same dir as spec (like PA)
+            reportUrl = self.__buildReportUrl(taskSpecFile)
+            fields['reportUrl'] = reportUrl 
+            result = 'TaskAssigned'
+
               
             return {'msgType': result, 'payload': fields}
 
@@ -184,4 +237,7 @@ class GetTaskHandler(object):
         path = thefile.replace(self.specBasePath, reportUrlDir+'/')
         path = path.replace(thefile.split('/')[-1], 'FrameworkJobReport.xml')
         return self.uploadBaseUrl+'/'+uploadRoot+'/'+path
+
+
+#    def __doTheMatching(self, ):
         

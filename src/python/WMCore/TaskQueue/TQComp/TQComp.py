@@ -4,8 +4,8 @@
 Main component of the Task Queue
 """
 
-__revision__ = "$Id: TQComp.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TQComp.py,v 1.5 2009/08/11 14:09:26 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import os
@@ -23,6 +23,8 @@ from WMCore.WMException import WMException
 #from TQComp.TQListener import TQListener
 from TQListener import TQListener
 import Defaults
+from WorkersHandler.HeartbeatPollHandler import HeartbeatPollHandler
+from Defaults import listenerMaxThreads
 
 #for logging
 import logging
@@ -37,19 +39,22 @@ class TQComp(Harness):
         Constructor. Passes config to its parent WMCore.Agent.Harness.
         It also checks that some required configuration options are 
         present:
-          downloadBaseUrl, sandboxBasePath, specBasePath, reportBasePath
+          downloadBaseUrl, sandboxBasePath, specBasePath, reportBasePath,
+          pilotErrorLogPath
         """
+        print "Starting TQComp..."
         Harness.__init__(self, config)
         print (config)
         
         required = ["downloadBaseUrl", "sandboxBasePath", \
-                    "specBasePath", "reportBasePath"]
+                    "specBasePath", "reportBasePath", "pilotErrorLogPath"]
         for param in required:
             if not hasattr(self.config.TQComp, param):
                 messg = "%s required in TQComp configuration" % param
                 # TODO: What number?
                 numb = 0
                 raise WMException(messg, numb)
+
       
 	
     def preInitialization(self):
@@ -98,13 +103,17 @@ class TQComp(Harness):
         params['sandboxBasePath'] = self.config.TQComp.sandboxBasePath
         params['specBasePath'] = self.config.TQComp.specBasePath
         if hasattr(self.config.TQComp, 'uploadBaseUrl'):
-            params['uploadBaseUrl'] = self.config.TQComp.uploadBaseUrl
+            upUrl = self.config.TQComp.uploadBaseUrl
         else:
-            params['uploadBaseUrl'] = self.config.TQComp.downloadBaseUrl
+            upUrl = self.config.TQComp.downloadBaseUrl
+        params['uploadBaseUrl'] = upUrl
         if hasattr(self.config.TQComp, 'matcherPlugin'):
             params['matcherPlugin'] = self.config.TQComp.matcherPlugin
         else:
             params['matcherPlugin'] = Defaults.matcherPlugin
+        params['maxThreads'] = listenerMaxThreads
+        if hasattr(self.config.TQListener, "maxThreads"):
+            params['maxThreads'] = self.config.TQListener.maxThreads
         self.listener.setHandler('getTask', \
            'TQComp.ListenerHandler.GetTaskHandler', params)
            
@@ -123,16 +132,46 @@ class TQComp(Harness):
         self.listener.setHandler('heartbeat', \
            'TQComp.ListenerHandler.HeartbeatHandler', params)
 
+        # errorReport handler
+        params = {}
+        params['pilotErrorLogPath'] = self.config.TQComp.pilotErrorLogPath
+        params['uploadBaseUrl'] = upUrl
+        self.listener.setHandler('errorReport', \
+           'TQComp.ListenerHandler.ErrorReportHandler', params)
+
         # pilotShutdown handler
         params = {}
         self.listener.setHandler('pilotShutdown', \
            'TQComp.ListenerHandler.PilotShutdownHandler', params)
 
 
-
         # Start listener
         self.listener.startHttpServer()
-      
+     
+
+
+        ######
+        # Set up worker threads for periodic tasks
+        ######
+        
+        # Heartbeat poll
+        hbPoll = HeartbeatPollHandler()
+
+        if hasattr(self.config.TQComp, 'heartbeatPollPeriod'):
+            idleTime = self.config.TQComp.heartbeatPollPeriod
+        else:
+            idleTime = Defaults.heartbeatPollPeriod
+
+        params = {}
+        if hasattr(self.config.TQComp, 'heartbeatValidity'):
+            params['hbValidity'] = self.config.TQComp.heartbeatValidity
+        else:
+            params['hbValidity'] = None
+
+        myThread.workerThreadManager.addWorker(hbPoll, \
+             idleTime = idleTime, parameters = params)
+
+
       
     def prepareToStop(self, wait = False, stopPayload = ""):
         """

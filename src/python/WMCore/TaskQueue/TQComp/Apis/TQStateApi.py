@@ -7,8 +7,8 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQStateApi.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TQStateApi.py,v 1.5 2009/08/11 14:09:26 delgadop Exp $"
+__version__ = "$Revision: 1.5 $"
 
 #import logging
 import threading
@@ -268,8 +268,11 @@ class TQStateApi(TQApi):
 
         for i in active:
             result[i[0]] = {'ActivePilots': i[1]}
+            result[i[0]]['IdlePilots'] = 0
 
         for i in idle:
+            if not result.has_key(i[0]):
+                result[i[0]] = {'ActivePilots': 0}
             result[i[0]]['IdlePilots'] = i[1]
         
         return result
@@ -290,13 +293,28 @@ class TQStateApi(TQApi):
 
         return counts 
 
-    def removeTasksById(self, taskIds = []):
+    def archiveTasksById(self, taskIds = []):
         """
-        Remove all tasks whose Id is included in the 'taskIds' list
-        (and exist in the queue).
+        Archive all tasks whose Id is included in the 'taskIds' list
+        (and exist in the queue): copy them from tq_tasks to 
+        tq_tasks_archive, then  remove them from tq_tasks.
         """
 
         if taskIds:
             self.transaction.begin()
+            self.queries.archiveTasksById(taskIds)
             self.queries.removeTasksById(taskIds)
             self.transaction.commit()
+
+    def getPilotLogs(self, pilotId, limit = None):
+        """
+        Get the records in tq_pilot_log that correspond to the specified
+        pilotId (or to all if None). If limit is not None, do not return
+        more than those records.
+        """
+        self.transaction.begin()
+        result = self.queries.getPilotLogs(pilotId, limit)
+        self.transaction.commit()
+
+        return result
+        

@@ -9,8 +9,8 @@ at configuration time as matcherPlugin. Otherwise, the default one in this modul
 is used.
 """
 
-__revision__ = "$Id: FlexPyMatchmaker.py,v 1.2 2009/07/08 17:28:07 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FlexPyMatchmaker.py,v 1.3 2009/08/11 14:09:26 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 
@@ -43,13 +43,14 @@ class FlexPyMatchmaker(object):
         self.logger = params["logger"]
         
 
-    def matchTask(self, pilot):
+    def matchTask(self, pilot, limit = None):
         """
-        Returns the ID of the best matching task, or None if there is no
+        Returns a list of the best matching tasks, or None if there is no
         task available.
 
         The argument 'pilot' must be a dict with all the information of the
-        pilot.
+        pilot. The optional argument limit may be used to indicate the maximum
+        number of tasks to be returned (all matching if not set).
         """
         # TODO: The pilot may inform us about the files it owns, or we may look
         # into our database... whatever is better from the load point of view
@@ -96,7 +97,7 @@ class FlexPyMatchmaker(object):
 
         # Calculate the ranking for every matching task
         ranks = []
-        best = [-1, None]
+#        best = [-1, None]
         t0 = time.time()
         for match in matches:
             if not match['reqs']: 
@@ -112,18 +113,40 @@ class FlexPyMatchmaker(object):
                     messg = "Error evaluating rank: %s - %s" % (ttype, val)
                     self.logger.critical(messg + ". Rank expr: %s" % (RANK_EXPR))
                     rank = 0
-            ranks.append(rank)
+            ranks.append([rank, match])
 #            self.logger.debug("Rank for task %s: %s\n" % (match['id'], rank))
-            if rank > best[0]:
-                best[0] = rank
-                best[1] = match
-        self.logger.debug("Ranks for matching tasks: %s" % ranks)
+#            if rank > best[0]:
+#                best[0] = rank
+#                best[1] = match
+
+        def compfunc(x, y):
+          if x[0] > y[0]: return -1
+          if x[0] < y[0]: return 1
+          return 0
+        ranks.sort(compfunc)
+#        self.logger.debug("Ranks for matching tasks: %s" % ranks)
+        ranks.reverse()
+        if not limit: 
+            limit = len(ranks)
+        else:
+            limit = min(len(ranks), limit)
+        best = []
+        for i in xrange(limit):
+            best.append(ranks[i][1])
+        
+#        self.logger.debug("Ranks for matching tasks: %s" % ranks)
         self.logger.debug("Time spent in ranking calc: %1.2e" % (time.time() - t0))
 
         # Return the best (or None)
-        self.logger.debug("Returning best task: %s, with rank: %s\n" % \
-                           (best[1]['id'], best[0]))
-        return best[1] 
+#        self.logger.debug("Returning best task: %s, with rank: %s\n" % \
+#                           (best[1]['id'], best[0]))
+
+        if best:
+            self.logger.debug("Returning best %i tasks. Best rank: %s\n" % \
+                           (limit, best[0]))
+        else:
+            self.logger.debug("No best task to return")
+        return best
 
 
 

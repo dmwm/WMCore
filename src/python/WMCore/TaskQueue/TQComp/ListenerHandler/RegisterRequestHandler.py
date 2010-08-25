@@ -3,8 +3,8 @@
 Base handler for registerRequest.
 """
 __all__ = []
-__revision__ = "$Id: RegisterRequestHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: RegisterRequestHandler.py,v 1.3 2009/08/11 14:09:27 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -57,25 +57,25 @@ class RegisterRequestHandler(object):
    
             self.logger.debug('RegisterRequestHandler:RegisterRequest:payload: %s' % payload)
             
+            # Extract the pilot attributes
+            required = ['host', 'se', 'cacheDir', 'ttl']
+            for param in required:
+                if not param in payload:
+                    result = 'Error'
+                    fields = {'Error': 'registerRequest messsage requires \
+%s field in payload' % param}
+#                        myThread.transaction.rollback()
+                    return {'msgType': result, 'payload': fields}
+            host = payload['host']
+            se = payload['se']
+            cacheDir = payload['cacheDir']
+            ttl = payload['ttl']
+            if 'filesystem' in payload:
+                filesystem = payload['filesystem']
+
             try:
                 myThread.transaction.begin()
               
-                # Extract the pilot attributes
-                required = ['host', 'se', 'cacheDir', 'ttl']
-                for param in required:
-                    if not param in payload:
-                        result = 'Error'
-                        fields = {'Error': 'registerRequest messsage requires \
-%s field in payload' % param}
-                        myThread.transaction.rollback()
-                        return {'msgType': result, 'payload': fields}
-                host = payload['host']
-                se = payload['se']
-                cacheDir = payload['cacheDir']
-                ttl = payload['ttl']
-                if 'filesystem' in payload:
-                    filesystem = payload['filesystem']
-
                 # Get the list of pilots in the same host
                 pilotList = self.queries.getPilotsAtHost(host, se, True)
                 self.logger.debug("PilotList: %s" % pilotList)
@@ -89,6 +89,10 @@ class RegisterRequestHandler(object):
                     fields = {'Error': 'Could not register pilot!'}
                     myThread.transaction.rollback()
                     return {'msgType': result, 'payload': fields}
+
+                # Log in the tq_pilot_log table
+                self.queries.logPilotEvent(pilotId, 'RegisterRequest', \
+                  'Host: %s, SE: %s' % (host, se))
 
                 # Give the result back
                 fields['registerStatus'] = 'RegisterDone'

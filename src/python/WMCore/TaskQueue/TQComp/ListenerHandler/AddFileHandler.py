@@ -3,8 +3,8 @@
 Base handler for addFile.
 """
 __all__ = []
-__revision__ = "$Id: AddFileHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: AddFileHandler.py,v 1.3 2009/08/11 14:09:27 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -56,29 +56,29 @@ class AddFileHandler(object):
    
             self.logger.debug('AddFileHandler:AddFile:payload: %s' % payload)
             
+              
+            # Message attributes
+            required = ['pilotId', 'fileList']
+            for param in required:
+                if not param in payload:
+                    result = 'Error'
+                    fields = {'Error': "addFile message requires \
+'%s' field in payload" % param}
+#                    myThread.transaction.rollback()
+                    return {'msgType': result, 'payload': fields}
+            pilotId= payload['pilotId']
+            files = []
+            for i in payload['fileList']:
+                file = {}
+                file['guid'] = i['fileGuid']
+                file['size'] = i['fileSize']
+                file['type'] = i['fileType']
+#                    self.logger.debug('fileId: %s' % file['guid'])
+                files.append(file)
+
             try:
                 myThread.transaction.begin()
-              
-                # Message attributes
-#                required = ['pilotId', 'fileguid', 'filesize', 'filetype']
-                required = ['pilotId', 'fileList']
-                for param in required:
-                    if not param in payload:
-                        result = 'Error'
-                        fields = {'Error': "addFile message requires \
-'%s' field in payload" % param}
-                        myThread.transaction.rollback()
-                        return {'msgType': result, 'payload': fields}
-                pilotId= payload['pilotId']
-                files = []
-                for i in payload['fileList']:
-                    file = {}
-                    file['guid'] = i['fileGuid']
-                    file['size'] = i['fileSize']
-                    file['type'] = i['fileType']
-#                    self.logger.debug('fileId: %s' % file['guid'])
-                    files.append(file)
-
+                
                 # Get pilot info from DB (check that it's registered)
                 res = self.queries.getPilotsWithFilter({'id': pilotId}, \
                                     ['id'], None, asDict = False)

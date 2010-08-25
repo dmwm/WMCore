@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_TaskQueue_
+_TQComp_
 
 Main Queue maintains tasks and pilot information component
 

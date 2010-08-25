@@ -30,7 +30,7 @@ For PUT operations, only the file to store is required
 as argument. But another option, --dest, must be included.
 The value of this option must be the destination path
 for the file in the server (if ended in '/', the basename
-of the local file to upload will be appended. This path
+of the local file to upload will be appended). This path
 should have been indicated by the TQ previously.
 
 
@@ -134,6 +134,15 @@ $> tqtalk -e glitece:20030 fileRemoved "{'pilotId': 3, 'fileList':
 Message sent
 Response:
 {"msg": {"msgType": "fileRemovedAck", "payload": {"info": "Done"}}}
+
+
+$> tqtalk -e glitece:20030 errorReport  "{'pilotId': 12, 'error': 'Testing',
+'errorCode': 12}"
+
+Message sent
+Response:
+{"msg": {"msgType": "errorReportAck", "payload": {"errorLogUrl":
+"http://glitece.ciemat.es:20030/upload/logs/12_20090730_121639.tgz"}}}
 
 
 $> tqtalk -e glitece:20030 pilotShutdown "{'pilotId': 5}"

@@ -18,12 +18,13 @@ uploadRoot = 'upload'
 taskStates = {'Queued': 0, 'Assigned': 1, 'Running': 2, 'Done': 3, 'Failed': 4}
 
 
-# These three could basically be anything
+# These could basically be anything
 # (both server and client read it and use it)
 # No apparent need to make them configurable for now
 sandboxUrlDir = "sandbox" 
 specUrlDir = "spec" 
 reportUrlDir = "reports"
+pilotLogUrlDir = "logs"
 
 
 # TODO: The rank expression might be made configurable (or not??)

@@ -50,27 +50,27 @@ OPTIONS
 
 EXAMPLES
 ========
-$> tqclient -c confFile.py  getTasks "{'state': 0}"
+$> tqclient -c $TQCONF  getTasks "{'state': 0}"
 [
-[10L,
-'/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-8-JobSpec.xml',
-'/pool/TaskQueue/playground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
-'prod_A', 5L, None, 0L, datetime.datetime(2009, 4, 23, 18, 5, 30), None],
-[11L,
-'/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-8-JobSpec.xml',
-'/pool/TaskQueue/playground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
-'prod_B', 3L, None, 0L, datetime.datetime(2009, 4, 23, 18, 5, 30), None],
+['TestPA01-243', '/pool/pa/workdir/JobCreator/TestPA01/0000/243/TestPA01-243-Job
+Spec.xml', '/pool/pa/workdir/JobCreator/TestPA01/Processing/TestPA01-Processing.
+tar.gz', 'TestPA01', "(swarch == 'slc4_ia32_gcc345') and ('CMSSW_2_1_11' in 
+cmssw) and (se in ['storm.ifca.es'])", None, 0L, datetime.datetime(2009, 6, 30, 
+16, 6, 11), datetime.datetime(2009, 7, 8, 18, 27, 14), 'Processing', None],
+['TestPA01-244', '/pool/pa/workdir/JobCreator/TestPA01/0000/244/TestPA01-244-Job
+Spec.xml', '/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/TestPA01/Process
+ing/TestPA01-Processing.tar.gz', 'TestPA01', "(swarch == 'slc4_ia32_gcc345') and
+('CMSSW_2_1_11' in cmssw) and (se in ['storm.ifca.es'])", None, 0L, 
+datetime.datetime(2009, 6, 30, 16, 6, 11), datetime.datetime(2009, 7, 8, 18, 27,
+14), 'Processing', None]
 ]
 
 
-$> tqclient -c $TQCONF  getTasks "{'id': 20}" "[]" 5 True
+$> tqclient -c $TQCONF  getTasks "{'id': '20'}" "[id, spec, reqs, pilot]" 5 True
 [
-{'state': 1L, 'creat_time': datetime.datetime(2009, 5, 8, 18, 26, 37), 'spec':
-'/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-8-JobSpec.xml',
-'reqs': None, 'sandbox':
-'/pool/TaskQueue/playground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
-'wkflow': 'prod_B', 'current_state_time': datetime.datetime(2009, 5, 27, 14, 12,
-39), 'type': 'Processing', 'id': 20L, 'pilot': 1L}
+{'spec': '/pool/TaskQueue/playground/specs/TestPA01-8-JobSpec.xml', 'reqs':
+None,
+'id': 20L, 'pilot': 1L}
 ]
 
 
@@ -81,20 +81,20 @@ $> tqclient -c $TQCONF  getPilots "{'se': 'srm.cern.ch'}" "['id', 'se', 'host']"
 ]
 
 
-$> tqclient -c confFile.py  -f /tmp/insertTaskCmd
+$> tqclient -c $TQCONF  -f /tmp/insertTaskCmd
 
 # Where /tmp/insertTaskCmd contains (2 lines):
 -------------------------------------
-insertTask "{'spec': '/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-
-8-JobSpec.xml', 'wkflow': 'prod_A' , 'type': 'Processing', 'sandbox': '/pool/TaskQueue/pl
-ayground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz', 'reqs': 'se==\'srm
-.cern.ch\''}"
+insertTask "{'id': 'abc21', 'spec': '/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDE
+AL_V9_TestPA01-8-JobSpec.xml', 'wkflow': 'prod_A' , 'type': 'Processing', 'sandbox': 
+'/pool/TaskQueue/playground/sandbox/TestPA01-Processing.tar.gz',
+'reqs': 'se==\\'srm.cern.ch\\'', 'req_se': 'srm.cern.ch'}"
 
-insertTask "{'spec': '/pool/TaskQueue/playground/specs/Some-Other-spec-file.xml', 'wkflow
-': 'test_3' , 'type': 'Processing', 'sandbox': '/pool/TaskQueue/playground/sandbox/Some-O
-ther-sandbox-file.tgz', 'reqs': 'se==\'srm.cern.ch\' and \'f1\' in cache' }"
+insertTask "{'id': 'efg22''spec': '/pool/TaskQueue/playground/specs/Some-Other-spec-file.
+xml', 'wkflow': 'test_3' , 'type': 'Processing', 'sandbox': '/pool/TaskQueue/playground/s
+andbox/Some-Other-sandbox-file.tgz', 'reqs': 'se==\\'srm.cern.ch\\' and \\'f1\\' in cache', 
+'req_se': 'srm.cern.ch'}"
 -------------------------------------
-
 
 
 $> tqclient -c $TQCONF getPilotsPerHost 
@@ -111,6 +111,18 @@ $> tqclient -c $TQCONF getDataPerHost
 ('srm.cern.ch', 'other_host.cern.ch') = ['fd', 'fc', 'fg']
 ('srm.cern.ch', 'somehost.cern.ch') = ['fb', 'fe']
 }
+
+$> tqclient -c $TQCONF getPilotLogs 1 
+[
+{'info': 'None', 'pilot_id': '1', 'task_id': 'None', 'event': 'PilotShutdown',
+'insert_time': '2009-07-31 10:53:14', 'error_code': '0', 'id': '7'},
+{'info': 'Testing2', 'pilot_id': '1', 'task_id': 'None', 'event':
+'ErrorReport', 'insert_time': '2009-07-31 10:51:53', 'error_code': '12', 'id':
+'6'},
+{'info': 'Host: somehost.cern.ch, SE: srm.cern.ch', 'pilot_id': '1', 'task_id':
+'None', 'event': 'RegisterRequest', 'insert_time': '2009-07-31 10:36:04',
+'error_code': '0', 'id': '1'}
+]
 """
 
 

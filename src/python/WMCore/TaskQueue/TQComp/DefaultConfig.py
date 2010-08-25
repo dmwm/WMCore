@@ -59,9 +59,21 @@ config.TQComp.sandboxBasePath = \
 config.TQComp.reportBasePath = \
          "/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/"
 
+# Directory where to store additional pilot error files (if any)
+# Make sure it gets cleaned every once in a while
+config.TQComp.pilotErrorLogPath = "/tmp/TQ-test/pilotErrorLogs"
+
 # Default tasks-pilots matcher (selects a task for a pilot requesting one)
 # Do not change (or uncomment) unless really sure!
 #config.TQComp.matcherPlugin = "TQComp.FlexPyMatchmaker"
+
+# How often to check for heartbeat/TTL status of pilots (seconds)
+# Uncomment to change default value
+#config.TQComp.heartbeatPollPeriod = 300
+
+# After how long a no reporting pilot is considered dead (seconds)
+# Uncomment to change default value
+#config.TQComp.heartbeatValidity = 1800
 
 # Message handlers could be added as well
 # (but there are none at this time)

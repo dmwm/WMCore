@@ -20,3 +20,8 @@ matcherPlugin = "TQComp.FlexPyMatchmaker"
 # Max number of threads for the listener (including its handlers)
 listenerMaxThreads = 10
 
+# How often to check for heartbeat/TTL status of pilots (seconds)
+heartbeatPollPeriod = 300
+
+# After how long a no reporting pilot is considered dead (seconds)
+heartbeatValidity = 1800

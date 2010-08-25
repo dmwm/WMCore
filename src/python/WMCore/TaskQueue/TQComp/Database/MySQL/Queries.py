@@ -9,9 +9,9 @@ This module implements the mysql backend for the TQComp
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.4 2009/07/08 17:28:07 delgadop Exp $"
+    "$Id: Queries.py,v 1.5 2009/08/11 14:09:27 delgadop Exp $"
 __version__ = \
-    "$Revision: 1.4 $"
+    "$Revision: 1.5 $"
 __author__ = \
     "delgadop@cern.ch"
 
@@ -162,8 +162,21 @@ class Queries(DBFormatter):
         result = self.execute(sqlStr, {'state': state})
         return self.format(result)
     
-    
-    def updateOneTask(self, taskid, vars):
+   
+    def lockTask(self, taskId):
+        """
+        Performs a "SELECT *" on the specified task using the 
+        "FOR UPDATE" so that we are sure that nobody will
+        modify or read the task until we comit our transaction.
+        """
+        sqlStr = """
+        SELECT * FROM tq_tasks WHERE id = :id FOR UPDATE
+        """
+        result = self.execute(sqlStr, {'id': taskId})
+        return self.formatDict(result)
+
+        
+    def updateOneTask(self, taskId, vars):
         """
         Updates specified task with the fields in the given dict
         (if empty, then nothing is done). 
@@ -176,7 +189,7 @@ class Queries(DBFormatter):
             else:
                 sqlStr = """UPDATE tq_tasks SET %s WHERE id=:id""" \
                          % reduce(commas, map(bindWhere, vars))
-            vars['id'] = taskid
+            vars['id'] = taskId
             self.execute(sqlStr, vars)
     
 
@@ -388,10 +401,10 @@ class Queries(DBFormatter):
         return dict(result)
 
     
-    def removeTasksById(self, taskIds = []):
+    def archiveTasksById(self, taskIds = []):
         """
-        Remove all tasks whose Id is included in the 'taskIds' list
-        (and exist in the queue).
+        Archive all tasks whose Id is included in the 'taskIds' list
+        (and exist in the queue): copy them from tq_tasks to tq_tasks_archive.
         """
         if taskIds:
 
@@ -409,10 +422,39 @@ class Queries(DBFormatter):
                 taskIds = "%s" % (tuple(taskIds),)
                 
             sqlStr = """
+            INSERT INTO tq_tasks_archive 
+              SELECT * FROM tq_tasks WHERE id IN %s
+            """ % (taskIds)
+
+            result = self.execute(sqlStr, {})
+
+
+    def removeTasksById(self, taskIds = []):
+        """
+        Remove all tasks whose Id is included in the 'taskIds' list
+        (and exist in the queue).
+        """
+        if taskIds:
+
+
+            # The following (with bind vars) should be fine, but for some reasons,
+            # it only works for bind vars being integers, not string...
+#            sqlStr = """
+#            DELETE FROM tq_tasks WHERE id IN :range
+#            """
+#            self.execute(sqlStr, {'range': taskIds})
+
+            if len(taskIds) == 1:
+                taskIds = "('%s')" % taskIds[0]
+            else:
+                taskIds = "%s" % (tuple(taskIds),)
+
+            sqlStr = """
             DELETE FROM tq_tasks WHERE id IN %s
             """ % (taskIds)
 
             result = self.execute(sqlStr, {})
+           
 
 
 # ------------ PILOTS ----------------
@@ -467,24 +509,6 @@ class Queries(DBFormatter):
             vars['id'] = pilotId
             self.execute(sqlStr, vars)
 
-
-#   def updateInsertPilot(self, pilotId, vars):
-#       """
-#       Inserts a new pilot or, if existing, updates it,with the 
-#       fields in the given dict.
-#       """
-##            ON DUPLICATE KEY UPDATE tq_pilots SET %s WHERE id = :id
-#       if vars:
-#          sqlStr = """INSERT INTO tq_pilots(id, %s) VALUES(:id, %s)
-#           ON DUPLICATE KEY UPDATE %s 
-#          """ % (reduce(commas, vars), \
-#                 reduce(commas, map(bindVals, vars)), \
-#                 reduce(commas, map(bindWhere, vars)))
-#       else:
-#          sqlStr = """INSERT INTO tq_pilots(id) VALUES(:id)"""
-#       
-#       vars['id'] = pilotId
-#       self.execute(sqlStr, vars)
 
 
 
@@ -619,9 +643,84 @@ class Queries(DBFormatter):
          DELETE FROM tq_pilots WHERE id = :id
         """
         result = self.execute(sqlStr, {'id': pilotId})
+
+
+    def archivePilot(self, pilotId):
+        """
+        Copies the pilot tq_pilots record to the tq_pilots_archive table.
+        """
+        sqlStr = """
+            INSERT INTO tq_pilots_archive 
+              SELECT * FROM tq_pilots WHERE id = :id
+            """
+        result = self.execute(sqlStr, {'id': pilotId})
+
+
+    def logPilotEvent(self, pilotId, event, info=None, taskId=None, errorCode=0):
+        """
+        Logs an event in the tq_pilot_log table
+        """
+
+        sqlStr = """
+         INSERT INTO tq_pilot_log (pilot_id, task_id, event, error_code, info)
+         VALUES (:pilot_id, :task_id, :event, :error_code, :info)
+        """
+        vars = {'pilot_id': pilotId, 'task_id': taskId, 'event': event,
+                'error_code': errorCode, 'info': info}
+        self.execute(sqlStr, vars)
+
+
+    def getPilotLogs(self, pilotId, limit = None):
+        """
+        Get the records in tq_pilot_log that correspond to the specified
+        pilotId (or to all if None). If limit is not None, do not return
+        more than those records.
+        """
+        sqlStr = """SELECT * FROM tq_pilot_log"""
+        vars = {}
+         
+        if pilotId:
+            sqlStr += """ WHERE pilot_id = :pilot_id"""
+            vars = {'pilot_id': pilotId}
+
+        sqlStr += """ ORDER BY insert_time DESC"""
+
+        if limit:
+            sqlStr += """ LIMIT %s""" % (limit)
+
+        result = self.execute(sqlStr, vars)
+        return self.formatDict(result)
+
+ 
+    def checkPilotsTtl(self):
+        """
+        Returns pilots that have lived too long. Notice that this will
+        never select pilots with a NULL ttl, which is what we want.
+        """
+
+        sqlStr = """
+         SELECT id FROM tq_pilots WHERE TIMESTAMPDIFF(SECOND,
+          ttl_time, CURRENT_TIMESTAMP()) > ttl;
+        """
+        vars = {}
+        result = self.execute(sqlStr, vars)
         return self.format(result)
- 
- 
+
+
+    def checkPilotsHeartbeat(self, hbValidity):
+        """
+        Returns pilots that have not reported for too long.
+        """
+
+        sqlStr = """
+         SELECT id FROM tq_pilots WHERE TIMESTAMPDIFF(SECOND,
+          last_heartbeat, CURRENT_TIMESTAMP()) > :validity;
+        """
+        vars = {'validity': hbValidity}
+        result = self.execute(sqlStr, vars)
+        return self.format(result)
+
+
 # ------------ DATA ----------------
 
     def getDataPerHost(self, hostPattern):

@@ -3,8 +3,8 @@
 Base handler for fileRemoved.
 """
 __all__ = []
-__revision__ = "$Id: FileRemovedHandler.py,v 1.2 2009/07/08 17:28:08 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FileRemovedHandler.py,v 1.3 2009/08/11 14:09:27 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WMFactory import WMFactory
 
@@ -57,23 +57,23 @@ class FileRemovedHandler(object):
    
             self.logger.debug('FileRemovedHandler:FileRemoved:payload: %s' % payload)
             
+            # Extract the pilot attributes
+#                required = ['pilotId', 'fileguid']
+            required = ['pilotId', 'fileList']
+            for param in required:
+                if not param in payload:
+                    result = 'Error'
+                    fields = {'Error': 'fileRemoved message requires \
+%s field in payload' % param}
+#                    myThread.transaction.rollback()
+                    return {'msgType': result, 'payload': fields}
+
+            pilotId = payload['pilotId']
+            files = payload['fileList']
+
             try:
                 myThread.transaction.begin()
               
-                # Extract the pilot attributes
-#                required = ['pilotId', 'fileguid']
-                required = ['pilotId', 'fileList']
-                for param in required:
-                    if not param in payload:
-                        result = 'Error'
-                        fields = {'Error': 'fileRemoved message requires \
-%s field in payload' % param}
-                        myThread.transaction.rollback()
-                        return {'msgType': result, 'payload': fields}
-
-                pilotId = payload['pilotId']
-                files = payload['fileList']
-
                 # Get pilot info from DB (check that it's registered)
                 res = self.queries.getPilotsWithFilter({'id': pilotId}, \
                                     ['id'], None, asDict = True)

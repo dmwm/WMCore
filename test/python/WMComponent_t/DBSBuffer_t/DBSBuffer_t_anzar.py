@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.10 2009/01/12 23:03:44 afaq Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.11 2009/05/15 15:46:12 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -45,10 +45,12 @@ class DBSBufferTest(unittest.TestCase):
 
             	myThread = threading.currentThread()
             	myThread.logger = logging.getLogger('DBSBufferTest')
-            	myThread.dialect = 'MySQL'
+            	#myThread.dialect = 'MySQL'
+                myThread.dialect = os.getenv("DIALECT")
 
             	options = {}
-            	options['unix_socket'] = os.getenv("DBSOCK")
+                if not os.getenv("DBSOCK") == None:
+                    options['unix_socket'] = os.getenv("DBSOCK")
             	dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 	options)
 
@@ -180,23 +182,40 @@ class DBSBufferTest(unittest.TestCase):
         config.Agent.agentName = "DBS Buffer"
 
         config.section_("General")
-        config.General.workDir = os.getenv("TESTDIR")
+        if not os.getenv("TESTDIR") == None:
+            config.General.workDir = os.getenv("TESTDIR")
+        else:
+            config.General.workDir = os.getcwd()
 
         config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql' 
+        config.CoreDatabase.dialect = 'mysql'
+        if not os.getenv("DIALECT") == None:
+            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
         #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        config.CoreDatabase.user = os.getenv("DBUSER")
+        if not os.getenv("DBUSER") == None:
+            config.CoreDatabase.user = os.getenv("DBUSER")
+        else:
+            config.CoreDatabase.user = os.getenv("USER")
+        if not os.getenv("DBHOST") == None:
+            config.CoreDatabase.hostname = os.getenv("DBHOST")
+        else:
+            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
         config.CoreDatabase.passwd = os.getenv("DBPASS")
-        config.CoreDatabase.hostname = os.getenv("DBHOST")
-        config.CoreDatabase.name = os.getenv("DBNAME")
+        if not os.getenv("DBNAME") == None:
+            config.CoreDatabase.name = os.getenv("DBNAME")
+        else:
+            config.CoreDatabase.name = os.getenv("DATABASE")
+        if not os.getenv("DATABASE") == None:
+            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
 
 	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         myThread = threading.currentThread()
         myThread.logger = logging.getLogger('DBSBufferTest')
-        myThread.dialect = 'MySQL'
+        myThread.dialect = os.getenv("DIALECT")
 
         options = {}
-        options['unix_socket'] = os.getenv("DBSOCK")
+        if not os.getenv("DBSOCK") == None:
+            options['unix_socket'] = os.getenv("DBSOCK")
         dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
 
@@ -223,9 +242,16 @@ class DBSBufferTest(unittest.TestCase):
 	"""
 
 	fjr_path='/uscms/home/anzar/work/FJR/forAnzar/Run67838'
+        count = 0;
 	for aFJR in os.listdir(fjr_path):
-		if aFJR.endswith('.xml') and aFJR.startswith('FrameworkJobReport'):
-			testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
+            if myThread.dialect.lower() == 'oracle' and count > 10:
+                continue
+            if aFJR.endswith('.xml') and aFJR.startswith('FrameworkJobReport'):
+                count = count + 1
+                testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
+                
+
+
 			
         #########myThread.transaction.commit()
          

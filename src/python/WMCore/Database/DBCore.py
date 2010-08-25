@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.29 2009/05/12 16:40:01 swakef Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: DBCore.py,v 1.30 2009/06/02 22:06:07 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -73,12 +73,12 @@ class DBInterface(WMObject):
             return result
         
         except Exception, e:
-            self.logger.exception('DBInterface.executemanybinds - exception:%s' % e)
-            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection type: %s' % type(connection))
-            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection %s' % connection)
-            WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection dialect %s' % connection.dialect)
-            self.logger.debug('DBInterface.executemanybinds - sql : %s' % s)
-            self.logger.debug('DBInterface.executemanybinds - binds : %s' % b)
+            self.logger.exception('DBInterface.executebinds - exception:%s' % e)
+            WMCore.WMLogging.sqldebug('DBInterface.executebinds - connection type: %s' % type(connection))
+            WMCore.WMLogging.sqldebug('DBInterface.executebinds - connection %s' % connection)
+            WMCore.WMLogging.sqldebug('DBInterface.executebinds - connection dialect %s' % connection.dialect)
+            self.logger.debug('DBInterface.executebinds - sql : %s' % s)
+            self.logger.debug('DBInterface.executebinds - binds : %s' % b)
             raise
         
 
@@ -135,7 +135,9 @@ class DBInterface(WMObject):
         """
         Return a connection to the engine (from the connection pool)
         """
+
         return self.engine.connect()
+
     
     def processData(self, sqlstmt, binds = {}, conn = None,
                     transaction = False):

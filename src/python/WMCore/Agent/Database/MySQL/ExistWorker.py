@@ -5,8 +5,8 @@ MySQL implementation of ExistWorker
 """
 
 __all__ = []
-__revision__ = "$Id: ExistWorker.py,v 1.1 2010/06/21 21:19:17 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ExistWorker.py,v 1.2 2010/06/28 21:24:39 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -28,7 +28,7 @@ class ExistWorker(DBFormatter):
             return result[0][0]
         
     def execute(self, componentName, workerName,
-                pid = None, conn = None, transaction = False):
+                conn = None, transaction = False):
         
         binds = {"component_name": componentName, 
                  "worker_name": workerName}

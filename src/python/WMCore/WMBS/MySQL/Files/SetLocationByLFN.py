@@ -5,8 +5,8 @@ _SetLocationByLFN_
 MySQL implementation of Files.SetLocationByLFN
 """
 
-__revision__ = "$Id: SetLocationByLFN.py,v 1.2 2010/03/10 20:48:56 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SetLocationByLFN.py,v 1.3 2010/04/08 16:20:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -14,7 +14,7 @@ class SetLocationByLFN(DBFormatter):
     sql = """INSERT INTO wmbs_file_location (file, location) 
              SELECT wmbs_file_details.id, wmbs_location.id
                FROM wmbs_location, wmbs_file_details
-               WHERE wmbs_location.site_name = :location
+               WHERE wmbs_location.se_name = :location
                AND wmbs_file_details.lfn = :lfn"""
                 
     def getBinds(self, lfn = None, location = None):

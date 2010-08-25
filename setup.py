@@ -113,6 +113,8 @@ class TestCommand(Command):
                     "\n".join(failedTestFiles)
              #"".join(' ', [result.failures[0],result.failures[1]]))
             #print "Errorlist:\n%s" % result.errors #"".join(' ', [result.errors[0],result.errors[1]]))
+            print "Tests unsuccessful. There were %s failures and %s errors"\
+                      % (len(result.failures), len(result.errors))
             print "FAILED: setup.py test" 
             sys.exit(1)
         else:

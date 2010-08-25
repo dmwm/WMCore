@@ -7,8 +7,8 @@ or a a set of files for each job.
 
 """
 
-__revision__ = "$Id: SizeBased.py,v 1.5 2009/12/16 18:49:12 mnorman Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: SizeBased.py,v 1.6 2009/12/16 18:54:43 mnorman Exp $"
+__version__  = "$Revision: 1.6 $"
 
 import logging
 
@@ -45,8 +45,9 @@ class SizeBased(JobFactory):
                     if currentSize > 0:
                         self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
                     self.currentJob.addFile(f)
-                    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
-                    currentSize = 0
+                    currentSize += sizeOfFile
+                    #self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                    #currentSize = 0
 
                 else:
                     if currentSize + sizeOfFile > sizePerJob:
@@ -56,8 +57,8 @@ class SizeBased(JobFactory):
 
                     if currentSize + sizeOfFile <= sizePerJob:
                     
-                        #if not self.currentJob:
-                        #    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                        if not self.currentJob:
+                            self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
                         #Add if it will be smaller
                         self.currentJob.addFile(f)
                         currentSize += sizeOfFile

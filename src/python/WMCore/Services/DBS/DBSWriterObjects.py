@@ -388,16 +388,16 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
     return that
 
     """
-    logging.debug("getDBSFileBlocks(): dset, se: %s, %s" % (procDataset, seName))
+    logging.warning("getDBSFileBlocks(): dset, se: %s, %s" % (procDataset, seName))
     
     allBlocks = dbsApiRef.listBlocks(procDataset, block_name = "*",
                                      storage_element_name = "*")
 
-    logging.debug("getDBSFileBlock(): all blocks %s" % allBlocks)
+    logging.warning("getDBSFileBlock(): all blocks %s" % allBlocks)
 
     openBlocks = [b for b in allBlocks if str(b['OpenForWriting']) == "1"]
 
-    logging.debug("getDBSFileBlocks(): open blocks %s" % openBlocks)
+    logging.warning("getDBSFileBlocks(): open blocks %s" % openBlocks)
 
     blockRef = None
     if len(openBlocks) > 1:
@@ -415,7 +415,7 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
         # // Need to create new block
         #//
 
-        logging.debug("getDBSFileBlock(): Creating a new block...")
+        logging.warning("getDBSFileBlock(): Creating a new block...")
 
         newBlockName = dbsApiRef.insertBlock (procDataset, None ,
                                               storage_element_list = [seName])
@@ -447,7 +447,7 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
 
 
 
-    logging.debug("Open FileBlock located at SE: %s to use is FileBlock: %s "%(seName,blockRef['Name']))
+    logging.warning("Open FileBlock located at SE: %s to use is FileBlock: %s "%(seName,blockRef['Name']))
     return blockRef
 
 

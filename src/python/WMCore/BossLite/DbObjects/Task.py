@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.19 2010/05/29 13:06:22 spigafi Exp $"
-__revision__ = "$Revision: 1.19 $"
+__version__ = "$Id: Task.py,v 1.20 2010/05/30 14:42:12 spigafi Exp $"
+__revision__ = "$Revision: 1.20 $"
 
 import os.path
 
@@ -15,6 +15,7 @@ from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 from WMCore.BossLite.DbObjects.Job      import Job
 
 from WMCore.BossLite.Common.Exceptions  import TaskError
+
 
 class Task(DbObject):
     """
@@ -144,7 +145,7 @@ class Task(DbObject):
         return
     
     
-    def load(self, db, deep = True):
+    def load(self, db, jobRange = None,  deep = True):
         """
         Load a task     
         """
@@ -166,7 +167,7 @@ class Task(DbObject):
         self.data.update(result[0])
         
         if deep :
-            self.loadJobs(db)
+            self.loadJobs(db, jobRange = jobRange)
 
         # is this method necessary?
         self.updateInternalData()
@@ -176,7 +177,7 @@ class Task(DbObject):
         return
     
     
-    def loadJobs(self, db, deep = True):
+    def loadJobs(self, db, jobRange = None, deep = True):
         """
         Load jobs from the database
         """
@@ -184,8 +185,8 @@ class Task(DbObject):
         # this check could be improved...
         if self.data['id'] < 0:
             self.exists(db)
-        
-        jobList = db.objLoad(self, classname = 'Task.GetJobs') 
+                
+        jobList = db.jobLoadJobs(id = self.data['id'], jobRange = jobRange) 
            
         # update the jobs information
         for job in jobList:

@@ -7,6 +7,7 @@ Implementation of StageOutImpl interface for SRM Version 2
 """
 import os, re
 import logging, tempfile
+import subprocess
 from subprocess import Popen, PIPE
 from WMCore.Storage.Registry import registerStageOutImplVersionTwo
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
@@ -68,6 +69,7 @@ class SRMV2Impl(StageOutImplV2):
                                         for i in range(targetdir.count("/")-4)]
         dirsToCheck = dirs[:]; dirsToCheck.reverse()
         levelToCreateFrom = len(dirs)
+        # the -1 in the zip is because we assume that /store is there
         for count, dir in zip(range(len(dirsToCheck), 0, -1), dirsToCheck):
             _, output = self.runCommandWarnOnError(['srmls',\
                                                            '-recursion_depth=0',\
@@ -80,8 +82,8 @@ class SRMV2Impl(StageOutImplV2):
 
         #  // Create needed directory levels from end of previous loop
         # //  to end of directory structure
-        for dir in dirs[levelToCreateFrom:]:
-            print "Create directory: %s" % dir
+        for dir in dirs[levelToCreateFrom - 1:]:
+            #print "Create directory: %s" % dir
             self.runCommandWarnOnError(['srmmkdir',
                                         '-retry_num=%s' % self.numRetries,
                                         dir])
@@ -113,23 +115,31 @@ class SRMV2Impl(StageOutImplV2):
                             options)
             self.runCommandWarnOnNonZero(ourCommand)
     
-            if not self.stageOut:
+            if not stageOut:
                 remotePFN, localPFN = fromPfn, toPfn.replace("file://", "", 1)
             else:
                 remotePFN, localPFN = toPfn, fromPfn.replace("file://", "", 1)
     
     
             if _CheckExitCodeOption:        
-                p1 = Popen(["rfstat", remotePFN], stdout=PIPE)
-                p3 = Popen(['cut','-f3','-d" "'], stdin=p1.stdout, stdout=PIPE)
-                exitCode = p3.communicate()[0]
-                if exitCode == 1:
+                p1 = Popen(["cat", reportFile], stdout=PIPE)
+                p3 = Popen(['cut','-f3','-d',' '], stdin=p1.stdout, stdout=PIPE)
+                exitCode = p3.communicate()[0].rstrip()
+                logging.info("srmcp exit status: %s" % exitCode)
+                p2 = Popen(['grep', '-c', 'SRM_INVALID_PATH',reportFile],stdout=PIPE)
+                invalidPathCount = p2.communicate()[0]
+                logging.info("got this for SRM_INVALID_PATH: %s" % invalidPathCount)
+                if (invalidPathCount and (exitCode == '')):
                     logging.warn("Directory doesn't exist in srmv2 stageout...creating and retrying")
+                    self.createOutputDirectory(toPfn,stageOut)
                     continue
-                else:
+                elif ( str(exitCode) != "0" ):
                     logging.error("Couldn't stage out! Error code: %s" % exitCode)
                     self.doDelete(toPfn,None,None,None,None)
-                    raise StageOutError, "srmcp failed! Error code: %s" % exitCode
+                    raise StageOutFailure, "srmcp failed! Error code: %s" % exitCode
+                else:
+                    logging.info("Tentatively succeeded transfer, will check metadata")
+                    break
                 
         localSize = os.path.getsize( localPFN )
         logging.info("Local Size %s" % localSize)
@@ -149,6 +159,8 @@ class SRMV2Impl(StageOutImplV2):
         remoteHost = m.groups()[0]
         #         filesize() { `srm-get-metadata -retry_num=0 %s 2>/dev/null | grep 'size :[0-9]' | cut -f2 -d":"`}
         # the following replaces the above
+        logging.info("remote path: %s" % remotePath)
+        logging.info("remote host: %s" % remoteHost)
         p1 = Popen(["srmls", '-recursion_depth=0','-retry_num=0', remotePFN], stdout=PIPE)
         p2 = Popen(["grep", remotePath], stdout=PIPE, stdin=p1.stdout)
         p3 = Popen(["grep", '-v', remoteHost], stdout=PIPE, stdin=p2.stdout)
@@ -164,6 +176,7 @@ class SRMV2Impl(StageOutImplV2):
         
         return toPfn
 
-
+    def runCommandWarnOnError(self,command):
+        return SRMV2Impl.runCommandWarnOnError(self, command)
 
 registerStageOutImplVersionTwo("srmv2", SRMV2Impl)

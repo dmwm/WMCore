@@ -187,7 +187,7 @@ class TestCommand(Command):
             
 
         if not result.wasSuccessful():
-            sys.stderr.write("Tests unsuccessful. There were %s failures and %s errors"\
+            sys.stderr.write("\nTests unsuccessful. There were %s failures and %s errors\n"\
                       % (len(result.failures), len(result.errors)))
             #print "Failurelist:\n%s" % "\n".join(map(lambda x: \
              #                                           "FAILURE: %s\n%s" % (x[0],x[1] ), result.failures))
@@ -197,20 +197,20 @@ class TestCommand(Command):
         if len(failedTestFiles):
             sys.stderr.write("The following tests failed to load: \n===============\n%s" %\
                     "\n".join(failedTestFiles))    
-        sys.stderr.write("------------------------------------")
-        sys.stderr.write("test results")
-        sys.stderr.write("------------------------------------")
-        sys.stderr.write("Stats: %s successful, %s failures, %s errors, %s didn't run" %\
+        sys.stderr.write("\n------------------------------------")
+        sys.stderr.write("\ntest results")
+        sys.stderr.write("\n------------------------------------")
+        sys.stderr.write("\nStats: %s successful, %s failures, %s errors, %s didn't run" %\
                 (totalTests - len(result.failures) - len(result.errors),\
                  len(result.failures),
                  len(result.errors),
                  len(failedTestFiles)))
                 
         if (not result.wasSuccessful()) or len(result.errors):
-            sys.stderr.write("FAILED: setup.py test") 
+            sys.stderr.write("\nFAILED: setup.py test\n") 
             sys.exit(1)
         else:
-            sys.stderr.write("PASS: setup.py test")
+            sys.stderr.write("\nPASS: setup.py test\n")
             sys.exit(0)
            
 

@@ -79,7 +79,8 @@ class DBFactory(object):
                                                        convert_unicode=True, 
                                                        encoding='utf-8',
                                                        strategy='threadlocal',
-                                                       pool_size = 25,
+                                                       #TODO: make configurable
+                                                       pool_size = 5,
                                                        connect_args = options)
                                                   )
         self.dia = self.engine.dialect

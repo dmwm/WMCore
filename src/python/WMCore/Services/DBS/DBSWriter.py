@@ -246,6 +246,8 @@ class DBSWriter:
         seName = None
         
         #Get the algos in insertable form
+        # logging.error("About to input algos")
+        # logging.error(algos)
         ialgos = [DBSWriterObjects.createAlgorithmForInsert(dict(algo)) for algo in algos ]
 
         #print ialgos
@@ -603,7 +605,19 @@ class DBSWriter:
         if isClosed != '1':
             msg = "Block %s already closed" % fileblockName
             logging.warning(msg)
-            return False
+            # Attempting to migrate to global
+            if self.globalDBSUrl:
+                self.dbs.migrateDatasetContents(self.args['url'], 
+                                                self.globalDBSUrl,
+                                                fileblockName.split("#")[0], 
+                                                fileblockName,
+                                                srcVersion = self.version,
+                                                dstVersion = self.globalVersion
+                                                )
+                logging.info("Migrated block %s to global due to pre-closed status" %(fileblockName))
+            else:
+                logging.error("Should've migrated block %s because it was already closed, but didn't" % (fileblockName))
+            return True
 
         
         
@@ -654,8 +668,9 @@ class DBSWriter:
                                                 srcVersion = self.version,
                                                 dstVersion = self.globalVersion
                                                 )
+                logging.info("Migrated block %s to global" %(fileblockName))
             else:
-                logging.error("Should've migrated block %s, but didn't" % (fileBlockName))
+                logging.error("Should've migrated block %s, but didn't" % (fileblockName))
         return closeBlock
     
         

@@ -6,13 +6,14 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.58 2010/03/23 20:08:24 afaq Exp $"
-__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: RESTModel.py,v 1.59 2010/04/26 14:27:27 sryu Exp $"
+__version__ = "$Revision: 1.59 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
 import sys
 import traceback
+from WMCore.WebTools.Page import DEFAULT_EXPIRE
 
 class RESTModel(WebAPI):
     """
@@ -115,7 +116,7 @@ class RESTModel(WebAPI):
         except Exception, e:
             error = e.__str__()
             self.debug(error)
-	    self.debug(traceback.format_exc())
+            self.debug(traceback.format_exc())
             raise 
        
         if 'expires' in self.methods[verb][method].keys():
@@ -123,7 +124,9 @@ class RESTModel(WebAPI):
         else:
             return data, False
                 
-    def addDAO(self, verb, methodKey, daoStr, args=[], validation=[], version=1, daoFactory = None):
+    def addDAO(self, verb, methodKey, daoStr, args=[], 
+               validation=[], version=1, daoFactory = None,
+               expires = DEFAULT_EXPIRE):
         """
         add dao in self.methods and wrap it with sanitise_input. Assumes that a 
         DAOFactory instance is available from self.
@@ -140,9 +143,11 @@ class RESTModel(WebAPI):
             # execute the requested input, now a list of keywords
             return dao.execute(**input)
                   
-        self.addMethod(verb, methodKey, function, args, validation, version)
+        self.addMethod(verb, methodKey, function, args, validation, 
+                       version, expires)
         
-    def addMethod(self, verb, methodKey, function, args=[], validation=[], version=1):
+    def addMethod(self, verb, methodKey, function, args=[], 
+                  validation=[], version=1, expires = DEFAULT_EXPIRE):
         """
         add a method handler to self.methods self.methods need to be initialize 
         if sub class hasn't done this already.
@@ -167,7 +172,8 @@ class RESTModel(WebAPI):
         self.methods[verb][methodKey] = {'args': args,
                                          'call': funcRef,
                                          'validation': validation,
-                                         'version': version}
+                                         'version': version,
+                                         'expires': expires}
 
     def sanitise_input(self, args=[], kwargs={}, method = None):
         """

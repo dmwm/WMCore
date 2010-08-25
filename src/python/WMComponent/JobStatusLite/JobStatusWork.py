@@ -12,8 +12,8 @@ on the subset of jobs assigned to them.
 
 """
 
-__revision__ = "$Id: JobStatusWork.py,v 1.2 2010/06/09 20:28:48 mcinquil Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobStatusWork.py,v 1.3 2010/06/10 16:16:18 mcinquil Exp $"
+__version__ = "$Revision: 1.3 $"
 
 #import threading
 #from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
@@ -205,7 +205,7 @@ class JobStatusWork:
                                                  task \
                                                )
                 
-                task = schedSession.query( task, queryType='parent' )
+                task = schedSession.query( taskId, queryType='parent' )
 
                 ## printing will slow down performances
                 # for job in task.jobs :

@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.16 2009/07/13 18:36:46 mnorman Exp $"
-__version__  = "$Revision: 1.16 $"
+__revision__ = "$Id: RunBased.py,v 1.17 2009/08/06 16:46:57 mnorman Exp $"
+__version__  = "$Revision: 1.17 $"
 
 from sets import Set
 
@@ -42,9 +42,6 @@ class RunBased(JobFactory):
         # List of Job Groups
         jobGroupList = []
         
-        # Get the available Fileset
-        fileset = list(self.subscription.availableFiles())
-        
         # Select all primary files for the first present run
         curRun = None
         primaryFiles = []
@@ -57,51 +54,55 @@ class RunBased(JobFactory):
         #In future, mask these files?
 
         runDict = {}
-        
-        for f in fileset:
 
-            #If it is a WMBS object, load all data
-            if hasattr(f, "loadData"):
-                f.loadData()
+        locationDict = self.sortByLocation()
 
-            #Die if there are no runs
-            if len(f['runs']) < 1:
-                msg = "File %s claims to contain %s runs!" %(f['lfn'], len(f['runs']))
-                raise RuntimeError, msg
+        for location in locationDict.keys():
+            fileList = locationDict[location]
+            for f in fileList:
+                
+                #If it is a WMBS object, load all data
+                if hasattr(f, "loadData"):
+                    f.loadData()
+                    
+                #Die if there are no runs
+                if len(f['runs']) < 1:
+                    msg = "File %s claims to contain %s runs!" %(f['lfn'], len(f['runs']))
+                    raise RuntimeError, msg
 
-            #First we need to pick the lowest run
-            run = min(f['runs'])
+                #First we need to pick the lowest run
+                run = min(f['runs'])
 
-            #If we don't have the run, we need to add it
-            if not run in runDict.keys():
-                runDict[run] = []
+                #If we don't have the run, we need to add it
+                if not run in runDict.keys():
+                    runDict[run] = []
 
-            runDict[run].append(f)
+                runDict[run].append(f)
 
 
-        for run in runDict.keys():
-            #Find the runs in the dictionary we assembled and split the files in them
+            for run in runDict.keys():
+                #Find the runs in the dictionary we assembled and split the files in them
             
-            joblist = []
+                joblist = []
 
-            #Now split them into sections according to files per job
-            while len(runDict[run]) > 0:
-                jobFiles = Fileset()
-                for i in range(filesPerJob):
-                    #Watch out if your last job has less then the full number of files
-                    if len(runDict[run]) > 0:
-                        jobFiles.addFile(runDict[run].pop())
+                #Now split them into sections according to files per job
+                while len(runDict[run]) > 0:
+                    jobFiles = Fileset()
+                    for i in range(filesPerJob):
+                        #Watch out if your last job has less then the full number of files
+                        if len(runDict[run]) > 0:
+                            jobFiles.addFile(runDict[run].pop())
 
-                # Create the job
-                job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
-                                  files = jobFiles)
-                joblist.append(job)
+                    # Create the job
+                    job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
+                                      files = jobFiles)
+                    joblist.append(job)
 
 
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroup.add(joblist)
-            jobGroup.commit()
-            jobGroupList.append(jobGroup)
+                jobGroup = groupInstance(subscription = self.subscription)
+                jobGroup.add(joblist)
+                jobGroup.commit()
+                jobGroupList.append(jobGroup)
 
 
         return jobGroupList

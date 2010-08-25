@@ -88,6 +88,9 @@ class Executor:
             self.stepSpace.location,
             )
 
+        # Set overall step status to 1 (failed)
+        self.report.setStepStatus(stepName = self.stepName, status = 1)
+
         #  //
         # //  Does the step contain settings for an emulator?
         #//   If so, load it up

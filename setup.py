@@ -150,7 +150,8 @@ def runUnitTests():
     modules = []
     for oneModule in moduleNames3:
         try:
-            modules.append(__import__(oneModule, globals(), locals()))   
+            __import__(oneModule)
+            modules.append(sys.modules[oneModule])
         except ImportError, e:
             print "ERROR: Can't load %s - %s" % (oneModule, e)    
         else:

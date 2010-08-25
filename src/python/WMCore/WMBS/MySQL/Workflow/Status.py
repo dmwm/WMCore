@@ -5,8 +5,8 @@ _Status_
 MySQL implementation of Workflow.Status
 """
 
-__revision__ = "$Id: Status.py,v 1.2 2010/05/26 21:55:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Status.py,v 1.3 2010/05/27 20:20:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -16,9 +16,12 @@ class Status(DBFormatter):
 
     """
     sql = """SELECT wmbs_workflow.owner, wmbs_workflow.task, wmbs_job_state.name,
-                    COUNT(wmbs_job.id) AS jobs, SUM(wmbs_job.outcome) AS success FROM wmbs_workflow
+                    COUNT(wmbs_job.id) AS jobs, SUM(wmbs_job.outcome) AS success,
+                    SUM(wmbs_fileset.open) AS open FROM wmbs_workflow
                INNER JOIN wmbs_subscription ON
                  wmbs_workflow.id = wmbs_subscription.workflow
+               INNER JOIN wmbs_fileset ON
+                 wmbs_subscription.fileset = wmbs_fileset.id
                LEFT OUTER JOIN wmbs_jobgroup ON
                  wmbs_subscription.id = wmbs_jobgroup.subscription
                LEFT OUTER JOIN wmbs_job ON

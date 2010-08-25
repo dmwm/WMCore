@@ -2,6 +2,9 @@
 """
 wmagent-workflow-status
 
+Query WMBS to determine workflow status in terms of number of jobs pending,
+running and complete as well as whether or not input filesets are closed or
+open.
 """
 
 import sys
@@ -50,6 +53,7 @@ statusDao = myDAOFactory("Workflow.Status")
 result = statusDao.execute()
 
 workflowInfo = {}
+workflowOpen = {}
 for row in result:
     if row["success"] == None:
         row["success"] = 0
@@ -58,8 +62,10 @@ for row in result:
         
     if not workflowInfo.has_key(row["owner"]):
         workflowInfo[row["owner"]] = {}
+        workflowOpen[row["owner"]] = {}
     if not workflowInfo[row["owner"]].has_key(row["task"]):
         workflowInfo[row["owner"]][row["task"]] = {"pending": 0, "running": 0, "complete": 0, "successful": 0}
+        workflowOpen[row["owner"]][row["task"]] = 0
 
     if row["name"] in ["complete", "success", "exhausted", "cleanout"]:
         workflowInfo[row["owner"]][row["task"]]["complete"] += int(row["jobs"])
@@ -68,7 +74,8 @@ for row in result:
     else:
         workflowInfo[row["owner"]][row["task"]]["running"] += int(row["jobs"])
 
-    workflowInfo[row["owner"]][row["task"]]["successful"] += int(row["success"])        
+    workflowInfo[row["owner"]][row["task"]]["successful"] += int(row["success"])
+    workflowOpen[row["owner"]][row["task"]] += int(row["open"])
 
 for owner in workflowInfo.keys():
     print "\n%s:" % owner
@@ -76,7 +83,11 @@ for owner in workflowInfo.keys():
     tasks = workflowInfo[owner].keys()
     tasks.sort()
     for task in tasks:
-        print "  %s:" % task
+        if workflowOpen[owner][task] == 0:
+            print "  %s (closed):" % task
+        else:
+            print "  %s (open):" % task
+            
         print "    %s pending, %s running, %s complete (%s successful)" % (workflowInfo[owner][task]["pending"],
                                                                            workflowInfo[owner][task]["running"],
                                                                            workflowInfo[owner][task]["complete"],

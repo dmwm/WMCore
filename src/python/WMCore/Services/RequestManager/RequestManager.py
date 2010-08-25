@@ -69,14 +69,9 @@ class RequestManager(Service):
             argString = str(hash(str(args)))
         file = callname + argString + '.cache'
         if clearCache:
-            self.clearCache(file, args)
+            self.clearCache(file, verb, args)
 
-        # overwrite original self['method']
-        # this is only place used self['method'], it is safe to overwrite
-        # If that changes keep the reset to original self['method']
-
-        self["method"] = verb
-        f = self.refreshCache(file, callname, args)
+        f = self.refreshCache(file, verb, callname, args)
         result = f.read()
         f.close()
 

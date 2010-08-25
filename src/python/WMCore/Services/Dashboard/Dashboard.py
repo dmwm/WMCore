@@ -5,8 +5,8 @@ _Dashboard_
 Talk to the Dashboard Service to get site status.
 """
 
-__revision__ = "$Id: Dashboard.py,v 1.6 2010/01/08 21:43:07 metson Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Dashboard.py,v 1.7 2010/03/08 23:16:42 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Services.Service import Service
 class Dashboard(Service):
@@ -16,6 +16,7 @@ class Dashboard(Service):
     """
     def __init__(self, dict={}):
         dict['accept_type'] = 'text/csv'
+        dict['method'] = 'GET'
         Service.__init__(self, dict)
     
     def getStatus(self, name):

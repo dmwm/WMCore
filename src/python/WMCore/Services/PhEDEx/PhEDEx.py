@@ -74,14 +74,9 @@ class PhEDEx(Service):
             argString = str(hash(str(args)))
         file = callname + argString + '.cache'
         if clearCache:
-            self.clearCache(file, args)
+            self.clearCache(file, args, verb = verb)
         try:
-            # overwrite original self['method']
-            # this is only place used self['method'], it is safe to overwrite
-            # If that changes keep the reset to original self['method']
-            
-            self["method"] = verb
-            f = self.refreshCache(file, callname, args)
+            f = self.refreshCache(file, callname, args, verb = verb)
             result = f.read()
             f.close()
 

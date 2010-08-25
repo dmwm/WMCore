@@ -5,8 +5,8 @@ _SAM_
 Talk to the SAM Service to get site status from the results of SAM tests.
 """
 
-__revision__ = "$Id: SAM.py,v 1.5 2010/01/09 09:15:34 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: SAM.py,v 1.6 2010/03/08 23:16:51 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Services.Service import Service
 
@@ -23,7 +23,7 @@ class SAM(Service):
                     "testname":"CE-cms-swinst"}
         file = 'sam_cmssw_inst_%s.html' % ce
         
-        f = self.refreshCache(file, url = '/sam/sam.py', inputdata = inputdata)
+        f = self.refreshCache(file, url = '/sam/sam.py', inputdata = inputdata, verb = 'GET')
         lines = f.readlines()
         f.close()
         

@@ -6,8 +6,8 @@ API for dealing with retrieving information from SiteDB
 
 """
 
-__revision__ = "$Id: SiteDB.py,v 1.12 2009/08/18 14:23:44 metson Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: SiteDB.py,v 1.13 2010/03/08 23:16:49 sryu Exp $"
+__version__ = "$Revision: 1.13 $"
 
 from WMCore.Services.SSLService import SSLService
 import urllib
@@ -51,10 +51,9 @@ class SiteDBJSON(SSLService):
                     filename=dict['cachepath'] + '/sitedbjsonparser.log',
                     filemode='w')
             dict['logger'] = logging.getLogger('SiteDBParser')
-            
         SSLService.__init__(self, dict)
 
-    def getJSON(self, callname, file='result.json', clearCache=False, **args):
+    def getJSON(self, callname, file = 'result.json', clearCache = False, verb = 'GET', **args):
         """
         _getJSON_
 
@@ -65,9 +64,9 @@ class SiteDBJSON(SSLService):
         """
         result = ''
         if clearCache:
-            self.clearCache(file, args)
+            self.clearCache(file, args, verb = verb)
         try:
-            f = self.refreshCache(file, callname, args)
+            f = self.refreshCache(file, callname, args, verb = verb)
             result = f.read()
             f.close()
         except IOError:
@@ -78,7 +77,7 @@ class SiteDBJSON(SSLService):
             results = self.parser.dictParser(result)
             return results
         except SyntaxError:
-            self.clearCache(file, args)
+            self.clearCache(file, args, verb = verb)
             raise SyntaxError("Problem parsing data. Cachefile cleared. Retrying may work")
 
 
@@ -93,7 +92,7 @@ class SiteDBJSON(SSLService):
             userName = userinfo['user']
         except (KeyError, IndexError):
             userinfo = self.getJSON("dnUserName", dn=dn,
-                                           file=file, clearCache=True)
+                                        file=file, clearCache=True)
             userName = userinfo['user']
         return userName
 

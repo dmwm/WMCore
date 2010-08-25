@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.39 2010/02/26 14:44:00 metson Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Service.py,v 1.40 2010/03/08 23:16:45 sryu Exp $"
+__version__ = "$Revision: 1.40 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -76,8 +76,11 @@ class Service(dict):
         self.setdefault("inputdata", {})
         self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
-        self.setdefault("method", 'GET')
-
+        self.supportVerbList = ('GET', 'POST', 'PUT', 'DELETE')
+        # this value should be only set when whole service class uses
+        # the same verb ('GET', 'POST', 'PUT', 'DELETE')
+        self.setdefault("method", None)
+        
         #Set a timeout for the socket
         self.setdefault("timeout", 30)
 
@@ -134,63 +137,73 @@ class Service(dict):
                 hash += value.__hash__()
         return hash
     
-    def cacheFileName(self, cachefile, inputdata = {}):
+    def cacheFileName(self, cachefile, verb, inputdata = {}):
         """
         Calculate the cache filename for a given query.
         """
+        
         hash = 0
         if inputdata:
             hash = self._makeHash(inputdata, hash)
         else:
             hash = self._makeHash(self['inputdata'], hash)
-        cachefile = "%s/%s_%s" % (self["cachepath"], hash, cachefile)
+        cachefile = "%s/%s_%s_%s" % (self["cachepath"], hash, verb, cachefile)
 
         return cachefile
 
     def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True, 
-                     encoder = True, decoder= True):
+                     encoder = True, decoder= True, verb = None):
         """
         See if the cache has expired. If it has make a new request to the 
         service for the input data. Return the cachefile as an open file object.  
         """
+        verb = self._verbCheck(verb)
+        
         t = datetime.datetime.now() - datetime.timedelta(hours = self['cacheduration'])
-        cachefile = self.cacheFileName(cachefile, inputdata)
+        cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
-            self.getData(cachefile, url, inputdata, encoder, decoder)
+            self.getData(cachefile, url, inputdata, encoder, decoder, verb)
         if openfile:
             return open(cachefile, 'r')
         else:
             return cachefile
 
-    def forceRefresh(self, cachefile, url='', inputdata = {}, encoder = True, decoder = True):
+    def forceRefresh(self, cachefile, url='', inputdata = {}, encoder = True, 
+                     decoder = True, verb = None):
         """
         Make a new request to the service for the input data, regardless of the 
         cache statue. Return the cachefile as an open file object.  
         """
-        cachefile = self.cacheFileName(cachefile, inputdata)
+        verb = self._verbCheck(verb)
+        
+        cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url, inputdata, encoder, decoder)
+        self.getData(cachefile, url, inputdata, encoder, decoder, verb)
         return open(cachefile, 'r')
 
-    def clearCache(self, cachefile, inputdata = {}):
+    def clearCache(self, cachefile, inputdata = {}, verb = None):
         """
         Delete the cache file.
         """
-        cachefile = self.cacheFileName(cachefile, inputdata)
+        verb = self._verbCheck(verb)
+
+        cachefile = self.cacheFileName(cachefile, verb, inputdata)
         try:
             os.remove(cachefile)
         except OSError: # File doesn't exist
             return
 
-    def getData(self, cachefile, url, inputdata = {}, encoder = True, decoder = True):
+    def getData(self, cachefile, url, inputdata = {}, encoder = True, decoder = True, 
+                verb = None):
         """
         Takes the already generated *full* path to cachefile and the url of the 
-        resource. Don't need to call self.cacheFileName(cachefile, inputdata)
+        resource. Don't need to call self.cacheFileName(cachefile, verb, inputdata)
         here.
         """
+        verb = self._verbCheck(verb)
         # Set the timeout
         deftimeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self['timeout'])
@@ -204,7 +217,7 @@ class Service(dict):
             self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
                                  (url, inputdata))
             data, status, reason = self["requests"].makeRequest(uri = url,
-                                                    verb = self["method"],
+                                                    verb = verb,
                                                     data = inputdata,
                                                     encoder = encoder,
                                                     decoder = decoder)
@@ -226,3 +239,12 @@ class Service(dict):
             raise e
         # Reset the timeout to it's original value
         socket.setdefaulttimeout(deftimeout)
+
+    def _verbCheck(self, verb):
+        if verb in self.supportVerbList:
+            return verb
+        elif self['method'] in self.supportVerbList:
+            return self['method']
+        else:
+            raise TypeError, 'verb parameter needs to be set'
+        

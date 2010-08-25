@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.22 2009/05/27 10:04:09 metson Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: CMSCouch.py,v 1.23 2009/05/27 10:26:25 metson Exp $"
+__version__ = "$Revision: 1.23 $"
 
 try:
     # Python 2.6
@@ -149,7 +149,6 @@ class Database(CouchDBRequests):
     TODO: remove leading whitespace when committing a view
     """
     def __init__(self, dbname = 'database', url = 'localhost:5984/', size = 5000):
-        print 'hello from %s' % dbname
         self._queue = []
         self.name = urllib.quote_plus(dbname)
         JSONRequests.__init__(self, url)

@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.15 2009/02/12 21:24:01 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.16 2009/03/18 20:03:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import logging
@@ -84,7 +84,8 @@ class JobGroupTest(unittest.TestCase):
     
     def createTestJobGroupA(self, commitFlag = True):
         """
-        create testJobGroupA 
+        _createTestJobGroupA_
+        
                with testSubscription 
                      using testWorkflow (wf001) and testWMBSFilset
         add testJobA with testFileA and testJobB with testFileB
@@ -113,12 +114,6 @@ class JobGroupTest(unittest.TestCase):
         testFileA.create()
         testFileB.create()
 
-        #testFilesetA = Fileset(name = "TestFilesetA", files = Set([testFileA]))
-        #testFilesetB = Fileset(name = "TestFilesetB", files = Set([testFileB]))
-        
-        #testJobA = Job(name = "TestJobA", files = testFilesetA)
-        #testJobB = Job(name = "TestJobB", files = testFilesetB)
-        
         testJobA = Job(name = "TestJobA")
         testJobA.addFile(testFileA)
         
@@ -131,12 +126,6 @@ class JobGroupTest(unittest.TestCase):
             testJobGroupA.commit()
         
         return testJobGroupA
-    
-    def deleteTestJobGroup(self, jobGroup):
-        """
-        delete job group and all the jobs, subscription, workflow and files
-        """
-        pass
     
     def testCreateDeleteExists(self):
         """
@@ -431,8 +420,7 @@ class JobGroupTest(unittest.TestCase):
         _testRecordSubscriptionStatus_
 
         Create a JobGroup and then add some jobs to it. commit the job group
-        and change the status of input file status of the jobs
-        
+        and change the status of input file status of the jobs        
         """
         testJobGroupA = self.createTestJobGroupA()
         
@@ -457,13 +445,11 @@ class JobGroupTest(unittest.TestCase):
                """ Error:  All jobs is in active state: 
                    JobGroup should be in ACTIVE State """
                    
-        
         jobs[0].changeStatus("COMPLETE")
         
         assert testJobGroupA.status() == "ACTIVE", \
                """ Error:  One job is in active state: 
                    JobGroup should be in ACTIVE State """
-        
         
         jobs[1].changeStatus("COMPLETE")
         
@@ -489,6 +475,7 @@ class JobGroupTest(unittest.TestCase):
     def testOutput(self):
         """
         _testOutput_ 
+
         test adding output files in job group
         """
         testJobGroupA = self.createTestJobGroupA()
@@ -515,7 +502,6 @@ class JobGroupTest(unittest.TestCase):
             job.changeStatus("COMPLETE")
         
         outputFileset = testJobGroupA.output() 
-        
         outputFileset.loadData()
         
         outputLfns = Set()
@@ -525,6 +511,5 @@ class JobGroupTest(unittest.TestCase):
         assert (lfnSet - outputLfns) == Set(), \
                "Error: output files doesn't match %s" % outputLfns
                   
-        
 if __name__ == "__main__":
     unittest.main() 

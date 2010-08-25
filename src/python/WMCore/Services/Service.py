@@ -48,8 +48,8 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
-__revision__ = "$Id: Service.py,v 1.60 2010/07/30 15:42:58 swakef Exp $"
-__version__ = "$Revision: 1.60 $"
+__revision__ = "$Id: Service.py,v 1.61 2010/08/10 18:11:12 metson Exp $"
+__version__ = "$Revision: 1.61 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -164,7 +164,7 @@ class Service(dict):
         return cachefile
 
     def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True, 
-                     encoder = True, decoder= True, verb = 'GET', contentType = None):
+                     encoder = True, decoder = True, verb = 'GET', contentType = None):
         """
         See if the cache has expired. If it has make a new request to the 
         service for the input data. Return the cachefile as an open file object.  
@@ -183,8 +183,8 @@ class Service(dict):
         else:
             return cachefile
 
-    def forceRefresh(self, cachefile, url='', inputdata = {}, encoder = True, 
-                     decoder = True, verb = 'GET', contentType = None):
+    def forceRefresh(self, cachefile, url='', inputdata = {}, openfile=True,
+                     encoder = True, decoder = True, verb = 'GET', contentType = None):
         """
         Make a new request to the service for the input data, regardless of the 
         cache state. Return the cachefile as an open file object.  
@@ -196,7 +196,10 @@ class Service(dict):
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
         self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'}, 
                      encoder, decoder, verb, contentType)
-        return open(cachefile, 'r')
+        if openfile:
+            return open(cachefile, 'r')
+        else:
+            return cachefile
 
     def clearCache(self, cachefile, inputdata = {}, verb = 'GET'):
         """
@@ -257,7 +260,7 @@ class Service(dict):
             else:
                 cache_age = os.path.getmtime(cachefile)
                 t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
-                cache_dead = cache_age < time.mktime(t.timetuple())
+                cache_dead = cache_age < time.mktime(t.timetuple())                
                 if self.get('usestalecache', False) and not cache_dead:
                     # If usestalecache is set the previous version of the cache file 
                     # should be returned, with a suitable message in the log
@@ -270,10 +273,10 @@ class Service(dict):
                                                                         cache_age))
                 else:
                     if cache_dead:
-                        msg = 'The cachefile %s is dead (5 times older than cache '
+                        msg = 'The cachefile %s is dead (%s hours older than cache '
                         msg += 'duration), and the service at %s is unavailable - '
                         msg += 'it returned %s because %s'
-                        msg = msg % (cachefile, he.url, he.status, he.reason)
+                        msg = msg % (cachefile, self.get('maxcachereuse', 24), he.url, he.status, he.reason)
                         self['logger'].warning(msg)
                     elif self.get('usestalecache', False) == False:
                         msg = 'The cachefile %s is stale and the service at %s is'

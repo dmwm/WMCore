@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.47 2010/02/09 19:59:33 meloam Exp $"
+    "$Id: TestInit.py,v 1.48 2010/02/09 20:10:18 meloam Exp $"
 __version__ = \
-    "$Revision: 1.47 $"
+    "$Revision: 1.48 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -65,6 +65,8 @@ class TestInit:
     def __del__(self):
         if self.deleteTmp:
             self.delWorkDir()
+        self.attemptToCloseDBConnections()
+
     
     def delWorkDir(self):
         if (self.testDir != None):
@@ -282,7 +284,10 @@ class TestInit:
 
         modules.reverse()
         self.init.clearDatabase(modules)
-        
+        self.attemptToCloseDBConnections()
+
+
+    def attemptToCloseDBConnections(self):
         myThread = threading.currentThread()
 
         try:
@@ -294,7 +299,5 @@ class TestInit:
             del myThread.dbFactory 
         except Exception, e:
             print "tried to delete factory %s" % e
-
-
-
-
+        
+        

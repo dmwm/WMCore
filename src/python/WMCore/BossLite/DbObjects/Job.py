@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.16 2010/05/10 12:45:34 spigafi Exp $"
-__revision__ = "$Revision: 1.16 $"
+__version__ = "$Id: Job.py,v 1.17 2010/05/11 10:44:54 spigafi Exp $"
+__revision__ = "$Revision: 1.17 $"
 
 
 # imports
@@ -211,9 +211,7 @@ class Job(DbObject):
         runJob = RunningJob(parameters = parameters)
         
         runJob.load(db)
-        
-        # Not happy with this call because it's slow.  Maybe use ID?
-        # keep track with a boolean variable could be a valid solution (NdFilip)
+
         if not runJob.existsInDataBase:  
             self.runningJob = None
         else:
@@ -282,10 +280,7 @@ class Job(DbObject):
 
         # close previous running instance (if any)
         self.closeRunningInstance(db)
-
-        # WTF!!!!
-        # We update the submission number when getting a new runningJob?
-        # Not on some other update?
+        
         self.data['submissionNumber'] += 1
         parameters = {'jobId': self.data['jobId'],
                       'taskId': self.data['taskId'],

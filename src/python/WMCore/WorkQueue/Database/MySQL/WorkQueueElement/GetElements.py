@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.14 2010/07/26 13:10:10 swakef Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: GetElements.py,v 1.15 2010/08/02 15:55:37 swakef Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -72,7 +72,7 @@ class GetElements(DBFormatter):
             self.sql += "%s update_time <= :before" % sep
             sep = "AND"
         if reqMgrUpdateNeeded:
-            self.sql += "%s reqmgr_time <= we.update_time" % sep
+            self.sql += "%s request_name IS NOT NULL AND reqmgr_time <= we.update_time" % sep
             sep = "AND"
         if elementIDs:
             tmp_binds = []

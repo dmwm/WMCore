@@ -107,8 +107,11 @@ class ProcessPool:
         This will cause them to shut down.
         """
         for worker in self.workers:
-            worker.stdin.write("\n")
-            worker.stdin.flush()
+            try:
+                worker.stdin.write("\n")
+                worker.stdin.flush()
+            except Exception, ex:
+                pass
 
         return
 
@@ -120,7 +123,6 @@ class ProcessPool:
         list where each item in the list can be serialized into JSON.
         """
         for someWork in work:
-            
             encodedWork = self.jsonHandler.encode(someWork)
 
             worker = self.workers[self.enqueueIndex]

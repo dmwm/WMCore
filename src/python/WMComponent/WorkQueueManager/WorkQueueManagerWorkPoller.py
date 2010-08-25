@@ -5,9 +5,10 @@ _WorkQueueManagerPoller_
 Pull work out of the work queue.
 """
 
-__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.4 2010/05/12 19:22:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueueManagerWorkPoller.py,v 1.5 2010/05/13 18:43:34 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
+import threading
 import socket
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -26,7 +27,10 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
     def algorithm(self, parameters):
         """
         Pull in work
-	"""
+	    """
+        myThread = threading.currentThread()
+        myThread.name = "WorkQueueManagerWorkPoller"
+        
         self.queue.logger.info("Pulling work from %s" % self.queue.params['ParentQueue'])
         work = 0
         try:

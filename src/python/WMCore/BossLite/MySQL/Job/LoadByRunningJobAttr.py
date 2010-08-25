@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.6 2010/05/25 13:15:29 spigafi Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.7 2010/06/03 13:05:35 mcinquil Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -81,12 +81,13 @@ class LoadByRunningJobAttr(DBFormatter):
                 whereStatement.append( "bl_runningjob.%s = %s" % \
                                        (tmp, binds[x]) )
                 
-        whereClause = ' AND '.join(whereStatement)
+        #whereClause = ' AND '.join(whereStatement)
         
+        ## To add as last clause
         if limit :
             if type(limit) == list and len(limit) == 2 :
-                whereStatement += """ AND bl_job.id > %s LIMIT %s """ % \
-                                                        (limit[0], limit[1]) 
+                whereStatement.append("bl_job.id > %s LIMIT %s " % \
+                                       (limit[0], limit[1]) )
                 # sqlFilled += """ LIMIT %s, %s """ % (limit[0], limit[1])
             # elif type(limit) == list and len(limit) == 1 :
             #      sqlFilled += """ LIMIT %s """ % (limit[0])
@@ -94,9 +95,10 @@ class LoadByRunningJobAttr(DBFormatter):
             #     sqlFilled += """ LIMIT %s """ % (limit)
             # if something is wrong, the LIMIT is ignored
         
+        # Adding clauses
+        whereClause = ' AND '.join(whereStatement)
         
         sqlFilled = self.sql % (whereClause)
-        
         result = self.dbi.processData(sqlFilled, {}, conn = conn,
                                       transaction = transaction)
         

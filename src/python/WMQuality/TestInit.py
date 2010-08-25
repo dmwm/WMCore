@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.23 2009/12/16 03:45:14 meloam Exp $"
+    "$Id: TestInit.py,v 1.24 2010/01/12 21:42:07 sryu Exp $"
 __version__ = \
-    "$Revision: 1.23 $"
+    "$Revision: 1.24 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -88,17 +88,17 @@ class TestInit:
         else:
             raise RuntimeError, "Unrecognized dialect"
         
-    def setDatabaseConnection(self):
+    def setDatabaseConnection(self, connectUrl=None, socket=None):
         """
         Set up the database connection by retrieving the environment
         parameters.
-        """
-        config = self.getConfiguration()
-        
+        """        
+        config = self.getConfiguration(connectUrl=connectUrl, socket=socket)
+    
         self.init.setDatabaseConnection(
-                    config.CoreDatabase.connectUrl,
-                    config.CoreDatabase.dialect,
-                    config.CoreDatabase.socket)
+                                        config.CoreDatabase.connectUrl,
+                                        config.CoreDatabase.dialect,
+                                        config.CoreDatabase.socket)
 
     def setSchema(self, customModules = [], useDefault = True, params = None):
         """
@@ -139,7 +139,7 @@ class TestInit:
         """
         self.init.initializeSchema(modules)
 
-    def getConfiguration(self, configurationFile = None):
+    def getConfiguration(self, configurationFile = None, connectUrl = None, socket=None):
         """ 
         Loads (if available) your configuration file and augments
         it with the standard settings used in multiple tests.
@@ -160,16 +160,21 @@ class TestInit:
         # config.General.workDir = os.getenv("TESTDIR")
 
         config.section_("CoreDatabase")
-        if (os.getenv('DATABASE') == None):
-            raise RuntimeError, \
-                "You must set the DATABASE environment variable to run tests"
-        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.dialect = self.getBackendFromDbURL( os.getenv("DATABASE") )
-        config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if os.getenv("DBHOST"):
-            print "****WARNING: the DBHOST environment variable will be deprecated soon***"
-            print "****WARNING: UPDATE YOUR ENVIRONMENT OR TESTS WILL FAIL****"
-        # after this you can augment it with whatever you need.
+        if connectUrl:
+            config.CoreDatabase.connectUrl = connectUrl
+            config.CoreDatabase.dialect = self.getBackendFromDbURL(connectUrl)
+            config.CoreDatabase.socket = socket or os.getenv("DBSOCK") 
+        else:
+            if (os.getenv('DATABASE') == None):
+                raise RuntimeError, \
+                    "You must set the DATABASE environment variable to run tests"
+            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+            config.CoreDatabase.dialect = self.getBackendFromDbURL( os.getenv("DATABASE") )
+            config.CoreDatabase.socket = os.getenv("DBSOCK")
+            if os.getenv("DBHOST"):
+                print "****WARNING: the DBHOST environment variable will be deprecated soon***"
+                print "****WARNING: UPDATE YOUR ENVIRONMENT OR TESTS WILL FAIL****"
+            # after this you can augment it with whatever you need.
         return config
 
     def clearDatabase(self, modules = []):

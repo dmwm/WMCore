@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.19 2010/06/29 19:05:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.20 2010/07/12 15:29:10 meloam Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import threading
 import traceback
@@ -97,7 +97,7 @@ class ExecuteMaster:
         
         preOutcome = executionObject.pre()
         if preOutcome != None:
-            print "Pre Executor Task Change: %s" % preOutcome
+            logging.info("Pre Executor Task Change: %s" % preOutcome)
             executor.saveReport()
             self.toTaskDirectory()
         try:
@@ -105,12 +105,14 @@ class ExecuteMaster:
         except WMExecutionFailure, ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
             error = True
+        except Exception, ex:
+            logging.error("Exception occured when executing step")
         #TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()
 
         postOutcome = executionObject.post()
         if postOutcome != None:
-            print "Pre Executor Task Change: %s" % preOutcome
+            logging.info("Pre Executor Task Change: %s" % preOutcome)
             executor.saveReport()
             self.toTaskDirectory()
         self.toTaskDirectory()

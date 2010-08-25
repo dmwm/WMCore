@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.41 2010/07/29 20:32:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.42 2010/07/29 21:26:07 mnorman Exp $"
+__version__ = "$Revision: 1.42 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -36,9 +36,12 @@ from WMCore.WMBase        import getWMBASE
 
 
 
-
+#pylint: disable-msg=C0103
 def _VmB(VmKey):
     '''Private.
+
+    Code taken from:
+    http://code.activestate.com/recipes/286222-memory-usage/
     '''
     _proc_status = '/proc/%d/status' % os.getpid()
 
@@ -61,15 +64,10 @@ def _VmB(VmKey):
     return float(v[1]) * _scale[v[2]]
 
 
-
-class BadJobError(Exception):
-    """
-    Silly exception that doesn't do anything
-    except signal
-    """
+#pylint: enable-msg=C0103
 
 
-    pass
+
 
 
 def siteListCompare(a, b):
@@ -134,9 +132,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         if hasattr(self.config.JobSubmitter, 'inputFile'):
             configDict['inputFile'] = self.config.JobSubmitter.inputFile
 
-        if hasattr(self.config, 'BossAir'):
-            configDict['pluginName'] = config.BossAir.pluginName
-            configDict['pluginName'] = config.BossAir.pluginDir 
+        
 
         workerName = "%s.%s" % (self.config.JobSubmitter.pluginDir, \
                                 self.config.JobSubmitter.pluginName)
@@ -151,12 +147,13 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
 
-        # Steve additions
+        # Additions for caching-based JobSubmitter
         self.cachedJobIDs   = set()
         self.cachedJobs     = {}
         self.jobsToPackage  = {}
         self.sandboxPackage = {}
         self.siteKeys       = {}
+        self.packageSize    = getattr(self.config.JobSubmitter, 'packageSize', 100)
 
         self.packageDir = os.path.join(self.config.JobSubmitter.submitDir, "packages")
         if not os.path.exists(self.packageDir):
@@ -166,6 +163,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
 
         # Call once to fill the siteKeys
+        # TODO: Make this less clumsy!
         self.getThresholds()
         return
 
@@ -192,7 +190,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         sandboxDir = os.path.dirname(jobPackage[jobPackage.keys()[0]]["sandbox"])
         batchDir = os.path.join(sandboxDir, "batch_%s" % batchID)
         
-        if len(jobPackage.keys()) == 100:
+        if len(jobPackage.keys()) == self.packageSize:
             
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
@@ -250,15 +248,14 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
-        processedCount = 0
         for newJob in newJobs:
             jobCount += 1
             jobID    = newJob['id']
             if jobID in self.cachedJobIDs:
                 continue
 
-            processedCount += 1
-            if processedCount % 5000 == 0:
+            # TODO: Think of a better way to do this
+            if jobCount % 5000 == 0:
                 logging.info("Processed %d/%d new jobs." % (jobCount, len(newJobs)))
 
             pickledJobPath = os.path.join(newJob["cache_dir"], "job.pkl")
@@ -269,6 +266,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             # This should be in terms of siteNames
             # Because there can be multiple entry points to a site with one SE
             # And each of them can be a separate location
+            # Note that all the files in a job have the same set of locations
             possibleLocations = set()
             rawLocations      = loadedJob["input_files"][0]["locations"]
 
@@ -282,8 +280,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                     for siteName in self.siteKeys[loc]:
                         possibleLocations.add(siteName)
             
-
-            #possibleLocations = set(loadedJob["input_files"][0]["locations"])
 
             if len(loadedJob["siteWhitelist"]) > 0:
                 possibleLocations = possibleLocations & set(loadedJob.get("siteWhitelist"))
@@ -317,8 +313,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.changeState.propagate(badJobs, "submitfailed", "created")
 
 
+        # If there are any leftover jobs, we want to get rid of them.
         self.flushJobPackages()
-        logging.info("Done.")
+        logging.info("Done with refreshCache() loop, submitting jobs.")
         return
 
 
@@ -478,6 +475,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         _algorithm_
 
+        Try to, in order:
+        1) Refresh the cache
+        2) Find jobs for all the necessary sites
+        3) Submit the jobs to the plugin
         """
         try:
             self.refreshCache()
@@ -491,6 +492,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.error(msg)
             raise Exception(msg)
 
+        # At the end we mark the locations of the jobs
+        # This applies even to failed jobs, since the location
+        # could be part of the failure reason.
         idList = []
         for package in jobsToSubmit.keys():
             for job in jobsToSubmit.get(package, []):

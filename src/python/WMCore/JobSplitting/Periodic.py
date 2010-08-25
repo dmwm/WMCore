@@ -3,12 +3,12 @@
 _Periodic_
 
 Periodically create jobs to process all files in a fileset.  A job will not be
-created unless the previous job has been completed.  This algorithm will stop
-creating jobs once the fileset has been closed.
+created unless the previous job has been completed.  This algorithm will create
+one final job containing all files once the input fileset has been closed.
 """
 
-__revision__ = "$Id: Periodic.py,v 1.1 2009/08/04 18:24:29 sfoulkes Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: Periodic.py,v 1.2 2009/08/10 16:10:22 sfoulkes Exp $"
+__version__  = "$Revision: 1.2 $"
 
 import time
 import threading
@@ -23,23 +23,15 @@ class Periodic(JobFactory):
 
     Periodically create jobs to process all files in a fileset.  A job will not
     be created unless the previous job has been completed.  This algorithm will
-    stop creating jobs once the fileset has been closed.
+    create one final job containing all files once the input fileset has been
+    closed.
     """
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def outstandingJobs(self, jobPeriod):
         """
-        _algorithm_
+        _outstandingJobs_
 
+        Determine whether or not there are outstanding jobs.
         """
-        jobPeriod = int(kwargs.get("job_period", 60))
-        
-        fileset = self.subscription.getFileset()
-        fileset.load()
-
-        if not fileset.open:
-            self.subscription.completeFiles(self.subscription.availableFiles())
-            return []
-
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
@@ -48,18 +40,44 @@ class Periodic(JobFactory):
         results = stateDAO.execute(subscription = self.subscription["id"])
 
         if len(results) > 0:
+            for result in results:
+                if result["name"] not in ["closeout", "cleanout", "exhausted"]:
+                    return True
+
             # If the query results multiple states they will all have the same
             # state_time.
             stateTime = int(results[0]["state_time"])
             if stateTime + jobPeriod > time.time():
-                return []
-        
-            for result in results:
-                if result["name"] not in ["closeout", "cleanout", "exhausted"]:
-                    return []
+                return True
 
+        return False
+
+    def algorithm(self, groupInstance = None, jobInstance = None, *args,
+                  **kwargs):
+        """
+        _algorithm_
+
+        Do some periodic job splitting.
+        """
+        jobPeriod = int(kwargs.get("job_period", 60))
+
+        if self.outstandingJobs(jobPeriod):
+            return []
+        
+        fileset = self.subscription.getFileset()
+        fileset.load()
+
+        if not fileset.open:
+            availableFiles = self.subscription.availableFiles()
+
+            if len(availableFiles) == 0:
+                return []
+            
+            self.subscription.completeFiles(self.subscription.availableFiles())
+
+        fileset.loadData()
         newJob = jobInstance(name = makeUUID())
-        newJob.addFile(list(self.subscription.availableFiles()))
+        newJob.addFile(fileset.getFiles())
         newJobGroup = groupInstance(subscription = self.subscription)
         newJobGroup.add(newJob)
         newJobGroup.commit()

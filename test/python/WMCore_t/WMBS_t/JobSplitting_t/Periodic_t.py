@@ -5,8 +5,8 @@ _Periodic_t_
 Periodic job splitting test.
 """
 
-__revision__ = "$Id: Periodic_t.py,v 1.1 2009/08/04 16:39:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Periodic_t.py,v 1.2 2009/08/10 16:10:21 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
@@ -26,11 +26,11 @@ from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
-class FileBasedTest(unittest.TestCase):
+class PeriodicTest(unittest.TestCase):
     """
-    _FileBasedTest_
+    _PeriodicTest_
 
-    Test file based job splitting.
+    Test file periodic splitting.
     """
     def runTest(self):
         """
@@ -44,8 +44,7 @@ class FileBasedTest(unittest.TestCase):
         """
         _setUp_
 
-        Create two subscriptions: One that contains a single file and one that
-        contains multiple files.
+        Create a single subscription with one file.
         """
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
@@ -112,7 +111,7 @@ class FileBasedTest(unittest.TestCase):
         """
         _testPeriodiciSplitting_
 
-
+        Manipulate the splitting algorithm to test the corner cases.
         """
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
@@ -142,6 +141,7 @@ class FileBasedTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Files are missing from the job."
 
+        # No jobs should be generated as there are outstanding jobs.
         time.sleep(5)
         moreJobGroups = jobFactory(job_period = 1)        
 
@@ -189,8 +189,8 @@ class FileBasedTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Files are missing from the job."
 
-        # The job splitting code will not create jobs if the input fileset is
-        # closed.
+        # The job splitting code should create one and only one job once the
+        # fileset has been closed.
         self.testFileset.markOpen(False)
         wmbsJob["state"] = "closeout"
         wmbsJob["oldstate"] = "new"
@@ -199,7 +199,36 @@ class FileBasedTest(unittest.TestCase):
         changeStateDAO.execute([wmbsJob])
 
         time.sleep(5)
-        moreJobGroups = jobFactory(job_period = 999999999999)
+        jobGroups = jobFactory(job_period = 1)
+
+        assert len(jobGroups) == 1, \
+               "ERROR: Wrong number of job groups returned: %s" % len(jobGroups)
+
+        assert len(jobGroups[0].jobs) == 1, \
+               "ERROR: Jobgroup has wrong number of jobs: %s" % len(jobGroups[0].jobs)
+
+        wmbsJob = jobGroups[0].jobs.pop()
+
+        assert len(wmbsJob["input_files"]) == 2, \
+               "ERROR: Job has wrong number of files: %s" % len(wmbsJob["input_files"])
+
+        goldenFiles = ["/this/is/a/lfnA", "/this/is/a/lfnB"]
+        for file in wmbsJob["input_files"]:
+            assert file["lfn"] in goldenFiles, \
+                   "ERROR: Unknown lfn: %s" % file["lfn"]
+            goldenFiles.remove(file["lfn"])
+
+        assert len(goldenFiles) == 0, \
+               "ERROR: Files are missing from the job."
+
+        # We should not get anymore jobs.
+        wmbsJob["state"] = "closeout"
+        wmbsJob["oldstate"] = "new"
+        wmbsJob["couch_record"] = "somejive"
+        wmbsJob["retry_count"] = 0
+        changeStateDAO.execute([wmbsJob])
+
+        moreJobGroups = jobFactory(job_period = 1)
 
         assert len(moreJobGroups) == 0, \
                "ERROR: No jobgroups should be returned."

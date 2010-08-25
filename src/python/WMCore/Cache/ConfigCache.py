@@ -9,12 +9,16 @@
 
 import WMCore.Database.CMSCouch as CMSCouch
 import urllib
-import hashlib
+
+try:
+    import hashlib
+except:
+    import md5 as hashlib
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.13 2009/09/04 16:20:01 evansde Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: ConfigCache.py,v 1.14 2009/09/21 14:47:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 class WMConfigCache:
     '''
@@ -63,7 +67,7 @@ class WMConfigCache:
 
         # new_config is a URL suitable for passing to urlopen
         configString = urllib.urlopen( newConfig ).read(-1)
-        configMD5    = hashlib.md5().new( configString ).hexdigest()
+        configMD5    = hashlib.md5(configString).hexdigest()
         # check and see if this file is already in the DB
         viewresult = self.searchByMD5( configMD5 )
 

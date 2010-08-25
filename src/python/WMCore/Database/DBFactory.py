@@ -82,7 +82,6 @@ class DBFactory(object):
     def connect(self):
         self.lock.acquire()
         self.logger.debug("Using SQLAlchemy v.%s" % sqlalchemy_version)
-        self.logger.debug("creating DB engine %s" % self.dburl)
                 
         if isinstance(self.dia, MySQLDialect):
             from WMCore.Database.MySQLCore import MySQLInterface as DBInterface

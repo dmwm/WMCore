@@ -4,8 +4,8 @@
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.1 2009/05/12 11:13:12 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ErrorHandlerPoller.py,v 1.2 2009/05/12 11:50:55 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -66,13 +66,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
         logging.debug("Found %s failed jobs failed during creation" % len(jobs))
 	processRetries(self, jobs, 'create')
 
-         # Discover the jobs that failed in submit step (with status 'createfailed')
+         # Discover the jobs that failed in submit step (with status 'submitfailed')
         jobs = self.failedsubmitquery.execute()
         logging.debug("Found %s failed jobs failed during submit" % len(jobs))
 	processRetries(self, jobs, 'submit')
 
-	# Discover the jobs that failed in run step (with status 'createfailed')
-        jobs = self.failedcreatequery.execute()
+	# Discover the jobs that failed in run step (with status 'jobfailed')
+        jobs = self.failedjobquery.execute()
         logging.debug("Found %s failed jobs failed during execution" % len(jobs))
 	processRetries(self, jobs, 'job')
 

@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.14 2009/09/30 21:03:18 meloam Exp $"
+    "$Id: TestInit.py,v 1.15 2009/09/30 23:41:26 meloam Exp $"
 __version__ = \
-    "$Revision: 1.14 $"
+    "$Revision: 1.15 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -36,8 +36,13 @@ class TestInit:
     minimize code duplication.
     """ 
 
-    def __init__(self, testClassName, backend = 'MySQL'):
+    def __init__(self, testClassName, backend = None):
         self.testClassName = testClassName
+        if ( backend == None ):
+            if ( os.getenv('DIALECT') == None ):
+                backend = 'MySQL'
+            else:
+                backend = os.getenv('DIALECT')
         self.backend = backend
         self.init = WMInit()
 
@@ -64,6 +69,12 @@ class TestInit:
             raise RuntimeError, \
                 "You must set the DATABASE environment variable to run tests"
         
+        # need to make sure that the dialect matches the database
+        if ( not os.getenv('DATABASE').lower().startswith( \
+                    self.backend.lower())):
+            raise RuntimeError, \
+                "It appears that your database doesn't match your dialect config"
+        
         self.init.setDatabaseConnection(os.getenv("DATABASE"), \
             self.backend, os.getenv("DBSOCK"))
 
@@ -78,16 +89,20 @@ class TestInit:
         if useDefault is set to False, it will not instantiate the
         schemas in the defaultModules array.
         """
-        defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
-            "WMCore.Trigger"]
-        if not useDefault:
-            defaultModules = []
+        try:
+            defaultModules = ["WMCore.MsgService", "WMCore.ThreadPool", \
+                              "WMCore.Trigger"]
+            if not useDefault:
+                defaultModules = []
 
-        # filter out unique modules
-        modules = {}
-        for module in (defaultModules + customModules):
-            modules[module] = 'done'
-        self.init.setSchema(modules.keys(), params = params)
+            # filter out unique modules
+            modules = {}
+            for module in (defaultModules + customModules):
+                modules[module] = 'done'
+            self.init.setSchema(modules.keys(), params = params)
+        except:
+            self.init.clearDatabase()
+        
 
     def initializeSchema(self, modules = []):
         """
@@ -118,10 +133,8 @@ class TestInit:
         config.General.workDir = os.getenv("TESTDIR")
 
         config.section_("CoreDatabase")
-        if self.backend == 'MySQL':
-            config.CoreDatabase.dialect = 'mysql'
-        if self.backend == 'Oracle':
-            config.CoreDatabase.dialect = 'oracle'
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.dialect = self.backend.lower()
         config.CoreDatabase.socket = os.getenv("DBSOCK")
         config.CoreDatabase.user = os.getenv("DBUSER")
         config.CoreDatabase.passwd = os.getenv("DBPASS")
@@ -152,7 +165,6 @@ class TestInit:
 #            for entry in result:
 #                print(str(entry))
 #        else:
-        print "tearing down this badboy"
         self.init.clearDatabase(modules)
 
 

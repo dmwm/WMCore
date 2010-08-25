@@ -5,8 +5,8 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-__revision__ = "$Id: ResourceControl_t.py,v 1.3 2010/02/09 17:01:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ResourceControl_t.py,v 1.4 2010/02/11 21:53:50 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import threading
@@ -68,6 +68,23 @@ class ResourceControlTest(unittest.TestCase):
         myResourceControl.insertThreshold("testSite1", "Merge", 150, 250)
         myResourceControl.insertThreshold("testSite2", "Processing", 25, 50)
         myResourceControl.insertThreshold("testSite2", "Merge", 75, 135)
+
+        createThresholds =  myResourceControl.listThresholdsForCreate()
+
+        assert len(createThresholds.keys()) == 2, \
+               "Error: Wrong number of site in Resource Control DB"
+        assert "testSite1" in createThresholds.keys(), \
+               "Error: Test Site 1 missing from thresholds."
+        assert "testSite2" in createThresholds.keys(), \
+               "Error: Test Site 2 missing from thresholds."        
+        assert createThresholds["testSite1"]["total_slots"] == 10, \
+               "Error: Wrong number of total slots."
+        assert createThresholds["testSite1"]["running_jobs"] == 0, \
+               "Error: Wrong number of running jobs."
+        assert createThresholds["testSite2"]["total_slots"] == 100, \
+               "Error: Wrong number of total slots."
+        assert createThresholds["testSite2"]["running_jobs"] == 0, \
+               "Error: Wrong number of running jobs."        
         
         thresholds = myResourceControl.listThresholdsForSubmit()
 

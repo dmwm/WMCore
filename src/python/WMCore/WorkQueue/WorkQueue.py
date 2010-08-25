@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.69 2010/02/11 17:57:00 sryu Exp $"
-__version__ = "$Revision: 1.69 $"
+__revision__ = "$Id: WorkQueue.py,v 1.70 2010/02/11 19:22:47 sryu Exp $"
+__version__ = "$Revision: 1.70 $"
 
 
 import time
@@ -651,7 +651,6 @@ class WorkQueue(WorkQueueBase):
     def _insertWMSpec(self, wmSpec):
         """
         """
-        #FIXME: Doesn't work - results in differing elements having the same spec url!!!!
         existsAction = self.daofactory(classname = "WMSpec.Exists")
         exists = existsAction.execute(wmSpec.name(), conn = self.getDBConn(),
                              transaction = self.existingTransaction())

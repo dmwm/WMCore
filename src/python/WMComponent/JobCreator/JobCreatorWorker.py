@@ -11,8 +11,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.12 2010/06/10 21:03:46 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.13 2010/06/11 19:32:23 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 import logging
@@ -191,7 +191,7 @@ class JobCreatorWorker:
             myThread.transaction.commit()
             
             for wmbsJobGroup in wmbsJobGroups:
-
+                self.createJobGroup(wmbsJobGroup)
                 # Create a directory
                 self.createWorkArea.processJobs(jobGroupID = wmbsJobGroup.exists(),
                                                 startDir = self.jobCacheDir)
@@ -213,8 +213,7 @@ class JobCreatorWorker:
                     cPickle.dump(job, output)
                     output.close()
 
-                # Only create jobGroups and jobs when we're done
-                self.createJobGroup(wmbsJobGroup)
+
 
                 logging.info("Finished call for jobGroup %i" \
                              %(wmbsJobGroup.exists()))

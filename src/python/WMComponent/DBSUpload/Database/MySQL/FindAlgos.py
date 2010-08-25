@@ -5,8 +5,8 @@ _DBSUpload.FindAlgos_
 Find algos in datasets
 
 """
-__revision__ = "$Id: FindAlgos.py,v 1.4 2008/12/17 21:57:10 afaq Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FindAlgos.py,v 1.5 2009/07/20 18:02:53 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -14,25 +14,42 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class FindAlgos(DBFormatter):
     
-    sql = """SELECT A.ID as ID, 
-                A.aPPName as ApplicationName, 
-                A.AppVer as ApplicationVersion, 
-                A.AppFam as ApplicationFamily, 
-                A.PSetHash as PSetHash,
-                A.ConfigContent as PSetContent, 
-                A.LastModificationDate as LUD
+    old_sql = """SELECT A.ID as ID, 
+                A.aPP_Name as ApplicationName, 
+                A.App_Ver as ApplicationVersion, 
+                A.App_Fam as ApplicationFamily, 
+                A.PSet_Hash as PSetHash,
+                A.Config_Content as PSetContent,
+                A.in_dbs as InDBS
                 FROM 
                 dbsbuffer_algo A 
-                    left outer join dbsbuffer_dataset D
-                     on D.Algo=A.ID
+                    LEFT OUTER JOIN dbsbuffer_dataset D
+                     ON D.Algo=A.ID
                      Where D.ID=:dataset"""
+
+
+    sql = """SELECT A.ID as ID, 
+                A.aPP_Name as ApplicationName, 
+                A.App_Ver as ApplicationVersion, 
+                A.App_Fam as ApplicationFamily, 
+                A.PSet_Hash as PSetHash,
+                A.Config_Content as PSetContent,
+                B.in_dbs as InDBS
+                FROM 
+                dbsbuffer_algo_dataset_assoc B
+                INNER JOIN
+                dbsbuffer_algo A
+                     ON B.algo_id = A.ID
+                WHERE B.dataset_id =:dataset
+
+
+    """
     
     def __init__(self):
         myThread = threading.currentThread()
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
     
     def getBinds(self, dataset):
-	print dataset
         binds =  { 'dataset': dataset['ID']}
         return binds
 
@@ -46,7 +63,7 @@ class FindAlgos(DBFormatter):
 		entry['ApplicationFamily']=r['applicationfamily']
 		entry['PSetHash']=r['psethash']
 		entry['PSetContent']=r['psetcontent']
-		entry['LUD']=r['lud']
+		entry['InDBS']=r['indbs']
 		ret.append(entry)
 	return ret
 
@@ -55,5 +72,6 @@ class FindAlgos(DBFormatter):
         
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)
+
         return self.makeAlgo(self.formatDict(result))
     

@@ -5,8 +5,8 @@ _DBSUpload.FindUploadableFiles_
 Find the files in a datasets that needs to be uploaded to DBS
 
 """
-__revision__ = "$Id: FindUploadableFiles.py,v 1.8 2009/06/04 21:45:17 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: FindUploadableFiles.py,v 1.9 2009/07/20 18:02:53 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "anzar@fnal.gov"
 
 import threading
@@ -23,7 +23,10 @@ class FindUploadableFiles(DBFormatter):
 		FROM dbsbuffer_file file 
 			where file.dataset=:dataset and file.status =:status LIMIT 10"""
 
-    sql = """SELECT dbsfile.id as ID FROM dbsbuffer_file dbsfile where dbsfile.dataset=:dataset and dbsfile.status =:status LIMIT :maxfiles""" 
+    sql = """SELECT dbsfile.id as ID FROM dbsbuffer_file dbsfile
+             WHERE dbsfile.dataset_algo = (SELECT ID FROM dbsbuffer_algo_dataset_assoc WHERE dataset_id =:dataset)
+             AND dbsfile.status =:status
+             LIMIT :maxfiles""" 
 
     def __init__(self):
         myThread = threading.currentThread()
@@ -47,7 +50,6 @@ class FindUploadableFiles(DBFormatter):
 
     def execute(self, datasetInfo=None, maxfiles=10, conn=None, transaction = False):
 
-        print datasetInfo
         binds = self.getBinds(datasetInfo, maxfiles)
         result = self.dbi.processData(self.sql, binds, 
                          conn = conn, transaction = transaction)

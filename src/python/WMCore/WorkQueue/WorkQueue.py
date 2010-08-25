@@ -9,17 +9,15 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.52 2010/01/06 17:02:19 swakef Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: WorkQueue.py,v 1.53 2010/01/06 17:33:00 swakef Exp $"
+__version__ = "$Revision: 1.53 $"
 
-# pylint: disable-msg = W0104, W0622
-# pylint: enable-msg = W0104, W0622
 
 import uuid
 import time
 import os
 try:
-    from collections import defaultdict    #python2.6 doesn't work fully yet
+    from collections import defaultdict
 except (NameError, ImportError):
     pass
 
@@ -780,7 +778,7 @@ class WorkQueue(WorkQueueBase):
                     subs = [x['node'] for x in dset['subscription']]
                     for block in dset['block']:
                         if block['name'] in args['block']:
-                            result[block['name']] = [x['node'] for x in block['subscription']]
+                            result[block['name']] = subs
                 else:
                     # block level subscriptions
                     for block in dset['block']:

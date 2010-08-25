@@ -3,6 +3,7 @@
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
 ConfigFile = emulatorSetup(phedex=True, dbs=True, siteDB=True, requestMgr=True)
 
+import os
 import unittest
 try:
     # Python 2.6
@@ -31,7 +32,8 @@ class WorkQueueTest(RESTBaseUnitTest):
     """
     def initialize(self):
         self.config = DefaultConfig('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel')
-        self.config.setDBUrl('sqlite:////tmp/resttest.db')
+        dbUrl = os.environ.get("DATABASE", None) or "sqlite:////tmp/resttest.db"
+        self.config.setDBUrl(dbUrl)
         self.config.setFormatter('WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter')
 
         # mysql example

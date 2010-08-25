@@ -48,6 +48,55 @@ def lint_files(files):
     lint_result = lint.Run(input)
     return lint_result.linter.stats
 
+
+
+import logging
+import os
+import unittest
+
+MODULE_EXTENSIONS = set('.py .pyc .pyo'.split())
+
+def unit_test_extractor(tup, path, filenames):
+    """Pull ``unittest.TestSuite``s from modules in path
+    if the path represents a valid Python package. Accumulate
+    results in `tup[1]`.
+    """
+    package_path, suites = tup
+    logging.debug('Path: %s', path)
+    logging.debug('Filenames: %s', filenames)
+    relpath = os.path.relpath(path, package_path)
+    relpath_pieces = relpath.split(os.sep)
+
+    if relpath_pieces[0] == '.': # Base directory.
+        relpath_pieces.pop(0) # Otherwise, screws up module name.
+    elif not any(os.path.exists(os.path.join(path, '__init__' + ext))
+            for ext in MODULE_EXTENSIONS):
+        return # Not a package directory and not the base directory, reject.
+
+    logging.info('Base: %s', '.'.join(relpath_pieces))
+    for filename in filenames:
+        base, ext = os.path.splitext(filename)
+        if ext not in MODULE_EXTENSIONS: # Not a Python module.
+            continue
+        logging.info('Module: %s', base)
+        module_name = '.'.join(relpath_pieces + [base])
+        logging.info('Importing from %s', module_name)
+        module = __import__(module_name)
+        module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
+        logging.info('Got suites: %s', module_suites)
+        suites += module_suites
+
+def get_test_suites(path):
+    """:return: Iterable of suites for the packages/modules
+    present under :param:`path`.
+    """
+    logging.info('Base path: %s', package_path)
+    suites = []
+    os.path.walk(package_path, unit_test_extractor, (package_path, suites))
+    logging.info('Got suites: %s', suites)
+    return suites
+
+
 def runUnitTests():
     # runs all the unittests, returning the testresults object
     testfiles = []
@@ -60,52 +109,18 @@ def runUnitTests():
     sys.path.append(srcpypath)
     
     
-    # Walk the directory tree
-    for dirpath, dirnames, filenames in os.walk('./test/python'):
-        # skipping CVS directories and their contents
- 
-        pathelements = dirpath.split('/')
-        if not 'CVS' in pathelements:
-            # to build up a list of file names which contain tests
-            for file in filenames:
-                if file not in ['__init__.py']:
-                    if file.endswith('_t.py'):
-                        testmodpath = pathelements[3:]
-                        testmodpath.append(file.replace('.py', ''))
-                        testfiles.append('.'.join(testmodpath))
-                        
-    #sys.stderr = open('/dev/null', 'w')
-    #sys.stdout = open('/dev/null', 'w')
-    
-    testsuite = TestSuite()
-    failedTestFiles = []
-    for test in testfiles:
-        loadedTests = None
-        print "LoadTest %s" % test
-        try:
-            loadedTests = TestLoader().loadTestsFromName(test)
-        except Exception, e:
-            try:
-                loadedTests = TestLoader().loadTestsFromModule(test)
-            except Exception, f:
-                print "LoadFail: %s Exception: %s Exception2: %s" % (test,e,f)
-                failedTestFiles.append("%s - %s -retry-> %s" % (test, e,f))
-        
-        for oneTest in loadedTests:
-            try:
-                print "--AddTest %s" % oneTest
-                testsuite.addTest( oneTest )
-            except Exception, e:
-                print "AddTestFail: %s Exception %s" % (oneTest, e)
-                
-    
-    t = TextTestRunner(verbosity=2)
-    result = t.run(testsuite)
+    logging.basicConfig(level=logging.WARN)
+    package_path = os.path.dirname(mydir)
+    suites = get_test_suites(package_path)
+    testCaseCount = 0
+    for suite in suites:
+        testCaseCount += testsuite.countTestCases()
+        unittest.TextTestRunner(verbosity=2).run(suite)
     #sys.stdout = sys.__stdout__
     #sys.stderr = sys.__stderr__
     
     print sys.path
-    return (result, failedTestFiles, testsuite.countTestCases())
+    return (result, 0, testsuite.countTestCases())
 
 
 class TestCommand(Command):

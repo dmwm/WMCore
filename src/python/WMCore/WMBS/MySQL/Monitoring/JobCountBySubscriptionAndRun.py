@@ -5,19 +5,19 @@ _JobCountBySubscription_
 Monitoring DAO classes for Jobs in WMBS
 """
 __all__ = []
-__revision__ = "$Id: JobCountBySubscriptionAndRun.py,v 1.1 2009/07/28 19:38:30 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobCountBySubscriptionAndRun.py,v 1.2 2009/07/30 16:32:42 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.WMBS.MySQL.Monitoring.DefaultFormatter import DefaultFormatter
 
-class JobCountBySubscriptionAndRun(DBFormatter):
+class JobCountBySubscriptionAndRun(DefaultFormatter):
     """
     _JobCountBySubscription_
     
     return the number of jobs grouped by their status and run for given a subscription (fileset, workflow pair)  
     """
     # warning oracle keyword is written upper case for easy replacement - not the best way to handle this
-    sql = """SELECT wmbs_file_runlumi_map.run, wmbs_job_state.name AS state, count(DISTINCT wmbs_job.id) AS numJobs 
+    sql = """SELECT wmbs_file_runlumi_map.run, wmbs_job_state.name AS job_state, count(DISTINCT wmbs_job.id) AS numJobs 
              FROM wmbs_job
               INNER JOIN wmbs_job_state ON wmbs_job_state.id = wmbs_job.state
               INNER JOIN wmbs_job_assoc ON wmbs_job_assoc.job = wmbs_job.id 

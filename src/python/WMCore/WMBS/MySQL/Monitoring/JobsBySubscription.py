@@ -5,14 +5,14 @@ _JobsByState_
 Monitoring DAO classes for Jobs in WMBS
 """
 __all__ = []
-__revision__ = "$Id: JobsBySubscription.py,v 1.1 2009/07/28 19:38:30 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobsBySubscription.py,v 1.2 2009/07/30 16:32:42 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
-from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.WMBS.MySQL.Monitoring.DefaultFormatter import DefaultFormatter
 
-class JobsBySubscription(DBFormatter):
+class JobsBySubscription(DefaultFormatter):
     
-    sql = """SELECT wmbs_job.id AS job_id, wjs.name as state, wmbs_job.state_time AS state_time  
+    sql = """SELECT wmbs_job.id AS job_id, wjs.name as job_state, wmbs_job.state_time AS state_time  
               FROM wmbs_job
                INNER JOIN wmbs_jobgroup wjg ON wmbs_job.jobgroup = wjg.id 
                INNER JOIN wmbs_subscription ws ON wjg.subscription = ws.id 
@@ -35,4 +35,4 @@ class JobsBySubscription(DBFormatter):
         result = self.dbi.processData(self.sql, bindVars, conn = conn,
                                       transaction = transaction)
         
-        return self.format(result)
+        return self.formatDict(result)

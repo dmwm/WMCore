@@ -5,12 +5,11 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.14 2009/08/31 18:01:53 metson Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: RESTModel.py,v 1.15 2009/08/31 18:04:23 metson Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
-from cherrypy import response
-
+from cherrypy import response, request
 class RESTModel(WebAPI):
     """
     Rest model class interface. Subclass this method and add methods to 

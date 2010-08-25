@@ -253,6 +253,16 @@ if "AOD" in writeDataTiers:
 
 
 
+#<<<<<<< Tier1ReRecoWorkload.py
+#for tname in workload.listAllTaskNames():
+#	taskRef = workload.getTaskByPath(tname)
+#	print taskRef.taskType()
+	
+	
+	
+
+#=======
+#>>>>>>> 1.10
 
 
 
@@ -285,6 +295,7 @@ from WMCore.Services.UUID import makeUUID
 
 from WMCore.JobSplitting.Generators.GeneratorFactory import makeGenerators
 
+import random
 
 
 workingDir = "%s/Tier1Workloads" % os.getcwd()
@@ -322,7 +333,37 @@ rereco = workload.getTask("ReReco")
 
 
 
+def testMergeSubscription(unmergedOutMod, mergeTask):
+    """
+    _testMergeSubscription_
+    
+    Generate a subscription containing a few faked up files for a merge job
+    
+    """
+    fileset = Fileset(name = "%s-MergeFiles" % mergeTask.getPathName())
+    lfnBase = unmergedOutMod.lfnBase
+    for i in range(0, random.randint(15,25)):
+        inpFile = File("%s/%s.root" %(lfnBase, makeUUID()),
+                       random.randint(20000, 100000),
+                       random.randint(1000,2000)
+        )
+        fileset.addFile(inpFile)
+    work = mergeTask.makeWorkflow()
+    subscription = Subscription(
+               fileset = fileset,
+               workflow = work,
+               split_algo = mergeTask.jobSplittingAlgorithm(),
+               type = "Merge")
+    return subscription
+        
 
+
+if 'RECO' in writeDataTiers:
+    mergeRecoSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputRECO"), mergeReco)
+if 'AOD' in writeDataTiers:
+    mergeAodSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputAOD"), mergeAod)
+if 'ALCA' in writeDataTiers:
+    mergeAlcaSubs = testMergeSubscription( rerecoCmsswHelper.getOutputModule("outputALCA"), mergeAlca)
 
 
 def testSubscription():
@@ -403,11 +444,40 @@ def makeRerecoJobs(task, subscriptionWithFiles):
     [ package.extend(group.getJobs()) for group in jobGroups ]
 
     return package
+    
+def makeMergeJobs(task, subs):
+    """
+    _makeMergeJobs_
+    
+    
+    """
+    splitter = SplitterFactory()
+    jobfactory = splitter(subs, "WMCore.DataStructs", makeGenerators(task))
+    params = task.jobSplittingParameters()
+    jobGroups = jobfactory(**params)
+    package = JobPackage()
+    [ package.extend(group.getJobs()) for group in jobGroups ]
+
+    return package
 
 if __name__ == '__main__':
     pkg = makeRerecoJobs(rereco, subs)
     savePkg = "%s/RecoJobPackage.pkl" % workingDir
     pkg.save(savePkg)
+
+    if 'RECO' in writeDataTiers:
+        mrgRecoPkg = makeMergeJobs(mergeReco, mergeRecoSubs)
+        savePkg = "%s/MergeRecoJobPackage.pkl" % workingDir
+        mrgRecoPkg.save(savePkg)
+    if 'AOD' in writeDataTiers:
+        mrgAodPkg = makeMergeJobs(mergeAod, mergeAodSubs)
+        savePkg = "%s/MergeAodJobPackage.pkl" % workingDir
+        mrgAodPkg.save(savePkg)
+    if 'ALCA' in writeDataTiers:
+        mrgAlcaPkg = makeMergeJobs(mergeAlca, mergeAlcaSubs)
+        savePkg = "%s/MergeAlcaJobPackage.pkl" % workingDir
+        mrgAlcaPkg.save(savePkg)
+
 
 
 #  //

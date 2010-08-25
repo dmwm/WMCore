@@ -5,13 +5,14 @@ _UploadToDBS_
 APIs related to adding file to DBS
 
 """
-__version__ = "$Revision: 1.9 $"
-__revision__ = "$Id: UploadToDBS.py,v 1.9 2009/09/23 16:39:54 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: UploadToDBS.py,v 1.10 2009/09/25 14:45:19 sfoulkes Exp $"
 __author__ = "anzar@fnal.gov"
 
 import logging
 import threading
 from WMCore.WMFactory import WMFactory
+from WMCore.DAOFactory import DAOFactory
 
 class UploadToDBS:
 
@@ -58,16 +59,23 @@ class UploadToDBS:
         myThread.transaction.commit()
         return results  
 
-    def updateFilesStatus(self, files):
-        # Add the algo to the buffer (API Call)
-        # dataset object contains the algo information
+    def updateFilesStatus(self, files, status):
+        """
+        _updateFileStatus_
+
+        Update the status of a series of files in DBSBuffer.  The files must be
+        passed in as a list of LFNs.
+        """
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
-        factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
-                        myThread.dialect)
-        newDS = factory.loadObject("UpdateFilesStatus")
-        newDS.execute(files=files, conn = myThread.transaction.conn, transaction=myThread.transaction)
+        factory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+        statusAction = factory(classname = "DBSBufferFiles.SetStatus")
+        statusAction.execute(lfns = files, status = status,
+                             conn = myThread.transaction.conn,
+                             transaction=myThread.transaction)
         myThread.transaction.commit()
         return
     

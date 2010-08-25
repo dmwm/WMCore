@@ -29,8 +29,21 @@
 <div id="resourceInfo"></div>
 <script type="text/javascript">
 //enableDebug()
+var dataFormatter = function(elCell, oRecord, oColumn, oData) {
+        
+        if (oData == 1) {
+            state = "Closed"
+        } else {
+			state = "<b>Open</b>"
+        }
+        elCell.innerHTML = state;
+    };
+    
 var dataSchema = {
-        fields: [{key: "task"}, {key: "name"}, {key: "jobs"}, {key: "success"}, {key: "owner"}, {key: "open"}]
+        fields: [{key: "workflow"}, {key: "task"}, 
+		         {key: "state"}, {key: "jobs"}, 
+				 {key: "success"}, {key: "owner"}, 
+				 {key: "open", formatter: dataFormatter}]
         };
 
 var dataUrl = "/wmbs/workflowstatus"

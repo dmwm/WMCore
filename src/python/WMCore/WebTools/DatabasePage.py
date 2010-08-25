@@ -1,4 +1,4 @@
-
+import os
 from WMCore.WebTools.Page import TemplatedPage
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.DBFactory import DBFactory
@@ -29,5 +29,13 @@ class DatabasePage(TemplatedPage, DBFormatter):
         """
         TemplatedPage.__init__(self, config)
         assert hasattr(self.config, 'database'), "No database configured"
-        conn = DBFactory(self, self.config.database).connect()
+        option = {}
+        
+        if self.config.database.find('mysql') != -1:
+            if hasattr(self.config, 'dbsocket'):
+                option['unix_socket'] = self.config.dbsocket
+            elif os.environ['DBSOCK']:
+                option['unix_socket'] = os.environ['DBSOCK']
+                
+        conn = DBFactory(self, self.config.database, option).connect()
         DBFormatter.__init__(self, self, conn)

@@ -6,8 +6,8 @@ File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
 
-__revision__ = "$Id: FileBased.py,v 1.23 2009/11/19 20:55:26 mnorman Exp $"
-__version__  = "$Revision: 1.23 $"
+__revision__ = "$Id: FileBased.py,v 1.24 2010/02/12 20:17:29 sfoulkes Exp $"
+__version__  = "$Revision: 1.24 $"
 
 import threading
 
@@ -58,6 +58,7 @@ class FileBased(JobFactory):
                 #This isn't supposed to happen, but better safe then sorry
                 continue
             for file in fileList:
+                file.loadData(parentage = 1)
                 if filesInJob == 0 or filesInJob == filesPerJob:
                     self.newJob(name = self.getJobName(baseName = baseName, \
                                                        length=totalJobs))

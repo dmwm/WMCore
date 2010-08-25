@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.8 2010/03/09 17:16:53 maxa Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.9 2010/03/18 19:37:35 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -51,7 +51,7 @@ class WorkQueueMonitorService(ServiceInterface):
         self.wq = WorkQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
         
         self.model.addMethod("GET", "status", self.wq.status,
-                             args = ["status", "before", "after", "elementIDs", "subs", "dictKey"])
+                             args = ["status", "before", "after", "elementIDs", "dictKey"])
         
         # DAO stuff
         # RESTModel.addDAO() see COMP/T0/src/python/T0/DAS/Tier0RESTModel.py

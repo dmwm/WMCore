@@ -4,7 +4,7 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.3 $"
+__version__ = "$Revision: 1.4 $"
 
 
 import os
@@ -80,14 +80,14 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         EmulatorUnitTestBase.tearDown(self)
         self.specGenerator.removeSpecs()
      
-    def _tester(self, testName, verb, code, partUrl, inpt = {}):
+    def _tester(self, testName, verb, code, partUrl, inpt = {}, contentType = "application/json"):
         print 80 * '#'
         print "test: %s" % testName
 
-        contentType = "application/json"
+        contentType = contentType
         accept = "text/json"
         
-        if inpt:
+        if inpt and contentType == "application/json":
             inpt = JsonWrapper.dumps(inpt)
         
         # output is dictionary for the output matching 
@@ -128,12 +128,15 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         #TODO: could try different spec or multiple spec
         specUrl = self.specGenerator.createProductionSpec("ProductionSpec1", "file")
         self.globalQueue.queueWork(specUrl)
+        specUrl = self.specGenerator.createProductionSpec("ProductionSpec2", "file")
+        self.globalQueue.queueWork(specUrl)
         
         testName = inspect.stack()[0][3]
-        inpt = { "elementIDs": [1] }        
-        data, exp = self._tester(testName, "POST", 200, "status/", inpt)
+        
+        inpt =  [("elementIDs",  1),("elementIDs", 2)]
+        data, exp = self._tester(testName, "GET", 200, "status/", inpt, contentType = "text/plain")
 
-        self.assertEqual(len(data), 1, "only 1 element needs to be back, got %s" % len(data))
+        self.assertEqual(len(data), 2)
         self.assertEqual(data[0]["Id"], 1, "expected Id 1, got %s" % data[0]["Id"])
 
                 

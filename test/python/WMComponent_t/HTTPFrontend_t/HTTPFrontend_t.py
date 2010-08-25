@@ -16,6 +16,7 @@ class MsgServiceApp(unittest.TestCase):
     TestCase for modules
     """
     def __init__(self, name):
+        unittest.TestCase.__init__()
         self.name = name
         self._maxMessage = 10
 

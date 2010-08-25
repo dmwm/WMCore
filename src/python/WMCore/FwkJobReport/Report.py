@@ -5,13 +5,38 @@ _Report_
 Job Report object
 
 """
-__version__ = "$Revision: 1.3 $"
-__revision__ = "$Id: Report.py,v 1.3 2009/11/11 20:21:31 evansde Exp $"
+__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Report.py,v 1.4 2009/11/16 12:45:46 evansde Exp $"
 __author__ = "evansde"
 
-
+import pickle
 from WMCore.Configuration import ConfigSection
 from WMCore.FwkJobReport.XMLParser import xmlToJobReport
+
+
+def jsonise(cfgSect):
+    result = {}
+    result['section_name_'] = cfgSect._internal_name
+    result['sections_'] = []
+    d = cfgSect.dictionary_()
+    for key, value in d.items():
+        if key in cfgSect._internal_children:
+            result[key] = jsonise(value)
+            result['sections_'].append(key)
+        else:
+            result[key] = value
+    return result
+
+def dejsonise(jsondict):
+    section = ConfigSection(jsondict['section_name_'])
+    sectionList = jsondict['sections_']
+    for key, value in jsondict.items():
+        if key in ("sections_", "section_name_"): continue
+        if key in sectionList:
+            setattr(section, key, dejsonise(value))
+        else:
+            setattr(section, key, value)
+    return section
 
 
 class Report:
@@ -35,6 +60,10 @@ class Report:
         self.report.section_("errors")
         self.report.section_("skipped")
         self.report.section_("parameters")
+        self.report.section_("logs")
+        self.report.section_("cleanup")
+        self.report.cleanup.section_("removed")
+        self.report.cleanup.section_("unremoved")
         self.report.skipped.section_("events")
         self.report.skipped.section_("files")
         self.report.skipped.files.fileCount = 0
@@ -50,6 +79,51 @@ class Report:
 
         """
         xmlToJobReport(self, xmlfile)
+
+
+    def json(self):
+        """
+        _json_
+
+        convert into JSON dictionary object
+
+        """
+        return jsonise(self.data)
+
+    def dejson(self, jsondicts):
+        """
+        _dejson_
+
+        Convert JSON provided into ConfigSection structure
+
+        """
+        self.data = dejsonise(self.data)
+
+    def persist(self, filename):
+        """
+        _persist_
+
+
+        """
+        handle = open(filename, 'w')
+        pickle.dump(self.data, handle)
+        handle.close()
+        return
+
+    def unpersist(self, filename):
+        """
+        _unpersist_
+
+        load object from file
+
+        """
+
+        handle = open(filename, 'r')
+        self.data = pickle.load(handle)
+        handle.close()
+        return
+
+
 
 
     def addOutputModule(self, moduleName):

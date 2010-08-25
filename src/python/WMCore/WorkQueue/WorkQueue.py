@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.62 2010/02/08 19:05:45 sryu Exp $"
-__version__ = "$Revision: 1.62 $"
+__revision__ = "$Id: WorkQueue.py,v 1.63 2010/02/09 12:27:09 swakef Exp $"
+__version__ = "$Revision: 1.63 $"
 
 
 import uuid
@@ -346,9 +346,9 @@ class WorkQueue(WorkQueueBase):
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
         totalUnits = []
-        #TODO this might be too long transaction period. 
-        #It might better 
-        trans = self.beginTransaction()
+        # split each top level task into constituent work elements
+        # Do all processing on units before dumping to the databse at the end
+        #TODO: This can leave orphan files behind - remove them on exception
         for topLevelTask in wmspec.taskIterator():
             dbs_url = topLevelTask.dbsUrl()
             wmspec = getWorkloadFromTask(topLevelTask)
@@ -360,27 +360,29 @@ class WorkQueue(WorkQueueBase):
                                  self.params['SplittingMapping'])
             
             units = policy(wmspec, topLevelTask, self.dbsHelpers)
-            totalUnits.extend(units)
-            
             for unit in units:
-                primaryBlock = unit['Data']
-                blocks = unit['ParentData']
-                jobs = unit['Jobs']
-    
                 wmspec = unit['WMSpec']
                 unique = uuid.uuid4().hex[:10] # hopefully random enough
                 new_url = os.path.join(self.params['CacheDir'],
                                            "%s.spec" % unique)
                 if os.path.exists(new_url):
                     raise RuntimeError, "spec file %s exists" % new_url
-                wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
+                wmspec.setSpecUrl(new_url)
                 wmspec.save(new_url)
-    
-                self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
+                self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (
+                         len(units), wmspec.name(), topLevelTask.name()))
+            totalUnits.extend(units)
+
+        # Do database stuff in one quick loop
+        trans = self.beginTransaction()
+        for unit in totalUnits:
+            primaryBlock = unit['Data']
+            blocks = unit['ParentData']
+            jobs = unit['Jobs']
+            wmspec = unit['WMSpec']
+            self._insertWorkQueueElement(wmspec, jobs, primaryBlock,
                                                  blocks, parentQueueId,
                                                  topLevelTask)
-            self.logger.info("Queued %s: task: %s unit(s) for %s" % (
-                             len(units), wmspec.name(), topLevelTask.name()))
         self.commitTransaction(trans)
         return len(totalUnits)
 

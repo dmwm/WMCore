@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.7 2010/02/25 21:44:07 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: RunBased_t.py,v 1.8 2010/06/02 20:26:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import os
@@ -54,7 +54,7 @@ class EventBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "somese.cern.ch")
+        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()

@@ -1,7 +1,7 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.12 2010/02/26 18:45:39 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.13 2010/03/22 15:04:40 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import random
@@ -67,7 +67,8 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.MsgService',
                                                  'WMCore.ThreadPool',
-                                                 'WMCore.ResourceControl'], useDefault = False)
+                                                 'WMCore.ResourceControl',
+                                                 'WMCore.WorkQueue.Database'], useDefault = False)
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -115,7 +116,9 @@ class JobCreatorTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         #self.testInit.clearDatabase(modules = ['WMCore.ThreadPool'])
-        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ThreadPool', 'WMCore.ResourceControl'])
+        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService',
+                                               'WMCore.ThreadPool', 'WMCore.ResourceControl',
+                                               'WMCore.WorkQueue.Database'])
         #self.testInit.clearDatabase()
         
         time.sleep(2)
@@ -349,7 +352,8 @@ class JobCreatorTest(unittest.TestCase):
         config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
         config.JobCreator.workerThreads             = 2
         config.JobCreator.componentDir              = self.testDir
-        config.JobCreator.useWorkQueue              = False
+        config.JobCreator.useWorkQueue              = True
+        config.JobCreator.WorkQueueParam            = {}
         
         # We now call the JobMaker from here
         config.component_('JobMaker')

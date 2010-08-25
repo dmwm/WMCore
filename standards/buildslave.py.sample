@@ -1,5 +1,8 @@
+# this file must be places in the root of the buildslave in order
+# to be picked up by wrapEnv.py
+
 conf = { 'python24' : 
             { 'PATH' : '/home/meloam/bin/python24',
-              'PYTHONPATH' : '/home/meloam/lib64/site-packages:/home/meloam/lib/site-packages'},
+              'PYTHONPATH' : '/home/meloam/lib64/python2.4/site-packages/:/home/meloam/lib/python2.4/site-packages/'},
          'mysql' : 'mysql://localhost:3306/testDB'
         }

@@ -14,6 +14,12 @@ if (len(sys.argv) < 3):
 
 requestedPython = sys.argv[1]
 requestedDB     = sys.argv[2]
+
+
+# the buildconfig file will end up being in the buildslave's main path
+sys.path.insert(0,'../../..')
+sys.path.insert(0,'../..')
+sys.path.insert(0,'..')
 import buildslave
 
 if ( not (requestedPython in buildslave.conf) ):

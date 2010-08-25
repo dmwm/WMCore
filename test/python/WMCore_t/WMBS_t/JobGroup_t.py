@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.27 2010/04/08 20:09:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.28 2010/04/14 20:56:55 sfoulkes Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import unittest
 import logging
@@ -370,7 +370,7 @@ class JobGroupTest(unittest.TestCase):
         
         for job in testJobGroupB.getJobs(type = "list"):
             assert job in goldenJobs, \
-                   "ERROR: JobGroup loaded an unknown job"
+                   "ERROR: JobGroup loaded an unknown job: %s, %s" % (job, goldenJobs)
             goldenJobs.remove(job)
 
         assert len(goldenJobs) == 0, \

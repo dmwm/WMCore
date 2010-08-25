@@ -12,10 +12,11 @@ import logging
 import threading
 from logging.handlers import RotatingFileHandler
 
-from WMCore.WMException import WMException
-from WMCore.WMRuntime import TaskSpace
-from WMCore.WMRuntime import StepSpace
-from WMCore           import WMLogging
+from WMCore.WMException        import WMException
+from WMCore.WMRuntime          import TaskSpace
+from WMCore.WMRuntime          import StepSpace
+from WMCore                    import WMLogging
+from WMCore.WMRuntime.Watchdog import Watchdog
 
 from WMCore.DataStructs.JobPackage import JobPackage
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -165,8 +166,21 @@ def setupLogging(logDir):
         myThread = threading.currentThread()
         myThread.logger = logging.getLogger()
     except Exception, ex:
-        msg = "Error setting up logging in dir %s\n" % logDir
+        msg = "Error setting up logging in dir %s:\n" % logDir
         msg += str(ex)
         raise BootstrapException, msg        
     return
+
+
+def setupMonitoring():
+    try:
+        monitor = Watchdog()
+        monitor.setInterval(20.0)
+        myThread = threading.currentThread
+        myThread.watchdogMonitor = monitor
+        return monitor
+    except Exception, ex:
+        msg = "Error setting up Watchdog monitoring:\n"
+        msg += str(ex)
+        raise BootstrapException, msg       
 

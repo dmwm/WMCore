@@ -13,13 +13,18 @@ if __name__ == '__main__':
 
     job = Bootstrap.loadJobDefinition()
     task = Bootstrap.loadTask(job)
+    monitor = Bootstrap.setupMonitoring()
 
     Bootstrap.setupLogging(os.getcwd())
 
     task.build(os.getcwd())
 
+    #monitor.start()
 
     task.execute(job)
+
+    if monitor.isAlive():
+        monitor.shutdown()
 
 
 

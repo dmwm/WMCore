@@ -4,8 +4,8 @@
 Component test TestComponent module and the harness
 """
 
-__revision__ = "$Id: Harness_t.py,v 1.12 2009/10/13 22:30:08 meloam Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Harness_t.py,v 1.13 2010/02/03 14:55:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -146,6 +146,10 @@ class HarnessTest(unittest.TestCase):
         msg = {'name' : 'Stop', 'payload' : ''}
         msgService.publish(msg)
         myThread.transaction.commit()
+
+        assert False
+
+        return
 
         msgService.finish()
 

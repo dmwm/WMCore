@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """
-_DeleteFile_
+_Delete_
 
 MySQL implementation of DeleteFile
 
 """
 
-__revision__ = "$Id: Delete.py,v 1.2 2009/07/13 19:55:26 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Delete.py,v 1.3 2009/07/15 20:43:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.40 2010/07/26 13:10:11 swakef Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.41 2010/07/28 15:24:30 swakef Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import unittest
 import os
@@ -478,6 +478,34 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork(slots)), 200)
 
 
+    def testGlobalBlockSplitting(self):
+        """Block splitting at global level"""
+        # force global queue to split work on block
+        self.globalQueue.params['SplittingMapping']['DatasetBlock']['name'] = 'Block'
+
+        # queue work, globally for block, pass down, report back -> complete
+        totalSpec = 1
+        totalBlocks = totalSpec * 2
+        self.assertEqual(0, len(self.globalQueue))
+        for _ in range(totalSpec):
+            self.globalQueue.queueWork(self.processingSpec.specUrl())
+        self.assertEqual(totalBlocks, len(self.globalQueue))
+
+        # pull to local
+        self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'SiteA' : 1000}),
+                         totalBlocks)
+        self.assertEqual(len(self.localQueue.status(status = 'Available')),
+                         totalBlocks) # 20 in local
+        work = self.localQueue.getWork({'SiteA' : 1000, 'SiteB' : 1000})
+        self.assertEqual(len(work), totalBlocks)
+        # both refer to same wmspec
+        self.assertEqual(work[0]['url'], work[1]['url'])
+        self.localQueue.doneWork([str(x['element_id']) for x in work])
+        self.localQueue.updateParent()
+        # elements in local deleted at end of update, only global ones left
+        self.assertEqual(len(self.localQueue.status(status = 'Done')),
+                         totalBlocks)
 
 if __name__ == "__main__":
     unittest.main()

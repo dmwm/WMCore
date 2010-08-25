@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.123 2010/07/26 13:10:11 swakef Exp $"
-__version__ = "$Revision: 1.123 $"
+__revision__ = "$Id: WorkQueue.py,v 1.124 2010/07/28 15:24:29 swakef Exp $"
+__version__ = "$Revision: 1.124 $"
 
 
 import time
@@ -307,6 +307,13 @@ class WorkQueue(WorkQueueBase):
                 status = 'Acquired'
             else:
                 status = pullingQueueUrl and 'Negotiating' or 'Acquired'
+                # send data to child queue - used to override data in workflow
+                if match['input_id'] and pullingQueueUrl:
+                    dataLoader = self.daofactory(classname = "Data.LoadByID")
+                    data = dataLoader.execute(match['input_id'],
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+                    wmSpecInfo['data'] = data['name']
         
             #make one transaction      
             with self.transactionContext():
@@ -656,7 +663,8 @@ class WorkQueue(WorkQueueBase):
                             wmspec = WMWorkloadHelper()
                             wmspec.load(element['url'])
                             totalUnits.extend(self._splitWork(wmspec,
-                                                        element['element_id']))
+                                                        element['element_id'],
+                                                        element.get('data')))
 
                         with self.transactionContext():
                             for unit in totalUnits:
@@ -689,6 +697,8 @@ class WorkQueue(WorkQueueBase):
         useWMBS = not skipWMBS and self.params['PopulateFilesets']
         elements = self.status(after = since, dictKey = "ParentQueueId",
                                syncWithWMBS = useWMBS)
+        # filter elements that don't come from the parent
+        elements.pop(None, None)
         # apply end policy to elements grouped by parent
         results = [endPolicy(group,
                              self.params['EndPolicySettings']) for \
@@ -756,9 +766,13 @@ class WorkQueue(WorkQueueBase):
     # //  Internal methods
     #//
 
-    def _splitWork(self, wmspec, parentQueueId = None):
+    def _splitWork(self, wmspec, parentQueueId = None, data = None):
         """
         Split work into WorkQeueueElements
+
+        If data param supplied use that rather than getting input data from
+        wmspec. Used for instance when global splits by Block (avoids having to
+        modify wmspec block whitelist - thus all appear as same wf in wmbs)
         """
         #TODO: This can leave orphan files behind - remove them on exception
         totalUnits = []
@@ -774,7 +788,7 @@ class WorkQueue(WorkQueueBase):
             # update policy parameter
             self.params['SplittingMapping'][policyName].update(args = wmspec.startPolicyParameters())
             policy = startPolicy(policyName, self.params['SplittingMapping'])
-            units = policy(wmspec, topLevelTask, self.dbsHelpers)
+            units = policy(wmspec, topLevelTask, self.dbsHelpers, data)
             for unit in units:
                 unit['ParentQueueId'] = parentQueueId
             self.logger.info("Queuing %s unit(s): wf: %s for task: %s" % (

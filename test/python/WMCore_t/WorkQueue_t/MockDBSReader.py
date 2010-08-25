@@ -3,8 +3,8 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
-__revision__ = "$Id: MockDBSReader.py,v 1.7 2010/07/19 10:50:33 swakef Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: MockDBSReader.py,v 1.8 2010/07/28 15:24:30 swakef Exp $"
+__version__ = "$Revision: 1.8 $"
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
@@ -49,8 +49,10 @@ class MockDBSReader:
             self.files = {dataset + "#1" : [dbsFile1],
                           dataset + "#2" : [dbsFile2]}
 
-    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True):
+    def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True, blockName = '*'):
         """Fake block info"""
+        if blockName != '*':
+            return [x for x in self.blocks[dataset] if x['Name'] == blockName]
         return self.blocks[dataset]
 
     def listFileBlockLocation(self, block):

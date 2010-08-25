@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Block tests
 """
 
-__revision__ = "$Id: Block_t.py,v 1.10 2010/07/19 10:50:33 swakef Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Block_t.py,v 1.11 2010/07/28 15:24:30 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import shutil
@@ -131,6 +131,28 @@ class BlockTestCase(unittest.TestCase):
         units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Data'], dataset + '#2')
+
+
+    def testDataDirectiveFromQueue(self):
+        """Test data directive from queue"""
+        Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
+        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            # Take dataset and force to run over only 1 block
+            units = Block(**self.splitArgs)(Tier1ReRecoWorkload, task,
+                                            dbs, dataset + '#1')
+            self.assertEqual(1, len(units))
+            blocks = [] # fill with blocks as we get work units for them
+            for unit in units:
+                self.assertEqual(1, unit['Jobs'])
+                self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
+                self.assertEqual(task, unit['Task'])
+            self.assertNotEqual(len(units),
+                             len(dbs[inputDataset.dbsurl].blocks[dataset]))
 
 if __name__ == '__main__':
     unittest.main()

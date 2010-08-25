@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.18 2010/07/26 13:10:09 swakef Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.19 2010/07/28 15:24:28 swakef Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import re
 import os
@@ -13,6 +13,7 @@ import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.WorkQueue.Policy.End import endPolicy
 
 class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
     """
@@ -108,13 +109,18 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         now = int(time.time())
         updated = []
 
-        elements = self.wq.status(reqMgrUpdateNeeded = True)
+        elements = self.wq.status(reqMgrUpdateNeeded = True,
+                                  dictKey = "RequestName")
+        elements = [endPolicy(group,
+                             self.wq.params['EndPolicySettings']) for \
+                             group in elements.values()]
         if not elements:
             return
 
         for ele in elements:
             try:
                 status = self.reqMgrStatus(ele)
+
                 if status:
                     self.reqMgr.reportRequestStatus(ele['RequestName'],
                                                     status)
@@ -129,6 +135,7 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
             except RuntimeError, ex:
                 msg = "Error updating ReqMgr about element %s: %s"
                 self.wq.logger.warning(msg % (ele['Id'], str(ex)))
+
         try:
             self.wq.setReqMgrUpdate(now, updated)
         except StandardError:
@@ -137,11 +144,12 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
 
     def reqMgrStatus(self, ele):
         """Map WorkQueue Status to that reported to ReqMgr"""
-        status = None
-        if ele.isComplete():
-            status = 'completed'
-        elif ele.isFailed():
-            status = 'failed'
-        elif ele.isRunning():
-            status = 'running'
-        return status
+        statusMapping = {'Acquired' : 'running',
+                         'Failed' : 'failed',
+                         'Canceled' : 'failed',
+                         'Done' : 'completed'
+                         }
+        if statusMapping.has_key(ele.status()):
+            return statusMapping[ele.status()]
+        else:
+            return None

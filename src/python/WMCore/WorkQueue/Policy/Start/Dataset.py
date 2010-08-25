@@ -4,8 +4,8 @@ WorkQueue splitting by dataset
 
 """
 __all__ = []
-__revision__ = "$Id: Dataset.py,v 1.14 2010/07/22 12:00:19 swakef Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Dataset.py,v 1.15 2010/07/28 15:24:29 swakef Exp $"
+__version__ = "$Revision: 1.15 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
@@ -25,6 +25,9 @@ class Dataset(StartPolicyInterface):
         datasetPath = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)
+        # dataset splitting can't have its data selection overridden
+        if (self.data and self.data != datasetPath):
+            raise RuntimeError, "Can't provide different data to split with"
         dataset = dbs.getDatasetInfo(datasetPath)
 
         # apply input dataset restrictions

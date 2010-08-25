@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Dataset tests
 """
 
-__revision__ = "$Id: Dataset_t.py,v 1.10 2010/07/21 14:36:46 swakef Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Dataset_t.py,v 1.11 2010/07/28 15:24:30 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import shutil
@@ -140,6 +140,20 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Data'], dataset)
         self.assertEqual(units[0]['Jobs'], 1.0)
+
+
+    def testDataDirectiveFromQueue(self):
+        """Test data directive from queue"""
+        Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
+        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
+        for task in Tier1ReRecoWorkload.taskIterator():
+            Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task, dbs, dataset)
+            self.assertRaises(RuntimeError, Dataset(**self.splitArgs),
+                              Tier1ReRecoWorkload, task, dbs, dataset + '1')
 
 if __name__ == '__main__':
     unittest.main()

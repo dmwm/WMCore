@@ -6,8 +6,8 @@ A dictionary based object meant to represent a WorkQueue block
 
 #Can we re-use WorkQueueElement for this?
 
-__revision__ = "$Id: WorkQueueElementResult.py,v 1.5 2010/06/18 15:12:51 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkQueueElementResult.py,v 1.6 2010/07/28 15:24:29 swakef Exp $"
+__version__ = "$Revision: 1.6 $"
 
 class WorkQueueElementResult(dict):
     """Class to hold the status of a related group of WorkQueueElements"""
@@ -29,6 +29,13 @@ class WorkQueueElementResult(dict):
         self.setdefault('PercentSuccess',
                         int(sum([x['PercentSuccess'] for x in self['Elements']],
                             0.0) / len(self['Elements'])))
+        self.setdefault('RequestName', self['Elements'][0]['RequestName'])
+        self.setdefault('TeamName', self['Elements'][0]['TeamName'])
+
+        # some cross checks
+        for i in self['Elements']:
+            assert(i['RequestName'] == self['RequestName'])
+            assert(i['TeamName'] == self['TeamName'])
 
     def fractionComplete(self):
         """Return fraction successful"""

@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: WorkQueueManager_t.py,v 1.5 2010/07/26 13:10:11 swakef Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkQueueManager_t.py,v 1.6 2010/07/28 15:24:30 swakef Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import logging
@@ -125,10 +125,11 @@ class WorkQueueManagerTest(unittest.TestCase):
         globalQ.phedexService = MockPhedexService(dataset)
         return globalQ
 
-    def createProcessingSpec(self):
+    def createProcessingSpec(self, splitter = 'DatasetBlock'):
         """Return a processing spec"""
         wf = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
         wf.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
+        wf.setStartPolicy(splitter)
         wf.save(wf.specUrl())
         return wf
 
@@ -136,29 +137,7 @@ class WorkQueueManagerTest(unittest.TestCase):
         """ReqMgr reporting"""
         # don't actually talk to ReqMgr - mock it.
 
-        class fakeReqMgr():
-            """Fake ReqMgr stuff"""
-            def __init__(self, spec):
-                self.spec = spec
-                self.count = 0
-                self.status= {}
 
-            def getAssignment(self, team):
-                assert(type(team) in types.StringTypes)
-                if not self.count and team == 'The A-Team':
-                    self.count += 1
-                    return {str(self.count) : self.spec.specUrl()}
-                else:
-                    return {}
-
-            def putWorkQueue(self, reqName, url):
-                self.status[reqName] = 'assigned-prodmgr'
-
-            def reportRequestStatus(self, name, status):
-                self.status[name] = status
-
-            def reportRequestProgress(self, name, args):
-                pass
 
         spec = self.createProcessingSpec()
         globalQ = self.setupGlobalWorkqueue(spec)
@@ -182,10 +161,75 @@ class WorkQueueManagerTest(unittest.TestCase):
         reqPoller.algorithm({})
         self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
 
+        globalQ.setStatus('Failed', 1)
+        reqPoller.algorithm({})
+        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'failed')
+
         # reqMgr problems should not crash client
         reqPoller = WorkQueueManagerReqMgrPoller(None, globalQ, {})
         reqPoller.algorithm({})
 
+
+    def testReqMgrBlockSplitting(self):
+        """ReqMgr interaction with block level splitting"""
+        spec = self.createProcessingSpec(splitter = 'Block')
+        globalQ = self.setupGlobalWorkqueue(spec)
+        reqMgr = fakeReqMgr(spec)
+        reqPoller = WorkQueueManagerReqMgrPoller(reqMgr, globalQ, {})
+
+        self.assertEqual(len(globalQ), 0)
+        reqPoller.algorithm({})
+        self.assertEqual(len(globalQ), 2)
+        globalQ.setStatus('Acquired', [1, 2])
+        elements = globalQ.status()
+        self.assertEqual(len(elements), 2)
+        elements[0]['PercentComplete'] = 25
+        elements[1]['PercentComplete'] = 75
+        globalQ.setProgress(elements[0])
+        globalQ.setProgress(elements[1])
+        elements = globalQ.status()
+        self.assertEqual(elements[0]['PercentComplete'], 25)
+        self.assertEqual(elements[1]['PercentComplete'], 75)
+        reqPoller.algorithm({}) # report back to ReqMgr
+        self.assertEqual(reqMgr.progress[str(reqMgr.count)]['percent_complete'],
+                         50)
+        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'running')
+        globalQ.setStatus('Done', [1, 2])
+        elements[0]['PercentComplete'] = 100
+        elements[1]['PercentComplete'] = 100
+        globalQ.setProgress(elements[0])
+        globalQ.setProgress(elements[1])
+        reqPoller.algorithm({}) # report back to ReqMgr
+        self.assertEqual(reqMgr.progress[str(reqMgr.count)]['percent_complete'],
+                         100)
+        self.assertEqual(reqMgr.status[str(reqMgr.count)], 'completed')
+
+class fakeReqMgr():
+    """Fake ReqMgr stuff"""
+    def __init__(self, spec):
+        self.spec = spec
+        self.count = 0
+        self.status = {}
+        self.progress = {}
+
+    def getAssignment(self, team):
+        assert(type(team) in types.StringTypes)
+        if not self.count and team == 'The A-Team':
+            self.count += 1
+            return {str(self.count) : self.spec.specUrl()}
+        else:
+            return {}
+
+    def putWorkQueue(self, reqName, url):
+        self.status[reqName] = 'assigned-prodmgr'
+
+    def reportRequestStatus(self, name, status):
+        self.status[name] = status
+
+    def reportRequestProgress(self, name, **args):
+        self.progress.setdefault(name, {})
+        self.progress[name].update(args)
+
+
 if __name__ == '__main__':
     unittest.main()
-

@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.17 2010/06/30 18:46:19 mnorman Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.18 2010/07/08 15:43:01 mnorman Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import unittest
 import threading
@@ -212,7 +212,8 @@ class JobSubmitterTest(unittest.TestCase):
 
 
 
-    def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site = None, bl = [], wl = []):
+    def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site = None,
+                        bl = [], wl = [], type = 'Processing'):
         """
         Creates a series of jobGroups for submissions
 
@@ -234,7 +235,7 @@ class JobSubmitterTest(unittest.TestCase):
             testFileset.create()
             testSubscription = Subscription(fileset = testFileset,
                                             workflow = testWorkflow,
-                                            type = "Processing",
+                                            type = type,
                                             split_algo = "FileBased")
             testSubscription.create()
 
@@ -982,6 +983,72 @@ class JobSubmitterTest(unittest.TestCase):
         command = ['condor_rm', self.user]
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
         pipe.communicate()
+
+
+
+    def testF_OverloadTest(self):
+        """
+
+
+        """
+
+        resourceControl = ResourceControl()
+        for site in self.sites:
+            resourceControl.insertThreshold(siteName = site, taskType = 'Silly', \
+                                            minSlots = 1, maxSlots = 1)
+
+
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+        workloadName = "basicWorkload"
+        myThread     = threading.currentThread()
+        workload     = self.createTestWorkload()
+        config       = self.getConfig()
+        changeState  = ChangeState(config)
+
+        nSubs = 2
+        nJobs = 10
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            type = 'Silly')
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        
+
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        # Actually run it
+        jobSubmitter.algorithm()
+
+        # Should be one job for each site
+        nSites = len(self.sites)
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nSites)
+
+
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Executing', jobType = "Silly")
+        self.assertEqual(len(result), nSites)
+        result = getJobsAction.execute(state = 'Created', jobType = "Silly")
+        self.assertEqual(len(result), nJobs*nSubs - nSites)
+
+
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+        return
 
 
 

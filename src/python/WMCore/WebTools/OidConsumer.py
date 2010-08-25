@@ -117,11 +117,9 @@ class OidConsumer(cherrypy.Tool):
             if openid_url:
                 assert openid_url == self.oidserver
         except:
-            msg = 'Error in discovery: wrong OpenID server '
-            msg += 'You are attempting to authenticate with %s. ' % openid_url
-            msg += 'This is an invalid OpenID URL. You want %s.' % self.oidserver
-            session = self.get_session()
-            session['info'] = msg
+            msg =  '<br><br><b>You are attempting to authenticate with %s. ' % openid_url
+            msg += '<br>This is an invalid OpenID URL. You want %s.</b>' % self.oidserver
+            cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.error_path)
 
         # If the user requested to login again without logging out first,
@@ -145,9 +143,10 @@ class OidConsumer(cherrypy.Tool):
         try:
             oidrequest = oidconsumer.begin(openid_url)
         except discover.DiscoveryFailure, exc:
-            msg = 'Error in discovery: %s' % cgi.escape(str(exc[0]))
-            msg += 'Check that you correctly provided the OpenID server in '
-            msg += 'your OpenID URL.'
+            msg =  '<br><br><b>Could not connect to the OpenID server %s</b>' % openid_url
+            msg += '<br><br> If you are running a private server instance, '
+            msg += 'make sure it is running and its address is correct.'
+            msg += '<br><br>Debug information:<br> %s' % cgi.escape(str(exc[0]))
             cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.error_path)
         else:
@@ -206,11 +205,33 @@ class OidConsumer(cherrypy.Tool):
         # Now verifies what it does mean
         if info.status == consumer.FAILURE:
             # The OpenID protocol failed, either locally or remotely
-            cherrypy.session[self.session_name]['info'] = info.identity_url
+            msg = ''
+            if info.identity_url:
+                msg += '<br><br><b>Could not authenticate %s</b>' % info.identity_url
+            if info.message:
+                msg += '<br><br><b>%s</b>' % info.message
+            else:
+                msg += '<br><br><b>Authentication failed for an unknown reason</b>'
+                #msg += '<br><br><b>The application %s' % cherrypy.request.script_name
+                #msg += ' is not registered to use the OpenID server.</b>'
+            cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.failed_path)
         elif info.status == consumer.CANCEL:
             # Indicates that the user cancelled the OpenID authentication request
-            cherrypy.session[self.session_name]['info'] = info.identity_url
+            if info.identity_url:
+                msg = '<br><br><b>The authentication for %s' % info.identity_url
+                msg += ' was cancelled.</b>'
+            else:
+                #msg = '<br><br><b>Authentication request cancelled.</b>'
+                msg =  '<br><br>Authentication failed due to one of '
+                msg += 'the following reasons:<br>'
+                msg += '<menu>'
+                msg += '<li>The application %s' % cherrypy.request.base
+                msg += ' is not registered to use the OpenID server;</li>'
+                msg += '<li>Username and password did not verify;</li>'
+                msg += '<li>The user cancelled the authentication.</li>'
+                msg += '</menu>'
+            cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.cancel_path)
         elif info.status == consumer.SETUP_NEEDED:
             # Means that the request was in immediate mode and the server was
@@ -218,7 +239,8 @@ class OidConsumer(cherrypy.Tool):
             # So, should send the user to the server
             if info.setup_url: # maybe not available in OpenID 2.0
                 raise cherrypy.HTTPRedirect(info.setup_url)
-            cherrypy.session[self.session_name]['info'] = info.identity_url
+            msg = '<br><br><b>Could not authenticate without user interaction.</b>'
+            cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.failed_path)
         elif info.status == consumer.SUCCESS:
             if info.endpoint.canonicalID:
@@ -245,7 +267,8 @@ class OidConsumer(cherrypy.Tool):
             raise cherrypy.HTTPRedirect(cherrypy.url(cherrypy.request.path_info))
 
         # If the code reaches here, an unknown error happened
-        cherrypy.session[self.session_name]['info'] = 'unknown reason'
+        msg = '<br><br><b>Invalid response from the server.</b>'
+        cherrypy.session[self.session_name]['info'] = msg
         raise cherrypy.HTTPRedirect(self.error_path)
 
         # End of process()
@@ -277,7 +300,8 @@ class OidConsumer(cherrypy.Tool):
         # Finally checks if the user is allowed
         if not authzfunc(user, role, group, site):
             # Not allowed
-            msg = 'You are not allowed to access %s' % cherrypy.request.path_info
+            msg =  '<br><br><b>You are not authorized to access '
+            msg += '%s.</b>' % cherrypy.request.path_info
             cherrypy.session[self.session_name]['info'] = msg
             raise cherrypy.HTTPRedirect(self.authz_path)
         

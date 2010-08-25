@@ -10,21 +10,25 @@ https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest - doesn't work (26/01
 guiding / reference classes:
 test/python/WMCore_t/Services_t/WorkQueue_t/WorkQueue_t.py - fails (26/01)
 test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.samples.*) - works
+
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.2 2010/02/03 17:20:49 maxa Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.3 2010/02/06 01:20:38 maxa Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 
 import os
 import shutil
+import inspect
 import unittest
 
 from WMCore.Wrappers import JsonWrapper
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
+from WMCore.WorkQueue.Database import States
+from WMCore.WMException import WMException
 
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
@@ -42,8 +46,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         print "initialize()"
         
         self.config = DefaultConfig("WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel")
-        # TODO
-        # will this be enough to provide DAS-compatible output?
+        # to provide DAS-compatible output
         self.config.setFormatter("WMCore.WebTools.DASRESTFormatter")
 
         # set database
@@ -70,13 +73,11 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
                                           NegotiationTimeout = 0,
                                           QueueURL = self.config.getServerUrl())
         
-        
-        # the rest of this method used for populating db, workqueues
-        # is probably no longer necessary - remove later (is likely not compatible with
-        # current set up / initialize stuff anyway)
-        return
+        """
+        the rest of this method used for populating db, workqueues
+        taken from test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py
+        likely not compatible with latest changes, remove later (04/02)
 
-        # populate - as done in test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py
         # create WMSpec first
         WorkQueueTestCase.setUp(self)
 
@@ -107,6 +108,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
                                      QueueURL = "local.example.com")
         # standalone queue for unit tests
         self.queue = WorkQueue(CacheDir = 'standalone')
+        """
 
 
 
@@ -117,11 +119,11 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
         # happens in RESTBaseUnitTest if self.schemaModules is set
         # self.testInit.clearDatabase()
 
-        # the rest of this method used for populating db, workqueues
-        # is probably no longer necessary - remove later (is likely not compatible with
-        # current set up / initialize stuff anyway)
-        # see setUp() method comment
-        return
+        """
+        the rest of this method used for cleaning up workqueues, db
+        taken from test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py
+        likely not compatible with latest changes, remove later (04/02)
+        see setUp() method comment
         
         # clean up WorkQueues - as done in test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py
         WorkQueueTestCase.tearDown(self)
@@ -130,112 +132,194 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
             os.unlink(f)
         for d in ('standalone', 'global', 'local'):
             shutil.rmtree(d, ignore_errors = True)
+        """
 
 
+    def _tester(self, testName, verb, code, partUrl, input = {}):
+        print 80 * '#'
+        print "test: %s" % testName
 
-
+        self.globalQueue.queueWork(createProductionSpec())
         
-    # starting with X to prevent from running for now 
-    def XtestNonExistingMethod(self):
-        print "testNonExistingMethod()"
-        # test not accepted type should return 406 error, in fact getting 404, then OK
-        url = self.urlbase + "someWrongMethod"
-        methodTest("GET", url,  accept = "text/json", output = {"code": 404})
+        # when using json encoding use application/json
+        contentType = "application/json"
+        accept = "text/json+das"
         
+        if input:
+            input = JsonWrapper.dumps(input)
         
-
-    # starting with X to prevent from running for now
-    def XtestExistingMethod(self):
-        print "testExistingMethod()"
-        url = self.urlbase + "test"
-    
-        #output is dictionary for the output matching 
+        # output is dictionary for the output matching 
         # there are four keys you can check:
-        # {'code': code, 'data': data, 'type': type, 'response': response}
-        data, expires = methodTest("GET", url,  accept = "text/json",
-                                   output = {"code": 200})
-        # beware of the starting quote - HTTPConnection class seems to wrap
-        # the return data this way ...
-        dataPrefix =  "\"date/time:"
-        errMsg = "Expect data starting with '%s', got '%s'" % (dataPrefix, data)
-        assert data.startswith(dataPrefix), errMsg         
-        
-                
+        # {'code': code, 'data': data, 'type': type, 'response': response}        
+        output = {"code": code, "type": accept}
 
-    def XtestElementStatus(self):
-        print "testElementStatus()"
-        
-        self.globalQueue.queueWork(createProductionSpec())
-        
-        verb = "POST"
-        url = self.urlbase + "status"
-        input = None
-        contentType = "application/json"
-        output = {"code": 200, "type": "text/json"} # gets already tested in methodTest
-        # no input specified
-        data, expires = methodTest(verb, url, contentType = contentType, output = output)
-        
+        url = self.urlbase + partUrl
+        data, exp = methodTest(verb, url,  accept = accept, input = input,
+                               contentType = contentType, output = output)
+        data = JsonWrapper.loads(data)
         print "\n\n"
         print "data: '%s'" % data
-        print "expires: '%s'" % expires
+        print "expires: '%s'" % exp
         print "\n\n"
         
-        data = JsonWrapper.loads(data)
-        
-        assert len(data) == 1, "Only 1 element needs to be back, got '%s'" % len(data)
-        id = data[0]["Id"]
-        assert id == 1, "Had 1 element, Id should be 1, got '%s'" % id  
-        
-        
+        return data, exp
 
+
+
+    def _checkHTTPError(self, data):
+        expected = "HTTPError"
+        got = data["results"]["type"]
+        assert got == expected, "Expected error '%s', got '%s'" % (expected, got)
     
-    def XtestElementStatusAvailable(self):
-        print "testElementStatusAvailable()"
-        
-        self.globalQueue.queueWork(createProductionSpec())
 
-        verb = "POST"
-        url = self.urlbase + "status"
+        
+    def testNonExistingUrl(self):
+        testName = inspect.stack()[0][3]        
+        self._tester(testName, "GET", 404, "somethingWrong")
+                
+        
+        
+    def testExistingUrl(self):
+        testName = inspect.stack()[0][3]
+        data, exp = self._tester(testName, "GET", 200, "test")
+    
+        dataPrefix =  "date/time:"
+        errMsg = "Expect data starting with '%s', got '%s'" % (dataPrefix, data)
+        assert data["results"].startswith(dataPrefix), errMsg         
+        
+        
+
+    def testElementStatus(self):
+        testName = inspect.stack()[0][3]
+        data, exp = self._tester(testName, "POST", 200, "status")
+        
+        r = data["results"]
+        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
+        assert r[0]["Id"] == 1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"]  
+        
+        
+    
+    def testElementStatusAvailable(self):
+        testName = inspect.stack()[0][3]
         input = {"status": "Available"}
-        input = JsonWrapper.dumps(input)
-        contentType = "application/json"
-        output = {"code": 200, "type": "text/json"} # gets already tested in methodTest
-        
-        data, expires = methodTest(verb, url, input = input, contentType = contentType, output = output)
-        
-        data = JsonWrapper.loads(data)
-        
-        print "\n\n"
-        print "data: '%s'" % data
-        print "expires: '%s'" % expires
-        print "\n\n"
-        
-        status = data[0]["Status"]
+        data, exp = self._tester(testName, "POST", 200, "status", input = input)
+                
+        r = data["results"]
+        status = r[0]["Status"]
         assert status == "Available", "Had 'Available' element but status is '%s'" % status
         
         
+
+    def testElementsDAO(self):
+        testName = inspect.stack()[0][3]
+        data, exp = self._tester(testName, "GET", 200, "elements")
+        
+        r = data["results"]           
+        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
+        assert data["request_method"] == "GET", "'request_method' not matching"
+        assert data["request_call"] == "dasjson", "'request_call' not matching" 
+
+        
+        
+    def testElementsByStateDAO(self):
+        testName = inspect.stack()[0][3]
+        input = {"status": "Available"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbystate", input = input)
+        
+        statusInt = data["results"][0]["status"]
+        statusStr = States[statusInt]
+        assert input["status"] == statusStr, ("Expecting element status '%s', got "
+            "'%s'" % (input["status"], statusStr))
+
+
+
+    def testElementsNonExistingByStateDAO(self):
+        testName = inspect.stack()[0][3]
+        input = {"status": "Failed"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbystate", input = input)
+        
+        r = data["results"]
+        assert len(r) == 0, ("Expecting empty result set, no elements with "
+                             "status '%s'") % input["status"]
+        
+                         
+
+    def testElementsByStateIntegerDAO(self):
+        testName = inspect.stack()[0][3]
+        input = {"status": 4} # states by integers - not supported
+        # call is expected to fail with code 400 and HTTPError
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        self._checkHTTPError(data)
+        
+        input = {"status": "4"} # states by integers - not supported
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        self._checkHTTPError(data)
+
+        input = {"status": 456} # states by integers - not supported
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        self._checkHTTPError(data)
+
+        
+
+    def testElementsByStateWrongStateDAO(self):
+        testName = inspect.stack()[0][3]
+        # test that the exception is raise on wrong input, error will be raised
+        input = {"status": "nonsensestatus"}        
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", input = input)
+        self._checkHTTPError(data)
+        
+        
+
+    def testElementsByIdIntegerDAO(self):
+        testName = inspect.stack()[0][3]
+        input = {"id": 1}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
+                
+        r = data["results"]
+        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
+        # now could safely assume only one item in the list
+        assert r[0]["id"] == 1, "Returned element should have id 1, got %s" % r[0]["id"]
+        
+        
+        
+    def testElementsByIdStringDAO(self):
+        testName = inspect.stack()[0][3]
+        input = {"id": "1"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
+                
+        r = data["results"]
+        assert len(r) == 1, "Only 1 element needs to be back, got '%s'" % len(r)
+        # now could safely assume only one item in the list
+        assert r[0]["id"] == 1, "Returned element should have id 1, got %s" % r[0]["id"]
+        
+        
+        
+    def testElementsByNonExistingIdDAO(self):
+        testName = inspect.stack()[0][3]
+        input = {"id": 100000}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", input = input)
+        
+        r = data["results"]
+        assert len(r) == 0, "Expected empty result (0 items), got '%s'" % len(r)
+        
+
+
+    def testElementsByIncorrectIntegerIdDAO(self):
+        testName = inspect.stack()[0][3]        
+        input = {"id": -10}
+        data, exp = self._tester(testName, "POST", 400, "elementsbyid", input = input)
+        
+        self._checkHTTPError(data)
+
+
+    def testElementsByIncorrectStringIdDAO(self):
+        testName = inspect.stack()[0][3]
+        input = {"id": "nonsenseelementid"}
+        data, exp = self._tester(testName, "POST", 400, "elementsbyid", input = input)
+        
+        self._checkHTTPError(data)
+        
     
-    def testElementStatusDAO(self):
-        print "testElementStatusDAO()"
-        
-        self.globalQueue.queueWork(createProductionSpec())
-
-        verb = "GET"
-        url = self.urlbase + "elements"
-        contentType = "application/json"
-        output = {"code": 200, "type": "text/json"} # gets already tested in methodTest
-        
-        data, expires = methodTest(verb, url, contentType = contentType, output = output)
-        
-        data = JsonWrapper.loads(data)
-        
-        print "\n\n"
-        print "data: '%s'" % data
-        print "expires: '%s'" % expires
-        print "\n\n"
-        
-
-                     
         
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,10 @@
 """
 WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueMonitorService.py
 
-REST interface to WorkQueue monitoring capabilities.
+REST interface to WorkQueue monitoring capabilities, output in
+    DAS-compatible format.
+Provides monitoring of WorkQueue elements, using DAO, DAO classes
+    residing in WorkQueue/Database/
 
 requirements:
 https://twiki.cern.ch/twiki/bin/viewauth/CMS/WMCoreDiscussT1Rollout
@@ -10,28 +13,28 @@ Provide monitoring information for the request as it propagates down to the agen
 installation:
 https://twiki.cern.ch/twiki/bin/view/CMS/WorkQueueInstallation
 
-writing unittests / testing details:
+writing unittests / testing details, hints:
 https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest
+WMCore/Services/WorkQueue/WorkQueue.py
+WMCore_t/Webtools_t/ and WMCore_t/Services_t/WorkQueue_t/WorkQueue_t.py
 
-
-
+TODO:
+-more monitoring requirements (e.g. statistics, etc) - not clear now
 """
 
 
-
-
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.4 2010/02/04 17:50:12 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
-
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.5 2010/02/06 01:20:38 maxa Exp $"
+__version__ = "$Revision"
 
 
 import os
 import time
 import logging # import WMCore.WMLogging
-from WMCore.Wrappers import JsonWrapper
+from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 from WMCore.WorkQueue.WorkQueue import WorkQueue
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WorkQueue.Database import States
 
 
 class WorkQueueMonitorService(ServiceInterface):
@@ -39,41 +42,84 @@ class WorkQueueMonitorService(ServiceInterface):
     
     def register(self):
         self._myClass = self.__class__.__name__ 
+
+        self.config = DefaultConfig("WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel")
+        # provide DAS output formatting ...
+        self.config.setFormatter("WMCore.WebTools.DASRESTFormatter")
         
-        self._testDbReadiness()
+        #self._testDbReadiness()
 
         self.model.addMethod("GET", "test", self.testMethod)
-        self.model.addMethod("GET", "testDb", self.testDb)
 
+        # from WorkQueueService
         self.wq = WorkQueue(logger = self.model, dbi = self.model.dbi, **self.model.config.queueParams)
-        self.model.addMethod('POST', 'status', self.wq.status, args=["status", "before", "after", 
-                                        "elementIDs", "subs", "dictKey"])
+        
+        self.model.addMethod("POST", "status", self.wq.status,
+                             args = ["status", "before", "after", "elementIDs", "subs", "dictKey"])
         
         # DAO stuff
-        # RESTModel.addDAO() usage: COMP/T0/src/python/T0/DAS/Tier0RESTModel.py
-        # (within WMCore no addDAO example except for WebTools_t/DummyRESTModel.py ...)
+        # RESTModel.addDAO() see COMP/T0/src/python/T0/DAS/Tier0RESTModel.py
+        # (within WMCore no addDAO() example except for WebTools_t/DummyRESTModel.py ...)
         
-        # AttributeError: 'WorkQueueRESTModel' object has no attribute 'daofactory'
         self.model.daofactory = DAOFactory(package = "WMCore.WorkQueue.Database",
                                            logger = self.model,
                                            dbinterface = self.model.dbi)
-        
         # WorkQueue.status signature:
         # status(self, status = None, before = None, after = None, elementIDs = None, dictKey = None)
         
-        # DAO elements
-        # DAO elements by status
-        # TODO
-        # DAO elements ... which else possibilities to add?
-        
         self.model.addDAO("GET",  "elements", "Monitor.Elements")
-        self.model.addDAO("POST", "elementsbystatus", "ElementsByStatus", args = ["status"])
+        self.model.addDAO("POST", "elementsbystate", "Monitor.ElementsByState",
+                           args = ["status"], validation = [self.validateState])
+        self.model.addDAO("POST", "elementsbyid", "Monitor.ElementsById",
+                           args = ["id"], validation = [self.validateId])
         
         logging.info("%s initialised." % self._myClass)        
         
 
+
+    def validateState(self, input):
+        """Validate input argument state - only element states as defined in
+           States (WMCore.WorkQueue.Database) are accepted (i.e. only states
+           designated by respective string names, not by integer indices).
+        """
+        state = input["status"]
+        try:
+            try:
+                int(state)
+            except:
+                pass
+            else:
+                raise ValueError # is integer - fail
+            States[state]
+        except ValueError, KeyError:
+            m = "Incorrect input - unknown WorkQueue element state '%s'" % state
+            raise AssertionError, m
+        else:
+            return input
+        
+        
+    
+    def validateId(self, input):
+        """Validate input argument id - only positive integers allowed."""
+        id = input["id"]
+        try:
+            if int(id) < 0:
+                raise ValueError
+        except ValueError:
+            m = "Incorrect input - id must be positive integer ('%s')" % id            
+            raise AssertionError, m
+        else:
+            return input
+                
+        
+
+    # -----------------------------------------------------------------------
+    # dummy tests, database connection testing / experiments stuff
+    # to be removed later (2010-02-05)  
+    
     
     def _testDbReadiness(self):
+        """town table used by a WebTools tutorial example"""
         logging.debug("%s doing database readiness test." % self._myClass)
         try:
             sql = "create table towns (name varchar(20), country varchar(20))"
@@ -97,13 +143,3 @@ class WorkQueueMonitorService(ServiceInterface):
         r = "date/time: %s" % time.strftime(format, time.localtime())
         return r
 
-
-
-    def testDb(self):        
-        try:            
-            result = self.model.dbi.processData("select * from towns")
-            return self.model.formatDict(result)
-        except Exception, ex:
-            return "database test failed, reason: '%s'" % ex
-        
-        

@@ -3,19 +3,24 @@
 Data objects for TQ APIs use.
 """
 
-__revision__ = "$Id: TQApiData.py,v 1.1 2009/04/27 07:52:26 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQApiData.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import xml.dom.minidom
 
 
 ############ MODULE CONSTANTS ################
-TASK_REQUIRED = ['spec',  'wkflow', 'type', 'sandbox']
-TASK_DEFAULTS = {'wkflow': None, 'type': 0, \
-                         'sandbox': 'sandboxFromSpec'}
+TASK_REQUIRED = ['spec', 'wkflow', 'type', 'sandbox', 'reqs']
+TASK_DEFAULTS = {'wkflow': None, 'type': 0, 'reqs': '', \
+                 'sandbox': 'sandboxFromSpec'}
 
 # The fields in the task table (those that can be queried upon)
-TASK_FIELDS = ['id', 'spec',  'wkflow', 'type', 'sandbox', 'state', 'pilot']
+TASK_FIELDS = ['id', 'spec', 'wkflow', 'type', 'sandbox', 'state', \
+               'pilot', 'reqs', 'creat_time', 'current_state_time']
+
+# The fields in the pilot table (those that can be queried upon)
+PILOT_FIELDS = ['id', 'host', 'se', 'site', 'cachedir', 'ttl', \
+                'ttl_time', 'last_hearbeat']
 
 
 ############### CLASSES ####################

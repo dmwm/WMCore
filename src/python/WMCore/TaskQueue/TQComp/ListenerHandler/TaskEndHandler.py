@@ -3,14 +3,13 @@
 Base handler for taskEnd.
 """
 __all__ = []
-__revision__ = "$Id: TaskEndHandler.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TaskEndHandler.py,v 1.3 2009/06/01 09:57:09 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 #from WMCore.Agent.BaseHandler import BaseHandler
 #from WMCore.ThreadPool.ThreadPool import ThreadPool
 from WMCore.WMFactory import WMFactory
 
-from TQComp.CommonUtil import buildXmlResponse                             
 from TQComp.Constants import taskStates
 from TQComp.Constants import reportUrlDir, uploadRoot
 
@@ -54,10 +53,6 @@ class TaskEndHandler(object):
         """
         Handles the event with payload.
         """
-#        # as we defined a threadpool we can enqueue our item
-#        # and move to the next.
-#        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload})
-        
         # load queries for backend.
         myThread = threading.currentThread()
    
@@ -68,28 +63,33 @@ class TaskEndHandler(object):
             self.logger.debug('TaskEndHandler:TaskEnd:payload: %s' % payload)
             
             try:
+                myThread.transaction.begin()
+
                 # Extract the task attributes
                 # Here we should check that all arguments are given correctly...
                 pilotId = payload['pilotId']
                 taskId = payload['taskId']
               
-                myThread.transaction.begin()
-
-                # Retrieve the task spec (and check that the task exists)
+                # Retrieve the task spec (check the task is in this pilot)
                 res = self.queries.getTasksWithFilter({'id': taskId}, \
-                                                      fields = ['spec'])
+                                          fields = ['spec', 'pilot'])
                 self.logger.debug("Res: %s" % res)
-                if not res:
+                if (not res) or (res[0][1] != pilotId):
                     result = 'Error'
-                    fields = {'Error': 'No task with id %s' % (taskId)}
+                    if (not res):
+                        fields = {'Error': 'No task with id %s' % (taskId)}
+                    else:
+                        fields = {'Error': 'Task %s not in pilot %s' % \
+                                           (taskId, pilotId)}
+                    myThread.transaction.rollback()
                     return {'msgType': result, 'payload': fields}
              
-                [specFile] = res[0]
+                specFile = res[0][0]
 
                 # Mark the task as done in the DB
 #                vars = {'state': taskStates['Done'], 'pilot': None}
                 vars = {'state': taskStates['Done']}
-                self.queries.updateTask(taskId, vars)
+                self.queries.updateOneTask(taskId, vars)
                 self.logger.debug("Task updated as Done.")
               
                 # Give the result back

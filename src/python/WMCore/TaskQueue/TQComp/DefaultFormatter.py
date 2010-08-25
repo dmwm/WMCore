@@ -9,8 +9,8 @@ implementing the interface that this class shows may be set at configuration
 time. Otherwise, the default one in this module is used.
 """
 
-__revision__ = "$Id: DefaultFormatter.py,v 1.1 2009/04/24 09:59:15 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultFormatter.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 

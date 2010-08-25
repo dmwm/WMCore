@@ -14,6 +14,9 @@ them in the configuration file.
 # Do not change if the pilots are not aware!
 listenerFormatter = "TQComp.DefaultFormatter"
 
+# Default tasks-pilots matcher (selects a task for a pilot requesting one)
+matcherPlugin = "TQComp.FlexPyMatchmaker"
+
 # Max number of threads for the listener (including its handlers)
 listenerMaxThreads = 10
 

@@ -4,8 +4,8 @@ Base class of the TQ API.
 """
 
 __all__ = []
-__revision__ = "$Id: TQApi.py,v 1.1 2009/04/27 07:52:26 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQApi.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading

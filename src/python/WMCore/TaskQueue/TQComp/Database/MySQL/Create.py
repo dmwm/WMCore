@@ -8,8 +8,8 @@ Class for creating MySQL specific schema for the error handler.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/04/27 08:21:20 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/06/01 09:57:09 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "delgadop@cern.ch"
 
 import threading
@@ -30,6 +30,7 @@ class Create(DBCreator):
         self.constraints = {}
         self.create['tqa'] = """      
 SET AUTOCOMMIT = 0; """
+# Lists tasks in the queue
         self.create['tq_tasks'] = """      
 CREATE TABLE `tq_tasks` (
     `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -37,28 +38,52 @@ CREATE TABLE `tq_tasks` (
     `sandbox` varchar(255),
     `wkflow` varchar(255),
     `type` int(11) NOT NULL default 0,
+    `reqs` varchar(510),
     `pilot` int(11),
     `state` int(11) NOT NULL default 0,
     `creat_time` timestamp default CURRENT_TIMESTAMP,
-    `current_state_time` timestamp,
-    PRIMARY KEY `id` (`id`)
+    `current_state_time` timestamp default 0,
+    PRIMARY KEY `id` (`id`),
+    CONSTRAINT `fk_pilot` FOREIGN KEY (`pilot`) REFERENCES `tq_pilots`(`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
+# TODO: Might have a site field as a reference to a new tq_sites table
+# (if we need to keep more info about sites...)
+# Need to look at ResoureMonitor for pilot manager first to decide what to do
         self.create['tq_pilots'] = """      
 CREATE TABLE `tq_pilots` (
-    `id` int(11) NOT NULL,
+    `id` int(11) NOT NULL AUTO_INCREMENT,
     `host` varchar(255),
-    `data` int(11),
+    `se` varchar(255),
+    `site` varchar(255),
+    `cachedir` varchar(255),
+    `ttl` int(11),
+    `ttl_time` timestamp default CURRENT_TIMESTAMP,
+    `last_heartbeat` timestamp default CURRENT_TIMESTAMP,
     PRIMARY KEY `id` (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """
- 
+# Links hosts and the data stored in their cache
+# The field 'se' acts as a site contrain (there might be hosts
+# with same name at different sites, but not within the same one)
+        self.create['tq_hostdata'] = """
+CREATE TABLE `tq_hostdata` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `host` varchar(255) NOT NULL,
+    `se` varchar(255) NOT NULL,
+    `data` varchar(255) NOT NULL,
+    PRIMARY KEY `id` (`id`),
+    CONSTRAINT `fk_data` FOREIGN KEY (`data`) REFERENCES `tq_data`(`guid`),
+    CONSTRAINT `uniq_hostdata` UNIQUE (`host`, `se`, `data`) 
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+"""
+# Lists existing pieces of data (type, size, etc.)
         self.create['tq_data'] = """      
 CREATE TABLE `tq_data` (
-    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `guid` varchar(255) NOT NULL,
     `type` int(11) NOT NULL default 0,
     `name` varchar(255),
     `size` int(11),
-    PRIMARY KEY `id` (`id`)
+    PRIMARY KEY `guid` (`guid`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 """

@@ -3,20 +3,20 @@
 Base handler for getTask.
 """
 __all__ = []
-__revision__ = "$Id: GetTaskHandler.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetTaskHandler.py,v 1.3 2009/06/01 09:57:09 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 
 #from WMCore.Agent.BaseHandler import BaseHandler
 #from WMCore.ThreadPool.ThreadPool import ThreadPool
 from WMCore.WMFactory import WMFactory
 from WMCore.WMException import WMException
-from traceback import extract_tb
-import sys
-
 
 from TQComp.Constants import sandboxUrlDir, specUrlDir, taskStates, staticRoot
 
+from traceback import extract_tb
+import sys
 import threading
+
 
 class GetTaskHandler(object):
     """
@@ -25,19 +25,23 @@ class GetTaskHandler(object):
  
     def __init__(self, params = None):
         """
-        Constructor. The params argument can be used as a dict for any
+        Constructor. The 'params' argument can be used as a dict for any
         parameter (if needed). Basic things can be obtained from currentThread.
 
         The required params are as follow:
-           downloadBaseUrl, sandboxBasePath, specBasePath
+           downloadBaseUrl, sandboxBasePath, specBasePath, matcherPlugin
         """
         myThread = threading.currentThread()
-        factory = WMFactory("default", \
-                  "TQComp.Database."+myThread.dialect)
-        self.queries = factory.loadObject("Queries")
+#        factory = WMFactory("default", \
+#                  "TQComp.Database."+myThread.dialect)
+        factory = WMFactory("default")
+#        self.queries = factory.loadObject("Queries")
+        self.queries = factory.loadObject("TQComp.Database."\
+                                  +myThread.dialect+".Queries")
         self.logger = myThread.logger
 
-        required = ["downloadBaseUrl", "sandboxBasePath", "specBasePath"]
+        required = ["downloadBaseUrl", "sandboxBasePath", "specBasePath",\
+                    "matcherPlugin"]
         for param in required:
             if not param in params:
                 messg = "GetTaskHandler object requires params['%s']" % param
@@ -48,6 +52,16 @@ class GetTaskHandler(object):
         self.downloadBaseUrl = params["downloadBaseUrl"]
         self.sandboxBasePath = params["sandboxBasePath"]
         self.specBasePath = params["specBasePath"]
+        try:
+            self.matcher = factory.loadObject(params["matcherPlugin"],\
+                           {'queries': self.queries, 'logger': self.logger})
+        except:
+            ttype, val, tb = sys.exc_info()
+            myThread.transaction.rollback()
+            messg = 'Could not load matcher plugin, due to: %s - %s '% (ttype, val)
+            # TODO: What number?
+            numb = 0
+            raise WMException(messg, numb)
 
 
     # this we overload from the base handler
@@ -55,10 +69,6 @@ class GetTaskHandler(object):
         """
         Handles the event with payload.
         """
-#        # as we defined a threadpool we can enqueue our item
-#        # and move to the next.
-#        self.threadpool.enqueue(event, {'event' : event, 'payload' :payload})
-        
         # load queries for backend.
         myThread = threading.currentThread()
     
@@ -69,37 +79,61 @@ class GetTaskHandler(object):
             self.logger.debug('GetTaskHandler:GetTask:payload: %s' % payload)
            
             try:
+                myThread.transaction.begin()
+
                 # Extract the task attributes
                 # Here we should check that all arguments are given correctly...
                 pilotId = payload['pilotId']
-                host = payload['host']
+
+                # Get pilot info from DB (check that it's registered)
+                res = self.queries.getPilotsWithFilter({'id': pilotId}, \
+                                    ['host', 'se'], None, asDict = True)
+                if not res:
+                    result = 'Error'
+                    fields = {'Error': 'Not registered pilot', \
+                              'PilotId': pilotId}
+                    myThread.transaction.rollback()
+                    return {'msgType': result, 'payload': fields}
+
+                # If the pilot did not pass required info, use DB values
+                if not ('host' in payload):
+                   payload['host'] = res[0]['host']
+                if not ('se' in payload):
+                   payload['se'] = res[0]['se']
+
+                if not 'cache' in payload:
+                   payload['cache'] = self.queries.getCacheAtHost(\
+                                    payload['host'], payload['se'])
              
                 # Select a task to assign to this pilot 
-#                res = self.queries.getTaskAtState(taskStates['Queued'])[0].fetchone()
-                res = self.queries.getTaskAtState(taskStates['Queued'])
 #                self.logger.debug("From SELECT query: %s" % res)
+#                res = self.queries.getTaskAtState(taskStates['Queued'])
+                res = self.matcher.matchTask(payload)
              
                 if not res:
                     result = 'NoTaskAvailable'
+                    myThread.transaction.rollback()
                     return {'msgType': result, 'payload': fields}
              
-                [taskId, taskSpecFile, taskSandbox] = res[0]
-#                taskId = res['id']
-#                specFile = res['spec']
-#                sandbox = res['sandbox']
+                taskId = res['id']
+                taskSpecFile = res['spec']
+                taskSandbox = res['sandbox']
 #                messg = "taskId, taskSpecFile, taskSandbox:"
 #                messg += " %s, %s, %s" %(taskId,taskSpecFile,taskSandbox)
 #                self.logger.debug(messg)
              
                 # Update task table with this assignment
-                myThread.transaction.begin()
                 vars = {'pilot': pilotId, 'state': taskStates['Assigned']}
-                self.logger.debug("updateTask vars: %s" % (vars))
-                self.queries.updateTask(taskId, vars)
-                
-                # Update pilot table with his host
-                vars = {'host': host}
-                self.logger.debug("updatePilot vars: %s" % (vars))
+                self.logger.debug("updateOneTask vars: %s" % (vars))
+                self.queries.updateOneTask(taskId, vars)
+               
+                # In principle, pilot should have registered before 
+                # (so no host update should occur here)
+                # but we update the hearbeat
+#                  # Update pilot table with his host
+#                vars = {'host': host}
+                vars = {'last_heartbeat': None}
+#                self.logger.debug("updatePilot vars: %s" % (vars))
                 self.queries.updatePilot(pilotId, vars)
              
                 self.logger.info("Assigning task %s to pilot %s" % (taskId, pilotId))
@@ -114,9 +148,9 @@ class GetTaskHandler(object):
                 myThread.transaction.commit()
               
             except:
-                type, val, tb = sys.exc_info()
+                ttype, val, tb = sys.exc_info()
                 myThread.transaction.rollback()
-                messg = 'Could not assign task, due to: %s - %s '% (type, val)
+                messg = 'Could not assign task, due to: %s - %s '% (ttype, val)
                 self.logger.warning(messg + "Trace: %s"% extract_tb(tb,limit=5))
                 result = 'Error'
                 fields = {'Error': messg}

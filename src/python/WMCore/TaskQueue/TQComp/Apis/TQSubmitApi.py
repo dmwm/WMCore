@@ -7,8 +7,8 @@ from TQComp.Apis.TQApi.
 """
 
 __all__ = []
-__revision__ = "$Id: TQSubmitApi.py,v 1.1 2009/04/27 07:52:26 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQSubmitApi.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import threading
@@ -54,7 +54,7 @@ class TQSubmitApi(TQApi):
         todel = []
         for task in taskList:
             try:
-                validateTask()
+                validateTask(task)
             except ValueError, inst:
                 self.logger.warning('%s' % inst)
                 todel.insert(0,where)
@@ -64,13 +64,13 @@ class TQSubmitApi(TQApi):
             taskList.pop(i)
            
         self.transaction.begin()
-        self.queries.addBulk(taskList)
+        self.queries.addTasksBulk(taskList)
         self.transaction.commit()
 
     
     def insertTask(self, task):
         """
-        Insert a task.
+        Insert a task in the queue.
         The 'task' must be a dict as defined in TQComp.Apis.TQApiData.Task.
         """
 
@@ -82,6 +82,66 @@ class TQSubmitApi(TQApi):
             
         # Insert job and its characteristics into the database
         self.transaction.begin()
-        self.queries.add(task)
+        self.queries.addTask(task)
         self.transaction.commit()
 
+
+    def removeOneTask(self, taskid):
+        """
+        Remove a task from the queue.
+        The 'taskid' must be an existing task ID (otherwise, nothing is done).
+        """
+        self.transaction.begin()
+        self.queries.removeOneTask(taskid)
+        self.transaction.commit()
+
+
+    def removeTasks(self, filter, deleteAll = False):
+        """
+        Remove matching tasks from the queue (filter will be used in the 
+        predicate of WHERE clause).
+        
+        NOTE: If filter is empty, no deletion will be performed. To delete
+        all tasks, set the deleteAll flag to True (the filter will be ignored).
+        """
+        if (not filter) and (not deleteAll):
+            self.logger.warning("No 'filter' provided and 'deleteAll' flag \
+not set. Doing nothing.")
+            return
+
+        if deleteAll:
+            filter = {}
+        
+        self.transaction.begin()
+        self.queries.removeTasks(filter)
+        self.transaction.commit()
+
+
+    def updateTasks(self, idList, keys, vals):
+        """
+        Updates tasks whose id is in 'idList' with the keys in
+        'keys' and the values in 'vals' (if empty, then nothing is done). 
+
+        For same values to all updates (applied to different ids), 'vals'
+        should be a list of the same length than 'keys' (otherwise, an
+        exception is raised).
+        
+        For different bindings for each id, 'vals' should be a list
+        of lists. The length of the external list must be the same of 
+        'idList' and the list of each member list must be as that of
+        'keys' (otherwise, an exception is raised).
+        """
+        self.transaction.begin()
+        self.queries.updateTasks(idList, keys, vals)
+        self.transaction.commit()
+
+
+    def updatePilot(self, pilotId, vars):
+        """
+        Updates pilot with given id, using the fields in 'vars'.
+        If the field last_heartbeat is included with a value 
+        of 0, the CURRENT_TIMESTAMP is used for it.
+        """
+        self.transaction.begin()
+        self.queries.updatePilot(pilotId, vars)
+        self.transaction.commit()

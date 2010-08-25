@@ -10,8 +10,8 @@ messages and act on them according to configuration (see the 'RemoteMsg'
 module documentation).
 """
 
-__revision__ = "$Id: TQHttpTree.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TQHttpTree.py,v 1.3 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import threading
@@ -123,8 +123,8 @@ class HttpTree(object):
                         'payload': {'Path': subpath, 'Length': len(all)}}
                 return self.params['formatter'].format({'msg': data})
             except:
-                type, val, tb = sys.exc_info()
-                messg = "Problem storing file %s: %s - %s" % (path, type, val)
+                ttype, val, tb = sys.exc_info()
+                messg = "Problem storing file %s: %s - %s" % (path, ttype, val)
                 data = {'msgType': 'Error', \
                         'payload': {'Error': messg}}
                 return self.params['formatter'].format({'msg': data})

@@ -6,8 +6,8 @@ creates logger handler for logging
  
 """
 
-__revision__ = "$Id: CommonUtil.py,v 1.1 2009/04/24 09:59:14 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CommonUtil.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import logging
@@ -222,4 +222,3 @@ def commasLB(x,y):
     reduce(commasLB, vars)
     """
     return "%s,\n%s" % (x, y) 
-

@@ -25,7 +25,9 @@ SYNOPSIS
 ========
 tqclient [-v] -c <conf-file> <command> ["<arg>" ..]
 
-tqclient --showcommands
+tqclient --showcommands 
+
+tqclient [-v] --showargs <command>
 
 tqclient [-u | -h]
 
@@ -34,7 +36,9 @@ OPTIONS
 =======
 -c, --config <conf-file>   Indicates configuration file for TQComp
 
---showcommands   Lists acceptable command
+--showcommands    Lists acceptable command
+
+--showargs <cmd>  Lists argument names for command
 
 -v, --verbose   Print of extra informative messages in the run
                 of the command. 
@@ -59,19 +63,54 @@ $> tqclient -c confFile.py  getTasks "{'state': 0}"
 ]
 
 
+$> tqclient -c $TQCONF  getTasks "{'id': 20}" "[]" 5 True
+[
+{'state': 1L, 'creat_time': datetime.datetime(2009, 5, 8, 18, 26, 37), 'spec':
+'/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-8-JobSpec.xml',
+'reqs': None, 'sandbox':
+'/pool/TaskQueue/playground/sandbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz',
+'wkflow': 'prod_B', 'current_state_time': datetime.datetime(2009, 5, 27, 14, 12,
+39), 'type': 3L, 'id': 20L, 'pilot': 1L}
+]
+
+
+$> tqclient -c $TQCONF  getPilots "{'se': 'srm.cern.ch'}" "['id', 'se', 'host']" 2 True
+[
+{'host': 'somehost.cern.ch', 'id': 1L, 'se': 'srm.cern.ch'},
+{'host': 'somehost.cern.ch', 'id': 2L, 'se': 'srm.cern.ch'}
+]
+
+
 $> tqclient -c confFile.py  -f /tmp/insertTaskCmd
 
 # Where /tmp/insertTaskCmd contains (2 lines):
 -------------------------------------
 insertTask "{'spec': '/pool/TaskQueue/playground/specs/Test-QCDpt_0_15-IDEAL_V9_TestPA01-
 8-JobSpec.xml', 'wkflow': 'prod_A' , 'type': 5, 'sandbox': '/pool/TaskQueue/playground/sa
-ndbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz'}"
+ndbox/Test-QCDpt_0_15-IDEAL_V9_TestPA01-Processing.tar.gz', 'reqs':
+'se==\'srm.cern.ch\''}"
 
 insertTask "{'spec': '/pool/TaskQueue/playground/specs/Some-Other-spec-file.xml', 'wkflow
 ': 'test_3' , 'type': 3, 'sandbox': '/pool/TaskQueue/playground/sandbox/Some-Other-sandbo
-x-file.tgz'}"
+x-file.tgz', 'reqs': 'se==\'srm.cern.ch\' and \'f1\' in cache' }"
 -------------------------------------
 
+
+
+$> tqclient -c $TQCONF getPilotsPerHost 
+{
+('fake.cern.ch', 'somehost.cern.ch') = [5L]
+('srm.cern.ch', 'other_host.cern.ch') = [3L]
+('srm.cern.ch', 'somehost.cern.ch') = [1L, 2L, 4L]
+}
+
+
+$> tqclient -c $TQCONF getDataPerHost 
+{
+('fake.cern.ch', 'somehost.cern.ch') = ['fa']
+('srm.cern.ch', 'other_host.cern.ch') = ['fd', 'fc', 'fg']
+('srm.cern.ch', 'somehost.cern.ch') = ['fb', 'fe']
+}
 """
 
 
@@ -79,7 +118,6 @@ x-file.tgz'}"
 import sys
 import getopt
 import logging
-import threading 
 from WMCore import Configuration
 from TQComp.CommonUtil import commasLB
 
@@ -218,7 +256,7 @@ def main():
 
     # Options
     longoptions=["help", "usage", "verbose", "showcommands", "config=", \
-                 "from-file="]
+                 "from-file=", "showargs"]
     try:
         # For options with args, just add ':' after the option letter here
         optlist, args = getopt.getopt(sys.argv[1:], 'huvc:f:', longoptions)
@@ -230,6 +268,7 @@ def main():
     verb = False
     confFile = None   
     fname = None
+    showargs = False
     for opt, val in optlist:
         if opt in ("-h", "--help"):
             help()
@@ -244,13 +283,15 @@ def main():
         elif opt in ("--showcommands"):
             showcommands(cmds)
             sys.exit(0)
+        elif opt in ("--showargs"):
+            showargs = True
         elif opt in ("-f", "--from-file"):
             fname = val
 
            
     # Option checking
-    if not confFile:
-        err("Option --config is compulsory\n")
+    if (not confFile) and (not showargs):
+        err("You must use either --showcommands, --from-file or --config\n")
         usage()
         return 2
 
@@ -272,10 +313,6 @@ def main():
         lines = [args[0]]
         args = args[1:]
  
-
-    mylogger = setLogging(verb)
-    myconfig = Configuration.loadConfigurationFile(confFile)
-
 
     # Now run once per specified command
     for line in lines:
@@ -301,12 +338,24 @@ def main():
         if not myclass:
             err("Not supported command: %s" % thecmd)
             continue
-    
+   
+        # If showargs, just do it and exit
+        if showargs:
+            # Get reference to method without instance
+            mymethod = getattr(myclass, thecmd)
+            nargs = mymethod.func_code.co_argcount
+            print mymethod.func_code.co_varnames[:nargs]
+            return 0
+
         # Instantiate API
+        mylogger = setLogging(verb)
+        myconfig = Configuration.loadConfigurationFile(confFile)
         tqApi = myclass(mylogger, myconfig, None)
 
-        # Call indicated method
+        # Get indicated method
         mymethod = getattr(tqApi, thecmd)
+       
+        # Call method
         out = mymethod(*args)
 
         args = None
@@ -314,7 +363,12 @@ def main():
         if out:
             if verb:
                 print "\n--Command output follows:"
-            if hasattr(out, '__iter__'):
+            if type(out) == dict:
+                print '{'
+                for i in out:
+                    print "%s = %s" % (i, out[i])
+                print '}'
+            elif hasattr(out, '__iter__'):
                 print '['
                 print reduce(commasLB, out)
                 print ']'

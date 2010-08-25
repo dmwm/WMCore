@@ -59,6 +59,10 @@ config.TQComp.sandboxBasePath = \
 config.TQComp.reportBasePath = \
          "/pool/TaskQueue/cms_code/work/pa/workdir/JobCreator/"
 
+# Default tasks-pilots matcher (selects a task for a pilot requesting one)
+# Do not change (or uncomment) unless really sure!
+#config.TQComp.matcherPlugin = "TQComp.FlexPyMatchmaker"
+
 # Message handlers could be added as well
 # (but there are none at this time)
 
@@ -91,7 +95,7 @@ config.TQListener.httpServerPort = '20030'
 config.TQListener.maxThreads = 20
 
 # The formatter for messages (json).
-# Do not change (uncomment) unless really sure!
+# Do not change (or uncomment) unless really sure!
 #config.TQListener.formatter = "TQComp.DefaultFormatter"
 
 # TQListener DB setting:

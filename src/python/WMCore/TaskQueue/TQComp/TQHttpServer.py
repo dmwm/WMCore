@@ -8,8 +8,8 @@ terminating) a cherrypy server that listens to incoming remote
 messages. Behaviour of this server is managed by a HttpTree object.
 """
 
-__revision__ = "$Id: TQHttpServer.py,v 1.1 2009/04/24 09:59:15 delgadop Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TQHttpServer.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 #import os

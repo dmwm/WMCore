@@ -5,8 +5,8 @@ _TQListener_
 
 """
 
-__revision__ = "$Id: TQListener.py,v 1.2 2009/04/30 09:00:23 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: TQListener.py,v 1.3 2009/06/01 09:57:08 delgadop Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 import os

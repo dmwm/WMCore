@@ -1,9 +1,19 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0201, W0142, W0102
+# W0201: Steve defines all global vars in __call__
+#   I don't know why, but I'm not getting blamed for it
+# W0142: Dave loves the ** magic
+# W0102: Dangerous default values?  I live on danger!
+#   Allows us to use a dict as a default
 """
 _ReReco_
 
 Standard ReReco workflow.
 """
+
+
+__version__ = "$Id: ReReco.py,v 1.29 2010/06/11 15:23:46 mnorman Exp $"
+__revision__ = "$Revision: 1.29 $"
 
 import subprocess
 
@@ -118,7 +128,8 @@ class ReRecoWorkloadFactory():
     def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
                             inputModule = None, scenarioName = None,
                             scenarioFunc = None, scenarioArgs = None, couchUrl = None,
-                            couchDBName = None, configDoc = None, splitAlgo = "FileBased"):
+                            couchDBName = None, configDoc = None, splitAlgo = "FileBased",
+                            splitArgs = {'files_per_job': 1}):
         """
         _setupProcessingTask_
 
@@ -145,7 +156,7 @@ class ReRecoWorkloadFactory():
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()
-        procTask.setSplittingAlgorithm(splitAlgo, files_per_job = 1)
+        procTask.setSplittingAlgorithm(splitAlgo, **splitArgs)
         procTask.addGenerator("BasicNaming")
         procTask.addGenerator("BasicCounter")
         procTask.setTaskType(taskType)
@@ -326,6 +337,10 @@ class ReRecoWorkloadFactory():
         self.maxMergeSize = arguments.get("MaxMergeSize", 4294967296)
         self.maxMergeEvents = arguments.get("MaxMergeEvents", 100000)
         self.emulation = arguments.get("Emulation", False)
+        self.stdJobSplitAlgo  = arguments.get("StdJobSplitAlgo", 'FileBased')
+        self.stdJobSplitArgs  = arguments.get("StdJobSplitArgs", {'files_per_job': 1})
+        self.skimJobSplitAlgo = arguments.get("SkimJobSplitAlgo", 'TwoFileBased')
+        self.skimJobSplitArgs = arguments.get("SkimJobSplitArgs", {'files_per_job': 1})
 
         # Derived parameters.
         #self.workloadName = workloadName or "ReReco-%s" % self.processingVersion
@@ -350,7 +365,8 @@ class ReRecoWorkloadFactory():
                                  scenarioName = self.scenario, scenarioFunc = "promptReco",
                                  scenarioArgs = {"globalTag": self.globalTag, "writeTiers": ["RECO", "ALCARECO"]}, 
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
-                                 configDoc = procConfigDoc) 
+                                 configDoc = procConfigDoc, splitAlgo = self.stdJobSplitAlgo,
+                                 splitArgs = self.stdJobSplitArgs) 
         self.addLogCollectTask(procTask)
 
         procOutput = {}
@@ -372,7 +388,8 @@ class ReRecoWorkloadFactory():
         parentCmsswStep = parentMergeTask.getStep("cmsRun1")
         self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
                                  couchUrl = self.couchUrl, couchDBName = self.couchDBName,
-                                 configDoc = skimConfigDoc, splitAlgo = "TwoFileBased")
+                                 configDoc = skimConfigDoc, splitAlgo = self.skimJobSplitAlgo,
+                                 splitArgs = self.skimJobSplitArgs)
         #addLogCollectTask(skimTask)
 
         skimOutputModules = self.getOutputModuleInfo(self.skimConfig,

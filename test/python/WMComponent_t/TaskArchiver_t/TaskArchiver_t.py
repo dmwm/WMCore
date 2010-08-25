@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: TaskArchiver_t.py,v 1.3 2010/03/22 18:57:10 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TaskArchiver_t.py,v 1.4 2010/03/22 19:19:51 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import logging
@@ -55,7 +55,8 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.MsgService", 
+                                                 "WMCore.ThreadPool", 'WMCore.WorkQueue.Database'],
                                 useDefault = False)
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -90,14 +91,16 @@ class TaskArchiverTest(unittest.TestCase):
         config.General.workDir = "."
 
         config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl    = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
-        config.JobStateMachine.couchDBName = "job_accountant_t"
+        config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
+        config.JobStateMachine.couchDBName  = "job_accountant_t"
 
         config.component_("TaskArchiver")
-        config.TaskArchiver.componentDir = self.testInit.generateWorkDir()
-        config.TaskArchiver.pollInterval  = 60
-        config.TaskArchiver.logLevel      = 'SQLDEBUG'
-        config.TaskArchiver.timeOut       = 0
+        config.TaskArchiver.componentDir    = self.testInit.generateWorkDir()
+        config.TaskArchiver.WorkQueueParams = {}
+        
+        config.TaskArchiver.pollInterval    = 60
+        config.TaskArchiver.logLevel        = 'SQLDEBUG'
+        config.TaskArchiver.timeOut         = 0
 
         return config
         

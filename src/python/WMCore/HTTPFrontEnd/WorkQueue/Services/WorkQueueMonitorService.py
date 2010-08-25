@@ -23,7 +23,7 @@ TODO:
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService.py,v 1.13 2010/04/12 20:54:13 maxa Exp $"
+__revision__ = "$Id: WorkQueueMonitorService.py,v 1.14 2010/05/04 14:39:49 sryu Exp $"
 __version__ = "$Revision"
 
 
@@ -62,7 +62,8 @@ class WorkQueueMonitorService(ServiceInterface):
                                            dbinterface = self.model.dbi)
         # WorkQueue.status signature:
         # status(self, status = None, before = None, after = None, elementIDs = None, dictKey = None)
-        
+        self.model.addDAO("GET", "elementsinfo", "Monitor.ElementsInfo")
+        self.model.addDAO("GET", "workloadprogress", "Monitor.WorkloadsWithProgress")
         self.model.addDAO("GET", "elements", "Monitor.Elements")
         self.model.addDAO("GET", "sites", "Monitor.Sites")
         self.model.addDAO("GET", "data", "Monitor.Data")

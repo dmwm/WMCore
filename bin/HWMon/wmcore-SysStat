@@ -109,8 +109,8 @@ Help: '--config=' option is obligatory, you must always provide WMCore
         --resources=<list> - for general machine Resources;
         --disks=<list> - for machine Disks;
         
-      You can speficy output format for '--status' command by
-      providing '--ouput=' option. Possible values:
+      You can speficy output format for '--status' and '--list=' 
+      commands by providing '--ouput=' option. Possible values:
         TUI - Text User Interface (best for terminal);
         XML - Best for third-party applications;
         JSON - Best for web-based applications;
@@ -309,7 +309,7 @@ def kill(pid, signal):
         else:
             raise
 
-def output(caller, data):
+def formatOutput(caller, data):
     """
     Prints '--status' information in '--output=' specified fromat.
     """
@@ -317,13 +317,68 @@ def output(caller, data):
     global CMD_TYPE, OUT_TYPE
     global output
     
+    def status_XML(data):
+        msg = "<?xml version=\"1.0\"?>\n"
+        msg += "<targets>\n"
+        for ttype in data:
+            for target in data[ttype]:
+                msg += "<target type=\"%s\" name=\"%s\">\n" % (ttype, target)
+                for status in  data[ttype][target]:
+                    msg += "<status type=\"%s\" status=\"%s\" pid=\"%s\"/>\n" % \
+                           (status, data[ttype][target][status][0], data[ttype][target][status][1])
+                msg += "</target>\n"
+        msg += "</targets>"
+        return msg
+    
+    # TODO: Other formats
+    def status_TUI(data):
+        def showPid(format, pid):
+            if pid != 0:
+                return str(pid)
+            else:
+                return format[2]
+                
+        def showStatus(format, status, ttype = "NONE"):
+            if ttype in ["DISK", "RESOURCE"]:
+                return format[2]
+            else:
+                return format[status]
+                
+        status = ["\033[41m OFF  \033[m", "\033[42m  ON  \033[m", "\033[43m  NO  \033[m"]
+        
+        msg = "\033[30m\033[47m%-11s | %-40s | %-5s | %-6s | %-5s | %-6s | %-5s | %-6s\033[m\n" %\
+              ("Target Type", "Target Name", "Target", "-->Pid", "Daemon", "-->Pid", "Sensor", "-->Pid")
+        for ttype in data:
+            for target in data[ttype]:
+                msg += "%-11s | %-40s | %-5s | %-6s | %-5s | %-6s | %-5s | %-6s\n" %\
+                       (ttype, target, showStatus(status, data[ttype][target]['TARGET'][0], ttype), showPid(status, data[ttype][target]['TARGET'][1]), \
+                       showStatus(status, data[ttype][target]['DAEMON'][0]), showPid(status, data[ttype][target]['DAEMON'][1]), \
+                       showStatus(status, data[ttype][target]['SENSOR'][0]), showPid(status, data[ttype][target]['SENSOR'][1]))
+                    
+        return msg
+    
     def list_XML(data):
-        print data
+        msg = "<?xml version=\"1.0\"?>\n"
+        msg += "<targets>\n"
+        for ttype in data:
+            for target in data[ttype]:
+                msg += "<target type=\"%s\">%s</target>\n" % (ttype, target)
+        msg += "</targets>"
+        return msg
         
     def list_TUI(data):
-        print data
+        msg = ""
+        msg += "\033[30m\033[47m%-11s | %-40s \033[m\n" % ("Target Type", "Target")
+        for ttype in data:
+            for target in data[ttype]:
+                msg += "%-11s | %-56s\n" % (ttype, target)
+        return msg
     
-    locals()[CMD_TYPE[caller].lower() + "_" + OUT_TYPE[output]](data)
+    template = CMD_TYPE[caller].lower() + "_" + OUT_TYPE[output]
+    if template in locals():
+        return locals()[template](data)
+    else:
+        return "Can not find template '%s'" % template
 
 def start():
     """
@@ -370,28 +425,25 @@ def start():
             sensord = subprocess.Popen(cmd)
             time.sleep(1)
             sensord.poll()
+            
+            pid = 0
+            if ttype == ITEM_WMCOMPONENT:
+                pid = isWMComponentRunning(target)[1]
+            elif ttype == ITEM_SERVICE:
+                pid = isServiceRunning(target)[1]
+            
             if sensord.returncode == None:
-                if ttype == ITEM_WMCOMPONENT:
-                    print "%-7s | Sensor (pid: %s) for %s %s (pid: %s) started." \
-                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target, str(isWMComponentRunning(target)[1]))
-                elif ttype == ITEM_SERVICE:
-                    print "%-7s | Sensor (pid: %s) for %s %s (pid: %s) started." \
-                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target, str(isServiceRunning(target)[1]))
-                else:
-                    print "%-7s | Sensor (pid: %s) for %s %s started." \
-                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target)
-            else:
-                # TODO: Statistical information can be more shortener through call
-                pid = 0
-                if ttype == ITEM_WMCOMPONENT:
-                    pid = isWMComponentRunning(target)[1]
-                elif ttype == ITEM_SERVICE:
-                    pid = isServiceRunning(target)[1]
-                    
                 if pid != 0:
-                    print "%-7s | Sensor for %s %s (pid: %s) did not start." % (status[0], ITEM_TYPE[ttype], target, str(pid))
+                    print "%-7s | Sensor daemon (pid: %s) for %s %s (pid: %s) started." \
+                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target, pid)
                 else:
-                    print "%-7s | Sensor for %s %s did not start." % (status[0], ITEM_TYPE[ttype], target)
+                    print "%-7s | Sensor daemon (pid: %s) for %s %s started." \
+                          % (status[1], str(sensord.pid), ITEM_TYPE[ttype], target)
+            else:                
+                if pid != 0:
+                    print "%-7s | Sensor daemon for %s %s (pid: %s) did not start." % (status[0], ITEM_TYPE[ttype], target, str(pid))
+                else:
+                    print "%-7s | Sensor daemon for %s %s did not start." % (status[0], ITEM_TYPE[ttype], target)
     
 def shutdown():
     """
@@ -421,7 +473,6 @@ def restart():
     print ">>> Starting up specified sensor daemons."
     start()
 
-# TODO: Should support output format 
 def status():
     """
     Gives sensors information.
@@ -441,27 +492,30 @@ def status():
         print "No information for specified targets."
         return
     
-    print "\033[30m\033[47m%-11s | %-40s | %-5s | %-6s | %-5s | %-6s | %-5s | %-6s\033[m" \
-          % ("Target Type", "Target Name", "Target", "-->Pid", "Daemon", "-->Pid", "Sensor", "-->Pid")
+    data = {}
+    
     for ttype in specifiedList:
+        data[ITEM_TYPE[ttype]] = {}
         for target in specifiedList[ttype]:
             statSensorDaemon = isSensorDaemonRunning(target)
             statSensor = isSensorRunning(target)
-       
+            stat = None
+            
+            data[ITEM_TYPE[ttype]][target] = {}
+            
             if ttype == ITEM_WMCOMPONENT:
-                statWMComponent = isWMComponentRunning(target)
-                print "%-11s | %-40s | %-5s | %-6s | %-5s | %-6s | %-5s | %-6s" \
-                      % (ITEM_TYPE[ttype], target, status[statWMComponent[0]], showPid(status, statWMComponent[1]), \
-                      status[statSensorDaemon[0]], showPid(status, statSensorDaemon[1]), status[statSensor[0]], showPid(status, statSensor[1]))
+                stat = isWMComponentRunning(target)
+
             elif ttype == ITEM_SERVICE:
-                statService = isServiceRunning(target)
-                print "%-11s | %-40s | %-5s | %-6s | %-5s | %-6s | %-5s | %-6s" \
-                      % (ITEM_TYPE[ttype], target, status[statService[0]], showPid(status, statService[1]), \
-                      status[statSensorDaemon[0]], showPid(status, statSensorDaemon[1]), status[statSensor[0]], showPid(status, statSensor[1]))
+                stat = isServiceRunning(target)
             else:
-                print "%-11s | %-40s | %-5s | %-6s | %-5s | %-6s | %-5s | %-6s" \
-                % (ITEM_TYPE[ttype], target, status[2], status[2], status[statSensorDaemon[0]], showPid(status, statSensorDaemon[1]), \
-                status[statSensor[0]], showPid(status, statSensor[1]))
+                stat = [False, 0]
+                
+            data[ITEM_TYPE[ttype]][target]["TARGET"] = [stat[0], stat[1]]
+            data[ITEM_TYPE[ttype]][target]["DAEMON"] = [statSensorDaemon[0], statSensorDaemon[1]]
+            data[ITEM_TYPE[ttype]][target]["SENSOR"] = [statSensor[0], statSensor[1]]
+            
+    print formatOutput(CMD_STATUS, data)
 
 def prepareAvailableList(arg):
     """
@@ -473,24 +527,31 @@ def prepareAvailableList(arg):
     
     valid = ['WMComponent', 'Service', 'Resource', 'Disk']
     
-    targetTypeList = arg.split(",")
     listAvail = {}
-    for ttype in targetTypeList:
-        if len(ttype.strip()) == 0:
-            continue
-        if ttype in valid:
-            targetType = ITEM_TYPE.index(ttype.upper())
-            if targetType == ITEM_WMCOMPONENT:
-                loadConfiguration()
-                listAvail[ITEM_WMCOMPONENT] = config.listComponents_()
-            elif targetType == ITEM_SERVICE:
-                listAvail[ITEM_SERVICE] = servicesList.keys()
-            elif targetType == ITEM_RESOURCE:
-                listAvail[ITEM_RESOURCE] = resourcesList
-            elif targetType == ITEM_DISK:
-                listAvail[ITEM_DISK] = disks()
-        else:
-            warning("Ignoring target type: %s." % ttype)
+    
+    loadConfiguration()
+    if len(arg) == 0:
+        listAvail[ITEM_WMCOMPONENT] = config.listComponents_()
+        listAvail[ITEM_SERVICE] = servicesList.keys()
+        listAvail[ITEM_RESOURCE] = resourcesList
+        listAvail[ITEM_DISK] = disks()
+    else:    
+        targetTypeList = arg.split(",")
+        for ttype in targetTypeList:
+            if len(ttype.strip()) == 0:
+                continue
+            if ttype in valid:
+                targetType = ITEM_TYPE.index(ttype.upper())
+                if targetType == ITEM_WMCOMPONENT:
+                    listAvail[ITEM_WMCOMPONENT] = config.listComponents_()
+                elif targetType == ITEM_SERVICE:
+                    listAvail[ITEM_SERVICE] = servicesList.keys()
+                elif targetType == ITEM_RESOURCE:
+                    listAvail[ITEM_RESOURCE] = resourcesList
+                elif targetType == ITEM_DISK:
+                    listAvail[ITEM_DISK] = disks()
+            else:
+                warning("Ignoring target type: %s." % ttype)
             
     return listAvail
 
@@ -504,14 +565,12 @@ def available():
     
     data = {}
     if len(availableList) == 0:
-        print "No targets for specified target types."
-        sys.exit(0)
+        return  "No targets for specified target types."
     
     for ttype in availableList:
         data[ITEM_TYPE[ttype]] = availableList[ttype]
-        output(CMD_LIST, data)
     
-    return msg
+    return formatOutput(CMD_LIST, data)
 
 ##########################
 ### Global definitions ###

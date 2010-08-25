@@ -22,6 +22,6 @@ class Documentation(TemplatedPage):
     @expose
     def default(self, *args, **kwargs):
         if len(args) > 0:
-            return self.templatepage(args[0])
+            return self.templatepage(args[0], config=self.config)
         else:
             return self.index()

@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.21 $"
-__revision__ = "$Id: Report.py,v 1.21 2010/04/12 20:36:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Report.py,v 1.22 2010/04/14 19:23:18 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -19,30 +19,6 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.FileInfo import FileInfo
-
-def jsonise(cfgSect):
-    result = {}
-    result['section_name_'] = cfgSect._internal_name
-    result['sections_'] = []
-    d = cfgSect.dictionary_()
-    for key, value in d.items():
-        if key in cfgSect._internal_children:
-            result[key] = jsonise(value)
-            result['sections_'].append(key)
-        else:
-            result[key] = value
-    return result
-
-def dejsonise(jsondict):
-    section = ConfigSection(jsondict['section_name_'])
-    sectionList = jsondict['sections_']
-    for key, value in jsondict.items():
-        if key in ("sections_", "section_name_"): continue
-        if key in sectionList:
-            setattr(section, key, dejsonise(value))
-        else:
-            setattr(section, key, value)
-    return section
 
 def checkFileForCompletion(file):
     """
@@ -150,23 +126,74 @@ class Report:
             print crashMessage
             self.addError("UnknownStep", 50115, "MissingJobReport", msg)
 
-    def json(self):
+    def __to_json__(self, thunker):
         """
-        _json_
+        __to_json__
 
-        convert into JSON dictionary object
+        Create a JSON version of the Report.
+        """
+        def jsonizeFiles(reportModule):
+            jsonFiles = []
+            fileCount = getattr(reportModule.files, "fileCount", 0)
+
+            for i in range(fileCount):
+                reportFile = getattr(reportModule.files, "file%s" % i)
+                jsonFile = reportFile.dictionary_()
+
+                cfgSectionRuns = jsonFile["runs"]
+                jsonFile["runs"] = {}
+                for runNumber in cfgSectionRuns.listSections_():
+                    jsonFile["runs"][int(runNumber)] = getattr(cfgSectionRuns,
+                                                               runNumber)
+                jsonFiles.append(jsonFile)
+
+            return jsonFiles
+
+        jsonReport = {}
+
+        for stepName in self.listSteps():
+            reportStep = self.retrieveStep(stepName)
+            jsonStep = {}
+            jsonStep["status"] = reportStep.status
+
+            jsonStep["output"] = {}
+            for outputModule in reportStep.outputModules:
+                reportOutputModule = getattr(reportStep.output, outputModule)
+                jsonStep["output"][outputModule] = jsonizeFiles(reportOutputModule)                
+
+            jsonStep["input"] = {}
+            for inputSource in reportStep.input.listSections_():
+                reportInputSource = getattr(reportStep.input, inputSource)
+                jsonStep["input"][inputSource] = jsonizeFiles(reportInputSource)                
+
+            jsonStep["errors"] = []
+            errorCount = getattr(reportStep.errors, "errorCount", 0)
+            for i in range(errorCount):
+                reportError = getattr(reportStep.errors, "error%i" % i)
+                jsonStep["errors"].append({"type": reportError.type,
+                                           "details": reportError.details,
+                                           "exitCode": reportError.exitCode})
+                
+            jsonStep["cleanup"] = {}
+            jsonStep["parameters"] = {}
+            jsonStep["site"] = {}
+            jsonStep["analysis"] = {}
+            jsonStep["logs"] = {}
+            jsonReport[stepName] = jsonStep
+        
+        return jsonReport
+
+    def stepSuccessful(self, stepName):
+        """
+        _stepSuccessful_
 
         """
-        return jsonise(self.data)
+        reportStep = self.retrieveStep(stepName)
 
-    def dejson(self, jsondicts):
-        """
-        _dejson_
+        if int(getattr(reportStep, "status", 1)) == 0:
+            return True
 
-        Convert JSON provided into ConfigSection structure
-
-        """
-        self.data = dejsonise(self.data)
+        return False
 
     def persist(self, filename):
         """
@@ -268,13 +295,15 @@ class Report:
         """
         _addInputSource_
 
-        Add an input source
-
+        Add an input source to the report doing nothing if the input source
+        already exists.
         """
+        if hasattr(self.report.input, sourceName):
+            return getattr(self.report.input, sourceName)
+            
         self.report.input.section_(sourceName)
         srcMod = getattr(self.report.input, sourceName)
         srcMod.section_("files")
-        srcMod.section_("dataset")
         srcMod.files.fileCount = 0
 
         return srcMod
@@ -563,42 +592,54 @@ class Report:
 
         return listOfFiles
 
-    def getInputFilesFromStep(self, stepName, inputSource = "PoolSource"):
+    def getInputFilesFromStep(self, stepName, inputSource = None):
         """
         _getInputFilesFromStep_
 
-        Retrieve a list of input files from the given step.  This assumes that
-        the input source is the PoolSource.
+        Retrieve a list of input files from the given step.
         """
         step = self.retrieveStep(stepName)
 
+        inputSources = []
+        if inputSource == None:
+            inputSources = step.input.listSections_()
+        else:
+            inputSources = [inputSource]
+
         inputFiles = []
-        source = getattr(step.input, inputSource)
-        for fileNum in range(source.files.fileCount):
-            fwjrFile = getattr(source.files, "file%d" % fileNum)
+        for inputSource in inputSources:
+            source = getattr(step.input, inputSource)
+            for fileNum in range(source.files.fileCount):
+                fwjrFile = getattr(source.files, "file%d" % fileNum)
 
-            lfn = getattr(fwjrFile, "lfn", None)
-            pfn = getattr(fwjrFile, "pfn", None)
-            size = getattr(fwjrFile, "size", 0)
-            events = getattr(fwjrFile, "events", 0)
-            branches = getattr(fwjrFile, "branches", [])
-            catalog = getattr(fwjrFile, "catalog", None)
-            guid = getattr(fwjrFile, "guid", None)
+                lfn = getattr(fwjrFile, "lfn", None)
+                pfn = getattr(fwjrFile, "pfn", None)
+                size = getattr(fwjrFile, "size", 0)
+                events = getattr(fwjrFile, "events", 0)
+                branches = getattr(fwjrFile, "branches", [])
+                catalog = getattr(fwjrFile, "catalog", None)
+                guid = getattr(fwjrFile, "guid", None)
+                inputSourceClass = getattr(fwjrFile, "input_source_class", None)
+                moduleLabel = getattr(fwjrFile, "module_label", None)
+                inputType = getattr(fwjrFile, "input_type", None)
 
-            inputFile = File(lfn = lfn, size = size, events = events)
-            inputFile["pfn"] = pfn
-            inputFile["branches"] = branches
-            inputFile["catalog"] = catalog
-            inputFile["guid"] = guid
+                inputFile = File(lfn = lfn, size = size, events = events)
+                inputFile["pfn"] = pfn
+                inputFile["branches"] = branches
+                inputFile["catalog"] = catalog
+                inputFile["guid"] = guid
+                inputFile["input_source_class"] = inputSourceClass
+                inputFile["module_label"] = moduleLabel
+                inputFile["input_type"] = inputType
 
-            runSection = getattr(fwjrFile, "runs")
-            runNumbers = runSection.listSections_()
+                runSection = getattr(fwjrFile, "runs")
+                runNumbers = runSection.listSections_()
 
-            for runNumber in runNumbers:
-                lumiTuple = getattr(runSection, str(runNumber))
-                inputFile.addRun(Run(int(runNumber), *lumiTuple))
+                for runNumber in runNumbers:
+                    lumiTuple = getattr(runSection, str(runNumber))
+                    inputFile.addRun(Run(int(runNumber), *lumiTuple))
 
-            inputFiles.append(inputFile)
+                inputFiles.append(inputFile)
 
         return inputFiles
 
@@ -692,3 +733,9 @@ class Report:
 
         return
                 
+if __name__ == "__main__":
+    myReport = Report("cmsRun1")
+    myReport.parse("/home/sfoulkes/WMCORE/test/python/WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
+
+    print myReport.data
+    print myReport.json()

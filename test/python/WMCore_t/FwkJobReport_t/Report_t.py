@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.3 2010/04/09 20:24:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Report_t.py,v 1.4 2010/04/14 19:23:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import unittest
 import os
@@ -273,8 +273,6 @@ class ReportTest(unittest.TestCase):
         self.verifyRecoOutput(myReport)
         self.verifyAlcaOutput(myReport)
 
-        # Verify storage statistcs.
-
         return
 
     @requiresPython26
@@ -282,6 +280,8 @@ class ReportTest(unittest.TestCase):
         """
         _testErrorReporting_
 
+        Verify that errors are correctly transfered from the XML report to the
+        python report.
         """
         cmsException = \
 """cms::Exception caught in cmsRun
@@ -321,6 +321,99 @@ cms::Exception caught in EventProcessor and rethrown
                                                                cmsException)
         
         return
+
+    @requiresPython26
+    def testMultipleInputs(self):
+        """
+        _testMultipleInputs_
+
+        Verify that parsing XML reports with multiple inputs works correctly.
+        """
+        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")        
+        myReport = Report("cmsRun1")
+        myReport.parse(xmlPath)
+
+        assert hasattr(myReport.data.cmsRun1.input, "source"), \
+               "Error: Report missing input source."
+
+        inputFiles = myReport.getInputFilesFromStep("cmsRun1")
+
+        assert len(inputFiles) == 2, \
+               "Error: Wrong number of input files."
+
+        for inputFile in inputFiles:
+            assert len(inputFile["branches"]) == 2, \
+                   "Error: Wrong number of branches."
+            assert "branch1" in inputFile["branches"], \
+                   "Error: Branch missing from input."
+            assert "branch2" in inputFile["branches"], \
+                   "Error: Branch missing from input."            
+            assert inputFile["input_type"] == "primaryFiles", \
+                   "Error: Wrong input type."
+            assert inputFile["module_label"] == "source", \
+                   "Error: Module label is wrong"
+            assert inputFile["catalog"] == "trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap", \
+                   "Error: Catalog is wrong."
+            assert inputFile["events"] == 2, \
+                   "Error: Wrong number of events."
+            assert inputFile["input_source_class"] == "PoolSource", \
+                   "Error: Wrong input source class."
+
+            if inputFile["guid"] == "F0875ECD-3347-DF11-9FE0-003048678A80":
+                assert inputFile["lfn"] == "/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/F0875ECD-3347-DF11-9FE0-003048678A80.root", \
+                       "Error: Input LFN is wrong."
+                assert inputFile["pfn"] == "dcap://cmsdca3.fnal.gov:24142/pnfs/fnal.gov/usr/cms/WAX/11/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/F0875ECD-3347-DF11-9FE0-003048678A80.root", \
+                       "Error: Input PFN is wrong."
+                assert len(inputFile["runs"]) == 1, \
+                       "Error: Wrong number of runs."
+                assert list(inputFile["runs"])[0].run == 124216, \
+                       "Error: Wrong run number."
+                assert 1 in list(inputFile["runs"])[0], \
+                       "Error: Wrong lumi sections in input file."
+            else:
+                assert inputFile["guid"] == "626D74CE-3347-DF11-9363-0030486790C0", \
+                       "Error: Wrong guid."
+                assert inputFile["lfn"] == "/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/626D74CE-3347-DF11-9363-0030486790C0.root", \
+                       "Error: Input LFN is wrong."
+                assert inputFile["pfn"] == "dcap://cmsdca3.fnal.gov:24142/pnfs/fnal.gov/usr/cms/WAX/11/store/backfill/2/unmerged/WMAgentCommissioining10/MinimumBias/RECO/rereco_GR10_P_V4_All_v1/0000/626D74CE-3347-DF11-9363-0030486790C0.root", \
+                       "Error: Input PFN is wrong."
+                assert len(inputFile["runs"]) == 1, \
+                       "Error: Wrong number of runs."
+                assert list(inputFile["runs"])[0].run == 124216, \
+                       "Error: Wrong run number."
+                assert 2 in list(inputFile["runs"])[0], \
+                       "Error: Wrong lumi sections in input file."
+
+        return
+
+    @requiresPython26
+    def testJSONEncoding(self):
+        """
+        _testJSONEncoding_
+
+        Verify that turning the FWJR into a JSON object works correctly.
+        """
+        xmlPath = os.path.join(WMCore.WMInit.getWMBASE(),
+                               "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
+        myReport = Report("cmsRun1")
+        myReport.parse(xmlPath)
+
+        jsonReport = myReport.__to_json__(None)
+        assert len(jsonReport.keys()) == 1, \
+               "Error: Wrong number of steps in report."
+        assert "cmsRun1" in jsonReport.keys(), \
+               "Error: Step missing from json report."
         
+        cmsRunStep = jsonReport["cmsRun1"]
+
+        jsonReportSections = ["status", "errors", "logs", "parameters", "site",
+                              "analysis", "cleanup", "input", "output"]
+        for jsonReportSection in jsonReportSections:
+            assert jsonReportSection in cmsRunStep.keys(), \
+                "Error: missing section: %s" % jsonReportSection
+                
+        return
+    
 if __name__ == "__main__":
     unittest.main()

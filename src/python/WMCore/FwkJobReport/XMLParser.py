@@ -5,8 +5,8 @@ _XMLParser_
 Read the raw XML output from the cmsRun executable. 
 """
 
-__version__ = "$Revision: 1.7 $"
-__revision__ = "$Id: XMLParser.py,v 1.7 2010/04/09 15:57:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: XMLParser.py,v 1.8 2010/04/14 19:23:18 sfoulkes Exp $"
 
 import xml.parsers.expat
 
@@ -107,7 +107,7 @@ def inputFileHandler(targets):
     while True:
         report, node = (yield)
         moduleName = None
-        moduleNode = [ x for x in node.children if x.name == "InputSourceClass"][0]
+        moduleNode = [ x for x in node.children if x.name == "ModuleLabel"][0]
         moduleName = moduleNode.text
 
         moduleRef = report.addInputSource(moduleName)

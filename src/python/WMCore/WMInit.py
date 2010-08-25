@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.7 2009/02/09 12:35:52 fvlingen Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WMInit.py,v 1.8 2009/04/27 21:30:23 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -74,10 +74,13 @@ class WMInit:
 
         # note: setLogging needs to have been set prior to calling this!
         myThread = threading.currentThread()
-        if dialect == 'mysql':
+        if dialect.lower() == 'mysql':
             dialect = 'MySQL'
-        elif dialect == 'oracle':
+        elif dialect.lower() == 'oracle':
             dialect = 'Oracle'
+        elif dialect.lower() == 'sqlite':
+            dialect = 'SQLite'
+        
         myThread.dialect = dialect
 
         options = {}
@@ -108,7 +111,6 @@ class WMInit:
         # filter out unique modules
 
         myThread.transaction.begin()
-
         for factoryName in modules:
             # need to create these tables for testing.
             # notice the default structure: <dialect>/Create

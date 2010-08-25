@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.26 2010/02/11 17:55:44 sryu Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.27 2010/02/25 21:44:19 swakef Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import unittest
 import os
@@ -67,10 +67,21 @@ class WorkQueueTest(WorkQueueTestCase):
         self.blacklistSpec.data._internal_name = 'whitelistlistSpec'
         self.whitelistSpec.save(self.whitelistSpec.specUrl())
 
+        # setup Mock DBS and PhEDEx
+        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        mockDBS = MockDBSReader('http://example.com', dataset)
+        dbsHelpers = {'http://example.com' : mockDBS,
+                      'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet' : mockDBS,
+                      }
+
         # Create queues
         self.globalQueue = globalQueue(CacheDir = self.workDir,
                                        NegotiationTimeout = 0,
-                                       QueueURL = 'global.example.com')
+                                       QueueURL = 'global.example.com',
+                                       DBSReaders = dbsHelpers)
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
 #                            ParentQueue = self.globalQueue,
@@ -79,21 +90,14 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue = localQueue(ParentQueue = self.globalQueue,
                                      CacheDir = self.workDir,
                                      ReportInterval = 0,
-                                     QueueURL = "local.example.com")
+                                     QueueURL = "local.example.com",
+                                     DBSReaders = dbsHelpers)
         # standalone queue for unit tests
-        self.queue = WorkQueue(CacheDir = self.workDir)
+        self.queue = WorkQueue(CacheDir = self.workDir,
+                               DBSReaders = dbsHelpers)
 
-        # setup Mock DBS and PhEDEx
-        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        mockDBS = MockDBSReader('http://example.com', dataset)
         for queue in (self.queue, self.localQueue, self.globalQueue):
-            queue.dbsHelpers['http://example.com'] = mockDBS
-            queue.dbsHelpers['http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'] = mockDBS
             queue.phedexService = MockPhedexService(dataset)
-
 
     def tearDown(self):
         """tearDown"""
@@ -104,7 +108,6 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a production WMSpec.
         """
-        print "Test Production Spec"
         specfile = self.spec.specUrl()
         numBlocks = 2
         njobs = [1] * numBlocks # array of jobs per block
@@ -132,8 +135,6 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Test priority change functionality
         """
-        print "Test Priority"
-        
         numBlocks = 2
         njobs = [10] * numBlocks # array of jobs per block
         total = sum(njobs)
@@ -158,8 +159,6 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a processing WMSpec.
         """
-        print "Test Processing Spec"
-        
         specfile = self.processingSpec.specUrl()
         njobs = [1, 1] # array of jobs per block
         total = sum(njobs)
@@ -190,8 +189,6 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Black & White list functionality
         """
-        print "Test Black List"
-        
         specfile = self.blacklistSpec.specUrl()
         njobs = [5, 10] # array of jobs per block
         numBlocks = len(njobs)
@@ -245,8 +242,6 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Chain WorkQueues, pull work down and verify splitting
         """
-        print "Test White List"
-        
         self.assertEqual(0, len(self.globalQueue))
         # check no work in local queue
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
@@ -287,11 +282,9 @@ class WorkQueueTest(WorkQueueTestCase):
 
 
     def testQueueChainingNegotiationFailures(self):
-        
-        """Chain workQueues and verify status updates, negotiation failues etc"""
-        
-        print "Test testQueueChainingNegotiationFailures"
-        
+        """
+        Chain workQueues and verify status updates, negotiation failues etc
+        """
         # verify that negotiation failures are removed
         #self.globalQueue.flushNegotiationFailures()
         #self.assertEqual(len(self.globalQueue.status('Negotiating')), 0)
@@ -325,9 +318,6 @@ class WorkQueueTest(WorkQueueTestCase):
 
 
     def testQueueChainingStatusUpdates(self):
-        
-        print "Test testQueueChainingStatusUpdates"
-        
         """Chain workQueues, pass work down and verify lifecycle"""
         self.assertEqual(0, len(self.globalQueue))
         self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
@@ -370,7 +360,6 @@ class WorkQueueTest(WorkQueueTestCase):
         multiTaskProduction spec consist 2 top level tasks each task has event size 1000 and 2000
         respectfully  
         """
-        print "Test testMultiTaskProduction"
         #TODO: needs more rigorous test on each element per task
         # Basic production Spec
         spec = MultiTaskProductionWorkload

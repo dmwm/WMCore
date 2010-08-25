@@ -4,7 +4,7 @@ Unittest file for WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueService.py
 """
 
 __revision__ = "$Id"
-__version__ = "$Revision: 1.1 $"
+__version__ = "$Revision: 1.2 $"
 
 
 import os
@@ -144,10 +144,16 @@ class WorkQueueServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         self.globalQueue.queueWork(specUrl)
         
         testName = inspect.stack()[0][3]
+        contentType = "text/plain"
+        accept = "text/json"
         inpt = { "name" : "some-non-existing-name" }
         # raises HTTPError in the cherrypy application
-        data, exp = self._tester(testName, "GET", 404, "wf/", inpt)
-        #print data
+        output = {"code": 404, "type": accept}
+
+        url = self.urlbase + 'wf/'
+        print "input: %s" % inpt
+        data, exp = methodTest('GET', url,  accept = accept, input = inpt,
+                               contentType = contentType, output = output)
         
         # no workflow appear to the in the directory, don't know what else to test
                 

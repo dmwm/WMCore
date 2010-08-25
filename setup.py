@@ -96,7 +96,7 @@ def runUnitTests():
                 print "--AddTest %s" % oneTest.id()
                 testsuite.addTest( oneTest )
             except Exception, e:
-                print "AddTestFail: %s Exception %s" % (oneTest.id(), e)
+                print "AddTestFail: %s Exception %s" % (oneTest, e)
                 
     
     t = TextTestRunner(verbosity=2)

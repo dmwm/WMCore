@@ -9,7 +9,7 @@ rather than using the common implementation to avoid generating
 extra runtime dependencies.
 
 """
-
+import WMCore.WMFactory
 from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError
@@ -97,7 +97,7 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
     if not useNewVersion:
         classRef  = Registry.StageOutImpl.get(name, None)
     else:
-        classRef = Registry.StageOutImplV2.get(name, None)
+        return _retrieveStageOutImpl2(name)
     
     if classRef == None:
         msg = "Failed to find StageOutImpl for name: %s\n" % name
@@ -108,4 +108,28 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
     else:
         return classRef()   
 
+pluginLookup = { 'test-win' : 'TestWinImpl',
+                'test-fail' : 'TestFailImpl',
+                'test-copy' : 'TestLocalCopyImpl',
+                'cp':'CPImpl',
+                "dccp-fnal": 'DCCPFNALImpl',
+                "dccp-generic": 'DCCPGenericImpl',
+                "hadoop": 'HadoopImpl',
+                "srmv2-lcg": 'LCGImpl',
+                "pydcap": 'PYDCCPImpl',
+                "rfcp-1": 'RFCP1Impl',
+                "rfcp-2": 'RFCP2Impl',
+                "rfcp-CERN": 'RFCPCERNImpl',
+                "rfcp": 'RFCPImpl',
+                "srm-fnal": 'SRMImpl',
+                "srm": 'SRMImpl',
+                "srmv2": 'SRMV2Impl',
+                "xrdcp": 'XRDCPImpl'}
 
+def _retrieveStageOutImpl2(backendName):
+    factory = WMCore.WMFactory.WMFactory(name = 'StageOutFactory',
+                                         namespace = 'WMCore.Storage.Plugins')
+    className = pluginLookup[backendName]
+    stageout = factory.loadObject(className)
+    return stageout
+    

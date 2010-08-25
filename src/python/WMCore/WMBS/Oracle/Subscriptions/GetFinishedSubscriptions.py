@@ -6,8 +6,8 @@ Oracle implementation of Subscription.GetFinishedSubscriptions
 """
 
 __all__ = []
-__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.1 2009/12/14 22:25:45 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetFinishedSubscriptions.py,v 1.2 2010/04/08 16:25:01 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFinishedSubscriptions import GetFinishedSubscriptions as MySQLFinishedSubscriptions
 
@@ -38,4 +38,8 @@ class GetFinishedSubscriptions(MySQLFinishedSubscriptions):
                AND (SELECT COUNT(wmbs_job.id) FROM wmbs_job
                       INNER JOIN wmbs_jobgroup ON wmbs_jobgroup.id = wmbs_job.jobgroup
                       INNER JOIN wmbs_subscription ON wmbs_subscription.id = wmbs_jobgroup.subscription
-                      WHERE :currTime - wmbs_job.state_time < :timeOut) = 0"""
+                      WHERE :currTime - wmbs_job.state_time < :timeOut) = 0
+               AND (SELECT COUNT(wmbs_s1.id) FROM wmbs_subscription wmbs_s1
+                      INNER JOIN wmbs_workflow_output wwo ON wwo.output_fileset = wmbs_s1.fileset
+                      INNER JOIN wmbs_subscription wmbs_s2 ON wmbs_s2.workflow = wwo.workflow_id
+                      WHERE wmbs_s2.id = wmbs_subscription.id) = 0"""

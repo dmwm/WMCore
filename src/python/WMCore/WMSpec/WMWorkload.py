@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.4 2009/06/13 01:50:47 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMWorkload.py,v 1.5 2009/09/10 15:40:20 evansde Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 
@@ -107,6 +107,8 @@ class WMWorkloadHelper(PersistencyHelper):
         else:
             helper = WMTaskHelper(wmTask)
         taskName = helper.name()
+        pathName = "/%s/%s" % (self.name(), taskName)
+        helper.setPathName(pathName)
         if taskName in self.listAllTaskNames():
             msg = "Duplicate task name: %s\n" % taskName
             msg += "Known tasks: %s\n" % self.listAllTaskNames()

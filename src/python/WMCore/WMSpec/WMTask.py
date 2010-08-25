@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.10 2009/08/17 20:51:42 mnorman Exp $"
-__revision__ = "$Revision: 1.10 $"
+__version__ = "$Id: WMTask.py,v 1.11 2009/09/10 15:40:20 evansde Exp $"
+__revision__ = "$Revision: 1.11 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -66,8 +66,29 @@ class WMTaskHelper(TreeHelper):
         """
         node = WMTaskHelper(WMTask(taskName))
         self.addNode(node)
+        pName = "%s/%s" % (self.getPathName(), taskName)
+        node.setPathName(pName)
         return node
 
+    def setPathName(self, pathName):
+        """
+        _setPathName_
+
+        Set the path name of the task within the workload
+        Used internally when addin tasks to workloads or subtasks
+
+        """
+        self.data.pathName = pathName
+
+    def getPathName(self):
+        """
+        _getPathName_
+
+        get the path name of this task reflecting its
+        structure within the workload and task tree
+
+        """
+        return self.data.pathName
 
 
     def steps(self):
@@ -238,7 +259,7 @@ class WMTaskHelper(TreeHelper):
     def getSeederConfigs(self):
         """
         _getSeederConfigs_
-        
+
         Returns a list of seeder config options in a dict with the seeder name as the key.
         """
 
@@ -261,7 +282,7 @@ class WMTaskHelper(TreeHelper):
     def addSeeder(self, seederName, args = None):
         """
         _addSeeder_
-        
+
         This SHOULD allow you to add a new seeder to the config section with any variable you want
         """
 
@@ -276,7 +297,7 @@ class WMTaskHelper(TreeHelper):
 
         return
 
-        
+
 
 class WMTask(ConfigSectionTree):
     """
@@ -290,6 +311,7 @@ class WMTask(ConfigSectionTree):
     def __init__(self, name):
         ConfigSectionTree.__init__(self, name)
         self.objectType = self.__class__.__name__
+        self.pathName = None
         self.section_("steps")
         self.steps.topStepName = None
         self.section_("parameters")

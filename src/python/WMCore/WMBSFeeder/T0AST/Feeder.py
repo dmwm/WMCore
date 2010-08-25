@@ -1,29 +1,27 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613
+#pylint: disable-msg=W0613,E1103
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.3 2009/12/15 23:12:14 riahi Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Feeder.py,v 1.4 2009/12/28 04:41:54 riahi Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import logging
-import os
 import threading
 
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
 from WMCore.WMBS.File import File
 #from WMCore.WMBS.Fileset import Fileset
 from WMCore.DataStructs.Run import Run
-from WMCore.WMInit import WMInit
 from WMCore.DAOFactory import DAOFactory
 #from WMCore.WMFactory import WMFactory
+from traceback import format_exc
 
 import time
 from WMCore.Services.Requests import JSONRequests
 
 #StartTime = int(time.time())
-LastTime = int(time.time()) 
-#lock = threading.Lock()
+LASTIME = int(time.time()) 
 
 class Feeder(FeederImpl):
     """
@@ -31,28 +29,20 @@ class Feeder(FeederImpl):
     """
 
     def __init__(self, \
-                 T0Url = "/tier0/listbulkfilesoverinterval/"): 
+                 urlT0 = "/tier0/listbulkfilesoverinterval/"): 
         """
         Configure the feeder
         """
 
         FeederImpl.__init__(self)
 
-        self.myThread = threading.currentThread()
         self.maxRetries = 3
         self.purgeTime = 3600 #(86400 1 day)
 
-        # Get configuration       
-        self.init = WMInit()
-        self.init.setLogging()
-        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
-            os.getenv('DIALECT'), os.getenv("DBSOCK"))
-
+        myThread = threading.currentThread()
         self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
-              logger = self.myThread.logger, \
-              dbinterface = self.myThread.dbi)
-        self.locationNew = self.daofactory(classname = "Locations.New")
-        self.getFileLoc = self.daofactory(classname = "Files.GetLocation")
+              logger = myThread.logger, \
+              dbinterface = myThread.dbi)
 
         #factory = WMFactory("default", \
         #    "WMComponent.FeederManager.Database." + self.myThread.dialect)
@@ -62,16 +52,21 @@ class Feeder(FeederImpl):
         """
         The algorithm itself
         """
-        global LastTime    
+        global LASTIME    
+
         #global StartTime 
         #filesetToProcess = Fileset( name = filesetToProcess.name )
         #filesetToProcess.load() 
+
+        myThread = threading.currentThread()
+
+        locationNew = self.daofactory(classname = "Locations.New")
+        getFileLoc = self.daofactory(classname = "Files.GetLocation")
 
         logging.debug("the T0Feeder is processing %s" % \
                  filesetToProcess.name) 
         logging.debug("the fileset name %s" % \
          (filesetToProcess.name).split(":")[0])
-
 
         fileType = (filesetToProcess.name).split(":")[2]
         logging.debug("the fileType is %s" % \
@@ -83,10 +78,10 @@ class Feeder(FeederImpl):
         dataTier = ((filesetToProcess.name\
             ).split(":")[0]).split('/')[3]
         url = "/tier0/listfilesoverinterval/%s/%s/%s/%s/%s" % \
-              (fileType, LastTime, primaryDataset,processedDataset, dataTier)
+              (fileType, LASTIME, primaryDataset,processedDataset, dataTier)
         #url = "/tier0/listbulkfilesoverinterval/%s/%s/%s/%s" % \
-       #       (filesetToProcess.lastUpdate, primaryDataset,\
-       #                processedDataset, dataTier)
+        #      (fileType, filesetToProcess.lastUpdate, primaryDataset,\
+        #               processedDataset, dataTier)
 
         tries = 1
         while True:
@@ -110,38 +105,50 @@ class Feeder(FeederImpl):
             logging.debug("T0 queries done ...")
             now = time.time()
             filesetToProcess.last_update = now
-            LastTime = int(newFilesList['end_time']) + 1
+            LASTIME = int(newFilesList['end_time']) + 1
 
             break
 
         # process all files
         if len(newFilesList['files']):  
 
-            for files in newFilesList['files']:
      
-                logging.debug("Files to add %s" %files)
+            try:
+                locationNew.execute(siteName = "caf.cern.ch")
+            except Exception,e:
+                logging.debug("Error when adding new location...")
+                logging.debug(e)
+                logging.debug( format_exc() )
 
+            for files in newFilesList['files']:
+                logging.debug("Files to add %s" %files)
                 # Assume parents and LumiSection aren't asked 
                 newfile = File(str(files['lfn']), \
            size = files['file_size'], events = files['events'])
-                self.locationNew.execute(siteName = "caf.cern.ch")
 
-                fileLoc = self.getFileLoc.execute(file = files['lfn'])
-
-                if 'caf.cern.ch' not in fileLoc:
-                    newfile.setLocation(["caf.cern.ch"])
-
-                else:
-                    logging.debug("File already associated to %s" %fileLoc)
 
                 for run in files['runs']:
                     newfile.addRun(Run( run , *files['runs'][run]))
 
-                if newfile.exists() == False :
-                    newfile.create()
+                try:
+                    if newfile.exists() == False :
+                        newfile.create()
 
-                filesetToProcess.addFile(newfile)
-                logging.debug("new file added...")
+                    fileLoc = getFileLoc.execute(file = files['lfn'])
+
+                    if 'caf.cern.ch' not in fileLoc:
+                        newfile.setLocation(["caf.cern.ch"])
+
+                    else:
+                        logging.debug("File already associated to %s" %fileLoc)
+
+                    filesetToProcess.addFile(newfile)
+                    logging.debug("new file added...")
+                except Exception,e:
+                    logging.debug("Error when adding new location...")
+                    logging.debug(e)
+                    logging.debug( format_exc() )
+
 
         else:
             logging.debug("nothing to do...")

@@ -3,25 +3,22 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.10 2009/12/18 00:03:18 riahi Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Feeder.py,v 1.11 2009/12/28 04:38:55 riahi Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 
 import logging
 import time
-import os
 import threading
 
 from WMCore.WMBSFeeder.FeederImpl import FeederImpl 
 from WMCore.WMBS.File import File
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMInit import WMInit
 
 from DBSAPI.dbsApiException import DbsConnectionError 
 from DBSAPI.dbsApi import DbsApi
-LOCK = threading.Lock()
 
 #from DBSAPI.dbsException import *
 #from DBSAPI.dbsApiException import *
@@ -47,23 +44,19 @@ class Feeder(FeederImpl):
         self.connectionAttempts = 5 
         self.myThread = threading.currentThread()
 
-        # Get configuration       
-        self.init = WMInit()
-        self.init.setLogging()
-        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
-            os.getenv('DIALECT'), os.getenv("DBSOCK"))
-
         self.daofactory = DAOFactory(package = "WMCore.WMBS" , \
               logger = self.myThread.logger, \
               dbinterface = self.myThread.dbi)
-        self.locationNew = self.daofactory(classname = "Locations.New")
-        self.getFileLoc = self.daofactory(classname = "Files.GetLocation")
     
     def __call__(self, filesetToProcess):
         """
         The algorithm itself
         """
+
  
+        locationNew = self.daofactory(classname = "Locations.New")
+        getFileLoc = self.daofactory(classname = "Files.GetLocation")
+
         logging.debug("DBSFeeder is processing %s" % \
                  filesetToProcess.name) 
         logging.debug("the fileset name  %s" \
@@ -120,7 +113,6 @@ class Feeder(FeederImpl):
                 files = self.dbs.listFiles("", "", "", [], "", fileBlock, \
                 details = None,retriveList = ['retrive_run' ])
 
-            #except DbsException, ex:
             except:
  
                 msg = "Error in "
@@ -128,10 +120,12 @@ class Feeder(FeederImpl):
                     fileBlock, )
                 raise DBSReaderError(msg)
 
-            if files[0]['RunsList']: 
+            try:
                 if int(startRun) > int(\
-              files[0]['RunsList'][0]['RunNumber']) :                  
+                 files[0]['RunsList'][0]['RunNumber']) :
                     continue
+            except:
+                logging.info("Error when getting run info")
 
             # get fileBlockId SE information
             seList = blocks[fileBlock]['StorageElements']
@@ -144,12 +138,9 @@ class Feeder(FeederImpl):
 
             else:
 
-                LOCK.acquire() 
                 for loc in seList:
-                    self.locationNew.execute(siteName = loc)
-                LOCK.release()
+                    locationNew.execute(siteName = loc)
 
-            LOCK.acquire() 
             for files in blocks[fileBlock]['Files']:
 
                 # Assume parents and LumiSection aren't asked 
@@ -160,7 +151,7 @@ class Feeder(FeederImpl):
                 if newfile.exists() == False :
                     newfile.create()
 
-                fileLoc = self.getFileLoc.execute(\
+                fileLoc = getFileLoc.execute(\
                   file = files['LogicalFileName'])
 
                 if fileLoc:
@@ -178,8 +169,6 @@ class Feeder(FeederImpl):
                 else:
 
                     newfile.setLocation(seList) 
-
-                LOCK.release()
                 filesetToProcess.addFile(newfile)
 
         # Close fileset

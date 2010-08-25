@@ -63,12 +63,13 @@ workloadName = "Tier0ReReco-%s" % arguments["ProcessingVersion"]
 workloadFile = "tier0ReReco-%s.pkl" % arguments["ProcessingVersion"]
 os.mkdir(workloadName)
 workload = tier0ReRecoWorkload(workloadName, arguments)
-workload.save(os.path.join(workloadName, workloadFile))
 
 # Build a sandbox using TaskMaker
 taskMaker = TaskMaker(workload, os.path.join(os.getcwd(), workloadName))
 taskMaker.skipSubscription = True
 taskMaker.processWorkload()
+
+workload.save(os.path.join(workloadName, workloadFile))
 
 def doIndent(level):
     myStr = ""

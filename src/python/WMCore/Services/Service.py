@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.29 2010/01/08 21:35:34 metson Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Service.py,v 1.30 2010/01/08 23:24:51 metson Exp $"
+__version__ = "$Revision: 1.30 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -171,7 +171,8 @@ class Service(dict):
                 inputdata = self["inputdata"]
             #prepend the basepath
             url = self["basepath"] + str(url)
-
+            self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
+                                 (url, inputdata))
             data, status, reason = self["requests"].makeRequest(uri = url,
                                                     verb = self["method"],
                                                     data = inputdata)

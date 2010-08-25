@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: API_t.py,v 1.2 2010/04/15 20:51:55 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: API_t.py,v 1.3 2010/04/19 20:44:18 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import threading
@@ -103,6 +103,9 @@ class APITest(unittest.TestCase):
             # It's either one or the other
             self.assertTrue(res.data == taskA1.data or res.data == taskA2.data)
 
+        testAPI.removeTask(task = taskA1)
+        self.assertFalse(taskA1.exists())
+
 
         return
 
@@ -142,6 +145,11 @@ class APITest(unittest.TestCase):
 
 
         task2 = testAPI.getTaskFromJob(job = job4)
+
+        testAPI.removeJob(job = job4)
+        self.assertFalse(job4.exists())
+
+        return
 
 
     def testC_APIRunningJobMethods(self):
@@ -214,6 +222,9 @@ class APITest(unittest.TestCase):
         self.assertEqual(job4.runningJob['statusReason'], 'WentToTheForum')
         self.assertEqual(job4.runningJob['storage'], None)
         self.assertEqual(job4.runningJob['service'], 'IdesOfMarch')
+
+
+        
 
         return
 

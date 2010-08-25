@@ -357,7 +357,7 @@ class PSetTweak:
             handle.close()
         if format == "pickle":
             handle = open(filename, "w")
-            pickle.dump(handle, self)
+            pickle.dump(self, handle)
             handle.close()
         return
 

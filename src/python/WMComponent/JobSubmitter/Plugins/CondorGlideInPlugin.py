@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.8 2010/05/13 20:15:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.9 2010/05/21 15:56:44 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import os.path
@@ -69,6 +69,7 @@ class CondorGlideInPlugin(PluginBase):
         for entry in parameters:
             jobList = entry.get('jobs', [])
             self.packageDir = entry.get('packageDir', None)
+            index           = entry.get('index', 0)
             self.unpacker   = os.path.join(getWMBASE(),
                                            'src/python/WMCore/WMRuntime/Unpacker.py')
 
@@ -85,7 +86,7 @@ class CondorGlideInPlugin(PluginBase):
                     os.mkdir(self.config['submitDir'])
 
 
-            jdlList = self.makeSubmit(jobList)
+            jdlList = self.makeSubmit(jobList, index)
             if not jdlList or jdlList == []:
                 # Then we got nothing
                 logging.error("No JDL file made!")
@@ -146,7 +147,7 @@ class CondorGlideInPlugin(PluginBase):
         return jdl
     
         
-    def makeSubmit(self, jobList):
+    def makeSubmit(self, jobList, index):
         """
         _makeSubmit_
 
@@ -162,8 +163,6 @@ class CondorGlideInPlugin(PluginBase):
         jdl = self.initSubmit()
 
 
-        index = 0
-        
         # For each script we have to do queue a separate directory, etc.
         for job in jobList:
             if job == {}:

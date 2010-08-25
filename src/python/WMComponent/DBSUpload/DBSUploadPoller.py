@@ -4,8 +4,8 @@
 The DBSUpload algorithm
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadPoller.py,v 1.2 2009/08/12 19:22:47 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.3 2009/08/12 22:28:18 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -127,28 +127,28 @@ class DBSUploadPoller(BaseWorkerThread):
             #Once the registration is done, you need to upload the individual files
             file_ids.extend(dbinterface.findUploadableFiles(dataset, self.uploadFileMax))
             
-	    files=[]
-	    #Making DBSBufferFile objects for easy manipulation
-        for an_id in file_ids:
-            file = DBSBufferFile(id=an_id['ID'])
-            file.load(parentage=1)
-            #Now really stupid stuff has to happen.
-            initSet = file['locations']
-            locations = Set()
-            for loc in initSet:
-                locations.add(str(loc))
-            file['locations'] = locations
-            files.append(file)
-            logging.info('I have prepared the file %s for uploading to DBS' %(an_id))
-
-            #Now that you have the files, insert them as a list
-            if len(files) > 0:
-            	self.dbswriter.insertFilesForDBSBuffer(files = files, procDataset = dict(dataset), \
-                                                       algos = algos, jobType = "NotMerge", insertDetectorData = False)
-                #Update the file status, and then recount UnMigrated Files
-            	dbinterface.updateFilesStatus(file_ids)
-
-            #print "Done"
+    	    files=[]
+    	    #Making DBSBufferFile objects for easy manipulation
+            for an_id in file_ids:
+                file = DBSBufferFile(id=an_id['ID'])
+                file.load(parentage=1)
+                #Now really stupid stuff has to happen.
+                initSet = file['locations']
+                locations = Set()
+                for loc in initSet:
+                    locations.add(str(loc))
+                file['locations'] = locations
+                files.append(file)
+                logging.info('I have prepared the file %s for uploading to DBS' %(an_id))
+    
+                #Now that you have the files, insert them as a list
+                if len(files) > 0:
+                	self.dbswriter.insertFilesForDBSBuffer(files = files, procDataset = dict(dataset), \
+                                                           algos = algos, jobType = "NotMerge", insertDetectorData = False)
+                    #Update the file status, and then recount UnMigrated Files
+                	dbinterface.updateFilesStatus(file_ids)
+    
+                #print "Done"
 
         return
 

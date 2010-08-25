@@ -122,14 +122,27 @@ class ProcessPool:
         Assign work to the workers processes.  The work parameters must be a
         list where each item in the list can be serialized into JSON.
         """
-        for someWork in work:
-            encodedWork = self.jsonHandler.encode(someWork)
+        workPerWorker = len(work) / len(self.workers)
+
+        while(len(work) > workPerWorker):
+            workForWorker = work[0:workPerWorker]
+            work = work[:workPerWorker]
+            
+            encodedWork = self.jsonHandler.encode(workForWorker)
 
             worker = self.workers[self.enqueueIndex]
             self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
             worker.stdin.write("%s\n" % encodedWork)
             worker.stdin.flush()
 
+        if len(work) > 0:
+            encodedWork = self.jsonHandler.encode(work)
+
+            worker = self.workers[self.enqueueIndex]
+            self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
+            worker.stdin.write("%s\n" % encodedWork)
+            worker.stdin.flush()
+            
         return
 
     def dequeue(self, totalItems = 1):
@@ -147,7 +160,7 @@ class ProcessPool:
 
             try:
                 output = worker.stdout.readline()
-
+                
                 if output == None:
                     continue
 
@@ -238,11 +251,9 @@ if __name__ == "__main__":
         encodedInput = sys.stdin.readline()
 
         try:
-            unicodeInput = jsonHandler.decode(encodedInput)
-            input = {}
-            for key in unicodeInput.keys():
-                input[str(key)] = unicodeInput[key]
+            input = jsonHandler.decode(encodedInput)
         except Exception, ex:
+            logging.error("Error decoding: %s" % str(ex))
             break
 
         try:
@@ -259,9 +270,15 @@ if __name__ == "__main__":
             sys.exit(1)
             
         if output != None:
-            encodedOutput = jsonHandler.encode(output)
-            sys.stdout.write("%s\n" % encodedOutput)
-            sys.stdout.flush()
+            if type(output) == list:
+                for item in output:
+                    encodedOutput = jsonHandler.encode(item)
+                    sys.stdout.write("%s\n" % encodedOutput)
+                    sys.stdout.flush()
+            else:
+                encodedOutput = jsonHandler.encode(output)
+                sys.stdout.write("%s\n" % encodedOutput)
+                sys.stdout.flush()                
 
     logging.info("Process with PID %s finished" %(os.getpid()))
     sys.exit(0)

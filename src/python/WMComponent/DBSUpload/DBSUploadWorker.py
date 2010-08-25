@@ -8,8 +8,8 @@
 The DBSUploadWorker for uploading to DBS
 """
 __all__ = []
-__revision__ = "$Id: DBSUploadWorker.py,v 1.1 2010/06/04 19:14:19 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DBSUploadWorker.py,v 1.2 2010/06/15 20:18:58 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -206,10 +206,6 @@ class DBSUploadWorker:
         """
         myThread = threading.currentThread()
 
-        if parameters == {}:
-            # I don't know what happened here...
-            return None
-        
         for dasInfo in parameters:
 
             # Initial values

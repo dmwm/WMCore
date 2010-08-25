@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.4 2009/12/28 04:41:54 riahi Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Feeder.py,v 1.5 2010/05/04 22:41:04 riahi Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import threading
@@ -20,7 +20,6 @@ from traceback import format_exc
 import time
 from WMCore.Services.Requests import JSONRequests
 
-#StartTime = int(time.time())
 LASTIME = int(time.time()) 
 
 class Feeder(FeederImpl):
@@ -44,21 +43,11 @@ class Feeder(FeederImpl):
               logger = myThread.logger, \
               dbinterface = myThread.dbi)
 
-        #factory = WMFactory("default", \
-        #    "WMComponent.FeederManager.Database." + self.myThread.dialect)
-        #self.queries = factory.loadObject("Queries")
-
     def __call__(self, filesetToProcess):
         """
         The algorithm itself
         """
         global LASTIME    
-
-        #global StartTime 
-        #filesetToProcess = Fileset( name = filesetToProcess.name )
-        #filesetToProcess.load() 
-
-        myThread = threading.currentThread()
 
         locationNew = self.daofactory(classname = "Locations.New")
         getFileLoc = self.daofactory(classname = "Files.GetLocation")
@@ -68,10 +57,20 @@ class Feeder(FeederImpl):
         logging.debug("the fileset name %s" % \
          (filesetToProcess.name).split(":")[0])
 
+        # Get the start Run if asked
+        startRun = (filesetToProcess.name).split(":")[3]
+
         fileType = (filesetToProcess.name).split(":")[2]
         logging.debug("the fileType is %s" % \
         (filesetToProcess.name).split(":")[2])
+        
+        #Add if fileset is empty , set LASTIME to 0
+        logging.debug("The fileset object %s" %filesetToProcess.files) 
 
+        # Fisrt call to T0 db for this fileset 
+        if not filesetToProcess.files: 
+            LASTIME = 0
+ 
         # url builder
         primaryDataset = ((filesetToProcess.name).split(":")[0]).split('/')[1]
         processedDataset = ((filesetToProcess.name).split(":")[0]).split('/')[2]
@@ -79,19 +78,17 @@ class Feeder(FeederImpl):
             ).split(":")[0]).split('/')[3]
         url = "/tier0/listfilesoverinterval/%s/%s/%s/%s/%s" % \
               (fileType, LASTIME, primaryDataset,processedDataset, dataTier)
-        #url = "/tier0/listbulkfilesoverinterval/%s/%s/%s/%s" % \
-        #      (fileType, filesetToProcess.lastUpdate, primaryDataset,\
-        #               processedDataset, dataTier)
 
         tries = 1
         while True:
 
             try:
 
-                myRequester = JSONRequests(url = "vocms52.cern.ch:8080")
-                requestResult = myRequester.get(url)
-                newFilesList = requestResult[0]["results"] 
-                logging.debug(newFilesList)
+                myRequester = JSONRequests(url = "vocms52.cern.ch:8889")
+                requestResult = myRequester.get(\
+            url+"/"+"?return_type=text/json%2Bdas")
+                logging.debug("Res %s" %str(requestResult))
+                newFilesList = requestResult[0]["results"]
 
             except:
 
@@ -122,17 +119,27 @@ class Feeder(FeederImpl):
 
             for files in newFilesList['files']:
                 logging.debug("Files to add %s" %files)
-                # Assume parents and LumiSection aren't asked 
+
                 newfile = File(str(files['lfn']), \
            size = files['file_size'], events = files['events'])
 
 
-                for run in files['runs']:
-                    newfile.addRun(Run( run , *files['runs'][run]))
-
                 try:
                     if newfile.exists() == False :
                         newfile.create()
+
+                    else:
+                        newfile.loadData()
+
+                    #Add run test if already exist
+                    for run in files['runs']:
+
+                        if not newfile['runs']:
+
+                            runSet = set()
+                            runSet.add(Run( run, *files['runs'][run]))
+                            newfile.addRunSet(runSet)
+
 
                     fileLoc = getFileLoc.execute(file = files['lfn'])
 
@@ -142,12 +149,24 @@ class Feeder(FeederImpl):
                     else:
                         logging.debug("File already associated to %s" %fileLoc)
 
-                    filesetToProcess.addFile(newfile)
-                    logging.debug("new file added...")
+                    if len(newfile["runs"]):
+
+                        val = 0
+                        for run in newfile['runs']:
+
+                            if run.run < int(startRun):
+                                val = 1 
+                                break 
+
+                        if not val:
+                            filesetToProcess.addFile(newfile)
+                            logging.debug("new file added...")
+
                 except Exception,e:
                     logging.debug("Error when adding new location...")
                     logging.debug(e)
                     logging.debug( format_exc() )
+
 
 
         else:
@@ -155,28 +174,6 @@ class Feeder(FeederImpl):
 
         # Commit the fileset
         filesetToProcess.commit()
-
-        # Purge work - sleep for one day blocking all T0 process 
-        # before doing the purge work 
-        # To create all needed jobs with files acquired until now 
-        # Remove T0 filesets from management will be the purge work 
-        #lock.acquire()
-        #if int(now) > (startTime + self.purgeTime):
-        #    time.sleep(180) #(24 hours)
-        #    logging.debug("Purging fileset...id %s name %s" \
-        # %(filesetToProcess.id,filesetToProcess.name))
-        #    dict = self.queries.getManagedFilesets("T0")
-        #    for filesetId in dict:
-        #       self.queries.removeManagedFilesets(filesetId, "T0")
-        #       self.queries.closeFileset(filesetId)
-        #    self.queries.purgeFilesets("T0")
-            #for fileset in dict:
-            #    newFileset = Fileset( name = dict[fileset] )
-            #    newFileset.create()
-            #    self.queries.addFilesetToManage(newFileset.id,"T0")
-        #    startTime = int(time.time())
-        #    logging.debug("Purge Done...")
-        #lock.release()
 
     def persist(self):
         """

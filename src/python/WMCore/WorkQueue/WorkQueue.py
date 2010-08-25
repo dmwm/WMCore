@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.80 2010/02/27 12:24:18 swakef Exp $"
-__version__ = "$Revision: 1.80 $"
+__revision__ = "$Id: WorkQueue.py,v 1.81 2010/03/02 12:15:28 swakef Exp $"
+__version__ = "$Revision: 1.81 $"
 
 
 import time
@@ -376,7 +376,7 @@ class WorkQueue(WorkQueueBase):
             tmp = defaultdict(list)
             for item in items:
                 tmp[item[dictKey]].append(item)
-            items = tmp
+            items = dict(tmp)
         return items
 
 
@@ -437,7 +437,7 @@ class WorkQueue(WorkQueueBase):
 
         # return to the child queue the elements that it needs to update
         self.logger.debug('Updates to child queue: %s' % str(child_update))
-        return child_update
+        return dict(child_update) # Service json lib can't handle defaultdict
 
 
     def flushNegotiationFailures(self):

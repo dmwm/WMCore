@@ -7,6 +7,7 @@ from openid.cryptutil import randomString # To generate session IDs
 from openid.store import filestore
 import cms_sreg as sreg # To request authorization data
 import cgi # To use escape()
+import urllib # To use urlencode()
 try:
     # Python 2.6
     import json
@@ -34,7 +35,7 @@ class OidConsumer(cherrypy.Tool):
         if self.config.store == 'filestore':
             self.store = filestore.FileOpenIDStore(self.config.store_path)
         
-        self.session_name = getattr(self.config, 'session_name', DEFAULT_SESSION_NAME)
+        self.sessname = getattr(self.config, 'session_name', DEFAULT_SESSION_NAME)
         self.oidserver = getattr(self.config, 'oid_server', DEFAULT_OID_SERVER)
 
         # The full URL of this app (without mount points or views)
@@ -70,99 +71,42 @@ class OidConsumer(cherrypy.Tool):
 
         # These methods are responsible for achieving auth and authz
         # before allowing access to any other page
-        self.verify()
-        self.process()
+        if self.session()['status'] in [UNKNOWN]:
+            self.request_auth()
+        if self.session()['status'] in [PROCESSING]:
+            self.verify_auth()
+
+        # 'status' is AUTHENTICATED, now checks if the user is authorized
         self.check_authorization(role, group, site, authzfunc)
         
-        # User authenticated and authorized. Now cherrypy calls the app handler to
-        # show the requested page
+        # End of callable(). The user authenticated and authorized.
+        # Now cherrypy calls the app handler to show the requested page.
     
-    def get_session(self):
-        oidsession = cherrypy.session.get(self.session_name, None)
-
-        if not oidsession or not isinstance(oidsession, dict):
-            oidsession = {}
-        
-        if 'sid' not in oidsession:
-            sid = randomString(16, '0123456789abcdef')
-            oidsession['sid'] = sid
-            cherrypy.session[self.session_name] = oidsession
-            cherrypy.session[self.session_name]['status'] = UNKNOWN
-
-        return cherrypy.session[self.session_name]
-
-    def is_processing(self):
-        if cherrypy.session.has_key(self.session_name):
-            if 'status' in cherrypy.session[self.session_name]:
-                if cherrypy.session[self.session_name]['status'] in [PROCESSING, AUTHENTICATED]:
-                    return True
-        return False
-
-    def is_authenticated(self):
-        if cherrypy.session.has_key(self.session_name):
-            if 'status' in cherrypy.session[self.session_name]:
-                if cherrypy.session[self.session_name]['status'] == AUTHENTICATED:
-                    return True
-        return False
-
-    def is_relogin(self, openid_url):
-        if openid_url:
-            if cherrypy.session.has_key(self.session_name):
-                if 'openid_url' in cherrypy.session[self.session_name]:
-                    if cherrypy.session[self.session_name]['openid_url'] != openid_url:
-                        return True
-        return False
-
-    def verify(self):
-        # We could force the url of the server here somehow, but it needs to be
-        # unset if the user isn't logged in...
-        openid_url = cherrypy.request.params.get('openid_url',None)        
-        try:
-            # ...so instead we assert that the url to be used is the one
-            # configured
-            if openid_url:
-                assert openid_url == self.oidserver
-        except:
-            msg =  '<br><br><b>You are attempting to authenticate with %s. ' % openid_url
-            msg += '<br>This is an invalid OpenID URL. You want %s.</b>' % self.oidserver
-            cherrypy.session[self.session_name]['info'] = msg
-            raise cherrypy.HTTPRedirect(self.error_path)
-
-        # If the user requested to login again without logging out first,
-        # force a logout
-        if self.is_relogin(openid_url):
-            # *** Should call cherrypy.lib.sessions.expire() and reprocess
-            # the request instead of just deleting the session dict ***
-            del cherrypy.session[self.session_name] # logout before continuing
-
-        # Do not start the verification process if it is was already started
-        if self.is_processing():
-            return
-        
-        current_url = cherrypy.url(base=self.app_url)
-        # If the user didn't inform his ID yet, redirect him to the login page
-        if not openid_url:
-            raise cherrypy.HTTPRedirect('%s?url=%s' % (self.login_path, current_url))
-        #del cherrypy.request.params['openid_url']
-
+    def request_auth(self):
+        """
+        This method generates an signed openid request and redirects the user
+        to the oid server to process it.
+        """
         # Here it is where we start playing with OpenId
-        oidconsumer = consumer.Consumer(self.get_session(), self.store)
+        oidconsumer = consumer.Consumer(self.session(), self.store)
         try:
-            oidrequest = oidconsumer.begin(openid_url)
+            oidrequest = oidconsumer.begin(self.oidserver)
         except discover.DiscoveryFailure, exc:
-            msg =  '<br><br><b>Could not connect to the OpenID server %s</b>' % openid_url
+            msg =  '<br><br><b>Could not connect to the OpenID server %s</b>' % self.oidserver
             msg += '<br><br> If you are running a private server instance, '
             msg += 'make sure it is running and its address is correct.'
             msg += '<br><br>Debug information:<br> %s' % cgi.escape(str(exc[0]))
-            cherrypy.session[self.session_name]['info'] = msg
+            self.session()['info'] = msg
             raise cherrypy.HTTPRedirect(self.error_path)
+            #raise cherrypy.HTTPRedirect(self.error_path+'?msg='+urllib.quote_plus(msg))
         else:
             # Then finally the auth begins...
             # Set the return URL to be the one requested by the user
+            current_url = cherrypy.url(base=self.app_url)
             return_to = current_url # was cherrypy.url(cp.path_info)
             trust_root = self.app_url # was cherrypy.request.base
-            cherrypy.session[self.session_name]['return_to'] = return_to
-            cherrypy.session[self.session_name]['status'] = PROCESSING
+            self.session()['return_to'] = return_to
+            self.session()['status'] = PROCESSING
 
             # Extends the OpenID request using SREG. Uses it to get authoriztion
             # data. Since this extension makes part of the original OpenID
@@ -172,40 +116,53 @@ class OidConsumer(cherrypy.Tool):
                                                       'dn'])
             oidrequest.addExtension(sreg_request)
 
-            # Should this auth request be sent as HTTPRedirect or as a POST?
-            if oidrequest.shouldSendRedirect():
-                # redirectURL() encodes the OpenID request into an URL
-                redirect_url = oidrequest.redirectURL(trust_root, return_to)
-                # Redirects the user-agent to the oid server using the
-                # encoded URL. After authenticating the user, the oid server
-                # will redirect the user agent back to 'return_to'
-                raise cherrypy.HTTPRedirect(redirect_url)
-            else:
-                form_html = oidrequest.htmlMarkup(
-                    trust_root, return_to,
-                    form_tag_attrs={'id':'openid_message'})
-                cherrypy.session[self.session_name]['info'] = form_html
-                raise cherrypy.HTTPRedirect(self.authdummy_path)
+            # redirectURL() encodes the OpenID request into an URL
+            redirect_url = oidrequest.redirectURL(trust_root, return_to)
+            # Redirects the user-agent to the oid server using the
+            # encoded URL. After authenticating the user, the oid server
+            # will redirect the user agent back to 'return_to'
+            raise cherrypy.HTTPRedirect(redirect_url)
+
         # End of verify()
 
-    def process(self):
+    def verify_auth(self):
         """
-        This function deals with the oid server response (when it redirects
+        This method deals with the oid server response (when it redirects
         the user-agent back to here. This request contains the status of the
-        user authentication in the oid server
+        user authentication with the oid server
         """
-        # Also ignores if the authentication process already completed
-        if self.is_authenticated():
-            return
-        
-        oidconsumer = consumer.Consumer(self.get_session(), self.store)
-        cherrypy.session[self.session_name]['status'] = UNKNOWN
+        self.session()['status'] = UNKNOWN
 
         # Ask the oid library to verify the response received from the oid serv.
-        current_url=cherrypy.session[self.session_name].get('return_to',None)
-        info = oidconsumer.complete(cherrypy.request.params,current_url)
-        # Now verifies what it does mean
-        if info.status == consumer.FAILURE:
+        current_url=self.session()['return_to']
+        #current_url=cherrypy.url(base=self.app_url)
+        oidconsumer = consumer.Consumer(self.session(), self.store)
+        info = oidconsumer.complete(cherrypy.request.params, current_url)
+
+        # Now verifies what the oid server response means
+        if info.status == consumer.SUCCESS:
+            if info.endpoint.canonicalID:
+                # Should use canonicalIDs instead of user-friendly oid URLs,
+                # but leave it like this now
+                pass
+
+            # Gets additional information that came in the server response.
+            # The authorization information is supposed to come in here.
+            sreg_data = sreg.SRegResponse.fromSuccessResponse(info) or {}
+            for i in ['fullname', 'dn']:
+                self.session()[i] = sreg_data.get(i,None)
+            # Should do a better job when passing a dict as a string
+            self.session()['permissions'] = eval(sreg_data.get('permissions',"{}"))
+            
+            # Set the new session state to authenticated
+            self.session()['status'] = AUTHENTICATED
+            self.session()['user_url'] = info.getDisplayIdentifier()
+            #cherrypy.request.params = {} # empty request parameters
+
+            # Finally redirects the user-agent to the URL initially requested
+            raise cherrypy.HTTPRedirect(current_url)
+
+        elif info.status == consumer.FAILURE:
             # The OpenID protocol failed, either locally or remotely
             msg = ''
             if info.identity_url:
@@ -214,8 +171,9 @@ class OidConsumer(cherrypy.Tool):
                 msg += '<br><br><b>%s</b>' % info.message
             else:
                 msg += '<br><br><b>Authentication failed for an unknown reason</b>'
-            cherrypy.session[self.session_name]['info'] = msg
+            self.session()['info'] = msg
             raise cherrypy.HTTPRedirect(self.failed_path)
+        
         elif info.status == consumer.CANCEL:
             # Indicates that the user cancelled the OpenID authentication request
             if info.identity_url:
@@ -230,8 +188,9 @@ class OidConsumer(cherrypy.Tool):
                 msg += '<li>Username and password did not verify;</li>'
                 msg += '<li>The user cancelled the authentication.</li>'
                 msg += '</menu>'
-            cherrypy.session[self.session_name]['info'] = msg
+            self.session()['info'] = msg
             raise cherrypy.HTTPRedirect(self.cancel_path)
+
         elif info.status == consumer.SETUP_NEEDED:
             # Means that the request was in immediate mode and the server was
             # unable to authenticate the user without interaction.
@@ -239,36 +198,12 @@ class OidConsumer(cherrypy.Tool):
             if info.setup_url: # maybe not available in OpenID 2.0
                 raise cherrypy.HTTPRedirect(info.setup_url)
             msg = '<br><br><b>Could not authenticate without user interaction.</b>'
-            cherrypy.session[self.session_name]['info'] = msg
+            self.session()['info'] = msg
             raise cherrypy.HTTPRedirect(self.failed_path)
-        elif info.status == consumer.SUCCESS:
-            if info.endpoint.canonicalID:
-                # Should use canonicalIDs instead of user-friendly oid URLs,
-                # but leave it like this now
-                pass
-
-            # Gets additional information that came in the server response.
-            # The authorization information is supposed to come in here.
-            sreg_data = sreg.SRegResponse.fromSuccessResponse(info) or {}
-            for i in ['fullname', 'dn']:
-                cherrypy.session[self.session_name][i] = sreg_data.get(i,None)
-            # Should do a better job when passing a dict as a string
-            cherrypy.session[self.session_name]['permissions'] = \
-                                   eval(sreg_data.get('permissions',"{}"))
-            
-            # Set the new session state to authenticated
-            cherrypy.session[self.session_name]['status'] = AUTHENTICATED
-            cherrypy.session[self.session_name]['openid_url'] = \
-                                      info.getDisplayIdentifier()
-            cherrypy.request.params = {} # empty request parameters
-
-            # Finally redirects the user-agent to the URL initially requested
-            #raise cherrypy.HTTPRedirect(cherrypy.url(cherrypy.request.path_info))
-            raise cherrypy.HTTPRedirect(current_url)
 
         # If the code reaches here, an unknown error happened
         msg = '<br><br><b>Invalid response from the server.</b>'
-        cherrypy.session[self.session_name]['info'] = msg
+        self.session()['info'] = msg
         raise cherrypy.HTTPRedirect(self.error_path)
 
         # End of process()
@@ -278,13 +213,13 @@ class OidConsumer(cherrypy.Tool):
             authzfunc = self.defaultAuth
 
         # Now prepares arguments to pass to the authzfunc
-        permissions = cherrypy.session[self.session_name]['permissions']
+        permissions = self.session()['permissions']
         if type(permissions) == type('str'):
             permissions = self.decoder.decode(permissions)
         user = {
                 'permissions':permissions,
-                'fullname': cherrypy.session[self.session_name]['fullname'],
-                'dn': cherrypy.session[self.session_name]['dn']}
+                'fullname': self.session()['fullname'],
+                'dn': self.session()['dn']}
 
         # For arguments to be lists
         if role and not isinstance(role, list):
@@ -299,7 +234,7 @@ class OidConsumer(cherrypy.Tool):
             # Not allowed
             msg =  '<br><br><b>You are not authorized to access '
             msg += '%s.</b>' % cherrypy.request.path_info
-            cherrypy.session[self.session_name]['info'] = msg
+            self.session()['info'] = msg
             raise cherrypy.HTTPRedirect(self.authz_path)
         
     def defaultAuth(self, user, role=[], group=[], site=[]):
@@ -347,3 +282,41 @@ class OidConsumer(cherrypy.Tool):
    
         return False
         
+
+    def session(self):
+        """
+        Uses cherrypy sessions instead of implementing by my own because:
+        - The sessionid is bounded to the user-agent and then less subject
+        to sessionid hijacking (when the cookie is theft or the sessionid
+        is guessed)
+        - It has a protection against session fixation attacks
+        (see http://en.wikipedia.org/wiki/Session_fixation)
+        - It allows me to choose the backend to store session information
+    
+        Another more secure solution to consider would be to use the SSL/TLS
+        session identifier. But it would require changing the frontend config
+        to set the SSL_SESSION_ID variable into the request sent to the backend
+        """
+        oidsession = cherrypy.session.get(self.sessname, None)
+        if not oidsession:
+            cherrypy.session[self.sessname] = {}
+            cherrypy.session[self.sessname]['sid'] = randomString(16,'0123456789abcdef')
+            cherrypy.session[self.sessname]['status'] = UNKNOWN  # auth state of this session
+            cherrypy.session[self.sessname]['user_url'] = None # The user related to this session
+                                                               # user_url = self.oidserver+'id/'+the real
+                                                               #            username seen by the oid server
+                                                               #            (will come from Hypernews/SiteDB)
+            cherrypy.session[self.sessname]['info'] = None # no additonal info
+            cherrypy.session[self.sessname]['return_to'] = None
+            cherrypy.session[self.sessname]['fullname'] = None
+            cherrypy.session[self.sessname]['dn'] = None
+            cherrypy.session[self.sessname]['permissions'] = None
+
+        return cherrypy.session[self.sessname]
+
+#-------------------------------------------------------------------------------
+
+def quoteattr(nonhtmltext):
+    'Prepares a text string to be used with HTML'
+    htmltext = cgi.escape(nonhtmltext, 1)
+    return '"%s"' % (htmltext,)

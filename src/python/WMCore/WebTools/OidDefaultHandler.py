@@ -12,11 +12,11 @@ class OidDefaultHandler:
         self.session_name = getattr(self.config, 'session_name', DEFAULT_SESSION_NAME)
         self.oidserver = getattr(self.config, 'oid_server', DEFAULT_OID_SERVER)
 
-    @expose
-    def login(self, url='/'):
-        redirect_url = "%s?%s" % (url, 
-                              urllib.urlencode({'openid_url':self.oidserver}))
-        raise cherrypy.HTTPRedirect(redirect_url)
+#    @expose
+#    def login(self, url='/'):
+#        redirect_url = "%s?%s" % (url, 
+#                              urllib.urlencode({'openid_url':self.oidserver}))
+#        raise cherrypy.HTTPRedirect(redirect_url)
 
     @expose
     def logout(self):
@@ -35,7 +35,7 @@ class OidDefaultHandler:
         return "Verification cancelled: %s" % self.getSessionInfo()
 
     @expose
-    def error(self):
+    def error(self,msg='Unknown error'):
         return "An error happened during the authentication: %s" \
                % self.getSessionInfo()
 
@@ -43,9 +43,9 @@ class OidDefaultHandler:
     def authz(self):
         return "Authorization failed: %s"  % self.getSessionInfo()
 
-    @expose
-    def dummy(self):
-        return self.getSessionInfo()
+#    @expose
+#    def dummy(self):
+#        return self.getSessionInfo()
 
     def getSessionInfo(self):
         sessreg = cherrypy.session.get(self.session_name,None)

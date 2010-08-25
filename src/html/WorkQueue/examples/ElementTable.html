@@ -12,33 +12,40 @@
 -->
 
 <script src="http://yui.yahooapis.com/2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js"></script>
-<script src="http://yui.yahooapis.com/2.8.0r4/build/dragdrop/dragdrop-min.js" ></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/dragdrop/dragdrop-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/connection/connection-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/element/element-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/datasource/datasource-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/datatable/datatable-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/json/json-min.js"></script>
-<script type="text/javascript" src="http://yui.yahooapis.com/2.8.0r4/build/paginator/paginator-min.js"></script> 
+<script src="http://yui.yahooapis.com/2.8.0r4/build/paginator/paginator-min.js"></script> 
 
 <!-- WebTools library -->
 <script src="../javascript/namespace.js"></script>
 <script src="../javascript/dataTable.js"></script>
 </head>
 <body class="yui-skin-sam">
-<div id="workload"></div>
+<div id="elements"></div>
 <script type="text/javascript">
 
 var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-                elCell.innerHTML = "<a href='" + oRecord.getData("ChildQueueUrl") + "' target='_blank'>" + sData + "</a>"; 
+                elCell.innerHTML = "<a href='" + oRecord.getData("child_queue") + "' target='_blank'>" + sData + "</a>"; 
             };
 var dataSchema = {
-        fields: [{key: "id"}, {key: "name"}, {key: "owner"}, {key: "url", formatter:formatUrl}]
+        fields: [{key: "id"}, {key: "spec_name"}, {key: "task_name"}, {key: "element_name"}, 
+		         {key: "status"}, {key: "child_queue", formatter:formatUrl}, 
+				 {key: "parent_flag"},
+				 {key: "priority"}, {key: "num_jobs"},
+				 {key: "parent_queue_id"}, {key: "subscription_id"},
+				 {key: "insert_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate},
+				 {key: "update_time", parser: "date", formatter:YAHOO.widget.DataTable.formatDate}
+				 ]
         };
 
-var dataUrl = "/workqueue/workloads"
+var dataUrl = "/workqueue/elementsinfo"
 
 var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
-var dataTable = WMCore.WebTools.createDataTable("workload", dataSource, 
+var dataTable = WMCore.WebTools.createDataTable("elements", dataSource, 
                              WMCore.WebTools.createDefaultTableDef(dataSchema.fields),
                              WMCore.WebTools.defaultTableConfig, 100000)
 

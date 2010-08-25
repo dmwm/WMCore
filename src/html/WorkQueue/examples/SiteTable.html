@@ -12,12 +12,12 @@
 -->
 
 <script src="http://yui.yahooapis.com/2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+<script src="http://yui.yahooapis.com/2.8.0r4/build/dragdrop/dragdrop-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/connection/connection-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/element/element-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/datasource/datasource-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/datatable/datatable-min.js"></script>
 <script src="http://yui.yahooapis.com/2.8.0r4/build/json/json-min.js"></script>
-<script src="http://yui.yahooapis.com/2.8.0r4/build/dragdrop/dragdrop-min.js" ></script>
 <script type="text/javascript" src="http://yui.yahooapis.com/2.8.0r4/build/paginator/paginator-min.js"></script> 
 
 <!-- WebTools library -->
@@ -29,13 +29,13 @@
 <script type="text/javascript">
 
 var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-                elCell.innerHTML = "<a href='" + oRecord.getData("ChildQueueUrl") + "' target='_blank'>" + sData + "</a>"; 
+                elCell.innerHTML = "<a href='" + oRecord.getData("name") + "' target='_blank'>" + sData + "</a>"; 
             };
 var dataSchema = {
         fields: [{key: "id", parser: "number"}, {key: "name", formatter:formatUrl}]
         };
 
-var dataUrl = "http://cmssrv52.fnal.gov:9996/workqueue/sites"
+var dataUrl = "/workqueue/sites"
 
 var dataSource = WMCore.WebTools.createDataSource(dataUrl, dataSchema)
 var dataTable = WMCore.WebTools.createDataTable("site", dataSource, 

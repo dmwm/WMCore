@@ -17,7 +17,7 @@ class StageOutImplV2:
     def __init__(self):
         pass
     
-    def doTransfer(self, lfn, pfn, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -26,7 +26,7 @@ class StageOutImplV2:
         """
         raise NotImplementedError
     
-    def doDelete(self, lfn, pfn, seName, command, options, protocol  ):
+    def doDelete(self, pfn, seName, command, options, protocol  ):
         """
             deletes a file, raises on error
             StageOutError (and inherited exceptions) are for expected errors

@@ -3,35 +3,25 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t.py,v 1.7 2009/08/17 15:15:33 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DBSBuffer_t.py,v 1.8 2009/10/13 20:48:37 meloam Exp $"
+__version__ = "$Revision: 1.8 $"
 __author__ = "anzar@fnal.gov"
 
-import commands
-import logging
-import os
-import os.path
 import threading
 import time
 import unittest
 
 from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
 
-from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
-
-from WMCore.Agent.Configuration import Configuration
 
 class DBSBufferTest(unittest.TestCase):
     """
     TestCase for DBSBuffer module 
     """
 
-    _setup_done = False
-    _teardown = False
     _maxMessage = 10
 
     def setUp(self):
@@ -41,19 +31,14 @@ class DBSBufferTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         DBSBuffer tables.  Also add some dummy locations.
         """
-
-        self.config = self.getConfig()
-        myThread = threading.currentThread()
-        myThread.dialect = self.config.CoreDatabase.dialect
-        
-        self.testInit = TestInit(__file__, myThread.dialect)
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-
-        myThread.dbFactory = DBFactory(myThread.logger, self.config.CoreDatabase.connectUrl)
-        myThread.dbi = myThread.dbFactory.connect()
-        myThread.transaction = Transaction(myThread.dbi)
-
-        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database", 'WMCore.ThreadPool','WMCore.MsgService','WMCore.Trigger'],
+        self.testInit.setDatabaseConnection()    
+        self.config = self.getConfig()
+        self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database",
+                                                  'WMCore.ThreadPool',
+                                                  'WMCore.MsgService',
+                                                  'WMCore.Trigger'],
                                 useDefault = True)
 
         return
@@ -64,40 +49,7 @@ class DBSBufferTest(unittest.TestCase):
         
         Drop all the DBSBuffer tables.
         """
-        
-        myThread = threading.currentThread()
-        
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(myThread.dbi)
-        
-        myThread.transaction.begin()
-
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-
-        factory = WMFactory("DBSBuffer", "WMCore.ThreadPool")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ThreadPool tear down.")
-
-        factory = WMFactory("DBSBuffer", "WMCore.MsgService")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-
-        factory = WMFactory("DBSBuffer", "WMCore.Trigger")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete Trigger tear down.")
-        
-        myThread.transaction.commit()    
-        return
+        self.testInit.clearDatabase()
 
 
     def getConfig(self):
@@ -106,44 +58,13 @@ class DBSBufferTest(unittest.TestCase):
 
         Gets config object for testing
         """
-
-        myThread = threading.currentThread()
-
-        config = Configuration()
+        config = self.testInit.getConfiguration()
         config.component_("DBSBuffer")
         config.DBSBuffer.logLevel = 'INFO'
         config.DBSBuffer.namespace = 'WMComponent.DBSBuffer.DBSBuffer'
         config.DBSBuffer.maxThreads = 1
         config.DBSBuffer.jobSuccessHandler = \
                                            'WMComponent.DBSBuffer.Handler.JobSuccess'
-
-        config.section_("General")
-        
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database = os.getenv("DATABASE")
 
 
         return config

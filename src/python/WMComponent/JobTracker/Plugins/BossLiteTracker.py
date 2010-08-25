@@ -1,9 +1,11 @@
 #!/bin/env python
+#pylint: disable-msg=E1103
+# E1103: The thread will have a logger and a dbi before it gets here
 
 # It's the tracker for BossLite
 
-__revision__ = "$Id: BossLiteTracker.py,v 1.3 2010/08/13 10:10:48 mcinquil Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: BossLiteTracker.py,v 1.4 2010/08/16 17:56:05 mcinquil Exp $"
+__version__  = "$Revision: 1.4 $"
 
 
 import logging
@@ -17,6 +19,7 @@ from WMComponent.JobTracker.Plugins.TrackerPlugin  import TrackerPlugin
 from WMCore.BossLite.DbObjects.Job           import Job
 from WMCore.BossLite.DbObjects.RunningJob    import RunningJob
 from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
+#from WMCore.WMConnectionBase    import WMConnectionBase
 
 
 
@@ -36,6 +39,8 @@ class BossLiteTracker(TrackerPlugin):
         self.config = config
 
         myThread = threading.currentThread()
+
+        #self.engine = WMConnectionBase(daoPackage = "WMCore.BossLite")
 
         self.daoFactory = DAOFactory(package = "WMCore.BossLite",
                                      logger = myThread.logger,
@@ -70,19 +75,20 @@ class BossLiteTracker(TrackerPlugin):
         killList  = []
 
         # Get all the jobs in BossLite
-        jobAction = self.daoFactory(classname = "RunningJob.LoadJobStatus")
+        jobAction = self.daoFactory(classname = "Job.LoadJobRunningJob")
         jobList   = jobAction.execute()
 
         # Reformat jobList
         # TODO: Think of a better way to do this
         jobInfo = {}
         for job in jobList:
-            jobInfo[job['id']] = job
+            jobInfo[job['wmbsJobId']] = job
 
-
+        
         logging.info('Translating BossLite job status')
 
-        # Go over each job in bl_runningjob
+
+        # Go over each job in WMBS
         for job in jobDict:
             # If we don't have the job, then it's finished
             # This is for the accountant to deal with
@@ -119,7 +125,7 @@ class BossLiteTracker(TrackerPlugin):
                     statName = jobStatus
 
                 trackDict[job['id']] = {'Status': statName,
-                                        'StatusTime': long(time.time())-jobTime}
+                                        'StatusTime': long(time.time()) - jobTime}
             
         # At the end, kill all the jobs that have exited
         logging.info("Removing exited jobs")

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.21 2010/02/25 19:45:17 mnorman Exp $"
-__version__  = "$Revision: 1.21 $"
+__revision__ = "$Id: JobFactory.py,v 1.22 2010/02/25 21:51:04 mnorman Exp $"
+__version__  = "$Revision: 1.22 $"
 
 
 import logging
@@ -82,7 +82,7 @@ class JobFactory(WMObject):
         """
         Return and new JobGroup
         """
-        self.commit()
+        self.appendJobGroup()
         self.currentGroup = self.groupInstance(subscription=self.subscription)
         map(lambda x: x.startGroup(self.currentGroup), self.generators)
 
@@ -96,23 +96,30 @@ class JobFactory(WMObject):
             gen(self.currentJob)
         self.currentGroup.add(self.currentJob)
 
-    def commit(self):
+    def appendJobGroup(self):
         """
-        Bulk commit the JobGroup
+        Append jobGroup to jobGroup list
+
         """
+
         if self.currentGroup:
             map(lambda x: x.finishGroup(self.currentGroup), self.generators)
-        if self.currentGroup \
-                and (self.currentGroup.jobs + self.currentGroup.newjobs) > 0:
-            self.currentGroup.commitBulk()
-            for job in self.currentGroup.jobs:
-                self.subscription.acquireFiles(job["input_files"])
-                job.save()
+        if self.currentGroup:
             self.jobGroups.append(self.currentGroup)
-            logging.debug('I have committed a jobGroup with id %i' %
-                                (self.currentGroup.id))
             self.currentGroup = None
 
+        return
+
+
+    def commit(self):
+        """
+        Bulk commit the JobGroups all at once
+        """
+
+        self.appendJobGroup()
+
+        if len(self.jobGroups) > 0:
+            self.subscription.bulkCommit(jobGroups = self.jobGroups)
 
         return
 

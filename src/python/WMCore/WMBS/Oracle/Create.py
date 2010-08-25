@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.24 2009/10/12 21:11:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Create.py,v 1.25 2009/12/02 19:39:55 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -28,6 +28,7 @@ class Create(CreateWMBSBase):
     sequence_tables.append('wmbs_jobgroup')
     sequence_tables.append('wmbs_job')
     sequence_tables.append('wmbs_job_state')
+    sequence_tables.append('wmbs_checksum_type')
     
     def __init__(self, logger = None, dbi = None, params = None):
         """
@@ -74,7 +75,6 @@ class Create(CreateWMBSBase):
                lfn         VARCHAR(255) NOT NULL,
                filesize    INTEGER,
                events      INTEGER,
-               cksum       VARCHAR(100),
                first_event INTEGER,
                last_event  INTEGER,
                merged      CHAR(1) CHECK (merged IN ('0', '1' )) NOT NULL
@@ -95,9 +95,9 @@ class Create(CreateWMBSBase):
                insert_time INTEGER NOT NULL
                ) %s""" % tablespaceTable
 
-        self.indexes["01_pk_wmbs_fileset_files"] = \
-          """ALTER TABLE wmbs_fileset_files ADD
-               (CONSTRAINT wmbs_fileset_files_pk PRIMARY KEY (fileid, fileset) %s)""" % tablespaceIndex
+        #self.indexes["01_pk_wmbs_fileset_files"] = \
+        #  """ALTER TABLE wmbs_fileset_files ADD
+        #       (CONSTRAINT wmbs_fileset_files_pk PRIMARY KEY (fileid, fileset) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_wmbs_fileset_files"] = \
           """ALTER TABLE wmbs_fileset_files ADD
@@ -433,6 +433,40 @@ class Create(CreateWMBSBase):
           """ALTER TABLE wmbs_job_mask ADD                   
                (CONSTRAINT fk_mask_job FOREIGN KEY (job)
                   REFERENCES wmbs_job(id) ON DELETE CASCADE)"""
+
+        self.create["18wmbs_checksum_type"] = \
+          """CREATE TABLE wmbs_checksum_type (
+              id            INTEGER,
+              type          VARCHAR(255) 
+              ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_checksum_type"] = \
+          """ALTER TABLE wmbs_checksum_type ADD
+               (CONSTRAINT wmbs_checksum_type_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+
+        self.create["19wmbs_file_checksums"] = \
+          """CREATE TABLE wmbs_file_checksums (
+              fileid        INTEGER,
+              typeid        INTEGER,
+              cksum         VARCHAR(100)
+              ) %s""" % tablespaceTable
+
+        self.indexes["02_uk_wmbs_file_checksums"] = \
+          """ALTER TABLE wmbs_file_checksums ADD
+               (CONSTRAINT wmbs_file_checksums_uk UNIQUE (fileid, typeid) %s)""" % tablespaceIndex
+
+        self.constraints["02_fk_wmbs_file_checksums"] = \
+          """ALTER TABLE wmbs_file_checksums ADD                   
+               (CONSTRAINT fk_filechecksums_cktype FOREIGN KEY (typeid)
+                  REFERENCES wmbs_checksum_type(id) ON DELETE CASCADE)"""
+
+        self.constraints["03_fk_wmbs_file_checksums"] = \
+          """ALTER TABLE wmbs_file_checksums ADD                   
+               (CONSTRAINT fk_filechecksums_file FOREIGN KEY (fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
+
+        
 
         for jobState in Transitions().states():
             jobStateQuery = """INSERT INTO wmbs_job_state(id, name) VALUES

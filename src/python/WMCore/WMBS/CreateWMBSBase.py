@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.39 2009/10/22 18:41:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.40 2009/12/02 19:39:55 mnorman Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import threading
 
@@ -50,7 +50,10 @@ class CreateWMBSBase(DBCreator):
                                "14wmbs_job_state",
                                "15wmbs_job",
                                "16wmbs_job_assoc",
-                               "17wmbs_job_mask"]
+                               "17wmbs_job_mask",
+                               "18wmbs_checksum_type",
+                               "19wmbs_file_checksums"]
+
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -66,7 +69,6 @@ class CreateWMBSBase(DBCreator):
              lfn          VARCHAR(255) NOT NULL,
              size         BIGINT,
              events       INTEGER,
-             cksum        VARCHAR(100),
              first_event  INTEGER,
              last_event   INTEGER,
              merged       INT(1)       NOT NULL DEFAULT 0,
@@ -254,6 +256,26 @@ class CreateWMBSBase(DBCreator):
               inclusivemask BOOLEAN DEFAULT TRUE,
               FOREIGN KEY (job)       REFERENCES wmbs_job(id)
                 ON DELETE CASCADE)"""
+
+        self.create["18wmbs_checksum_type"] = \
+          """CREATE TABLE wmbs_checksum_type (
+              id            INTEGER      PRIMARY KEY AUTO_INCREMENT,
+              type          VARCHAR(255) )
+              """
+
+
+        self.create["19wmbs_file_checksums"] = \
+          """CREATE TABLE wmbs_file_checksums (
+              fileid        INTEGER,
+              typeid        INTEGER,
+              cksum         VARCHAR(100),
+              UNIQUE (fileid, typeid), 
+              FOREIGN KEY (typeid) REFERENCES wmbs_checksum_type(id)
+                ON DELETE CASCADE,
+              FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
+                ON DELETE CASCADE)"""
+
+
 
         # The transitions class holds all states and allowed transitions, use
         # that to populate the wmbs_job_state table

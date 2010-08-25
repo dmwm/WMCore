@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.23 $"
-__revision__ = "$Id: Report.py,v 1.23 2010/04/21 16:15:33 mnorman Exp $"
+__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Report.py,v 1.24 2010/04/26 21:19:19 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -103,6 +103,16 @@ class Report:
         """
         return self.data.steps
 
+    def setStepStatus(self, stepName, status):
+        """
+        _setStepStatus_
+
+        Set the status for a step.
+        """
+        reportStep = self.retrieveStep(stepName)        
+        reportStep.status = status
+        return
+    
     def parse(self, xmlfile):
         """
         _parse_

@@ -4,8 +4,8 @@
 JobTracker test 
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.4 2010/02/04 22:36:37 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobTracker_t.py,v 1.5 2010/04/28 21:13:21 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import logging
@@ -29,6 +29,8 @@ from WMCore.DataStructs.Run   import Run
 from WMComponent.JobTracker.JobTracker import JobTracker
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
+
+from WMCore.Agent.Configuration import Configuration
 
 class JobTrackerTest(unittest.TestCase):
     """
@@ -66,15 +68,40 @@ class JobTrackerTest(unittest.TestCase):
         """
         Database deletion
         """
-        self.testInit.clearDatabase()
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"])
         
 
     def getConfig(self, configPath=os.path.join(WMCore.WMInit.getWMBASE(), \
                                                 'src/python/WMComponent/JobTracker/DefaultConfig.py')):
 
 
-        config = self.testInit.getConfiguration( configPath )
-        self.testInit.generateWorkDir(config)
+
+        #self.testInit.generateWorkDir(config)
+        config = Configuration()
+
+        config.section_("CoreDatabase")
+        config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+
+        # JobTracker
+        config.component_("JobTracker")
+        config.JobTracker.logLevel      = 'INFO'
+        config.JobTracker.pollInterval  = 10
+        config.JobTracker.trackerName   = 'TestTracker'
+        config.JobTracker.pluginDir     = 'WMComponent.JobTracker.Plugins'
+        config.JobTracker.componentDir  = os.path.join(os.getcwd(), 'Components')
+        config.JobTracker.runTimeLimit  = 7776000 #Jobs expire after 90 days
+        config.JobTracker.idleTimeLimit = 7776000
+        config.JobTracker.heldTimeLimit = 7776000
+        config.JobTracker.unknTimeLimit = 7776000
+
+
+        #JobStateMachine
+        config.component_('JobStateMachine')
+        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'mnorman:theworst@cmssrv52.fnal.gov:5984')
+        config.JobStateMachine.default_retries = 1
+        config.JobStateMachine.couchDBName     = "mnorman_test"
+        
         return config
     
 

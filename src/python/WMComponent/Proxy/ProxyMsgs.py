@@ -6,8 +6,8 @@ down version of the old message service in the prodagent that
 is compliant with the old schema.
 """
 
-__revision__ = "$Id: ProxyMsgs.py,v 1.3 2008/09/29 16:10:56 fvlingen Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ProxyMsgs.py,v 1.4 2009/11/28 01:03:42 riahi Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -24,6 +24,7 @@ from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.Transaction import Transaction
 
 from WMCore.Database.DBFormatter import DBFormatter
+import MySQLdb
 
 class ProxyMsgs:
     """
@@ -37,9 +38,9 @@ class ProxyMsgs:
         """
         self.contactinfo = contactinfo
 
-        options = {}
-        options['unix_socket'] = os.getenv("DBSOCK")
-        dbFactory = DBFactory(logging.getLogger(), contactinfo, options)
+        self.options = {}
+        self.options['unix_socket'] = os.getenv("DBSOCK")
+        dbFactory = DBFactory(logging.getLogger(), contactinfo, self.options)
 
         self.dbi = dbFactory.connect()
         self.trans = Transaction(self.dbi)
@@ -136,6 +137,7 @@ class ProxyMsgs:
                        FROM ms_type
                        WHERE name = '""" + name + """'
                      """
+
         self.trans.begin()
         result = self.trans.processData(sqlCommand, {})
         rows = self.dbformat.format(result)
@@ -143,7 +145,7 @@ class ProxyMsgs:
         # get message type id
         if len(rows) == 1:
             
-            # message type was registered before, get id
+           # message type was registered before, get id
             typeid = rows[0][0]
             
         else:
@@ -203,7 +205,14 @@ class ProxyMsgs:
                        FROM ms_type
                        WHERE name = '""" + name + """'
                      """
-        self.trans.begin()                     
+
+        dbFactory = DBFactory(logging.getLogger()\
+          , self.contactinfo, self.options)
+        self.dbi = dbFactory.connect()
+        self.trans = Transaction(self.dbi)
+        self.trans.commit()
+        self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
+        self.trans.begin()
         result = self.trans.processData(sqlCommand, {})
 
         rows = self.dbformat.format(result)
@@ -285,12 +294,19 @@ class ProxyMsgs:
                      SELECT typeid
                        FROM ms_type
                        WHERE name = '""" + name + """'
+
                      """
+        dbFactory = DBFactory(logging.getLogger(), \
+           self.contactinfo, self.options)
+        self.dbi = dbFactory.connect()
+        self.trans = Transaction(self.dbi)
+        self.trans.commit()
+        self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
         self.trans.begin()
-        results = self.trans.processData(sqlCommand, {})
+        result = self.trans.processData(sqlCommand, {})
         self.trans.commit()
  
-        rows = self.dbformat.format(results)
+        rows = self.dbformat.format(result)
 
         if len(rows) == 0:
             # not registered before, so cant have any instances
@@ -323,8 +339,6 @@ class ProxyMsgs:
         """
         __get__
         """
-
-
         # get messages command
         sqlCommand = """
                      SELECT messageid, name, payload
@@ -345,9 +359,17 @@ class ProxyMsgs:
             # get messsages
             result = 0
             # execute command
+            dbFactory = DBFactory(logging.getLogger(), \
+                self.contactinfo, self.options)
+            self.dbi = dbFactory.connect()
+            self.trans = Transaction(self.dbi)
+            self.trans.commit()
+            self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
             self.trans.begin()
             result = self.trans.processData(sqlCommand, {})
             self.trans.commit()
+
+
             rows = self.dbformat.format(result)
             # there is one, return it
             if len(rows) == 1:
@@ -406,11 +428,17 @@ class ProxyMsgs:
                        FROM ms_type
                        WHERE name = '""" + messageType + """'
                      """
+        dbFactory = DBFactory(logging.getLogger(), \
+            self.contactinfo, self.options)
+        self.dbi = dbFactory.connect()
+        self.trans = Transaction(self.dbi)
+        self.trans.commit()
+        self.dbformat = DBFormatter(logging.getLogger(), self.dbi)
         self.trans.begin()
         result = self.trans.processData(sqlCommand, {})
         rows = self.dbformat.format(result)
         self.trans.commit()
-
+    
         # no rows, nothing to do
         if len(rows) == 0:
             return

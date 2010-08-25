@@ -35,7 +35,19 @@ class WorkQueueServiceTest(unittest.TestCase):
         childUrl = "http://test.url"
         childResources = []
         print wqApi.synchronize(childUrl, childResources)
+    
+    def testStatusChange(self):
         
+        wqApi = WorkQueue(self.params)
+
+        print wqApi.gotWork([1])
+        print wqApi.status()
+        print wqApi.doneWork([1])
+        print wqApi.status()
+        print wqApi.failWork([1])
+        print wqApi.status()
+        print wqApi.cancelWork([1])
+        print wqApi.status()
 if __name__ == '__main__':
 
     unittest.main()

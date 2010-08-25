@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.39 2009/07/11 08:39:36 metson Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: CMSCouch.py,v 1.40 2009/07/13 20:01:13 meloam Exp $"
+__version__ = "$Revision: 1.40 $"
 
 try:
     # Python 2.6
@@ -244,13 +244,9 @@ class Database(CouchDBRequests):
         uri  = '/%s/_bulk_docs/' % self.name
         data = {'docs': list(self._queue)}
         retval = self.post(uri , data)
-        status = 201
-        if (status == 201):
-            self._queue = []
-            return retval
-        else:
-            self.queue = []
-            raise RuntimeError, "Unknown couchdb status %s data %s retval %s" % (status, data, retval)
+        self._queue = []
+        return retval
+
 #           ##############3
 #           # currently nonfunctional threading code?
 #

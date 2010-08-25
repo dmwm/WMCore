@@ -4,8 +4,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t.py,v 1.4 2008/11/18 23:25:29 afaq Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBSBuffer_t.py,v 1.5 2009/08/12 15:45:23 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -44,10 +44,11 @@ class DBSBufferTest(unittest.TestCase):
 
             myThread = threading.currentThread()
             myThread.logger = logging.getLogger('DBSBufferTest')
-            myThread.dialect = 'MySQL'
+            myThread.dialect = os.getenv("DIALECT")
 
             options = {}
-            options['unix_socket'] = os.getenv("DBSOCK")
+            if (os.getenv("DBSOCK")):
+                options['unix_socket'] = os.getenv("DBSOCK")
             dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
                 options)
             print "os.getenv(DATABASE)", os.getenv("DATABASE")

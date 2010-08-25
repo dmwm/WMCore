@@ -3,8 +3,8 @@
 Code for migrating blocks to global DBS
 """
 
-__revision__ = "$Id: MigrateFileBlocks.py,v 1.1 2009/12/02 19:46:34 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MigrateFileBlocks.py,v 1.2 2009/12/07 16:06:17 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
@@ -29,6 +29,18 @@ from WMCore.Services.DBS           import DBSWriterObjects
 from WMCore.Services.DBS.DBSErrors import DBSWriterError, formatEx,DBSReaderError
 from WMCore.Services.DBS.DBSReader import DBSReader
 
+
+
+def usage():
+    """
+    Exactly what it says on the tin
+    """
+
+    print """Usage:
+    python MigrateFileBlocks.py [dataset path] [path to config file for DBSUpload]
+
+    where [dataset path] is a formal dataset path (/Primary/Processed/Tier)
+    and the config file is probably the DBSUpload default config"""
 
 
 class MigrateFileBlocks:
@@ -79,6 +91,7 @@ class MigrateFileBlocks:
         for entry in blockNames:
             name = entry['blockname']
             self.dbswriter.manageFileBlock(name, maxFiles = 0, maxSize = None, timeOut = None)
+            block['OpenForWriting'] = 0
             dbinterface.setBlockStatus(name, locations, block['OpenForWriting'])
 
 
@@ -86,6 +99,11 @@ class MigrateFileBlocks:
 
 
 if __name__ == '__main__':
+
+    if len(sys.argv) < 3:
+        usage()
+        sys.exit(1)
+
     configPath  = sys.argv[2]
     datasetPath = sys.argv[1]
 

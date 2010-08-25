@@ -82,7 +82,13 @@ class InstallScenario(ScriptInterface):
         jobTweak = makeJobTweak(self.job)
         applyTweak(process, jobTweak)
         
-        # output modules
+        # output modules fixup for missing parameters
+        import FWCore.ParameterSet.Config as cms
+        for outMod in process.outputModules_():
+            outModRef = getattr(process, outMod)
+            if not hasattr(outModRef, "logicalFileName"):
+                outModRef.logicalFileName = cms.untracked.string('')
+        
         cmsswStep = self.step.getTypeHelper()
         for om in cmsswStep.listOutputModules():
             mod = cmsswStep.getOutputModule(om)

@@ -208,7 +208,7 @@ class PhEDEx(Service):
         """
 
         callname = 'blockreplicas'
-        return self._getResult(callname, args = kwargs, verb="GET")
+        return self._getResult(callname, args = kwargs)
 
     def getReplicaInfoForFiles(self, **args):
         """

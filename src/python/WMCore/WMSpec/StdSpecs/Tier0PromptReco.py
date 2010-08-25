@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
-Tier0ReReco.py
+_Tier0PromptReco_
 
+The Tier0 Prompt Reco workflow with does RECO and ALCA skiming.
 """
 
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -12,10 +13,11 @@ parseDataset = lambda x : { "Primary" : x.split("/")[1],
                             "Processed": x.split("/")[2],
                             "Tier" : x.split("/")[3]}
                             
-def tier0ReRecoWorkload(workloadName, arguments):
+def tier0PromptRecoWorkload(workloadName, arguments):
     """
-    _tier0ReRecoWorkload_
-    
+    _tier0PromptRecoWorkload_
+
+    The Tier0 Prompt Reco workflow with does RECO and ALCA skiming.    
     """
     writeDataTiers = arguments.get("OutputTiers", ['RECO', 'ALCARECO'])
     owner = arguments.get("Owner", "DataOps")
@@ -125,23 +127,23 @@ def tier0ReRecoWorkload(workloadName, arguments):
     if "RECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
             "outputRECORECO", primaryDataset = inputPrimaryDataset,
-            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
+            processedDataset = "%s-Tier0PromptReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "RECO",
-            lfnBase = "%s/RECO/%s-Tier0ReReco-%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
+            lfnBase = "%s/RECO/%s-Tier0PromptReco-%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
         )   
 
     if "ALCARECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
             "outputALCARECOALCARECO", primaryDataset = inputPrimaryDataset,
-            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
+            processedDataset = "%s-Tier0PromptReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "ALCARECO",
-            lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
+            lfnBase = "%s/ALCARECO/%s-Tier0PromptReco-%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
         )  
 
     if "AOD" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
             "outputAODRECO", primaryDataset = inputPrimaryDataset,
-            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
+            processedDataset = "%s-Tier0PromptReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "AOD",
             lfnBase = "%s/AOD/%s" % (unmergedLfnBase, acquisitionEra, processingVersion)
         )  
@@ -183,9 +185,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
         mergeRecoCmsswHelper.setDataProcessingConfig(scenario, "merge")
         mergeRecoCmsswHelper.addOutputModule(
             "Merged", primaryDataset = inputPrimaryDataset,
-            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
+            processedDataset = "%s-Tier0PromptReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "RECO",
-            lfnBase = "%s/RECO/%s-Tier0ReReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
+            lfnBase = "%s/RECO/%s-Tier0PromptReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
         )
 
 
@@ -234,9 +236,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
             skimAlcaCmsswHelper.addOutputModule(
                 "ALCARECOStream%s" % skim,
                 primaryDataset = inputPrimaryDataset,
-                processedDataset = "%s-Tier0ReReco-%s-%s" % (acquisitionEra, skim, processingVersion),
+                processedDataset = "%s-Tier0PromptReco-%s-%s" % (acquisitionEra, skim, processingVersion),
                 dataTier = "ALCARECO",
-                lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion))
+                lfnBase = "%s/ALCARECO/%s-Tier0PromptReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion))
             
             mergeAlca = skimAlca.addTask("MergeAlcaReco%s" % skim)
             mergeAlcaCmssw = mergeAlca.makeStep("mergeAlcaReco%s" % skim)
@@ -260,9 +262,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
             mergeAlcaCmsswHelper.setDataProcessingConfig(scenario, "merge")
             mergeAlcaCmsswHelper.addOutputModule(
                 "Merged", primaryDataset = inputPrimaryDataset,
-                processedDataset = "%s-Tier0ReReco-%s-%s" % (acquisitionEra, skim, processingVersion),
+                processedDataset = "%s-Tier0PromptReco-%s-%s" % (acquisitionEra, skim, processingVersion),
                 dataTier = "ALCARECO",
-                lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion)
+                lfnBase = "%s/ALCARECO/%s-Tier0PromptReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion)
                 )
 
             mergeAlca.setInputReference(skimAlcaCmssw, outputModule = "ALCARECOStream%s" % skim)
@@ -298,9 +300,9 @@ def tier0ReRecoWorkload(workloadName, arguments):
         mergeAodCmsswHelper.setDataProcessingConfig(scenario, "merge")
         mergeAodCmsswHelper.addOutputModule(
             "Merged", primaryDataset = inputPrimaryDataset,
-            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
+            processedDataset = "%s-Tier0PromptReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "AOD",
-            lfnBase = "%s/AOD/%s-Tier0ReReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
+            lfnBase = "%s/AOD/%s-Tier0PromptReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
         )
 
         mergeAod.setInputReference(rerecoCmssw, outputModule = "outputAODRECO")
@@ -319,7 +321,7 @@ if __name__ == '__main__':
         "InputDatasets" : "/MinBias/Commissioning09-v0/RAW",
         }
 
-    workload = tier0ReRecoWorkload("Test", arguments)
+    workload = tier0PromptRecoWorkload("Test", arguments)
             
     for tt in  workload.taskIterator():
         print "Have task %s, printing children:" % tt.name()

@@ -7,8 +7,8 @@ Class for creating MySQL specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2008/12/11 09:06:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2009/10/07 12:18:27 spiga Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import threading
@@ -24,7 +24,7 @@ class Create(DBCreator):
     
     
     
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None, params = None):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}

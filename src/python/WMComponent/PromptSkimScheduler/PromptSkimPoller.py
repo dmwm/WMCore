@@ -5,21 +5,19 @@ _PromptSkimPoller_
 Poll T0AST for complete blocks and launch skims.
 """
 
-__revision__ = "$Id: PromptSkimPoller.py,v 1.2 2010/06/04 20:12:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: PromptSkimPoller.py,v 1.3 2010/06/06 14:34:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import time
 import threading
 import logging
+import sys
+import os
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Agent.Harness import Harness
 from WMCore.DAOFactory import DAOFactory
-
-import logging
-import threading
-import sys
 
 from T0.State.Database.Reader import ListBlock
 from T0.State.Database.Reader import ListDatasets
@@ -30,6 +28,7 @@ from T0.State.Database.Writer import InsertBlock
 from T0.State.Database.Writer import InsertDataset
 
 from T0.GenericTier0.Tier0DB import Tier0DB
+from T0.RunConfigCache.CacheManager import getRunConfigCache
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
@@ -38,11 +37,11 @@ from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.DataStructs.Run import Run
 from WMCore.DAOFactory import DAOFactory
-from WMCOre.Database.DBFactory import DBFactory
+from WMCore.Database.DBFactory import DBFactory
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimFactory
+from WMCore.WMSpec.StdSpecs.PromptSkim import PromptSkimWorkloadFactory
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 
@@ -60,22 +59,28 @@ class PromptSkimPoller(BaseWorkerThread):
         logging.info("PromptSkimScheduler Component Started")
 
         # Workload related parameters
-        self.promptSkimFactory = PromptSkimWorkfloadFactory()
+        self.promptSkimFactory = PromptSkimWorkloadFactory()
         self.workloads = {}
-        self.workloadCache = self.config.PromtSkimScheduler.workloadCache
+        self.workloadCache = self.config.PromptSkimScheduler.workloadCache
+        os.makedirs(self.workloadCache)
+
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging,
+                                     dbinterface = myThread.dbi)
+        self.runConfigCache = None
 
         # Scram arch and path to cmssw needed to generate workflows.
         self.scramArch = self.config.PromptSkimScheduler.scramArch
         self.cmsPath = self.config.PromptSkimScheduler.cmsPath
 
         # Job splitting parameters
-        self.filesPerJob = self.PromptSkimScheduler.filesPerJob
-        self.minMergeSize = self.PromptSkimScheduler.minMergeSize
-        self.maxMergeEvents = self.PromptSkimScheduler.maxMergeEvents
-        self.maxMergeSize = self.PromptSkimScheduler.maxMergeSize
-        self.maxMergeFiles = self.PromptSkimScheduler.maxMergeFiles
+        self.filesPerJob = self.config.PromptSkimScheduler.filesPerJob
+        self.minMergeSize = self.config.PromptSkimScheduler.minMergeSize
+        self.maxMergeEvents = self.config.PromptSkimScheduler.maxMergeEvents
+        self.maxMergeSize = self.config.PromptSkimScheduler.maxMergeSize
+        self.maxMergeFiles = self.config.PromptSkimScheduler.maxMergeFiles
 
-        phedex = PhEDEx({"endpoint": self.PromptSkimScheduler.phedexURL}, "Json")
+        phedex = PhEDEx({"endpoint": self.config.PromptSkimScheduler.phedexURL}, "json")
         self.nodeMap = phedex.getNodeMap()
         
         self.t0astDBConn = None
@@ -92,7 +97,7 @@ class PromptSkimPoller(BaseWorkerThread):
                                    manageGlobal = False,
                                    initConnection = False)
 
-        self.t0astDBConn.dbFactory = DBFactory(logging, self.PromptSkimScheduler.t0astURL)
+        self.t0astDBConn.dbFactory = DBFactory(logging, self.config.PromptSkimScheduler.t0astURL)
         self.t0astDBConn.connect()
         return
 
@@ -106,6 +111,16 @@ class PromptSkimPoller(BaseWorkerThread):
         self.pollForRunComplete()
         return
 
+    def getRunConfig(self, runNumber):
+        """
+        _getRunConfig_
+
+        """
+        if not self.runConfigCache:
+            self.runConfigCache = getRunConfigCache(self.t0astDBConn, None)
+
+        return self.runConfigCache.getRunConfig(runNumber)
+    
     def inputFilesetName(self, blockInfo):
         """
         _inputFilesetName_
@@ -192,13 +207,12 @@ class PromptSkimPoller(BaseWorkerThread):
 
         """
         if self.workloads.has_key(blockInfo["RUN_ID"]):
-            if self.workload[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
+            if self.workloads[blockInfo["RUN_ID"]].has_key(skimConfig.SkimName):
                 return
 
         runConfig = self.getRunConfig(blockInfo["RUN_ID"])
-        datasetPath = "/%s/%s/%s" % (block.getPrimaryDatasetName(),
-                                     block.getProcessedDatasetName(),
-                                     block.getDataTier())
+        logging.debug("BLOCKINFO: %s" % blockInfo)
+        (datasetPath, guid) = blockInfo["BLOCK_NAME"].split("#", 1)
         configFile = runConfig.retrieveConfigFromURL(skimConfig.ConfigURL)
 
         if skimConfig.TwoFileRead:
@@ -206,8 +220,8 @@ class PromptSkimPoller(BaseWorkerThread):
         else:
             splitAlgo = "FileBased"
             
-        wfParams = {"AcquisitionEra": yeah,
-                    "Requester": "CMSPromptSkimming",
+        wfParams = {"AcquisitionEra": runConfig.getAcquisitionEra(),
+                    "Requestor": "CMSPromptSkimming",
                     "InputDataset": datasetPath,
                     "CMSSWVersion": skimConfig.CMSSWVersion,
                     "ScramArch": self.scramArch,
@@ -220,21 +234,26 @@ class PromptSkimPoller(BaseWorkerThread):
                     "MinMergeSize": self.minMergeSize,
                     "MaxMergeSize": self.maxMergeSize,
                     "MaxMergeEvents": self.maxMergeEvents,
-                    "SplitAlgo": self.splitAlgo}
+                    "SplitAlgo": splitAlgo}
 
-        workloadName = "Run%s-%s-%s-%s" % (run, primary, processed, skim)
+        (primary, processed, tier) = datasetPath[1:].split("/", 3)
+        workloadName = "Run%s-%s-%s-%s" % (blockInfo["RUN_ID"], primary, processed, skimConfig.SkimName)
 
-        workload = self.promptSkimFactory(wfParams)
+        workload = self.promptSkimFactory(workloadName, wfParams)
         taskMaker = TaskMaker(workload, os.path.join(self.workloadCache, workloadName))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
 
-        specPath = os.path.join(self.workfloadCache, workloadName, "spec.pkl")
+        specPath = os.path.join(self.workloadCache, workloadName, "spec.pkl")
         workload.save(specPath)
 
         myHelper = WMBSHelper(workload, specPath, "CMSDataOps", "PromptSkim",
                               "Skim", None, None, None)
         myHelper.createSubscription()
+
+        if not self.workloads.has_key(blockInfo["RUN_ID"]):
+            self.workloads[blockInfo["RUN_ID"]] = {}
+        self.workloads[blockInfo["RUN_ID"]][skimConfig.SkimName] = True
         return
 
     def pollForTransferedBlocks(self):
@@ -293,7 +312,7 @@ class PromptSkimPoller(BaseWorkerThread):
 
             for skimConfig in skims:
                 try:
-                    self.createWorkflowsForBlock(runConfig.getAcquisitionEra(),
+                    self.createWorkloadsForBlock(runConfig.getAcquisitionEra(),
                                                  skimConfig, skimmableBlock,
                                                  blockSEName)
                 except Exception, ex:
@@ -335,8 +354,6 @@ class PromptSkimPoller(BaseWorkerThread):
                     openRuns.append(run[3:])
 
         if len(openRuns) == 0:
-            self.ms.publishUnique("Tier1Scheduler:pollForRunComplete",
-                                  "", "00:01:00")        
             return
         
         runStatuses = ListRuns.listRunState(self.t0astDBConn, openRuns)

@@ -113,13 +113,7 @@ class PromptSkimWorkloadFactory():
         if inputDataset != None:
             (primary, processed, tier) = self.inputDataset[1:].split("/")
             procTask.addInputDataset(primary = primary, processed = processed,
-                                     tier = tier, dbsurl = self.dbsUrl,
-                                     block_blacklist = self.blockBlackList,
-                                     block_whitelist = self.blockWhiteList,
-                                     run_blacklist = self.runBlackList,
-                                     run_whitelist = self.runWhiteList)
-            procTask.data.constraints.sites.whitelist = self.siteWhiteList
-            procTask.data.constraints.sites.blacklist = self.siteBlackList
+                                     tier = tier)
         else:
             procTask.setInputReference(inputStep, outputModule = inputModule)
 
@@ -245,7 +239,6 @@ class PromptSkimWorkloadFactory():
 
         # Required parameters that can be empty.
         self.skimConfig = arguments["SkimConfig"]
-        self.scenario = arguments["Scenario"]
         self.couchUrl = arguments.get("CouchUrl", "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984")
         self.couchDBName = arguments.get("CouchDBName", "wmagent_config_cache")        
         

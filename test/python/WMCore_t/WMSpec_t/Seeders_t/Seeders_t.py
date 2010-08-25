@@ -31,21 +31,21 @@ class SeederTest(unittest.TestCase):
         self.manager = SeederManager()
 
         self.seedlistForRandom = {
-            "simMuonRPCDigis": None,
-            "simEcalUnsuppressedDigis": None,
-            "simCastorDigis": None,
-            "generator": None,
-            "simSiStripDigis": None,
-            "LHCTransport": None,
-            "mix": None,
-            "simHcalUnsuppressedDigis": None,
-            "theSource": None,
-            "simMuonCSCDigis": None,
-            "VtxSmeared": None,
-            "g4SimHits": None,
-            "simSiPixelDigis": None,
-            "simMuonDTDigis": None,
-            "evtgenproducer": None
+            "simMuonRPCDigis.initialSeed": None,
+            "simEcalUnsuppressedDigis.initialSeed": None,
+            "simCastorDigis.initialSeed": None,
+            "generator.initialSeed": None,
+            "simSiStripDigis.initialSeed": None,
+            "LHCTransport.initialSeed": None,
+            "mix.initialSeed": None,
+            "simHcalUnsuppressedDigis.initialSeed": None,
+            "theSource.initialSeed": None,
+            "simMuonCSCDigis.initialSeed": None,
+            "VtxSmeared.initialSeed": None,
+            "g4SimHits.initialSeed": None,
+            "simSiPixelDigis.initialSeed": None,
+            "simMuonDTDigis.initialSeed": None,
+            "evtgenproducer.initialSeed": None
             }
 
 
@@ -139,21 +139,11 @@ class SeederTest(unittest.TestCase):
         task1.data.section_("seeders")
         task1.data.seeders.section_("RandomSeeder")
         task1.data.seeders.section_("RunAndLumiSeeder")
-        task1.data.seeders.RandomSeeder.simMuonRPCDigis            = None
-        task1.data.seeders.RandomSeeder.simEcalUnsuppressedDigis   = None
-        task1.data.seeders.RandomSeeder.simCastorDigis             = None
-        task1.data.seeders.RandomSeeder.generator                  = None 
-        task1.data.seeders.RandomSeeder.simSiStripDigis            = None
-        task1.data.seeders.RandomSeeder.LHCTransport               = None
-        task1.data.seeders.RandomSeeder.mix                        = None
-        task1.data.seeders.RandomSeeder.simHcalUnsuppressedDigis   = None
-        task1.data.seeders.RandomSeeder.theSource                  = None
-        task1.data.seeders.RandomSeeder.simMuonCSCDigis            = None
-        task1.data.seeders.RandomSeeder.VtxSmeared                 = None
-        task1.data.seeders.RandomSeeder.g4SimHits                  = None
-        task1.data.seeders.RandomSeeder.simSiPixelDigis            = None
-        task1.data.seeders.RandomSeeder.simMuonDTDigis             = None
-        task1.data.seeders.RandomSeeder.evtgenproducer             = None
+        task1.data.seeders.RandomSeeder.section_("generator")
+        task1.data.seeders.RandomSeeder.section_("evtgenproducer")
+        task1.data.seeders.RandomSeeder.generator.initialSeed      = None 
+        task1.data.seeders.RandomSeeder.evtgenproducer.initialSeed = None
+        task1.data.seeders.RandomSeeder.MAXINT                     = 100000
         task1.data.seeders.RunAndLumiSeeder.lumi_per_run           = 5
 
         manager = SeederManager(task = task1)
@@ -171,9 +161,51 @@ class SeederTest(unittest.TestCase):
                 self.assertEqual(hasattr(conf.RandomSeeder.generator, 'initialSeed'), True)
                 self.assertEqual(job["mask"]["FirstLumi"], count%6)
                 self.assertEqual(job["mask"]["FirstRun"],  (count/6) + 1)
+                x = conf.RandomSeeder.generator.initialSeed
+                assert x > 0, "ERROR: producing negative random numbers"
+                assert x < 100000, "ERROR: MAXINT tag failed; producing bad random number %i" %(x)
                 count += 1
 
         return
+
+
+
+
+    def testPresetSeeder(self):
+        """
+        _testPresetSeeder_
+        
+        Test whether the PresetSeeder works
+        """
+
+        task1 = makeWMTask("task1")
+
+        task1.data.section_("seeders")
+        task1.data.seeders.section_("PresetSeeder")
+        task1.data.seeders.PresetSeeder.section_("generator")
+        task1.data.seeders.PresetSeeder.section_("evtgenproducer")
+        task1.data.seeders.PresetSeeder.generator.initialSeed                  = 1001 
+        task1.data.seeders.PresetSeeder.evtgenproducer.initialSeed             = 1001
+
+
+        manager = SeederManager(task = task1)
+
+        jobs = self.oneHundredFiles()
+
+        for jobGrp in jobs:
+            manager(jobGrp)
+
+        for jobGrp in jobs:
+            count = 0
+            for job in jobGrp.jobs:
+                conf = job.getBaggage()
+                self.assertEqual(conf.PresetSeeder.evtgenproducer.initialSeed, 1001)
+                self.assertEqual(conf.PresetSeeder.generator.initialSeed,      1001)
+
+
+        return
+
+        
 
 if __name__ == '__main__':
     unittest.main()

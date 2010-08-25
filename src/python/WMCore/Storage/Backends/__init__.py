@@ -23,6 +23,7 @@ import RFCPImpl
 import RFCP1Impl
 import RFCP2Impl
 import RFCPCERNImpl
+import RFCPRALImpl
 import PYDCCPImpl
 import SRMV2Impl
 import XRDCPImpl

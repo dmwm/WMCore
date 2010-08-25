@@ -6,13 +6,14 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.15 2010/04/26 21:08:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: StageOut.py,v 1.16 2010/04/26 21:27:59 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import os
 import os.path
 import logging
 import signal
+import string
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.FwkJobReport.Report             import Report
@@ -21,6 +22,12 @@ import WMCore.Storage.StageOutMgr as StageOutMgr
 from WMCore.Storage.StageOutError import StageOutFailure
         
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
+
+def parseLFNWithNumber(lfn, folder):
+    lfnSplit = lfn.split('/')
+    # Put a folder before the final file name
+    lfnSplit[-1:-1] = folder
+    return string.join(lfnSplit, '/')
 
 class StageOut(Executor):
     """
@@ -116,6 +123,13 @@ class StageOut(Executor):
                 if hasattr(file, 'lfn') and hasattr(file, 'pfn'):
                     # Save the input PFN in case we need it
                     # Undecided whether to move file.pfn to the output PFN
+                    if 'number' in self.job.keys():
+                        # Then we need to append the jobNumber to the LFN as a dir
+                        nFilesInFolder = getattr(self.step.output, 'maxFilesPerDirectory', 400)
+                        folder = int(self.job['number']/nFilesInFolder)
+                        setattr(file, 'lfn',
+                                parseLFNWithNumber(lfn = getattr(file, 'lfn'),
+                                                   folder = str(folder)))
                     file.InputPFN        = file.pfn
                     fileForTransfer = {'LFN': getattr(file, 'lfn'), \
                                        'PFN': getattr(file, 'pfn'), \

@@ -5,8 +5,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.7 2010/03/30 19:22:30 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.8 2010/04/26 20:37:44 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
@@ -127,6 +127,10 @@ class JobCreatorWorker:
         logging.debug("Job Groups %s" % wmbsJobGroups)
         logging.info("Have jobGroups")
 
+        # Now we get to find out what job they are.
+        countJobs = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
+        jobNumber = countJobs.execute(workflow = workflow.id)
+
         myThread.transaction.commit()
 
         for wmbsJobGroup in wmbsJobGroups:
@@ -136,6 +140,7 @@ class JobCreatorWorker:
                                             startDir = self.jobCacheDir)
 
             for job in wmbsJobGroup.jobs:
+                jobNumber += 1
                 #We better save the whole job
                 #First, add the necessary components
                 if wmTask:
@@ -143,11 +148,13 @@ class JobCreatorWorker:
                     job['spec']    = workflow.spec
                     job['sandbox'] = wmTask.data.input.sandbox
                     job['task']    = wmTask.getPathName()
+                job['number']  = jobNumber
                 cacheDir = job.getCache()
                 job['cache_dir'] = cacheDir
                 output = open(os.path.join(cacheDir, 'job.pkl'),'w')
                 cPickle.dump(job, output)
                 output.close()
+                
 
             logging.info("Finished call for jobGroup %i" %(wmbsJobGroup.exists()))
 

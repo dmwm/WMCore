@@ -22,6 +22,9 @@ import sys
 import os
 import tarfile
 import getopt
+import shutil
+
+from subprocess import Popen, PIPE
 
 
 options = {
@@ -74,9 +77,16 @@ def createWorkArea(sandbox):
     if not os.path.exists(jobDir):
         os.makedirs(jobDir)
 
-    tfile = tarfile.open(sandbox, "r")
-    tfile.extractall(jobDir)
-    tfile.close()
+
+    #tfile = tarfile.open(sandbox, "r")
+    #tfile.extractall(jobDir)
+    #tfile.close()
+
+    os.chdir(jobDir)
+    pipe = Popen(['tar', '-jxvf', '../%s' %(sandbox)], stdout = PIPE, stderr = PIPE, shell=False)
+    pipe.communicate()
+    os.chdir(currentDir)
+
 
     print "export PYTHONPATH=$PYTHONPATH:%s" % jobDir
     return jobDir
@@ -91,7 +101,9 @@ def installPackage(jobArea, jobPackage, jobIndex):
     """
     target = "%s/WMSandbox" % jobArea
     pkgTarget = "%s/JobPackage.pcl" % target
+    #shutil.copy(jobPackage, pkgTarget)
     os.system("/bin/cp %s %s" % (jobPackage, pkgTarget))
+
 
     indexPy = "%s/JobIndex.py" % target
     handle = open(indexPy, 'w')
@@ -147,7 +159,7 @@ if __name__ == '__main__':
     try:
         jobArea = createWorkArea(sandbox)
         installPackage(jobArea, package, jobIndex)
-        sys.exit(0)
+        #sys.exit(0)
     except Exception, ex:
         msg = "Unable to create job area for bootstrap\n"
         msg += str(ex)

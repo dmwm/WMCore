@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.68 2010/07/19 19:21:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.68 $"
+__revision__ = "$Id: CMSCouch.py,v 1.69 2010/07/19 20:11:10 evansde Exp $"
+__version__ = "$Revision: 1.69 $"
 
 import urllib
 import datetime
@@ -238,6 +238,20 @@ class Database(CouchDBRequests):
         """
         return Document(dict=self.get('/%s/%s' % (self.name, 
                                                   urllib.quote_plus(id))))
+
+    def documentExists(self, id):
+        """
+        Check if a document exists by ID
+        """
+        uri = "/%s/%s" % (self.name, urllib.quote_plus(id))
+        docExists = False
+        try:
+            self.makeRequest(uri, {}, 'HEAD')
+            return True
+        except:
+            return False
+            
+       
 
     def delete_doc(self, id):
         """

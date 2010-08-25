@@ -3,15 +3,15 @@
 Unit tests for json wrapper.
 """
 
-__revision__ = "$Id: JsonWrapper_t.py,v 1.4 2010/01/27 19:44:34 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
-
+__revision__ = "$Id: JsonWrapper_t.py,v 1.5 2010/08/02 16:01:58 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
+import nose
 __test = False
 try:
     import cjson
     __test = True
 except:
-    print "No cjson module is found, skip the test"
+
 
 import unittest
 try:
@@ -34,6 +34,8 @@ class TestWrapper(unittest.TestCase):
         """
         Test cjson implementation.
         """
+        if not __test:
+            raise nose.SkipTest
         json_wrap._module = "cjson"
         result = json_wrap.dumps(self.record)
         expect = json.dumps(self.record)
@@ -64,6 +66,9 @@ class TestWrapper(unittest.TestCase):
         """
         Test that cjson and json libraries do the same thing.
         """
+        if not __test:
+            raise nose.SkipTest
+        json_wrap._module = "cjson"
         json_wrap._module = "cjson"
         cj_result = json_wrap.dumps(self.record)
         json_wrap._module = "json"
@@ -80,8 +85,11 @@ class TestWrapper(unittest.TestCase):
         
     def test_file_compare(self):
         # TODO: use python's mktmnam, don't just assume these paths exist
+        raise RuntimeError, "Don't write to hardcoded paths, buildbot dislikes it -- Melo"
         testfile = '/tmp/jsonwrappertest'
-        
+        if not __test:
+            raise nose.SkipTest
+        json_wrap._module = "cjson"        
         #write self.record to a file via cjson
         f = open(testfile, 'w')
         json_wrap._module = "cjson"

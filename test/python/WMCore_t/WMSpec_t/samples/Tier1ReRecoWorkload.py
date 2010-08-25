@@ -30,10 +30,11 @@ skimLogArch = rerecoCmssw.addStep("logArch1")
 skimLogArch.setStepType("LogArchive")
 rereco.applyTemplates()
 rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
+#MinimumBias/BeamCommissioning09-v1/RAW
 rereco.addInputDataset(
-    primary = "Cosmics",
-    processed = "CRAFT09-PromptReco-v1",
-    tier = "RECO",
+    primary = "MinimumBias",
+    processed = "BeamCommissioning09-v1",
+    tier = "RAW",
     dbsurl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
 
 
@@ -49,12 +50,13 @@ rerecoCmsswHelper = rerecoCmssw.getTypeHelper()
 
 
 rerecoCmsswHelper.cmsswSetup(
-    "CMSSW_3_1_2",
-    softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
+    "CMSSW_3_3_5_patch3",
+    softwareEnvironment = " . /uscmst1/prod/sw/cms/shrc prod",
+    scramArch = "slc5_ia32_gcc434",
     )
 
 rerecoCmsswHelper.setDataProcessingConfig(
-    "cosmics", "promptReco", globalTag = "GLOBAL::BALLS",
+    "cosmics", "promptReco", globalTag = "GR09_P_V7::All",
     writeTiers = ['RECO'])
 
 rerecoCmsswHelper.addOutputModule(
@@ -153,7 +155,7 @@ def testSubscription():
     fileset1 = Fileset(name = 'SkimFiles')
 
 
-    for dbsF in dbs.listFiles(patternLFN = "/store/data/CRAFT09/Cosmics/RECO/v1/000/108/483/*", retriveList = ['retrive_lumi', 'retrive_run']):
+    for dbsF in dbs.listFiles(patternLFN = "/store/data/BeamCommissioning09/MinimumBias/RAW/*", retriveList = ['retrive_lumi', 'retrive_run']):
 
         runs = {}
         for lumi in dbsF['LumiList']:
@@ -169,13 +171,10 @@ def testSubscription():
                      dbsF['NumberOfEvents'])
         for run in runs.values():
             wmbsF.addRun(run)
-
         fileset1.addFile(wmbsF)
 
 
-
     work = rereco.makeWorkflow()
-    print work.task
     subscription = Subscription(
         fileset = fileset1,
         workflow = work,
@@ -214,7 +213,7 @@ def makeRerecoJobs(task, subscriptionWithFiles):
 
     jobGroups = jobfactory(files_per_job = 1)
 
-
+    
 
     package = JobPackage()
     [ package.extend(group.getJobs()) for group in jobGroups ]

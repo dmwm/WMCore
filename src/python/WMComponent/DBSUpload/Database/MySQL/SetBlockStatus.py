@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 
                                                                                                                                                                                                                                                                                                                                                                                                           """
-__revision__ = "$Id: SetBlockStatus.py,v 1.8 2009/12/02 16:28:43 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.9 2009/12/07 18:57:21 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -24,11 +24,15 @@ class SetBlockStatus(DBFormatter):
     SELECT blockname FROM dbsbuffer_block WHERE blockname = :block
     """
 
-    sql = """INSERT INTO dbsbuffer_block (blockname, location, status)
-               SELECT :block, (SELECT id FROM dbsbuffer_location WHERE se_name = :location), :status FROM DUAL
+    sql = """INSERT INTO dbsbuffer_block (blockname, location, status, create_time)
+               SELECT :block, (SELECT id FROM dbsbuffer_location WHERE se_name = :location), :status, :time FROM DUAL
                """
 
     updateSQL = """UPDATE dbsbuffer_block SET status = :status
+                     WHERE blockname = :block 
+    """
+
+    timedSQL  = """UPDATE dbsbuffer_block SET status = :status, create_time = :time
                      WHERE blockname = :block 
     """
 
@@ -38,7 +42,7 @@ class SetBlockStatus(DBFormatter):
         DBFormatter.__init__(self, myThread.logger, myThread.dbi)
 
 
-    def execute(self, block, locations = None, open_status = 0, conn = None, transaction = False):
+    def execute(self, block, locations = None, open_status = 0, time = 0, conn = None, transaction = False):
         """
         _execute_
 
@@ -56,9 +60,9 @@ class SetBlockStatus(DBFormatter):
         #Hence us parsing open_status into status
         status = ''
 
-        if open_status == '1':
+        if open_status == '1' or open_status == 1:
             status = 'Open'
-        elif open_status == '0':
+        elif open_status == '0' or open_status == 0:
             status = 'InGlobalDBS'
         elif type(open_status) == str:
             status = open_status
@@ -73,14 +77,22 @@ class SetBlockStatus(DBFormatter):
         if res1 == []:
             sql = self.sql
             for location in locations:
-                bindVars.append({"block": block, "location": location, "status": status})
+                bindVars.append({"block": block, "location": location, "status": status, "time": time})
         else:
-            sql = self.updateSQL
-            bindVars = {"block": block, "status": status}
-            
+
+            if time:
+                bindVars = {"block": block, "status": status, "time": time}
+                sql = self.timedSQL
+            else:
+                bindVars = {"block": block, "status": status}
+                sql = self.updateSQL
+
+                
 
         self.dbi.processData(sql, bindVars, conn = conn,
-                             transaction = transaction)
+                                     transaction = transaction)
+            
+
         return
                                              
 

@@ -7,8 +7,8 @@ Data object that describes a job
 """
 
 __all__ = []
-__revision__ = "$Id: Job.py,v 1.24 2009/06/09 18:30:13 evansde Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Job.py,v 1.25 2009/08/10 19:00:00 evansde Exp $"
+__version__ = "$Revision: 1.25 $"
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.JobGroup import JobGroup
@@ -120,5 +120,24 @@ class Job(WMObject, dict):
         """
         return self.baggage
 
+
+    def addBaggageParameter(self, attrName, value):
+        """
+        _addBaggageParameter_
+
+        Add an attribute as process.pset1.pset2.param = value
+        Value should be the appropriate python type
+
+        """
+        currentPSet = self.baggage
+        paramList = attrName.split(".")
+        for i in range(0, len(paramList)):
+            param = paramList.pop(0)
+            if len(paramList) > 0:
+                if not hasattr(currentPSet, param):
+                    currentPSet.section_(param)
+                currentPSet = getattr(currentPSet, param)
+            else:
+                setattr(currentPSet, param, value)
 
 

@@ -4,8 +4,8 @@
 Rest Model abstract implementation
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.41 2009/12/29 12:36:40 metson Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: RESTModel.py,v 1.42 2009/12/29 12:42:43 metson Exp $"
+__version__ = "$Revision: 1.42 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -66,6 +66,10 @@ class RESTModel(WebAPI):
                 except TypeError, e:
                     #TODO: check with Simon this might not what he wants
                     raise HTTPError(400, str(e))
+                except HTTPError, he:
+                    raise he
+                except Exception, e:
+                    raise HTTPError(500, {type(e): str(e)})
                 if 'expires' in self.methods[verb][method].keys():
                     return data, self.methods[verb][method]['expires']
                 else:
@@ -153,12 +157,8 @@ class RESTModel(WebAPI):
             else:
                 if len(args):
                     input[a] = args.pop(0)
-        try:
-            return self.validate_input(input, verb, method)
-        except HTTPError, he:
-            raise he
-        except Exception, e:
-            raise HTTPError(400, {type(e): str(e)})
+        return self.validate_input(input, verb, method)
+        
     
     def validate_input(self, input, verb, method):
         """

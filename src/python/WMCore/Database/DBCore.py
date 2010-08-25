@@ -6,11 +6,12 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.25 2009/01/29 13:31:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: DBCore.py,v 1.26 2009/03/31 09:45:34 metson Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.Database.ResultSet import ResultSet
 import WMCore.WMLogging
 
 class DBInterface(WMObject):    
@@ -60,11 +61,17 @@ class DBInterface(WMObject):
         try:
             WMCore.WMLogging.sqldebug ('DBInterface.executebinds - sql : %s' % s)
             WMCore.WMLogging.sqldebug ('DBInterface.executebinds - binds : %s' % b)
+            
+            result = ResultSet()
+            resultproxy = None
             if b == None: 
-                result = connection.execute(s)
+                resultproxy = connection.execute(s)
             else: 
-                result = connection.execute(s, b)
+                resultproxy = connection.execute(s, b)
+            result.add(resultproxy)
+            resultproxy.close()
             return result
+        
         except Exception, e:
             self.logger.exception('DBInterface.executemanybinds - exception:%s' % e)
             WMCore.WMLogging.sqldebug('DBInterface.executemanybinds - connection type: %s' % type(connection))
@@ -95,9 +102,13 @@ class DBInterface(WMObject):
             """
             Trying to select many
             """
-            result = []
+            
+            result = ResultSet()
+            resultproxy = None
             for bind in b:
-                result.append(connection.execute(s, bind))
+                resultproxy = connection.execute(s, bind)
+                result.add(resultproxy)
+                resultproxy.close()
             return self.makelist(result)
         
         """

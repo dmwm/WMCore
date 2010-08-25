@@ -92,9 +92,11 @@ class MySQLInterface(DBInterface):
             """
             Trying to select many
             """
-            result = []
+            result = ResultSet()
             for bind in bind_list:
-                result.append(connection.execute(newsql, bind))
+                resultproxy = connection.execute(s, bind)
+                result.add(resultproxy)
+                resultproxy.close()
             return self.makelist(result)
 
         result = connection.execute(newsql, bind_list)

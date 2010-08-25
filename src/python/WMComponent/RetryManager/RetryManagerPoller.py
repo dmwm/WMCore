@@ -1,16 +1,14 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613
+#pylint: disable-msg=W0613, W6501
 """
 The actual retry algorithm(s)
 """
 __all__ = []
-__revision__ = "$Id: RetryManagerPoller.py,v 1.4 2009/12/16 17:45:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
-__author__ = "anzar@fnal.gov"
+__revision__ = "$Id: RetryManagerPoller.py,v 1.5 2010/02/12 14:58:48 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
-import re
 import datetime
 import time
 import os
@@ -19,11 +17,23 @@ import os.path
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.WMBS.Job          import Job
-from WMCore.WMFactory         import WMFactory
 from WMCore.DAOFactory        import DAOFactory
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.JobStateMachine.Transitions import Transitions
+
+def convertdatetime(t):
+    """
+    Convert dates into useable format.
+    """
+    return int(time.mktime(t.timetuple()))
+
+def timestamp():
+    """
+    generate a timestamp
+    """
+    t = datetime.datetime.now()
+    return convertdatetime(t)
 
 class RetryManagerPoller(BaseWorkerThread):
     """
@@ -35,11 +45,7 @@ class RetryManagerPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
-    
-    def setup(self, parameters):
-        """
-        Load DB objects required for queries
-        """
+
         myThread = threading.currentThread()
 
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -52,7 +58,22 @@ class RetryManagerPoller(BaseWorkerThread):
 
         return
 
-    def terminate(self,params):
+
+    
+    
+    def setup(self, parameters):
+        """
+        Currently does nothing
+        """
+
+        return
+    
+
+    def terminate(self, params):
+        """
+        Run one more time through, then terminate
+
+        """
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 
@@ -73,7 +94,7 @@ class RetryManagerPoller(BaseWorkerThread):
             raise
 
 
-    def processRetries(self, jobs, type):
+    def processRetries(self, jobs, jobType):
         """
         _processRetries_
         
@@ -81,25 +102,22 @@ class RetryManagerPoller(BaseWorkerThread):
         """
 
         transitions = Transitions()
-        oldstate = '%scooloff' %(type)
+        oldstate = '%scooloff' % (jobType)
         if not oldstate in transitions.keys():
-            print transitions.keys()
-            print type
-            logging.error('Unknown job type %s' %(type))
+            logging.error('Unknown job type %s' % (jobType))
             return
         jobList  = []
         propList = []
 
         newJobType  = transitions[oldstate][0]
     
-        for id in jobs:
-            job = Job(id = id)
+        for jid in jobs:
+            job = Job(id = jid)
             job.loadData()
             jobList.append(job)
 
-        currentTime = self.timestamp()
         #Now we should have the jobs
-        propList = self.selectRetryAlgo(jobList, type)
+        propList = self.selectRetryAlgo(jobList, jobType)
 
         if len(propList) > 0:
             self.changeState.propagate(propList, newJobType, oldstate)
@@ -108,14 +126,12 @@ class RetryManagerPoller(BaseWorkerThread):
         return
 
 
-    def selectRetryAlgo(self, jobList, type):
+    def selectRetryAlgo(self, jobList, jobType):
         """
         _selectRetryAlgo_
 
         Selects which retry algorithm to use
         """
-
-        myThread = threading.currentThread()
 
         result = []
 
@@ -126,8 +142,8 @@ class RetryManagerPoller(BaseWorkerThread):
         pluginName = self.config.RetryManager.pluginName
         if pluginName == '' or pluginName == None:
             pluginName = 'RetryAlgo'
-        plugin = '%s%s' %(type.capitalize(), pluginName)
-        name = '%s.%s'%(self.config.RetryManager.pluginPath, plugin)
+        plugin = '%s%s' % (jobType.capitalize(), pluginName)
+        name = '%s.%s' % (self.config.RetryManager.pluginPath, plugin)
         path = os.path.join(self.config.RetryManager.WMCoreBase, 'src/python', name.replace('.','/')) + '.py'
 
         if os.path.isfile(path):
@@ -142,12 +158,12 @@ class RetryManagerPoller(BaseWorkerThread):
         else:
             logging.error('Could find no module.  Am using default to determine whether cooldown has expired')
             for job in jobList:
-                if self.defaultRetryAlgo(job, type):
+                if self.defaultRetryAlgo(job, jobType):
                     result.append(job)
 
         return result
 
-    def defaultRetryAlgo(self, job, type):
+    def defaultRetryAlgo(self, job, jobType):
         """
         _defaultRetryAlgo_
 
@@ -155,12 +171,12 @@ class RetryManagerPoller(BaseWorkerThread):
         amount of time
         """
 
-        cooloffTime = self.config.RetryManager.coolOffTime.get(type, None)
+        cooloffTime = self.config.RetryManager.coolOffTime.get(jobType, None)
         if not cooloffTime:
-            logging.error('Unknown cooloffTime for type %s: passing' %(type))
+            logging.error('Unknown cooloffTime for type %s: passing' %(jobType))
             return
 
-        currentTime = self.timestamp()
+        currentTime = timestamp()
         if currentTime - job['state_time'] > cooloffTime:
             return True
         else:
@@ -175,27 +191,19 @@ class RetryManagerPoller(BaseWorkerThread):
         # Discover the jobs that are in create cooloff
         jobs = self.getJobs.execute(state = 'createcooloff')
         logging.debug("Found %s jobs in createcooloff" % len(jobs))
-	self.processRetries(jobs, 'create')
+        self.processRetries(jobs, 'create')
 
          # Discover the jobs that are in submit cooloff
         jobs = self.getJobs.execute(state = 'submitcooloff')
         logging.debug("Found %s jobs in submitcooloff" % len(jobs))
-	self.processRetries(jobs, 'submit')
+        self.processRetries(jobs, 'submit')
 
 	# Discover the jobs that are in run cooloff
         jobs = self.getJobs.execute(state = 'jobcooloff')
         logging.debug("Found %s jobs in jobcooloff" % len(jobs))
-	self.processRetries(jobs, 'job')
+        self.processRetries(jobs, 'job')
 
 
 
 
-    def convertdatetime(self, t):
-        return int(time.mktime(t.timetuple()))
-          
-    def timestamp(self):
-        """
-        generate a timestamp
-        """
-        t = datetime.datetime.now()
-        return self.convertdatetime(t)
+

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0613, W6501
 
 """
 _RetryManager_
@@ -8,9 +9,8 @@ attempts to put them in their non-cooloff state again.
 
 """
 
-__revision__ = "$Id: RetryManager.py,v 1.3 2009/07/30 19:24:54 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "anzar@fnal.gov"
+__revision__ = "$Id: RetryManager.py,v 1.4 2010/02/12 14:58:48 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 import logging

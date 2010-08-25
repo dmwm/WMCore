@@ -86,6 +86,18 @@ class DBObjectsTest(unittest.TestCase):
         self.assertEqual(task3.data['serverName'], 'Taginae')
         self.assertEqual(task3.data['startDirectory'], 'Cannae')
         self.assertEqual(task3.data['outputDirectory'], 'Zama')
+
+
+
+        task4 = Task(parameters = {'id': 1})
+        task4.load()
+        self.assertTrue(task4.exists())
+        task3.remove()
+        self.assertFalse(task4.exists())
+
+
+
+        
         
         return
 
@@ -127,7 +139,14 @@ class DBObjectsTest(unittest.TestCase):
             self.assertEqual(job4.data[key], job.data[key])
 
 
+        # Test Delete
+        job4.remove()
+        job5 = Job(parameters = {'jobId': 101})
+        self.assertFalse(job5.exists())
+
         return
+
+    
 
     def testC_CreateRunningJobs(self):
         """
@@ -164,6 +183,10 @@ class DBObjectsTest(unittest.TestCase):
         # Uncomment if you want to check it.
         #runJob4 = RunningJob(parameters = {'jobId': 'retarded', 'taskId': task.exists(), 'submission': 1})
         #runJob4.load()
+
+        runJob3.remove()
+        self.assertFalse(runJob3.exists())
+        
 
 
     def testD_TestAssociations(self):

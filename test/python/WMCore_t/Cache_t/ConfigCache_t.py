@@ -192,7 +192,7 @@ class Test(unittest.TestCase):
         
         Ddd and delete files repeatedly.
         """
-        filehandle = open('test-pset1.py', 'rb')
+        filehandle = open(os.path.join(os.path.dirname(__file__), 'test-pset1.py'), 'rb')
         sampletext = filehandle.read()
         for i in range(10):
             # made the slightly modified file so the md5 sums dont overlap

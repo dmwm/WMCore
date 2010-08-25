@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.77 2010/02/25 21:45:30 swakef Exp $"
-__version__ = "$Revision: 1.77 $"
+__revision__ = "$Id: WorkQueue.py,v 1.78 2010/02/26 15:28:46 swakef Exp $"
+__version__ = "$Revision: 1.78 $"
 
 
 import time
@@ -553,9 +553,9 @@ class WorkQueue(WorkQueueBase):
         elements = self.status(after = since, dictKey = "ParentQueueId")
 
         # apply end policy to elements grouped by parent
-        items = [endPolicy(group,
+        items = tuple(endPolicy(group,
                            self.params['EndPolicySettings']) for \
-                                                    group in elements.values()]
+                                                    group in elements.values())
         if items:
             self.logger.debug("Update parent queue with: %s" % str(items))
             try:

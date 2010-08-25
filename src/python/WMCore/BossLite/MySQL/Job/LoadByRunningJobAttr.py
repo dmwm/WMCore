@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.5 2010/05/24 09:32:51 spigafi Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.6 2010/05/25 13:15:29 spigafi Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -51,20 +51,41 @@ class LoadByRunningJobAttr(DBFormatter):
         whereStatement = []
         
         for x in binds:
-            if type(binds[x]) == str :
+            
+            tmp = RunningJob.fields[x]
+            
+            if tmp in RunningJob.timeFields :
+                # This is a time-stamp
+                if type(binds[x]) == list and len(binds[x]) == 2 : 
+                    # I have an interval (2 time-stamps)
+                    whereStatement.append("bl_runningjob.%s > %s" % \
+                                       (tmp, binds[x][0]) )
+                    whereStatement.append("bl_runningjob.%s < %s" % \
+                                       (tmp, binds[x][1]) )
+                    
+                elif type(binds[x]) == list and len(binds[x]) == 1 :
+                    # From a specified time-stamp until now
+                    whereStatement.append("bl_runningjob.%s > %s" % \
+                                       (tmp, binds[x][0]) )
+                
+                elif type(binds[x]) == int :
+                    # From a specified time-stamp until now
+                    whereStatement.append("bl_runningjob.%s > %s" % \
+                                       (tmp, binds[x]) )
+                                          
+            elif type(binds[x]) == str :
                 whereStatement.append( "bl_runningjob.%s = '%s'" % \
-                                       (RunningJob.fields[x], binds[x]) )
+                                       (tmp, binds[x]) )
+                
             else:
                 whereStatement.append( "bl_runningjob.%s = %s" % \
-                                       (RunningJob.fields[x], binds[x]) )
+                                       (tmp, binds[x]) )
                 
         whereClause = ' AND '.join(whereStatement)
-
-        sqlFilled = self.sql % (whereClause)
         
         if limit :
             if type(limit) == list and len(limit) == 2 :
-                sqlFilled += """ AND bl_job.id > %s LIMIT %s """ % \
+                whereStatement += """ AND bl_job.id > %s LIMIT %s """ % \
                                                         (limit[0], limit[1]) 
                 # sqlFilled += """ LIMIT %s, %s """ % (limit[0], limit[1])
             # elif type(limit) == list and len(limit) == 1 :
@@ -72,6 +93,9 @@ class LoadByRunningJobAttr(DBFormatter):
             # elif type(limit) == int and limit >= 0 :
             #     sqlFilled += """ LIMIT %s """ % (limit)
             # if something is wrong, the LIMIT is ignored
+        
+        
+        sqlFilled = self.sql % (whereClause)
         
         result = self.dbi.processData(sqlFilled, {}, conn = conn,
                                       transaction = transaction)

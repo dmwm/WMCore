@@ -93,7 +93,7 @@ maint = config.WebtoolsDocs.views.section_('maintenance')
 #active.rest.database.connectUrl = 'sqlite://'
 # for more option check 
 # http://www.sqlalchemy.org/docs/reference/sqlalchemy/connections.html
-#active.rest.database.engineParameters = {'pool_size': 10, 'max_overflow': 10}
+#active.rest.database.engineParameters = {'pool_size': 10, 'max_overflow': 10, 'pool_timeout': 30}
 #active.rest.section_('model')
 #active.rest.model.object = 'RESTModel'
 #active.rest.section_('formatter')

@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.36 2010/02/10 02:53:21 meloam Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: DBCore.py,v 1.37 2010/02/15 22:28:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.37 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -52,23 +52,28 @@ class DBInterface(WMObject):
                     binds.append(thebind)
         return binds
 
-    def executebinds(self, s=None, b=None, connection=None):
+    def executebinds(self, s = None, b = None, connection = None,
+                     returnCursor = False):
         """
         _executebinds_
         
         returns a list of sqlalchemy.engine.base.ResultProxy objects
         """
-        result = ResultSet()
-        resultproxy = None
         if b == None: 
-            resultproxy = connection.execute(s)
+            resultProxy = connection.execute(s)
         else: 
-            resultproxy = connection.execute(s, b)
-        result.add(resultproxy)
-        resultproxy.close()
+            resultProxy = connection.execute(s, b)
+
+        if returnCursor:
+            return resultProxy
+        
+        result = ResultSet()            
+        result.add(resultProxy)
+        resultProxy.close()
         return result
 
-    def executemanybinds(self, s=None, b=None, connection=None):
+    def executemanybinds(self, s = None, b = None, connection = None,
+                         returnCursor = False):
         """
         _executemanybinds_
         b is a list of dictionaries for the binds, e.g.:
@@ -90,13 +95,17 @@ class DBInterface(WMObject):
             """
             Trying to select many
             """
-            
-            result = ResultSet()
-            resultproxy = None
-            for bind in b:
-                resultproxy = connection.execute(s, bind)
-                result.add(resultproxy)
-                resultproxy.close()
+            if returnCursor:
+                result = []
+                for bind in b:
+                    result.append(connection.execute(s, bind))
+            else:
+                result = ResultSet()            
+                for bind in b:
+                    resultproxy = connection.execute(s, bind)
+                    result.add(resultproxy)
+                    resultproxy.close()
+
             return self.makelist(result)
         
         """
@@ -113,7 +122,7 @@ class DBInterface(WMObject):
 
     
     def processData(self, sqlstmt, binds = {}, conn = None,
-                    transaction = False):
+                    transaction = False, returnCursor = False):
         """
         set conn if you already have an active connection to reuse
         set transaction = True if you already have an active transaction        
@@ -137,7 +146,8 @@ class DBInterface(WMObject):
                     trans = connection.begin()
 
                 for i in sqlstmt:
-                    r = self.executebinds(i, connection=connection)
+                    r = self.executebinds(i, connection = connection,
+                                          returnCursor = returnCursor)
                     result.append(r)
                     
                 if not transaction: 
@@ -148,11 +158,13 @@ class DBInterface(WMObject):
                     trans = connection.begin()
                 while(len(binds) > self.maxBindsPerQuery):
                     result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
-                                                   conn=connection, transaction = True))
+                                                   conn=connection, transaction = True,
+                                                   returnCursor = returnCursor))
                     binds = binds[self.maxBindsPerQuery:]
 
                 for i in sqlstmt:
-                    result.extend(self.executemanybinds(i, binds, connection=connection))
+                    result.extend(self.executemanybinds(i, binds, connection = connection,
+                                                        returnCursor = returnCursor))
                 if not transaction: 
                     trans.commit()
             elif len(binds) == len(sqlstmt):
@@ -163,7 +175,8 @@ class DBInterface(WMObject):
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
                     
-                    r = self.executebinds(s, b, connection=connection)
+                    r = self.executebinds(s, b, connection=connection,
+                                          returnCursor = returnCursor)
                     result.append(r)
                     
                 if not transaction: 

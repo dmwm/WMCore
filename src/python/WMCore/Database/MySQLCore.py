@@ -98,7 +98,8 @@ class MySQLInterface(DBInterface):
 
         return (updatedSQL, mySQLBindVarsList)
 
-    def executebinds(self, s = None, b = None, connection = None):
+    def executebinds(self, s = None, b = None, connection = None,
+                     returnCursor = False):
         """
         _executebinds_
 
@@ -106,27 +107,16 @@ class MySQLInterface(DBInterface):
         Transform the bind variables into the format that MySQL expects.
         """
         s, b = self.substitute(s, b)
-        return DBInterface.executebinds(self, s, b, connection)
+        return DBInterface.executebinds(self, s, b, connection, returnCursor)
     
-    def executemanybinds(self, s = None, b = None, connection = None):
+    def executemanybinds(self, s = None, b = None, connection = None,
+                         returnCursor = False):
         """
         _executemanybinds_
 
         Execute a SQL statement that has multiple sets of bind variables.
         Transform the bind variables into the format that MySQL expects.        
         """
-        newsql, bind_list = self.substitute(s, b)
-
-        if newsql.lower().endswith('select', 0, 6):
-            """
-            Trying to select many
-            """
-            result = ResultSet()
-            for bind in bind_list:
-                resultproxy = connection.execute(newsql, bind)
-                result.add(resultproxy)
-                resultproxy.close()
-            return self.makelist(result)
-
-        result = connection.execute(newsql, bind_list)
-        return self.makelist(result)
+        newsql, binds = self.substitute(s, b)
+        return DBInterface.executemanybinds(self, newsql, binds, connection,
+                                            returnCursor)

@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.44 2010/01/19 21:21:35 sfoulkes Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.45 2010/01/20 15:41:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.45 $"
 
 import threading
 
@@ -237,7 +237,7 @@ class CreateWMBSBase(DBCreator):
              location     INTEGER,
              outcome      INTEGER       DEFAULT 0,
              cache_dir    VARCHAR(255)  DEFAULT 'None',
-             fwjr_path    VARCHAR(255),
+             fwjr_path    VARCHAR(500),
              UNIQUE (name),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE,

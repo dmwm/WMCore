@@ -5,8 +5,8 @@ _SetLocationByLFN_
 MySQL implementation of Files.SetLocationByLFN
 """
 
-__revision__ = "$Id: SetLocationByLFN.py,v 1.1 2010/03/09 19:59:26 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SetLocationByLFN.py,v 1.2 2010/03/10 20:48:56 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -22,12 +22,12 @@ class SetLocationByLFN(DBFormatter):
             return {'lfn': lfn, 'location': location}
         elif isinstance(lfn, (list, set)):
             binds = []
-            for file in lfn:
-                binds.append({'lfn': file, 'location': location})
+            for bind in lfn:
+                binds.append(bind)
             return binds
 
     
-    def execute(self, lfn, location, conn = None, transaction = None):
+    def execute(self, lfn, location = None, conn = None, transaction = None):
         """
         Set location by LFN
 

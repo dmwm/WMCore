@@ -66,7 +66,11 @@ def tier0PromptRecoWorkload(workloadName, arguments):
     workload.setStartPolicy('DatasetBlock')
     workload.setEndPolicy('SingleShot')
     workload.data.properties.acquisitionEra = acquisitionEra
-
+    
+    # configure possibly using new stageout code
+    useNewStageOut = False
+    if arguments.get('newStageOut', False):
+        useNewStageOut = True
 
     #  //
     # // set up the production task
@@ -76,6 +80,7 @@ def tier0PromptRecoWorkload(workloadName, arguments):
     rerecoCmssw.setStepType("CMSSW")
     rerecoStageOut = rerecoCmssw.addStep("stageOut1")
     rerecoStageOut.setStepType("StageOut")
+    rerecoStageOut.addOverride('newStageOut',useNewStageOut)
     rerecoLogArch = rerecoCmssw.addStep("logArch1")
     rerecoLogArch.setStepType("LogArchive")
     rereco.applyTemplates()
@@ -167,6 +172,7 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         mergeRecoCmssw.setStepType("CMSSW")
         mergeRecoStageOut = mergeRecoCmssw.addStep("stageOut1")
         mergeRecoStageOut.setStepType("StageOut")
+        mergeRecoStageOut.addOverride('newStageOut',useNewStageOut)
         mergeRecoLogArch = mergeRecoCmssw.addStep("logArch1")
         mergeRecoLogArch.setStepType("LogArchive")
 
@@ -208,6 +214,7 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         skimAlcaCmssw.setStepType("CMSSW")
         skimAlcaStageOut = skimAlcaCmssw.addStep("stageOut1")
         skimAlcaStageOut.setStepType("StageOut")
+        skimAlcaStageOut.addOverride('newStageOut',useNewStageOut)
         skimAlcaLogArch = skimAlcaCmssw.addStep("logArch1")
         skimAlcaLogArch.setStepType("LogArchive")
         skimAlca.addGenerator("BasicNaming")
@@ -245,6 +252,7 @@ def tier0PromptRecoWorkload(workloadName, arguments):
             mergeAlcaCmssw.setStepType("CMSSW")
             mergeAlcaStageOut = mergeAlcaCmssw.addStep("stageOut1")
             mergeAlcaStageOut.setStepType("StageOut")
+            mergeAlcaStageOut.addOverride('newStageOut',useNewStageOut)
             mergeAlcaLogArch = mergeAlcaCmssw.addStep("logArch1")
             mergeAlcaLogArch.setStepType("LogArchive")
             mergeAlca.addGenerator("BasicNaming")
@@ -282,6 +290,7 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         mergeAodCmssw.setStepType("CMSSW")
         mergeAodStageOut = mergeAodCmssw.addStep("stageOut1")
         mergeAodStageOut.setStepType("StageOut")
+        mergeAodStageOut.addOverride('newStageOut',useNewStageOut)
         mergeAodLogArch = mergeAodCmssw.addStep("logArch1")
         mergeAodLogArch.setStepType("LogArchive")
         mergeAod.addGenerator("BasicNaming")

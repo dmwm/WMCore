@@ -11,8 +11,8 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.22 2010/07/01 16:29:33 meloam Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: StageOut.py,v 1.23 2010/07/04 20:01:01 meloam Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import os
 import os.path
@@ -62,12 +62,7 @@ class StageOut(Executor):
         _execute_
 
 
-        """
-        # switch between old stageOut behavior and new, fancy stage out behavior
-        useNewStageOutCode = False
-        if hasattr(self.step, "newStageOut") and self.step.newStageOut:
-            useNewStageOutCode = True
-        
+        """        
         #Are we using emulators again?
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
@@ -82,6 +77,13 @@ class StageOut(Executor):
         print "override %s " % self.step
 
         # Pull out StageOutMgr Overrides
+        
+        # switch between old stageOut behavior and new, fancy stage out behavior
+        useNewStageOutCode = False
+        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
+            useNewStageOutCode = True
+        
+        
         stageOutCall = {}
         if overrides.has_key("command") and overrides.has_key("option") \
                and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):

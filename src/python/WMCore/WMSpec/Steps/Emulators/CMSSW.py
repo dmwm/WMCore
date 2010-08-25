@@ -28,7 +28,7 @@ class CMSSW(Emulator):
 
         print "Emulating CMSSW Step"
     
-    def pre(self,step):
+    def pre(self):
         '''
             _emulatePre_
             
@@ -36,7 +36,7 @@ class CMSSW(Emulator):
         '''
         return self.executor.pre()
 
-    def emulatePost(self):
+    def post(self):
         '''
             _emulatePost_
             

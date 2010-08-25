@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.18 2009/12/11 16:32:30 mnorman Exp $"
-__revision__ = "$Revision: 1.18 $"
+__version__ = "$Id: WMTask.py,v 1.19 2010/01/12 19:59:57 evansde Exp $"
+__revision__ = "$Revision: 1.19 $"
 
 import os
 
@@ -242,9 +242,11 @@ class WMTaskHelper(TreeHelper):
 
         Invoke execution of the steps using an optional Emulator
 
+        TODO: emulator is now deprecated, remove from API 
+
         """
         self.setupEnvironment()
-        master = ExecuteMaster(emulator)
+        master = ExecuteMaster()
         master(self, wmbsJob)
         return
 

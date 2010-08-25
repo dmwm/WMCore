@@ -4,8 +4,8 @@
 The documentation for the framework
 """
     
-__revision__ = "$Id: WorkQueueMonitorPage.py,v 1.1 2010/04/30 21:26:26 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueMonitorPage.py,v 1.2 2010/05/11 20:04:50 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage
@@ -52,7 +52,9 @@ class WorkQueueMonitorPage(TemplatedPage):
             examples = listdir(os.path.join(self.config.html, 'examples'))
             index = "<h1>WorkQueuMonitor Examples</h1>\n<ol>"
             for t in examples:
-                index = "%s\n<li><a href='%s'>%s</a></li>" % (index, t, t)
+                index = """%s\n<li>
+                           <a href='/workqueuemonitor/examples/%s'>%s</a>
+                           </li>""" % (index, t, t)
             return index
         
         return serve_file(os.path.join(self.config.html, 'examples', *args),

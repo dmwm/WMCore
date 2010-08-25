@@ -7,8 +7,8 @@ Unittest for JobMaker class
 """
 
 
-__revision__ = "$Id: JobMaker_t.py,v 1.1 2009/06/19 18:10:34 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: JobMaker_t.py,v 1.2 2009/08/26 16:33:33 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -51,6 +51,7 @@ class JobMakerTest(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setSchema(customModules = ["WMCore.MsgService"],
@@ -62,9 +63,6 @@ class JobMakerTest(unittest.TestCase):
         self.cwd = os.getcwd()
 
         myThread = threading.currentThread()
-
-        print myThread.dbi.processData('SELECT * FROM tp_threadpool')[0].fetchall()
-
 
         self._teardown = False
 
@@ -185,125 +183,19 @@ class JobMakerTest(unittest.TestCase):
 
         myThread.transaction.commit()
 
+        
         return testJobGroup   
 
     
-    def testA(self):
-
-        print "testA"
-
-        return
-
-        testJobGroup = self.createSingleJobGroup()
-
-
-        ID =  testJobGroup.exists()
-
-        jobMaker = testJobMaker(ID)
-        jobMaker.createJobGroupArea()
-        jobMaker.createWorkArea()
-        jobMaker.cleanUpAll()
-
-
-        print "Ended testA"
-        return
-
-
-    def testB(self):
-
-        print "testB"
-
-        return
-
-        myThread = threading.currentThread()
-
-        testJobGroup = self.createSingleJobGroup()
-
-        ID = testJobGroup.exists()
-
-
-        # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
-            'src/python/WMCore/WMSpec/Makers/DefaultConfig.py'))
-
-        config.Agent.contact = "mnorman@fnal.gov"
-        config.Agent.teamName = "WMSpec"
-        config.Agent.agentName = "JobMaker"
-
-        config.section_("General")
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql'
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database              = os.getenv("DATABASE")
-        else:
-            print "ERROR: Could not find database setting in environment!"
-            print "ABORT: Cannot start without a database"
-            raise 'Exception'
-
-
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        myThread.logger = logging.getLogger('DBSBufferTest')
-        myThread.dialect = os.getenv("DIALECT")
-
-        options = {}
-        if not os.getenv("DBSOCK") == None:
-            options['unix_socket'] = os.getenv("DBSOCK")
-        dbFactory = DBFactory(myThread.logger, os.getenv("DATABASE"), \
-                options)
-
-        testJobMaker = JobMaker(config)
-        testJobMaker.prepareToStart()
-        
-        dbFactory = DBFactory(myThread.logger, myThread.database, options)
-        myThread.dbi = dbFactory.connect()
-        myThread.transaction = Transaction(myThread.dbi)
-
-        #print myThread.dbi.processData('SELECT * FROM wmbs_jobgroup')[0].fetchall()
-
-
-        testJobMaker.handleMessage('MakeJob', ID)
-
-        while (threading.activeCount() > 1):
-            print "Waiting for threads to finish"
-            time.sleep(1)
-
-        os.chdir(self.cwd)
-
-        return
-
-
-    def testC(self):
+    def testASingleJobGroup(self):
         """
-        Test for creation of multiple job groups and threading
+        Test for creation of single job groups and threading
 
         """
 
-        return
+        #return
 
-        print "testC"
+        print "testASingleJobGroup"
 
         #self._teardown = True
 
@@ -372,44 +264,50 @@ class JobMakerTest(unittest.TestCase):
         myThread.dbi = dbFactory.connect()
         myThread.transaction = Transaction(myThread.dbi)
 
-        for i in range(0,1000):
+        for i in range(0,100):
             testJobGroup = self.createSingleJobGroup(str(i))
             testJobGroupList.append(testJobGroup)
 
         for job in testJobGroupList:
             if job.exists():
-                testJobMaker.handleMessage('MakeJob', job.exists())
+                testJobMaker.handleMessage('MakeJob', {'jobGroupID': job.exists(), 'startDir': os.getcwd()})
 
-        print "The number of threads is %i" %(threading.activeCount())
 
         while (threading.activeCount() > 1):
             print "Waiting for threads to finish"
             time.sleep(1)
 
-        #for job in testJobGroupList:
-        #    if job.exists():
-        #        self.assertEqual(os.path.isdir(job['uid']), True)
+
+        self.assertEqual(os.path.isdir('TestWorkload'), True)
+        self.assertEqual(os.path.isdir('TestWorkload/TestTask'), True)
+        self.assertEqual(os.path.isdir('TestWorkload/TestTask/JobCollection_1_0'), True)
 
 
         os.chdir(self.cwd)
+
+        os.popen3('rm -r test/TestWorkload/TestTask')
         
         return
 
 
 
-    def testD(self):
+    def testMultipleJobGroups(self):
         """
         Test for creation of huge job groups and threading
 
         """
 
-        print "testD"
+        print "testMultipleJobGroups"
+
+        #return
 
         #self._teardown = True
 
         myThread = threading.currentThread()
 
         os.chdir('test')
+
+        currDir = os.getcwd()
 
         testJobGroupList = [] 
 
@@ -480,9 +378,11 @@ class JobMakerTest(unittest.TestCase):
 
         for job in testJobGroupList:
             if job.exists():
-                testJobMaker.handleMessage('MakeJob', job.exists())
+                testJobMaker.handleMessage('MakeJob', {'jobGroupID': job.exists(), 'startDir': currDir})
 
         print "The number of threads is %i" %(threading.activeCount())
+
+        #time.sleep(600)
 
         while (threading.activeCount() > 1):
             print "Waiting for threads to finish"
@@ -495,6 +395,20 @@ class JobMakerTest(unittest.TestCase):
         endtime = time.time()
 
         print "This process took %i seconds to run" %(int(endtime - starttime))
+
+        self.assertEqual(os.path.isdir('TestHugeWorkload'), True)
+        self.assertEqual(os.path.isdir('TestHugeWorkload/TestHugeTask'), True)
+        listOfCollections = ['JobCollection_1_0', 'JobCollection_1_1', 'JobCollection_2_0', 'JobCollection_2_1', 'JobCollection_4_0', \
+                             'JobCollection_3_0', 'JobCollection_5_0', 'JobCollection_3_1', 'JobCollection_5_1', 'JobCollection_4_1', \
+                             'JobCollection_4_2', 'JobCollection_4_3', 'JobCollection_4_4']
+        for coll in listOfCollections:
+            assert coll in os.listdir('TestHugeWorkload/TestHugeTask'), "Failed to create TestHugeWorkload/TestHugeTask/%s" %(coll)
+            self.assertEqual(len(os.listdir('TestHugeWorkload/TestHugeTask/%s' %(coll))), 1000)
+        
+        #Get rid of all this crap
+        os.popen3('rm -r TestHugeWorkload')
+
+        os.chdir(self.cwd)
         
         return
 

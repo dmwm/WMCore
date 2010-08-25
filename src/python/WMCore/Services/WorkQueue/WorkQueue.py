@@ -99,21 +99,24 @@ class WorkQueue(Service):
     
     def status(self, status = None, before = None, after = None, 
                elementIDs = None, dictKey = None):
-        
-        args = {}
+        args = []
         if status != None:
-            args['status'] = status
+            args.append(('status', status))
         if before != None:
-            args['before'] = before
+            args.append(('before', before))
         if after != None:
-            args['after'] = after
+            args.append(('after', after))
         if dictKey != None:
-            args['dictKey'] = dictKey
+            args.append(('dictKey', dictKey))
         if elementIDs != None:
-            args['elementIDs'] = elementIDs
+            if type(elementIDs) != list:
+                raise TypeError, "elementIDs should be list of ids"
+            for elementID in elementIDs:
+                args.append(('elementIDs', elementID))
         
         callname = 'status'
-        return self._getResult(callname, args = args, verb = "POST")
+        return self._getResult(callname, args = args, verb = "GET", 
+                               contentType = "text/plain")
     
     def synchronize(self, child_url, child_report):
         """

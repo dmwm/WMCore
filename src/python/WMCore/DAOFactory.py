@@ -14,7 +14,7 @@ class DAOFactory(object):
         self.logger = logger
         self.dbinterface = dbinterface
         self.owner = owner
-        self.logger.debug("Instantiating DAOFactory for %s package" % self.package)
+        #self.logger.debug("Instantiating DAOFactory for %s package" % self.package)
         self.dialects = {"Oracle" : OracleDialect,
                     "MySQL" : MySQLDialect,
                     "SQLite" : SQLiteDialect}
@@ -33,7 +33,7 @@ class DAOFactory(object):
             raise TypeError, "unknown connection type: %s" % dia
         
         module = "%s.%s.%s" % (self.package, dialect, classname)
-        self.logger.debug("importing %s, %s" % (module, classname))
+        #self.logger.debug("importing %s, %s" % (module, classname))
         module = __import__(module, globals(), locals(), [classname])#, -1)
         instance = getattr(module, classname.split('.')[-1])
         if self.owner:

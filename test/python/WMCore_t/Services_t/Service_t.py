@@ -78,7 +78,10 @@ class ServiceTest(unittest.TestCase):
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cachepath': '/my/path'}
         service = Service(dict)
-        self.assertEqual( service['cachepath'] ,  dict['cachepath'] )
+        # We append hostname to the cachepath, so that we can talk to two
+        # services on different hosts
+        self.assertEqual(service['cachepath'], 
+                         '%s/cmssw.cvs.cern.ch' % dict['cachepath'] )
     
     def testCacheDuration(self):
         dict = {'logger': self.logger, 
@@ -115,12 +118,16 @@ class ServiceTest(unittest.TestCase):
                 'usestalecache': True,
                 'cachepath' : self.myService['cachepath']}
         service = Service(dict)
-        
         cache = 'stalecachetest'
+        
+        # Start test from a clear cache
+        service.clearCache(cache)
+        
         cachefile = service.cacheFileName(cache)
         
         # first check that the exception raises when the file doesn't exist
         self.logger.info('first call to refreshCache - should fail')
+        
         self.assertRaises(HTTPException, service.refreshCache, cache, '/lies')
         
         cacheddata = 'this data is mouldy'

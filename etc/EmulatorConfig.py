@@ -8,4 +8,4 @@ config = Configuration()
 config.section_("Emulator")
 config.Emulator.PhEDEx = True
 config.Emulator.DBSReader = True
-config.Emulator.RequestMgr = True
+config.Emulator.RequestManager = True

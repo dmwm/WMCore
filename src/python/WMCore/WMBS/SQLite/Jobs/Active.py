@@ -12,3 +12,4 @@ class Active(ActiveJobsMySQL):
                      SELECT :job, (SELECT jobgroup FROM wmbs_job WHERE id = :job)
                        WHERE NOT EXISTS
                          (SELECT job FROM wmbs_group_job_acquired WHERE job = :job)"""        
+    updateSQL = ActiveJobsMySQL.updateSQL

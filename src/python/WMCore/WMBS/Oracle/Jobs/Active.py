@@ -6,10 +6,11 @@ Oracle implementation of Jobs.Active
 """
 
 __all__ = []
-__revision__ = "$Id: Active.py,v 1.5 2009/03/20 14:29:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Active.py,v 1.6 2009/04/10 15:42:48 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
-from WMCore.WMBS.MySQL.Jobs.Active import Active as ActiveJobMySQL
+from WMCore.WMBS.MySQL.Jobs.Active import Active as ActiveJobsMySQL
 
-class Active(ActiveJobMySQL):
-    insertSQL = ActiveJobMySQL.insertSQL
+class Active(ActiveJobsMySQL):
+    insertSQL = ActiveJobsMySQL.insertSQL
+    updateSQL = ActiveJobsMySQL.updateSQL

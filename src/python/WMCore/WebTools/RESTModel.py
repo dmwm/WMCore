@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.53 2010/02/02 18:06:02 sryu Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: RESTModel.py,v 1.54 2010/02/10 18:49:33 sryu Exp $"
+__version__ = "$Revision: 1.54 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -146,21 +146,6 @@ class RESTModel(WebAPI):
                   
         self.addMethod(verb, methodKey, function, args, validation, version)
         
-    def addWrappedMethod(self, verb, methodKey, funcName, args=[], validation=[], version=1):
-        """
-        add a method handler in self.methods and wrap it with sanitise_input.
-        """
-        def function(*args, **kwargs):
-            # store the method name
-            method = methodKey
-            input = self.sanitise_input(args, kwargs, method)
-            # store the function
-            func = funcName
-            # execute the requested input, now a list of keywords
-            return func(**input)
-                  
-        self.addMethod(verb, methodKey, function, args, validation, version)
-        
     def addMethod(self, verb, methodKey, function, args=[], validation=[], version=1):
         """
         add a method handler to self.methods self.methods need to be initialize 
@@ -168,9 +153,23 @@ class RESTModel(WebAPI):
         """
         if not self.methods.has_key(verb):
             self.methods[verb] = {}
-                  
+        
+        def wrapper(*args, **kwargs):
+            # store the method name
+            method = methodKey
+            input = self.sanitise_input(args, kwargs, method)
+            # store the function
+            func = function
+            # execute the requested input, now a list of keywords
+            return func(**input)
+        
+        if len(validation) != 0:
+            funcRef = wrapper
+        else:
+            funcRef = function
+            
         self.methods[verb][methodKey] = {'args': args,
-                                         'call': function,
+                                         'call': funcRef,
                                          'validation': validation,
                                          'version': version}
 

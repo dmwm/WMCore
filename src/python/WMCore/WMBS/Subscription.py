@@ -16,8 +16,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.69 2010/06/28 19:01:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.69 $"
+__revision__ = "$Id: Subscription.py,v 1.70 2010/08/05 20:20:32 mnorman Exp $"
+__version__ = "$Revision: 1.70 $"
 
 import logging
 
@@ -180,7 +180,7 @@ class Subscription(WMBSBase, WMSubscription):
         self.commitTransaction(existingTransaction)
         return files
     
-    def acquireFiles(self, files = None):
+    def acquireFiles(self, files = None, deleteCheck = True):
         """
         _acuireFiles_
         
@@ -204,10 +204,11 @@ class Subscription(WMBSBase, WMSubscription):
             self.commitTransaction(existingTransaction)
             return
 
-        deleteAction.execute(subscription = self["id"],
-                             file = [x["id"] for x in files],
-                             conn = self.getDBConn(),
-                             transaction = self.existingTransaction())
+        if deleteCheck:
+            deleteAction.execute(subscription = self["id"],
+                                 file = [x["id"] for x in files],
+                                 conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())
 
         action.execute(self['id'], file = [x["id"] for x in files],
                        conn = self.getDBConn(),
@@ -586,7 +587,7 @@ class Subscription(WMBSBase, WMSubscription):
         for job in jobList:
             fileList.extend(job['input_files'])
 
-        self.acquireFiles(files = fileList)
+        self.acquireFiles(files = fileList, deleteCheck = True)
 
 
         self.commitTransaction(existingTransaction)

@@ -6,8 +6,8 @@ MySQL implementation of Subscription.GetFilesForMerge
 """
 
 __all__ = []
-__revision__ = "$Id: GetFilesForMerge.py,v 1.4 2009/09/01 19:33:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetFilesForMerge.py,v 1.5 2009/11/09 16:21:22 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -55,7 +55,7 @@ class GetFilesForMerge(DBFormatter):
                  (SELECT jobgroup FROM
                    (SELECT wmbs_job.jobgroup AS jobgroup , COUNT(*) AS total FROM wmbs_job
                       INNER JOIN wmbs_job_state ON wmbs_job.state = wmbs_job_state.id
-                    WHERE wmbs_job.outcome = 0 OR wmbs_job_state.name != 'closeout'
+                    WHERE wmbs_job.outcome = 0 OR wmbs_job_state.name != 'cleanout'
                     GROUP BY wmbs_job.jobgroup) incomplete
                   WHERE incomplete.total != 0)  
                AND NOT EXISTS

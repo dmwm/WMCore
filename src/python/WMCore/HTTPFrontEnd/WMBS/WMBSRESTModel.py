@@ -100,7 +100,7 @@ class WMBSRESTModel(RESTModel):
     implementing the GET verb.
     """
     def __init__(self, config = {}):
-        self.version = "$Revision: 1.10 $"        
+        self.version = "$Revision: 1.11 $"        
         RESTModel.__init__(self, config)
 
         self.daos = {}
@@ -146,10 +146,10 @@ class WMBSRESTModel(RESTModel):
                                                          "call": self.listWorkflowEfficiency,
                                                          "validation": [],
                                                          "version": self.version}
-        self.methods["GET"]["listjobstatechanges"] = {"args": ["jobState", "startTime"],
-                                                      "call": self.listJobStateChanges,
-                                                      "validation": [],
-                                                      "version": self.version}
+        self.methods["GET"]["listjobstatus"] = {"args": ["jobState", "startTime"],
+                                                "call": self.listJobStatus,
+                                                "validation": [],
+                                                "version": self.version}
         self.methods["GET"]["subscriptionstatus"] = {"args": ["subType"],
                                                      "call": self.subscriptionStatus,
                                                      "validation": [],
@@ -177,11 +177,11 @@ class WMBSRESTModel(RESTModel):
         dao = self.getDAO("Monitoring.ListJobStates")
         return dao.execute()    
 
-    def listJobStateChanges(self, *args, **kwargs):
+    def listJobStatus(self, *args, **kwargs):
         """
-        _listJobStateChanges_
+        _listJobStatus_
 
-        Handler for the listjobstatechanges method.  This takes two arguments
+        Handler for the listjobstatus method.  This takes two arguments
         from the webserver:
           jobState - The state to display, defaults to success.
           interval - The amount of time to display, defaults to 2 hours.
@@ -197,21 +197,37 @@ class WMBSRESTModel(RESTModel):
         endTime = int(time.time())
         startTime = endTime - interval
 
-        endKey = 'endkey=["%s",%d]' % (jobState, startTime)
-        startKey = 'startkey=["%s",%d]' % (jobState, endTime)
-        base = '/tier1_skimming/_design/jobdump/_view/jobstate?descending=true&' 
-        url = "%s&%s&%s" % (base, endKey, startKey)
+        if jobState == "all":
+            endKey = 'endkey=%d' % startTime
+            startKey = 'startkey=%d' % endTime
+            order = 'descending=true'
+            base = '/tier1_skimming/_design/jobdump/_view/stateChangesByTime?' 
+            url = "%s&%s&%s&%s" % (base, order, endKey, startKey)            
+        elif jobState == "running":
+            # query wmbs
+            url = "yourmom"
+        else:
+            endKey = 'endkey=["%s",%d]' % (jobState, startTime)
+            startKey = 'startkey=["%s",%d]' % (jobState, endTime)
+            order = 'descending=true'
+            base = '/tier1_skimming/_design/jobdump/_view/stateChangesByState?' 
+            url = "%s&%s&%s&%s" % (base, order, endKey, startKey)
 
         myRequester = JSONRequests(url = "cmssrv52:5984")
         requestResult = myRequester.get(url)[0]
 
         dasResult = []
         for result in requestResult["rows"]:
-            dasResult.append({"couch_record": result["id"],
-                              "timestamp": result["key"][1],
-                              "state": result["key"][0],
-                              "job_name": result["value"]})
-            
+            if type(result["key"]) == list:
+                dasResult.append({"couch_record": result["id"],
+                                  "timestamp": result["key"][1],
+                                  "state": result["key"][0],
+                                  "job_name": result["value"]})
+            else:
+                dasResult.append({"couch_record": result["id"],
+                                  "timestamp": result["key"],
+                                  "state": result["value"][1],
+                                  "job_name": result["value"][0]})                
         return dasResult
 
     def listJobsBySub(self, *args, **kwargs):

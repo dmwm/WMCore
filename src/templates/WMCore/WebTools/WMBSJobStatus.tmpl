@@ -72,7 +72,7 @@ function generateJobStatusRequest() {
 
 // Create a data source to pull information about job state changes from the
 // WMBS DAS.  Turn off caching as it limits the automatic polled updates.
-var jstDataSource = new YAHOO.util.DataSource("/wmbs/listjobstatechanges?");
+var jstDataSource = new YAHOO.util.DataSource("/wmbs/listjobstatus?");
 jstDataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;
 jstDataSource.connXhrMode = "queueRequests";
 jstDataSource.maxCacheEntries = 0;
@@ -176,7 +176,8 @@ var menuItems = [
     {text: "Job State",
      submenu: {
          id: "jobStateSubMenu",
-         itemdata: [{text: "new", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "new"}}},
+         itemdata: [{text: "all", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "all"}}},
+                    {text: "new", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "new"}}},
                     {text: "complete", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "complete"}}},
                     {text: "created", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "created"}}},
                     {text: "none", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "none"}}},

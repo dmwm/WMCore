@@ -244,7 +244,7 @@ class ReqMgrBrowser(TemplatedPage):
         if status == "assigned":
            # make a page to choose teams
            return self.assign(requestName)
-        return message + ' <A HREF=requestDetails/%s>Details</A><BR>' % requestName
+        return message + ' <A HREF=requestDetails/%s>Details</A> <A HREF=".">Back</A><BR>' % requestName
 
     def assign(self, requestName):
         allTeams = self.jsonSender.get('/reqMgr/team')[0]

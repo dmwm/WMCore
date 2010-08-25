@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.41 2009/07/09 21:33:29 mnorman Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: Subscription.py,v 1.42 2009/07/15 22:29:45 meloam Exp $"
+__version__ = "$Revision: 1.42 $"
 
 from sets import Set
 import logging
@@ -369,3 +369,25 @@ class Subscription(WMBSBase, WMSubscription):
         result = jobLocate.execute(location = location, subscription = self['id'], state = state).values()[0]
 
         return result
+ 
+    def getJobGroups(self):
+        """
+            Returns a list of job groups associated with the subscription
+            that has jobs that arent acquired
+            
+            NOTE:
+                If you have a jobgroup that is partially acquired,
+                i.e. there are two jobs within a group and one is acquired
+                and the other one isn't, the group will appear in the list
+            DOUBLENOTE:
+                you shouldn't be doing that anyway. by policy you need to
+                either get the whole group or none at all. Halfway is
+                naughty
+        """
+        # first, make sure we have all the necessary data
+        self.loadData()
+        
+        action = self.daofactory( classname = "Subscriptions.GetJobGroups" )
+        return action.execute(self['id'], conn = self.getDBConn(),
+                                          transaction = self.existingTransaction())
+   

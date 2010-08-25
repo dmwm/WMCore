@@ -167,10 +167,9 @@ class AccountantWorker(WMConnectionBase):
         if not hasattr(jobReport.data, 'steps'):
             return False
 
-        for step in jobReport.data.steps:
-            report = getattr(jobReport.data, step)
-            if report.status != 'Success' and report.status != 0:
-                return False
+        if not jobReport.taskSuccessful():
+            return False
+
 
         return True
    
@@ -275,6 +274,7 @@ class AccountantWorker(WMConnectionBase):
                                 events = jobReportFile["events"],
                                 checksums = jobReportFile["checksums"],
                                 status = "NOTUPLOADED")
+        #dbsFile["locations"] = set()
         dbsFile.setAlgorithm(appName = datasetInfo["applicationName"],
                              appVer = datasetInfo["applicationVersion"],
                              appFam = jobReportFile["module_label"],
@@ -287,6 +287,7 @@ class AccountantWorker(WMConnectionBase):
             newRun = Run(runNumber = run.run)
             newRun.extend(run.lumis)
             dbsFile.addRun(newRun)
+
 
         dbsFile.setLocation(se = list(jobReportFile["locations"])[0], immediateSave = False)
         self.dbsFilesToCreate.append(dbsFile)
@@ -572,6 +573,9 @@ class AccountantWorker(WMConnectionBase):
         if type(file["locations"]) == set:
             seName = list(file["locations"])[0]
         elif type(file["locations"]) == list:
+            if len(file['locations']) > 1:
+                logging.error("Have more then one location for a file in job %i" % (jobID))
+                logging.error("Choosing location %s" % (file['locations'][0]))
             seName = file["locations"][0]
         else:
             seName = file["locations"]

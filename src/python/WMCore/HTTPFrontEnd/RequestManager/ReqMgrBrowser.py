@@ -17,8 +17,8 @@ class ReqMgrBrowser(TemplatedPage):
         self.templatedir = __file__.rsplit('/', 1)[0]
         print self.templatedir
         self.urlPrefix = 'http://%s/download/?filepath=' % config.reqMgrHost
-        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'RequestPriority', 'RequestStatus', 'Written', 'Merged']
-        self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged'}
+        self.fields = ['RequestName', 'Group', 'Requestor', 'RequestType', 'RequestPriority', 'RequestStatus', 'Complete', 'Success']
+        self.calculatedFields = {'Written': 'percentWritten', 'Merged':'percentMerged', 'Complete':'percentComplete', 'Success' : 'percentSuccess'}
         self.linkedFields = {'RequestName':'requestDetails'}
         self.adminMode = True
         self.adminFields = {'RequestStatus':'statusMenu', 'RequestPriority':'priorityMenu'}
@@ -196,6 +196,19 @@ class ReqMgrBrowser(TemplatedPage):
                 if percent > maxPercent:
                     maxPercent = percent
         return "%i%%" % maxPercent
+
+    def percentComplete(self, request):
+        return self.biggestUpdate('percent_complete', request)
+
+    def percentSuccess(self, request):
+        return self.biggestUpdate('percent_success', request)
+
+    def biggestUpdate(self, field, request):
+        max = 0
+        for update in request["RequestUpdates"]:
+            if update.has_key(field):
+                max = update[field]
+        return "%i%%" % max
 
 
     def doAdmin(self, **kwargs):

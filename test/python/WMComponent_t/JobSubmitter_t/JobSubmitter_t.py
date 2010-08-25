@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.15 2010/06/08 20:08:19 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.16 2010/06/23 20:39:21 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import unittest
 import threading
@@ -38,6 +38,7 @@ from WMCore.WMBS.Job          import Job
 from WMComponent.JobSubmitter.JobSubmitter       import JobSubmitter
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMComponent.JobSubmitter.Plugins.CondorGlobusPlugin   import CondorGlobusPlugin
+from WMComponent.JobSubmitter.Plugins.CondorGlideInPlugin  import CondorGlideInPlugin
 from WMComponent.JobSubmitter.Plugins.BossLiteCondorPlugin import BossLiteCondorPlugin
 
 
@@ -177,14 +178,14 @@ class JobSubmitterTest(unittest.TestCase):
         self.ceName = '127.0.0.1'
 
         for site in self.sites:
-            locationAction.execute(siteName = site, seName = site, ceName = self.ceName)
+            locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
             locationSlots.execute(siteName = site, jobSlots = 1000)
 
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = site, ceName = self.ceName)
+            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             minSlots = 1000, maxSlots = 10000)
 
@@ -205,7 +206,7 @@ class JobSubmitterTest(unittest.TestCase):
 
 
 
-    def createJobGroups(self, nSubs, nJobs, task, workloadSpec):
+    def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site = None, bl = [], wl = []):
         """
         Creates a series of jobGroups for submissions
 
@@ -214,7 +215,7 @@ class JobSubmitterTest(unittest.TestCase):
         jobGroupList = []
 
         testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                name = "wf001", task="basicWorkload/Production")
+                                name = makeUUID(), task="basicWorkload/Production")
         testWorkflow.create()
 
         # Create subscriptions
@@ -240,7 +241,8 @@ class JobSubmitterTest(unittest.TestCase):
                            nJobs = nJobs,
                            jobGroup = testJobGroup,
                            fileset = testFileset,
-                           sub = i)
+                           sub = testSubscription.exists(),
+                           site = site, bl = bl, wl = wl)
                                          
 
 
@@ -252,7 +254,7 @@ class JobSubmitterTest(unittest.TestCase):
             
 
 
-    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub):
+    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site = None, bl = [], wl = []):
         """
         _makeNJobs_
 
@@ -263,15 +265,19 @@ class JobSubmitterTest(unittest.TestCase):
         # Set the CacheDir
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
-
         for n in range(nJobs):
             # First make a file
-            site = self.sites[0]
+            #site = self.sites[0]
             testFile = File(lfn = "/singleLfn/%s/%s" %(name, n),
                             size = 1024, events = 10)
-            testFile.setLocation(site)
+            if site:
+                testFile.setLocation(site)
+            else:
+                for tmpSite in self.sites:
+                    testFile.setLocation('se.%s' % (tmpSite))
             testFile.create()
             fileset.addFile(testFile)
+
 
         fileset.commit()
 
@@ -285,6 +291,8 @@ class JobSubmitterTest(unittest.TestCase):
             testJob['sandbox'] = task.data.input.sandbox
             testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
+            testJob["siteBlackList"] = bl
+            testJob["siteWhiteList"] = wl
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
@@ -364,27 +372,6 @@ class JobSubmitterTest(unittest.TestCase):
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
-        # Create a new workload using StdSpecs.ReReco
-        #arguments = {
-        #    "CmsPath": "/uscmst1/prod/sw/cms",
-        #    "AcquisitionEra": "WMAgentCommissioning10",
-        #    "Requester": "sfoulkes@fnal.gov",
-        #    "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        #    "CMSSWVersion": "CMSSW_3_5_8_patch3",
-        #    "ScramArch": "slc5_ia32_gcc434",
-        #    "ProcessingVersion": "v2scf",
-        #    "SkimInput": "output",
-        #    "GlobalTag": "GR10_P_v4::All",
-        #    
-        #    "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
-        #    "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
-        #    
-        #    "CouchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
-        #    "CouchDBName": "wmagent_config_cache",
-        #    "Scenario": "",
-        #    "Emulate" : emulator,
-        #    }
-
 
         arguments = getTestArguments()
 
@@ -401,7 +388,7 @@ class JobSubmitterTest(unittest.TestCase):
         return workload
 
 
-    def checkJDL(self, config, cacheDir, submitFile):
+    def checkJDL(self, config, cacheDir, submitFile, site = None):
         """
         _checkJDL_
 
@@ -422,7 +409,7 @@ class JobSubmitterTest(unittest.TestCase):
             #self.assertEqual(job.get('initialdir', None),
             #                 os.path.join(cacheDir, 'Job_%i' % index))
             self.assertEqual(job.get('+WMAgent_JobID', 0), str(index))
-            self.assertEqual(job.get('globusscheduler', None), self.ceName)
+            #self.assertEqual(job.get('globusscheduler', None), self.ceName)
             inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'Tier1ReReco-Sandbox.tar.bz2'),
                                               os.path.join(self.testDir, 'workloadTest/Tier1ReReco', 'batch_1/JobPackage.pkl'),
                                               os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore', 'WMRuntime/Unpacker.py'))
@@ -431,6 +418,9 @@ class JobSubmitterTest(unittest.TestCase):
             # Arguments use a list starting from 0
             self.assertEqual(job.get('arguments', None),
                              'Tier1ReReco-Sandbox.tar.bz2 %i' % (index - 1))
+
+            if site:
+                self.assertEqual(job.get('globusscheduler', None), site)
 
         # Now handle the head
         self.assertEqual(head.get('should_transfer_files', None), 'YES')
@@ -442,6 +432,10 @@ class JobSubmitterTest(unittest.TestCase):
         self.assertEqual(head.get('when_to_transfer_output', None), 'ON_EXIT')
         self.assertEqual(head.get('Executable', None), config.JobSubmitter.submitScript)
 
+        return
+
+            
+
 
 
     def testA_BasicTest(self):
@@ -451,6 +445,8 @@ class JobSubmitterTest(unittest.TestCase):
         Parse and test the JDL files
         See what condor says
         """
+
+        #return
 
         workloadName = "basicWorkload"
 
@@ -470,7 +466,8 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
-                                                                        workloadName))
+                                                                        workloadName),
+                                            site = 'se.T2_US_UCSD')
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
@@ -497,12 +494,19 @@ class JobSubmitterTest(unittest.TestCase):
         
         # Check on the JDL
         submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
-        self.checkJDL(config = config, cacheDir = cacheDir, submitFile = submitFile)
+        self.checkJDL(config = config, cacheDir = cacheDir,
+                      submitFile = submitFile, site = 'T2_US_UCSD')
+
+        if os.path.exists('CacheDir'):
+            shutil.rmtree('CacheDir')
+        shutil.copytree(self.testDir, 'CacheDir')
 
 
         # Check to make sure we have running jobs
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nJobs * nSubs)
+
+        
 
 
         # Now clean-up
@@ -534,7 +538,7 @@ class JobSubmitterTest(unittest.TestCase):
         changeState  = ChangeState(config)
 
         nSubs = 5
-        nJobs = 300
+        nJobs = 100
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -610,7 +614,7 @@ class JobSubmitterTest(unittest.TestCase):
         changeState = ChangeState(config)
 
         nSubs = 2
-        nJobs = 250
+        nJobs = 500
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -658,12 +662,12 @@ class JobSubmitterTest(unittest.TestCase):
 
         # Now we submit them
         #plugin = BossLiteCondorPlugin(submitDir    = config.JobSubmitter.submitDir,
-        plugin = CondorGlobusPlugin(submitDir    = config.JobSubmitter.submitDir,
-                                    submitScript = config.JobSubmitter.submitScript)
+        plugin = CondorGlideInPlugin(submitDir    = config.JobSubmitter.submitDir,
+                                     submitScript = config.JobSubmitter.submitScript)
 
         startTime = time.time()
-        cProfile.runctx("plugin(parameters = subBundle)", globals(), locals(), filename = "profStats.stat")
-        #plugin(parameters = subBundle)
+        #cProfile.runctx("plugin(parameters = subBundle)", globals(), locals(), filename = "profStats.stat")
+        plugin(parameters = subBundle)
         stopTime  = time.time()
 
 
@@ -681,172 +685,200 @@ class JobSubmitterTest(unittest.TestCase):
 
         print "Job took %f seconds to run plugin" % (stopTime - startTime)
 
-        p = pstats.Stats('profStats.stat')
-        p.sort_stats('cumulative')
-        p.print_stats()
+        #if os.path.exists('CacheDir'):
+        #    shutil.rmtree('CacheDir')
+        #shutil.copytree(self.testDir, 'CacheDir')
+
+        #p = pstats.Stats('profStats.stat')
+        #p.sort_stats('cumulative')
+        #p.print_stats()
 
         return
 
         
-
-
-    def testB_TestLongSubmission(self):
+    def testD_CreamCETest(self):
         """
-        See if you can get Burt to kill you.
+        _CreamCETest_
 
+        This is for submitting to Cream CEs.  Don't use it.
         """
 
         return
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+
+        workloadName = "basicWorkload"
 
         myThread = threading.currentThread()
 
         workload = self.createTestWorkload()
 
-        config = self.getConfig()
-        #config.JobSubmitter.submitDir = config.General.workDir
-        if not os.path.isdir(config.JobSubmitter.submitDir):
-            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
+        config   = self.getConfig()
+        config.JobSubmitter.pluginName    = 'CreamPlugin'
 
+        changeState = ChangeState(config)
 
-        #Right now only works with 1
-        jobGroupList = self.createJobGroup(1, config, 'second', workloadSpec = 'basicWorkload', task = workload.getTask('Production'), nJobs = 500)
+        nSubs = 1
+        nJobs = 10
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
 
+        # Add a new site
+        siteName = "creamSite"
+        ceName = "https://cream-1-fzk.gridka.de:8443/ce-cream/services/CREAM2  pbs cmsXS"
+        #ceName = "127.0.0.1"
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
+        locationAction.execute(siteName = siteName, seName = siteName, ceName = ceName)
+        locationSlots.execute(siteName = siteName, jobSlots = 1000)
 
-        # some general settings that would come from the general default 
-        # config file
-
-        testJobSubmitter = JobSubmitter(config)
-        testJobSubmitter.prepareToStart()
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
-
-        for state in result:
-            self.assertEqual(state.values()[0], 14)
-
-
-        username = os.getenv('USER')
-        pipe = Popen(['condor_q', username], stdout = PIPE, stderr = PIPE, shell = True)
-
-        output = pipe.communicate()[0]
-
-        self.assertEqual(output.find(username) > 0, True, "I couldn't find your username in the local condor_q.  Check it manually to find your job")
-
-        #print "You must check that you have 3000 NEW jobs in the condor_q manually."
-        #print "WARNING!  REMOVE YOUR JOB FROM THE CONDOR_Q!"
-
+        resourceControl = ResourceControl()
+        resourceControl.insertSite(siteName = siteName, seName = siteName, ceName = ceName)
+        resourceControl.insertThreshold(siteName = siteName, taskType = 'Processing', \
+                                        minSlots = 1000, maxSlots = 10000)
         
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            site = siteName)
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+        jobSubmitter.algorithm()
+
+
+        # Check that jobs are in the right state
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 0)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+        if os.path.exists('CacheDir'):
+            shutil.rmtree('CacheDir')
+        shutil.copytree(self.testDir, 'CacheDir')
 
         return
 
 
+    def testE_WhiteListBlackList(self):
+        """
+        _WhiteListBlackList_
 
+        Test the whitelist/blacklist implementation
+        Trust the jobCreator to get this in the job right
+        """
 
-    def testD_shadowPoolSubmit(self):
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
 
+        workloadName = "basicWorkload"
+        myThread     = threading.currentThread()
+        workload     = self.createTestWorkload()
+        config       = self.getConfig()
+        changeState  = ChangeState(config)
 
-        return
+        nSubs = 2
+        nJobs = 10
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
 
-        workload = self.createTestWorkload()
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            bl = ['T2_US_Florida', 'T2_TW_Taiwan', 'T1_CH_CERN'])
 
-        myThread = threading.currentThread()
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
 
-        #if os.path.exists(os.path.join(os.getcwd(), 'FrameworkJobReport.xml')):
-        #    os.remove(os.path.join(os.getcwd(), 'FrameworkJobReport.xml'))
-
-        config = self.getConfig()
-        config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
-        if not os.path.isdir(config.JobSubmitter.submitDir):
-            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
-
-        #Right now only works with 1
-        jobGroupList = self.createJobGroup(1, config, 'second', workloadSpec = 'basicWorkload', task = workload.getTask('Production'), nJobs = 10)
-
-
-        # some general settings that would come from the general default 
-        # config file
-
-        testJobSubmitter = JobSubmitter(config)
-        testJobSubmitter.prepareToStart()
-
-        #Give it three minutes to get on a node and do its 120 second of sleeping
-        time.sleep(90)
-
-
-        print myThread.dbi.processData("SELECT * FROM wmbs_location")[0].fetchall()
         
-        username = os.getenv('USER')
-        pipe = Popen(['condor_q', username], stdout = PIPE, stderr = PIPE, shell = True)
-        output = pipe.communicate()[0]
-        self.assertEqual(output.find(username) > 0, True, "I couldn't find your username in the local condor_q.  Check it manually to find your job")
 
-        time.sleep(180)
 
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        # Actually run it
+        jobSubmitter.algorithm()
 
         if os.path.isdir('CacheDir'):
             shutil.rmtree('CacheDir')
         shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
 
-        result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
 
-        for state in result:
-            self.assertEqual(state.values()[0], 14)
+        # Check to make sure we have running jobs
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nJobs * nSubs)
 
-        self.assertEqual(os.path.isfile('%s/CacheDir/Job_2/Report.pkl' %self.testDir), True, "Job did not return file successfully")
-        self.assertEqual(os.path.isfile('%s/CacheDir/Job_8/Report.pkl' %self.testDir), True, "Job did not return file successfully")
-
-        fileStats = os.stat('%s/CacheDir/Job_8/Report.pkl' %self.testDir)
-        self.assertEqual(int(fileStats.st_size) > 0, True, "Job returned zero-length file")
-
-        
-        
-
-        return
+        # All jobs should be at UCSD
+        submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
+        self.checkJDL(config = config, cacheDir = cacheDir,
+                      submitFile = submitFile, site = 'T2_US_UCSD')
 
 
-
-    def testE_shadowPoolLongTest(self):
-        """
-        If you run this, Burt will hunt you down and kill you
-
-        """
-
-        return
-
-        workload = self.createTestWorkload()
-
-        myThread = threading.currentThread()
-
-        config = self.getConfig()
-        config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
-        if not os.path.isdir(config.JobSubmitter.submitDir):
-            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
-
-        #Right now only works with 1
-        jobGroupList = self.createJobGroup(1, config, 'second', workloadSpec = 'basicWorkload', task = workload.getTask('Production'), nJobs = 950)
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
 
 
-        startTime = time.clock()
-
-        # some general settings that would come from the general default 
-        # config file
-
-        testJobSubmitter = JobSubmitter(config)
-        testJobSubmitter.prepareToStart()
-
-        #Should run twice and end
-        myThread.workerThreadManager.terminateWorkers()
 
 
-        stopTime = time.clock()
 
-        print "Job took %f seconds" %(stopTime - startTime)
-        
-        return
+
+        # Run again and test the whiteList
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            wl = ['T2_US_UCSD'])
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        # Actually run it
+        jobSubmitter.algorithm()
+
+        if os.path.isdir('CacheDir'):
+            shutil.rmtree('CacheDir')
+        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
+
+
+        # Check to make sure we have running jobs
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nJobs * nSubs)
+
+        # All jobs should be at UCSD
+        submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
+        self.checkJDL(config = config, cacheDir = cacheDir,
+                      submitFile = submitFile, site = 'T2_US_UCSD')
+
+
+        # Now clean-up
+        command = ['condor_rm', self.user]
+        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        pipe.communicate()
+
+
 
 
 

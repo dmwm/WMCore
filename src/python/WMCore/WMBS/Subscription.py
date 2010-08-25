@@ -20,8 +20,8 @@ TABLE wmbs_subscription
     type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.46 2009/09/25 15:33:30 mnorman Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: Subscription.py,v 1.47 2009/09/28 20:21:46 mnorman Exp $"
+__version__ = "$Revision: 1.47 $"
 
 from sets import Set
 import logging
@@ -357,17 +357,8 @@ class Subscription(WMBSBase, WMSubscription):
  
     def getJobGroups(self):
         """
-            Returns a list of job groups associated with the subscription
-            that has jobs that arent acquired
-            
-            NOTE:
-                If you have a jobgroup that is partially acquired,
-                i.e. there are two jobs within a group and one is acquired
-                and the other one isn't, the group will appear in the list
-            DOUBLENOTE:
-                you shouldn't be doing that anyway. by policy you need to
-                either get the whole group or none at all. Halfway is
-                naughty
+            Returns a list of job group IDs associated with the subscription
+
         """
         # first, make sure we have all the necessary data
         self.loadData()
@@ -390,15 +381,20 @@ class Subscription(WMBSBase, WMSubscription):
 
         self.loadData()
 
+        jobGroups = self.getJobGroups()
+
         #First, jobs
-        for jobID in self.getJobs():
-            job = WMBSJob(id = jobID)
-            job.delete()
+        deleteAction = self.daofactory(classname = "Jobs.Delete")
+        for job in self.getJobs():
+            deleteAction.execute(id = job["id"], conn = self.getDBConn(),
+                                 transaction = self.existingTransaction())
 
         #Next jobGroups
-        for jobGroupID in self.getJobGroups():
-            jobGroup = WMBSJobGroup(id = jobGroupID)
-            jobGroup.delete()
+        deleteAction = self.daofactory(classname = "JobGroup.Delete")
+        for jobGroupID in jobGroups:
+            deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+
 
 
 

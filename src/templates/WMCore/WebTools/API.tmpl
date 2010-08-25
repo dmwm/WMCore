@@ -31,7 +31,11 @@
 					    #end for
 					    #end if
 					    <p class="small">
+                            #try					    
+                            version $methods[$m]['version'] <a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
+					    	#except
 					    	<a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
+					    	#end try
 					    </p>
 					    </dd>
 					    <hr/>

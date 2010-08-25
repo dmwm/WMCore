@@ -30,127 +30,91 @@ complete).
 WMAgent deals with groups and calls group.status periodically
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.15 2009/03/18 19:56:57 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobGroup.py,v 1.16 2009/05/12 16:20:20 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
-from WMCore.DataStructs.Pickleable import Pickleable
+from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Fileset import Fileset
-from sets import Set
+
 import datetime
 
-class JobGroup(Pickleable):
+class JobGroup(WMObject):
     """
     JobGroups are sets of jobs running on files who's output needs to be merged
     together.
     """
     def __init__(self, subscription = None, jobs = None):
-        self.jobs = Set()
+        self.jobs = []
+        self.newjobs = []
 
-        if jobs == None:
-            self.newjobs = Set()
-        else:
+        if type(jobs) == list:
             self.newjobs = jobs
+        elif jobs != None:
+            self.newjobs = [jobs]
             
         self.subscription = subscription
-        self.groupoutput = Fileset()
+        self.output = Fileset()
         self.last_update = datetime.datetime.now()
-        self.id = self.last_update.__hash__() 
-        self.uid = 0
         
-    def add(self, job):        
-        self.newjobs = self.newjobs | self.makeset(job)
-        
+    def add(self, job):
+        """
+        _add_
+
+        Add a Job to the JobGroup.
+        """
+        self.newjobs.append(job)
+        return
+
     def commit(self):
         """
         _commit_
 
-        Move any new jobs to the jobs attribute, and empty the newjobs
-        attribute.
+        Move any jobs in the newjobs dict to the job dict.  Empty the newjobs
+        dict.
         """
-        self.jobs = self.jobs | self.newjobs
-        self.newjobs = Set()
-    
-    def __len__(self):
-        return len(self.jobs) + len(self.newjobs)
-    
-    def status(self, detail=False):
-        """
-        The status of the job group is the sum of the status of all jobs in the
-        group.
-        
-        return: ACTIVE, COMPLETE, FAILED
-        """
-        complete = []
-        failed = []
-        activated = []
-        for j in (self.jobs | self.newjobs):
-            if j.last_update < self.last_update:
-                # job has been updated
-                if j.status == 'ACTIVE':
-                    activated.append(j)
-                elif j.status == 'FAILED':
-                    failed.append(j)
-                elif j.status == 'COMPLETE':
-                    complete.append(j)
-        
-        self.last_update = datetime.datetime.now()
-    
-        ac = len(activated)
-        fa = len(failed)
-        cm = len(complete)
-        av = len(self.jobs) - ac - fa - cm  
-    
-        total = av + ac + fa + cm
-        report = ''
-        if detail:
-            report = ' (av %s, ac %s, fa %s, cm %s)' % (av, ac, fa, cm)
-        if cm == total:
-            self.recordComplete(self.jobs)
-            return 'COMPLETE%s' % report
-        elif fa > 0:
-            self.recordFail(self.jobs)
-            return 'FAILED%s' % report
-        else:
-            self.recordAcquire(self.jobs)
-            return 'ACTIVE%s' % report
-     
-    def recordAcquire(self, jobs = None):
-        if jobs == None:
-            jobs = self.jobs
-            
-        jobs = self.makelist(jobs)
-        for j in jobs:
-            self.subscription.acquireFiles(j.getFiles())
-            
-    def recordComplete(self, jobs = None):
-        if jobs == None:
-            jobs = self.jobs
-            
-        jobs = self.makelist(jobs)
-        for j in jobs:
-            self.subscription.completeFiles(j.getFiles())
-            
-    def recordFail(self, jobs = None):
-        if jobs == None:
-            jobs = self.jobs
-            
-        jobs = self.makelist(jobs)
-        for j in jobs:
-            self.subscription.failFiles(j.getFiles())
-    
-    def output(self):
-        """
-        The output is the files produced by the jobs in the group - these must
-        be merged up together.
-        """
-        if self.status() == 'COMPLETE':
-            "output only makes sense if the group is completed"
-            for j in self.jobs:
-                self.addOutput(j.output.getFiles())
-            return self.groupoutput
-        print self.status(detail=True)
-        return False
+        self.jobs.extend(self.newjobs)
+        self.newjobs = []
     
     def addOutput(self, file):
-        self.groupoutput.addFile(file)
-        self.groupoutput.commit()
+        """
+        _addOutput_
+
+        Add a File to the JobGroup's output fileset.  The File is committed
+        to the Fileset immediately.
+        """
+        self.output.addFile(file)
+        self.output.commit()
+
+    def getJobs(self, type = "list"):
+        """
+        _getJobs_
+
+        Retrieve all of the jobs in the JobGroup.  The output will either be
+        returned as a list of Job objects (when type is "list") or a list of
+        Job IDs (when type is "id").
+        """
+        if type == "list":
+            return self.jobs
+        elif type == "id":
+            jobIDs = []
+
+            for job in self.jobs:
+                jobIDs.append(job["id"])
+
+            return jobIDs
+        else:
+            print "Unknown type: %s" % type
+
+        return
+
+    def getOutput(self, type = "list"):
+        """
+        _getOutput_
+
+        Retrieve all of the files that are in the JobGroup's output fileset.
+        Type can be one of the following: list, set, lfn, id.
+        """
+        return self.output.getFiles(type = type)
+
+    def __len__(self):
+        return len(self.jobs.keys()) + len(self.newjobs.keys())

@@ -6,8 +6,8 @@ Unit tests for WorkerThreads.
 
 """
 
-__revision__ = "$Id: WorkerThreads_t.py,v 1.8 2010/02/10 03:52:28 meloam Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WorkerThreads_t.py,v 1.9 2010/08/02 17:36:54 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import threading
@@ -101,7 +101,7 @@ class WorkerThreadsTest(unittest.TestCase):
         myThread.transaction = None
         myThread.dbFactory = None
         
-        self.testInit = TestInit(__file__, backend = os.getenv('DIALECT'))
+        self.testInit = TestInit()
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
             

@@ -3,8 +3,8 @@
 SchedulerFake
 """
 
-__revision__ = "$Id: SchedulerFake.py,v 1.1 2010/05/21 14:16:41 spigafi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SchedulerFake.py,v 1.2 2010/06/03 11:12:51 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "filippo.spiga@cern.ch"
 
 from WMCore.BossLite.Scheduler.SchedulerInterface import SchedulerInterface
@@ -46,7 +46,10 @@ class SchedulerFake(SchedulerInterface) :
         if len(self.config) != 0 :
             command += " -c " + self.config
      
-        return command
+        # DEBUG
+        #print command
+        
+        return 
     
     
     def submit( self, obj, requirements='', config ='', service='' ):
@@ -75,7 +78,23 @@ class SchedulerFake(SchedulerInterface) :
 
         command += ' ' + fname
         
-        return command
+        # DEBUG
+        #print command
+        
+        returnMap = {}
+        if type(obj) == Task :                                    
+            for job in obj.jobs:
+                    returnMap[job['name']] = "%s-schedulerId" % (job['name'])
+
+            return returnMap, str("XXX1"), str("XX2")
+        
+        elif type(obj) == Job :
+            returnMap[obj['name']] = "%s-schedulerId" % (jobjob['name'])
+
+            return returnMap, str("XXX1"), str("XX2")
+        
+        else : 
+            raise SchedulerError( 'unexpected error',  type(obj) )
     
     
     def getOutput( self, obj, outdir='' ):
@@ -92,7 +111,10 @@ class SchedulerFake(SchedulerInterface) :
             
             command = "glite-wms-job-output --json --noint --dir " + \
                         outdir + " " + obj.runningJob['schedulerId']
-                    
+            
+            # DEBUG
+            #print command
+                 
         elif type(obj) == Task :
             for selJob in obj.jobs:
                 if not self.valid( selJob.runningJob ):
@@ -102,11 +124,15 @@ class SchedulerFake(SchedulerInterface) :
                             outdir + " " + selJob.runningJob['schedulerId']
                 
                 command += "\n"
+            
+            # DEBUG
+            #print command
         
         else:
             raise SchedulerError('wrong argument type', str( type(obj) ))      
-
-        return command
+    
+        return
+    
     
     
     def purgeService( self, obj ):
@@ -128,7 +154,10 @@ class SchedulerFake(SchedulerInterface) :
                 
                 command += "\n"
         
-        return command
+        # DEBUG
+        #print command
+                    
+        return
             
     
     def kill( self, obj ):
@@ -149,7 +178,10 @@ class SchedulerFake(SchedulerInterface) :
         
         command = "glite-wms-job-cancel --json --noint " + schedIdList
         
-        return command
+        # DEBUG
+        #print command
+                    
+        return
     
     
     def matchResources( self, obj, requirements='', config='', service='' ):
@@ -174,7 +206,10 @@ class SchedulerFake(SchedulerInterface) :
 
         command += " " + fname
         
-        return command
+        # DEBUG
+        #print command
+                    
+        return
     
     
     def postMortem( self, schedulerId, outfile, service):
@@ -185,7 +220,10 @@ class SchedulerFake(SchedulerInterface) :
         command = "glite-wms-job-logging-info -v 3 " + schedulerId + \
                   " > " + outfile
             
-        return command
+        # DEBUG
+        #print command
+                    
+        return 
     
     
     def query(self, obj, service='', objType='node') :
@@ -209,6 +247,9 @@ class SchedulerFake(SchedulerInterface) :
                         continue
                     
                     jobIds[ str(job.runningJob['schedulerId']) ] = count    
+                    
+                    job.runningJob['status'] = 'SD'
+                    
                     count += 1
                 
                 if jobIds :
@@ -216,10 +257,15 @@ class SchedulerFake(SchedulerInterface) :
                                    
                     command = 'GLiteStatusQuery.py --jobId=%s' % formatJobIds
                     
+                    # DEBUG
+                    #print command
+                    
             elif objType == 'parent' :
                 for job in obj.jobs :
                     if self.valid( job.runningJob ) :
                         jobIds[ str(job.runningJob['schedulerId']) ] = count
+                        
+                        job.runningJob['status'] = 'SD'
                         
                         if job.runningJob['schedulerParentId'] \
                                 not in parentIds:
@@ -234,11 +280,14 @@ class SchedulerFake(SchedulerInterface) :
                     
                     command = 'GLiteStatusQuery.py --parentId=%s --jobId=%s' \
                             % (formattedParentIds, formattedJobIds)
+                            
+                    # DEBUG
+                    #print command
             
         else:
             raise SchedulerError('wrong argument type', str( type(obj) ))
 
-        return command
+        return
     
     
     def jobDescription (self, obj, requirements='', config='', service = ''):

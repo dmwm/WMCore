@@ -2,10 +2,11 @@
 """
 _Destroy_
 
+MySQL implementation of BossLite.Destroy
 """
 
-__revision__ = "$Id: Destroy.py,v 1.1 2010/03/30 10:09:09 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Destroy.py,v 1.2 2010/05/10 13:34:33 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -14,9 +15,13 @@ from WMCore.Database.DBCreator import DBCreator
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
-from WMCore.Services.BossLite.MySQL.Create import Create
+from WMCore.BossLite.MySQL.Create import Create
 
 class Destroy(Create):    
+    """
+    BossLite.Destroy
+    """
+    
     def __init__(self, logger = None, dbi = None):
         """
         _init_

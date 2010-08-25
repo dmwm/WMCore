@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WMSpecGenerator.py,v 1.5 2010/03/19 15:32:29 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WMSpecGenerator.py,v 1.6 2010/04/07 15:16:37 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import unittest
 import os
@@ -40,7 +40,7 @@ class WMSpecGenerator(object):
             specUrl = self._save(spec)
             return specUrl
         elif returnType == "spec":
-            spec
+            return spec
         else:
             specUrl = self._save(spec)
             return spec, specUrl

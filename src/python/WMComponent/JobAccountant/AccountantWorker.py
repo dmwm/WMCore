@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.14 2010/02/25 22:44:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.15 2010/02/26 22:25:14 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import os
 import threading
@@ -52,6 +52,7 @@ class AccountantWorker:
         self.getJobTypeAction = self.daoFactory(classname = "Jobs.GetType")
         self.getParentInfoAction = self.daoFactory(classname = "Files.GetParentInfo")
         self.getMergedChildrenAction = self.daoFactory(classname = "Files.GetMergedChildren")
+        self.setParentageByJob       = self.daoFactory(classname = "Files.SetParentageByJob")
 
         self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
@@ -104,6 +105,14 @@ class AccountantWorker:
         and make sure the status is 'Success'.  If a step does not return
         'Success', the job will fail.
         """
+
+        if not hasattr(jobReport, 'data'):
+            return False
+
+        if not hasattr(jobReport.data, 'steps'):
+            return False
+
+
         for step in jobReport.data.steps:
             report = getattr(jobReport.data, step)
             if report.status != 'Success' and report.status != 0:
@@ -350,14 +359,15 @@ class AccountantWorker:
         self.fixupDBSFileStatus(redneckChildren)
         return
 
-    def addFileToWMBS(self, jobType, fwjrFile, jobMask, inputFiles):
+    def addFileToWMBS(self, jobType, fwjrFile, jobMask, jobID = None):
         """
         _addFileToWMBS_
 
         Add a file that was produced in a job to WMBS.  
         """
+
         fwjrFile["first_event"] = jobMask["FirstEvent"]
-        fwjrFile["last_event"] = jobMask["LastEvent"]
+        fwjrFile["last_event"]  = jobMask["LastEvent"]
 
         if fwjrFile["first_event"] == None:
             fwjrFile["first_event"] = 0
@@ -377,15 +387,18 @@ class AccountantWorker:
 
         wmbsFile = File()
         wmbsFile.loadFromDataStructsFile(file = fwjrFile)
+        self.setParentageByJob.execute(jobID = jobID, child = wmbsFile['id'],
+                                       conn = self.transaction.conn,
+                                       transaction = True)
 
-        for inputFile in inputFiles:
-            if inputFile["lfn"] not in wmbsFile.getParentLFNs():
-                try:
-                    wmbsFile.addParent(inputFile["lfn"])
-                except Exception, ex:
-                    msg = str(ex)
-                    logging.error("Exception in adding parents\n%s" %(msg))
-                    return None, None, None
+        #for inputFile in inputFiles:
+        #    if inputFile["lfn"] not in wmbsFile.getParentLFNs():
+        #        try:
+        #            wmbsFile.addParent(inputFile["lfn"])
+        #        except Exception, ex:
+        #            msg = str(ex)
+        #            logging.error("Exception in adding parents\n%s" %(msg))
+        #            return None, None, None
 
         if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile)
@@ -400,11 +413,12 @@ class AccountantWorker:
         WMBS.
         """
         wmbsJob = Job(id = jobID)
-        wmbsJob.loadData()
-        jobFiles = wmbsJob.getFiles()
+        #wmbsJob.loadData()
+        #jobFiles = wmbsJob.getFiles()
+        wmbsJob.load()
         wmbsJob["outcome"] = "success"
-        wmbsJob.save()
         wmbsJob.getMask()
+        outputID = wmbsJob.loadOutputID()
 
         wmbsJob["fwjr"] = fwkJobReport
 
@@ -412,8 +426,8 @@ class AccountantWorker:
                                                     conn = self.transaction.conn,
                                                     transaction = True)
 
-        wmbsJobGroup = JobGroup(id = wmbsJob["jobgroup"])
-        wmbsJobGroup.load()
+        #wmbsJobGroup = JobGroup(id = wmbsJob["jobgroup"])
+        #wmbsJobGroup.load()
 
         jobType = self.getJobTypeAction.execute(jobID = jobID,
                                                 conn = self.transaction.conn,
@@ -433,7 +447,7 @@ class AccountantWorker:
 
         for fwjrFile in fileList:
             (wmbsFile, moduleLabel, merged) = \
-                     self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"], jobFiles)
+                     self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"], jobID = jobID)
             if not wmbsFile and not moduleLabel:
                 # Something got screwed up in addFileToWMBS.  Send job to FAIL
                 self.transaction.rollback()
@@ -445,7 +459,7 @@ class AccountantWorker:
             if merged:
                 mergedOutputFiles.append(wmbsFile)
 
-            filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": wmbsJobGroup.output.id})
+            filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputID})
             outputFileset = self.outputFilesetsForJob(outputMap, wmbsFile["merged"], moduleLabel)
             if outputFileset != None:
                 filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputFileset})
@@ -457,6 +471,8 @@ class AccountantWorker:
                                                 transaction = True)
 
         wmbsJob.completeInputFiles()
+        # Only save once job is done, and we're sure we made it through okay
+        wmbsJob.save()
         self.stateChanger.propagate([wmbsJob], "success", "complete")
 
         for mergedOutputFile in mergedOutputFiles:

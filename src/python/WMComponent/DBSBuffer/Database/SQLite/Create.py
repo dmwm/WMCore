@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for SQLite
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2009/07/20 19:16:55 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Create.py,v 1.5 2009/07/27 20:03:07 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import logging
 import threading
@@ -54,7 +54,7 @@ class Create(DBCreator):
                   in_dbs           INTEGER DEFAULT 0,
                   FOREIGN KEY (algo_id) REFERENCES dbsbuffer_algo(id)
                     ON DELETE CASCADE,
-                  FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_algo(id)
+                  FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                     ON DELETE CASCADE
                )"""
                 

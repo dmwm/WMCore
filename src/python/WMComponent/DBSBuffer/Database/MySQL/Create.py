@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.19 2009/07/14 19:19:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Create.py,v 1.20 2009/07/27 20:03:07 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -15,7 +15,7 @@ from WMCore.Database.DBCreator import DBCreator
 
 class Create(DBCreator):
 
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None, params = None):
         """
         _init_
 
@@ -57,7 +57,7 @@ class Create(DBCreator):
                            primary key(id),
                            FOREIGN KEY (algo_id) REFERENCES dbsbuffer_algo(id)
                              ON DELETE CASCADE,
-                           FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_algo(id)
+                           FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                              ON DELETE CASCADE
                         ) ENGINE = InnoDB"""
         

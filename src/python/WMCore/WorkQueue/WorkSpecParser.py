@@ -6,12 +6,25 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.3 2009/05/21 18:22:54 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.4 2009/05/28 17:14:31 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import pickle
-from ProdCommon.DataMgmt.DBS import DBSReader
+from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, newWorkload
+
+
+class WorkUnit:
+    """
+    Represents a chunk of work
+    Either processing a block or a reasonable sized production request
+    """
+    def __init__(self, name, primaryBlock, blocks, jobs):
+        self.name = name
+        self.primaryBlock = primaryBlock
+        self.blocks = blocks
+        self.jobs = jobs
+
 
 class WorkSpecParser:
     """
@@ -20,9 +33,10 @@ class WorkSpecParser:
     
     def __init__(self, url, defaultBlockSize=100):
         self.specUrl = url
-        self.wmSpec = newWorkload(url) #pickle.load(open(self.specUrl)) #TODO: Replace by WMSpec load method
+        self.wmSpec = pickle.load(open(self.specUrl)) #TODO: Replace by WMSpec load method
         self.initialTask = self.wmSpec.taskIterator().next()
-        self.dbs = DBSReader(self.wmSpec.dbsUrl)
+        self.dbsUrl = getattr(self.wmSpec, 'dbsUrl', 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
+        self.dbs = DBSReader(self.dbsUrl)
         self.defaultBlockSize = defaultBlockSize
         self.results = [] # [name (block or fake), [blocks], jobs] 
         self.__split()
@@ -39,17 +53,20 @@ class WorkSpecParser:
         splitting criteria i.e. Generation jobs
         """
         # job split constraints
-        splitType = self.initialTask.get('splitType', 'File')
-        splitSize = self.initialTask.get('splitSize', 1)
+        splitType = getattr(self.initialTask, 'splitType', 'File')
+        splitSize = getattr(self.initialTask, 'splitSize', 1)
         
         
-        if not self.initialTask.inputDatasets():
+        if not getattr(self.initialTask, 'inputDatasets', ()):
             # we don't have any input data - divide into blocks of default size
             return self.__split_no_input()
             
         # data processing - assume blocks are reasonable size so queue them
+        #TODO: Only run over closed blocks - probably need to change this
         for dataset in self.initialTask.inputDatasets():
-            for block in self.dbs.getBlocks(dataset):
+            blocks = self.dbs.getFileBlocksInfo(dataset, onlyClosedBlocks=True)
+            for block in blocks:
+                name = block['Name']
                 if splitType == 'Event':
                     jobs = self.__estimateJobs(splitSize, block['NumEvents'])
                 elif splitType == 'File':
@@ -57,28 +74,28 @@ class WorkSpecParser:
                 else:
                     raise RuntimeError, 'Unsupported SplitType: %s' % splitType
                 
-                #TODO: Get parentage list etc.
-                self.results.append((block['Name'], block['Name'], jobs))
+                if bool(getattr(self.initialTask, 'Parents', "False")):
+                    blocks = block['Parents']
+                else:
+                    blocks = []
+                self.results.append(WorkUnit(name, name, blocks, jobs))
+
 
 
     def __split_no_input(self):
         """
         We have no input data - split by events
         """
-        total = self.initialTask.totalEvents()
-        perJob = self.initialTask.get('splitSize', 100)
-        # have to be splitting by event
-#        while total:
-#            self.results.append(('', (), eventsPerBlock / eventsPerJob))
-#            if total < eventsPerBlock:
-#                eventsPerBlock = total
+        total = getattr(self.initialTask, 'totalEvents', 10000)
+        perJob = getattr(self.initialTask, 'splitSize', 10)
+        blockTotal = self.defaultBlockSize * perJob
         count = 0
         while total > 0:
-            jobs = self.__estimateJobs(self.defaultBlockSize * perJob, total)
+            jobs = self.__estimateJobs(perJob, blockTotal)
             count += 1
-            total -= jobs * perJob
-        #for i in range(self.__estimateJobs(self.defaultBlockSize, total)):
-            self.results.append((str(count), (), jobs))
+            total -= (jobs * perJob)
+            self.results.append(WorkUnit(str(count), None, (), jobs))
+            if total < blockTotal: blockTotal = total
             
 
     def __estimateJobs(self, unit, total):
@@ -86,14 +103,15 @@ class WorkSpecParser:
         Estimate the number of jobs resulting from a block of work
         """
         #TODO: Possibility to run JobSplitting in DryRun mode, need changes
-        # there for this though. Also maybe unessecary as subscriptions need 
+        # there for this though. Also maybe unnecessary as subscriptions need 
         # a fileset setup etc... might be able to fake without persisting in db though...
         # for now fake this
         count = 0
-        while total:
+        while total > 0:
             count += 1
-            if total < unit:
-                eventsPerBlock = total
+            total -= unit
+#            if total < unit:
+#                eventsPerBlock = total
         return count
 
 
@@ -117,19 +135,19 @@ class WorkSpecParser:
         """
         Site whitelist as defined in task
         """
-        return self.initialTask.constraints.sites.whitelist
+        return getattr(self.initialTask, 'constraints.sites.whitelist', ())
     
   
     def siteBlacklist(self):
         """
         Site blacklist as defined in task
         """
-        return self.initialTask.constraints.sites.blacklist
+        return getattr(self.initialTask, 'constraints.sites.blacklist', ())
     
 
     def priority(self):
         """
         Return priority of workflow
         """
-        return self.wmSpec.get('Priroity', 1)
+        return getattr(self.wmSpec, 'Priroity', 1)
       

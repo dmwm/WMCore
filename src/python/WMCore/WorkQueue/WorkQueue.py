@@ -11,12 +11,15 @@ TODO: Persist WQElements
 """
 
 import time
+# pylint: disable-msg=W0104,W0622
 try:
     set
-except ImportError:
+except NameError:
     from sets import Set as set
+# pylint: enable-msg=W0104,W0622
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WorkQueue.DBSHelper import DBSHelper
+from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WorkSpecParser import WorkSpecParser
 
@@ -32,14 +35,15 @@ class _WQElement(WMObject):
                  blackList = None):
         WMObject.__init__(self)
         self.specUrl = specUrl
+        self.primaryBlock = primaryBlock
         # blockLocations is dict format of {blockName:[location List], ...}
         self.blockLocations = blockLocations or {}
-        #self.locations = locations
-        self.primaryBlock = primaryBlock
+        if primaryBlock:
+            blockLocations[primaryBlock] = []
         self.whiteList = whiteList or []
         self.blackList = blackList or []
         self.priority = priority
-        self.online = online
+        self._online = online
         self.njobs = njobs
         self.time = time.time()
         self.status = "Available"
@@ -47,30 +51,49 @@ class _WQElement(WMObject):
         self.wmSpec = WorkSpecParser(specUrl)
 
 
-    def __cmp__(self, y):
+    def __cmp__(self, other):
         """
         Compare work units so they can be sorted by priority
           priority determined by a weighted average of the 
             static priority and the queueing time
         """
-        tfactor = self.time
         current = time.time()
         weight = 0.01
-        return (self.priority + weight*(current - self.time)) - (y.priority + weight*(current - y.time))
+        lhs = self.priority + weight * (current - self.time)
+        rhs = other.priority + weight * (current - other.time)
+        return cmp(rhs, lhs) # Contrary to normal sorting (high priority first)
 
 
-    def _sites(self):
-        """
-        Return sites that contain all blocks
-        """
-        return []
+    def __str__(self):
+        return "WQElement: %s:%s priority=%s, njobs=%s, time=%s" % (self.specUrl,
+                                            self.primaryBlock, self.priority,
+                                            self.njobs, self.time)
 
 
-    def _online(self):
+    def online(self):
         """
         Are all blocks online?
         """
         return True
+
+
+    def dataAvailable(self, site):
+        """
+        Can we run at the given site?
+        """
+        if not self.blockLocations:
+            return True # no input blocks - match any site
+        #TODO: Stager behavior faked for now - should be site specific
+        return self.online() and site in self.locations
+    
+    
+    def slotsAvailable(self, slots):
+        """
+        Do we have enough slots available?
+        """
+        #Options: Strict matching?, x% of block slots available?
+        #For now strict - assume block small enough to release
+        return slots >= self.njobs
 
 
     def match(self, conditions):
@@ -82,29 +105,21 @@ class _WQElement(WMObject):
         Boolean indicates if a match was made, the dict contains the
         original conditions passed in minus any that were used in the match
         """
-        if not self._online():
+        if self.status != "Available":
             return False, conditions
 
         #TODO: Add some ranking so most restrictive requirements match first
         for site, slots in conditions.iteritems():
-            #For now just return first matching requirement 
-            #TODO: add ranking so most restrictive requirements match first
-            for condition in conditions:
-                site = condition['Site']
-                
-                #TODO: Refine slot calc,
-                #Options: Strict matching?, x% of block slots available?
-                #For now strict - assume block small enough to release
-                if site in self._sites and slots > self.njobs:
-                    newconditions = {}
-                    newconditions.update(conditions)
-                    newslots = slots - self.njobs
-                    if newslots > 0:
-                        newconditions[site] = newslots
-                    else:
-                        newconditions.pop(site)
-                    return True, newconditions
-        # if here - never matched anything
+            if self.dataAvailable(site) and self.slotsAvailable(slots):
+                newconditions = {}
+                newconditions.update(conditions)
+                newslots = slots - self.njobs
+                if newslots > 0:
+                    newconditions[site] = newslots
+                else:
+                    newconditions.pop(site)
+                return True, newconditions
+
         return False, conditions
 
 
@@ -115,9 +130,9 @@ class _WQElement(WMObject):
         self.status = status
         
     
-    def getLocations(self):
+    def locations(self):
         """
-        _getLocations_
+        _locations_
         
         return list of locations in the WQElement only if there is some common location
         in a primary block and its parent block
@@ -126,6 +141,7 @@ class _WQElement(WMObject):
         for locations in self.blockLocations.values():
             commonLocation = commonLocation.intersection(set(locations))
         return list(commonLocation)
+    locations = property(locations)
     
             
     def updateLocations(self, dbsHelper):
@@ -154,28 +170,36 @@ class WorkQueue(WMObject):
     """
     def __init__(self, dbsUrl):
         self.elements = [ ]
-        self.dbsHelper = DBSHelper(dbsUrl)
+        self.dbsHelper = DBSReader(dbsUrl)
 
 
-    def addElement(self, specUrl, nJobs, dbsUrl, primaryBlock = None,
-                   parentBlocks = None, priority = 0,
-                   whiteList = None, blackList = None):
+    def __len__(self):
+        return len(self.elements)
+
+
+    def addElement(self, specUrl, nJobs, primaryBlock = None, blocks = None,
+                   priority = 0, whiteList = None, blackList = None):
         """
         _addElement_
         
         TODO: eventually this will be the database update for WorkQueue table set
         """
-        parentBlocks = parentBlocks or []
-        dbsHelper = DBSHelper(dbsUrl)
-        blockLocations = {primaryBlock:
-                          dbsHelper.getBlockLocations(primaryBlock)} # TODO: Should be automated contains both primaryBlock and parentBlock 
-        for block in parentBlocks:
-            blockLocations[block] = dbsHelper.getBlockLocations(block)
-            
-        online = 1 # TODO: Should be automated 
-        newElem = _WQElement(specUrl, primaryBlock, blockLocations, priority, online, 
-                             nJobs, whiteList, blackList)
-        self.elements.append(newElem) 
+        blocks = blocks or []
+        whiteList = whiteList or []
+        blackList = blackList or []
+        #Fill Block locations later
+        blockLocations = {}
+        for block in blocks:
+            blockLocations[block] = []
+#        if primaryBlock:
+#            blockLocations[primaryBlock] = self.dbsHelper.listFileBlockLocation(primaryBlock)
+#        for block in blocks:
+#            blockLocations[block] = self.dbsHelper.listFileBlockLocation(block)
+        online = True # TODO: Should be automated 
+        element = _WQElement(specUrl, primaryBlock, blockLocations, 
+                                        priority, online, nJobs,
+                                        whiteList, blackList)
+        self.elements.append(element)
 
 
     def match(self, conditions):
@@ -186,17 +210,19 @@ class WorkQueue(WMObject):
         results = []
         self.reorderList()
         for element in self.elements:
-            #Act of matching returns the remaining match attributes 
+            # Act of matching returns the remaining match attributes
             matched, conditions = element.match(conditions)
             if matched:
                 results.append(element)
                 if not conditions:
                     break # stop matching when no resources left      
         return results
-        
-        return results
+
 
     def reorderList(self):
+        """
+        Order internal queue in priority order, highest first.
+        """
         self.elements.sort()    
 
 
@@ -204,7 +230,7 @@ class WorkQueue(WMObject):
         """
         _setStatus_
         """
-        # set the status of give subscription and status
+        # set the status of given subscriptions and status
         results = []
         for element in self.elements:
             if element.subscription == subscription:
@@ -213,21 +239,23 @@ class WorkQueue(WMObject):
         return results
 
 
-    def setPriority(self, idnumber, newpriority):
-        found = 0
-        count = 0
-        while (len(self.elements) < count or found):
-            if (self.elements[count].idnumber == idnumber):
-                found=1
-                self.elements[count].priority = newpriority
-            if (not found):
-                print "Element not found nothing changed"
-            else:
-                self.reorderList()
-                
+    def setPriority(self, newpriority, *workflows):
+        """
+        Update priority for an element and re-prioritize the queue
+         Return number of affected blocks or -1 for error
+        """
+        #TODO: Error handling?
+        wflows = lambda x: x.specUrl in workflows
+        affected = self.mark(wflows, 'priority', newpriority)
+        if affected:
+            self.reorderList()
+        return affected > 0
+
 
     def updateLocationInfo(self):
-        
+        """
+        Update locations for elements
+        """
         for element in self.elements:
             element.updateLocations(self.dbsHelper)
 
@@ -237,10 +265,11 @@ class WorkQueue(WMObject):
         _getWork_
         siteJob is dict format of {site: estimateJobSlot}
         """
+        results = []
         # update the location information in WorkQueue
         # if this is too much overhead use separate component
         self.updateLocationInfo()
-        subscriptions = []
+        #subscriptions = []
         #for site in siteJobs.key():
         # might just return one  block
         wqElementList = self.match(siteJobs)
@@ -249,40 +278,54 @@ class WorkQueue(WMObject):
             wmbsHelper = WMBSHelper(wmSpec)
             # create fileset workflow and subscription
             # generate workflow name from wmSpec names
-            workflowName= "Workflow"
-            
-            results = {}
-            for site in wqElementList["sites"]: 
-                # generate fileset name from multiple blocks using some convention.
-                # fileset should be blocks processed in the same sites
-                filesetName = "Fileset"
-                subscription = wmbsHelper.createSubscription(fileName=workflowName,
-                                                    	     workflowName=workflowName)
-                results[site] = subscription
+            workflowName = "Workflow"
+
+            # generate fileset name from multiple blocks using some convention.
+            # fileset should be blocks processed in the same sites
+            filesetName = "Fileset"
+            try:
+                subscription = wmbsHelper.createSubscription(filesetName=workflowName,
+                                                	     workflowName=workflowName)
+            except:
+                subscription = 1 #Remove when this works!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            results.append(subscription)
+            wqElement.subscription = subscription
+
         return results
 
     
-    def gotWork(self, subscription):
+    def gotWork(self, *subscriptions):
         """
         _gotWork_
         
         this is called by JSM
         update the WorkQueue status table and remove from further consideration
         """
-        taken_blocks = self.setStatus(subscription, "Acquired")
-        [self.elements.remove(x) for x in [taken_blocks]] 
-        return True
+        subs = lambda x: x.subscription in subscriptions
+        return self.mark(subs, 'status', 'Acquired') > 0
 
 
-    def doneWork(self, subscription):
+    def doneWork(self, *subscriptions):
         """
         _doneWork_
         
         this is called by JSM
         update the WorkQueue status form table
         """
-        self.setStatus(subscription, "Done")
-        return True
+        subs = lambda x: x.subscription in subscriptions
+        return self.mark(subs, 'status', 'Done') > 0
+
+
+    def mark(self, searcher, field, newvalue):
+        """
+        Iterate over queue, replacing oldvalue with newvalue
+        """
+        count = 0
+        for ele in self.elements:
+            if searcher(ele):
+                setattr(ele, field, newvalue)
+                count += 1
+        return count
 
 
     def queueWork(self, wmspec):
@@ -290,13 +333,17 @@ class WorkQueue(WMObject):
         Take and queue work from a WMSpec
         """
         spec = WorkSpecParser(wmspec)
-        for name, blocks, jobs in spec:
+        for unit in spec:
+            name = unit.name
+            primaryBlock = unit.primaryBlock
+            blocks = unit.blocks
+            jobs = unit.jobs
+            
             self.addElement(specUrl = wmspec,
-                            primaryBlock = name,
-                            parentBlocks = [],
+                            primaryBlock = primaryBlock,
+                            blocks = blocks,
                             priority = spec.priority(),
-                            whitelist = spec.siteWhitelist(),
-                            blacklist = spec.siteBlacklist(),
-                            nJobs = jobs,
-                            dbsUrl = spec.wmSpec.dbsUrl)
+                            whiteList = spec.siteWhitelist(),
+                            blackList = spec.siteBlacklist(),
+                            nJobs = jobs)
         return True

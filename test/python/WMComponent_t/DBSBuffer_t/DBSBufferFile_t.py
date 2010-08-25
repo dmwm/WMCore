@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.7 2009/10/22 18:37:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.8 2009/11/02 20:10:51 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import os
@@ -626,6 +626,49 @@ class FileTest(unittest.TestCase):
                "Error: Wrong number of files counted in DBS Buffer."
 
         return
+
+    def testAddParents(self):
+        """
+        _testAddParents_
+
+        Verify that the addParents() method works correctly even if the parents
+        do not already exist in the database.
+        """
+        testFile = DBSBufferFile(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                                 cksum = 1, locations = "se1.fnal.gov")
+        testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFile.create()
+
+        testParent = DBSBufferFile(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                                 cksum = 1, locations = "se1.fnal.gov")
+        testParent.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
+                              appFam = "RECO", psetHash = "GIBBERISH",
+                              configContent = "MOREGIBBERISH")
+        testParent.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RAW")
+        testParent.create()
+
+        goldenLFNs = ["lfn1", "lfn2", "lfn3", "/this/is/a/lfnB"]
+        testFile.addParents(goldenLFNs)
+
+        verifyFile = DBSBufferFile(id = testFile["id"])
+        verifyFile.load(parentage = 1)
+        parentLFNs = verifyFile.getParentLFNs()
+
+        for parentLFN in parentLFNs:
+            assert parentLFN in goldenLFNs, \
+                   "Error: unknown lfn %s" % parentLFN
+
+            goldenLFNs.remove(parentLFN)
+
+        assert len(goldenLFNs) == 0, \
+               "Error: missing LFNs..."
+
+        return
         
 if __name__ == "__main__":
     unittest.main() 
+
+#  LocalWords:  testParent

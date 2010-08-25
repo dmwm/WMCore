@@ -235,16 +235,13 @@ def rerecoWorkload(workloadName, arguments):
             mergeRecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
         cleanupRecoTask = rereco.addTask("CleanupUnmergedReco")
-        cleanupRecoStep = cleanupRecoTask.makeStep("cleanupUnmergedReco")    
-        cleanupRecoStep.setStepType("DeleteFiles")
-
-        cleanupRecoStep.applyTemplates()
-        cleanupRecoStep.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 10)
-        cleanupRecoStep.addGenerator("BasicNaming")
-        cleanupRecoStep.addGenerator("BasicCounter")
-        cleanupRecoStep.setTaskType("Cleanup")
-
+        cleanupRecoTask.setTaskType("Cleanup")
         cleanupRecoTask.setInputReference(rerecoCmssw, outputModule = outputModule("RECO"))
+        cleanupRecoTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 10)
+       
+        cleanupRecoStep = cleanupRecoTask.makeStep("cleanupUnmergedReco")
+        cleanupRecoStep.setStepType("DeleteFiles")
+        cleanupRecoTask.applyTemplates()
 
     if "ALCARECO" in writeDataTiers:
         mergeAlca = rereco.addTask("MergeAlcaReco")
@@ -275,7 +272,6 @@ def rerecoWorkload(workloadName, arguments):
             lfnBase = "%s/ALCARECO/%s" % ( commonLfnBase, processedDatasetName)
         )
 
-
         mergeAlca.setInputReference(rerecoCmssw, outputModule = outputModule("ALCARECO"))
         if emulationMode:
             mergeAlcaStageOutHelper = mergeAlcaStageOut.getTypeHelper()
@@ -284,8 +280,14 @@ def rerecoWorkload(workloadName, arguments):
             mergeAlcaStageOutHelper.data.emulator.emulatorName = "StageOut"
             mergeAlcaLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
-
-
+        cleanupAlcaTask = rereco.addTask("CleanupUnmergedAlca")
+        cleanupAlcaTask.setTaskType("Cleanup")
+        cleanupAlcaTask.setInputReference(rerecoCmssw, outputModule = outputModule("ALCARECO"))
+        cleanupAlcaTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 10)
+       
+        cleanupAlcaStep = cleanupAlcaTask.makeStep("cleanupUnmergedAlca")
+        cleanupAlcaStep.setStepType("DeleteFiles")
+        cleanupAlcaTask.applyTemplates()            
 
     if "AOD" in writeDataTiers:
         mergeAod = rereco.addTask("MergeAod")
@@ -326,3 +328,5 @@ def rerecoWorkload(workloadName, arguments):
 
 
     return workload
+
+#  LocalWords:  LogArchive

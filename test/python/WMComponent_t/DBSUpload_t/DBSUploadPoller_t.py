@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.16 2009/12/10 20:37:17 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 
 import os
@@ -53,6 +53,7 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.testInit.clearDatabase(modules = ["WMCore.ThreadPool", "WMCore.MsgService"])
         self.testInit.setSchema(customModules = 
                                 ["WMCore.ThreadPool",
                                  "WMCore.MsgService",
@@ -102,7 +103,7 @@ class DBSUploadTest(unittest.TestCase):
         Add files to the DBSBuffer with a set dataset path.
         """
         testFileParentA = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, cksum = 1, locations = "malpaquet")
+                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -110,7 +111,7 @@ class DBSUploadTest(unittest.TestCase):
         testFileParentA.addRun(Run(1, *[45]))
         
         testFileParentB = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, cksum = 2, locations = "malpaquet")
+                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -118,7 +119,7 @@ class DBSUploadTest(unittest.TestCase):
         testFileParentB.addRun(Run(1, *[45]))
         
         testFileParentC = DBSBufferFile(lfn = makeUUID()+'hello', size = 1024,
-                                        events = 20, cksum = 3, locations = "malpaquet")
+                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
         testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -130,7 +131,7 @@ class DBSUploadTest(unittest.TestCase):
         testFileParentC.create()
         
         testFile = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                 events = 10, cksum = 1, locations = "malpaquet")
+                                 events = 10, checksums = {'cksum': 1}, locations = "malpaquet")
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                               appFam = "RECO", psetHash = "GIBBERISH",
                               configContent = "MOREGIBBERISH")
@@ -159,7 +160,7 @@ class DBSUploadTest(unittest.TestCase):
         testFiles = []
 
         testFileParentA = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, cksum = 1, locations = "malpaquet")
+                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -167,7 +168,7 @@ class DBSUploadTest(unittest.TestCase):
         testFileParentA.addRun(Run(1, *[45]))
         
         testFileParentB = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, cksum = 2, locations = "malpaquet")
+                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
         testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -175,7 +176,7 @@ class DBSUploadTest(unittest.TestCase):
         testFileParentB.addRun(Run(1, *[45]))
         
         testFileParentC = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                        events = 20, cksum = 3, locations = "malpaquet")
+                                        events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
         testFileParentC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
@@ -188,7 +189,7 @@ class DBSUploadTest(unittest.TestCase):
 
         for i in range(0,200):
                 testFile = DBSBufferFile(lfn = makeUUID(), size = 1024,
-                                         events = 10, cksum = 1, locations = "malpaquet")
+                                         events = 10, checksums = {'cksum': 1}, locations = "malpaquet")
                 testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
                                       appFam = "RECO", psetHash = "GIBBERISH",
                                       configContent = "MOREGIBBERISH")

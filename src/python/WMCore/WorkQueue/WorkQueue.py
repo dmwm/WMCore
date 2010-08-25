@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.139 2010/08/16 18:40:23 mnorman Exp $"
-__version__ = "$Revision: 1.139 $"
+__revision__ = "$Id: WorkQueue.py,v 1.140 2010/08/16 19:19:24 sryu Exp $"
+__version__ = "$Revision: 1.140 $"
 
 
 import time
@@ -394,11 +394,6 @@ class WorkQueue(WorkQueueBase):
         sub = wmbsHelper.createSubscriptionAndAddFiles(dbsBlock = dbsBlock)
         
         self.logger.info("Created top level Subscription %s" % sub['id'])
-        
-        #else:
-            # add MC fake files for each subscription.
-            # this is needed for JobCreator trigger: commented out for now.
-            #wmbsHelper.addMCFakeFile()
 
         updateSub = self.daofactory(classname = "WorkQueueElement.UpdateSubscription")
         updateSub.execute(match['id'], sub['id'],

@@ -33,7 +33,7 @@ class ServiceTest(unittest.TestCase):
         assert os.path.exists(f.name)
         f.close()
         
-        self.myService.clearCache('testClear', '/COMP/WMCORE/src/python/WMCore/Services/Service.py?view=markup')
+        self.myService.clearCache('testClear')
         assert not os.path.exists(f.name)
         
 

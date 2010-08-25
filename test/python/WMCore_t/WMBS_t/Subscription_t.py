@@ -1185,27 +1185,12 @@ class SubscriptionTest(unittest.TestCase):
         """
         (testSubscription, testFileset, testWorkflow, testFileA,\
             testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        testSubscription.create()
 
         stateChanger = ChangeState(DefaultConfig.config, 'subscription_t_jsm_database')
 
-        self.assertFalse(testSubscription.exists() , \
-               "ERROR: Subscription exists before it was created")
-
-        testSubscription.create()
-    
-        assert testSubscription.exists() >= 0, \
-               "ERROR: Subscription does not exist after it was created"
-               
         testJobGroupA = JobGroup(subscription = testSubscription)
         testJobGroupA.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(10, *[12312]))
-
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(10, *[12312]))
-        testFileA.create()
-        testFileB.create()
 
         testJobA = Job(name = "TestJobA")
         testJobA.addFile(testFileA)
@@ -1220,12 +1205,8 @@ class SubscriptionTest(unittest.TestCase):
         testJobGroupB = JobGroup(subscription = testSubscription)
         testJobGroupB.create()
 
-        testFileC = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileC.addRun(Run(10, *[12312]))
-
-        testFileD = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10)
         testFileD.addRun(Run(10, *[12312]))
-        testFileC.create()
         testFileD.create()
 
         testJobC = Job(name = "TestJobC")
@@ -1237,7 +1218,7 @@ class SubscriptionTest(unittest.TestCase):
         testJobGroupB.add(testJobC)
         testJobGroupB.add(testJobD)
         testJobGroupB.commit() 
-        
+
         firstResult = testSubscription.getJobGroups()
         self.assertEquals(firstResult.sort(), [testJobGroupA,testJobGroupB].sort(), \
                                  "Two jobgroups should be available not: %s"
@@ -1257,28 +1238,11 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEquals([thirdResult[0].id], [testJobGroupB.id], \
                             "Should be one jobgroup %s, found %s" % ([testJobGroupB.id], [thirdResult[0].id]))
         self.assertEquals(len(thirdResult),1)
-        stateChanger.propagate([testJobC,testJobD], 'created', 'new')
-        fourthResult  = testSubscription.getJobGroups()
+
+        stateChanger.propagate([testJobC, testJobD], 'created', 'new')
+        fourthResult = testSubscription.getJobGroups()
         self.assertFalse(fourthResult, \
                             "Should be no jobgroups, found %s" % (fourthResult,))
 
-    def testIDFilesetWorkflowDAO(self):
-        """
-        _testIDFilesetWorkflowDAO_
-
-        """
-        (testSubscription, testFileset, testWorkflow, 
-         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
-
-        testSubscription.create()
-
-        idDAO = self.daofactory(classname = "Subscriptions.IDFromFilesetWorkflow")
-        subID = idDAO.execute(workflow = testWorkflow.name, fileset = testFileset.name)
-
-        assert subID == testSubscription["id"], \
-               "ERROR: ID DAO returned the wrong ID."
-
-        return
-               
 if __name__ == "__main__":
     unittest.main()

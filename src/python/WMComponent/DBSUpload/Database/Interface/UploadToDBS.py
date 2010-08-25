@@ -5,14 +5,17 @@ _UploadToDBS_
 APIs related to adding file to DBS
 
 """
-__version__ = "$Revision: 1.13 $"
-__revision__ = "$Id: UploadToDBS.py,v 1.13 2010/02/24 21:42:04 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: UploadToDBS.py,v 1.14 2010/06/04 19:17:07 mnorman Exp $"
 
 import logging
 import threading
-from WMCore.WMFactory import WMFactory
-from WMCore.DAOFactory import DAOFactory
+from WMCore.WMFactory        import WMFactory
+from WMCore.DAOFactory       import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
+
+from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMCore.DataStructs.Run import Run
 
 
 class UploadToDBS (WMConnectionBase):
@@ -24,39 +27,6 @@ class UploadToDBS (WMConnectionBase):
     def __init__(self, logger=None, dbfactory = None):
         pass
     
-    def findUploadableDatasets(self):
-        """
-        Call to findUploadableDatasets
-
-        """
-        myThread = threading.currentThread()
-        existingTransaction = self.beginTransaction()
-        
-        factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
-                        myThread.dialect)
-        findDatasets = factory.loadObject("FindUploadableDatasets")
-        # Add the file to the buffer (API Call)
-        results = findDatasets.execute(conn = self.getDBConn(), transaction=self.existingTransaction())
-        self.commitTransaction(existingTransaction)
-        return results  
-
-    def findUploadableFiles(self):
-        """
-        Call to findUploadableFiles
-
-        """
-        myThread = threading.currentThread()
-        existingTransaction = self.beginTransaction()
-        
-        factory = WMFactory("dbsUpload", "WMComponent.DBSUpload.Database."+ \
-                        myThread.dialect)
-        findFiles = factory.loadObject("FindUploadableFiles")
-        # Add the file to the buffer (API Call)
-        
-        #results = findFiles.execute(conn = self.getDBConn(), transaction=self.existingTransaction())
-        results = findFiles.execute(conn = self.getDBConn(), transaction=self.existingTransaction())
-        self.commitTransaction(existingTransaction)
-        return results  
 
     def findAlgos(self, dataset):
         """
@@ -83,6 +53,10 @@ class UploadToDBS (WMConnectionBase):
         Update the status of a series of files in DBSBuffer.  The files must be
         passed in as a list of LFNs.
         """
+
+        if len(files) == 0:
+            return
+        
         myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
         
@@ -155,3 +129,101 @@ class UploadToDBS (WMConnectionBase):
         self.commitTransaction(existingTransaction)
 
         return
+
+
+
+    def findUploadableDAS(self):
+        """
+        _findUploadableDAS_
+
+        Find all the Dataset-Algo combinations
+        with uploadable files.
+        """
+
+        myThread = threading.currentThread()
+        existingTransaction = self.beginTransaction()
+
+        factory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+        findDAS = factory(classname = "FindDASToUpload")
+        result  = findDAS.execute(conn = self.getDBConn(),
+                                  transaction=self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+
+        return result
+
+
+
+    def findUploadableFilesByDAS(self, das):
+        """
+        _findUploadableDAS_
+
+        Find all the Dataset-Algo files available
+        with uploadable files.
+        """
+
+        myThread = threading.currentThread()
+        existingTransaction = self.beginTransaction()
+
+        dbsFiles = []
+
+        factory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+        findFiles = factory(classname = "LoadDBSFilesByDAS")
+        results   = findFiles.execute(das = das,
+                                      conn = self.getDBConn(),
+                                      transaction=self.existingTransaction())
+
+        for entry in results:
+            # Add loaded information
+            dbsfile = DBSBufferFile(id=entry['id'])
+            dbsfile.update(entry)
+            dbsFiles.append(dbsfile)
+
+        for dbsfile in dbsFiles:
+            if 'runInfo' in dbsfile.keys():
+                # Then we have to replace it with a real run
+                for r in dbsfile['runInfo'].keys():
+                    run = Run(runNumber = r)
+                    run.extend(dbsfile['runInfo'][r])
+                    dbsfile.addRun(run)
+                del dbsfile['runInfo']
+            if 'parentLFNs' in dbsfile.keys():
+                # Then we have some parents
+                for lfn in dbsfile['parentLFNs']:
+                    newFile = DBSBufferFile(lfn = lfn)
+                    dbsfile['parents'].add(newFile)
+                del dbsfile['parentLFNs']
+
+        self.commitTransaction(existingTransaction)
+
+        return dbsFiles
+
+
+    def loadBlocksByDAS(self, das):
+        """
+        _loadBlocksByDAS_
+
+        Given a DAS, find all the 
+        blocks associated with it in the
+        Open status
+        """
+
+        myThread = threading.currentThread()
+        existingTransaction = self.beginTransaction()
+
+        factory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+                             logger = myThread.logger,
+                             dbinterface = myThread.dbi)
+        findBlocks = factory(classname = "LoadBlocksByDAS")
+        result     = findBlocks.execute(das = das,
+                                        conn = self.getDBConn(),
+                                        transaction=self.existingTransaction())
+
+        self.commitTransaction(existingTransaction)
+
+        return result
+        

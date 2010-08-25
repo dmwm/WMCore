@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.48 2009/05/26 15:44:54 sfoulkes Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: File.py,v 1.49 2009/06/29 18:59:47 mnorman Exp $"
+__version__ = "$Revision: 1.49 $"
 
 from sets import Set
 
@@ -358,6 +358,11 @@ class File(WMBSBase, WMFile):
         written to the database all locations will be reloaded from the
         database.
         """
+
+        if not self.exists():
+            return
+
+        
         existingTransaction = self.beginTransaction()
 
         # Add new locations if required

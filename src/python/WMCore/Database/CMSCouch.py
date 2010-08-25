@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.41 2009/07/21 19:05:50 meloam Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: CMSCouch.py,v 1.42 2009/07/21 20:50:14 meloam Exp $"
+__version__ = "$Revision: 1.42 $"
 
 try:
     # Python 2.6
@@ -125,7 +125,7 @@ class CouchDBRequests(JSONRequests):
         compatibility).
         """
         try:
-            result, status, reason, response = JSONRequests.makeRequest(
+            result, status, reason = JSONRequests.makeRequest(
                                         self, uri, data, type, encode, decode)
         except BadStatusLine,e:
             print "BadStatusLine failure: %s" % e

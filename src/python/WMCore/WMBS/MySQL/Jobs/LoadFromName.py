@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFromName.
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromName.py,v 1.5 2009/01/16 22:38:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: LoadFromName.py,v 1.6 2009/05/11 14:47:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.6 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,8 +18,16 @@ class LoadFromName(DBFormatter):
     Retrieve meta data for a job given it's name.  This includes the name,
     job group and last update time. 
     """
-    sql = """SELECT ID, NAME, JOBGROUP, LAST_UPDATE FROM wmbs_job WHERE
-             NAME = :name"""
+    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name, 
+                    wmbs_job_state.name AS state, state_time, retry_count,
+                    couch_record, wmbs_location.site_name AS location, 
+                    outcome AS bool_outcome
+             FROM wmbs_job
+               LEFT OUTER JOIN wmbs_location ON
+                 wmbs_job.location = wmbs_location.id
+               LEFT OUTER JOIN wmbs_job_state ON
+                 wmbs_job.state = wmbs_job_state.id
+             WHERE wmbs_job.name = :name"""
 
     def formatDict(self, result):
         """
@@ -31,7 +39,13 @@ class LoadFromName(DBFormatter):
         formattedResult = DBFormatter.formatDict(self, result)[0]
         formattedResult["id"] = int(formattedResult["id"])
         formattedResult["jobgroup"] = int(formattedResult["jobgroup"])
-        formattedResult["last_update"] = int(formattedResult["last_update"])
+
+        if formattedResult["bool_outcome"] == "0":
+            formattedResult["outcome"] = "fail"
+        else:
+            formattedResult["outcome"] = "success"
+
+        del formattedResult["bool_outcome"]
         return formattedResult
     
     def execute(self, name, conn = None, transaction = False):

@@ -6,19 +6,27 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.8 2009/01/12 19:26:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: New.py,v 1.9 2009/05/11 14:47:49 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class New(DBFormatter):
-    sql = """INSERT INTO wmbs_job (jobgroup, name, last_update)
-             VALUES (:jobgroup, :name, %d)""" % time.time()
-        
-    def execute(self, jobgroup, name, conn = None, transaction = False):
-        binds = self.getBinds(jobgroup = jobgroup, name = name)
+    sql = """INSERT INTO wmbs_job (jobgroup, name, state, state_time, 
+                                   couch_record, location) VALUES 
+              (:jobgroup, :name,
+               (SELECT id FROM wmbs_job_state WHERE name = 'new'),
+               :state_time, :couch_record, 
+               (SELECT id FROM wmbs_location WHERE site_name = :location))"""
+
+    def execute(self, jobgroup, name, couch_record = None, location = None, 
+                conn = None, transaction = False):
+        binds = {"jobgroup": jobgroup, "name": name, 
+                 "couch_record": couch_record, "state_time": time.time(),
+                 "location": location}
+
         self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)
+                             transaction = transaction)            
         return

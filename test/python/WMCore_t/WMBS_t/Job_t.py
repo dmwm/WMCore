@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.17 2009/05/09 12:05:27 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Job_t.py,v 1.18 2009/05/11 14:47:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import unittest
 import logging
@@ -57,11 +57,20 @@ class JobTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
+        myThread = threading.currentThread()        
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS", 
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
+
+        locationNew = self.daoFactory(classname = "Locations.New")
+        locationNew.execute(siteName = "test.site.ch", jobSlots = 300)
+        locationNew.execute(siteName = "test2.site.ch", jobSlots = 300)
+
         self._setup = True
         return
           
-    def tearDown(self):        
+    def tearDown(self):
         """
         _tearDown_
         
@@ -82,10 +91,12 @@ class JobTest(unittest.TestCase):
             
         self._teardown = True
         
-        
     def createTestJob(self):
         """
-        create the testJobA with 2 files in it and 
+        _createTestJob_
+
+        Create a test job with two files as input.  This will also create the
+        appropriate workflow, jobgroup and subscription.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
@@ -109,8 +120,11 @@ class JobTest(unittest.TestCase):
         testFileB.create()
 
         testJob = Job(name = "TestJob", files = [testFileA, testFileB])
+        testJob["couch_record"] = "somecouchrecord"
+        testJob["location"] = "test.site.ch"
         testJob.create(group = testJobGroup)
-        
+        testJob.associateFiles()
+
         return testJob
             
     def testCreateDeleteExists(self):
@@ -139,8 +153,6 @@ class JobTest(unittest.TestCase):
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileA.create()
         testFileB.create()
-
-        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
 
         testJob = Job(name = "TestJob", files = [testFileA, testFileB])
        
@@ -184,8 +196,6 @@ class JobTest(unittest.TestCase):
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileA.create()
         testFileB.create()
-
-        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -234,8 +244,6 @@ class JobTest(unittest.TestCase):
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileA.create()
         testFileB.create()
-
-        testFileset = Fileset(name = "TestFileset", files = Set([testFileA, testFileB]))
 
         testJob = Job(name = "TestJob", files = [testFileA, testFileB])
 
@@ -310,34 +318,41 @@ class JobTest(unittest.TestCase):
         database using the name and the id and then verify that all information
         was loaded correctly.
         """
+
+        # test loading state, state_time, retry count, etc...
+
         testJobA = self.createTestJob()
-        testJobB = Job(id = testJobA.id)
+        testJobB = Job(id = testJobA["id"])
         testJobC = Job(name = "TestJob")
         testJobB.load()
         testJobC.load()
 
-        assert type(testJobB.id) == int, \
+        assert type(testJobB["id"]) == int, \
                "ERROR: Job id is not an int."
 
-        assert type(testJobC.id) == int, \
-               "ERROR: Job id is not an int."        
+        assert type(testJobC["id"]) == int, \
+               "ERROR: Job id is not an int."
 
-        assert type(testJobB.job_group) == int, \
+        assert type(testJobB["jobgroup"]) == int, \
                "ERROR: Job group id is not an int."
 
-        assert type(testJobC.job_group) == int, \
+        assert type(testJobC["jobgroup"]) == int, \
                "ERROR: Job group id is not an int."        
 
-        assert (testJobA.id == testJobB.id) and \
-               (testJobA.name == testJobB.name) and \
-               (testJobA.job_group == testJobB.job_group), \
+        assert (testJobA["id"] == testJobB["id"]) and \
+               (testJobA["name"] == testJobB["name"]) and \
+               (testJobA["jobgroup"] == testJobB["jobgroup"]) and \
+               (testJobA["couch_record"] == testJobB["couch_record"]) and \
+               (testJobA["location"] == testJobB["location"]), \
                "ERROR: Load from ID didn't load everything correctly"
 
-        assert (testJobA.id == testJobC.id) and \
-               (testJobA.name == testJobC.name) and \
-               (testJobA.job_group == testJobC.job_group), \
-               "ERROR: Load from name didn't load everything correctly"        
-               
+        assert (testJobA["id"] == testJobC["id"]) and \
+               (testJobA["name"] == testJobC["name"]) and \
+               (testJobA["jobgroup"] == testJobC["jobgroup"]) and \
+               (testJobA["couch_record"] == testJobC["couch_record"]) and \
+               (testJobA["location"] == testJobC["location"]), \
+               "ERROR: Load from name didn't load everything correctly"
+
         return
 
     def testLoadData(self):
@@ -350,34 +365,50 @@ class JobTest(unittest.TestCase):
         """
         testJobA = self.createTestJob()
 
-        testJobA.mask["FirstEvent"] = 1
-        testJobA.mask["LastEvent"] = 2
-        testJobA.mask["FirstLumi"] = 3
-        testJobA.mask["LastLumi"] = 4
-        testJobA.mask["FirstRun"] = 5
-        testJobA.mask["LastRun"] = 6
+        testJobA["mask"]["FirstEvent"] = 1
+        testJobA["mask"]["LastEvent"] = 2
+        testJobA["mask"]["FirstLumi"] = 3
+        testJobA["mask"]["LastLumi"] = 4
+        testJobA["mask"]["FirstRun"] = 5
+        testJobA["mask"]["LastRun"] = 6
 
         testJobA.save()
 
-        testJobB = Job(id = testJobA.id)
+        testJobB = Job(id = testJobA["id"])
         testJobC = Job(name = "TestJob")
         testJobB.loadData()
         testJobC.loadData()
 
-        assert (testJobA.id == testJobB.id) and \
-               (testJobA.name == testJobB.name) and \
-               (testJobA.job_group == testJobB.job_group), \
+        assert type(testJobB["id"]) == int, \
+               "ERROR: Job id is not an int."
+
+        assert type(testJobC["id"]) == int, \
+               "ERROR: Job id is not an int."        
+
+        assert type(testJobB["jobgroup"]) == int, \
+               "ERROR: Job group id is not an int."
+
+        assert type(testJobC["jobgroup"]) == int, \
+               "ERROR: Job group id is not an int."        
+
+        assert (testJobA["id"] == testJobB["id"]) and \
+               (testJobA["name"] == testJobB["name"]) and \
+               (testJobA["jobgroup"] == testJobB["jobgroup"]) and \
+               (testJobA["couch_record"] == testJobB["couch_record"]) and \
+               (testJobA["location"] == testJobB["location"]), \
                "ERROR: Load from ID didn't load everything correctly"
 
-        assert (testJobA.id == testJobC.id) and \
-               (testJobA.name == testJobC.name) and \
-               (testJobA.job_group == testJobC.job_group), \
-               "ERROR: Load from name didn't load everything correctly"        
-               
-        assert testJobA.mask == testJobB.mask, \
+        assert (testJobA["id"] == testJobC["id"]) and \
+               (testJobA["name"] == testJobC["name"]) and \
+               (testJobA["jobgroup"] == testJobC["jobgroup"]) and \
+               (testJobA["couch_record"] == testJobC["couch_record"]) and \
+               (testJobA["location"] == testJobC["location"]), \
+               "ERROR: Load from name didn't load everything correctly"
+
+        assert testJobA["mask"] == testJobB["mask"], \
                "ERROR: Job mask did not load properly"
 
-        assert testJobA.mask == testJobC.mask, \
+        assert testJobA["mask"] == testJobC["mask"], \
                "ERROR: Job mask did not load properly"        
 
         goldenFiles = testJobA.getFiles()
@@ -409,7 +440,8 @@ class JobTest(unittest.TestCase):
         """
         testJobA = self.createTestJob()
         
-        testJobB = Job(id = testJobA.id)
+        testJobB = Job(id = testJobA["id"])
+        testJobB.loadData()
 
         goldenFiles = testJobA.getFiles()
         for testFile in testJobB.getFiles():
@@ -420,7 +452,7 @@ class JobTest(unittest.TestCase):
         assert len(goldenFiles) == 0, \
                "ERROR: Job didn't load all files"
 
-        return        
+        return
 
     def testSaveTransaction(self):
         """
@@ -435,86 +467,59 @@ class JobTest(unittest.TestCase):
         """
         testJobA = self.createTestJob()
 
-        testJobA.mask["FirstEvent"] = 1
-        testJobA.mask["LastEvent"] = 2
-        testJobA.mask["FirstLumi"] = 3
-        testJobA.mask["LastLumi"] = 4
-        testJobA.mask["FirstRun"] = 5
-        testJobA.mask["LastRun"] = 6
+        testJobA["mask"]["FirstEvent"] = 1
+        testJobA["mask"]["LastEvent"] = 2
+        testJobA["mask"]["FirstLumi"] = 3
+        testJobA["mask"]["LastLumi"] = 4
+        testJobA["mask"]["FirstRun"] = 5
+        testJobA["mask"]["LastRun"] = 6
 
         testJobA.save()
 
-        testJobB = Job(id = testJobA.id)        
+        testJobB = Job(id = testJobA["id"])        
         testJobB.loadData()
 
-        assert testJobA.mask == testJobB.mask, \
+        assert testJobA["mask"] == testJobB["mask"], \
                "ERROR: Job mask did not load properly"
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        testJobA.mask["FirstEvent"] = 7
-        testJobA.mask["LastEvent"] = 8
-        testJobA.mask["FirstLumi"] = 9
-        testJobA.mask["LastLumi"] = 10
-        testJobA.mask["FirstRun"] = 11
-        testJobA.mask["LastRun"] = 12
+        testJobA["mask"]["FirstEvent"] = 7
+        testJobA["mask"]["LastEvent"] = 8
+        testJobA["mask"]["FirstLumi"] = 9
+        testJobA["mask"]["LastLumi"] = 10
+        testJobA["mask"]["FirstRun"] = 11
+        testJobA["mask"]["LastRun"] = 12
+        testJobA["name"] = "stevesJob"
+        testJobA["couch_record"] = "someCouchRecord"
+        testJobA["location"] = "test2.site.ch"
 
         testJobA.save()
-        testJobC = Job(id = testJobA.id)        
+        testJobC = Job(id = testJobA["id"])
         testJobC.loadData()
 
-        assert testJobA.mask == testJobC.mask, \
-               "ERROR: Job mask did not load properly"
+        assert testJobA["mask"] == testJobC["mask"], \
+            "ERROR: Job mask did not load properly"
+
+        assert testJobC["name"] == "stevesJob", \
+            "ERROR: Job name did not save"
+
+        assert testJobC["couch_record"] == "someCouchRecord", \
+            "ERROR: Job couch record did not save"
+
+        assert testJobC["location"] == "test2.site.ch", \
+            "ERROR: Job site did not save"
 
         myThread.transaction.rollback()
 
-        testJobD = Job(id = testJobA.id)
+        testJobD = Job(id = testJobA["id"])
         testJobD.loadData()
 
-        assert testJobB.mask == testJobD.mask, \
+        assert testJobB["mask"] == testJobD["mask"], \
                "ERROR: Job mask did not load properly"        
         
         return
     
-    def testChageJobStatusToComplete(self):
-        """
-        _testAddOutput_
-
-        Create a job and save it to the database.  Test
-        """
-        
-        testJobA = self.createTestJob()
-        testFile = File(lfn = "/this/is/a/lfnOut", size = 1024, events = 10)
-        testFile.create()
-        
-        testJobA.changeStatus("ACTIVE")
-        
-        assert testJobA.getStatus() == "ACTIVE", \
-               "Error: job has to be ACTIVE status"
-               
-        testJobA.changeStatus("FAILED")
-        
-        assert testJobA.getStatus() == "FAILED", \
-               "Error: job has to be FAILED status"
-               
-        testJobA.changeStatus("COMPLETE")
-        
-        assert testJobA.getStatus() == "COMPLETE", \
-               "Error: job has to be complete status"
-        
-        testJobA.processSuccessfulJob(testFile)
-               
-        testFile.loadData(parentage = 1)
-        inputFileSet = testJobA.getFiles(type = "set")
-        
-        assert inputFileSet - Set(testFile.getParentLFNs()) == Set(), \
-               "Error: parent relattion is not updated"
-        
-        assert testFile.getRuns() == [Run(1, *[45, 46])], \
-               "Error: output file run is not updated"
-               
-        
-               
 if __name__ == "__main__":
     unittest.main() 

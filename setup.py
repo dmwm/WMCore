@@ -11,10 +11,7 @@ import unittest
 can_lint = False
 can_coverage = False
 try:
-    from pylint.lint import Run
-    from pylint.lint import report_total_messages_stats
-    from pylint.lint import report_messages_by_module_stats
-    from pylint.lint import report_messages_stats 
+    from pylint.lint import Run 
     from pylint.lint import preprocess_options, cb_init_hook
     from pylint import checkers
     can_lint = True
@@ -26,140 +23,143 @@ try:
 except:
     pass
 
-class LinterRun(Run):
-    def __init__(self, args, reporter=None):
-        self._rcfile = None
-        self._plugins = []
-        preprocess_options(args, {
-            # option: (callback, takearg)
-            'rcfile':       (self.cb_set_rcfile, True),
-            'load-plugins': (self.cb_add_plugins, True),
-            })
-        self.linter = linter = self.LinterClass((
-            ('rcfile',
-             {'action' : 'callback', 'callback' : lambda *args: 1,
-              'type': 'string', 'metavar': '<file>',
-              'help' : 'Specify a configuration file.'}),
-
-            ('init-hook',
-             {'action' : 'callback', 'type' : 'string', 'metavar': '<code>',
-              'callback' : cb_init_hook,
-              'help' : 'Python code to execute, usually for sys.path \
-manipulation such as pygtk.require().'}),
-
-            ('help-msg',
-             {'action' : 'callback', 'type' : 'string', 'metavar': '<msg-id>',
-              'callback' : self.cb_help_message,
-              'group': 'Commands',
-              'help' : '''Display a help message for the given message id and \
-exit. The value may be a comma separated list of message ids.'''}),
-
-            ('list-msgs',
-             {'action' : 'callback', 'metavar': '<msg-id>',
-              'callback' : self.cb_list_messages,
-              'group': 'Commands',
-              'help' : "Generate pylint's full documentation."}),
-
-            ('generate-rcfile',
-             {'action' : 'callback', 'callback' : self.cb_generate_config,
-              'group': 'Commands',
-              'help' : '''Generate a sample configuration file according to \
-the current configuration. You can put other options before this one to get \
-them in the generated configuration.'''}),
-
-            ('generate-man',
-             {'action' : 'callback', 'callback' : self.cb_generate_manpage,
-              'group': 'Commands',
-              'help' : "Generate pylint's man page.",'hide': 'True'}),
-
-            ('errors-only',
-             {'action' : 'callback', 'callback' : self.cb_error_mode,
-              'short': 'e',
-              'help' : '''In error mode, checkers without error messages are \
-disabled and for others, only the ERROR messages are displayed, and no reports \
-are done by default'''}),
-
-            ('profile',
-             {'type' : 'yn', 'metavar' : '<y_or_n>',
-              'default': False,
-              'help' : 'Profiled execution.'}),
-
-            ), option_groups=self.option_groups,
-               reporter=reporter, pylintrc=self._rcfile)
-        # register standard checkers
-        from pylint import checkers
-        checkers.initialize(linter)
-        # load command line plugins
-        linter.load_plugin_modules(self._plugins)
-        # read configuration
-        linter.disable_message('W0704')
-        linter.read_config_file()
-        # is there some additional plugins in the file configuration, in
-        config_parser = linter._config_parser
-        if config_parser.has_option('MASTER', 'load-plugins'):
-            plugins = splitstrip(config_parser.get('MASTER', 'load-plugins'))
-            linter.load_plugin_modules(plugins)
-        # now we can load file config and command line, plugins (which can
-        # provide options) have been registered
-        linter.load_config_file()
-        if reporter:
-            # if a custom reporter is provided as argument, it may be overriden
-            # by file parameters, so re-set it here, but before command line
-            # parsing so it's still overrideable by command line option
-            linter.set_reporter(reporter)
-        args = linter.load_command_line_configuration(args)
-        # insert current working directory to the python path to have a correct
-        # behaviour
-        sys.path.insert(0, os.getcwd())
-        if self.linter.config.profile:
-            print >> sys.stderr, '** profiled run'
-            from hotshot import Profile, stats
-            prof = Profile('stones.prof')
-            prof.runcall(linter.check, args)
-            prof.close()
-            data = stats.load('stones.prof')
-            data.strip_dirs()
-            data.sort_stats('time', 'calls')
-            data.print_stats(30)
-        sys.path.pop(0)
+if can_lint:
+    class LinterRun(Run):
+        def __init__(self, args, reporter=None):
+            self._rcfile = None
+            self._plugins = []
+            preprocess_options(args, {
+                # option: (callback, takearg)
+                'rcfile':       (self.cb_set_rcfile, True),
+                'load-plugins': (self.cb_add_plugins, True),
+                })
+            self.linter = linter = self.LinterClass((
+                ('rcfile',
+                 {'action' : 'callback', 'callback' : lambda *args: 1,
+                  'type': 'string', 'metavar': '<file>',
+                  'help' : 'Specify a configuration file.'}),
     
-    def cb_set_rcfile(self, name, value):
-        """callback for option preprocessing (ie before optik parsing)"""
-        self._rcfile = value
-
-    def cb_add_plugins(self, name, value):
-        """callback for option preprocessing (ie before optik parsing)"""
-        self._plugins.extend(splitstrip(value))
-
-    def cb_error_mode(self, *args, **kwargs):
-        """error mode:
-        * checkers without error messages are disabled
-        * for others, only the ERROR messages are displayed
-        * disable reports
-        * do not save execution information
-        """
-        self.linter.disable_noerror_checkers()
-        self.linter.set_option('disable-msg-cat', 'WCRFI')
-        self.linter.set_option('reports', False)
-        self.linter.set_option('persistent', False)
-
-    def cb_generate_config(self, *args, **kwargs):
-        """optik callback for sample config file generation"""
-        self.linter.generate_config(skipsections=('COMMANDS',))
+                ('init-hook',
+                 {'action' : 'callback', 'type' : 'string', 'metavar': '<code>',
+                  'callback' : cb_init_hook,
+                  'help' : 'Python code to execute, usually for sys.path \
+    manipulation such as pygtk.require().'}),
+    
+                ('help-msg',
+                 {'action' : 'callback', 'type' : 'string', 'metavar': '<msg-id>',
+                  'callback' : self.cb_help_message,
+                  'group': 'Commands',
+                  'help' : '''Display a help message for the given message id and \
+    exit. The value may be a comma separated list of message ids.'''}),
+    
+                ('list-msgs',
+                 {'action' : 'callback', 'metavar': '<msg-id>',
+                  'callback' : self.cb_list_messages,
+                  'group': 'Commands',
+                  'help' : "Generate pylint's full documentation."}),
+    
+                ('generate-rcfile',
+                 {'action' : 'callback', 'callback' : self.cb_generate_config,
+                  'group': 'Commands',
+                  'help' : '''Generate a sample configuration file according to \
+    the current configuration. You can put other options before this one to get \
+    them in the generated configuration.'''}),
+    
+                ('generate-man',
+                 {'action' : 'callback', 'callback' : self.cb_generate_manpage,
+                  'group': 'Commands',
+                  'help' : "Generate pylint's man page.",'hide': 'True'}),
+    
+                ('errors-only',
+                 {'action' : 'callback', 'callback' : self.cb_error_mode,
+                  'short': 'e',
+                  'help' : '''In error mode, checkers without error messages are \
+    disabled and for others, only the ERROR messages are displayed, and no reports \
+    are done by default'''}),
+    
+                ('profile',
+                 {'type' : 'yn', 'metavar' : '<y_or_n>',
+                  'default': False,
+                  'help' : 'Profiled execution.'}),
+    
+                ), option_groups=self.option_groups,
+                   reporter=reporter, pylintrc=self._rcfile)
+            # register standard checkers
+            checkers.initialize(linter)
+            # load command line plugins
+            linter.load_plugin_modules(self._plugins)
+            # read configuration
+            linter.disable_message('W0704')
+            linter.read_config_file()
+            # is there some additional plugins in the file configuration, in
+            config_parser = linter._config_parser
+            if config_parser.has_option('MASTER', 'load-plugins'):
+                plugins = splitstrip(config_parser.get('MASTER', 'load-plugins'))
+                linter.load_plugin_modules(plugins)
+            # now we can load file config and command line, plugins (which can
+            # provide options) have been registered
+            linter.load_config_file()
+            if reporter:
+                # if a custom reporter is provided as argument, it may be overriden
+                # by file parameters, so re-set it here, but before command line
+                # parsing so it's still overrideable by command line option
+                linter.set_reporter(reporter)
+            args = linter.load_command_line_configuration(args)
+            # insert current working directory to the python path to have a correct
+            # behaviour
+            sys.path.insert(0, os.getcwd())
+            if self.linter.config.profile:
+                print >> sys.stderr, '** profiled run'
+                from hotshot import Profile, stats
+                prof = Profile('stones.prof')
+                prof.runcall(linter.check, args)
+                prof.close()
+                data = stats.load('stones.prof')
+                data.strip_dirs()
+                data.sort_stats('time', 'calls')
+                data.print_stats(30)
+            sys.path.pop(0)
         
-    def cb_generate_manpage(self, *args, **kwargs):
-        """optik callback for sample config file generation"""
-        from pylint import __pkginfo__
-        self.linter.generate_manpage(__pkginfo__)
-        
-    def cb_help_message(self, option, opt_name, value, parser):
-        """optik callback for printing some help about a particular message"""
-        self.linter.help_message(splitstrip(value))
-
-    def cb_list_messages(self, option, opt_name, value, parser):
-        """optik callback for printing available messages"""
-        self.linter.list_messages()
-        
+        def cb_set_rcfile(self, name, value):
+            """callback for option preprocessing (ie before optik parsing)"""
+            self._rcfile = value
+    
+        def cb_add_plugins(self, name, value):
+            """callback for option preprocessing (ie before optik parsing)"""
+            self._plugins.extend(splitstrip(value))
+    
+        def cb_error_mode(self, *args, **kwargs):
+            """error mode:
+            * checkers without error messages are disabled
+            * for others, only the ERROR messages are displayed
+            * disable reports
+            * do not save execution information
+            """
+            self.linter.disable_noerror_checkers()
+            self.linter.set_option('disable-msg-cat', 'WCRFI')
+            self.linter.set_option('reports', False)
+            self.linter.set_option('persistent', False)
+    
+        def cb_generate_config(self, *args, **kwargs):
+            """optik callback for sample config file generation"""
+            self.linter.generate_config(skipsections=('COMMANDS',))
+            
+        def cb_generate_manpage(self, *args, **kwargs):
+            """optik callback for sample config file generation"""
+            from pylint import __pkginfo__
+            self.linter.generate_manpage(__pkginfo__)
+            
+        def cb_help_message(self, option, opt_name, value, parser):
+            """optik callback for printing some help about a particular message"""
+            self.linter.help_message(splitstrip(value))
+    
+        def cb_list_messages(self, option, opt_name, value, parser):
+            """optik callback for printing available messages"""
+            self.linter.list_messages()
+else:
+    class LinterRun:
+        def __init__(self):
+            pass
 
 """
 Build, clean and test the WMCore package.

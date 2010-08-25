@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.27 2010/02/25 21:44:19 swakef Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.28 2010/03/17 14:28:08 swakef Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import unittest
 import os
@@ -18,16 +18,16 @@ from WMCore.WMSpec.WMTask import makeWMTask
 from WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
-from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workload as Tier1ReRecoWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
-from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workingDir
-shutil.rmtree(workingDir, ignore_errors = True)
+from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
+
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
 
+rerecoArgs = {"InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW"}
 
 class WorkQueueTest(WorkQueueTestCase):
     """
@@ -46,29 +46,27 @@ class WorkQueueTest(WorkQueueTestCase):
         self.spec.save(self.spec.specUrl())
 
         # Sample Tier1 ReReco spec
-        self.processingSpec = Tier1ReRecoWorkload
+        self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
         self.processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessing.spec'))
         self.processingSpec.save(self.processingSpec.specUrl())
 
         # ReReco spec with blacklist
-        self.blacklistSpec = deepcopy(self.processingSpec)
+        self.blacklistSpec = rerecoWorkload('blacklistSpec', rerecoArgs)
         self.blacklistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testBlacklist.spec'))
         self.blacklistSpec.taskIterator().next().data.constraints.sites.blacklist = ['SiteA']
-        self.blacklistSpec.data._internal_name = 'blacklistSpec'
         self.blacklistSpec.save(self.blacklistSpec.specUrl())
 
         # ReReco spec with whitelist
-        self.whitelistSpec = deepcopy(self.processingSpec)
+        self.whitelistSpec = rerecoWorkload('whitelistlistSpec', rerecoArgs)
         self.whitelistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testWhitelist.spec'))
         self.whitelistSpec.taskIterator().next().data.constraints.sites.whitelist = ['SiteB']
-        self.blacklistSpec.data._internal_name = 'whitelistlistSpec'
         self.whitelistSpec.save(self.whitelistSpec.specUrl())
 
         # setup Mock DBS and PhEDEx
-        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        inputDataset = self.processingSpec.taskIterator().next().inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                      inputDataset.processed,
                                      inputDataset.tier)

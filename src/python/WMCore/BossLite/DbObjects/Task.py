@@ -4,8 +4,8 @@ _Task_
 
 """
 
-__version__ = "$Id: Task.py,v 1.20 2010/05/30 14:42:12 spigafi Exp $"
-__revision__ = "$Revision: 1.20 $"
+__version__ = "$Id: Task.py,v 1.21 2010/06/11 17:42:26 spigafi Exp $"
+__revision__ = "$Revision: 1.21 $"
 
 import os.path
 
@@ -167,7 +167,7 @@ class Task(DbObject):
         self.data.update(result[0])
         
         if deep :
-            self.loadJobs(db, jobRange = jobRange)
+            self.loadJobs(db, jobRange = jobRange, deep = deep)
 
         # is this method necessary?
         self.updateInternalData()
@@ -245,10 +245,10 @@ class Task(DbObject):
         if self.data['id'] is None:
             raise TaskError( "Task not loaded %s" %self)
 
-        if self.data['id'] != job['taskId'] :
+        if int(self.data['id']) != int(job['taskId']) :
             raise TaskError(
                 "Mismatching taskId: %d for the task, %d for the job" \
-                % ( self.data['id'], job['taskId'] )
+                % ( int(self.data['id']), int(job['taskId']) )
                 )
 
         # insert job

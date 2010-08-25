@@ -1,16 +1,21 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1103, W6501, E1101
+#E1103: Use DB objects attached to thread
+#W6501: Allow string formatting in error messages
+#E1101: Create config sections
 """
 _AccountantWorker_
 
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.27 2010/04/29 14:53:53 mnorman Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.28 2010/05/04 21:31:43 mnorman Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import os
 import threading
 import logging
+import gc
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.FwkJobReport.Report import Report
@@ -81,7 +86,6 @@ class AccountantWorker:
         self.mergedOutputFiles = []
         self.listOfJobsToSave  = []
         self.filesetAssoc      = []
-        self.count             = 0
 
         
         return
@@ -100,6 +104,7 @@ class AccountantWorker:
         self.mergedOutputFiles = []
         self.listOfJobsToSave  = []
         self.filesetAssoc      = []
+        gc.collect()
 
         return
 
@@ -187,11 +192,10 @@ class AccountantWorker:
 
             returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
 
-
         # Now things done at the end of the job
 
         # Do what we can with WMBS files
-        wmbsFiles = self.handleWMBSFiles()
+        self.handleWMBSFiles()
 
         # Create DBSBufferFiles
         self.createFilesInDBSBuffer()
@@ -357,7 +361,6 @@ class AccountantWorker:
         Find the parent of the file in DBS
         This is meant to be called recursively
         """
-        myThread = threading.currentThread()
         parentsInfo = self.getParentInfoAction.execute([lfn],
                                                        conn = self.transaction.conn,
                                                        transaction = True)
@@ -454,8 +457,6 @@ class AccountantWorker:
                                                 conn = self.transaction.conn,
                                                 transaction = True)
 
-        filesetAssoc = []
-        mergedOutputFiles = []
         fileList = fwkJobReport.getAllFiles()
 
         for fwjrFile in fileList:

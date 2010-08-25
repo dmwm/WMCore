@@ -11,8 +11,8 @@ in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
 you set {'isolation_level':None} all sql will be implicitly committed and the
 Transaction object will be meaningless.
 """
-__revision__ = "$Id: Transaction.py,v 1.8 2009/06/11 18:36:38 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Transaction.py,v 1.9 2009/07/28 12:52:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import logging
 import time
@@ -28,7 +28,6 @@ class Transaction(WMObject):
         """
         Get the connection from the DBInterface and open a new transaction on it
         """
-        #print "Transaction::__init__()"
         self.dbi = dbinterface
         self.conn = None
         self.transaction = None
@@ -39,14 +38,14 @@ class Transaction(WMObject):
         self.sqlBuffer = []
        
     def begin(self):
-        #print "Transaction::begin(%s) pre: %s, %s" % (id(self), self.conn, self.transaction)
-
         if self.conn == None:
             self.conn = self.dbi.connection()
         if self.conn.closed:
             self.conn = self.dbi.connection()
 
-        self.transaction = self.conn.begin()
+        if self.transaction == None:
+            self.transaction = self.conn.begin()
+
         return
    
     def processData(self, sql, binds={}):
@@ -80,7 +79,6 @@ class Transaction(WMObject):
         """
         Commit the transaction and return the connection to the pool
         """
-        #print "Transaction::commit(%s)" % id(self)
         if not self.transaction == None:
             try:
                 self.transaction.commit()
@@ -97,7 +95,7 @@ class Transaction(WMObject):
                 self.redo()
                 self.transaction.commit()
         else:
-            print "Transaction::commit(%s) had null transaction object" %id(self)
+            logging.debug("Transaction::commit(%s) had null transaction object" %id(self))
             
             
         self.sqlBuffer = []

@@ -27,6 +27,8 @@ class PhEDEx(Service):
         """
         self.responseType = responseType.lower()
 
+        dict["timeout"] = 300
+
         if not dict.has_key('endpoint'):
             dict['endpoint'] = "%scmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
                                 ((secure and "https://" or "http://"),

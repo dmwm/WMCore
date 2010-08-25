@@ -5,8 +5,8 @@ Rest Model abstract implementation
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: RESTModel.py,v 1.25 2009/09/21 21:36:06 sryu Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: RESTModel.py,v 1.26 2009/09/22 14:41:15 metson Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request
@@ -77,9 +77,9 @@ class RESTModel(WebAPI):
             response.status = 501
             return {'exception': data}
         
-    def sanitise_input(self, *args, **kwargs):
+    def sanitise_input(self, args, kwargs):
         """
-        Pull out the necesary input from kwargs (by name) and, failing that, 
+        Pull out the necessary input from kwargs (by name) and, failing that, 
         pulls out the number required args from args, which assumes the 
         arguments are positional. 
         
@@ -90,7 +90,6 @@ class RESTModel(WebAPI):
         """
         method = sys._getframe(1).f_code.co_name
         input = {}
-        args = list(args)
         verb = request.method.upper()
         for a in self.methods[verb][method]['args']:
             if a in kwargs.keys():

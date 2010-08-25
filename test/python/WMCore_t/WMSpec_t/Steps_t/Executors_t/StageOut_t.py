@@ -136,9 +136,10 @@ class otherStageOutTest(unittest.TestCase):
 
     def setUp(self):
         # stolen from CMSSWExecutor_t. thanks, dave
+        self.oldpath = sys.path[:]
         self.testInit = TestInit(__file__)
         self.testDir = self.testInit.generateWorkDir()
-        self.job = Job(name = "/UnitTest/DeleterTask/DeleteTest-test-job")
+        self.job = Job(name = "/UnitTests/DeleterTask/DeleteTest-test-job")
         shutil.copyfile('/etc/hosts', os.path.join(self.testDir, 'testfile'))
         
         self.workload = newWorkload("UnitTests")
@@ -163,12 +164,12 @@ class otherStageOutTest(unittest.TestCase):
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
         
-        self.sandboxDir = "%s/UnitTests" % self.testDir
         
         self.task.build(self.testDir)
+
         sys.path.append(self.testDir)
-        sys.path.append(self.sandboxDir)
-        
+        sys.path.append(os.path.join(self.testDir, 'UnitTests'))
+        print "path is sys.path %s" % sys.path
 
         
 #        binDir = inspect.getsourcefile(ModuleLocator)
@@ -181,16 +182,25 @@ class otherStageOutTest(unittest.TestCase):
                          os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
             
     def tearDown(self):
-        self.testInit.delWorkDir()
-        sys.path.remove(self.sandboxDir)
+        print "tearing down"
+        sys.path = self.oldpath[:]
+        self.stephelp = None
         self.stepdata = None
         self.workload = None
         self.task     = None
-        self.stepdata = None   
+        self.stepdata = None
+        self.executor = None
+        self.cmsswHelper = None
+        self.cmsswStep = None
+
+        print dir(self)
     
      
     def testCPBackendStageOutAgainstReportNew(self):
-        #self.makeReport(os.path.join(self.testDir, 'taskspace', 'oneitem','Report.pkl'))
+        myReport = Report('cmsRun1')
+        myReport.unpersist(os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
+        myReport.data.cmsRun1.status = 0
+        myReport.persist(os.path.join( self.testDir, 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
         executor = StageOutExecutor.StageOut()
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)

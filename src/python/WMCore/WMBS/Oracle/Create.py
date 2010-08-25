@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.23 2009/09/04 21:08:28 mnorman Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Create.py,v 1.24 2009/10/12 21:11:14 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -24,7 +24,6 @@ class Create(CreateWMBSBase):
     sequence_tables.append('wmbs_file_details')
     sequence_tables.append('wmbs_location')
     sequence_tables.append('wmbs_workflow') 
-    sequence_tables.append('wmbs_subs_type')
     sequence_tables.append('wmbs_subscription') 
     sequence_tables.append('wmbs_jobgroup')
     sequence_tables.append('wmbs_job')
@@ -39,7 +38,6 @@ class Create(CreateWMBSBase):
         """
 
         CreateWMBSBase.__init__(self, logger, dbi)
-        self.requiredTables.append('09wmbs_subs_type')
 
         tablespaceTable = ""
         tablespaceIndex = ""
@@ -49,6 +47,10 @@ class Create(CreateWMBSBase):
                 tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
             if params.has_key("tablespace_index"):
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
+
+        self.create = {}
+        self.constraints = {}
+        self.indexes = {}
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -160,7 +162,7 @@ class Create(CreateWMBSBase):
               (CONSTRAINT fk_location_location FOREIGN KEY(location)
                  REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
          
-        self.create["08wmbs_workflow"] = \
+        self.create["07wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
                id    INTEGER      NOT NULL,
                spec  VARCHAR(255) NOT NULL,
@@ -194,21 +196,21 @@ class Create(CreateWMBSBase):
               (CONSTRAINT fk_wfoutput_fileset FOREIGN KEY(output_fileset)
                  REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
         
-        self.create["09wmbs_subs_type"] = \
-          """CREATE TABLE wmbs_subs_type (
+        self.create["07wmbs_sub_types"] = \
+          """CREATE TABLE wmbs_sub_types (
                id   INTEGER      NOT NULL,
                name VARCHAR(255) NOT NULL
                ) %s""" % tablespaceTable
 
-        self.indexes["01_pk_wmbs_subs_type"] = \
-          """ALTER TABLE wmbs_subs_type ADD
-               (CONSTRAINT wmbs_subs_type_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+        self.indexes["01_pk_wmbs_sub_types"] = \
+          """ALTER TABLE wmbs_sub_types ADD
+               (CONSTRAINT wmbs_sub_types_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
-        self.indexes["02_pk_wmbs_subs_type"] = \
-          """ALTER TABLE wmbs_subs_type ADD
-               (CONSTRAINT wmbs_subs_type_uk UNIQUE (name) %s)""" % tablespaceIndex
+        self.indexes["02_pk_wmbs_sub_types"] = \
+          """ALTER TABLE wmbs_sub_types ADD
+               (CONSTRAINT wmbs_sub_types_uk UNIQUE (name) %s)""" % tablespaceIndex
              
-        self.create["09wmbs_subscription"] = \
+        self.create["08wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
                id          INTEGER      NOT NULL,
                fileset     INTEGER      NOT NULL,
@@ -229,8 +231,8 @@ class Create(CreateWMBSBase):
 
         self.constraints["02_fk_wmbs_subscription"] = \
           """ALTER TABLE wmbs_subscription ADD
-               (CONSTRAINT fk_subs_type FOREIGN KEY(subtype)
-                  REFERENCES wmbs_subs_type(id) ON DELETE CASCADE)"""
+               (CONSTRAINT fk_sub_types FOREIGN KEY(subtype)
+                  REFERENCES wmbs_sub_types(id) ON DELETE CASCADE)"""
 
         self.constraints["03_fk_wmbs_subscription"] = \
           """ALTER TABLE wmbs_subscription ADD        
@@ -264,6 +266,10 @@ class Create(CreateWMBSBase):
                fileid       INTEGER NOT NULL
                ) %s""" % tablespaceTable
 
+        self.indexes["01_pk_wmbs_sub_files_acquired"] = \
+          """ALTER TABLE wmbs_sub_files_acquired ADD
+               (CONSTRAINT wmbs_sub_files_acquired_pk PRIMARY KEY (subscription, fileid) %s)""" % tablespaceIndex
+
         self.constraints["01_fk_wmbs_sub_files_acquired"] = \
           """ALTER TABLE wmbs_sub_files_acquired ADD
                (CONSTRAINT fk_subsacquired_sub FOREIGN KEY (subscription)
@@ -280,6 +286,10 @@ class Create(CreateWMBSBase):
                fileid       INTEGER NOT NULL
                ) %s""" % tablespaceTable
 
+        self.indexes["01_pk_wmbs_sub_files_failed"] = \
+          """ALTER TABLE wmbs_sub_files_failed ADD
+               (CONSTRAINT wmbs_sub_files_failed_pk PRIMARY KEY (subscription, fileid) %s)""" % tablespaceIndex
+
         self.constraints["01_fk_wmbs_sub_files_failed"] = \
           """ALTER TABLE wmbs_sub_files_failed ADD
                (CONSTRAINT fk_subsfailed_sub FOREIGN KEY (subscription)
@@ -295,6 +305,10 @@ class Create(CreateWMBSBase):
                subscription INTEGER NOT NULL,
                fileid       INTEGER NOT NULL
                ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_sub_files_complete"] = \
+          """ALTER TABLE wmbs_sub_files_complete ADD
+               (CONSTRAINT wmbs_sub_files_complete_pk PRIMARY KEY (subscription, fileid) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_wmbs_sub_files_complete"] = \
           """ALTER TABLE wmbs_sub_files_complete ADD
@@ -359,7 +373,8 @@ class Create(CreateWMBSBase):
                couch_record VARCHAR(255),
                location     INTEGER,
                outcome      INTEGER       DEFAULT 0,
-               cache_dir    VARCHAR(255)  DEFAULT 'None'
+               cache_dir    VARCHAR(255)  DEFAULT 'None',
+               fwjr_path    VARCHAR(255)
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_job"] = \
@@ -424,11 +439,6 @@ class Create(CreateWMBSBase):
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
             self.inserts["job_state_%s" % jobState] = jobStateQuery
           
-        for subType in ("Processing", "Merge", "Harvesting"):
-            subTypeQuery = """INSERT INTO wmbs_subs_type (id, name) 
-                          values (wmbs_subs_type_SEQ.nextval, '%s')""" % subType
-            self.inserts["wmbs_subs_type_%s" % subType] = subTypeQuery
-
         j = 50
         for i in self.sequence_tables:
             seqname = '%s_SEQ' % i

@@ -12,16 +12,10 @@ associated to a single fileset and a single workflow.
 workflow + fileset = subscription
 
 subscription + application logic = jobs
-
-TABLE wmbs_subscription
-    id      INT(11) NOT NULL AUTO_INCREMENT,
-    fileset INT(11) NOT NULL,
-    workflow INT(11) NOT NULL,
-    type    ENUM("Merge", "Frocessing")
 """
 
-__revision__ = "$Id: Subscription.py,v 1.49 2009/09/29 18:34:56 sryu Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: Subscription.py,v 1.50 2009/10/12 21:11:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.50 $"
 
 from sets import Set
 import logging
@@ -67,9 +61,9 @@ class Subscription(WMBSBase, WMSubscription):
             self.load()
             return
         
-        action = self.daofactory(classname="Subscriptions.New")
+        action = self.daofactory(classname = "Subscriptions.New")
         action.execute(fileset = self["fileset"].id, type = self["type"],
-                       split = self["split_algo"],
+                       split_algo = self["split_algo"],
                        workflow = self["workflow"].id,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
@@ -93,7 +87,6 @@ class Subscription(WMBSBase, WMSubscription):
         """
         action = self.daofactory(classname="Subscriptions.Exists")
         result = action.execute(fileset = self["fileset"].id,
-                                type = self["type"],
                                 workflow = self["workflow"].id,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())

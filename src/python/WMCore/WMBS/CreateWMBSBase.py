@@ -4,8 +4,8 @@ _CreateWMBS_
 Base class for creating the WMBS database.
 """
 
-__revision__ = "$Id: CreateWMBSBase.py,v 1.37 2009/10/05 18:08:03 sfoulkes Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: CreateWMBSBase.py,v 1.38 2009/10/12 21:11:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import threading
 
@@ -38,9 +38,10 @@ class CreateWMBSBase(DBCreator):
                                "05wmbs_file_runlumi_map",
                                "06wmbs_location",
                                "07wmbs_file_location",
-                               "08wmbs_workflow",
+                               "07wmbs_sub_types",                               
+                               "07wmbs_workflow",
                                "09wmbs_workflow_output",
-                               "09wmbs_subscription",
+                               "08wmbs_subscription",
                                "09wmbs_subscription_location",
                                "10wmbs_sub_files_acquired",
                                "11wmbs_sub_files_failed",
@@ -113,7 +114,7 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY(location) REFERENCES wmbs_location(id)
                ON DELETE CASCADE)"""
 
-        self.create["08wmbs_workflow"] = \
+        self.create["07wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
              spec         VARCHAR(255) NOT NULL,
@@ -132,21 +133,28 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)
                ON DELETE CASCADE)
              """
+        
+        self.create["07wmbs_sub_types"] = \
+          """CREATE TABLE wmbs_sub_types (
+               id   INTEGER      PRIMARY KEY,
+               name VARCHAR(255) NOT NULL,
+               UNIQUE(name))"""
 
-        self.create["09wmbs_subscription"] = \
+        self.create["08wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              fileset     INTEGER      NOT NULL,
              workflow    INTEGER      NOT NULL,
              split_algo  VARCHAR(255) NOT NULL DEFAULT 'File',
-             type        INTEGER      NOT NULL,
+             subtype     INTEGER      NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
              FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
-               ON DELETE CASCADE
-             FOREIGN KEY(type)     REFERENCES wmbs_subs_type(id)
-               ON DELETE CASCADE
+               ON DELETE CASCADE,
              FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
-               ON DELETE CASCADE)"""
+               ON DELETE CASCADE,
+             FOREIGN KEY(subtype) REFERENCES wmbs_sub_types(id)
+               ON DELETE CASCADE)"""               
+
 
         self.create["09wmbs_subscription_location"] = \
           """CREATE TABLE wmbs_subscription_location (
@@ -218,6 +226,7 @@ class CreateWMBSBase(DBCreator):
              location     INTEGER,
              outcome      INTEGER       DEFAULT 0,
              cache_dir    VARCHAR(255)  DEFAULT 'None',
+             fwjr_path    VARCHAR(255),
              UNIQUE(name),
              FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
                ON DELETE CASCADE,
@@ -252,6 +261,14 @@ class CreateWMBSBase(DBCreator):
             jobStateQuery = "INSERT INTO wmbs_job_state (name) VALUES ('%s')" % \
                 (jobState)
             self.inserts["job_state_%s" % jobState] = jobStateQuery
+
+        subTypes = ["Processing", "Merge", "Harvesting"]
+        for i in range(len(subTypes)): 
+            subTypeQuery = """INSERT INTO wmbs_sub_types (id, name)
+                                VALUES (%s, '%s')""" % (i, subTypes[i])
+            self.inserts["wmbs_sub_types_%s" % subTypes[i]] = subTypeQuery
+
+        return
 
     def execute(self, conn = None, transaction = None):
         """

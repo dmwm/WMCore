@@ -6,15 +6,17 @@ MySQL implementation of Subscription.LoadFromFilesetWorkflow
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromFilesetWorkflow.py,v 1.2 2009/01/16 22:38:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadFromFilesetWorkflow.py,v 1.3 2009/10/12 21:11:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadFromFilesetWorkflow(DBFormatter):
-    sql = """SELECT id, fileset, workflow, split_algo, type, last_update
-             FROM wmbs_subscription WHERE fileset = :fileset
-             AND workflow = :workflow"""
+    sql = """SELECT wmbs_subscription.id, fileset, workflow, split_algo,
+                    wmbs_sub_types.name, last_update FROM wmbs_subscription
+               INNER JOIN wmbs_sub_types ON
+                 wmbs_subscription.subtype = wmbs_sub_types.id
+             WHERE fileset = :fileset AND workflow = :workflow"""
 
     def formatDict(self, result):
         """
@@ -28,6 +30,8 @@ class LoadFromFilesetWorkflow(DBFormatter):
         formattedResult["fileset"] = int(formattedResult["fileset"])
         formattedResult["workflow"] = int(formattedResult["workflow"])
         formattedResult["last_update"] = int(formattedResult["last_update"])        
+        formattedResult["type"] = formattedResult["name"]
+        del formattedResult["name"]
         return formattedResult
     
     def execute(self, fileset = None, workflow = None, conn = None,

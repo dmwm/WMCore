@@ -5,15 +5,17 @@ _LoadFromID_
 MySQL implementation of Subscription.LoadFromID
 """
 
-__all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.2 2009/01/16 22:38:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LoadFromID.py,v 1.3 2009/10/12 21:11:15 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadFromID(DBFormatter):
-    sql = """SELECT id, fileset, workflow, split_algo, type, last_update
-             FROM wmbs_subscription WHERE id = :id"""
+    sql = """SELECT wmbs_subscription.id, fileset, workflow, split_algo,
+                    wmbs_sub_types.name, last_update FROM wmbs_subscription
+               INNER JOIN wmbs_sub_types ON
+                 wmbs_subscription.subtype = wmbs_sub_types.id
+             WHERE wmbs_subscription.id = :id"""
 
     def formatDict(self, result):
         """
@@ -26,7 +28,9 @@ class LoadFromID(DBFormatter):
         formattedResult["id"] = int(formattedResult["id"])
         formattedResult["fileset"] = int(formattedResult["fileset"])
         formattedResult["workflow"] = int(formattedResult["workflow"])
-        formattedResult["last_update"] = int(formattedResult["last_update"])        
+        formattedResult["last_update"] = int(formattedResult["last_update"])
+        formattedResult["type"] = formattedResult["name"]
+        del formattedResult["name"]
         return formattedResult
     
     def execute(self, id = None, conn = None, transaction = False):

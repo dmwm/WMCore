@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.97 2010/04/09 20:35:55 sryu Exp $"
-__version__ = "$Revision: 1.97 $"
+__revision__ = "$Id: WorkQueue.py,v 1.98 2010/04/09 21:28:56 sryu Exp $"
+__version__ = "$Revision: 1.98 $"
 
 
 import time
@@ -33,6 +33,8 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.WMBS.Subscription import Subscription as WMBSSubscription
 from WMCore.WMBS.File import File as WMBSFile
 
+from WMCore.WMRuntime.SandboxCreator import SandboxCreator
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 #TODO: Scale test
 #TODO: Handle multiple dbs instances
 #TODO: Decide whether to move/refactor db functions
@@ -137,9 +139,9 @@ class WorkQueue(WorkQueueBase):
         self.SiteDB = SiteDB()
         
         #only import WMBSHelper when it needed
-        if self.params['PopulateFilesets']:
-            from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-            from WMCore.WorkQueue.WMBSHelper import WMBSHelper
+#        if self.params['PopulateFilesets']:
+#            from WMCore.WMRuntime.SandboxCreator import SandboxCreator
+#            from WMCore.WorkQueue.WMBSHelper import WMBSHelper
                     
     #  //
     # // External API

@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.27 2010/06/22 21:20:38 mnorman Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.28 2010/06/23 20:40:34 mnorman Exp $"
+__version__ = "$Revision: 1.28 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -248,22 +248,60 @@ class JobSubmitterPoller(BaseWorkerThread):
         if len(job['input_files']) == 0:
             # Then it has no files
             # Can run anywhere?
-            availableSites = self.sites.keys()
+            availableSites = []
+            for site in self.sites.keys():
+                if jobType in self.sites[site].keys():
+                    availableSites.append(self.sites[site][jobType]['se_name'])
         else:
             for site in job['input_files'][0]['locations']:
                 availableSites.append(site)
 
-        # First look for sites where we have
-        # less then the minimum jobs of this type
+
+        # You want only sites that are BOTH in keys and availableSites
+        # and that allow that jobType
+        possibleSites = []
         for site in self.sites.keys():
             if not jobType in self.sites[site].keys():
-                # Then we don't actually have this type at this site
                 continue
             if not self.sites[site][jobType]['se_name'] in availableSites:
-                # Then we can't run there
                 continue
-            if not self.sites[site][jobType]['task_running_jobs'] \
-               < self.sites[site][jobType]['max_slots']:
+            possibleSites.append(site)
+
+        if len(possibleSites) == 0:
+            logging.error("Job %i has NO possible sites" % (job['id']))
+            return None
+
+
+        # Now do the blacklist/whitelist magic
+        # First we check the whitelist and if it has sites,
+        # remove all sites now on whiteList
+        if len(job.get('siteWhiteList', [])) > 0:
+            for site in possibleSites:
+                if not site in job['siteWhiteList']:
+                    possibleSites.remove(site)
+            if len(possibleSites) == 0:
+                logging.error("Job %i has NO sites possible in whitelist" % (job['id']))
+                return None
+        
+        else:
+            # If we don't have a whiteList, check for a blackList
+            # Remove all blackList jobs
+            for site in job.get('siteBlackList', []):
+                if site in possibleSites:
+                    possibleSites.remove(site)
+            if len(possibleSites) == 0:
+                logging.error("Job %i eliminated all sites in blacklist" % (job['id']))
+                return None
+
+
+
+        
+
+        # First look for sites where we have
+        # less then the minimum jobs of this type
+        for site in possibleSites:
+            siteDict = self.sites[site][jobType]
+            if not siteDict['task_running_jobs'] < siteDict['max_slots']:
                 # Then we have too many jobs in this place already
                 continue
             nSpaces = self.sites[site][jobType]['min_slots'] \
@@ -274,13 +312,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         if tmpSlots < 0:  # Then we didn't have any sites under the minimum
             tmpSlots = -999999
             tmpSite  = None
-            for site in self.sites.keys():
-                if not jobType in self.sites[site].keys():
-                    # Then we don't actually have this type at this site
-                    continue
-                if not self.sites[site][jobType]['se_name'] in availableSites:
-                    # Then we can't run there
-                    continue
+            for site in possibleSites:
                 siteDict = self.sites[site][jobType]
                 if not siteDict['task_running_jobs'] < siteDict['max_slots']:
                     # Then we have too many jobs for this task
@@ -291,19 +323,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                     tmpSlots = nSpaces
                     tmpSite  = site
 
-        # I guess we shouldn't do this
-        # if not tmpSite:
-            # The chances of this are so ludicrously
-            # low that it should never happen
-            # Nevertheless, having said that...
-            # Randomly choose a site
-        #    tmpSite = random.choice(self.sites.keys())
-
         # Having chosen a site, account for it
         if tmpSite:
             self.sites[tmpSite][jobType]['task_running_jobs'] += 1
             for key in self.sites[tmpSite].keys():
                 self.sites[tmpSite][key]['total_running_jobs'] += 1
+        else:
+            logging.error("Could not find site for job %i; all sites may be full" % (job['id']))
 
 
         return tmpSite

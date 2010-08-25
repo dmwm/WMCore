@@ -2,9 +2,19 @@ from matplotlib.pyplot import figure
 import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
 import numpy as np
-from Plot import Plot
+from Plot import Plot, validate_series_item
 
 class Sparkline(Plot):
+    def validate_input(self,input):
+        if not 'series' in input:
+            input['series']=[]
+        else:
+            newseries=[]
+            for i,item in enumerate(input['series']):
+                newseries.append(validate_series_item(item,default_colour=cm.Dark2(float(i)/len(input['series']))))
+            input['series']=newseries
+        return input
+    
     def plot(self,input):
         """
         Draw an unlabelled line plot. Syntax is the same as for a pie chart.
@@ -23,15 +33,8 @@ class Sparkline(Plot):
     
         labelled = input.get('labelled',False)
         overlay = input.get('overlay',False)
-    
-        data = input['series']    
-        for i,d in enumerate(data):
-            if not 'colour' in d:
-                d['colour'] = cm.Dark2(float(i)/len(data))
-            if not 'label' in d:
-                d['label'] = ''
-            if not 'values' in d:
-                d['values'] = [0]
+        
+        data = input['series']
     
         if len(data)>0:
             if overlay and len(data)>1:

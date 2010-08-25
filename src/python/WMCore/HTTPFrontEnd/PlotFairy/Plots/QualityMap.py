@@ -2,9 +2,20 @@ from matplotlib.pyplot import figure
 import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
 import numpy as np
-from Plot import Plot
+from Plot import Plot, validate_series_item, validate_axis
 
 class QualityMap(Plot):
+    def validate_input(self,input):
+        if not 'data' in input:
+            input['data']=[[]]
+        if not 'xaxis' in input:
+            input['xaxis']={}
+        input['xaxis']=validate_axis(input['xaxis'])
+        if not 'yaxis' in input:
+            input['yaxis']={}
+        input['yaxis']=validate_axis(input['yaxis'])
+        return input
+        
     def plot(self,input):
         """
         Draw a quality map as used for phedex transfer quality measurements, etc.
@@ -26,15 +37,15 @@ class QualityMap(Plot):
         
         axes = fig.add_axes([0.1,0.1,0.8,0.8])
         axes.set_title(input.get('title',''))
-        xaxis = input.get('xaxis',{})
-        yaxis = input.get('yaxis',{})
-        
+        xaxis = input['xaxis']
+        yaxis = input['yaxis']
+    
         axes.set_xlabel(xaxis.get('label',''))
         axes.set_ylabel(yaxis.get('label',''))
-        
-        xtype = xaxis.get('type','num')
-        ytype = yaxis.get('type','num')
-        data = input.get('data',[[]])
+
+        xtype = xaxis['type']
+        ytype = yaxis['type']
+        data = input['data']
         
         x_left = []
         x_width = []

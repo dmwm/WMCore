@@ -2,9 +2,18 @@ from matplotlib.pyplot import figure
 import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
 import numpy as np
-from Plot import Plot
+from Plot import Plot, validate_series_item
 
 class Pie(Plot):
+    def validate_input(self,input):
+        if not 'series' in input:
+            input['series']=[]
+        else:
+            newseries=[]
+            for i,item in enumerate(input['series']):
+                newseries.append(validate_series_item(item,default_colour=cm.Dark2(float(i)/len(input['series'])),value_type='notseq'))
+            input['series']=newseries
+        return input
     def plot(self, input):
         """
         Produce an object representing a pie chart
@@ -29,7 +38,7 @@ class Pie(Plot):
         for s in input['series']:
             labels.append(s['label'])
             fracs.append(s['value'])
-            colours.append(['colour'])
+            colours.append(s['colour'])
             explode = [0] * len(fracs)
         if 'explode' in input:
             ind = input['explode'] - 1

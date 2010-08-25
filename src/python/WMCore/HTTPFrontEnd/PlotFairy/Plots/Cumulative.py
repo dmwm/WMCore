@@ -2,9 +2,24 @@ from matplotlib.pyplot import figure
 import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
 import numpy as np
-from Plot import Plot
+from Plot import Plot, validate_axis, validate_series_item
 
 class Cumulative(Plot):
+    def validate_input(self,input):
+        if not 'xaxis' in input:
+            input['xaxis']={}
+        input['xaxis']=validate_axis(input['xaxis'])
+        if not 'yaxis' in input:
+            input['yaxis']={}
+        if not 'series' in input:
+            input['series']=[]
+        else:
+            newseries=[]
+            for i,item in enumerate(input['series']):
+                newseries.append(validate_series_item(item,default_colour=cm.Dark2(float(i)/len(input['series']))))
+            input['series']=newseries
+        return input
+        
     def plot(self,input):
         """
         Draw a cumulative plot. The argument and optional arguments for this are identical to the numerical bar chart case above.
@@ -14,14 +29,14 @@ class Cumulative(Plot):
         
         axes = fig.add_axes([0.1,0.1,0.8,0.8])
         axes.set_title(input.get('title',''))
-        xaxis = input.get('xaxis',{})
-        yaxis = input.get('yaxis',{})
-        
+        xaxis = input['xaxis']
+        yaxis = input['yaxis']
+    
         axes.set_xlabel(xaxis.get('label',''))
         axes.set_ylabel(yaxis.get('label',''))
-        
-        xtype = xaxis.get('type','num')
-        series = input.get('series',[])
+
+        xtype = xaxis['type']
+        series = input['series']
         
         logmin = 0
         if yaxis.get('log',False):

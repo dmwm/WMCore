@@ -2,10 +2,16 @@ import math
 from matplotlib.pyplot import figure
 import matplotlib.cm as cm
 from matplotlib.patches import Rectangle
+from matplotlib.lines import Line2D
 import numpy as np
-from Plot import Plot
+from Plot import Plot, siformat, binformat
 
 class Baobab(Plot):
+    def validate_input(self,input):
+        if not 'data' in input:
+            input['data']={'label':'root','value':1,'children':[]}
+        return input
+        
     def plot(self,input):
         """
         Make a baobab/filelight hierarchical pie chart.
@@ -116,7 +122,7 @@ class Baobab(Plot):
             
                 line = Line2D((lx,lx),(0.75,ly),linewidth=1,linestyle='-.',zorder=-2,color='blue')
                 axes.add_line(line)
-                axes.text(lx,ly,self.siformat(i*use_bar_location,unit),horizontalalignment='center',verticalalignment='center',zorder=-1,color='blue')
+                axes.text(lx,ly,siformat(i*use_bar_location,unit),horizontalalignment='center',verticalalignment='center',zorder=-1,color='blue')
     
     
         bars = axes.bar(left=left[1:],height=height[1:],width=width[1:],bottom=bottom[1:],color=colours[1:])
@@ -146,7 +152,7 @@ class Baobab(Plot):
                 else:
                     axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(n))
     
-            axes.text(0,0,self.siformat(data_root['value'],unit),horizontalalignment='center',verticalalignment='center',weight='bold')
+            axes.text(0,0,siformat(data_root['value'],unit),horizontalalignment='center',verticalalignment='center',weight='bold')
     
         return fig
     

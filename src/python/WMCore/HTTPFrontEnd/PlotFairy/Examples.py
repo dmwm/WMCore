@@ -41,7 +41,8 @@ simple_baobab = {
 		{	'value':250,
 			"children":[],
 			'label':'250'}]},
-	'legend':True
+	'labelled':True,
+	'scale':True
 }
 
 simple_bar_labels = {
@@ -119,4 +120,4 @@ print "<img width='200' height='200' src='http://localhost:8010/plotfairy/plot/?
 print "</td>"
 print "</tr>"
 print "</table>"
-print "</body>\n</html>"
+print "</body>\n</html>"	

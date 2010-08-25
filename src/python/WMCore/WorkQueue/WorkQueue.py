@@ -184,5 +184,18 @@ class WorkQueue(WMObject):
             return True
         except:
             return False
+    
+    def doneWork(self, subscription):
+        """
+        _doneWork_
+        
+        this is called by JSM
+        update the WorkQueue status form table
+        """
+        try:
+            self.setStatus(subscription, "Done")
+            return True
+        except:
+            return False
         
 

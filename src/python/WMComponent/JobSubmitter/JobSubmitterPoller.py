@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.40 2010/07/29 20:06:48 mnorman Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.41 2010/07/29 20:32:00 sfoulkes Exp $"
+__version__ = "$Revision: 1.41 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -186,7 +186,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                                          "package": JobPackage()}
 
         jobPackage = self.jobsToPackage[loadedJob["workflow"]]["package"]
-        jobPackage[loadedJob["id"]] = loadedJob
+        jobPackage[loadedJob["id"]] = loadedJob.getDataStructsJob()
 
         batchID = self.jobsToPackage[loadedJob["workflow"]]["batchid"]
         sandboxDir = os.path.dirname(jobPackage[jobPackage.keys()[0]]["sandbox"])

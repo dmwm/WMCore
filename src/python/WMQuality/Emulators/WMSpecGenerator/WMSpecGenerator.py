@@ -11,10 +11,10 @@ import os
 import shutil
 import tempfile
 
-from WMCore.WMSpec.StdSpecs import ReReco
+from Samples.TestReRecoWorkload import rerecoWorkload as TestReRecoWorkload
 from Samples.BasicProductionWorkload import createWorkload as BasicProductionWorkload
 from Samples.BasicProcessingWorkload import createWorkload as BasicProcessingWorkload
-from Samples import ReRecoParams
+
 #from Samples.MultiTaskProcessingWorkload import createWorkload as MultiTaskProcessingWorkload
 #from Samples.MultiTaskProductionWorkload import createWorkload as MultiTaskProductionWorkload
 
@@ -57,7 +57,7 @@ class WMSpecGenerator(object):
         return self._selectReturnType(spec, returnType)    
     
     def createReRecoSpec(self, specName, returnType="spec"):
-        spec = ReReco.rerecoWorkload(specName, ReRecoParams.getParams()) 
+        spec =  TestReRecoWorkload(specName) 
         return self._selectReturnType(spec, returnType)    
     
     def createRandomProductionSpecs(self, size=10):

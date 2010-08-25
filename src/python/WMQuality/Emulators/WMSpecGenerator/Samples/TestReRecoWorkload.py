@@ -1,12 +1,31 @@
 # this is for actual test
-from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
-
+from WMCore.WMSpec.StdSpecs.ReReco import \
+     getTestArguments, ReRecoWorkloadFactory
+     
 def getParams():
     testArgs = getTestArguments()
     # remove couch config
     testArgs.update({'CouchUrl': None, 'CouchDBName': None})
     
     return testArgs
+
+class TestReRecoWorkloadFactory(ReRecoWorkloadFactory):
+    """Override bits that talk to cmsssw"""
+    
+    def getOutputModuleInfo(self, configUrl, scenarioName, scenarioFunc,
+                            scenarioArgs):
+        return {}
+
+
+def rerecoWorkload(workloadName):
+    """
+    _rerecoWorkload_
+
+    Instantiate the ReRecoWorkflowFactory and have it generate a workload for
+    the given parameters.
+    """
+    myReRecoFactory = TestReRecoWorkloadFactory()
+    return myReRecoFactory(workloadName, getParams())
 
 # remove couch config
 

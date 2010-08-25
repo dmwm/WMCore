@@ -73,20 +73,18 @@ class WorkQueue(Service):
         file = callname + argString + '.cache'
         if clearCache:
             self.clearCache(file, args)
-        try:
-            # overwrite original self['method']
-            # this is only place used self['method'], it is safe to overwrite
-            # If that changes keep the reset to original self['method']
-            
-            self["method"] = verb
-            # can't pass the decoder here since refreshCache wright to file
-            #f = self.refreshCache(file, callname, args, encoder = self.encoder)
-            f = self.forceRefresh(file, callname, args, encoder = self.encoder)
-            result = f.read()
-            f.close()
-            result = self.decoder(result)
-        except IOError, ex:
-            raise RuntimeError("URL not available: %s" % callname)
+
+        # overwrite original self['method']
+        # this is only place used self['method'], it is safe to overwrite
+        # If that changes keep the reset to original self['method']
+
+        self["method"] = verb
+        # can't pass the decoder here since refreshCache wright to file
+        #f = self.refreshCache(file, callname, args, encoder = self.encoder)
+        f = self.forceRefresh(file, callname, args, encoder = self.encoder)
+        result = f.read()
+        f.close()
+        result = self.decoder(result)
 
         return result
     

@@ -19,7 +19,8 @@ class ResourceControl(WMConnectionBase):
                                          dbinterface = self.dbi)
         return
 
-    def insertSite(self, siteName, jobSlots = 0, seName = None, ceName = None):
+    def insertSite(self, siteName, jobSlots = 0, seName = None,
+                   ceName = None, plugin = None):
         """
         _insertSite_
 
@@ -29,7 +30,7 @@ class ResourceControl(WMConnectionBase):
         insertAction = self.wmbsDAOFactory(classname = "Locations.New")
         insertAction.execute(siteName = siteName, jobSlots = jobSlots,
                              seName = seName, ceName = ceName,
-                             conn = self.getDBConn(),
+                             plugin = plugin, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
         return
 
@@ -42,8 +43,8 @@ class ResourceControl(WMConnectionBase):
         """
         listAction = self.wmbsDAOFactory(classname = "Locations.GetSiteInfo")
         result = listAction.execute(siteName = siteName,
-                                  conn = self.getDBConn(),
-                                  transaction = self.existingTransaction())
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
         if len(result) == 0:
             return None
         return result[0]

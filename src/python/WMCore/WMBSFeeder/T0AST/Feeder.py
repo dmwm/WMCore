@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.1 2009/11/06 11:06:24 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Feeder.py,v 1.2 2009/12/08 10:08:16 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import logging
 import os
@@ -68,13 +68,15 @@ class Feeder(FeederImpl):
         logging.debug("the fileset name %s" % \
          (filesetToProcess.name).split(":")[0])
 
+        fileType = "bulk"
+
         # url builder
         primaryDataset = ((filesetToProcess.name).split(":")[0]).split('/')[1]
         processedDataset = ((filesetToProcess.name).split(":")[0]).split('/')[2]
         dataTier = ((filesetToProcess.name\
             ).split(":")[0]).split('/')[3]
-        url = "/tier0/listbulkfilesoverinterval/%s/%s/%s/%s" % \
-              (LastTime, primaryDataset,processedDataset, dataTier)
+        url = "/tier0/listfilesoverinterval/%s/%s/%s/%s/%s" % \
+              (fileType, LastTime, primaryDataset,processedDataset, dataTier)
 
         tries = 1
  

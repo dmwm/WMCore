@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.15 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.15 $"
+__revision__ = "$Id: JobFactory.py,v 1.16 2009/10/02 19:18:00 evansde Exp $"
+__version__  = "$Revision: 1.16 $"
 
 
 import logging
@@ -17,14 +17,14 @@ from WMCore.DataStructs.File     import File
 class JobFactory(WMObject):
     """
     A JobFactory is created with a subscription (which has a fileset). It is a
-    base class of an object instance of an object representing some job 
-    splitting algorithm. It is called with a job type (at least) to return a 
-    JobGroup object. The JobFactory should be subclassed by real splitting 
+    base class of an object instance of an object representing some job
+    splitting algorithm. It is called with a job type (at least) to return a
+    JobGroup object. The JobFactory should be subclassed by real splitting
     algorithm implementations.
     """
-    def __init__(self, 
-                 package='WMCore.DataStructs', 
-                 subscription=None, 
+    def __init__(self,
+                 package='WMCore.DataStructs',
+                 subscription=None,
                  generators=[]):
         self.package = package
         self.subscription = subscription
@@ -42,26 +42,30 @@ class JobFactory(WMObject):
         The default behaviour of JobFactory.__call__ is to return a single
         Job associated with all the files in the subscription's fileset
         """
-        
+
         #Need to reset the internal data for multiple calls to the factory
         self.jobGroups = []
         self.currentGroup = None
         self.currentJob = None
-        
-        
+
+
         module = "%s.%s" % (self.package, jobtype)
         module = __import__(module, globals(), locals(), [jobtype])#, -1)
         self.jobInstance = getattr(module, jobtype.split('.')[-1])
-        
+
         module = "%s.%s" % (self.package, grouptype)
         module = __import__(module, globals(), locals(), [grouptype])
         self.groupInstance = getattr(module, grouptype.split('.')[-1])
-        
+
+        map(lambda x: x.start(), self.generators)
+
         self.algorithm(*args, **kwargs)
-        
+
         self.commit()
+
+        map(lambda x: x.finish(), self.generators)
         return self.jobGroups
-    
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -72,39 +76,42 @@ class JobFactory(WMObject):
         """
         self.newGroup(args, kwargs)
         self.newJob(name='myJob')
-        
+
     def newGroup(self):
         """
         Return and new JobGroup
         """
         self.commit()
         self.currentGroup = self.groupInstance(subscription=self.subscription)
-    
+        map(lambda x: x.startGroup(self.currentGroup), self.generators)
+
     def newJob(self, name=None, files=None):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
         self.currentJob = self.jobInstance(name, files)
         for gen in self.generators:
-            gen(job)
+            gen(self.currentJob)
         self.currentGroup.add(self.currentJob)
-    
+
     def commit(self):
         """
         Bulk commit the JobGroup
         """
+        if self.currentGroup:
+            map(lambda x: x.finishGroup(self.currentGroup), self.generators)
         if self.currentGroup \
-                and (self.currentGroup.jobs + self.currentGroup.newjobs) > 0: 
+                and (self.currentGroup.jobs + self.currentGroup.newjobs) > 0:
             self.currentGroup.commitBulk()
             self.jobGroups.append(self.currentGroup)
-            logging.debug('I have committed a jobGroup with id %i' % 
+            logging.debug('I have committed a jobGroup with id %i' %
                                 (self.currentGroup.id))
             self.currentGroup = None
-            
+
     def sortByLocation(self):
         """
         _sortByLocation_
-        
+
         Sorts the files in the job by location and passes back a dictionary of files, with each key corresponding
         to a set of locations
         """
@@ -115,11 +122,11 @@ class JobFactory(WMObject):
 
         for file in fileset:
             locSet = ImmutableSet(file['locations'])
-                    
+
             if locSet in fileDict.keys():
                 fileDict[locSet].append(file)
             else:
                 fileDict[locSet] = [file]
 
         return fileDict
-            
+

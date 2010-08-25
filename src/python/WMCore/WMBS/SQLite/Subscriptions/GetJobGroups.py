@@ -6,11 +6,11 @@ Sqlite implementation of Job.ChangeState
 """
 
 __all__ = []
-__revision__ = "$Id: GetJobGroups.py,v 1.2 2009/07/15 21:54:21 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetJobGroups.py,v 1.3 2009/07/15 21:55:17 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
-from WMCore.WMBS.MySQL.Jobs.ChangeState import ChangeState as BaseDAO
+from WMCore.WMBS.MySQL.Subscriptions.GetJobGroups import GetJobGroups as BaseDAO
 
 class GetJobGroups(BaseDAO):
     pass

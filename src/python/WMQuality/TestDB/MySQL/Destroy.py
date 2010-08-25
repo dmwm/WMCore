@@ -5,8 +5,8 @@ _Destroy_
 Tear down the MySQL version of the TestDB schema.
 """
 
-__revision__ = "$Id: Destroy.py,v 1.1 2010/03/01 16:49:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Destroy.py,v 1.2 2010/05/04 16:18:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 
@@ -28,6 +28,7 @@ class Destroy(DBCreator):
         
         self.delete["01test_tablea"] = "DROP TABLE test_tablea"
         self.delete["02test_tableb"] = "DROP TABLE test_tableb"
-        self.delete["03test_tablec"] = "DROP TABLE test_tablec"
+        self.delete["03test_tablec"] = "DROP TABLE test_tablec" 
+        self.delete["04test_bigcol"] = "DROP TABLE test_bigcol"       
 
         return

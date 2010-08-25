@@ -5,8 +5,8 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
-__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.5 2010/07/13 13:20:46 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.6 2010/08/17 22:03:25 metson Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import os
 import unittest
@@ -58,7 +58,26 @@ class TrivialFileCatalogTest(unittest.TestCase):
 
 
         return
-
+    
+    def testRoundTrip(self):
+        """
+        Round trip tests failed
+        """
+        tfc_file = os.path.join(getWMBASE(),
+                                   "test/python/WMCore_t/Storage_t",
+                                   "T1_US_FNAL_TrivialFileCatalog.xml")
+        tfc = readTFC(tfc_file)
+        
+        # Check that an lfn goes to an srmv2 pfn and comes back as the same lfn
+        in_lfn = '/store/data/my/data'
+        
+        in_pfn = tfc.matchLFN('srmv2', in_lfn)
+        out_lfn = tfc.matchPFN('srmv2', in_pfn)
+        self.assertEqual(in_lfn, out_lfn)
+        
+        out_pfn = tfc.matchLFN('srmv2', out_lfn)
+        self.assertEqual(in_pfn, out_pfn)
+        
     def testDataServiceXML(self):
         phedex = PhEDEx(responseType='xml')
         
@@ -69,7 +88,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         
         tfc_file = phedex.cacheFileName('tfc', inputdata={'node': site})
         tfc = readTFC(tfc_file)
-        
+        print tfc
         # Hacky XML parser 
         phedex_dom = parseString(phedex.getPFN(site, lfn, protocol))
          

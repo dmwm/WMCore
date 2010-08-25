@@ -24,8 +24,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.22 2010/05/14 18:56:55 mnorman Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.23 2010/05/14 21:56:37 mnorman Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import threading
 import logging
@@ -311,7 +311,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 myThread.transaction.rollback()
                 # Check that algo actually got to DBS
                 algo    = createAlgoFromInfo(info = fileList[datasetAlgo][0])
-                addToBuffer.addDataset(datasetAlgo, 0)
+                self.dbinterface.setDatasetAlgo(datasetAlgoInfo = datasetAlgo, inDBS = 0)
                 addToBuffer.updateAlgo(algo, 0)
                 raise Exception(msg)
                     
@@ -328,8 +328,11 @@ class DBSUploadPoller(BaseWorkerThread):
 
             for block in blocks:
                 if time.time() - block['create_time'] > self.DBSBlockTimeout:
-                    timedOut = self.dbswriter.manageFileBlock(block['blockname'], maxFiles = self.DBSMaxFiles,
-                                                              maxSize = self.DBSMaxSize, timeOut = self.DBSBlockTimeout)
+                    block['Name']  = block['blockname']
+                    block['files'] = []   # This shouldn't matter
+                    timedOut = self.dbswriter.manageFileBlock(block, maxFiles = self.DBSMaxFiles,
+                                                              maxSize = self.DBSMaxSize,
+                                                              timeOut = self.DBSBlockTimeout)
                     if timedOut:
                         dbinterface.setBlockStatus(block['blockname'], locations = None,
                                                    openStatus = 0, time = block['create_time'])

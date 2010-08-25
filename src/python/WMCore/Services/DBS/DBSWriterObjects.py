@@ -388,11 +388,16 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
     return that
 
     """
-
+    logging.debug("getDBSFileBlocks(): dset, se: %s, %s" % (procDataset, seName))
+    
     allBlocks = dbsApiRef.listBlocks(procDataset, block_name = "*",
                                      storage_element_name = "*")
 
+    logging.debug("getDBSFileBlock(): all blocks %s" % allBlocks)
+
     openBlocks = [b for b in allBlocks if str(b['OpenForWriting']) == "1"]
+
+    logging.debug("getDBSFileBlocks(): open blocks %s" % openBlocks)
 
     blockRef = None
     if len(openBlocks) > 1:
@@ -409,6 +414,8 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
         #  //
         # // Need to create new block
         #//
+
+        logging.debug("getDBSFileBlock(): Creating a new block...")
 
         newBlockName = dbsApiRef.insertBlock (procDataset, None ,
                                               storage_element_list = [seName])

@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.27 2010/04/21 16:47:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.28 2010/04/29 15:11:34 mnorman Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import logging
 import os.path
@@ -180,11 +180,12 @@ class JobAccountantTest(unittest.TestCase):
         assert testJob["outcome"] == "failure", \
                "Error: test job has wrong outcome: %s" % testJob["outcome"]
 
-        assert len(self.testSubscription.filesOfStatus("Acquired")) == 0, \
-               "Error: There not be any acquired files."
-        assert len(self.testSubscription.filesOfStatus("Failed")) == 1, \
-               "Error: Wrong number of failed files: %s" % \
-               len(self.testSubscription.filesOfStatus("Failed"))
+        # We know longer mark files as failed in the Accountant
+        self.assertEqual(len(self.testSubscription.filesOfStatus("Acquired")),
+                         1,  "Error: There not be any acquired files.")
+        self.assertEqual(len(self.testSubscription.filesOfStatus("Failed")), 0,
+                         "Error: Wrong number of failed files: %s" \
+                         % len(self.testSubscription.filesOfStatus("Failed")))
         return
  
 
@@ -1056,39 +1057,40 @@ class JobAccountantTest(unittest.TestCase):
         return
 
 
-#     def testTwoProcessLoadTest(self):
-#         """
-#         _testTwoProcessLoadTest_
+    def testTwoProcessLoadTest(self):
+        """
+        _testTwoProcessLoadTest_
+        
+        Run the load test using two worker processes.
+        """
 
-#         Run the load test using two worker processes.
-#         """
-#         print("  Filling DB...")
+        print("  Filling DB...")
+        
+        self.setupDBForLoadTest()
+        config = self.createConfig(workerThreads = 2)
+        
+        accountant = JobAccountantPoller(config)
+        accountant.setup()
+        
+        print("  Running accountant...")
+        
+        startTime = time.time()
+        accountant.algorithm()
+        endTime = time.time()
+        print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
+        
+        for (jobID, fwjrPath) in self.jobs:
+            print("  Validating %s, %s" % (jobID, fwjrPath))
+            jobReport = Report()
+            jobReport.unpersist(fwjrPath)
+            
+            self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
+            self.verifyJobSuccess(jobID)
+            self.verifyDBSBufferContents("Processing",
+                                         ["/some/lfn/for/job/%s" % jobID],
+                                         jobReport.getAllFilesFromStep("cmsRun1"))
 
-#         self.setupDBForLoadTest()
-#         config = self.createConfig(workerThreads = 2)
-
-#         accountant = JobAccountantPoller(config)
-#         accountant.setup()
-
-#         print("  Running accountant...")
-
-#         startTime = time.time()
-#         accountant.algorithm()
-#         endTime = time.time()
-#         print("  Performance: %s fwjrs/sec" % (100 / (endTime - startTime)))
-
-#         for (jobID, fwjrPath) in self.jobs:
-#             print("  Validating %s, %s" % (jobID, fwjrPath))
-#             jobReport = Report()
-#             jobReport.unpersist(fwjrPath)
-
-#             self.verifyFileMetaData(jobID, jobReport.getAllFilesFromStep("cmsRun1"))
-#             self.verifyJobSuccess(jobID)
-#             self.verifyDBSBufferContents("Processing",
-#                                          ["/some/lfn/for/job/%s" % jobID],
-#                                          jobReport.getAllFilesFromStep("cmsRun1"))
-
-#         return    
+        return    
 
 
 #     def testFourProcessLoadTest(self):

@@ -47,11 +47,11 @@ class RequestManager(Service):
                     filemode = 'w')
             dict['logger'] = logging.getLogger('RequestMgrParser')
             dict['accept_type'] = 'text/json'
-        
+
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
-                   args = None, verb="GET"):
+                   args = None, verb = "GET"):
         """
         _getResult_
 
@@ -70,18 +70,15 @@ class RequestManager(Service):
         file = callname + argString + '.cache'
         if clearCache:
             self.clearCache(file, args)
-        try:
-            # overwrite original self['method']
-            # this is only place used self['method'], it is safe to overwrite
-            # If that changes keep the reset to original self['method']
-            
-            self["method"] = verb
-            f = self.refreshCache(file, callname, args)
-            result = f.read()
-            f.close()
 
-        except IOError, ex:
-            raise RuntimeError("URL not available: %s" % callname)
+        # overwrite original self['method']
+        # this is only place used self['method'], it is safe to overwrite
+        # If that changes keep the reset to original self['method']
+
+        self["method"] = verb
+        f = self.refreshCache(file, callname, args)
+        result = f.read()
+        f.close()
 
 #        if self.responseType == "json":
 #            decoder = json.JSONDecoder()
@@ -89,39 +86,38 @@ class RequestManager(Service):
 
         result = JsonWrapper.loads(result)
         return result
-    
-    def getRequest(self, requestName=None):
-        
+
+    def getRequest(self, requestName = None):
+
         """
         _getRequest_
 
         """
         args = {}
         args['requestName'] = requestName
-        
+
         callname = 'request'
-        return self._getResult(callname, args = args, verb="GET")
-    
-    def getAssignment(self, teamName=None, request=None):
-        
+        return self._getResult(callname, args = args, verb = "GET")
+
+    def getAssignment(self, teamName = None, request = None):
+
         args = {}
         args['teamName'] = teamName
         args['request'] = request
-        
+
         callname = 'assignment'
-        return self._getResult(callname, args = args, verb="GET")
-    
-    def postAssignment(self, requestName, prodAgentUrl=None):
+        return self._getResult(callname, args = args, verb = "GET")
+
+    def postAssignment(self, requestName, prodAgentUrl = None):
         args = {}
         args['requestName'] = requestName
-        
+
         callname = 'assignment'
-        return self._getResult(callname, args = args, verb="POST")
-    
+        return self._getResult(callname, args = args, verb = "POST")
+
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 
 from WMQuality.Emulators import emulatorSwitch
 if emulatorSwitch("RequestManager"):
     from WMQuality.Emulators.RequestManagerClient.RequestManager import RequestManager
 
-    

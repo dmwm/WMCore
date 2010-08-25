@@ -157,7 +157,7 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                         n = n[:self.props.text_truncate_outer-1]+'..'
                     tangential_length = w*(max_height+0.5)*radial_length
                     text_size=min(font_size(n,2*radial_length),font_size('',tangential_length))
-                    if text_size>self.props.text_size_min:
+                    if text_size>=self.props.text_size_min:
                         axes.text(cx,cy+2.0,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=text_size)
                 else:
                     if self.props.text_truncate_inner != -1 and len(n)>=self.props.text_truncate_inner:
@@ -165,11 +165,11 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                     tangential_length = min(w*(b+.33)*radial_length,2*radial_length*math.sqrt(1.33*b+0.88))#h+0.75))
                     if tangential_length>radial_length:
                         text_size = min(font_size('',radial_length),font_size(n,tangential_length))
-                        if text_size>self.props.text_size_min:
+                        if text_size>=self.props.text_size_min:
                             axes.text(cx,cy-0.16,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=text_size)
                     else:
                         text_size = min(font_size('',tangential_length),font_size(n,radial_length))
-                        if text_size>self.props.text_size_min:
+                        if text_size>=self.props.text_size_min:
                             axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=text_size)
             if self.props.central_label:
                 axes.text(0,0,formatter(self.props.data['value'])+unit,horizontalalignment='center',verticalalignment='center',weight='bold')

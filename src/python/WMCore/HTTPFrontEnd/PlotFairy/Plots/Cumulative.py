@@ -2,7 +2,7 @@ from Plot import Plot
 from Mixins import *
 from Validators import *
 
-class Cumulative(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,BinnedNumericSeriesMixin):
+class Cumulative(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XBinnedNumericAxisMixin,YNumericAxisMixin,BinnedNumericSeriesMixin,WatermarkMixin):
     __metaclass__=Plot
     def __init__(self):
         self.validators = []

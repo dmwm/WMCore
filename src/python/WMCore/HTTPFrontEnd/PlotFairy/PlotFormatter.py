@@ -36,5 +36,5 @@ class PlotFormatter(RESTFormatter):
             raise NotImplemented
         else:
             buffer = StringIO()
-            data['figure'].savefig(buffer, data.get('dpi',96), format=format)
+            data['figure'].savefig(buffer, data.get('dpi',100), format=format)
             return buffer.getvalue()

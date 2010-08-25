@@ -2,7 +2,7 @@ from Plot import Plot
 from Mixins import *
 from Validators import *
 
-class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeriesMixin):
+class Sparkline(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,BinnedNumericSeriesMixin,WatermarkMixin):
     __metaclass__=Plot
     def __init__(self):
         self.validators = [ElementBase('labelled',bool,default=True),

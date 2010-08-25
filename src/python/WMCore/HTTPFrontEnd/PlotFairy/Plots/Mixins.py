@@ -4,31 +4,17 @@ from Utils import *
 class Mixin(object):
     def __init__(self,*args,**kwargs):
         pass
-    def validate(self,input):
-        return True
-    def extract(self,input):
-        pass
-    def construct(self,*args,**kwargs):
-        pass
-    def predata(self,*args,**kwargs):
-        pass
-    def data(self,*args,**kwargs):
-        pass
-    def postdata(self,*args,**kwargs):
-        pass
-    def finalise(self,*args,**kwargs):
-        pass
 
 class FigureMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [IntBase('height',min=1,max=5000,default=600),
                            IntBase('width',min=1,max=5000,default=800),
-                           FloatBase('dpi',min=1,max=300,default=96.)] 
+                           FloatBase('dpi',min=1,max=300,default=100.)] 
         super(FigureMixin,self).__init__(*args,**kwargs)
     def construct(self,*args,**kwargs):
         self.figure = matplotlib.pyplot.figure(figsize=(self.props.width/self.props.dpi,self.props.height/self.props.dpi),
                                                dpi=self.props.dpi)
-        super(FigureMixin,self).construct(*args,**kwargs)
+        #super(FigureMixin,self).construct(*args,**kwargs)
 
 class TitleMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -79,7 +65,7 @@ class TitleMixin(Mixin):
                 ch -= self.props.linepadding
                 
             self.props.topbound = ch
-        super(TitleMixin,self).construct(*args,**kwargs)
+        #super(TitleMixin,self).construct(*args,**kwargs)
     
 
 class FigAxesMixin(Mixin):
@@ -119,7 +105,7 @@ class FigAxesMixin(Mixin):
             self.figure.add_axes((left,bottom,float(avail_width)/w,float(avail_height)/h),projection=projection)
             self.props.axes_left = left
             self.props.axes_bottom = bottom
-        super(FigAxesMixin,self).construct(*args,**kwargs)
+        #super(FigAxesMixin,self).construct(*args,**kwargs)
         
 class StyleMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -132,7 +118,7 @@ class StyleMixin(Mixin):
             self.figure.set_facecolor(self.props.background)
         if self.props.gridlines:
             self.figure.gca().grid()
-        super(StyleMixin,self).construct(*args,**kwargs)
+        #super(StyleMixin,self).construct(*args,**kwargs)
 
 """
 A note on axis mixins. The intention was that these would be inherit
@@ -181,14 +167,16 @@ def UniqueAxis(axisclass, axis):
     newtype = type(name,tuple(bases),attrs)
     setattr(newtype,'_%s__axis'%name,axis)
     for n,v in newtype.__dict__.items():
+        #print n
         if type(v)==types.FunctionType:
+            #print 'rebuilding',n
             newcode = new.code(v.func_code.co_argcount,
                                    v.func_code.co_nlocals,
                                    v.func_code.co_stacksize,
                                    v.func_code.co_flags,
                                    v.func_code.co_code,
                                    v.func_code.co_consts,
-                                   tuple([n.replace(axisclass.__name__,name) for n in v.func_code.co_names]),
+                                   tuple([nn.replace(axisclass.__name__,name) for nn in v.func_code.co_names]),
                                    v.func_code.co_varnames,
                                    v.func_code.co_filename,
                                    v.func_code.co_name,
@@ -196,7 +184,7 @@ def UniqueAxis(axisclass, axis):
                                    v.func_code.co_lnotab)
             newfunc = new.function(newcode,v.func_globals,v.func_name,v.func_defaults)
             setattr(newtype,n,newfunc)
-    
+            #print 'rebuilt',n,newfunc.func_code.co_names,id(newfunc)
     return newtype
 
 def axis_format(axis,data):
@@ -282,7 +270,7 @@ class NumericAxisMixin(Mixin):
             setattr(self.props,'log_%s'%self.__axis[0].lower(),True)
         else:
             setattr(self.props,'log_%s'%self.__axis[0].lower(),False)
-        super(NumericAxisMixin,self).predata(*args,**kwargs)
+        #super(NumericAxisMixin,self).predata(*args,**kwargs)
     
     def postdata(self,*args,**kwargs):
         axes = self.figure.gca()
@@ -292,7 +280,7 @@ class NumericAxisMixin(Mixin):
         if data['min'] or data['max']:
             axis.set_view_interval(data['min'],data['max'])
         
-        super(NumericAxisMixin,self).postdata(*args,**kwargs)
+        #super(NumericAxisMixin,self).postdata(*args,**kwargs)
 
 XNumericAxisMixin = UniqueAxis(NumericAxisMixin,'xaxis')
 YNumericAxisMixin = UniqueAxis(NumericAxisMixin,'yaxis')
@@ -311,7 +299,7 @@ class BinnedNumericAxisMixin(NumericAxisMixin):
         data['bins']=bins
         data['edges']=edges
         
-        super(BinnedNumericAxisMixin,self).predata(*args,**kwargs)
+        #super(BinnedNumericAxisMixin,self).predata(*args,**kwargs)
 
 XBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'xaxis')
 YBinnedNumericAxisMixin = UniqueAxis(BinnedNumericAxisMixin,'yaxis')
@@ -344,7 +332,7 @@ class AnyBinnedAxisMixin(Mixin):
             axes.set_xlabel(data['label'])
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
-        super(AnyBinnedAxisMixin,self).predata(*args,**kwargs)
+        #super(AnyBinnedAxisMixin,self).predata(*args,**kwargs)
 
 XAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'xaxis')
 YAnyBinnedAxisMixin = UniqueAxis(AnyBinnedAxisMixin,'yaxis')
@@ -369,7 +357,7 @@ class LabelledAxisMixin(Mixin):
         data['bins'] = len(data['labels'])
         data['edges'] = range(len(data['labels'])+1)
         
-        super(LabelledAxisMixin,self).predata(*args,**kwargs)
+        #super(LabelledAxisMixin,self).predata(*args,**kwargs)
 
 XLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'xaxis')
 YLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'yaxis')
@@ -377,8 +365,10 @@ YLabelledAxisMixin = UniqueAxis(LabelledAxisMixin,'yaxis')
 class AutoLabelledAxisMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [DictElementBase(self.__axis,True,[StringBase('label',None,default='')])]
+        #print 'AutoLabelledAxisMixin::__init__',self.__class__,self.__dict__.keys()
         super(AutoLabelledAxisMixin,self).__init__(*args,**kwargs)
-    def predata(self,*args,**kwargs):       
+    def predata(self,*args,**kwargs):
+        #print 'AutoLabelledAxisMixin::predata',self.__class__,self.__dict__.keys()
         axes = self.figure.gca()
         data = self.props.get(self.__axis)
         if self.__axis=='xaxis':
@@ -387,11 +377,15 @@ class AutoLabelledAxisMixin(Mixin):
         elif self.__axis=='yaxis':
             axes.set_ylabel(data['label'])
             axis_format(axes.yaxis,data)
-        super(AutoLabelledAxisMixin,self).predata(*args,**kwargs)
+        #super(AutoLabelledAxisMixin,self).predata(*args,**kwargs)
 
+#print 'AutoLabelledAxisMixin',AutoLabelledAxisMixin.predata.func_code.co_names
+#print AutoLabelledAxisMixin.predata,id(AutoLabelledAxisMixin.predata)
 XAutoLabelledAxisMixin = UniqueAxis(AutoLabelledAxisMixin,'xaxis')
 YAutoLabelledAxisMixin = UniqueAxis(AutoLabelledAxisMixin,'yaxis')
-            
+#print 'XAutoLabelledAxisMixin',XAutoLabelledAxisMixin.predata.func_code.co_names            
+#print XAutoLabelledAxisMixin.predata,id(XAutoLabelledAxisMixin.predata)
+
 class BinnedNumericSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
         self.validators += [ListElementBase('series',dict,DictElementBase('listitem',False,[StringBase('label',None,default=''),ListElementBase('values',(int,float),allow_missing=False),ColourBase('colour',default=None)]),allow_missing=False)]
@@ -442,7 +436,7 @@ class BinnedNumericSeriesMixin(Mixin):
             series['min'] = min(series['values'])
             series['max'] = max(series['values'])
             
-        super(BinnedNumericSeriesMixin,self).data(*args,**kwargs)
+        #super(BinnedNumericSeriesMixin,self).data(*args,**kwargs)
     
 class LabelledSeriesMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -453,7 +447,7 @@ class LabelledSeriesMixin(Mixin):
         for i,series in enumerate(self.props.series):
             if series['colour']==None:
                 series['colour']=cmap(float(i)/len(self.props.series))
-        super(LabelledSeriesMixin,self).data(*args,**kwargs)
+        #super(LabelledSeriesMixin,self).data(*args,**kwargs)
 
 class LabelledSeries2DMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -469,7 +463,7 @@ class LabelledSeries2DMixin(Mixin):
                     series['y'] += [0.]*(len(series['x'])-len(series['y']))
                 else:
                     series['x'] += [0.]*(len(series['y'])-len(series['x']))    
-        super(LabelledSeries2DMixin,self).data(*args,**kwargs)
+        #super(LabelledSeries2DMixin,self).data(*args,**kwargs)
                 
         
 class ArrayMixin(Mixin):
@@ -485,7 +479,8 @@ class ArrayMixin(Mixin):
             return False
         if self.__rowlen!=None and not list(lengths)[0]==self.__rowlen:
             return False
-        return super(ArrayMixin,self).validate(input)
+        return True
+        #return super(ArrayMixin,self).validate(input)
     def predata(self,*args,**kwargs):
         if self.__min!=None or self.__max!=None:
             for row in self.props.data:
@@ -494,7 +489,7 @@ class ArrayMixin(Mixin):
                         row[i]=self.__min
                     if self.__max!=None and item>self.__max:
                         row[i]=self.__max
-        super(ArrayMixin,self).predata(*args,**kwargs)
+        #super(ArrayMixin,self).predata(*args,**kwargs)
 
 class WatermarkMixin(Mixin):
     def __init__(self,*args,**kwargs):
@@ -532,4 +527,4 @@ class WatermarkMixin(Mixin):
             except:
                 pass
                 
-        super(WatermarkMixin,self).finalise(*args,**kwargs)
+        #super(WatermarkMixin,self).finalise(*args,**kwargs)

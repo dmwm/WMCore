@@ -2,7 +2,7 @@ from Plot import Plot
 from Mixins import *
 from Validators import *
 
-class Pie(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,LabelledSeriesMixin):
+class Pie(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,LabelledSeriesMixin,WatermarkMixin):
     __metaclass__=Plot
     def __init__(self):
         self.validators = [ElementBase('shadow',bool,default=True),ElementBase('percentage',bool,default=True)]

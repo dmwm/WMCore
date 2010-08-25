@@ -9,6 +9,10 @@ instantiated via a factory, and be stateless.
 import matplotlib.pyplot 
 from Utils import Props
 
+class null(object):
+    def null(self):
+        pass
+instancemethod = type(null.null)
 
 class Plot(type):
     def __new__(cls, name, bases, attrs):
@@ -17,10 +21,9 @@ class Plot(type):
             for v in self.validators:
                 if not v.validate(input):
                     return 'validation-failed: %s'%v.element_name
-            return super(self.__class__,self).validate(input) and self.validate(input)
+            return True
+            #return super(self.__class__,self).validate(input) and self.validate(input)
         attrs['_validate']=_validate
-        if not 'validate' in attrs:
-            attrs['validate']=lambda self,input: True
         def _extract(self,input):
             for v in self.validators:
                 if hasattr(self.props,v.element_name):
@@ -31,56 +34,29 @@ class Plot(type):
                         setattr(self.props,v.element_name,val)
                 else:
                     setattr(self.props,v.element_name,v.extract(input))
-            super(self.__class__,self).extract(input)
-            self.extract(input)
+            #super(self.__class__,self).extract(input)
+            for method in self.__class__._extract_calls:
+                method(self,input)
+            #self.extract(input)
         attrs['_extract']=_extract
-        if not 'extract' in attrs:
-            attrs['extract']=lambda self,input: None
-        def _construct(self):
-            super(self.__class__,self).construct()
-            self.construct()
-        attrs['_construct']=_construct
-        if not 'construct' in attrs:
-            attrs['construct']=lambda self: None
-        def _predata(self):
-            super(self.__class__,self).predata()
-            self.predata()
-        attrs['_predata']=_predata
-        if not 'predata' in attrs:
-            attrs['predata']=lambda self: None
-        def _data(self):
-            super(self.__class__,self).data()
-            self.data()
-        attrs['_data']=_data
-        if not 'data' in attrs:
-            attrs['data']=lambda self: None
-        def _postdata(self):
-            super(self.__class__,self).postdata()
-            self.postdata()
-        attrs['_postdata']=_postdata
-        if not 'postdata' in attrs:
-            attrs['postdata']=lambda self: None
-        def _finalise(self):
-            super(self.__class__,self).finalise()
-            self.finalise()
-        attrs['_finalise']=_finalise
-        if not 'finalise' in attrs:
-            attrs['finalise']=lambda self: None
         def __call__(self,input):
             self.figure = None
-            validate = self._validate(input)
-            if validate==True:
-                try:
-                    self._extract(input)
-                    self._construct()
-                    self._predata()
-                    self._data()
-                    self._postdata()
-                    self._finalise()
-                    return self.figure
-                except Exception as e:
-                    return self._error(str(e))
-            return self._error(validate)
+            try:
+                validate_result = self._validate(input)
+                if not validate_result==True:
+                    return self._error(validate_result)
+                for method in self.__class__._validate_calls:
+                    validate_result = method(self,input)
+                    if not validate_result==True:
+                        return self._error(validate_result)
+                self._extract(input)
+                for method in self.__class__._extract_calls:
+                    method(self,input)
+                for method in self.__class__._build_calls:
+                    method(self)
+                return self.figure
+            except Exception as e:
+                return self._error(str(e))
         attrs['__call__']=__call__
         
         def __init__(self,*args,**kwargs):
@@ -94,13 +70,13 @@ class Plot(type):
         def _error(self,msg):
             height = self.props.get('height',600)
             width = self.props.get('width',800)
-            dpi = self.props.get('dpi',96)
+            dpi = self.props.get('dpi',100)
             if self.figure and isinstance(self.figure,matplotlib.figure.Figure):
                 try:
                     matplotlib.pyplot.close(self.figure)
                 except:
                     pass
-            self.figure = matplotlib.pyplot.figure(figsize=(self.props.width/self.props.dpi,self.props.height/self.props.dpi),dpi=self.props.dpi)
+            self.figure = matplotlib.pyplot.figure(figsize=(height/dpi,width/dpi),dpi=dpi)
             self.figure.text(0.5,0.5,'Error!\n%s'%msg,ha='center',va='center',weight='bold',color='r')
             return self.figure
             
@@ -114,4 +90,26 @@ class Plot(type):
                     pass
         if not '__del__' in attrs:
             attrs['__del__']=__del__
+        _validate_calls = []
+        _extract_calls = []
+        _build_calls = []
+        
+        for klass in bases:
+            if hasattr(klass,'validate'):
+                _validate_calls.append(getattr(klass,'validate'))
+            if hasattr(klass,'extract'):
+                _extract_calls.append(getattr(klass,'extract'))
+        if 'validate' in attrs:
+            _validate_calls.append(attrs['validate'])
+        if 'extract' in attrs:
+            _extract_calls.append(attrs['extract'])
+        for step in ('construct','predata','data','postdata','finalise'):
+            for klass in bases:
+                if hasattr(klass,step):
+                    _build_calls.append(getattr(klass,step))
+            if step in attrs:
+                _build_calls.append(attrs[step])
+        attrs['_validate_calls']=_validate_calls
+        attrs['_extract_calls']=_extract_calls
+        attrs['_build_calls']=_build_calls
         return super(Plot,cls).__new__(cls, name, bases, attrs)

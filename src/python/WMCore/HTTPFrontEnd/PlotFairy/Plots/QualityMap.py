@@ -2,7 +2,7 @@ from Plot import Plot
 from Mixins import *
 from Validators import *
 
-class QualityMap(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAnyBinnedAxisMixin,YAnyBinnedAxisMixin,ArrayMixin):
+class QualityMap(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAnyBinnedAxisMixin,YAnyBinnedAxisMixin,ArrayMixin,WatermarkMixin):
     __metaclass__=Plot
     def __init__(self):
         self.validators = [ColourBase('colour0',default='#ff0000'),ColourBase('colour1',default='#00ff00')]

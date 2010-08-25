@@ -6,8 +6,8 @@ SQLAlchemy result sets (aka cursors) can be closed. Make this class look as much
 like the SQLAlchemy class to minimise the impact of adding this class.
 """
 
-__revision__ = "$Id: ResultSet.py,v 1.6 2009/05/14 14:51:27 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ResultSet.py,v 1.7 2009/05/15 14:14:01 swakef Exp $"
+__version__ = "$Revision: 1.7 $"
 
 class ResultSet:
     def __init__(self):
@@ -27,6 +27,13 @@ class ResultSet:
         return self.data
     
     def add(self, resultproxy):
+
+        #Has to be there to provide some Oracle functionality
+        #Oracle resultproxy doesn't have lastrowid
+        if hasattr(resultproxy, 'lastrowid'):
+            self.lastrowid = resultproxy.lastrowid
+        self.rowcount += resultproxy.rowcount
+        
         if resultproxy.closed:
             return
         
@@ -34,11 +41,5 @@ class ResultSet:
             if len(self.keys) == 0:
                 self.keys.extend(r.keys())
             self.data.append(r)
-
-        #Has to be there to provide some Oracle functionality
-        #Oracle resultproxy doesn't have lastrowid
-        if hasattr(resultproxy, 'lastrowid'):
-            self.lastrowid = resultproxy.lastrowid
-        self.rowcount = len(self.data)
         
         return

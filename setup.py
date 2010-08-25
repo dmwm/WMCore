@@ -90,7 +90,7 @@ def unit_test_extractor(tup, path, filenames):
                 module_suites = unittest.defaultTestLoader.loadTestsFromModule(module)
                 logging.info('Got suites: %s', module_suites)
                 all_test_suites.append(module_suites)
-            except Exception, e:
+            except ImportError, e:
                 logging.fatal("Couldn't load test %s: Exception: %s" % (module_name,e))
                 
             #suites += module_suites
@@ -180,6 +180,10 @@ class TestCommand(Command):
             print "Caching code coverage statstics"
         except:
             coverageEnabled = False
+        
+        ## FIXME: make this more portable
+        if 'WMCOREBASE' not in os.environ:
+            os.environ['WMCOREBASE'] = os.getcwd()
         
         result, failedTestFiles, totalTests = runUnitTests()
         

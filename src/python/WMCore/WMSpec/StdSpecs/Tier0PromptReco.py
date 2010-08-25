@@ -12,7 +12,16 @@ from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 parseDataset = lambda x : { "Primary" : x.split("/")[1], 
                             "Processed": x.split("/")[2],
                             "Tier" : x.split("/")[3]}
-                            
+def doOverrides(stepHelper, newStageOut, arguments):
+    if newStageOut:
+        stepHelper.addOverride('waitTime', arguments.get('waitTime'))
+        stepHelper.addOverride('command', arguments.get('stageOutCommand'))
+        stepHelper.addOverride('option',arguments.get('stageOutOptions'))
+        stepHelper.addOverride('se-name',arguments.get('stageOutSeName'))
+        stepHelper.addOverride('lfn-prefix', arguments.get('stageOutLfnPrefix'))
+        stepHelper.addOverride('newStageOut',True)
+
+        
 def tier0PromptRecoWorkload(workloadName, arguments):
     """
     _tier0PromptRecoWorkload_
@@ -71,7 +80,7 @@ def tier0PromptRecoWorkload(workloadName, arguments):
     useNewStageOut = False
     if arguments.get('newStageOut', False):
         useNewStageOut = True
-
+        print "***USING NEW STAGEOUT CODE***"
     #  //
     # // set up the production task
     #//
@@ -80,10 +89,10 @@ def tier0PromptRecoWorkload(workloadName, arguments):
     rerecoCmssw.setStepType("CMSSW")
     rerecoStageOut = rerecoCmssw.addStep("stageOut1")
     rerecoStageOut.setStepType("StageOut")
-    rerecoStageOut.addOverride('newStageOut',useNewStageOut)
+    doOverrides(rerecoStageOut,    useNewStageOut, arguments )
     rerecoLogArch = rerecoCmssw.addStep("logArch1")
     rerecoLogArch.setStepType("LogArchive")
-    rerecoLogArch.addOverride('newStageOut',useNewStageOut)
+    doOverrides(rerecoLogArch,    useNewStageOut, arguments )
     rereco.applyTemplates()
     rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
     rereco.addGenerator("BasicNaming")
@@ -173,9 +182,11 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         mergeRecoCmssw.setStepType("CMSSW")
         mergeRecoStageOut = mergeRecoCmssw.addStep("stageOut1")
         mergeRecoStageOut.setStepType("StageOut")
-        mergeRecoStageOut.addOverride('newStageOut',useNewStageOut)
+        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
         mergeRecoLogArch = mergeRecoCmssw.addStep("logArch1")
-        mergeRecoLogArch.addOverride('newStageOut',useNewStageOut)
+        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
         mergeRecoLogArch.setStepType("LogArchive")
 
         mergeReco.applyTemplates()
@@ -216,9 +227,11 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         skimAlcaCmssw.setStepType("CMSSW")
         skimAlcaStageOut = skimAlcaCmssw.addStep("stageOut1")
         skimAlcaStageOut.setStepType("StageOut")
-        skimAlcaStageOut.addOverride('newStageOut',useNewStageOut)
+        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
         skimAlcaLogArch = skimAlcaCmssw.addStep("logArch1")
-        skimAlcaLogArch.addOverride('newStageOut',useNewStageOut)
+        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
         skimAlcaLogArch.setStepType("LogArchive")
         skimAlca.addGenerator("BasicNaming")
         skimAlca.addGenerator("BasicCounter")
@@ -255,9 +268,11 @@ def tier0PromptRecoWorkload(workloadName, arguments):
             mergeAlcaCmssw.setStepType("CMSSW")
             mergeAlcaStageOut = mergeAlcaCmssw.addStep("stageOut1")
             mergeAlcaStageOut.setStepType("StageOut")
-            mergeAlcaStageOut.addOverride('newStageOut',useNewStageOut)
+            doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
             mergeAlcaLogArch = mergeAlcaCmssw.addStep("logArch1")
-            mergeAlcaLogArch.addOverride('newStageOut',useNewStageOut)
+            doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
             mergeAlcaLogArch.setStepType("LogArchive")
             mergeAlca.addGenerator("BasicNaming")
             mergeAlca.addGenerator("BasicCounter")
@@ -294,9 +309,11 @@ def tier0PromptRecoWorkload(workloadName, arguments):
         mergeAodCmssw.setStepType("CMSSW")
         mergeAodStageOut = mergeAodCmssw.addStep("stageOut1")
         mergeAodStageOut.setStepType("StageOut")
-        mergeAodStageOut.addOverride('newStageOut',useNewStageOut)
+        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
         mergeAodLogArch = mergeAodCmssw.addStep("logArch1")
-        mergeAodLogArch.setStepType("LogArchive")
+        doOverrides(rerecoStageOut,    useNewStageOut, arguments )
+
         mergeAodLogArch.addOverride('newStageOut',useNewStageOut)
         mergeAod.addGenerator("BasicNaming")
         mergeAod.addGenerator("BasicCounter")

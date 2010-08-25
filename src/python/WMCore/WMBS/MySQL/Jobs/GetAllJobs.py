@@ -6,8 +6,8 @@ MySQL implementation of Jobs.GetAllJobs
 """
 
 __all__ = []
-__revision__ = "$Id: GetAllJobs.py,v 1.1 2009/07/30 19:29:42 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetAllJobs.py,v 1.2 2009/12/30 14:03:09 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -47,7 +47,7 @@ class GetAllJobs(DBFormatter):
         Execute the SQL for the given job ID and then format and return
         the result.
         """
-        if state == None:
+        if state == None or type(state) != str:
             result = self.dbi.processData(self.sql_all, {}, conn = conn,
                                           transaction = transaction)
         else:

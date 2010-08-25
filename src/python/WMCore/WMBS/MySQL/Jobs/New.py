@@ -6,8 +6,8 @@ MySQL implementation of Jobs.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.14 2009/12/24 16:19:28 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: New.py,v 1.15 2009/12/30 14:03:09 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import time
 
@@ -56,10 +56,9 @@ class New(DBFormatter):
     def execute(self, jobgroup = None, name = None, couch_record = None, location = None, cache_dir = None,
                 outcome = None, fwjr = None, conn = None, transaction = False, jobList = None):
 
-        if outcome == None:
+        if outcome == None or type(outcome) != str:
             outcome = 'failure'
-            
-        if outcome.lower() == 'success':
+        elif outcome.lower() == 'success':
             boolOutcome = 1
         else:
             boolOutcome = 0

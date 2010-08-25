@@ -3,5 +3,6 @@ from os import environ
 
 config = Configuration()
 
-config.component_('JobStateMachine')
-config.JobStateMachine.couchurl = 'http://localhost:5984'
+jsm = config.component_('JobStateMachine')
+jsm.couchurl = 'http://localhost:5984'
+jsm.default_retries = 1

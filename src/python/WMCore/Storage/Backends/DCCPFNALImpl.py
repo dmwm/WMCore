@@ -3,7 +3,6 @@
 _DCCPFNALImpl_
 
 Implementation of StageOutImpl interface for DCCPFNAL
-
 """
 
 import os
@@ -11,6 +10,7 @@ import commands
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
+from WMCore.Storage.StageOutError import StageOutError
 
 _CheckExitCodeOption = True
 
@@ -78,22 +78,16 @@ class DCCPFNALImpl(StageOutImpl):
         if not pfn.startswith("srm"):
             return pfn
 
-        print "Translating PFN: %s\n To use dcache door" % pfn
-        dcacheDoor = commands.getoutput(
-            "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
-
+        doorCmd = "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh"
+        (status, output) = commands.getstatusoutput(doorCmd)
+            
+        if status != 0:
+            raise StageOutError("Unable to determine dCache door", Command = doorCmd,
+                                output = output)
 
         pfn = pfn.split("/store/")[1]
-        pfn = "%s%s" % (dcacheDoor, pfn)
-
-
-        print "Created Target PFN with dCache Door: ", pfn
-
+        pfn = "%s%s" % (output, pfn)
         return pfn
-
-
-
-
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None):
         """
@@ -143,9 +137,7 @@ fi
 
 """ % (pnfsPfn(targetPFN), sourcePFN, pnfsPfn(targetPFN))
 
-        print "Executing:\n", result
         return result
-
 
     def buildStageInCommand(self, sourcePFN, targetPFN, options = None):
         """
@@ -185,8 +177,6 @@ if [ $FILE_SIZE != $DEST_SIZE ]; then
    exit 60311
 fi
 """ % (pnfsPfn(targetPFN), pnfsPfn(sourcePFN), pnfsPfn(targetPFN))
-
-        print "Executing:\n", result
         return result
 
 

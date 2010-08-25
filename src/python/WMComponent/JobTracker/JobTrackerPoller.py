@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.12 2010/06/02 21:48:13 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.13 2010/06/08 14:39:40 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 import logging
@@ -82,7 +82,7 @@ class JobTrackerPoller(BaseWorkerThread):
 	Performs the archiveJobs method, looking for each type of failure
 	And deal with it as desired.
         """
-        logging.debug("Running algorithm for finding finished subscriptions")
+        logging.info("Running Tracker algorithm")
         myThread = threading.currentThread()
         try:
             myThread.transaction.begin()
@@ -275,7 +275,7 @@ class JobTrackerPoller(BaseWorkerThread):
         for job in listOfJobs:
             jrPath = os.path.join(job.getCache(),
                                   'Report.%i.pkl' % (job['retry_count']))
-            jrBinds.append({'jobid': jobID, 'fwjrpath': jrPath})
+            jrBinds.append({'jobid': job['id'], 'fwjrpath': jrPath})
 
         # Set all binds at once
         myThread.transaction.begin()

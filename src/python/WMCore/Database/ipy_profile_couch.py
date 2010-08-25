@@ -5,8 +5,8 @@
 Couch DB command line admin tool
 """
 
-__revision__   = "$Id: ipy_profile_couch.py,v 1.1 2009/06/19 14:56:41 valya Exp $"
-__version__    = "$Revision: 1.1 $"
+__revision__   = "$Id: ipy_profile_couch.py,v 1.2 2009/06/19 15:35:11 valya Exp $"
+__version__    = "$Revision: 1.2 $"
 __author__     = "Valentin Kuznetsov"
 __license__    = "GPL"
 __version__    = "1.0.1"
@@ -87,7 +87,6 @@ try:
     from ipipe import *
 except ImportError:
     pass
-from DAS.utils.iprint import PrintManager
 
 # global variables
 URI="http://localhost:5984"
@@ -284,8 +283,8 @@ def create_db(db_name):
 
 def delete_db(db_name):
     """
-    Delete DB in couch. By default DAS database called das.
-    Parameters: <db_name, e.g. das>
+    Delete DB in couch.
+    Parameters: <db_name>
     """
     host  = URI
     path  = '/%s' % DB

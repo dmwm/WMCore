@@ -12,13 +12,14 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.8 2010/06/03 21:32:30 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.9 2010/06/14 17:48:52 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import os.path
 import logging
 import threading
+import cPickle
 
 import subprocess
 
@@ -129,14 +130,10 @@ class CondorGlobusPlugin(PluginBase):
                                     stderr = subprocess.PIPE, shell = False)
             output, error = pipe.communicate()
 
-            
+            if not error == '':
+                logging.error("Printing out command stderr")
+                logging.error(error)
 
-
-            #error = pipe.stderr.readlines()
-            logging.error("Printing out command stderr")
-            logging.error(error)
-            logging.error("Printing out command stdout")
-            logging.error(output)
             errorCheck, errorMsg = parseError(error = error)
 
                     
@@ -149,6 +146,7 @@ class CondorGlobusPlugin(PluginBase):
                     result['Success'].append(job['id'])
             else:
                 logging.error("JobSubmission failed due to error")
+
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
@@ -170,7 +168,7 @@ class CondorGlobusPlugin(PluginBase):
 
         
         jdl.append("universe = globus\n")
-        jdl.append("should_transfer_executable = TRUE\n")
+        jdl.append("requirements = (Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\")")
         jdl.append("transfer_output_files = Report.pkl\n")
         jdl.append("transfer_output_remaps = \"Report.pkl = Report.$(Cluster).$(Process).pkl\"\n")
         jdl.append("should_transfer_files = YES\n")
@@ -198,10 +196,10 @@ class CondorGlobusPlugin(PluginBase):
             #I don't know how we got here, but we did
             logging.error("No jobs passed to plugin")
             return None
-
+        
         jdl = self.initSubmit()
 
-
+        
         # For each script we have to do queue a separate directory, etc.
         for job in jobList:
             if job == {}:

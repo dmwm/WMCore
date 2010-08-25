@@ -11,12 +11,15 @@ except:
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-from WorkQueuePopulator import createProductionSpec, createProcessingSpec, getGlobalQueue
+
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
+from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
-class WorkQueueTest(RESTBaseUnitTest):
+
+class WorkQueueTest(RESTBaseUnitTest, EmulatorUnitTestBase):
     """
     Test WorkQueue Service client
     It will start WorkQueue RESTService
@@ -41,26 +44,36 @@ class WorkQueueTest(RESTBaseUnitTest):
         setUP global values
         """
         RESTBaseUnitTest.setUp(self)
+        EmulatorUnitTestBase.setUp(self)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
         
-        self.globalQueue = getGlobalQueue(dbi = self.testInit.getDBInterface(),
-                                          CacheDir = 'global',
+        #cache location is set under current directory - Global
+        self.globalQueue = globalQueue(dbi = self.testInit.getDBInterface(),
+                                          CacheDir = 'Global',
                                           NegotiationTimeout = 0,
-                                          QueueURL = self.config.getServerUrl())    
+                                          QueueURL = self.config.getServerUrl())
+        # original location of wmspec: under current directory - WMSpecs
+        self.specGenerator = WMSpecGenerator("WMSpecs")
+        
+    def tearDown(self):
+        RESTBaseUnitTest.tearDown(self)
+        EmulatorUnitTestBase.tearDown(self)
+        self.specGenerator.removeSpecs()
         
     def testGetWork(self):
-        self.globalQueue.queueWork(createProductionSpec())
+        
+        specName = "ProductionSpec"
+        self.globalQueue.queueWork(self.specGenerator.createProductionSpec(specName, "file"))
         
         wqApi = WorkQueueDS(self.params)
 
         data = wqApi.getWork({'SiteB' : 15, 'SiteA' : 15}, "http://test.url")
         self.assertEqual( len(data) ,  1, "only 1 element needs to be back. Got (%s)" % len(data) )
-        assert data[0]['wmspec_name'] == 'BasicProduction', "spec name is not BasicProduction: %s" \
-                                % data['wmspec_name']
-         
+        self.assertEqual(data[0]['wmspec_name'], specName)
+        
     def testSynchronize(self):
-        self.globalQueue.queueWork(createProcessingSpec())
+        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec('ProcessingSpec', "file"))
         wqApi = WorkQueueDS(self.params)
         childUrl = "http://test.url"
         childResources = [{'ParentQueueId' : 1, 'Status' : 'Available'}]
@@ -72,7 +85,7 @@ class WorkQueueTest(RESTBaseUnitTest):
         
     def testStatusChange(self):
         
-        self.globalQueue.queueWork(createProcessingSpec())
+        self.globalQueue.queueWork(self.specGenerator.createProcessingSpec('ProcessingSpec', "file"))
         wqApi = WorkQueueDS(self.params)
 
         print wqApi.gotWork([1])

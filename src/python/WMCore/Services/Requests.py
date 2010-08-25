@@ -22,33 +22,36 @@ class Requests(dict):
         coverage
         """
         self.setdefault("accept_type", 'text/html')
+        self.setdefault("content_type", 'application/x-www-form-urlencoded')
         self.setdefault("host", url)
         self.setdefault("conn", self._getURLOpener())
 
-    def get(self, uri=None, data={}, encode = True, decode=True):
-        data = self.makeRequest(uri, data, 'GET', encode, decode)
-        return data
+    def get(self, uri=None, data={}, encode = True, decode=True, type=None):
+        """
+        GET some data
+        """
+        return self.makeRequest(uri, data, 'GET', encode, decode, type)
 
-    def post(self, uri=None, data={}, encode = True, decode=True):
+    def post(self, uri=None, data={}, encode = True, decode=True, type=None):
         """
         POST some data
         """
-        return self.makeRequest(uri, data, 'POST', encode, decode)
+        return self.makeRequest(uri, data, 'POST', encode, decode, type)
 
-    def put(self, uri=None, data={}, encode = True, decode=True):
+    def put(self, uri=None, data={}, encode = True, decode=True, type=None):
         """
         PUT some data
         """
-        return self.makeRequest(uri, data, 'PUT', encode, decode)
+        return self.makeRequest(uri, data, 'PUT', encode, decode, type)
        
-    def delete(self, uri=None, data={}, encode = True, decode=True):
+    def delete(self, uri=None, data={}, encode = True, decode=True, type=None):
         """
         DELETE some data
         """
-        return self.makeRequest(uri, data, 'DELETE', encode, decode)
+        return self.makeRequest(uri, data, 'DELETE', encode, decode, type)
 
     def makeRequest(self, uri=None, data={}, verb='GET',
-                     encoder=True, decoder=True):
+                     encoder=True, decoder=True, type=None):
         """
         Make a request to the remote database. for a give URI. The type of
         request will determine the action take by the server (be careful with
@@ -63,7 +66,14 @@ class Requests(dict):
         as a string.
         
         """
-        headers = {"Content-type": 'application/x-www-form-urlencoded', 
+        # $client/$client_version (CMS) $http_lib/$http_lib_version $os/$os_version ($arch)
+        if type:
+            headers = {"Content-type": type,
+                   "User-agent": "WMCore.Services.Requests/v001",
+                   "Accept": self['accept_type']}
+        else:
+            headers = {"Content-type": self['content_type'],
+                   "User-agent": "WMCore.Services.Requests/v001",
                    "Accept": self['accept_type']}
         encoded_data = ''
         
@@ -160,6 +170,7 @@ class JSONRequests(Requests):
     def __init__(self, url = 'localhost:8080'):
         Requests.__init__(self, url)
         self['accept_type'] = "application/json"
+        self['content_type'] = "application/json"
 
     def encode(self, data):
         """

@@ -4,10 +4,11 @@ _BossLiteDBWM_
 
 """
 
-__version__ = "$Id: BossLiteDBWM.py,v 1.1 2010/05/03 13:03:38 spigafi Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: BossLiteDBWM.py,v 1.2 2010/05/04 15:33:58 spigafi Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 from copy import deepcopy
+import threading
 
 from WMCore.BossLite.Common.Exceptions  import DbError
 from WMCore.BossLite.Common.System      import evalCustomList
@@ -36,6 +37,7 @@ def dbTransaction(func):
         except Exception, ex:
             msg = "Failure in TrackingDB class"
             msg += str(ex)
+            # Is this correct?
             myThread = threading.currentThread()
             myThread.transaction.rollback()
             raise DbError(msg)        
@@ -61,7 +63,10 @@ class BossLiteDBWM(BossLiteDBInterface):
         self.engine = WMConnectionBase(daoPackage = "WMCore.BossLite")
 
     ##########################################################################
+    # Methods for BossLiteAPI
+    ##########################################################################
     
+    @dbTransaction
     def insert(self, obj):
         """
         Uses default values for non specified parameters. Note that all
@@ -97,6 +102,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
     ##########################################################################
 
+    @dbTransaction
     def select(self, template, strict = True):
         """
         _select_
@@ -160,6 +166,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
     ##########################################################################
 
+    @dbTransaction
     def selectDistinct(self, template, distinctAttr, strict = True):
         """
         _select_
@@ -224,7 +231,9 @@ class BossLiteDBWM(BossLiteDBInterface):
 
     ##########################################################################
 
-    def selectJoin(self, template, jTemplate, jMap=None, less=None, more=None, options=None):
+    @dbTransaction
+    def selectJoin(self, template, jTemplate, 
+                   jMap=None, less=None, more=None, options=None ):
         """
         select from template and jTemplate, using join condition from jMap
         """
@@ -388,6 +397,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
     ##########################################################################
 
+    @dbTransaction
     def update(self, template, skipAttributes = None):
         """
         _update_
@@ -452,6 +462,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
     ##########################################################################
 
+    @dbTransaction
     def delete(self, template):
         """
         _delete_
@@ -550,6 +561,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
     ##########################################################################
     
+    @dbTransaction
     def distinctAttr(self, template, value_1 , value_2, alist ,  strict = True):
         """
         _distinctAttr_
@@ -642,6 +654,7 @@ class BossLiteDBWM(BossLiteDBInterface):
 
     ##########################################################################
 
+    @dbTransaction
     def distinct(self, template, value_1 , strict = True):
         """
         _distinct_
@@ -733,7 +746,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         raise NotImplementedError
     
     ##########################################################################
-    # Metodi di accesso al database specializzati per singolo oggetto
+    # Methods for DbObjects
     ##########################################################################
     
     @dbTransaction
@@ -784,8 +797,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         
         elif type(obj) == RunningJob :
             action = self.engine.daofactory(classname = "RunningJob.Save")
-            
-        
+                
         else :
             raise NotImplementedError    
         
@@ -887,6 +899,7 @@ class BossLiteDBWM(BossLiteDBInterface):
         
         elif type(obj) == RunningJob :
             
+            # I think 'LoadByID' is useless...
             if obj.data['id'] > 0:
                 action = self.engine.daofactory(classname = "RunningJob.LoadByID")
                 result = action.execute(id = obj.data['id'], 
@@ -979,3 +992,18 @@ class BossLiteDBWM(BossLiteDBInterface):
                        transaction = self.existingTransaction)  
         
     ##########################################################################
+    # Method for execute raw SQL statements through general-purpose DAO
+    ##########################################################################
+    
+    @dbTransaction
+    def executeSQL(self, query):
+        """
+        Method for execute raw SQL statements through general-purpose DAO
+        """
+        
+        action = self.engine.daofactory(classname = "BLGenericDAO")
+        result = action.execute(rawSql = query,
+                           conn = self.engine.getDBConn(),
+                           transaction = self.existingTransaction) 
+        
+        return result

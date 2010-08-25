@@ -24,6 +24,7 @@ from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
+from nose.plugins.skip import Skip, SkipTest
 
 class DaemonTest(unittest.TestCase):
     """
@@ -63,6 +64,7 @@ class DaemonTest(unittest.TestCase):
 
         Test daemon creation
         """
+        raise SkipTest, "Nobody knows if this code is actually used"
         # keep the parent alive
         self.pid = createDaemon(self.tempDir, True)
         try:

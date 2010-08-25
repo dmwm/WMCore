@@ -5,23 +5,19 @@ Filesets and Feeders manager
 """
 
 __all__ = []
-__revision__ = "$Id: FeederManagerPoller.py,v 1.3 2009/10/19 13:08:15 riahi Exp $" 
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FeederManagerPoller.py,\
+     v 1.4 2009/11/06 12:08:15 riahi Exp $" 
+__version__ = "$Revision: 1.4 $"
 
+import os
 import threading
 import logging
+
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.WMFactory import WMFactory
-from WMCore.WMBSFeeder.DBS.Feeder import Feeder
-from WMCore.WMBS.Fileset import Fileset
-#from Registry import retrieveFeederImpl, RegistryError
 from ProdCommon.ThreadTools import WorkQueue
-
-#from sqlalchemy import create_engine
-#import sqlalchemy.pool as pool
-#from sqlalchemy.exceptions import IntegrityError, OperationalError
-#from WMCore.WMBS.Factory import SQLFactory
-
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMFactory import WMFactory
+from WMCore.WMInit import WMInit
 
 # Tracks filesets watched:{filesetName:filesetObject}
 FILESET_WATCH = {}
@@ -75,6 +71,7 @@ class FeederManagerPoller(BaseWorkerThread):
                 logging.debug("Processing %s %s" % \
   ( managedFilesets[fileset]['id'] , managedFilesets[fileset]['name'] ) )
                 filesetToUpdate = Fileset(id=managedFilesets[fileset]['id'])
+
                 filesetToUpdate.loadData()
                 # lock me!
                 FILESET_WATCH[filesetToUpdate.name] = filesetToUpdate
@@ -92,8 +89,7 @@ class FeederManagerPoller(BaseWorkerThread):
       ("the poll key %s result %s is ready !" % (key,str(fileset.id)))
 
 
-            # FIXME: Get it more generic 
-            feederId = self.queries.getFeederId("Feeder")
+            feederId = self.queries.getFeederId((fileset.name).split(":")[1])
             logging.debug("the Feeder %s has processed %s and is \
                   removing it if closed" % (feederId , fileset.name ) ) 
 
@@ -102,6 +98,7 @@ class FeederManagerPoller(BaseWorkerThread):
             # If the fileset is closed remove it
             if fileset.open == False: 
                 self.queries.removeManagedFilesets(fileset.id, feederId)
+
                 # lock me!
                 del FILESET_WATCH[key]
 
@@ -111,41 +108,30 @@ class FeederManagerPoller(BaseWorkerThread):
         Call relevant external source and get file details
         """
 
-        # Looking for!  
-        #try:
-             # fileset.source can be dataset feeder
-             #fileset.source 
-        #     feeder = retrieveFeederImpl("Feeder")
-        #except RegistryError:
-        #     msg = "WMBSFeeder plugin \'%s\' unknown" % fileset.source
-        #     logging.error(msg)
-        #     logging.error("aborting poll for...")
-        #     raise RuntimeError, msg
-    
-        # do we have any parents we need
-        #if fileset.parents and fileset.listNewFiles()\ 
-                 # and not fileset.listNewFiles()[0].parents(): 
-        # get parentage from dbs
-        ##     try:
-        ##         parentFeeder = retrieveFeederImpl('dbs', fileset)
-        ##     except RegistryError:
-        ##         msg = "WMBSFeeder plugin \'%s\' unknown" % 'dbs'
-        ##         logging.error(msg)
-        ##         logging.error("aborting poll for...")
-        ##         raise RuntimeError, msg
-        
-        ##fileset = parentFeeder.getParentsForNewFiles(fileset)
+        # Get configuration       
+        self.init = WMInit()
+        self.init.setLogging()
+        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+            os.getenv('DIALECT'), os.getenv("DBSOCK"))
 
-        # FIXME: Get it more generic
-        logging.debug("feeder name is %s" %(fileset.name).split(":")[1])
 
-        feeder = Feeder()
-
+        logging.debug("Feeder name %s" %(fileset.name).split(":")[1])
         try:
-            feeder(fileset)
-        except:
-            logging.debug("ERROR when calling Feeder")
 
+            factory = WMFactory("default", \
+                "WMCore.WMBSFeeder." + (fileset.name).split(":")[1])
+            feeder = factory.loadObject("Feeder")
+            feeder(fileset)
+
+        except:
+
+            msg = "Feeder plugin \'%s\' unknown" \
+              % (fileset.name).split(":")[1] 
+            logging.info(msg)
+            logging.info("aborting poll for...closing fileset")
+            fileset.markOpen(False)
+            fileset.commit()
+     
         return fileset 
 
     def algorithm(self, parameters):

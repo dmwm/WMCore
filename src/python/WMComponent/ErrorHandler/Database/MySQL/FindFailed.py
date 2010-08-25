@@ -10,9 +10,9 @@ errorhandler, for locating the fialed jobs in certain state
 """
 
 __revision__ = \
-    "$Id: FindFailed.py,v 1.1 2009/05/08 16:32:40 afaq Exp $"
+    "$Id: FindFailed.py,v 1.2 2009/05/08 17:16:37 afaq Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "anzar@fnal.gov"
 
@@ -26,8 +26,9 @@ class FindFailed(DBFormatter):
     create job error handler.
     
     """
-
-    sqlStr = """SELECT ID FROM wmbs_job, jsm_state WHERE status = :job_status limit 100"""
+    
+    sqlStr = """SELECT wmbs_job.id as ID, jsm_state.retry_max as RETRY_MAX, wmbs_job.retry_count as RETRY_COUNT 
+			FROM wmbs_job, jsm_state WHERE wmbs_job.status = :job_status and jsm_state.ID=wmbs_job.state  limit 100"""
     
     def __init__(self):
         myThread = threading.currentThread()
@@ -47,6 +48,8 @@ class FindFailed(DBFormatter):
         """
         formattedResult = DBFormatter.formatDict(self, result)[0]
         formattedResult["id"] = int(formattedResult["id"])
+        formattedResult["retry_count"] = int(formattedResult["retry_count"])
+        formattedResult["retry_max"] = int(formattedResult["retry_max"])
         return formattedResult
  
     def execute(self, jobStatus, conn=None, transaction = False):

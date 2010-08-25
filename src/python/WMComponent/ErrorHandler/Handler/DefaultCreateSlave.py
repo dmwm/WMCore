@@ -5,8 +5,8 @@ Slave used for default create failure handler.
 
 __all__ = []
 __revision__ = \
-    "$Id: DefaultCreateSlave.py,v 1.2 2008/09/30 18:25:38 fvlingen Exp $"
-__version__ = "$Revision: 1.2 $"
+    "$Id: DefaultCreateSlave.py,v 1.3 2009/05/08 17:16:37 afaq Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -29,8 +29,20 @@ class DefaultCreateSlave(DefaultSlave):
             +str(parameters))
         sleepTime = random.randint(0, 5)
         myThread = threading.currentThread()
+
         # we need to do this in our slave otherwise the failure
         # messages that might have been published, will not be send.
+
+	# Discover the jobs that failed in create step (with status 'createfailed')
+	jobs = listCreateFailed.execute()
+	# Retries < max retry count
+	for ajob in jobs:
+		# Retries < max retry count
+		if ajob['retry_count'] < ajob['retry_amx']:
+			#SIMON's CODE SHOULD PUT the job in "exhausted" state
+		# Check if Retries >= max retry count
+		if ajob['retry_count'] >= ajob['retry_max']:
+			#SIMON's CODE SHOULD PUT the job in "retrycooloff" state
         myThread.msgService.finish()
 
         time.sleep(sleepTime) 

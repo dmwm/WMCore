@@ -2,7 +2,7 @@
 import unittest
 
 import WMCore.Storage.Backends
-import WMCore.Storage.Plugins
+import WMCore.Storage.Plugins.TestWinImpl
 from WMCore.Storage.Registry import retrieveStageOutImpl
 
 
@@ -18,7 +18,7 @@ class TestRegistry(unittest.TestCase):
                 WMCore.Storage.Backends.UnittestImpl.WinImpl))
         # make sure that you get the new one if you want it
         self.assertTrue( retrieveStageOutImpl('test-win', useNewVersion = True), 
-                WMCore.Storage.Plugins.StageOutUnitTest.WinImpl)
+                WMCore.Storage.Plugins.TestWinImpl.TestWinImpl)
 
 
 

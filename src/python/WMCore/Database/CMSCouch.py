@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.20 2009/05/19 15:12:07 metson Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: CMSCouch.py,v 1.21 2009/05/26 21:07:22 meloam Exp $"
+__version__ = "$Revision: 1.21 $"
 
 try:
     # Python 2.6
@@ -177,7 +177,7 @@ class Database(CouchDBRequests):
             doc = self.timestamp(doc)
         self._queue.append(doc)
 
-    def queuedelete(self, doc):
+    def queueDelete(self, doc):
         """
         Queue up a document for deletion
         """
@@ -225,7 +225,7 @@ class Database(CouchDBRequests):
         """
         return self.post('/%s/_compact' % self.name)
 
-    def loadview(self, design, view, options = {}, keys = []):
+    def loadView(self, design, view, options = {}, keys = []):
         """
         Load a view by getting, for example:
         http://localhost:5984/tester/_view/viewtest/age_name?count=10&group=true

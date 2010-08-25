@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.7 2010/02/11 17:09:48 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.8 2010/05/03 19:24:22 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
@@ -109,9 +109,14 @@ class JobTrackerPoller(BaseWorkerThread):
 
         locListAction = self.daoFactory(classname = "Jobs.GetLocation")
         locDict = locListAction.execute(jobid = jobDictList)
+        #logging.error("Have locations in trackJobs")
+        #logging.error(locDict)
 
         trackDict = self.getInfo(locDict)
 
+        #logging.error("Have info")
+        #logging.info(trackDict)
+        
         passedJobs, failedJobs = self.parseJobs(trackDict)
 
         #logging.error("In trackJobs")
@@ -187,7 +192,8 @@ class JobTrackerPoller(BaseWorkerThread):
             job = Job(id = jobID)
             job.load()
             listOfJobs.append(job)
-            job.setFWJRPath(os.path.join(job.getCache(), 'Report.pkl'))
+            job.setFWJRPath(os.path.join(job.getCache(),
+                                         'Report.%i.pkl' % (job['retry_count'])))
 
         self.changeState.propagate(listOfJobs, 'jobfailed', 'executing')
 

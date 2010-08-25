@@ -7,8 +7,8 @@ a set of jobs based on event counts.  Each jobgroup returned will only
 contain jobs for a single file.
 """
 
-__revision__ = "$Id: FileAndEventBased.py,v 1.10 2009/07/30 18:37:07 sfoulkes Exp $"
-__version__  = "$Revision: 1.10 $"
+__revision__ = "$Id: FileAndEventBased.py,v 1.11 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.11 $"
 
 from sets import Set
 
@@ -19,8 +19,7 @@ class FileAndEventBased(JobFactory):
     """
     Split jobs by number of events
     """
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -46,28 +45,21 @@ class FileAndEventBased(JobFactory):
                 if not selectionAlgorithm( f ):
                     self.subscription.completeFiles( [ f ] )
                     continue
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroups.append(jobGroup)
+            self.newGroup()
             eventsInFile = int(f["events"])
 
             if eventsInFile == 0:
-                currentJob = jobInstance(name = makeUUID())
+                self.newJob(name = makeUUID())
                 self.subscription.acquireFiles(f)
-                currentJob.addFile(f)
-                currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)                
-                jobGroup.add(currentJob)
-                jobGroup.commit()
+                self.currentJob.addFile(f)
+                self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)
                 continue
 
             currentEvent = 0
             while currentEvent < eventsInFile:
-                currentJob = jobInstance(name = makeUUID())
-                currentJob.addFile(f)
-                currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
-                jobGroup.add(currentJob)
+                self.newJob(name = makeUUID())
+                self.currentJob.addFile(f)
+                self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                 currentEvent += eventsPerJob
                 
             self.subscriptions.acquireFiles(f)
-            jobGroup.commit()
-
-        return jobGroups

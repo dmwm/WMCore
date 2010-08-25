@@ -6,8 +6,8 @@ If the current time is beyond trigger_time, add
 any unacquired jobs to 
 """
 
-__revision__ = "$Id: FixedDelay.py,v 1.1 2009/07/22 21:25:51 meloam Exp $"
-__version__  = "$Revision: 1.1 $"
+__revision__ = "$Id: FixedDelay.py,v 1.2 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.2 $"
 
 from sets import Set
 
@@ -21,20 +21,13 @@ class FixedDelay(JobFactory):
     pull all the available files into a
     new job
     """
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
         A time delay job splitting algorithm, will shove all unacquired
         files into a new job if the trigger_time has been passed
         """
-       
-        #  //
-        # // Resulting job set (shouldnt this be a JobGroup??)
-        #//
-        #jobs = Set()
-        jobs = []
 
         #  //
         # // get the fileset
@@ -43,24 +36,13 @@ class FixedDelay(JobFactory):
         trigger_time = kwargs['trigger_time']
         if (trigger_time < time.gmtime()):
             availFiles = self.subscription.availableFiles()
-                
-            baseName = makeUUID()
-            currentJob = jobInstance(name = '%s-endofrun' % (baseName,))
-            
             if (len(availFiles) == 0):
                 # no files to acquire
                 return []
+                
+            baseName = makeUUID()
+            self.newGroup()
+            self.newJob(name = '%s-endofrun' % (baseName,))
             
             for f in availFiles:                    
-                currentJob.addFile(f)
-                    
-            jobs.append(currentJob)
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroup.add(jobs)
-            jobGroup.commit()
-            #jobGroup.recordAcquire(list(jobs))
-            return [jobGroup]
-        else:
-            return []
-
- 
+                self.currentJob.addFile(f)

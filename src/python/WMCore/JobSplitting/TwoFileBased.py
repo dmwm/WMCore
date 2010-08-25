@@ -7,8 +7,8 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.5 2009/08/03 19:48:14 sfoulkes Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.6 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.6 $"
 
 import logging
 from sets import Set
@@ -17,8 +17,7 @@ from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
 
 class TwoFileBased(JobFactory):
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -36,19 +35,10 @@ class TwoFileBased(JobFactory):
         for availableFile in self.subscription.availableFiles():
             availableFile.loadData(parentage = 1)
             if filesInJob == 0 or filesInJob == filesPerJob:
-                if jobGroup:
-                    jobGroup.commit()
-                jobGroup = groupInstance(subscription = self.subscription)
-                jobGroups.append(jobGroup)
-                job = jobInstance(name = "%s-%s" % (baseName, len(jobGroups) + 1))
-                jobGroup.add(job)
+                self.newGroup()
+                self.newJob(name = "%s-%s" % (baseName, len(jobGroups) + 1))
                 filesInJob = 0
 
             filesInJob += 1
             self.subscription.acquireFiles(availableFile)
-            job.addFile(availableFile)
-
-        if jobGroup:
-            jobGroup.commit()
-
-        return jobGroups
+            self.currentJob.addFile(availableFile)

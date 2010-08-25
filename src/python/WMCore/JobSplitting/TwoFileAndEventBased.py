@@ -4,8 +4,8 @@ _TwoFileAndEventBased_
 
 """
 
-__revision__ = "$Id: TwoFileAndEventBased.py,v 1.3 2009/07/30 18:37:07 sfoulkes Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: TwoFileAndEventBased.py,v 1.4 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.4 $"
 
 from sets import Set
 
@@ -16,8 +16,7 @@ class TwoFileAndEventBased(JobFactory):
     """
     Split jobs by number of events
     """
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -44,27 +43,20 @@ class TwoFileAndEventBased(JobFactory):
                     self.subscription.completeFiles( [ f ] )
                     continue
             f.loadData(parentage = 1)
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroups.append(jobGroup)
+            self.newGroup()
             eventsInFile = f['events']
 
             if eventsInFile == 0:
-                currentJob = jobInstance(name = makeUUID())
-                currentJob.addFile(f)
+                self.newJob(name = makeUUID())
+                self.currentJob.addFile(f)
                 self.subscription.acquireFiles(f)
-                jobGroup.add(currentJob)
-                jobGroup.commit()
                 continue
 
             currentEvent = 0
             while currentEvent < eventsInFile:
-                currentJob = jobInstance(name = makeUUID())
+                self.newJob(name = makeUUID())
                 currentJob.addFile(f)
                 currentJob.mask.setMaxAndSkipEvents(eventsPerJob, currentEvent)
-                jobGroup.add(currentJob)
                 currentEvent += eventsPerJob
 
             self.subscription.acquireFiles(f)
-            jobGroup.commit()
-
-        return jobGroups

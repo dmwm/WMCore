@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.4 2009/08/27 16:48:11 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.5 2009/09/30 12:30:54 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 
@@ -139,15 +139,12 @@ class WMBSMergeBySize(JobFactory):
         Create a merge job for the given merge units.  All the files contained
         in the merge units will be associated to the job.
         """
-        newJob = self.jobInstance(name = makeUUID())
+        self.newJob(name = makeUUID())
         sortedFiles = sortedFilesFromMergeUnits(mergeUnits)
 
         for file in sortedFiles:
             file.load()
-            newJob.addFile(file)
-
-        self.jobs.append(newJob)
-        return
+            self.currentJob.addFile(file)
     
     def defineMergeJobs(self, mergeUnits):
         """
@@ -187,8 +184,7 @@ class WMBSMergeBySize(JobFactory):
 
         return
     
-    def algorithm(self, groupInstance = None, jobInstance = None,
-                  *args, **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -201,10 +197,6 @@ class WMBSMergeBySize(JobFactory):
         self.maxMergeSize = int(kwargs.get("max_merge_size", 1000000000))
         self.minMergeSize = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))
-        self.jobs = []
-
-        self.jobInstance = jobInstance
-        self.groupInstance = groupInstance
 
         self.subscription["fileset"].load()
 
@@ -224,16 +216,11 @@ class WMBSMergeBySize(JobFactory):
         mergeUnits = self.defineMergeUnits(mergeableFiles)
         mergeUnits.sort(mergeUnitCompare)
 
+        self.newGroup()
         self.defineMergeJobs(mergeUnits)
 
         if len(self.jobs) == 0:
             return []
 
-        jobGroup = groupInstance(subscription = self.subscription)
-        jobGroup.add(self.jobs)
-        jobGroup.commit()
-
         for job in self.jobs:
             self.subscription.acquireFiles(job["input_files"])
-        
-        return [jobGroup]

@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: FileBased.py,v 1.18 2009/09/10 18:58:17 mnorman Exp $"
-__version__  = "$Revision: 1.18 $"
+__revision__ = "$Id: FileBased.py,v 1.19 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.19 $"
 
 from sets import Set
 from sets import ImmutableSet
@@ -26,12 +26,11 @@ class FileBased(JobFactory):
     Split jobs by number of files.
     """
 
-    def getJobName(self, baseName, length):
-        return '%s-%s' %(baseName, str(length))
+    def getJobName(self, length=None):
+        return '%s-%s' %(makeUUID(), str(length))
         #return baseName+str(length+1)
     
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -39,16 +38,15 @@ class FileBased(JobFactory):
         maximum of 'files_per_job'.  If the 'files_per_job' parameters is not
         passed in jobs will process a maximum of 10 files.
         """
-
         myThread = threading.currentThread()
+        
+        self.newGroup()
         
         filesPerJob  = int(kwargs.get("files_per_job", 10))
         filesInJob   = 0
         totalJobs    = 0 
         jobs         = []
         listOfFiles  = []
-        jobGroupList = []
-        baseName     = makeUUID()
 
         #Get a dictionary of sites, files
         locationDict = self.sortByLocation()
@@ -57,37 +55,18 @@ class FileBased(JobFactory):
             #Now we have all the files in a certain location
             fileList   = locationDict[location]
             filesInJob = 0
-            jobs       = []
             if len(fileList) == 0:
                 continue
-
             for file in fileList:
                 if filesInJob == 0 or filesInJob == filesPerJob:
-                    job = jobInstance(name = self.getJobName(baseName, totalJobs))
+                    self.newJob(name = self.getJobName(length=filesInJob))
                     totalJobs += 1
-
-                    jobs.append(job)
                     filesInJob = 0
                     
                 filesInJob += 1
-                job.addFile(file)
+                self.currentJob.addFile(file)
+                
                 listOfFiles.append(file)
-
-            logging.info('I have %i jobs for location %s' %(len(jobs), location))
-
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroup.add(jobs)
-            jobGroup.commitBulk()
-            jobGroupList.append(jobGroup)
-
-            logging.debug('I have committed a jobGroup with id %i' %(jobGroup.id))
-
 
         #We need here to acquire all the files we have assigned to jobs
         self.subscription.acquireFiles(files = listOfFiles)
-
-        return jobGroupList
-        
-        
-
- 

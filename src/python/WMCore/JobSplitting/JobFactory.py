@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.14 2009/09/10 18:58:58 mnorman Exp $"
-__version__  = "$Revision: 1.14 $"
+__revision__ = "$Id: JobFactory.py,v 1.15 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.15 $"
 
 
 import logging
@@ -22,32 +22,47 @@ class JobFactory(WMObject):
     JobGroup object. The JobFactory should be subclassed by real splitting 
     algorithm implementations.
     """
-    def __init__(self, package='WMCore.DataStructs', subscription=None):
+    def __init__(self, 
+                 package='WMCore.DataStructs', 
+                 subscription=None, 
+                 generators=[]):
         self.package = package
         self.subscription = subscription
+        self.generators = generators
+        self.jobInstance = None
+        self.groupInstance = None
+        self.jobGroups = []
+        self.currentGroup = None
+        self.currentJob = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
+
 
     def __call__(self, jobtype='Job', grouptype='JobGroup', *args, **kwargs):
         """
         The default behaviour of JobFactory.__call__ is to return a single
         Job associated with all the files in the subscription's fileset
         """
+        
+        #Need to reset the internal data for multiple calls to the factory
+        self.jobGroups = []
+        self.currentGroup = None
+        self.currentJob = None
+        
+        
         module = "%s.%s" % (self.package, jobtype)
         module = __import__(module, globals(), locals(), [jobtype])#, -1)
-        jobInstance = getattr(module, jobtype.split('.')[-1])
+        self.jobInstance = getattr(module, jobtype.split('.')[-1])
         
         module = "%s.%s" % (self.package, grouptype)
         module = __import__(module, globals(), locals(), [grouptype])
-        groupInstance = getattr(module, grouptype.split('.')[-1])
-
-        jobGroups = self.algorithm(groupInstance = groupInstance,
-                                   jobInstance = jobInstance,
-                                   *args, **kwargs)
-
-        return jobGroups
+        self.groupInstance = getattr(module, grouptype.split('.')[-1])
+        
+        self.algorithm(*args, **kwargs)
+        
+        self.commit()
+        return self.jobGroups
     
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -55,9 +70,37 @@ class JobFactory(WMObject):
         subscription and splits them into jobs and inserts them into job groups.
         The algorithm must return a list of job groups.
         """
-        pass
-
-
+        self.newGroup(args, kwargs)
+        self.newJob(name='myJob')
+        
+    def newGroup(self):
+        """
+        Return and new JobGroup
+        """
+        self.commit()
+        self.currentGroup = self.groupInstance(subscription=self.subscription)
+    
+    def newJob(self, name=None, files=None):
+        """
+        Instantiate a new Job onject, apply all the generators to it
+        """
+        self.currentJob = self.jobInstance(name, files)
+        for gen in self.generators:
+            gen(job)
+        self.currentGroup.add(self.currentJob)
+    
+    def commit(self):
+        """
+        Bulk commit the JobGroup
+        """
+        if self.currentGroup \
+                and (self.currentGroup.jobs + self.currentGroup.newjobs) > 0: 
+            self.currentGroup.commitBulk()
+            self.jobGroups.append(self.currentGroup)
+            logging.debug('I have committed a jobGroup with id %i' % 
+                                (self.currentGroup.id))
+            self.currentGroup = None
+            
     def sortByLocation(self):
         """
         _sortByLocation_

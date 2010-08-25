@@ -6,11 +6,10 @@ If a subscription's fileset is closed, make a job that will run over any availab
 files
 """
 
-__revision__ = "$Id: EndOfRun.py,v 1.2 2009/07/28 20:10:39 sfoulkes Exp $"
-__version__  = "$Revision: 1.2 $"
+__revision__ = "$Id: EndOfRun.py,v 1.3 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.3 $"
 
-from sets import Set
-
+import logging
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
 
@@ -19,8 +18,7 @@ class EndOfRun(JobFactory):
     if a subscription's fileset is closed, pull all the available files into a
     new job
     """
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -32,34 +30,29 @@ class EndOfRun(JobFactory):
         #  //
         # // Resulting job set (shouldnt this be a JobGroup??)
         #//
-        #jobs = Set()
-        jobs = []
+        self.newGroup()
 
         #  //
         # // get the fileset
         #//
         fileset = self.subscription.getFileset()
-        fileset.load()
+        try:
+            fileset.load()
+        except AttributeError, ae:
+            logging.warning("Not using a WMBS fileset, hopefully this is a unit test")
+            pass    
 
         if (not fileset.open):
             availFiles = self.subscription.availableFiles()
 
             baseName = makeUUID()
-            currentJob = jobInstance(name = '%s-endofrun' % (baseName,))
+            self.newJob(name = '%s-endofrun' % (baseName,))
             
             if (len(availFiles) == 0):
                 # no files to acquire
                 return []
             
             for f in availFiles:                    
-                currentJob.addFile(f)
+                self.currentJob.addFile(f)
 
             self.subscription.acquireFiles(availFiles)
-
-            jobs.append(currentJob)
-            jobGroup = groupInstance(subscription = self.subscription)
-            jobGroup.add(jobs)
-            jobGroup.commit()
-            return [jobGroup]
-        else:
-            return []

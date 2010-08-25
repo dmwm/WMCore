@@ -11,8 +11,8 @@ Note that the period here refers to the amount of time between the end of a job
 and the creation of a new job.
 """
 
-__revision__ = "$Id: Periodic.py,v 1.4 2009/08/13 19:44:19 sfoulkes Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: Periodic.py,v 1.5 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.5 $"
 
 import time
 import threading
@@ -69,8 +69,7 @@ class Periodic(JobFactory):
 
         return False
 
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
@@ -99,11 +98,6 @@ class Periodic(JobFactory):
         else:
             self.subscription.acquireFiles(availableFiles)
 
-
-        newJob = jobInstance(name = makeUUID())
-        newJob.addFile(allFiles)
-        newJobGroup = groupInstance(subscription = self.subscription)
-        newJobGroup.add(newJob)
-        newJobGroup.commit()
-
-        return [newJobGroup]
+        self.newGroup()
+        self.newJob(name = makeUUID())
+        self.currentJob.addFile(allFiles)

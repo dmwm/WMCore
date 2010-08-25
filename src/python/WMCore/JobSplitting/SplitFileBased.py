@@ -8,8 +8,8 @@ but instead of combining multiple merge units together this will create a
 single job for each merge unit.
 """
 
-__revision__ = "$Id: SplitFileBased.py,v 1.2 2009/07/02 15:46:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SplitFileBased.py,v 1.3 2009/09/30 12:30:54 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -142,34 +142,21 @@ class SplitFileBased(JobFactory):
         merging will work correctly.
         """
         for mergeUnit in mergeUnits:
-            newJobGroup = self.groupInstance(subscription = self.subscription)
-            newJob = self.jobInstance(name = makeUUID())            
+            self.newGroup()
+            self.newJob(name = makeUUID())            
             sortedFiles = sortedFilesFromMergeUnits([mergeUnit])
 
             for file in sortedFiles:
                 file.load()
-                newJob.addFile(file)
-
-            newJobGroup.add(newJob)
-            newJobGroup.commit()
-            newJobGroup.recordAcquire(newJob)
-
-            self.jobGroups.append(newJobGroup)
-            
-        return
+                self.currentJob.addFile(file)
     
-    def algorithm(self, groupInstance = None, jobInstance = None,
-                  *args, **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
         Use the generic WMBS merging DAO to get a list of files in our fileset
         that correspond to completed job groups.  Create jobs for these files.
         """
-        self.jobGroups = []
-
-        self.jobInstance = jobInstance
-        self.groupInstance = groupInstance
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS",

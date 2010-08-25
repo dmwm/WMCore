@@ -7,8 +7,8 @@ based on the size of the files
 
 """
 
-__revision__ = "$Id: MergeBySize.py,v 1.4 2009/02/26 20:06:40 ewv Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: MergeBySize.py,v 1.5 2009/09/30 12:30:54 metson Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 from WMCore.JobSplitting.JobFactory import JobFactory
@@ -27,14 +27,13 @@ class MergeBySize(JobFactory):
 
 
     """
-    def algorithm(self, jobInstance = None, jobName=None, *args, **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
 
         Implement merge algorithm for the subscription provided
 
         """
-        jobs = Set()
         fileset = list(self.subscription.availableFiles())
 
         mergeSize = kwargs['merge_size']
@@ -43,31 +42,21 @@ class MergeBySize(JobFactory):
 
         accumSize = 0
         accumFiles = []
-
-        for f in fileset:
-            accumSize += f['size']
-            accumFiles.append(f)
-            if accumSize >= mergeSize:
-                job  = jobInstance(name = '%s-%s' % (jobName, len(jobs) +1))
-                job.addFile(accumFiles)
-                job.mask.setMaxAndSkipEvents(-1, 0)
-                jobs.add(job)
-                accumSize = 0
-                accumFiles = []
-
-        if len(accumFiles) > 0:
-            if overflow:
-                job =  jobInstance(name = '%s-%s' % (jobName, len(jobs) +1 ))
-                job.addFile(accumFiles)
-                job.mask.setMaxAndSkipEvents(-1, 0)
-                jobs.add(job)
-
-
-        return jobs
-
-
-
-
-
-
-
+        locationDict = self.sortByLocation()
+        for location in locationDict:
+            self.newGroup()
+            for f in locationDict[location]:
+                accumSize += f['size']
+                accumFiles.append(f)
+                if accumSize >= mergeSize:
+                    self.newJob(name = '%s-%s' % (jobName, len(jobs) +1))
+                    self.currentJob.addFile(accumFiles)
+                    self.currentJob.mask.setMaxAndSkipEvents(-1, 0)
+                    accumSize = 0
+                    accumFiles = []
+    
+            if len(accumFiles) > 0:
+                if overflow:
+                    self.newJob(name = '%s-%s' % (jobName, len(jobs) +1 ))
+                    self.currentJob.addFile(accumFiles)
+                    self.currentJob.mask.setMaxAndSkipEvents(-1, 0)

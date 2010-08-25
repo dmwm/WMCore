@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.17 2009/08/06 16:46:57 mnorman Exp $"
-__version__  = "$Revision: 1.17 $"
+__revision__ = "$Id: RunBased.py,v 1.18 2009/09/30 12:30:54 metson Exp $"
+__version__  = "$Revision: 1.18 $"
 
 from sets import Set
 
@@ -20,8 +20,7 @@ from WMCore.DataStructs.Fileset import Fileset
 from WMCore.Services.UUID import makeUUID
 
 class RunBased(JobFactory):
-    def algorithm(self, groupInstance = None, jobInstance = None, *args,
-                  **kwargs):
+    def algorithm(self, *args, **kwargs):
         """
         _algorithm_
         
@@ -35,13 +34,7 @@ class RunBased(JobFactory):
         requireRunClosed = kwargs.get("require_run_closed", False)
 
         baseName = makeUUID()
-        
-        # Resulting job set
-        jobs = []
-
-        # List of Job Groups
-        jobGroupList = []
-        
+                
         # Select all primary files for the first present run
         curRun = None
         primaryFiles = []
@@ -83,7 +76,7 @@ class RunBased(JobFactory):
             for run in runDict.keys():
                 #Find the runs in the dictionary we assembled and split the files in them
             
-                joblist = []
+                self.newGroup()
 
                 #Now split them into sections according to files per job
                 while len(runDict[run]) > 0:
@@ -94,15 +87,5 @@ class RunBased(JobFactory):
                             jobFiles.addFile(runDict[run].pop())
 
                     # Create the job
-                    job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
-                                      files = jobFiles)
-                    joblist.append(job)
-
-
-                jobGroup = groupInstance(subscription = self.subscription)
-                jobGroup.add(joblist)
-                jobGroup.commit()
-                jobGroupList.append(jobGroup)
-
-
-        return jobGroupList
+                    currentJob = self.newJob('%s-%s' % (baseName, len(self.currentGroup.jobs)), 
+                                             files = jobFiles)

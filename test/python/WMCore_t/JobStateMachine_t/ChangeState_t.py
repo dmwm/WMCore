@@ -122,9 +122,21 @@ class TestChangeState(unittest.TestCase):
                "Error: Name parameter is incorrect."
         assert testJobADoc["jobgroup"] == testJobA["jobgroup"], \
                "Error: Jobgroup parameter is incorrect."
-        assert testJobADoc["mask"] == testJobA["mask"], \
-               "Error: Mask parameter is incorrect."
-        assert testJobADoc["input_files"] == testJobA["input_files"], \
+
+        assert testJobADoc["mask"]["firstevent"] == testJobA["mask"]["FirstEvent"], \
+               "Error: First event in mask is incorrect."
+        assert testJobADoc["mask"]["lastevent"] == testJobA["mask"]["LastEvent"], \
+               "Error: Last event in mask is incorrect."
+        assert testJobADoc["mask"]["firstlumi"] == testJobA["mask"]["FirstLumi"], \
+               "Error: First lumi in mask is incorrect."
+        assert testJobADoc["mask"]["lastlumi"] == testJobA["mask"]["LastLumi"], \
+               "Error: First lumi in mask is incorrect."
+        assert testJobADoc["mask"]["firstrun"] == testJobA["mask"]["FirstRun"], \
+               "Error: First run in mask is incorrect."
+        assert testJobADoc["mask"]["lastevent"] == testJobA["mask"]["LastRun"], \
+               "Error: First event in mask is incorrect."        
+                
+        assert testJobADoc["inputfiles"] == testJobA["input_files"], \
                "Error: Input files parameter is incorrect."
         
         testJobBDoc = change.database.document(testJobB["couch_record"])
@@ -135,9 +147,21 @@ class TestChangeState(unittest.TestCase):
                "Error: Name parameter is incorrect."
         assert testJobBDoc["jobgroup"] == testJobB["jobgroup"], \
                "Error: Jobgroup parameter is incorrect."
-        assert testJobBDoc["mask"] == testJobB["mask"], \
-               "Error: Mask parameter is incorrect."
-        assert testJobBDoc["input_files"] == testJobB["input_files"], \
+
+        assert testJobBDoc["mask"]["firstevent"] == testJobB["mask"]["FirstEvent"], \
+               "Error: First event in mask is incorrect."
+        assert testJobBDoc["mask"]["lastevent"] == testJobB["mask"]["LastEvent"], \
+               "Error: Last event in mask is incorrect."
+        assert testJobBDoc["mask"]["firstlumi"] == testJobB["mask"]["FirstLumi"], \
+               "Error: First lumi in mask is incorrect."
+        assert testJobBDoc["mask"]["lastlumi"] == testJobB["mask"]["LastLumi"], \
+               "Error: First lumi in mask is incorrect."
+        assert testJobBDoc["mask"]["firstrun"] == testJobB["mask"]["FirstRun"], \
+               "Error: First run in mask is incorrect."
+        assert testJobBDoc["mask"]["lastevent"] == testJobB["mask"]["LastRun"], \
+               "Error: First event in mask is incorrect."
+        
+        assert testJobBDoc["inputfiles"] == testJobB["input_files"], \
                "Error: Input files parameter is incorrect."
 
         changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t")
@@ -177,7 +201,7 @@ class TestChangeState(unittest.TestCase):
 
         assert couchJobDoc["name"] == testJobA["name"], \
                "Error: Name is wrong"
-        assert len(couchJobDoc["input_files"]) == 1, \
+        assert len(couchJobDoc["inputfiles"]) == 1, \
                "Error: Wrong number of input files."
                     
         return

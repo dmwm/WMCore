@@ -5,8 +5,8 @@ _WorkerThreadManager_
 A class used to manage regularly running worker threads.
 """
 
-__revision__ = "$Id: WorkerThreadManager.py,v 1.9 2009/08/13 00:05:16 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WorkerThreadManager.py,v 1.10 2009/10/07 20:28:58 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "james.jackson@cern.ch"
 
 import threading
@@ -14,6 +14,9 @@ import logging
 import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+
+# keep track of a unique WTM number
+wtmcount = 0
 
 class WorkerThreadManager:
     """
@@ -30,6 +33,8 @@ class WorkerThreadManager:
         self.lock = threading.Lock()
         self.lock.acquire()
         self.activeThreadCount = 0
+        self.wtmnumber = wtmcount
+        wtmcount = wtmcount + 1
         self.slavecounter = 0
         self.slavelist = []
         self.lock.release()
@@ -58,7 +63,7 @@ class WorkerThreadManager:
         worker.component = self.component
         self.lock.acquire()
         self.slavecounter += 1
-        worker.slaveid = self.slavecounter
+        worker.slaveid = "%s-%s" % (self.wtmnumber, self.slavecounter)
         self.lock.release()
         
         

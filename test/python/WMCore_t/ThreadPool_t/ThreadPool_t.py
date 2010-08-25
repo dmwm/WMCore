@@ -7,8 +7,8 @@ Unit tests for threadpool.
 
 """
 
-__revision__ = "$Id: ThreadPool_t.py,v 1.14 2010/02/10 03:52:26 meloam Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: ThreadPool_t.py,v 1.15 2010/08/02 16:26:07 meloam Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import threading
@@ -66,7 +66,6 @@ class ThreadPoolTest(unittest.TestCase):
         config = self.testInit.getConfiguration()
         # normally assigned by the harness of the test component.
         config.Agent.componentName = "TestComponent"
-        config.CoreDatabase.dialect = os.getenv("DIALECT")
 
         component.config = config
 

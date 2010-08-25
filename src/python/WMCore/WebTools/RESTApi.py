@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.32 2010/01/06 15:48:24 valya Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: RESTApi.py,v 1.33 2010/01/08 18:12:35 metson Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml, make_rfc_timestamp
@@ -116,8 +116,8 @@ class RESTApi(WebAPI):
         except Exception, e:
             response.status = 500
             return self.formatResponse({'exception': 500,
-                                        'type': type(e), 
-                                        'message': e.message},
+                                        'type': e.__class__.__name__, 
+                                        'message': str(e)},
                                         format=kwargs.get('return_type', None))
     
     def formatResponse(self, data, expires=False, format=None):

@@ -6,15 +6,15 @@ DAO object for WorkQueue
 """
 
 __all__ = []
-__revision__ = "$Id: DataSiteMap.py,v 1.1 2010/03/24 19:40:12 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DataSiteMap.py,v 1.2 2010/03/24 19:53:44 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 
 
-class Sites(DBFormatter):
+class DataSiteMap(DBFormatter):
     sql = """SELECT d.id, d.name, s.name FROM wq_data_site_assoc
              INNER JOIN wq_data d ON (d.id = data_id)
              INNER JOIN wq_site s ON (s.id = site_id)

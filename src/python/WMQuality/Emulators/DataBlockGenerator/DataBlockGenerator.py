@@ -21,8 +21,8 @@ class DataBlockGenerator(object):
             
             self.blocks[dataset].append(
                                     {'Name' : blockName,
-                                     'NumEvents' : numOfEvents,
-                                     'NumFiles' : numOfFiles,
+                                     'NumberOfEvents' : numOfEvents,
+                                     'NumberOfFiles' : numOfFiles,
                                      'Size' : size,
                                      'Parents' : ()}
                                      )

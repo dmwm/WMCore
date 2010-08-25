@@ -4,8 +4,8 @@ WorkQueue splitting by block
 
 """
 __all__ = []
-__revision__ = "$Id: MonteCarlo.py,v 1.8 2010/02/11 17:57:00 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: MonteCarlo.py,v 1.9 2010/03/24 16:22:49 sryu Exp $"
+__version__ = "$Revision: 1.9 $"
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from copy import deepcopy
@@ -15,7 +15,7 @@ class MonteCarlo(StartPolicyInterface):
     """Split elements into blocks"""
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
-        self.args.setdefault('SliceType', 'NumEvents')
+        self.args.setdefault('SliceType', 'NumberOfEvents')
         self.args.setdefault('SliceSize', 1000)
 
 

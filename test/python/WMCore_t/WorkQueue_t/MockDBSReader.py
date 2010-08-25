@@ -3,8 +3,8 @@
     Mocked DBS interface for Start Policy unit tests
 """
 
-__revision__ = "$Id: MockDBSReader.py,v 1.2 2010/03/15 18:22:10 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: MockDBSReader.py,v 1.3 2010/03/24 16:24:04 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 #//     - ignore some params in dbs spec - silence pylint warnings
 # pylint: disable-msg=W0613,R0201
@@ -17,8 +17,8 @@ class MockDBSReader:
         self.url = url
         for dataset in datasets:
             self.blocks[dataset] = [{'Name' : dataset + "#1",
-                                     'NumEvents' : 500,
-                                     'NumFiles' : 5,
+                                     'NumberOfEvents' : 500,
+                                     'NumberOfFiles' : 5,
                                      'Size' : 100000,
                                      'Parents' : ()},
                                     {'Name' : dataset + "#2",

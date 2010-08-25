@@ -50,7 +50,7 @@ config.SecurityModule.store = 'filestore'
 config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
 #config.CernOpenID.store.database = 'sqlite://'
 config.SecurityModule.session_name = 'SecurityModule'
-config.SecurityModule.oid_server = 'http://localhost:8000/'
+config.SecurityModule.oid_server = 'http://localhost:8400/'
 config.SecurityModule.handler = 'WMCore.WebTools.OidDefaultHandler'
 
 # The section name is also the location the class will be located

@@ -5,8 +5,8 @@ _Queries_
 Queries for the alert system for the MySQL database.
 """
 
-__revision__ = "$Id: Queries.py,v 1.2 2009/07/10 21:45:34 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Queries.py,v 1.3 2009/10/23 19:57:53 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import time
@@ -57,7 +57,7 @@ class Queries(DBFormatter):
                          COMPONENT, MESSAGE, TIME, :p_2 FROM alert_current
                          WHERE ID = :p_1)"""
         deleteQuery = "DELETE FROM alert_current WHERE ID = :p_1"
-        bindVars = {"p_1": alertID, "p_2": time.time()}
+        bindVars = {"p_1": alertID, "p_2": int(time.time())}
         
         self.execute(insertQuery, bindVars)
         self.execute(deleteQuery, bindVars)

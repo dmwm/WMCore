@@ -22,23 +22,15 @@ class WorkQueueRESTModel(RESTModel):
         self.wq = globalQueue(logger=self, dbi=self.dbi)
         #only support get for now
         self.methods = {'GET':{}, 'POST':{}, 'PUT':{}, 'DELETE':{}}
-        self.addService('POST', 'getwork', self.getWork, args=[])
-        self.addService('PUT', 'synchronize', self.synchronize, args=["child_url", "child_report"])
-        self.addService('PUT', 'gotwork', self.wq.gotWork, args=["parentElementID"])
-        self.addService('PUT', 'failwork', self.wq.failWork, args=["parentElementID"])
-        self.addService('PUT', 'successwork', self.wq.successWork, args=["parentElementID"])
-        self.addService('DELETE', 'deletework', self.wq.deleteWork, args=["parentElementID"])
+        self.addMethod('POST', 'getwork', self.getWork, args=[])
+        self.addMethod('PUT', 'synchronize', self.synchronize, args=["child_url", "child_report"])
+        self.addMethod('PUT', 'gotwork', self.gotWork, args=["elementIDs"])
+        self.addMethod('PUT', 'failwork', self.failWork, args=["elementIDs"])
+        self.addMethod('PUT', 'donework', self.doneWork, args=["elementIDs"])
+        self.addMethod('PUT', 'cancelwork', self.cancelWork, args=["elementIDs"])
+        #self.addMethod('DELETE', 'deletework', self.deleteWork, args=["elementIDs"])
         
-    def addService(self, verb, methodKey, func, args=[], validation=[], version=1):
-        """
-        add service (or any other method handler) in 
-        """ 
-        #TODO Wrap the function to the dict format (json)
-        self.methods[verb][methodKey] = {'args': args,
-                                         'call': func,
-                                         'validation': [],
-                                         'version': version}
-        
+            
     def validateArgs(self, input):
         return input
             
@@ -63,5 +55,65 @@ class WorkQueueRESTModel(RESTModel):
         decodedChildReport = jsonwrapper.loads(child_report)
         
         result = self.wq.synchronize(child_url, decodedChildReport)
+        #print result
+        return result
+    
+    def doneWork(self, elementIDs):
+        """
+        _doneWork_
+        
+        TODO: not the best way to handle parameters which is not in dict format
+        find the better way to handle it 
+        """
+        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        result = self.wq.doneWork(decodedElementIDs)
+        #print result
+        return result
+    
+    def failWork(self, elementIDs):
+        """
+        _failWork_
+        
+        TODO: not the best way to handle parameters which is not in dict format
+        find the better way to handle it 
+        """
+        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        result = self.wq.doneWork(decodedElementIDs)
+        #print result
+        return result
+    
+    def cancelWork(self, elementIDs):
+        """
+        _cancelWork_
+        
+        TODO: not the best way to handle parameters which is not in dict format
+        find the better way to handle it 
+        """
+        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        result = self.wq.doneWork(decodedElementIDs)
+        #print result
+        return result
+    
+    def gotWork(self, elementIDs):
+        """
+        _doneWork_
+        
+        TODO: not the best way to handle parameters which is not in dict format
+        find the better way to handle it 
+        """
+        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        result = self.wq.doneWork(decodedElementIDs)
+        #print result
+        return result
+    
+    def deleteWork(self, elementIDs):
+        """
+        _deleteWork_
+        
+        TODO: not the best way to handle parameters which is not in dict format
+        find the better way to handle it 
+        """
+        decodedElementIDs = jsonwrapper.loads(elementIDs)
+        result = self.wq.doneWork(decodedElementIDs)
         #print result
         return result

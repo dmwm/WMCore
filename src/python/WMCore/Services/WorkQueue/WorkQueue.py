@@ -115,4 +115,47 @@ class WorkQueue(Service):
         callname = 'synchronize'
         return self._getResult(callname, args = args, verb="PUT")
     
+    def doneWork(self, elementIDs):
+        """
+        _doneWork_
+        """
+        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        args = {}
+        args['elementIDs'] = encodedElementIDs
         
+        callname = 'donework'
+        return self._getResult(callname, args = args, verb="PUT")
+    
+    def failWork(self, elementIDs):
+        """
+        _failWork_
+        """
+        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        args = {}
+        args['elementIDs'] = encodedElementIDs
+        
+        callname = 'failwork'
+        return self._getResult(callname, args = args, verb="PUT")
+    
+    def cancelWork(self, elementIDs):
+        """
+        _cancelWork_
+        """
+        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        args = {}
+        args['elementIDs'] = encodedElementIDs
+        
+        callname = 'cancelwork'
+        return self._getResult(callname, args = args, verb="PUT")
+    
+    def gotWork(self, elementIDs):
+        """
+        _gotWork_
+        """
+        encodedElementIDs = jsonwrapper.dumps(elementIDs)
+        args = {}
+        args['elementIDs'] = encodedElementIDs
+        
+        callname = 'gotwork'
+        return self._getResult(callname, args = args, verb="PUT")
+    

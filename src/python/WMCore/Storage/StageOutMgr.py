@@ -11,7 +11,7 @@ use this class as a basic API
 
 import os
 
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+#from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
@@ -56,6 +56,8 @@ class StageOutMgr:
 
         self.numberOfRetries = 3
         self.retryPauseTime = 600
+
+        from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 
         #  //
         # // If override isnt None, we dont need SiteCfg, if it is
@@ -164,7 +166,7 @@ class StageOutMgr:
         return
 
 
-    def __call__(self, **fileToStage):
+    def __call__(self, fileToStage):
         """
         _operator()_
 

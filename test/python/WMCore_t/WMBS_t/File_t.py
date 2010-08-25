@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.46 2010/04/12 21:32:46 sryu Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: File_t.py,v 1.47 2010/08/17 21:06:37 mnorman Exp $"
+__version__ = "$Revision: 1.47 $"
 
 import unittest
 import logging
@@ -1172,6 +1172,47 @@ class FileTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
               "ERROR: Some parents are missing"
+
+
+
+    def testAddToFileset(self):
+        """
+        _AddToFileset_
+
+        Test to see if we can add to a fileset using the DAO
+        """
+
+
+        testFileset = Fileset(name = "inputFileset")
+        testFileset.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run( 1, *[45]))
+        testFileB.create()
+
+
+
+        addToFileset = self.daofactory(classname = "Files.AddToFileset")
+        addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
+                             fileset = testFileset.id)
+
+
+        testFileset2 = Fileset(name = "inputFileset")
+        testFileset2.loadData()
+
+        self.assertEqual(len(testFileset2.files), 2)
+        for file in testFileset2.files:
+            self.assertTrue(file in [testFileA, testFileB])
+
+        # Check that adding twice doesn't crash
+        addToFileset.execute(file = [testFileA['lfn'], testFileB['lfn']],
+                             fileset = testFileset.id)
+
+
+        
 
 if __name__ == "__main__":
     unittest.main() 

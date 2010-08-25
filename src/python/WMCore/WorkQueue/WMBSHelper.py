@@ -9,8 +9,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.36 2010/08/13 18:55:55 sryu Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.37 2010/08/16 18:40:49 mnorman Exp $"
+__version__ = "$Revision: 1.37 $"
 
 import logging
 import threading
@@ -195,6 +195,28 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.addFile(wmbsFile)
         self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
+
+
+    def createSubscriptionAndAddFiles(self, dbsBlock):
+        """
+        _createSubscriptionAndAddFiles_
+        
+        Create the subscription and add files at one time to
+        put everything in one transaction.
+
+        """
+
+        self.beginTransaction()
+        
+        sub = self.createSubscription()
+        
+        if dbsBlock != None:
+            self.addFiles(dbsBlock)
+
+
+        self.commitTransaction(existingTransaction = False)
+
+        return sub
     
     def addFiles(self, dbsBlock):
         """
@@ -203,8 +225,6 @@ class WMBSHelper(WMConnectionBase):
         create wmbs files from given dbs block.
         as well as run lumi update
         """
-
-        self.beginTransaction()
 
         for dbsFile in self.validFiles(dbsBlock['Files']):
             self._convertDBSFileToWMBSFile(dbsFile, dbsBlock['StorageElements'])
@@ -218,9 +238,7 @@ class WMBSHelper(WMConnectionBase):
         #self.topLevelFileset.commit()
         self.topLevelFileset.markOpen(False)
 
-        self.commitTransaction(existingTransaction = False)
-        
-        #add to DBSBuffer
+        return
 
 
     def _addFilesToWMBSInBulk(self):
@@ -288,7 +306,36 @@ class WMBSHelper(WMConnectionBase):
                                wmbsFile['merged']])
 
 
+        
+
+
+        if len(fileCreate) > 0:
+
+            self.addFileAction.execute(files = fileCreate,
+                                       conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+            
+            
+            
+            self.setFileRunLumi.execute(file = runLumiBinds,
+                                        conn = self.getDBConn(),
+                                        transaction = self.existingTransaction())
+            
+            self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
+                                            conn = self.getDBConn(),
+                                            transaction = self.existingTransaction())
+            
+            
+            self.setFileLocation.execute(lfn = fileLocations,
+                                         conn = self.getDBConn(),
+                                         transaction = self.existingTransaction())
+
+
+            
+
         if len(fileLFNs) > 0:
+            logging.debug("About to add %i files to fileset %i" % (len(fileLFNs),
+                                                                   self.topLevelFileset.id))
             self.addToFileset.execute(file = fileLFNs,
                                       fileset = self.topLevelFileset.id,
                                       conn = self.getDBConn(),
@@ -298,32 +345,6 @@ class WMBSHelper(WMConnectionBase):
             self.setParentage.execute(binds = parentageBinds,
                                       conn = self.getDBConn(),
                                       transaction = self.existingTransaction())
-
-
-
-
-        if len(fileCreate) < 1:
-            # If we have no files, ditch
-            return
-
-        self.addFileAction.execute(files = fileCreate,
-                                   conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())
-        
-        
-
-        self.setFileRunLumi.execute(file = runLumiBinds,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
-
-        self.setFileAddChecksum.execute(bulkList = fileCksumBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
-
-
-        self.setFileLocation.execute(lfn = fileLocations,
-                                     conn = self.getDBConn(),
-                                     transaction = self.existingTransaction())
 
 
         

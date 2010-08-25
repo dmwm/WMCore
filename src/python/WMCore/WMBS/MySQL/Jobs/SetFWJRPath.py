@@ -5,8 +5,8 @@ _SetFWJRPath_
 MySQL implementation of Jobs.SetFWJRPath
 """
 
-__revision__ = "$Id: SetFWJRPath.py,v 1.1 2009/10/13 20:04:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SetFWJRPath.py,v 1.2 2010/06/01 16:11:32 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -19,7 +19,14 @@ class SetFWJRPath(DBFormatter):
     sql = "UPDATE wmbs_job SET fwjr_path = :fwjrpath WHERE id = :jobid"
 
     def execute(self, jobID = None, fwjrPath = None, conn = None,
-                transaction = False):
-        self.dbi.processData(self.sql, {"jobid": jobID, "fwjrpath": fwjrPath},
+                transaction = False, binds = None):
+        """
+        Send either a jobID and a path, or a list of dictionaries
+        with jobid and fwjrpath values.
+
+        """
+        if not binds:
+            binds = {"jobid": jobID, "fwjrpath": fwjrPath}
+        self.dbi.processData(self.sql, binds,
                              conn = conn, transaction = transaction)
         return

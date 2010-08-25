@@ -6,8 +6,8 @@ Rest Model abstract implementation
 TODO: Decide on refactoring this into a sub class of a VERB implementation...
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.51 2010/01/28 19:53:16 sryu Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: RESTModel.py,v 1.52 2010/01/28 19:58:19 sryu Exp $"
+__version__ = "$Revision: 1.52 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -229,6 +229,10 @@ class RESTModel(WebAPI):
     def processParams(self, args, kwargs):
         """
         If the args and kwargs needs to be processed (encoded, decoded) according to the 
-        http header values or convert request.body overwrite this function in child class 
+        http header values (i.e. content-type) or convert request.body to parameters, 
+        overwrite this function in child class
+        
+        Warning: use this as caution,  args are list of arguement and kwargs dict of argument and value.
+        overwritten function should return same type of tuple [], {}  
         """
         return args, kwargs

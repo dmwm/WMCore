@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.111 2010/05/20 16:30:44 sryu Exp $"
-__version__ = "$Revision: 1.111 $"
+__revision__ = "$Id: WorkQueue.py,v 1.112 2010/05/24 16:48:16 swakef Exp $"
+__version__ = "$Revision: 1.112 $"
 
 
 import time
@@ -98,8 +98,7 @@ class WorkQueue(WorkQueueBase):
 
         #TODO: current directory as a default directory might not be a best choice.
         # Don't know where else though 
-        self.params.setdefault('CacheDir', os.path.join(os.getcwd(),
-                                                        'wf_cache'))
+        self.params.setdefault('CacheDir', os.path.join(os.getcwd(), 'wf'))
         self.params.setdefault('NegotiationTimeout', 3600)
         self.params.setdefault('QueueURL', None) # url this queue is visible on
         self.params.setdefault('FullReportInterval', 3600)

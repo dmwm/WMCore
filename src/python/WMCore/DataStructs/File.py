@@ -6,8 +6,8 @@ Data object that contains details for a single file
 
 """
 __all__ = []
-__revision__ = "$Id: File.py,v 1.23 2009/12/15 14:13:50 spiga Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: File.py,v 1.24 2010/06/22 11:06:52 evansde Exp $"
+__version__ = "$Revision: 1.24 $"
 import datetime
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.DataStructs.Run import Run
@@ -104,3 +104,17 @@ class File(WMObject, dict):
     def __hash__(self):
         hash = self['lfn'].__hash__()
         return hash
+
+    def json(self):
+        """
+        _json_
+        
+        JSON friendly formatted file
+
+        """
+        d = dict()
+        d.update(self)
+        d['runs'] = [ x.json() for x in self['runs'] ]
+        d['locations'] = list(self['locations'])
+        d['parents'] = list(self['parents'])
+        return d

@@ -6,8 +6,8 @@ _Run_
 container representing a run, and its constituent lumi sections
 
 """
-__revision__ = "$Id: Run.py,v 1.5 2009/08/24 15:01:37 sfoulkes Exp $"
-__version__  = "$Revision: 1.5 $"
+__revision__ = "$Id: Run.py,v 1.6 2010/06/22 11:06:52 evansde Exp $"
+__version__  = "$Revision: 1.6 $"
 
 from WMCore.DataStructs.WMObject import WMObject
 
@@ -33,6 +33,13 @@ class Run(WMObject):
             return self.run < rhs.run
         return list(self.lumis) < list(rhs.lumis)
 
+    def json(self):
+        """
+            _json_
+            
+            convert to JSON friendly format
+        """
+        return { "Run" : self.run, "Lumis" : self.lumis}
 
 
     def __gt__(self, rhs):

@@ -84,7 +84,7 @@ class CMSRunHandler(DiagnosticHandler):
 
 
         errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step.name()))
+                              '%s-stderr.log' % (executor.step.._internal_name))
 
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
@@ -125,7 +125,7 @@ class EDMExceptionHandler(DiagnosticHandler):
                                  executor.step.output.jobReport)
 
         errLog = os.path.join(os.path.dirname(jobRepXml),
-                              '%s-stderr.log' % (executor.step.name()))
+                              '%s-stderr.log' % (executor.step._internal_name))
 
 
         addOn = '\n'

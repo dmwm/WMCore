@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.44 2010/02/04 16:22:53 mnorman Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: Job.py,v 1.45 2010/02/15 22:39:20 mnorman Exp $"
+__version__ = "$Revision: 1.45 $"
 
 import datetime
 
@@ -47,6 +47,7 @@ class Job(WMBSBase, WMJob):
         self["cache_dir"]    = None
         self["sandbox"]      = None
         self['fwjr']         = None
+        self['custom']       = {}  # For local add-ons that we want to send to JSON
 
         return
             
@@ -314,6 +315,11 @@ class Job(WMBSBase, WMJob):
             for fwkjr in self["fwkjrs"]:
                 jobDict["fwkjrs"].append(thunker._thunk(fwkjr))
 
+        if self['custom'] != {}:
+            # If we have something in the baggage, attach it.
+            # Baggage must only have simple variables
+            jobDict['custom'] = self['custom']
+
         return jobDict
 
     def getCache(self, refreshFlag = False):
@@ -413,7 +419,7 @@ class Job(WMBSBase, WMJob):
         job["location"]    = self["location"]   
         job["mask"]        = self["mask"]       
         job["task"]        = self["task"]
-        job["input_files"] = self["input_files"]
+        #job["input_files"] = self["input_files"]
         job["sandbox"]     = self["sandbox"]
 
         return job

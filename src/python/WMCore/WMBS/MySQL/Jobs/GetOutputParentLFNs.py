@@ -5,8 +5,8 @@ _GetOutputParentLFNs_
 MySQL implementation of Jobs.GetOutputParentLFNs
 """
 
-__revision__ = "$Id: GetOutputParentLFNs.py,v 1.1 2009/08/21 10:05:04 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: GetOutputParentLFNs.py,v 1.2 2009/08/21 10:45:44 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -30,6 +30,8 @@ class GetOutputParentLFNs(DBFormatter):
 
         Format the result of the query so that it is just a single list of LFNs.
         """
+        results = DBFormatter.format(self, results)
+        
         lfns = []
         for result in results:
             lfns.append(result[0])
@@ -40,10 +42,12 @@ class GetOutputParentLFNs(DBFormatter):
         result = self.dbi.processData(self.inputSQL, {"job": job}, conn = conn,
                                       transaction = transaction)
 
-        if len(result) == 0:
+        formattedResult = DBFormatter.format(self, result)
+
+        if len(formattedResult) == 0:
             return []
 
-        if result[0][1] == 0:
+        if formattedResult[0][1] == 0:
             # The input to the job consisted of unmerged files, so we'll need
             # to query for the parents of the job's input.
             result = self.dbi.processData(self.parentSQL, {"job": job}, conn = conn,

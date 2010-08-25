@@ -3,8 +3,8 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.14 2010/07/02 20:05:10 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.15 2010/07/02 20:27:09 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import re
 import os
@@ -78,8 +78,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     self.wq.logger.exception("Error processing request %s" % reqName)
             
             if workLoads:
-                self.queue.logger.info("There is new work, update location info") 
-                self.queue.updateLocationInfo() 
+                self.wq.logger.info("There is new work, update location info") 
+                self.wq.updateLocationInfo() 
                 
             self.logger.info("%s element(s) obtained from RequestManager" % work)
 

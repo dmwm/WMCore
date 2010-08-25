@@ -4,8 +4,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorPoller.py,v 1.20 2010/08/02 21:34:45 mnorman Exp $"
-__version__  = "$Revision: 1.20 $"
+__revision__ = "$Id: JobCreatorPoller.py,v 1.21 2010/08/12 14:42:41 mnorman Exp $"
+__version__  = "$Revision: 1.21 $"
 
 import threading
 import logging
@@ -49,8 +49,11 @@ class JobCreatorPoller(BaseWorkerThread):
 
 
         #Variables
-        self.jobCacheDir    = config.JobCreator.jobCacheDir
-        self.defaultJobType = config.JobCreator.defaultJobType
+        self.jobCacheDir        = config.JobCreator.jobCacheDir
+        self.defaultJobType     = config.JobCreator.defaultJobType
+        self.count              = 0
+        self.processPoolRestart = getattr(config.JobCreator, 'processPoolRestart', 20)
+        self.restartProcessPool = getattr(config.JobCreator, 'restartProcessPool', False)
 
         
         BaseWorkerThread.__init__(self)
@@ -73,12 +76,6 @@ class JobCreatorPoller(BaseWorkerThread):
 
 
 
-        #Testing
-        self.timing = {'pollSites': 0, 'pollSubscriptions': 0, 'pollJobs': 0,
-                       'askWorkQueue': 0, 'pollSubList': 0, 'pollSubJG': 0, 
-                       'pollSubSplit': 0, 'baggage': 0, 'createWorkArea': 0}
-
-
         self.check()
 
         return
@@ -93,7 +90,7 @@ class JobCreatorPoller(BaseWorkerThread):
             if not os.path.exists(self.jobCacheDir):
                 os.makedirs(self.jobCacheDir)
             else:
-                msg = "Assigned a non-existant cache directory %s.  Failing!" \
+                msg = "Assigned a pre-existant cache object %s.  Failing!" \
                       % (self.jobCacheDir)
                 raise Exception (msg)
 
@@ -104,33 +101,14 @@ class JobCreatorPoller(BaseWorkerThread):
         """
         logging.debug("Running JSM.JobCreator")
         try:
-            self.runJobCreator()
+            self.pollSubscriptions()
         except Exception, ex:
-            #myThread.transaction.rollback()
             msg = "Failed to execute JobCreator \n%s\n" % (ex)
             msg += str(traceback.format_exc())
             msg += "\n\n"
             raise Exception(msg)
 
-        #print self.timing
-        #print "Job took %f seconds" %(time.clock()-startTime)
-
         
-
-    def runJobCreator(self):
-        """
-        Highest level manager for job creation
-
-        """
-
-        #This should do three tasks:
-        #Poll current subscriptions and create jobs.
-        
-        #self.check()
-
-        self.pollSubscriptions()
-    
-        return
 
 
 
@@ -151,21 +129,29 @@ class JobCreatorPoller(BaseWorkerThread):
         myThread.transaction.commit()
 
 
-        #Now go through each one looking for jobs
+        # Create a list of subscriptions to send to
+        # JobCreatorWorkers
         listOfWork = []
         for subscription in subscriptions:
+            listOfWork.append({'subscription': subscription})
 
-
-            #Create a dictionary
-            tmpDict = {'subscription': subscription}
-            listOfWork.append(tmpDict)
-
-        logging.info("Subscriptions enqueued: %s" % listOfWork)
+        logging.debug("Enqueuing the following work: %s" % listOfWork)
             
         if listOfWork != []:
             # Only enqueue if we have work to do!
+            logging.debug("About to enqueue %i items" % (len(listOfWork)))
             self.processPool.enqueue(listOfWork)
             self.processPool.dequeue(totalItems = len(listOfWork))
+            logging.debug("Successfully dequeued work")
+            self.count += 1
+
+
+        # If done, and you've done this several times, restart
+        if self.count >= self.processPoolRestart and self.restartProcessPool:
+            logging.debug("Restarting processPool")
+            self.processPool.restart()
+            self.count = 0
+
     
         return
 

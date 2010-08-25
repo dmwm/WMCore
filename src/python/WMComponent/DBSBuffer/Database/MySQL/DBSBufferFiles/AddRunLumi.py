@@ -5,8 +5,8 @@ _AddRunLumi_
 MySQL implementation of AddRunLumi
 """
 
-__revision__ = "$Id: AddRunLumi.py,v 1.3 2009/12/16 17:45:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: AddRunLumi.py,v 1.4 2010/03/09 18:34:05 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -19,6 +19,11 @@ class AddRunLumi(DBFormatter):
     def getBinds(self, file=None, runs=None):
 
 	binds = []
+
+        if type(file) == list:
+            for entry in file:
+                binds.extend(self.getBinds(file = entry['lfn'], runs = entry['runs']))
+            return binds
 
 	if type(file) == type('string'):
 		lfn = file

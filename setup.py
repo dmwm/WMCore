@@ -19,7 +19,7 @@ Build, clean and test the WMCore package.
 
 def generate_filelist():
     files = []
-    for dirpath, dirnames, filenames in os.walk('./src/python/'):
+    for dirpath, dirnames, filenames in os.walk('src/python/'):
         # skipping CVS directories and their contents
         pathelements = dirpath.split('/')
         result = []
@@ -54,7 +54,7 @@ def runUnitTests():
     sys.path.append(srcpypath)
     
     # Walk the directory tree
-    for dirpath, dirnames, filenames in os.walk('./test/python/WMCore_t'):
+    for dirpath, dirnames, filenames in os.walk('./test/python'):
         # skipping CVS directories and their contents
         pathelements = dirpath.split('/')
         if not 'CVS' in pathelements:
@@ -78,7 +78,7 @@ def runUnitTests():
             failedTestFiles.append(test)
             
     
-    t = TextTestRunner(verbosity=1)
+    t = TextTestRunner(verbosity=0)
     result = t.run(testsuite)
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
@@ -113,7 +113,25 @@ class TestCommand(Command):
         '''
         testfiles = [ ]
         
+        # attempt to perform coverage tests, even if they weren't asked for
+        #   it doesn't cost (much), and by caching the results, a later
+        #   coverage test run doesn't have to run through all the unittests
+        #   just generate the coverage report
+        files = generate_filelist()
+        coverageEnabled = True;
+        try:
+            cov = coverage.coverage(branch = True, data_file="wmcore-coverage.dat" )
+            cov.start()
+            print "Caching code coverage statstics"
+        except:
+            coverageEnabled = False
+        
         result, failedTestFiles = runUnitTests()
+        
+        if coverageEnabled:
+            cov.stop()
+            cov.save()
+            
         if not result.wasSuccessful():
             print "Tests unsuccessful. There were %s failures and %s errors"\
                       % (len(result.failures), len(result.errors))
@@ -315,15 +333,25 @@ class CoverageCommand(Command):
         http://nedbatchelder.com/code/coverage/
         """
         files = generate_filelist()
-        cov = coverage.coverage(branch = True, )
-        cov.start()
-        runUnitTests()
-        cov.stop()
+        dataFile = None
+        cov = None
         
+        # attempt to load previously cached coverage information if it exists
+        try:
+            dataFile = open("wmcore-coverage.dat","r")
+            cov = coverage.coverage(branch = True, data_file='wmcore-coverage.dat')
+            cov.load()
+        except:  
+            cov = coverage.coverage(branch = True, )
+            cov.start()
+            runUnitTests()
+            cov.stop()
+            cov.save()
+            
         # we have our coverage information, now let's do something with it
         # get a list of modules
-        coverage.report(morfs = files, file=open('coverage.txt','w'))
-        return 0.0
+        cov.report(morfs = files, file=sys.stdout)
+        return 0
     
 class DumbCoverageCommand(Command):
     """

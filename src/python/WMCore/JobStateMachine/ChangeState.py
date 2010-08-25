@@ -1,14 +1,16 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W6501, E1103
+# W6501: pass information to logging using string arguments
+# E1103: We attach argument to currentThread elsewhere
 """
 _ChangeState_
 
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.39 2010/05/03 15:52:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: ChangeState.py,v 1.40 2010/05/13 16:36:42 mnorman Exp $"
+__version__ = "$Revision: 1.40 $"
 
-from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.WMObject import WMObject
@@ -16,8 +18,6 @@ from WMCore.JobStateMachine.Transitions import Transitions
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMConnectionBase import WMConnectionBase
 
-import base64
-import urllib
 import threading
 import time
 import logging
@@ -36,11 +36,14 @@ class ChangeState(WMObject, WMConnectionBase):
         self.dialect = self.myThread.dialect
         self.dbi = self.myThread.dbi
 
+        self.database = None
+
         if couchDbName == None:
             couchDbName = getattr(self.config.JobStateMachine, "couchDBName",
                                    "Unknown")
             
         self.dbname = couchDbName
+
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self.logger,
                                      dbinterface = self.dbi)
@@ -50,7 +53,9 @@ class ChangeState(WMObject, WMConnectionBase):
             if self.dbname not in self.couchdb.listDatabases():
                 self.createDatabase()
 
+            logging.error("About to connect to couch")
             self.database = self.couchdb.connectDatabase(couchDbName)
+            logging.error("Connected to couch")
         except Exception, ex:
             logging.error("Error connecting to couch: %s" % str(ex))
 
@@ -82,7 +87,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         return jobs
     
-    def addAttachment(self,name,jobid,url):
+    def addAttachment(self, name, jobid, url):
         """
             addAttachment(name, jobid, url)
         enqueues an attachment to be stuck onto the couchrecord at the
@@ -100,6 +105,11 @@ class ChangeState(WMObject, WMConnectionBase):
         identified by couchID
         """
         results = None
+        if not self.database:
+            # Then we never established a couchDB
+            logging.error("Attempted to getAttachment() " \
+                          + "without valid couch database")
+            return results
         
         try:
             results = self.database.getAttachment(couchID, name)
@@ -132,6 +142,13 @@ class ChangeState(WMObject, WMConnectionBase):
           newstate
           timestamp
         """
+
+        if not self.database:
+            # Then we have no database to record in
+            # Abort the couch part, keep the JSM part
+            logging.error("Attempted to record job with invalid couchDB")
+            return
+        
         transDict = {"oldstate": oldstate, "newstate": newstate,
                      "timestamp": int(time.time())}
 
@@ -143,7 +160,8 @@ class ChangeState(WMObject, WMConnectionBase):
             job["state"] = newstate
             if job["couch_record"] == None:
                 jobIDNoCouch.append(job['id'])
-        couchRecordList = getCouchDAO.execute(jobID = jobIDNoCouch, conn = self.getDBConn(),
+        couchRecordList = getCouchDAO.execute(jobID = jobIDNoCouch,
+                                              conn = self.getDBConn(),
                                               transaction = self.existingTransaction())
         for job in jobs:
             for record in couchRecordList:
@@ -163,12 +181,13 @@ class ChangeState(WMObject, WMConnectionBase):
                 doc = job
                 if not uuID:
                     uuID = makeUUID()
-                doc["_id"] = '%s_%i' %(uuID, newJobCounter)
+                doc["_id"] = '%s_%i' % (uuID, newJobCounter)
                 newJobCounter += 1
                 job["couch_record"] = doc["_id"]
                 doc["state_changes"] = []
                 doc["fwkjrs"] = []
-                couchRecordsToUpdate.append({'jobid': job['id'], 'couchid': doc['_id']})
+                couchRecordsToUpdate.append({'jobid': job['id'],
+                                             'couchid': doc['_id']})
                 couchRecord = doc["_id"]
 
             else:
@@ -189,7 +208,8 @@ class ChangeState(WMObject, WMConnectionBase):
             self.database.queue(doc)
 
         if len(couchRecordsToUpdate) > 0:
-            setCouchDAO.execute(bulkList = couchRecordsToUpdate, conn = self.getDBConn(),
+            setCouchDAO.execute(bulkList = couchRecordsToUpdate,
+                                conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
             
         self.database.commit()

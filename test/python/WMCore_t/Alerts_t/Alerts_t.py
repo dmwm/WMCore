@@ -3,8 +3,8 @@
 
 """
 
-__revision__ = "$Id: Alerts_t.py,v 1.4 2009/10/01 01:29:26 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Alerts_t.py,v 1.5 2009/10/01 01:31:13 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import commands
 import unittest
@@ -65,7 +65,7 @@ class AlertsTest(unittest.TestCase):
         messages = ["SERVER ON FIRE", "Your burrito just exploded.",
                     "The dollar is worthless."]
 
-        print "Publishing Alerts:"
+        #print "Publishing Alerts:"
         publishedAlerts = []
         for i in range(5):
             alertComponent = random.choice(components)            
@@ -75,12 +75,12 @@ class AlertsTest(unittest.TestCase):
             alert = "  %s: %s - %s" % (alertSeverity, alertMessage,
                                        alertComponent)
             publishedAlerts.append(alert)
-            print alert            
+            #print alert            
 
             alertSystem.publishAlert(alertSeverity, alertComponent,
                                      alertMessage)
 
-        print "Retrieving Alerts:"
+        #print "Retrieving Alerts:"
         currentAlerts = alertSystem.listCurrentAlerts()
 
         if len(publishedAlerts) != len(currentAlerts):
@@ -90,7 +90,7 @@ class AlertsTest(unittest.TestCase):
             formattedAlert = "  %s: %s - %s" % (currentAlert["severity"],
                                                 currentAlert["message"],
                                                 currentAlert["component"])
-            print formattedAlert
+            #    print formattedAlert
 
             if formattedAlert not in publishedAlerts:
                 return False

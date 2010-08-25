@@ -9,12 +9,12 @@
 
 import WMCore.Database.CMSCouch as CMSCouch
 import urllib
-import md5
+import hashlib
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.12 2009/08/31 20:06:23 evansde Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: ConfigCache.py,v 1.13 2009/09/04 16:20:01 evansde Exp $"
+__version__ = "$Revision: 1.13 $"
 
 class WMConfigCache:
     '''
@@ -60,9 +60,10 @@ class WMConfigCache:
             and if it's there, just return the existing DBID instead of
             duplicating the rows
         '''
+
         # new_config is a URL suitable for passing to urlopen
         configString = urllib.urlopen( newConfig ).read(-1)
-        configMD5    = md5.new( configString ).hexdigest()
+        configMD5    = hashlib.md5().new( configString ).hexdigest()
         # check and see if this file is already in the DB
         viewresult = self.searchByMD5( configMD5 )
 

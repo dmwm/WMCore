@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.19 2009/07/17 14:30:31 swakef Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: WorkQueue.py,v 1.20 2009/08/12 17:13:46 sryu Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -234,6 +234,17 @@ class _WQElement(WorkQueueBase):
         self.commitTransaction(existingTransaction)
         self.status = status
         
+    def setPriority(self, priority):
+        """
+        Change priority to that given
+        TODO: this overwrites the priority in from workload which might not be what we want.
+        """
+        existingTransaction = self.beginTransaction()
+        statusAction = self.daofactory(classname = "WorkQueueElement.UpdatePriortiy")
+        statusAction.execute(priority, conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+        self.commitTransaction(existingTransaction)
+        self.priority = priority
             
     def updateLocations(self, dbsHelper):
         """
@@ -305,7 +316,7 @@ class WorkQueue(WorkQueueBase):
                 self.elements[ele["id"]] = wqEle
         self.updateLocationInfo()
     
-    def _getWQElement(self, wmSpecID, blockID, nJobs, insertTime):
+    def _getWQElement(self, wmSpecID, blockID, nJobs, insertTime, status="Available"):
         """
         get WQElement using DAO
         TODO this would make more sense to be in _WQElement class. need to put it 
@@ -339,7 +350,7 @@ class WorkQueue(WorkQueueBase):
             for block in blocks:
                 parentBlocks.append(Block.getBlock(block))
                 
-        return _WQElement(wmSpec, nJobs, insertTime, primaryBlock, parentBlocks)
+        return _WQElement(wmSpec, nJobs, insertTime, primaryBlock, parentBlocks, status)
     
     def match(self, conditions):
         """
@@ -382,10 +393,13 @@ class WorkQueue(WorkQueueBase):
         """
         Update priority for an element and re-prioritize the queue
          Return True if status of any blocks changed else False
+         
+        TODO: it doens't change db. make db update as well
         """
         #TODO: Error handling?
-
+        
         wflows = lambda x: x.wmSpec.specUrl  in workflows
+        print wflows
         affected = self.mark(wflows, 'priority', newpriority)
         if affected:
             self.reorderList()
@@ -411,6 +425,25 @@ class WorkQueue(WorkQueueBase):
         """
         _getWork_
         siteJob is dict format of {site: estimateJobSlot}
+        
+        JobCreator calls this method, it will 
+        1. match jobs with work queue element
+        2. create the subscription for it if it is not already exist. 
+           (currently set to have one subscription per a workload)
+           (associate the subscription to workload - currently following naming convention,
+            so it can retrieved by workflow name - but might needs association table)
+        3. fill up the fileset with files in the subscription 
+           when if it is processing jobs. if it is production jobs (MC) fileset will be empty
+        4. TODO: close the fileset if the last workqueue element of the workload is processed. 
+        5. update the workqueue status to ('Acquired') might need finer status change 
+           if it fails to create wmbs files partially
+        6. return list of subscription (or not)
+           it can be only tracked only subscription (workload) level job done
+           or
+           return workquue element list:
+           if we want to track partial level of success. But requires JobCreate map workqueue element
+           to each jobgroup. also doneWork parameter should be list of workqueue element not list 
+           of subscription  
         """
         # always populate the self.elements freshly before the selection 
         self.load()
@@ -424,20 +457,25 @@ class WorkQueue(WorkQueueBase):
             #TODO: task maker will handle creating the subscription
             #It will be already available by now - wqElement.wmSpec.subscriptionID?
             subscription = wmbsHelper.createSubscription()
+            
+            #This is only processing job: production job is random seed as in put
             #TODO: also fill up the files in the fileset
             #      find out how to handle parent files
-            #dbs = self.dbsHelpers[wqElement.wmSpec.dbs_url]
-            #files, pfile = wqElement.listFilesInElement(dbs)
-            #wmbsHelper.createFilesAndAssociateToFileset(files)
-            
+            if wqElement.wmSpec.inputDatasets:
+                dbs = self.dbsHelpers[wqElement.wmSpec.dbs_url]
+                cFiles, pFiles = wqElement.listFilesInElement(dbs)
+                wmbsHelper.addFiles(cFiles, wqElement.locations)
+                #wmbsHelper.addFiles(pFiles)
+            #else: handle production workload
             #TODO: probably need to pass element id list as well if it needs track
             # fine grained status
             # also check if it is the last element in the given spec close the fileset.           
             results.append(subscription)
             wqElement.subscription = subscription
             #TODO: probably need to update the status here since this is not REST call.
-            # gotWork function won't be necessary 
-
+            # gotWork function won't be necessary
+            wqElement.setStatus("Acquired") 
+            
         return results
 
     
@@ -469,7 +507,9 @@ class WorkQueue(WorkQueueBase):
         Iterate over queue, setting field to newvalue
         """
         count = 0
+        print self.elements.values()
         for ele in self.elements.values():
+           
             if searcher(ele):
                 setattr(ele, field, newvalue)
                 count += 1
@@ -510,7 +550,7 @@ class WorkQueue(WorkQueueBase):
         wqElements = []
         for ele in elements:
             wqEle = self._getWQElement(ele["wmspec_id"], ele["block_id"], 
-                       ele["num_jobs"], ele["insert_time"])
+                       ele["num_jobs"], ele["insert_time"], ele["status"])
             wqElements.append(wqEle)
         self.updateLocationInfo(wqElements)
         return wqElements

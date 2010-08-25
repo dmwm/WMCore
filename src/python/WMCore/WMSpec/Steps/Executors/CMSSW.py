@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.10 2009/12/03 22:42:26 evansde Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: CMSSW.py,v 1.11 2009/12/04 20:15:22 evansde Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -77,6 +77,7 @@ class CMSSW(Executor):
         # I don't pass it directly through os.system because I don't
         # trust that there won't be shell-escape shenanigans with
         # arbitrary input files
+        scramSetup     = self.step.application.setup.softwareEnvironment
         scramCommand   = self.step.application.setup.scramCommand
         scramProject   = self.step.application.setup.scramProject
         cmsswVersion   = self.step.application.setup.cmsswVersion
@@ -91,7 +92,7 @@ class CMSSW(Executor):
         scram = Scram(
             command = scramCommand,
             version = cmsswVersion,
-            initialisation = self.step.application.setup.softwareEnvironment,
+            initialise = self.step.application.setup.softwareEnvironment,
             directory = self.step.builder.workingDir
             )
         projectOutcome = scram.project()
@@ -164,7 +165,8 @@ class CMSSW(Executor):
         stdoutHandle = open( self.step.output.stdout , 'w')
         stderrHandle = open( self.step.output.stderr , 'w')
 
-        args = ['/bin/bash', configPath, scramCommand,
+        args = ['/bin/bash', configPath, scramSetup,
+                                         scramCommand,
                                          scramProject,
                                          cmsswVersion,
                                          jobReportXML,
@@ -238,23 +240,26 @@ configBlob = """#!/bin/bash
 REQUIRED_ARGUMENT_COUNT=5
 if [ $# -lt $REQUIRED_ARGUMENT_COUNT ]
 then
-    echo "Usage: `basename $0` <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION>\
+    echo "Usage: `basename $0` <SCRAM_SETUP> <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION>\
                  <JOB_REPORT> <EXECUTABLE> <CONFIG> [Arguments for cmsRun]"
     exit 70
 fi
 
 # Extract the required arguments out, leaving an unknown number of
 #  cmsRun arguments
-SCRAM_COMMAND=$1
-SCRAM_PROJECT=$2
-CMSSW_VERSION=$3
-JOB_REPORT=$4
-EXECUTABLE=$5
-CONFIGURATION=$6
+SCRAM_SETUP=$1
+SCRAM_COMMAND=$2
+SCRAM_PROJECT=$3
+CMSSW_VERSION=$4
+JOB_REPORT=$5
+EXECUTABLE=$6
+CONFIGURATION=$7
 shift;shift;shift
-shift;shift;shift
+shift;shift;shift;shift;
 
-echo "$SCRAM_COMMAND $SCRAM_PROJECT"
+echo "$SCRAM_SETUP $SCRAM_COMMAND $SCRAM_PROJECT"
+
+$SCRAM_SETUP
 
 # do the actual executing
 $SCRAM_COMMAND project $SCRAM_PROJECT $CMSSW_VERSION
@@ -264,7 +269,8 @@ if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 eval `$SCRAM_COMMAND runtime -sh`
 if [ $? -ne 0 ]; then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
 cd ..
-$EXECUTABLE "$@" -j $JOB_REPORT $CONFIG &
+echo "$EXECUTABLE  -j $JOB_REPORT $CONFIGURATION"
+$EXECUTABLE  -j $JOB_REPORT $CONFIGURATION &
 PROCID=$!
 echo $PROCID > process.id
 wait $PROCID

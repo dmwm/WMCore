@@ -7,8 +7,8 @@ Act as bootstrap for pilot job
 
 """
 
-__revision__ = "$Id: PilotClient.py,v 1.1 2009/07/30 22:30:12 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PilotClient.py,v 1.2 2009/07/31 11:18:30 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -27,7 +27,7 @@ from PilotJob import getScramInfo,getCMSSWInfo,parseJobSpec, parseJR
 
 pilotConfig = {'pilotID':125, 'pilotName':'Pilot_125', \
                'serverMode':False, 'serverPort':10, \
-               'tqaddress':'vocms13.cern.ch:8030', 'TTL':-1 }
+               'tqaddress':'vocms13.cern.ch:8030', 'TTL':None }
 
 pilotConfig = cPickle.dumps( pilotConfig )
 pilotConfig = encodestring( pilotConfig )

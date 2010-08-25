@@ -24,6 +24,7 @@ class EmulatorUnitTestBase(unittest.TestCase):
         config.Emulator.PhEDEx = self.phedexFlag
         config.Emulator.DBSReader = self.dbsFlag
         config.Emulator.RequestMgr = self.requestMgrFlag
+        config.Emulator.SiteDB = self.siteDBFlag
         saveConfigurationFile(config, self.configFile)
         print "create config file:%s, PhEDEx: %s, DBS: %s, RequestManager: %s, with flag" \
                % (self.configFile, self.phedexFlag, self.dbsFlag, self.requestMgrFlag)
@@ -34,4 +35,5 @@ class EmulatorUnitTestBase(unittest.TestCase):
         """
         self.phedexFlag = True
         self.dbsFlag = True
-        self.requestMgrFlag = False
+        self.requestMgrFlag = True
+        self.siteDBFlag = True

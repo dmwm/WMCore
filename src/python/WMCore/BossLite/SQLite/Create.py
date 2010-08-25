@@ -15,7 +15,7 @@ class Create(MySQLCreate):
 
     """
 
-    def __init__(self, logger = None, dbi = None):
+    def __init__(self, logger = None, dbi = None, params = None):
         """
         Create all tables
 

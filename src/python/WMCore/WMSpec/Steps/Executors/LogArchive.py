@@ -6,8 +6,8 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.6 2010/04/26 21:08:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: LogArchive.py,v 1.7 2010/04/29 14:52:04 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import os.path
@@ -27,6 +27,8 @@ class Alarm(Exception):
 
 def alarmHandler(signum, frame):
     raise Alarm
+
+lfnGroup = lambda j : str(j.get('counter', 0)/500).zfill(4)
 
 
 class LogArchive(Executor):
@@ -194,10 +196,11 @@ class LogArchive(Executor):
         year, month, day = reqTime[:3]
 
         #LFN = 'test'
+        
 
-        LFN = "/store/unmerged/logs/prod/%s/%s/%s/%s/%s/%s/%s-%s" % \
+        LFN = "/store/unmerged/logs/prod/%s/%s/%s/%s/%s/%s/%s/%s-%s" % \
               (year, month, day, self.report.data.workload,
-               runPadding, runNumber, self.job["name"], tarName)
+               runPadding, runNumber, lfnGroup(self.job), self.job["name"], tarName)
 
 
         return LFN

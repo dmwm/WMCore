@@ -14,8 +14,8 @@ test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.sampl
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.4 2010/02/10 03:52:28 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.5 2010/03/09 14:06:25 maxa Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 
@@ -51,7 +51,8 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
 
         # set database
         dbUrl = os.environ["DATABASE"] or "sqlite:////tmp/resttest.db"
-        self.config.setDBUrl(dbUrl)        
+        self.config.setDBUrl(dbUrl)
+               
         self.urlbase = self.config.getServerUrl()
         
         self.schemaModules = ["WMCore.WorkQueue.Database"]
@@ -169,7 +170,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
     def _checkHTTPError(self, data):
         expected = "HTTPError"
         got = data["results"]["type"]
-        self.assertEqual( got ,  expected, "Expected error '%s', got '%s'" % (expected, got) )
+        self.assertEqual(got, expected, "Expected error '%s', got '%s'" % (expected, got))
     
 
         
@@ -191,24 +192,13 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest):
 
     def testElementStatus(self):
         testName = inspect.stack()[0][3]
-        data, exp = self._tester(testName, "POST", 200, "status")
+        data, exp = self._tester(testName, "GET", 200, "status")
         
         r = data["results"]
-        self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
-        self.assertEqual( r[0]["Id"] ,  1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"]   )
+        self.assertEqual(len(r), 1, "Only 1 element needs to be back, got '%s'" % len(r))
+        self.assertEqual(r[0]["Id"], 1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"])
         
-        
-    
-    def testElementStatusAvailable(self):
-        testName = inspect.stack()[0][3]
-        input = {"status": "Available"}
-        data, exp = self._tester(testName, "POST", 200, "status", input = input)
                 
-        r = data["results"]
-        status = r[0]["Status"]
-        self.assertEqual( status ,  "Available", "Had 'Available' element but status is '%s'" % status )
-        
-        
 
     def testElementsDAO(self):
         testName = inspect.stack()[0][3]

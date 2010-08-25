@@ -6,8 +6,8 @@ Unit tests for  daemon creation
 
 """
 
-__revision__ = "$Id: Daemon_t.py,v 1.6 2009/10/01 01:16:41 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Daemon_t.py,v 1.7 2009/10/01 01:17:55 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -79,13 +79,6 @@ class DaemonTest(unittest.TestCase):
             while True:
                 logging.debug('I am a deamon (wait 10 seconds)')
                 time.sleep(1)
-        DaemonTest._teardown = True
-
-    def runTest(self):
-        """
-        Runs the tests.
-        """
-        self.testA()
 
 if __name__ == "__main__":
     unittest.main()

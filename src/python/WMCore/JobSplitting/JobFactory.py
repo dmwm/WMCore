@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.29 2010/05/07 20:48:36 mnorman Exp $"
-__version__  = "$Revision: 1.29 $"
+__revision__ = "$Id: JobFactory.py,v 1.30 2010/06/11 19:11:13 sfoulkes Exp $"
+__version__  = "$Revision: 1.30 $"
 
 
 import logging
@@ -101,6 +101,7 @@ class JobFactory(WMObject):
         self.currentJob = self.jobInstance(name, files)
         self.currentJob["task"] = self.subscription.taskName()
         self.currentJob["workflow"] = self.subscription.workflowName()
+        self.currentJob["owner"] = self.subscription.owner()
         self.nJobs += 1
         for gen in self.generators:
             gen(self.currentJob)

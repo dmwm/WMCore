@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.22 2010/02/10 03:52:29 meloam Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: REST_t.py,v 1.23 2010/03/17 18:26:21 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 try:
@@ -25,7 +25,7 @@ from WMCore.Configuration import Configuration
 from WMCore.WebTools.Page import make_rfc_timestamp
 from DummyRESTModel import DummyRESTModel
 #decorator import for RESTServer setup
-from WMQuality.WebTools.RESTServerSetup import setUpDAS, serverSetup 
+from WMQuality.WebTools.RESTServerSetup import setUpDAS, serverSetup, DefaultConfig
 from WMQuality.WebTools.RESTClientAPI import makeRequest, methodTest
 
 def setUpDummyRESTModel(func):
@@ -40,11 +40,11 @@ def setUpDummyRESTModel(func):
 class RESTTest(unittest.TestCase):
     
     def setUp(self):
+        self.config = DefaultConfig()
         self.dasFlag = False
         self.restModel = 'WMCore.WebTools.RESTModel'
-        self.urlbase = 'http://localhost:8080/rest/'
-        self.config = None
-    
+        self.urlbase = self.config.getServerUrl()
+        
     def tearDown(self):
         self.dasFlag = None
         self.restModel = None
@@ -129,7 +129,7 @@ class RESTTest(unittest.TestCase):
         
     @setUpDAS
     @serverSetup    
-    def testDasPing(self, das=True):
+    def testDasPing(self):
         
         verb ='GET'
         url = self.urlbase + 'ping'
@@ -151,8 +151,8 @@ class RESTTest(unittest.TestCase):
     @setUpDummyRESTModel    
     @serverSetup
     def testList(self):
-        
-        verb ='GET'
+    
+       	verb ='GET'
         url = self.urlbase + 'list/'
         input = {'int':123, 'str':'abc'}
         output={'code':200, 'type':'text/json', 'data':'{"int": 123, "str": "abc"}'}
@@ -170,13 +170,8 @@ class RESTTest(unittest.TestCase):
         """
         Emulate how CherryPy passes arguments to a method, check that the data
         returned is correct.
-        """
-        config = Configuration()
-        component = config.component_('UnitTests')
-        component.application = 'UnitTests'
-        component.database = 'sqlite://'
-                
-        drm = DummyRESTModel(component)
+        """     
+        drm = DummyRESTModel(self.config.getModelConfig())
         
         def func(*args, **kwargs):
             input = drm.sanitise_input(args, kwargs, "list")
@@ -241,12 +236,8 @@ class RESTTest(unittest.TestCase):
                  
     def testSanitiseAssertFail(self):
         
-        config = Configuration()
-        component = config.component_('UnitTests')
-        component.application = 'UnitTests'
-        component.database = 'sqlite://'
                 
-        drm = DummyRESTModel(component)
+        drm = DummyRESTModel(self.config.getModelConfig())
         
         #TODO: this is not really testing where is fails.
         #However the purpose of the test is just demonstrating how validation is used,
@@ -314,13 +305,8 @@ class RESTTest(unittest.TestCase):
 
         
     def testDAOBased(self):
-        
-        config = Configuration()
-        component = config.component_('UnitTests')
-        component.application = 'UnitTests'
-        component.database = 'sqlite://'
                 
-        drm = DummyRESTModel(component)
+        drm = DummyRESTModel(self.config.getModelConfig())
         
         result = drm.methods['GET']['data1']['call']()
         self.assertEqual( result ,  123, 'Error default value is set to 123 but returns %s' % result )

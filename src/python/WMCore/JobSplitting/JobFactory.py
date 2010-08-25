@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 
-__revision__ = "$Id: JobFactory.py,v 1.28 2010/05/07 14:46:41 mnorman Exp $"
-__version__  = "$Revision: 1.28 $"
+__revision__ = "$Id: JobFactory.py,v 1.29 2010/05/07 20:48:36 mnorman Exp $"
+__version__  = "$Revision: 1.29 $"
 
 
 import logging
@@ -180,9 +180,6 @@ class JobFactory(WMObject):
         if not length:
             length = self.nJobs
 
-        name = '%s-%s-%s-%i' % (self.subscription.taskName(),
-                                self.subscription.workflowName(),
-                                self.baseUUID,
-                                length)
+        name = '%s-%i' % (self.baseUUID, length)
 
         return name

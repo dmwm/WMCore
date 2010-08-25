@@ -127,7 +127,9 @@ class LintCommand(Command):
                         files.append(filepath)
                         # run individual tests as follows
                         try:
-                            lint.Run(['--rcfile=standards/.pylintrc', filepath])
+                            lint.Run(['--rcfile=standards/.pylintrc', 
+                                      '--output-format=parseable', 
+                                      filepath])
                         except Exception, e:
                             print "Couldn't lint %s\n%s %s" % (file, e, type(e))
         # Could run a global test as:

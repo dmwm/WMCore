@@ -424,7 +424,7 @@ class SchedulerARC(SchedulerInterface):
 
         # Build xRSL 
         xrsl = self.jobDescription(task, requirements, config, service)
-        xrsl_file = os.path.dirname(task['cfgName']) + '/job.xrsl'
+        xrsl_file = os.path.dirname(task['cfgName'] or './') + '/%s-jobs.xrsl' % task['name']
         f = open(xrsl_file, "w")
         f.write(xrsl)
         f.close()

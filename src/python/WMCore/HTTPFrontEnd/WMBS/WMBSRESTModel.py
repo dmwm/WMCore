@@ -17,12 +17,19 @@ class WMBSRESTModel(RESTModel):
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self,
                                      dbinterface = self.dbi)
-        self.methods = {'GET':{'jobs':{'dao': 'JobsByState',
-                                       'call': self.sanitise,
-                                       'version': 1}}}
-
-    def sanitise(self, verb, args, kwargs):
+        
+        #only support get for now
+        self.methods = {'GET':{}}
+        self.addDAO('GET', 'jobs', 'Monitoring.JobsByState')
+        self.addDAO('GET', 'jobcount', 'Monitoring.JobCountByState')
+        self.addDAO('GET', 'jobsbysubs', 'Monitoring.JobsBySubscription')
+        self.addDAO('GET', 'jobcountbysubs', 'Monitoring.JobCountBySubscriptionAndRun')
+        
+        
+        
+    def _sanitise(self, verb, args, kwargs):
         """
+        don't override this in subclass
         Take the arguments and ignore everything apart from the first value in 
         args - this is the method name. We can then use this to pull out 
         configuration from self.methods.
@@ -34,5 +41,13 @@ class WMBSRESTModel(RESTModel):
         and disrupting the service.
         """
         dao = self.daofactory(classname=self.methods[verb][args[0]]['dao'])
-        return dao.execute()
+        return dao.execute(**kwargs)
         
+    def addDAO(self, verb, methodKey, dao, version=1):
+        """
+        add dao (or any other method handler) in self.methods
+        self.method need to be initialize if sub class doesn't want to take provide by
+        """
+        self.methods[verb][methodKey] = {'dao': dao,
+                                         'call': self._sanitise,
+                                         'version': version}

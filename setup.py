@@ -118,13 +118,18 @@ class LintCommand(Command):
         for dirpath, dirnames, filenames in os.walk('./src/python/'):
             # skipping CVS directories and their contents
             pathelements = dirpath.split('/')
+            
             if not 'CVS' in pathelements:
                 # to build up a list of file names which contain tests
                 for file in filenames:
-                    filepath = '/'.join([dirpath, file]) 
-                    files.append(filepath)
-                    # run individual tests as follows
-                    lint.Run(['--rcfile=standards/.pylintrc', filepath])
+                    if file.endswith('.py'):
+                        filepath = '/'.join([dirpath, file]) 
+                        files.append(filepath)
+                        # run individual tests as follows
+                        try:
+                            lint.Run(['--rcfile=standards/.pylintrc', filepath])
+                        except Exception, e:
+                            print "Couldn't lint %s\n%s %s" % (file, e, type(e))
         # Could run a global test as:
         #input = ['--rcfile=standards/.pylintrc']
         #input.extend(files)

@@ -8,8 +8,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 """
 
-__revision__ = "$Id: BlackWhiteListParser.py,v 1.9 2009/02/09 18:04:06 mcinquil Exp $"
-__version__  = "$Revision: 1.9 $"
+__revision__ = "$Id: BlackWhiteListParser.py,v 1.10 2009/05/26 10:27:49 spiga Exp $"
+__version__  = "$Revision: 1.10 $"
 __author__   = "ewv@fnal.gov"
 
 import sets
@@ -52,12 +52,12 @@ class BlackWhiteListParser(object):
         else:
             blackList = []
 
-        logger.debug(7,'Input whitelist: %s' % ', '.join(whiteList))
-        logger.debug(7,'Input blacklist: %s' % ', '.join(blackList))
+        logger.debug('Input whitelist: %s' % ', '.join(whiteList))
+        logger.debug('Input blacklist: %s' % ', '.join(blackList))
         self.blacklist = sets.Set(self.expandList(blackList))
         self.whitelist = sets.Set(self.expandList(whiteList))
-        logger.debug(5,'Converted whitelist: %s' % ', '.join(self.whitelist))
-        logger.debug(5,'Converted blacklist: %s' % ', '.join(self.blacklist))
+        logger.debug('Converted whitelist: %s' % ', '.join(self.whitelist))
+        logger.debug('Converted blacklist: %s' % ', '.join(self.blacklist))
 
 
     def expandList(self, userList):
@@ -82,10 +82,10 @@ class BlackWhiteListParser(object):
                 expandedList.append(item)
 
         if hadErrors:
-            self.logger.message("Problem connecting to SiteDB. " \
+            self.logger.info("Problem connecting to SiteDB. " \
                                 #+ "%s " % self.kind.upper() \
                                 + "White/blacklist may be incomplete.")
-            self.logger.message("List is %s" % expandedList)
+            self.logger.info("List is %s" % expandedList)
 
         return expandedList
 
@@ -112,10 +112,10 @@ class BlackWhiteListParser(object):
         goodSites = list(goodSites)
         if not goodSites and fileblocks:
             msg = "No sites hosting the block %s after blackList" % fileblocks
-            self.logger.debug(5, msg)
-            self.logger.debug(5, "Proceeding without this block.\n")
+            self.logger.debug( msg)
+            self.logger.debug( "Proceeding without this block.\n")
         elif fileblocks:
-            self.logger.debug(5, "Selected sites for block %s via blacklist " \
+            self.logger.debug( "Selected sites for block %s via blacklist " \
                 "are %s.\n" % (', '.join(fileblocks), ', '.join(goodSites)))
         return goodSites
 
@@ -141,10 +141,10 @@ class BlackWhiteListParser(object):
         goodSites = list(goodSites)
         if not goodSites and fileblocks:
             msg = "No sites hosting the block %s after whiteList" % fileblocks
-            self.logger.debug(5, msg)
-            self.logger.debug(5, "Proceeding without this block.\n")
+            self.logger.debug( msg)
+            self.logger.debug( "Proceeding without this block.\n")
         elif fileblocks:
-            self.logger.debug(5, "Selected sites for block %s via whitelist "\
+            self.logger.debug( "Selected sites for block %s via whitelist "\
                 " are %s.\n" % (', '.join(fileblocks), ', '.join(goodSites)))
 
         return goodSites

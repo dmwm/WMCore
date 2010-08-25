@@ -237,7 +237,7 @@ class ConfigurationTest(unittest.TestCase):
 
         #print commentConfig.commentedString_()
         #print docConfig.documentedString_()
-        print docConfig.commentedString_()
+        #print docConfig.commentedString_()
 
 
 if __name__ == '__main__':

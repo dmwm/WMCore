@@ -4,7 +4,11 @@ from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 import os
-from pylint import lint
+
+try:
+    from pylint import lint
+except:
+    pass
 
 """
 Build, clean and test the WMCore package.

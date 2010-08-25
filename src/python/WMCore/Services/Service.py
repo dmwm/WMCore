@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.51 2010/06/23 14:08:37 meloam Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: Service.py,v 1.52 2010/06/25 20:26:23 sryu Exp $"
+__version__ = "$Revision: 1.52 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -210,7 +210,7 @@ class Service(dict):
         # Set the timeout
         deftimeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self['timeout'])
-        data, status, reason = (None, "UNKNOWN", "UNKNOWN")
+
         # Nested form for version < 2.5 
         try:
             try:
@@ -236,10 +236,10 @@ class Service(dict):
             except HTTPException, he:
                 if not os.path.exists(cachefile):
                     msg = 'The cachefile %s does not exist and the service at %s is'
-                    msg += ' unavailable - status: %s reason: %s'
-                    msg = msg % (cachefile, url, status, reason)
+                    msg += ' unavailable - it returned %s because %s'
+                    msg = msg % (cachefile, he.url, he.status, he.reason)
                     self['logger'].warning(msg)
-                    raise
+                    raise he
                 else:
                     cache_age = os.path.getmtime(cachefile)
                     t = datetime.datetime.now() - datetime.timedelta(hours = self.get('maxcachereuse', 24))
@@ -259,14 +259,14 @@ class Service(dict):
                             msg = 'The cachefile %s is dead (5 times older than cache '
                             msg += 'duration), and the service at %s is unavailable - '
                             msg += 'it returned %s because %s'
-                            msg = msg % (cachefile, url, status, reason)
+                            msg = msg % (cachefile, he.url, he.status, he.reason)
                             self['logger'].warning(msg)
                         elif self.get('usestalecache', False) == False:
                             msg = 'The cachefile %s is stale and the service at %s is'
-                            msg += ' unavailable '
-                            msg = msg % (cachefile, url, status, reason)
+                            msg += ' unavailable - it returned %s because %s'
+                            msg = msg % (cachefile, he.url, he.status, he.reason)
                             self['logger'].warning(msg)
-                        raise
+                        raise he
                     
         finally:
             # Reset the timeout to it's original value

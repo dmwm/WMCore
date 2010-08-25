@@ -3,8 +3,8 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.11 2009/09/25 14:46:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.12 2009/09/25 21:53:27 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 import logging
@@ -48,7 +48,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.config     = config
         self.dbsurl     = self.config.DBSUpload.dbsurl
         self.dbsversion = self.config.DBSUpload.dbsversion
-        self.uploadFileMax = 10
+        self.uploadFileMax = self.config.DBSUpload.uploadFileMax
 
         self.DBSMaxFiles   = self.config.DBSUpload.DBSMaxFiles
         self.DBSMaxSize    = self.config.DBSUpload.DBSMaxSize
@@ -171,8 +171,10 @@ class DBSUploadPoller(BaseWorkerThread):
                         locations.append(loc['Name'])
                     dbinterface.setBlockStatus(block['Name'], locations, block['OpenForWriting'])
                     if "files" in block.keys():
+                        myThread.transaction.begin()
                         for file in block["files"]:
                             setBlock.execute(lfn = file, blockName = block['Name'])
+                        myThread.transaction.commit()
 
 
                 #Update the file status, and then recount UnMigrated Files
@@ -194,9 +196,9 @@ class DBSUploadPoller(BaseWorkerThread):
         logging.debug("Running subscription / fileset matching algorithm")
         myThread = threading.currentThread()
         try:
-            myThread.transaction.begin()
+            #myThread.transaction.begin()
             self.uploadDatasets()
-            myThread.transaction.commit()
+            #myThread.transaction.commit()
         except:
             myThread.transaction.rollback()
             raise

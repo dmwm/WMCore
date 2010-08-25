@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.12 2010/03/01 15:19:10 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.13 2010/05/24 19:33:30 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import time
 import threading
@@ -28,8 +28,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                         checksums = checksums, parents = parents, merged = True)
         self.setdefault("status", status)
         self.setdefault("id", id)
-        self.setdefault("location", set())
-
+        
         # Parameters for the algorithm
         self.setdefault("appName", None)
         self.setdefault("appVer", None)
@@ -308,7 +307,7 @@ class DBSBufferFile(WMBSBase, WMFile):
             localTransaction.commit()
         
         action = self.daoFactory(classname = "DBSBufferFiles.HeritageLFNParent")
-        action.execute(parentLFNs = parentLFNs, childID = self["id"],
+        action.execute(parentLFNs = parentLFNs, childLFN = self["lfn"],
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         return

@@ -5,8 +5,8 @@ _Report_t_
 Unit tests for the Report class.
 """
 
-__revision__ = "$Id: Report_t.py,v 1.8 2010/08/16 14:51:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Report_t.py,v 1.9 2010/08/16 16:50:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import os
@@ -329,6 +329,9 @@ cms::Exception caught in EventProcessor and rethrown
         myReport.parse(xmlPath)
 
         jsonReport = myReport.__to_json__(None)
+
+        assert "task" in jsonReport.keys(), \
+               "Error: Task name missing from report."
 
         assert len(jsonReport["steps"].keys()) == 1, \
                "Error: Wrong number of steps in report."

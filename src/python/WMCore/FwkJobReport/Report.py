@@ -7,8 +7,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.35 $"
-__revision__ = "$Id: Report.py,v 1.35 2010/08/16 16:36:49 mnorman Exp $"
+__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Report.py,v 1.36 2010/08/16 16:50:58 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -171,7 +171,7 @@ class Report:
             return jsonFiles
 
         jsonReport = {}
-        jsonReport["workload"] = self.data.workload
+        jsonReport["task"] = self.getTaskName()
         jsonReport["steps"] = {}
 
         for stepName in self.listSteps():
@@ -451,8 +451,6 @@ class Report:
         self.data.section_(reportname)
         self.report = getattr(self.data, reportname)
         self.report.id = None
-        self.report.task = None
-        self.report.workload = None
         self.report.status = status
         self.report.outputModules = []
         
@@ -819,14 +817,12 @@ class Report:
 
         return {'startTime': startTime, 'stopTime': stopTime}
 
-
     def setTaskName(self, taskName):
         """
         _setTaskName_
         
         Set the task name for the report
         """
-
         self.data.task = taskName
         return
 
@@ -836,7 +832,6 @@ class Report:
 
         Return the task name
         """
-
         return getattr(self.data, 'task', None)
                 
 if __name__ == "__main__":

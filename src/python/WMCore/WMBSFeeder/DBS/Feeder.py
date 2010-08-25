@@ -3,8 +3,8 @@
 """
 _Feeder_
 """
-__revision__ = "$Id: Feeder.py,v 1.11 2009/12/28 04:38:55 riahi Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Feeder.py,v 1.12 2010/01/31 19:40:57 riahi Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
@@ -19,6 +19,7 @@ from WMCore.DAOFactory import DAOFactory
 
 from DBSAPI.dbsApiException import DbsConnectionError 
 from DBSAPI.dbsApi import DbsApi
+from WMCore.DataStructs.Run import Run
 
 #from DBSAPI.dbsException import *
 #from DBSAPI.dbsApiException import *
@@ -120,13 +121,6 @@ class Feeder(FeederImpl):
                     fileBlock, )
                 raise DBSReaderError(msg)
 
-            try:
-                if int(startRun) > int(\
-                 files[0]['RunsList'][0]['RunNumber']) :
-                    continue
-            except:
-                logging.info("Error when getting run info")
-
             # get fileBlockId SE information
             seList = blocks[fileBlock]['StorageElements']
  
@@ -143,41 +137,64 @@ class Feeder(FeederImpl):
 
             for files in blocks[fileBlock]['Files']:
 
-                # Assume parents and LumiSection aren't asked 
-                newfile = File(files['LogicalFileName'], \
-                 size=files['FileSize'], events=files['NumberOfEvents']) 
-                       #lumi=files['LumiList']), locations=seList)
- 
-                if newfile.exists() == False :
-                    newfile.create()
+                if startRun != 'None':
 
-                fileLoc = getFileLoc.execute(\
-                  file = files['LogicalFileName'])
+                    if len(files['LumiList']):
 
-                if fileLoc:
+                        for lumi in files['LumiList']:
+    
+                            if int(startRun) <= lumi['RunNumber' ]:
+                               
+                                newfile = File(files['LogicalFileName'], \
+                   size=files['FileSize'], events=files['NumberOfEvents'])
 
-                    for loc in seList:
+                                newfile.addRun(Run( lumi['RunNumber' ], \
+                                  *[lumi['LumiSectionNumber']]))
 
-                        if loc not in fileLoc: 
-  
-                            newfile.setLocation(loc)
-
-                        else:
-
-                            logging.debug("File already associated to %s" %loc)
+                                if newfile.exists() == False :
+                                    newfile.create()
+    
+                                fileLoc = getFileLoc.execute(\
+                                    file = files['LogicalFileName'])
+    
+                                if fileLoc:
+                                    for loc in seList:
+                                        if loc not in fileLoc:
+                                            newfile.setLocation(loc)
+                                        else:
+                                            logging.debug("\
+                                File already associated to %s" %loc) 
+                                else:
+                                    newfile.setLocation(seList)
+                                    filesetToProcess.addFile(newfile)
 
                 else:
 
-                    newfile.setLocation(seList) 
-                filesetToProcess.addFile(newfile)
+                    # Assume parents and LumiSection aren't asked 
+                    newfile = File(files['LogicalFileName'], \
+                  size=files['FileSize'], events=files['NumberOfEvents'])
+                    if newfile.exists() == False :
+                        newfile.create()
+
+                    fileLoc = getFileLoc.execute(\
+                        file = files['LogicalFileName'])
+
+                    if fileLoc:
+                        for loc in seList:
+                            if loc not in fileLoc:
+                                newfile.setLocation(loc)
+                            else:
+                                logging.debug("\
+                 File already associated to %s" %loc)
+                    else:
+                        newfile.setLocation(seList)
+                        filesetToProcess.addFile(newfile)
 
         # Close fileset
         filesetToProcess.markOpen(False)
 
         # Commit the fileset
         filesetToProcess.commit()
-
-        logging.debug("fileset %s is commited"% filesetToProcess.name)
 
     def persist(self):
         """

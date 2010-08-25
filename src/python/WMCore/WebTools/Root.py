@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.49 2010/02/18 19:11:17 rpw Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: Root.py,v 1.50 2010/03/03 20:25:43 metson Exp $"
+__version__ = "$Revision: 1.50 $"
 
 # CherryPy
 import cherrypy
@@ -62,7 +62,7 @@ class Root(WMObject, Harness):
     def validateConfig(self):
         # Check that the configuration has the required sections
         config_dict = self.appconfig.dictionary_()
-        must_have_keys = ['admin', 'description', 'title', 'templates']
+        must_have_keys = ['admin', 'description', 'title']
         for key in must_have_keys:
             msg  = "Application configuration '%s' does not contain '%s' key"\
                     % (self.app, key)

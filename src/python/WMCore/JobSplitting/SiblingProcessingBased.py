@@ -6,8 +6,8 @@ Launch jobs to run over a file once all other subscriptions that process the fil
 have completed processing it.
 """
 
-__revision__ = "$Id: SiblingProcessingBased.py,v 1.4 2010/07/08 20:07:04 sfoulkes Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: SiblingProcessingBased.py,v 1.5 2010/07/26 16:21:28 sfoulkes Exp $"
+__version__  = "$Revision: 1.5 $"
 
 import threading
 import logging
@@ -42,26 +42,34 @@ class SiblingProcessingBased(JobFactory):
         else:
             filesetClosed = True
 
-        if len(completeFiles) < filesPerJob and not filesetClosed:
-            return
+        fileSites = {}
+        for completeFile in completeFiles:
+            if not fileSites.has_key(completeFile["se_name"]):
+                fileSites[completeFile["se_name"]] = []
 
-        self.newGroup()
-        while len(completeFiles) >= filesPerJob:
-            self.newJob(name = makeUUID())
-            for jobFile in completeFiles[0:filesPerJob]:
-                newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
-                               events = jobFile["events"])
-                newFile["locations"] = set([jobFile["se_name"]])                
-                self.currentJob.addFile(newFile)
+            fileSites[completeFile["se_name"]].append(completeFile)
+
+        for siteName in fileSites.keys():
+            if len(fileSites[siteName]) < filesPerJob and not filesetClosed:
+                continue
+
+            self.newGroup()
+            while len(fileSites[siteName]) >= filesPerJob:
+                self.newJob(name = makeUUID())
+                for jobFile in fileSites[siteName][0:filesPerJob]:
+                    newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
+                                   events = jobFile["events"])
+                    newFile["locations"] = set([jobFile["se_name"]])                
+                    self.currentJob.addFile(newFile)
                 
-            completeFiles = completeFiles[filesPerJob:]
+                    fileSites[siteName] = fileSites[siteName][filesPerJob:]
 
-        if filesetClosed and len(completeFiles) > 0:
-            self.newJob(name = makeUUID())
-            for jobFile in completeFiles:
-                newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
-                               events = jobFile["events"])
-                newFile["locations"] = set([jobFile["se_name"]])
-                self.currentJob.addFile(newFile)            
+            if filesetClosed and len(fileSites[siteName]) > 0:
+                self.newJob(name = makeUUID())
+                for jobFile in fileSites[siteName]:
+                    newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
+                                   events = jobFile["events"])
+                    newFile["locations"] = set([jobFile["se_name"]])
+                    self.currentJob.addFile(newFile)            
 
         return

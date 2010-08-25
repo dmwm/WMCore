@@ -5,8 +5,8 @@ _SiblingProcessingBased_t_
 Test SiblingProcessing job splitting.
 """
 
-__revision__ = "$Id: SiblingProcessingBased_t.py,v 1.2 2010/07/08 20:07:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SiblingProcessingBased_t.py,v 1.3 2010/07/26 16:21:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os
@@ -46,6 +46,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site2", seName = "somese2.cern.ch")
 
         self.testFilesetA = Fileset(name = "FilesetA")
         self.testFilesetA.create()
@@ -249,6 +250,71 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         assert "testFileF" in lfns, \
                "Error: TestFileF missing from job input."
 
+        return
+
+    def testMultipleLocations(self):
+        """
+        _testMultipleLocations_
+
+        Verify that the sibling processing based algorithm doesn't create jobs
+        that run over files at multiple sites.
+        """
+        testFile1 = File("testFile1", size = 1000, events = 100,
+                         locations = set(["somese2.cern.ch"]))
+        testFile1.create()
+        testFile2 = File("testFile2", size = 1000, events = 100,
+                         locations = set(["somese2.cern.ch"]))
+        testFile2.create()
+        testFile3 = File("testFile3", size = 1000, events = 100,
+                         locations = set(["somese2.cern.ch"]))
+        testFile3.create()        
+
+        self.testFilesetA.addFile(testFile1)
+        self.testFilesetA.addFile(testFile2)
+        self.testFilesetA.addFile(testFile3)
+        self.testFilesetA.commit()
+        self.testFilesetA.markOpen(False)
+
+        self.deleteSubscriptionA.completeFiles([testFile1, testFile2, testFile3])
+        self.deleteSubscriptionA.completeFiles([self.testFileA, self.testFileB, self.testFileC])
+        
+        splitter = SplitterFactory()
+        deleteFactoryA = splitter(package = "WMCore.WMBS",
+                                  subscription = self.deleteSubscriptionA)
+
+        result = deleteFactoryA(files_per_job = 50)
+
+        assert len(result) == 2, \
+               "Error: Wrong number of jobgroups returned."
+
+        goldenFilesA = ["testFileA", "testFileB", "testFileC"]
+        goldenFilesB = ["testFile1", "testFile2", "testFile3"]
+
+        locations = {"testFileA": "somese.cern.ch", "testFileB": "somese.cern.ch",
+                     "testFileC": "somese.cern.ch", "testFile1": "somese2.cern.ch",
+                     "testFile2": "somese2.cern.ch", "testFile3": "somese2.cern.ch"}
+        
+        for jobGroup in result:
+            assert len(jobGroup.jobs) == 1, \
+                   "Error: Wrong number of jobs in jobgroup."
+            assert len(jobGroup.jobs[0]["input_files"]) == 3, \
+                   "Error: Wrong number of input files in job."
+
+            jobSite = list(jobGroup.jobs[0]["input_files"][0]["locations"])[0]
+
+            if jobSite == "somese.cern.ch":
+                goldenFiles = goldenFilesA
+            else:
+                goldenFiles = goldenFilesB
+                
+            for jobFile in jobGroup.jobs[0]["input_files"]:
+                assert list(jobFile["locations"])[0] == locations[jobFile["lfn"]], \
+                       "Error: Wrong site for file."
+                goldenFiles.remove(jobFile["lfn"])
+
+            assert len(goldenFiles) == 0,  \
+                   "Error: Files are missing."
+        
         return
 
 if __name__ == '__main__':

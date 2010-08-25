@@ -11,9 +11,9 @@ import unittest
 
 from unittest import TestCase
 from WMCore_t.WMBS_t.Performance_t.MySQLDAO_t import MySQLDAOTest
-from WMCore_t.WMBS_t.Performance_t.File_t import FileTest
+from WMCore_t.WMBS_t.Performance_t.File_t import PerformanceFileTest
 
-class MySQLDAOFile_t(FileTest, MySQLDAOTest, TestCase):
+class MySQLDAOFile_t(PerformanceFileTest, MySQLDAOTest, TestCase):
     """
     __MySQLDAOFileTest__
 
@@ -28,7 +28,7 @@ class MySQLDAOFile_t(FileTest, MySQLDAOTest, TestCase):
 
         """
         MySQLDAOTest.setUp(self)
-        FileTest.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
+        PerformanceFileTest.setUp(self, sqlURI=self.sqlURI, logarg='MySQL')
 
     def tearDown(self):
         """
@@ -36,7 +36,7 @@ class MySQLDAOFile_t(FileTest, MySQLDAOTest, TestCase):
 
         """
         #Call superclass tearDown method
-        FileTest.tearDown(self)
+        PerformanceFileTest.tearDown(self)
         MySQLDAOTest.tearDown(self)
         #DB Specific tearDown code
         

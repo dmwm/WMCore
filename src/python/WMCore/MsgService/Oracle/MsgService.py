@@ -38,9 +38,9 @@ messages after it is handled.
 # -mnorman
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.2 2009/07/06 19:05:39 sfoulkes Exp $"
+    "$Id: MsgService.py,v 1.3 2009/09/02 19:47:03 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.2 $"
+    "$Revision: 1.3 $"
 __author__ = \
     "mnorman@fnal.gov"
 
@@ -149,14 +149,14 @@ class MsgService(MySQLMsgService):
         # process was registered before
         if result != {}:
             # if pid and host are the same, get id and return
-            if result['HOST'] == currentHost and result['PID'] == currentPid:
-                self.procid = result['PROCID']
+            if result['host'] == currentHost and result['pid'] == currentPid:
+                self.procid = result['procid']
                 return
             # process was replaced, update info
             else:
                 self.query.updateName(args = {'currentHost' : currentHost, \
                     'currentPid' : currentPid, 'name' : name})
-                self.procid = result['PROCID']
+                self.procid = result['procid']
                 return
         # register new process in database
         logging.debug("Registering new process with name: "+ name)
@@ -193,7 +193,7 @@ class MsgService(MySQLMsgService):
 
         if result != {}:
             # message type was registered before, get id
-            typeid = result['TYPEID']
+            typeid = result['typeid']
         else:
             # not registered before, so register now
             typeid = self.query.insertMessageType({'name' : name})
@@ -230,7 +230,7 @@ class MsgService(MySQLMsgService):
         result = self.query.checkMessageType(args = {'name' : name})
         if result != {}:
             # message type was registered before, get id
-            typeid = result['TYPEID']
+            typeid = result['typeid']
         else:
             # not registered before, so register now
             typeid = self.query.insertMessageType({'name' : name})
@@ -288,7 +288,7 @@ class MsgService(MySQLMsgService):
             # get message type id
             if result != {}:
                 # message type was registered before, get id
-                messageTypes[messageType]['typeid'] = result['TYPEID']
+                messageTypes[messageType]['typeid'] = result['typeid']
             else:
                 typeid = self.query.insertMessageType({'name' : messageType})
                 # get id
@@ -472,7 +472,7 @@ class MsgService(MySQLMsgService):
             # get message type id
             if result != {}:
                 # message type was registered before, get id
-                messageTypes[messageType]['typeid'] = result['TYPEID']
+                messageTypes[messageType]['typeid'] = result['typeid']
             else:
                 typeid = self.query.insertMessageType({'name' : messageType})
                 # get id
@@ -744,6 +744,7 @@ class MsgService(MySQLMsgService):
         # no rows, nothing to do
         if result == {}:
             return
+
         tables = []
         if self.oneQueue:
             tables = ['ms_message', 'ms_message_buffer_in', \
@@ -759,7 +760,7 @@ class MsgService(MySQLMsgService):
                       'ms_priority_message_'+self.name+'_buffer_out']
         for table in tables:
             args = {'tablename' : table, \
-                'sqlArgs' : {'typeid' : result['TYPEID'], \
+                'sqlArgs' : {'typeid' : result['typeid'], \
                              'procid' : str(self.procid)}}
             self.query.removeMessageType(args = args)
            

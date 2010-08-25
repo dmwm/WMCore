@@ -223,6 +223,11 @@ class PhEDEx(Service):
         from collections import defaultdict
         result = defaultdict(set)
 
+        dataItems = list(set(dataItems)) # force unique items
+
+        # cache dataset calls - speed up per block searches where dataset sub
+        datasetMap = {}
+
         # bug in phedex api means we can't query multiple datasets/blocks
         # remove looping construct when fix deployed
         for item in dataItems:
@@ -234,7 +239,11 @@ class PhEDEx(Service):
             # First query for a dataset level subscription (most common)
             # then if its a block, query for a block level subscription
             kwargs['dataset'], kwargs['block'] = [item.split('#')[0]], []
-            response = self.subscriptions(**kwargs)['phedex']
+            try:
+                response = datasetMap[kwargs['dataset'][0]]
+            except KeyError:
+                response = self.subscriptions(**kwargs)['phedex']
+                datasetMap[kwargs['dataset'][0]] = response
 
             # iterate over response as can't jump to specific datasets
             for dset in response['dataset']:

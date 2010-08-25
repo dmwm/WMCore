@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.55 2010/01/14 21:03:36 mnorman Exp $"
-__version__ = "$Revision: 1.55 $"
+__revision__ = "$Id: Subscription.py,v 1.56 2010/02/09 17:26:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.56 $"
 
 import logging
 
@@ -394,18 +394,10 @@ class Subscription(WMBSBase, WMSubscription):
 
         Nothing except the taskArchiver should be calling this.
         """
-
+        existingTransaction = self.beginTransaction()
         self.load()
 
-        print "Loaded self"
-
         jobGroups = self.getAllJobGroups()
-
-        print "Loaded jobGroups"
-
-        existingTransaction = self.beginTransaction()
-
-        print "Have transaction"
 
         #First, jobs
         deleteAction = self.daofactory(classname = "Jobs.Delete")
@@ -415,52 +407,34 @@ class Subscription(WMBSBase, WMSubscription):
         deleteAction.execute(id = jobDeleteList, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
-        print "Deleted Jobs"
-
         #Next jobGroups
         deleteAction = self.daofactory(classname = "JobGroup.Delete")
         for jobGroupID in jobGroups:
             deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
-        print "Deleted jobGroups"
-
-        self.commitTransaction(existingTransaction)
-
-        print "Committed Transaction"
-
-
         #Next Fileset
-        existingTransaction = self.beginTransaction()
         filesetID = self["fileset"].id
         action = self.daofactory(classname = "Fileset.DeleteCheck")
-        action.execute(fileid = self["fileset"].id, subid = self["id"])
-        self.commitTransaction(existingTransaction)
-
-        print "Deleted fileset"
+        action.execute(fileid = self["fileset"].id, subid = self["id"],
+                       conn = self.getDBConn(), transaction = self.existingTransaction())
 
         #If we got rid of the fileset
         #If we did not delete the fileset, all files are still in use
-        existingTransaction = self.beginTransaction()
         if not self["fileset"].exists():
             #Now get rid of unused files
             action = self.daofactory(classname = "Files.DeleteCheck")
             for file in self["fileset"].files:
-                action.execute(file = file['id'], fileset = filesetID)
-        self.commitTransaction(existingTransaction)
-
-        print "Deleted files"
+                action.execute(file = file['id'], fileset = filesetID,
+                               conn = self.getDBConn(), transaction = self.existingTransaction())
 
         #Next Workflow
-        existingTransaction = self.beginTransaction()
         action = self.daofactory(classname = "Workflow.DeleteCheck")
-        action.execute(workid = self["workflow"].id, subid = self["id"])
-        self.commitTransaction(existingTransaction)
+        action.execute(workid = self["workflow"].id, subid = self["id"],
+                       conn = self.getDBConn(), transaction = self.existingTransaction())
 
-        print "Deleted workflow"
-
-        #And last
         self.delete()
+        self.commitTransaction(existingTransaction)
         return
    
     def isFileCompleted(self, files):

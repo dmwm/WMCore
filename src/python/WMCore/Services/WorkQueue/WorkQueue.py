@@ -64,13 +64,8 @@ class WorkQueue(Service):
         TODO: Probably want to move this up into Service
         """
         result = ''
-        if args == None:
-            argString = ''
-        else:
-            # rely on str() sorts dictionary by keys.
-            #TODO: it is not guaranteed to generate unique hash for the different args
-            argString = str(hash(str(args)))
-        file = callname + argString + '.cache'
+        # make base file name from call name.
+        file = callname.replace("/", "_")
         if clearCache:
             self.clearCache(file, args, verb)
 

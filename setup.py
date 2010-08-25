@@ -54,11 +54,11 @@ def runUnitTests():
     # Add the test and src directory to the python path
     mydir = os.getcwd()
     # todo: not portable
-    testspypath = os.path.join([mydir, 'test','python'])
-    srcpypath = os.path.join([mydir, 'src','python']) 
-    print "src path %s test: %s" % (srcpypath, testspypath)
+    testspypath = '/'.join([mydir, 'test/python/'])
+    srcpypath = '/'.join([mydir, 'src/python/']) 
     sys.path.append(testspypath)
     sys.path.append(srcpypath)
+    
     
     # Walk the directory tree
     for dirpath, dirnames, filenames in os.walk('./test/python'):
@@ -72,8 +72,6 @@ def runUnitTests():
                     if file.endswith('_t.py'):
                         testmodpath = pathelements[3:]
                         testmodpath.append(file.replace('.py', ''))
-                        print "examinging path: %s" % dirpath
-                        print "adding testmodpath %s" % testmodpath
                         testfiles.append('.'.join(testmodpath))
                         
     sys.stderr = open('/dev/null', 'w')
@@ -92,6 +90,8 @@ def runUnitTests():
     result = t.run(testsuite)
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
+    
+    print sys.path
     return (result, failedTestFiles, testsuite.countTestCases())
 
 

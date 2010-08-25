@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
-_injectTier0ReRecoWorkflow_
+_injectTier0PromptRecoWorkflow_
 
+Create a PromptReco workflow and inject it as well as some files into WMBS.
 """
 
 import os
@@ -17,7 +18,7 @@ from WMCore.WMBS.Workflow import Workflow
 
 from WMCore.DataStructs.Run import Run
 
-from WMCore.WMSpec.StdSpecs.Tier0ReReco import tier0ReRecoWorkload
+from WMCore.WMSpec.StdSpecs.Tier0PromptReco import tier0PromptRecoWorkload
 from DBSAPI.dbsApi import DbsApi
 
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
@@ -25,11 +26,11 @@ from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 arguments = {
     "OutputTiers" : ["RECO", "ALCARECO"],
     "AcquisitionEra" : "WMAgentCommissioining10",
-    "GlobalTag" :"GR09_R_34X_V5::All",
+    "GlobalTag" : "GR10_P_V4::All",#"GR09_R_34X_V5::All",
     "LFNCategory" : "/store/backfill/2",
     "TemporaryLFNCategory": "/store/backfill/2/unmerged",
     "ProcessingVersion" : "v1",
-    "Scenario" : "cosmics",
+    "Scenario" : "pp",
     "CMSSWVersion" : "CMSSW_3_5_6",
     "InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW",
     "Emulate" : False,
@@ -41,7 +42,7 @@ if not os.environ.has_key("WMAGENT_CONFIG"):
 
 if len(sys.argv) != 2:
     print "Usage:"
-    print "./injectTier0ReRecoWorkflow.py PROCESSING_VERSION"
+    print "./injectTier0PromptRecoWorkflow.py PROCESSING_VERSION"
     sys.exit(1)
 else:
     arguments["ProcessingVersion"] = sys.argv[1]
@@ -59,10 +60,10 @@ myWMInit = WMInit()
 myWMInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
                                socketLoc = socketLoc)
 
-workloadName = "Tier0ReReco-%s" % arguments["ProcessingVersion"]
-workloadFile = "tier0ReReco-%s.pkl" % arguments["ProcessingVersion"]
+workloadName = "Tier0PromptReco-%s" % arguments["ProcessingVersion"]
+workloadFile = "tier0PromptReco-%s.pkl" % arguments["ProcessingVersion"]
 os.mkdir(workloadName)
-workload = tier0ReRecoWorkload(workloadName, arguments)
+workload = tier0PromptRecoWorkload(workloadName, arguments)
 
 # Build a sandbox using TaskMaker
 taskMaker = TaskMaker(workload, os.path.join(os.getcwd(), workloadName))
@@ -131,7 +132,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
     dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
-    dbsResults = dbsResults[0:1]
+    #dbsResults = dbsResults[0:10]
     print "  found %d files, inserting into wmbs..." % (len(dbsResults))
 
     for dbsResult in dbsResults:

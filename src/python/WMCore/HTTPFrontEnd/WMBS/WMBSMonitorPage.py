@@ -58,7 +58,7 @@ class WMBSMonitorPage(TemplatedPage):
             index = "<h1>WMBS Monitor Examples</h1>\n<ol>"
             for t in examples:
                 index = """%s\n<li>
-                           <a href='./examples/%s'>%s</a>
+                           <a href='./%s'>%s</a>
                            </li>""" % (index, t, t)
             return index
         

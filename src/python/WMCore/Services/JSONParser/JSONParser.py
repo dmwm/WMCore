@@ -6,8 +6,8 @@ API for parsing JSON URLs and returning as python objects.
 
 """
 
-__revision__ = "$Id: JSONParser.py,v 1.8 2009/03/31 14:53:45 metson Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JSONParser.py,v 1.9 2009/08/07 14:32:15 ewv Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import urllib
 import cStringIO
@@ -59,8 +59,7 @@ class JSONParser:
             except ValueError:
                 return float(token[1])
         else:
-            print "Bad token", token
-            raise SyntaxError("Malformed expression")
+            raise SyntaxError("Malformed expression: %s" % token)
 
 
     def dictParser(self, source):

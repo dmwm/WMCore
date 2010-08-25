@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.14 2009/03/20 14:42:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: Job_t.py,v 1.15 2009/04/29 16:27:53 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import logging
@@ -110,7 +110,7 @@ class JobTest(unittest.TestCase):
 
         testJob = Job(name = "TestJob", files = [testFileA, testFileB])
         testJob.create(group = testJobGroup)
-
+        
         return testJob
             
     def testCreateDeleteExists(self):
@@ -477,16 +477,32 @@ class JobTest(unittest.TestCase):
         
         return
     
-    def testAddOutput(self):
+    def testChageJobStatusToComplete(self):
         """
         _testAddOutput_
 
         Create a job and save it to the database.  Test
         """
+        
         testJobA = self.createTestJob()
         testFile = File(lfn = "/this/is/a/lfnOut", size = 1024, events = 10)
         testFile.create()
-        testJobA.addOutput(testFile)
+        
+        testJobA.changeStatus("ACTIVE")
+        
+        assert testJobA.getStatus() == "ACTIVE", \
+               "Error: job has to be ACTIVE status"
+               
+        testJobA.changeStatus("FAILED")
+        
+        assert testJobA.getStatus() == "FAILED", \
+               "Error: job has to be FAILED status"
+               
+        testJobA.changeStatus("COMPLETE", testFile)
+        
+        assert testJobA.getStatus() == "COMPLETE", \
+               "Error: job has to be complete status"
+               
         testFile.loadData(parentage = 1)
         inputFileSet = testJobA.getFiles(type = "set")
         
@@ -495,6 +511,8 @@ class JobTest(unittest.TestCase):
         
         assert testFile.getRuns() == [Run(1, *[45, 46])], \
                "Error: output file run is not updated"
+               
+        
                
 if __name__ == "__main__":
     unittest.main() 

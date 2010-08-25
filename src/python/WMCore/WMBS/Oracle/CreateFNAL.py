@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: CreateFNAL.py,v 1.3 2009/08/21 16:28:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: CreateFNAL.py,v 1.4 2009/08/24 13:54:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.JobStateMachine.ChangeState import Transitions
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
@@ -224,17 +224,17 @@ class Create(CreateWMBSBase):
                     % seqname
 
         # Primary keys need to be setup before foreign keys.  
-        self.constraints["1_pk_wmbs_fileset"] = \
+        self.indexes["1_pk_wmbs_fileset"] = \
             """ALTER TABLE wmbs_fileset ADD
                  (CONSTRAINT pk_wmbs_fileset PRIMARY KEY (id)
                  USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
         
-        self.constraints["1_pk_wmbs_file_details"] = \
+        self.indexes["1_pk_wmbs_file_details"] = \
             """ALTER TABLE wmbs_file_details ADD
                  (CONSTRAINT pk_wmbs_file_details PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
 
-        self.constraints["1_pk_wmbs_fileset_files"] = \
+        self.indexes["1_pk_wmbs_fileset_files"] = \
             """ALTER TABLE wmbs_fileset_files ADD
                  (CONSTRAINT pk_wmbs_fileset_files PRIMARY KEY (fileid, fileset)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
@@ -249,7 +249,7 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT fk_filesetfiles_file FOREIGN KEY (fileid)
                   REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_file_parent"] = \
+        self.indexes["1_pk_wmbs_file_parent"] = \
             """ALTER TABLE wmbs_file_parent ADD
                  (CONSTRAINT pk_wmbs_file_parent PRIMARY KEY (child, parent)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
@@ -262,14 +262,14 @@ class Create(CreateWMBSBase):
         self.constraints["3_fk_wmbs_file_parent"] = \
             """ALTER TABLE wmbs_file_parent ADD
                  (CONSTRAINT fk_fileparentage_parent FOREIGN KEY (parent)
-                  REFERENCES wmbs_file_details(id) ON DELETE CASCASE)"""
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_location"] = \
+        self.indexes["1_pk_wmbs_location"] = \
             """ALTER TABLE wmbs_location ADD
                  (CONSTRAINT pk_wmbs_location PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
 
-        self.constraints["1_pk_wmbs_file_location"] = \
+        self.indexes["1_pk_wmbs_file_location"] = \
             """ALTER TABLE wmbs_file_location ADD
                  (CONSTRAINT pk_wmbs_file_location PRIMARY KEY (fileid, location)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
@@ -284,17 +284,17 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT fk_location_se FOREIGN KEY (location)
                   REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_workflow"] = \
+        self.indexes["1_pk_wmbs_workflow"] = \
             """ALTER TABLE wmbs_workflow ADD
                  (CONSTRAINT pk_wmbs_workflow PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
 
-        self.constraints["1_pk_wmbs_subs_type"] = \
+        self.indexes["1_pk_wmbs_subs_type"] = \
             """ALTER TABLE wmbs_subs_type ADD
                  (CONSTRAINT pk_wmbs_subs_type PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
 
-        self.constraints["1_pk_wmbs_subscription"] = \
+        self.indexes["1_pk_wmbs_subscription"] = \
             """ALTER TABLE wmbs_subscription ADD
                  (CONSTRAINT pk_wmbs_subscription PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
@@ -314,7 +314,7 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT fk_subs_workflow FOREIGN KEY (workflow)
                   REFERENCES wmbs_workflow(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_jobgroup"] = \
+        self.indexes["1_pk_wmbs_jobgroup"] = \
             """ALTER TABLE wmbs_jobgroup ADD
                  (CONSTRAINT pk_wmbs_jobgroup PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)""" 
@@ -329,12 +329,12 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT fk_jobgroup_fileset FOREIGN KEY (output)
                   REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_job_state"] = \
+        self.indexes["1_pk_wmbs_job_state"] = \
             """ALTER TABLE wmbs_job_state ADD
                  (CONSTRAINT pk_wmbs_job_state PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
 
-        self.constraints["1_pk_wmbs_job"] = \
+        self.indexes["1_pk_wmbs_job"] = \
             """ALTER TABLE wmbs_job ADD
                  (CONSTRAINT pk_wmbs_job PRIMARY KEY (id)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
@@ -344,7 +344,7 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT fk_job_jobgroup FOREIGN KEY (jobgroup)
                   REFERENCES wmbs_jobgroup(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_job_assoc"] = \
+        self.indexes["1_pk_wmbs_job_assoc"] = \
             """ALTER TABLE wmbs_job_assoc ADD
                  (CONSTRAINT pk_wmbs_job_assoc PRIMARY KEY (fileid, job)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
@@ -359,7 +359,7 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT fk_jobassoc_file FOREIGN KEY (fileid)
                   REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_file_runlumi_map"] = \
+        self.indexes["1_pk_wmbs_file_runlumi_map"] = \
             """ALTER TABLE wmbs_file_runlumi_map ADD
                  (CONSTRAINT pk_wmbs_file_runlumi_map PRIMARY KEY (fileid, run, lumi)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""
@@ -369,7 +369,7 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT fk_runlumi_file FOREIGN KEY (fileid)
                   REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
-        self.constraints["1_pk_wmbs_job_mask"] = \
+        self.indexes["1_pk_wmbs_job_mask"] = \
             """ALTER TABLE wmbs_job_mask ADD
                  (CONSTRAINT pk_wmbs_job_mask PRIMARY KEY (job)
                   USING INDEX TABLESPACE TIER1_WMBS_INDEX)"""

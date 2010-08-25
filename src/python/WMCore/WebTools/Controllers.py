@@ -6,11 +6,13 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.11 2009/06/07 23:14:28 valya Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Controllers.py,v 1.12 2009/06/29 19:13:25 valya Exp $"
+__version__ = "$Revision: 1.12 $"
 
+import cherrypy
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
+from cherrypy.lib.static import serve_file
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
 # Logging
@@ -29,12 +31,17 @@ minimising setting appropriate headers and etags and gzip.
         self.cssmap = {}
         self.jsmap = {}
         self.cache = {}
+        self.imagemap = {}
         try:
             self.cssmap = self.config.css
         except:
             pass
         try:
             self.jsmap = self.config.js
+        except:
+            pass
+        try:
+            self.imagemap = self.config.images
         except:
             pass
          
@@ -45,6 +52,20 @@ minimising setting appropriate headers and etags and gzip.
     @expose
     def default(self, *args, **kwargs):
         return self.index()
+
+    @expose
+    def images(self, *args, **kwargs):
+        """
+        serve static images
+        """
+        mime_types = ['image/gif', 'image/png', 'image/jpg', 'image/jpeg']
+        cherryconf.update ({'tools.encode.on': True, 'tools.gzip.on': True})
+        accepts = cherrypy.request.headers.elements('Accept')
+        for accept in accepts:
+            if  accept.value in mime_types and len(args) == 1 \
+                and self.imagemap.has_key(args[0]):
+                image = self.imagemap[args[0]]
+                return serve_file(image)
     
     @exposecss
     def css(self, *args, **kwargs):

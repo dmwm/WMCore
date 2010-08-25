@@ -3,8 +3,8 @@
 _TaskSpace_
 
 Frontend module for setting up TaskSpace & StepSpace areas within a job.
-
 """
+
 import inspect
 import pickle
 import os
@@ -22,8 +22,6 @@ from WMCore.WMRuntime.Watchdog import Watchdog
 
 from WMCore.DataStructs.JobPackage import JobPackage
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-
-
 
 class BootstrapException(WMException):
     #TODO: make awesome
@@ -68,10 +66,6 @@ def locateWMSandbox():
         raise BootstrapException(msg)
 
     wmsandboxLoc = inspect.getsourcefile(WMSandbox)
-    print "Have sourcefile location"
-    print WMSandbox
-    print wmsandboxLoc
-    print inspect.getmoduleinfo(wmsandboxLoc)
     wmsandboxLoc = wmsandboxLoc.replace("__init__.py", "")
     return wmsandboxLoc
 

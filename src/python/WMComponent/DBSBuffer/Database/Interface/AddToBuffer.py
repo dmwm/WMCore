@@ -5,8 +5,8 @@ _addToBuffer_
 APIs related to adding file to DBS Buffer
 
 """
-__version__ = "$Revision: 1.17 $"
-__revision__ = "$Id: AddToBuffer.py,v 1.17 2010/05/14 18:55:21 mnorman Exp $"
+__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: AddToBuffer.py,v 1.18 2010/06/08 19:05:11 sfoulkes Exp $"
 
 
 import logging
@@ -147,7 +147,7 @@ class AddToBuffer(WMConnectionBase):
 
         binds = []
         for f in fileObjs:
-            binds.append(f['ID'])
+            binds.append(f["id"])
 
 
         loadFiles = factory(classname = "DBSBufferFiles.LoadBulkFilesByID")

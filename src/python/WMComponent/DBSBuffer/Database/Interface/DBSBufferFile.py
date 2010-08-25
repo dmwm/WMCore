@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.13 2010/05/24 19:33:30 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.14 2010/06/08 19:05:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import time
 import threading
@@ -144,34 +144,30 @@ class DBSBufferFile(WMBSBase, WMFile):
         _insertDatasetAlgo_
 
         Insert the dataset and algorithm for this file into the DBS Buffer.
-        The dataset, algorithm and association between the two will be inserted
-        as a seperate transaction to avoid a race between two processes trying
-        to insert the same dataset/algo.  
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
         newDatasetAction = self.daoFactory(classname = "NewDataset")
         assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")      
 
-        myThread = threading.currentThread()
-        localTransaction = Transaction(myThread.dbi)
-        localTransaction.begin()
+        existingTransaction = self.beginTransaction()
 
         newAlgoAction.execute(appName = self["appName"], appVer = self["appVer"],
                               appFam = self["appFam"], psetHash = self["psetHash"],
                               configContent = self["configContent"],
-                              conn = localTransaction.conn,
+                              conn = self.getDBConn(),
                               transaction = True)
 
         newDatasetAction.execute(datasetPath = self["datasetPath"],
-                                 conn = localTransaction.conn,
+                                 conn = self.getDBConn(),
                                  transaction = True)
 
         assocID = assocAction.execute(appName = self["appName"], appVer = self["appVer"],
                                       appFam = self["appFam"], psetHash = self["psetHash"],
                                       datasetPath = self["datasetPath"],
-                                      conn = localTransaction.conn,
+                                      conn = self.getDBConn(),
                                       transaction = True)
-        localTransaction.commit()
+        
+        self.commitTransaction(existingTransaction)        
         return assocID
     
     def create(self):
@@ -250,10 +246,6 @@ class DBSBufferFile(WMBSBase, WMFile):
         Associate this file with it's parents.  If the parents do not exist in
         the buffer then bogus place holder files will be created so that the
         parentage information can be tracked and correctly inserted into DBS.
-
-        Note that the bogus parents are created in a seperate transaction.  This
-        helps avoid a race between two processes trying to insert the same
-        parent files into the buffer.
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
         newDatasetAction = self.daoFactory(classname = "NewDataset")
@@ -264,52 +256,49 @@ class DBSBufferFile(WMBSBase, WMFile):
                                    logger = self.logger,
                                    dbinterface = self.dbi)
         setDatasetAlgoAction = uploadFactory(classname = "SetDatasetAlgo")
-        
 
+        existingTransaction = self.beginTransaction()
+        
         toBeCreated = []
         for parentLFN in parentLFNs:
             self["parents"].add(DBSBufferFile(lfn = parentLFN))
             if not existsAction.execute(lfn = parentLFN,
                                         conn = self.getDBConn(),
-                                        transaction = self.existingTransaction()):
+                                        transaction = True):
                 toBeCreated.append(parentLFN)
 
         if len(toBeCreated) > 0:
-            myThread = threading.currentThread()
-            localTransaction = Transaction(myThread.dbi)
-            localTransaction.begin()
             newAlgoAction.execute(appName = "cmsRun", appVer = "UNKNOWN",
-                                  appFam = "UNKNOWN", psetHash = "GIBBERISH",
-                                  configContent = "MOREBIGGERISH",
-                                  conn = localTransaction.conn,
+                                  appFam = "UNKNOWN", psetHash = "NOT_SET",
+                                  configContent = "NOT_SET",
+                                  conn = self.getDBConn(),
                                   transaction = True)
 
-            newDatasetAction.execute(datasetPath = "/bogus/dataset/path",
-                                     conn = localTransaction.conn,
+            newDatasetAction.execute(datasetPath = "bogus",
+                                     conn = self.getDBConn(),
                                      transaction = True)
 
             assocID = assocAction.execute(appName = "cmsRun", appVer = "UNKNOWN",
-                                          appFam = "UNKNOWN", psetHash = "GIBBERISH",
-                                          datasetPath = "/bogus/dataset/path",
-                                          conn = localTransaction.conn,
+                                          appFam = "UNKNOWN", psetHash = "NOT_SET",
+                                          datasetPath = "bogus",
+                                          conn = self.getDBConn(),
                                           transaction = True)
 
             setDatasetAlgoAction.execute(datasetAlgo = assocID, inDBS = 1,
-                                         conn = localTransaction.conn,
+                                         conn = self.getDBConn(),
                                          transaction = True)
 
             action = self.daoFactory(classname = "DBSBufferFiles.AddIgnore")
             action.execute(lfns = toBeCreated, datasetAlgo = assocID,
                            status = "AlreadyInDBS",
-                           conn = localTransaction.conn,
+                           conn = self.getDBConn(),
                            transaction = True)
 
-            localTransaction.commit()
-        
         action = self.daoFactory(classname = "DBSBufferFiles.HeritageLFNParent")
         action.execute(parentLFNs = parentLFNs, childLFN = self["lfn"],
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
+        self.commitTransaction(existingTransaction)        
         return
     
     def updateLocations(self):
@@ -349,7 +338,6 @@ class DBSBufferFile(WMBSBase, WMFile):
             
         self["newlocations"].clear()
         self.commitTransaction(existingTransaction)
-            
         return
         
     def setLocation(self, se, immediateSave = True):

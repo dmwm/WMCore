@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.16 2010/05/14 18:56:00 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.17 2010/06/08 19:05:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import os
@@ -656,7 +656,7 @@ class DBSBufferFileTest(unittest.TestCase):
         # Check that the bogus dataset is listed as inDBS
         sqlCommand = """SELECT in_dbs FROM dbsbuffer_algo_dataset_assoc das
                           INNER JOIN dbsbuffer_dataset ds ON das.dataset_id = ds.id
-                          WHERE ds.path = '/bogus/dataset/path'"""
+                          WHERE ds.path = 'bogus'"""
 
         status = myThread.dbi.processData(sqlCommand)[0].fetchall()[0][0]
 

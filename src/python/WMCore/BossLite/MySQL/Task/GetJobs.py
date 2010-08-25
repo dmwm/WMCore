@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Task.GetJobs
 """
 
 __all__ = []
-__revision__ = "$Id: GetJobs.py,v 1.4 2010/05/10 12:54:43 spigafi Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: GetJobs.py,v 1.5 2010/05/30 14:38:00 spigafi Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -33,17 +33,25 @@ class GetJobs(DBFormatter):
                     submission_number as submissionNumber, 
                     closed as closed
             FROM bl_job
-            WHERE task_id = :taskId
-            """
+            WHERE %s """
     
-    def execute(self, binds, conn = None, transaction = False):
+    def execute(self, id, range = None, conn = None, transaction = False):
         """
         Load everything using the database ID
         """
         
+        binds = {}
+        
         objFormatter = JobDBFormatter()
         
-        result = self.dbi.processData(self.sql, binds, conn = conn,
+        whereClause = """ task_id = %s """ % (id)
+        sqlFilled = self.sql % (whereClause)
+        
+        if range :
+            sqlFilled += """ AND job_id = :jobId """
+            binds =[ { 'jobId' : x } for x in range ]
+        
+        result = self.dbi.processData(sqlFilled, binds, conn = conn,
                                       transaction = transaction)
         
         ppResult = self.formatDict(result)

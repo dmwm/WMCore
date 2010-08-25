@@ -11,11 +11,12 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.27 2010/04/12 18:00:41 sryu Exp $"
-__revision__ = "$Revision: 1.27 $"
+__version__ = "$Id: WMTask.py,v 1.28 2010/04/22 21:26:41 sfoulkes Exp $"
+__revision__ = "$Revision: 1.28 $"
 
 import os
 
+from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -244,7 +245,12 @@ class WMTaskHelper(TreeHelper):
         Retrieve all the output modules for the particular step.
         """
         step = self.getStep(stepName)
-        return step.data.output.modules
+
+        if hasattr(step.data, "output"):
+            if hasattr(step.data.output, "modules"):
+                return step.data.output.modules
+
+        return ConfigSection()
     
     def build(self, workingDir):
         """

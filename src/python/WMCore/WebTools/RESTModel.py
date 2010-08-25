@@ -4,8 +4,8 @@
 Rest Model abstract implementation
 """
 
-__revision__ = "$Id: RESTModel.py,v 1.40 2009/12/28 21:40:47 sryu Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: RESTModel.py,v 1.41 2009/12/29 12:36:40 metson Exp $"
+__version__ = "$Revision: 1.41 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import response, request, HTTPError
@@ -92,9 +92,10 @@ class RESTModel(WebAPI):
         def function(*args, **kwargs):
             # store the method name
             method = methodKey
-            input = self.sanitise_input(method, *args, **kwargs)
+            input = self.sanitise_input(args, kwargs, method)
             # store the dao
             dao = self.daofactory(classname=daoStr)
+            # execute the requested input, now a list of keywords
             return dao.execute(**input)
                   
         self.addMethod(verb, methodKey, function, args, validation, version)
@@ -106,9 +107,10 @@ class RESTModel(WebAPI):
         def function(*args, **kwargs):
             # store the method name
             method = methodKey
-            input = self.sanitise_input(method, *args, **kwargs)
+            input = self.sanitise_input(args, kwargs, method)
             # store the function
             func = funcName
+            # execute the requested input, now a list of keywords
             return func(**input)
                   
         self.addMethod(verb, methodKey, function, args, validation, version)
@@ -126,7 +128,7 @@ class RESTModel(WebAPI):
                                          'validation': validation,
                                          'version': version}
 
-    def sanitise_input(self,  method = None, *args, **kwargs):
+    def sanitise_input(self, args=[], kwargs={}, method = None):
         """
         Pull out the necessary input from kwargs (by name) and, failing that, 
         pulls out the number required args from args, which assumes the 
@@ -139,8 +141,8 @@ class RESTModel(WebAPI):
         
         Returns a dictionary.
         """
-        
-        args = list(args)
+        if len(args):
+            args = list(args)
         input = {}
         verb = request.method.upper()
         for a in self.methods[verb][method]['args']:
@@ -151,7 +153,12 @@ class RESTModel(WebAPI):
             else:
                 if len(args):
                     input[a] = args.pop(0)
-        return self.validate_input(input, verb, method)
+        try:
+            return self.validate_input(input, verb, method)
+        except HTTPError, he:
+            raise he
+        except Exception, e:
+            raise HTTPError(400, {type(e): str(e)})
     
     def validate_input(self, input, verb, method):
         """
@@ -165,9 +172,8 @@ class RESTModel(WebAPI):
             # Do nothing
             return input
         result = {}
-        try:
-            for fnc in validators:
-                result.update(fnc(input))
-            return result
-        except Exception, e:
-            raise HTTPError(400, str(e))
+        # Run the validation functions, these should raise exceptions. If the  
+        # exception is an HTTPError re-raise it, else raise a 400 HTTPError.
+        for fnc in validators:
+            result.update(fnc(input))
+        return result

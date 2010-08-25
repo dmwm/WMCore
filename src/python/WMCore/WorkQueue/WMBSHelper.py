@@ -5,12 +5,11 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.21 2010/04/08 16:48:46 sryu Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.22 2010/04/12 21:17:06 sryu Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import logging
 
-from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
@@ -159,20 +158,4 @@ class WMBSHelper:
         logging.info("WMBS File: %s\n on Location: %s" 
                      % (wmbsFile['lfn'], wmbsFile['newlocations']))
         return wmbsFile
-    
-    @staticmethod
-    def createSandbox(workload, sandboxLocation):
-        
-        def _createSandboxForTask(task):
-            setattr(task.data.input, 'sandbox', "%s/%s-Sandbox.tar.bz2" % 
-                                     (sandboxLocation, task.name()))
-            sandboxCreator.makeSandbox(sandboxLocation, workload, task)
-            for childTask in task.childTaskIterator():
-                _createSandboxForTask(childTask)
-    
-        sandboxCreator = SandboxCreator()
-        
-        for task in workload.taskIterator():
-            _createSandboxForTask(task)
-            
         

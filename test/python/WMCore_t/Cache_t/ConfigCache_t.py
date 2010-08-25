@@ -43,7 +43,12 @@ class Test(unittest.TestCase):
         # make the cache object
         #cachedelete = ConfigCache.WMConfigCache('testdb2')
         #cachedelete.deleteDatabase()
-        self.cache = ConfigCache.WMConfigCache('testdb2', 'cmssrv48.fnal.gov:5984')
+        if (os.getenv('COUCHURL') != None):
+            couchurl = os.getenv('COUCHURL')
+        else:
+            couchurl = 'localhost:5984'
+            
+        self.cache = ConfigCache.WMConfigCache('testdb2', couchurl)
         
         # make some temp config files to test with
         (self.fileobj1, self.filename1) = tempfile.mkstemp()

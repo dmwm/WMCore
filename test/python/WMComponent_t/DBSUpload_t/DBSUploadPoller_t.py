@@ -7,7 +7,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.6 $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "mnorman@fnal.gov"
 
 import commands
@@ -343,7 +343,7 @@ class DBSUploadTest(unittest.TestCase):
 
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
 
-        self.assertEqual(len(result), 1)
+        self.assertEqual(len(result), 2)
 
         return
 

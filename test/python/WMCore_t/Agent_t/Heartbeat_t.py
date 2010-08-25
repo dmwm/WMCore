@@ -4,8 +4,8 @@ _WorkQueueTestCase_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: Heartbeat_t.py,v 1.1 2010/06/21 21:20:33 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Heartbeat_t.py,v 1.2 2010/06/23 18:16:01 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import time
@@ -38,9 +38,6 @@ class HeartbeatTest(unittest.TestCase):
         """
         
         self.testInit.clearDatabase()
-    
-    def testS(self):
-        print "testshema"
     
     def testHeartbeat(self):
         testComponent = HeartbeatAPI("testComponent")
@@ -88,6 +85,12 @@ class HeartbeatTest(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]['worker_name'], "testWorker")
         self.assertEqual(result[1]['worker_name'], "test2Worker")
+        
+        testComponent.updateWorkerError("test2Worker", "Error1")
+        result = testComponent.getHeartbeatInfo()
+        self.assertEqual(result[1]['error_message'], "Error1")
+        
+        
         
 if __name__ == "__main__":
     unittest.main()      

@@ -1,17 +1,22 @@
 #!/bin/env python
+#pylint: disable-msg=E1101, W0201, W0142, E1103
+# E1101: reference config file variables
+# W0142: ** magic
+# W0201: Don't much around with __init__
+# E1103: Use thread members
 
-__revision__ = "$Id: JobCreator_t.py,v 1.20 2010/04/15 21:07:37 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.21 2010/06/14 21:03:18 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import unittest
 import random
 import threading
 import time
 import os
-import shutil
 import logging
 import cProfile
 import pstats
+import cPickle
 
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
@@ -22,22 +27,19 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Job import Job
 
 from WMCore.Agent.Configuration              import loadConfigurationFile, Configuration
 from WMComponent.JobCreator.JobCreator       import JobCreator
 from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
+from WMComponent.JobCreator.JobCreatorWorker import JobCreatorWorker
 
-from WMCore.WMSpec.WMWorkload                import WMWorkload, WMWorkloadHelper
+from WMCore.Services.UUID import makeUUID
 
-from WMCore.WMSpec.WMTask                    import WMTask, WMTaskHelper
 from WMCore.ResourceControl.ResourceControl  import ResourceControl
 
 #Workload stuff
-from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 
 class JobCreatorTest(unittest.TestCase):
     """
@@ -64,15 +66,15 @@ class JobCreatorTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ['WMCore.WMBS', 
                                                  'WMCore.MsgService',
                                                  'WMCore.ThreadPool',
-                                                 'WMCore.ResourceControl',
-                                                 'WMCore.WorkQueue.Database'], useDefault = False)
+                                                 'WMCore.ResourceControl'], useDefault = False)
+                                                 #'WMCore.WorkQueue.Database'], useDefault = False)
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
         
-        locationAction = daofactory(classname = "Locations.New")
+        locationAction = self.daoFactory(classname = "Locations.New")
         for site in self.sites:
             locationAction.execute(siteName = site, seName = site)
 
@@ -113,8 +115,8 @@ class JobCreatorTest(unittest.TestCase):
 
         #self.testInit.clearDatabase(modules = ['WMCore.ThreadPool'])
         self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService',
-                                               'WMCore.ThreadPool', 'WMCore.ResourceControl',
-                                               'WMCore.WorkQueue.Database'])
+                                               'WMCore.ThreadPool', 'WMCore.ResourceControl'])
+                                               #'WMCore.WorkQueue.Database'])
         #self.testInit.clearDatabase()
         
         time.sleep(2)
@@ -128,188 +130,68 @@ class JobCreatorTest(unittest.TestCase):
 
 
 
-
-
-
-    def createBigJobCollection(self, instance, nSubs):
+    def createJobCollection(self, name, nSubs, nFiles, workflowURL = 'test'):
         """
+        _createJobCollection_
 
-        Creates a giant block of jobs
-
-
+        Create a collection of jobs
         """
 
         myThread = threading.currentThread()
 
-        testWorkflow = Workflow(spec = "TestHugeWorkload/TestHugeTask", owner = "mnorman",
-                                name = "wf001", task="/BasicProduction/Merge")
+        testWorkflow = Workflow(spec = workflowURL, owner = "mnorman",
+                                name = name, task="/Tier1ReReco/ReReco")
         testWorkflow.create()
 
-        for i in range(0, nSubs):
+        for sub in range(nSubs):
 
-            nameStr = str(instance) + str(i)
+            nameStr = '%s-%i' % (name, sub)
 
-            myThread.transaction.begin()
-
-            testFileset = Fileset(name = "TestFileset"+nameStr)
+            testFileset = Fileset(name = nameStr)
             testFileset.create()
-        
-            for j in range(0,100):
-                #pick a random site
+
+            for f in range(nFiles):
+                # pick a random site
                 site = random.choice(self.sites)
-                testFile = File(lfn = "/this/is/a/lfn"+nameStr+str(j), size = 1024, events = 10)
+                testFile = File(lfn = "/lfn/%s/%i" % (nameStr, f), size = 1024, events = 10)
                 testFile.setLocation(site)
                 testFile.create()
                 testFileset.addFile(testFile)
 
             testFileset.commit()
-            testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
+            testSubscription = Subscription(fileset = testFileset,
+                                            workflow = testWorkflow,
+                                            type = "Processing",
+                                            split_algo = "FileBased")
             testSubscription.create()
-
-            myThread.transaction.commit()
-        return
-
-
-
-    def createSingleSiteCollection(self, instance, nSubs, workloadSpec = None):
-        """
-        Creates a giant block of jobs at one site
-        """
-
-
-
-        myThread = threading.currentThread()
-
-        if not workloadSpec:
-            logging.error("Should never be assigning workloadSpec")
-            workloadSpec = "TestSingleWorkload/TestHugeTask"
-
-
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman", name = "wf001", task="/BasicProduction/Merge")
-        testWorkflow.create()
-
-        for i in range(0, nSubs):
-
-            nameStr = str(instance) + str(i)
-
-            myThread.transaction.begin()
-
-            testFileset = Fileset(name = "TestFileset"+nameStr)
-            testFileset.create()
-        
-
-            for j in range(0,100):
-                #pick the first site
-                site = self.sites[0]
-                testFile = File(lfn = "/singleLfn"+nameStr+str(j), size = 1024, events = 10)
-                testFile.setLocation(site)
-                testFile.create()
-                testFileset.addFile(testFile)
-
-            testFileset.commit()
-            testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
-            testSubscription.create()
-
-            myThread.transaction.commit()
-
-        return
-
-    def createMutlipleSiteCollection(self, instance, nSubs, workloadSpec = None):
-        """
-
-        Creates a giant block of jobs at multiple sites
-
-
-        """
-
-
-
-        myThread = threading.currentThread()
-
-        nameStr = str(instance)
-
-
-        if not workloadSpec:
-            workloadSpec = "TestSingleWorkload%s/TestHugeTask" %(nameStr)
-
-
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman2",
-                                name = "wf001"+nameStr, task="Merge")
-        testWorkflow.create()
-
-        for i in range(0, nSubs):
-
-            nameStr = str(instance) + str(i)
-
-            myThread.transaction.begin()
-
-        
-            testFileset = Fileset(name = "TestFileset"+nameStr)
-            testFileset.create()
-        
-
-            for j in range(0,100):
-                #pick a random site
-                site = self.sites[0]
-                testFile = File(lfn = "/multLfn"+nameStr+str(j), size = 1024, events = 10)
-                testFile.setLocation(self.sites)
-                testFile.create()
-                testFileset.addFile(testFile)
-
-            testFileset.commit()
-            testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
-            testSubscription.create()
-
-            myThread.transaction.commit()
 
 
         return
 
 
-    def getAbsolutelyMassiveJobGroup(self, instance, nSubs, workloadSpec = None):
+
+    def createWorkload(self, workloadName = 'Test'):
+        """
+        _createWorkload_
+
+        Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        Creates a giant block of jobs at multiple sites
+        arguments = getTestArguments()
 
+        workload = rerecoWorkload("Tier1ReReco", arguments)
+        rereco = workload.getTask("ReReco")
 
-        """
-
-
-
-        myThread = threading.currentThread()
-
-        if not workloadSpec:
-            workloadSpec = "TestSingleWorkload/TestReallyHugeTask" 
-
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman3",
-                                name = "afmwf001", task="Merge")
-        testWorkflow.create()
-
-        for i in range(0, nSubs):
-
-            nameStr = str(instance) + str(i)
-
-            myThread.transaction.begin()
         
-            testFileset = Fileset(name = "TestFileset"+nameStr)
-            testFileset.create()
+        taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
+        taskMaker.skipSubscription = True
+        taskMaker.processWorkload()
 
-            for j in range(0,5000):
-                #pick a random site
-                site = self.sites[0]
-                testFile = File(lfn = "/multLfn"+nameStr+str(j), size = 1024, events = 10)
-                testFile.setLocation(self.sites)
-                testFile.create()
-                testFileset.addFile(testFile)
+        workload.save(workloadName)
 
-            testFileset.commit()
-            testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
-            testSubscription.create()
-
-            myThread.transaction.commit()
+        return workload
 
 
-        return
 
 
     def getConfig(self):
@@ -345,7 +227,7 @@ class JobCreatorTest(unittest.TestCase):
         config.JobCreator.maxThreads                = 1
         config.JobCreator.UpdateFromResourceControl = True
         config.JobCreator.pollInterval              = 10
-        config.JobCreator.jobCacheDir               = os.path.join(self.testDir)
+        config.JobCreator.jobCacheDir               = self.testDir
         config.JobCreator.defaultJobType            = 'processing' #Type of jobs that we run, used for resource control
         config.JobCreator.workerThreads             = 2
         config.JobCreator.componentDir              = os.path.join(os.getcwd(), 'Components')
@@ -368,323 +250,79 @@ class JobCreatorTest(unittest.TestCase):
         return config
 
 
-    def createTestWorkload(self, workloadName = None):
+    def testA_VerySimpleTest(self):
         """
-        _createTestWorkload_
-
-        Creates a test workload for us to run on, hold the basic necessities.
-        """
-
-        if not workloadName:
-            workloadName = os.path.join(self.testDir, 'basicWorkload.pcl')
-
-        if os.path.isdir(workloadName):
-            raise
-        if os.path.isfile(workloadName):
-            os.remove(workloadName)
-
-        #Basic workload definition
-        workload = newWorkload("BasicProduction")
-        workload.setStartPolicy('MonteCarlo')
-        workload.setEndPolicy('SingleShot')
-
-        #Basic production step
-        production = workload.newTask("Production")
-        production.addProduction(totalevents = 1000)
-        prodCmssw = production.makeStep("cmsRun1")
-        prodCmssw.setStepType("CMSSW")
-        prodStageOut = prodCmssw.addStep("stageOut1")
-        prodStageOut.setStepType("StageOut")
-        prodLogArch = prodCmssw.addStep("logArch1")
-        prodLogArch.setStepType("LogArchive")
-        production.applyTemplates()
-        production.setSplittingAlgorithm("FileBased", files_per_job = 10)
-
-        #Basic Merge step
-        merge = workload.newTask("Merge")
-        mergeCmssw = merge.makeStep("cmsRun1")
-        mergeCmssw.setStepType("CMSSW")
-        mergeStageOut = mergeCmssw.addStep("stageOut1")
-        mergeStageOut.setStepType("StageOut")
-        merge.applyTemplates()
-        merge.setSplittingAlgorithm("FileBased", files_per_job = 10)
-
-
-        prodCmsswHelper = prodCmssw.getTypeHelper()
-        prodCmsswHelper.data.section_('emulator')
-        prodCmsswHelper.data.emulator.emulatorName = "CMSSW"
-        prodCmsswHelper.data.application.setup.cmsswVersion = "CMSSW_X_Y_Z"
-        prodCmsswHelper.data.application.setup.softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
-        #prodCmsswHelper.data.application.configuration.configCacheUrl = "http://whatever"
-        prodCmsswHelper.addOutputModule("writeData", primaryDataset = "Primary",
-                                        processedDataset = "Processed",
-                                        dataTier = "TIER",
-                                        lfnBase = "/this/is/a/test/LFN")
-
-
-        prodStageOutHelper = prodStageOut.getTypeHelper()
-        prodStageOutHelper.data.section_('emulator')
-        prodStageOutHelper.data.emulator.emulatorName = "StageOut"
-        prodLogArchHelper = prodLogArch.getTypeHelper()
-        prodLogArchHelper.data.section_('emulator')
-        prodLogArchHelper.data.emulator.emulatorName = "LogArchive"
-        merge.setInputReference(prodCmssw, outputModule = "writeData")
-
-
-        monitoring  = production.data.section_('watchdog')
-        monitoring.monitors = ['WMRuntimeMonitor', 'TestMonitor']
-        monitoring.section_('TestMonitor')
-        monitoring.TestMonitor.connectionURL = "dummy.cern.ch:99999/CMS"
-        monitoring.TestMonitor.password      = "ThisIsTheWorld'sStupidestPassword"
-        monitoring.TestMonitor.softTimeOut   = 300
-        monitoring.TestMonitor.hardTimeOut   = 600
+        _VerySimpleTest_
         
-        taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
-        taskMaker.skipSubscription = True
-        taskMaker.processWorkload()
-
-        workload.save(workloadName)
-
-        return workload
-
-
-    def testA(self):
+        Just test that everything works...more or less
         """
-        Test for whether or not the job will actually run
-
-        """
-
-        #return
 
         myThread = threading.currentThread()
 
-        nSubs = 5
+        config = self.getConfig()
 
-        self.createBigJobCollection("first", nSubs)
+        name         = makeUUID()
+        nSubs        = 5
+        nFiles       = 10
+        workloadName = 'Tier1ReReco'
 
-        print "Should have database by now"
-        print myThread.dbi.processData("SELECT * FROM rc_threshold")[0].fetchall()
-        print self.resourceControl.listThresholdsForCreate()
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
 
+        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
 
         
-        config = self.getConfig()
 
-        testJobCreator = JobCreator(config)
-        testJobCreator.prepareToStart()
-
-        time.sleep(30)
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
+        testJobCreator = JobCreatorPoller(config = config)
 
 
-        result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs*100)
-
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
-
-        self.assertEqual(len(result[0].fetchall()), len(self.sites) * nSubs)
+        # First, can we run once without everything crashing?
+        testJobCreator.algorithm()
+        time.sleep(1)
 
 
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_job')
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
 
-        assert len(result[0].fetchall()) > nSubs * 20, "Not enough jobs!"
+        self.assertEqual(len(result), nSubs*nFiles)
 
-        while (threading.activeCount() > 1):
-            #We should never trigger this, but something weird is going on
-            print "Waiting for threads to finish"
-            time.sleep(1)
 
-        #self.teardown = True
+        # Count database objects
+        result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')[0].fetchall()
+        self.assertEqual(len(result), nSubs * nFiles)
+
+
+        # Find the test directory
+        testDirectory = os.path.join(self.testDir, 'Tier1ReReco', 'ReReco')
+        # It should have at least one jobGroup
+        self.assertTrue('JobCollection_1_0' in os.listdir(testDirectory))
+        # But no more then twenty
+        self.assertTrue(len(os.listdir(testDirectory)) <= 20)
+
+        groupDirectory = os.path.join(testDirectory, 'JobCollection_1_0')
+
+        # First job should be in here
+        self.assertTrue('job_1' in os.listdir(groupDirectory))
+        jobFile = os.path.join(groupDirectory, 'job_1', 'job.pkl')
+        self.assertTrue(os.path.isfile(jobFile))
+        f = open(jobFile, 'r')
+        job = cPickle.load(f)
+        f.close()
+
+
+        self.assertEqual(job['workflow'], name)
+        self.assertEqual(len(job['input_files']), 1)
+        self.assertEqual(os.path.basename(job['sandbox']), 'Tier1ReReco-Sandbox.tar.bz2')
 
 
         return
 
-
-    def testB(self):
-        """
-        This one actually tests something
-
-        """
-
-        #return
-        
-        myThread = threading.currentThread()
-
-        nSubs = 5
-
-        self.createSingleSiteCollection("first", nSubs)
-
-        config = self.getConfig()
-
-
-        testJobCreator = JobCreator(config)
-        testJobCreator.prepareToStart()
-
-        #time.sleep(10)
-        
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs)
-
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_job')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs * 20)
-
-        while (threading.activeCount() > 1):
-            #We should never trigger this, but something weird is going on
-            print "Waiting for threads to finish"
-            time.sleep(1)
-
-        #os.chdir(self.cwd)
-
-        return
-
-
-    def testC(self):
-        """
-        This one actually tests whether we can read the WMSpec
-
-        """
-
-        #return
-
-        wmWorkload = self.createTestWorkload()
-
-
-        if os.path.exists("basicWorkloadUpdated.pcl"):
-            os.remove("basicWorkloadUpdated.pcl")
-
-        wmTask     = wmWorkload.getTask("Merge")
-        #print wmTask.data
-
-        wmTask.data.section_("seeders")
-        wmTask.data.seeders.section_("RandomSeeder")
-        wmTask.data.seeders.section_("RunAndLumiSeeder")
-        wmTask.data.seeders.RandomSeeder.simMuonRPCDigis            = None
-        wmTask.data.seeders.RandomSeeder.simEcalUnsuppressedDigis   = None
-        wmTask.data.seeders.RandomSeeder.simCastorDigis             = None
-        wmTask.data.seeders.RandomSeeder.generator                  = None 
-        wmTask.data.seeders.RandomSeeder.simSiStripDigis            = None
-        wmTask.data.seeders.RandomSeeder.LHCTransport               = None
-
-        wmWorkload.save(os.path.join(self.testDir, "basicWorkloadUpdated.pcl"))
         
 
 
-        myThread = threading.currentThread()
 
-        nSubs = 5
-
-        self.createSingleSiteCollection(instance = "first", nSubs = nSubs, workloadSpec = os.path.join(self.testDir, "basicWorkloadUpdated.pcl"))
-
-        config = self.getConfig()
-
-
-        testJobCreator = JobCreator(config)
-        testJobCreator.prepareToStart()
-
-        #time.sleep(20)
-
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        if os.path.exists('tmpDir'):
-            shutil.rmtree('tmpDir')
-
-        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'tmpDir'))
-
-        result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs*100)
-
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs)
-
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_job')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs * 10)
-
-        while (threading.activeCount() > 1):
-            #We should never trigger this, but something weird is going on
-            print "Waiting for threads to finish"
-            time.sleep(1)
-
-        
-        
-
-        return
-
-
-    def testD(self):
-        """
-        This one tests whether or not we can choose a site from a list in the file
-        This is not well tested, since I don't know which location it will end up in.
-
-        """
-
-        #return
-
-
-        wmWorkload = self.createTestWorkload()
-
-        myThread = threading.currentThread()
-
-        nSubs = 5
-
-        self.createSingleSiteCollection("first", nSubs, self.testDir + "/basicWorkload.pcl")
-        
-
-        config = self.getConfig()
-
-        testJobCreator = JobCreator(config)
-        testJobCreator.prepareToStart()
-
-        #time.sleep(20)
-
-
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-
-        result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs*100)
-
-
-        result = myThread.dbi.processData('SELECT ID FROM wmbs_jobgroup')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs)
-
-
-        result = myThread.dbi.processData('SELECT id FROM wmbs_job')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs * 10)
-
-        self.assertEqual(os.listdir('%s/BasicProduction/Merge/JobCollection_1_0/job_1' %self.testDir), ['job.pkl'])
-
-        while (threading.activeCount() > 1):
-            #We should never trigger this, but something weird is going on
-            print "Waiting for threads to finish"
-            time.sleep(1)
-
-
-        return
-
-
-    def testE_Profile(self):
+    def testB_ProfilePoller(self):
         """
         Profile your performance
         You shouldn't be running this normally because it doesn't do anything
@@ -693,14 +331,18 @@ class JobCreatorTest(unittest.TestCase):
 
         return
 
-        wmWorkload = self.createTestWorkload()
-
         myThread = threading.currentThread()
 
-        nSubs = 5
+        name         = makeUUID()
+        nSubs        = 5
+        nFiles       = 10
+        workloadName = 'Tier1ReReco'
 
-        self.createSingleSiteCollection("first", nSubs, self.testDir + "/basicWorkload.pcl")
-        
+
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
+
+        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
         config = self.getConfig()
 
@@ -708,73 +350,104 @@ class JobCreatorTest(unittest.TestCase):
         cProfile.runctx("testJobCreator.algorithm()", globals(), locals(), filename = "testStats.stat")
 
         p = pstats.Stats('testStats.stat')
-        p.sort_stats('time')
-        p.print_stats()
-
-        return
-        
-
-
-    def testAbsoFuckingLoutelyHugeJob(self):
-        """
-        This one takes a long time to run, but it runs
-        """
+        p.sort_stats('cumulative')
+        p.print_stats(.2)
 
         return
 
-        print "This should take about twelve to fifteen minutes"
 
-        
-        wmWorkload = self.createTestWorkload()
-        
+    def testC_ProfileWorker(self):
+        """
+        Profile where the work actually gets done
+        You shouldn't be running this one either, since it doesn't test anything.
+        """
+
+        return
+
         myThread = threading.currentThread()
 
-        nSubs = 5
+        name         = makeUUID()
+        nSubs        = 5
+        nFiles       = 10
+        workloadName = 'Tier1ReReco'
 
-        self.getAbsolutelyMassiveJobGroup("first", nSubs, self.testDir + "/basicWorkload.pcl")
+
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
+
+        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
 
         config = self.getConfig()
 
-        startTime = time.clock()
-        testJobCreator = JobCreator(config)
-        testJobCreator.prepareToStart()
+        configDict = {"couchURL": config.JobStateMachine.couchurl,
+                      "defaultRetries": config.JobStateMachine.default_retries,
+                      "couchDBName": config.JobStateMachine.couchDBName,
+                      'jobCacheDir': config.JobCreator.jobCacheDir,
+                      'defaultJobType': config.JobCreator.defaultJobType}
 
-        print "Killing"
-        myThread.workerThreadManager.terminateWorkers()
-        while (threading.activeCount() > 1):
-            #We should never trigger this, but something weird is going on
-            #print "Waiting for threads to finish"
-            time.sleep(0.1)
-        stopTime = time.clock()
+        input = [{"subscription": 1}, {"subscription": 2}, {"subscription": 3}, {"subscription": 4}, {"subscription": 5}]
 
-        #time.sleep(90)
-
-        print "Time taken: "
-        print stopTime - startTime
-
-        if os.path.exists('tmpDir'):
-            shutil.rmtree('tmpDir')
-        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'tmpDir'))
-
-        dirs = os.listdir(os.path.join(self.testDir, 'BasicProduction/Merge'))
-
-        self.assertEqual(len(dirs), (nSubs*500)/500)
-
-        result = myThread.dbi.processData('SELECT id FROM wmbs_job')[0].fetchall()
-        print "Have wmbs_job results"
-        print len(result)
-        
-        for dir in dirs:
-            self.assertEqual(len(os.listdir('%s/BasicProduction/Merge/%s' %(self.testDir, dir))), 500)
+        testJobCreator = JobCreatorWorker(**configDict)
+        cProfile.runctx("testJobCreator(parameters = input)", globals(), locals(), filename = "workStats.stat")
 
 
-        result = myThread.dbi.processData('SELECT id FROM wmbs_job')
-
-        self.assertEqual(len(result[0].fetchall()), nSubs * 500)
-
-        
+        p = pstats.Stats('workStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats(.2)
 
         return
+
+
+    def testD_HugeTest(self):
+        """
+        Don't run this one either
+
+        """
+
+        return
+
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+
+        name         = makeUUID()
+        nSubs        = 10
+        nFiles       = 5000
+        workloadName = 'Tier1ReReco'
+
+        workload = self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', 'Tier1ReReco', 'WMSandbox', 'WMWorkload.pkl')
+
+        self.createJobCollection(name = name, nSubs = nSubs, nFiles = nFiles, workflowURL = workloadPath)
+
+
+        
+
+        testJobCreator = JobCreatorPoller(config = config)
+
+
+        # First, can we run once without everything crashing?
+        startTime = time.time()
+        testJobCreator.algorithm()
+        stopTime  = time.time()
+
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+
+        self.assertEqual(len(result), nSubs*nFiles)
+
+
+        print("Job took %f seconds to run" %(stopTime - startTime))
+
+
+        # Count database objects
+        result = myThread.dbi.processData('SELECT * FROM wmbs_sub_files_acquired')[0].fetchall()
+        self.assertEqual(len(result), nSubs * nFiles)
+        
+
+
+
 
 if __name__ == "__main__":
 

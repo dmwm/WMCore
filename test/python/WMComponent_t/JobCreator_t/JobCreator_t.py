@@ -1,7 +1,7 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.14 2010/03/22 15:22:41 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.15 2010/03/22 16:03:55 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import random
@@ -107,7 +107,7 @@ class JobCreatorTest(EmulatorUnitTestBase):
 
         self.testDir = self.testInit.generateWorkDir()
         self.cwd = os.getcwd()
-
+        EmulatorUnitTestBase.tearDown(self)
 
         return
 
@@ -135,7 +135,8 @@ class JobCreatorTest(EmulatorUnitTestBase):
         self.testInit.delWorkDir()
         
         self._teardown = True
-
+        
+        
         return
 
 
@@ -695,7 +696,7 @@ class JobCreatorTest(EmulatorUnitTestBase):
 
         """
 
-        #return
+        return
 
         wmWorkload = self.createTestWorkload()
 

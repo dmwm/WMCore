@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.12 2009/03/03 17:29:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Fileset_t.py,v 1.13 2009/04/28 13:57:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import logging
@@ -14,11 +14,14 @@ import random
 import os
 import threading
 
-from WMCore.WMFactory import WMFactory
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.Subscription import Subscription
+
 from WMCore.DataStructs.Run import Run
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMFactory import WMFactory
 
 from WMQuality.TestInit import TestInit
 
@@ -74,7 +77,7 @@ class FilesetTest(unittest.TestCase):
         
         self._teardown = True
         return                              
-
+ 
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -516,5 +519,93 @@ class FilesetTest(unittest.TestCase):
                
         return
 
+    def testFilesetClosing(self):
+        """
+        _testFilesetClosing_
+
+        Verify the proper operation of the closable fileset DAO object.  A
+        fileset is closable if:
+          - The subscription that feeds it has completed processing all files
+            in it's input fileset
+          - The fileset that feeds the subscription is closed
+        """
+        testOutputFileset1 = Fileset(name = "TestOutputFileset1")
+        testOutputFileset1.create()
+        testOutputFileset2 = Fileset(name = "TestOutputFileset2")
+        testOutputFileset2.create()
+        testOutputFileset3 = Fileset(name = "TestOutputFileset3")
+        testOutputFileset3.create()
+        testOutputFileset4 = Fileset(name = "TestOutputFileset4")
+        testOutputFileset4.create()        
+        
+        testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = True)
+        testFilesetOpen.create()
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
+                         events = 20, cksum = 3)
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
+                         events = 20, cksum = 3)        
+        testFilesetOpen.addFile(testFileA)
+        testFilesetOpen.addFile(testFileB)
+        testFilesetOpen.commit()
+
+        testFilesetClosed = Fileset(name = "TestFilesetClosed", is_open = False)
+        testFilesetClosed.create()
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
+                         events = 20, cksum = 3)
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
+                         events = 20, cksum = 3)        
+        testFilesetClosed.addFile(testFileC)
+        testFilesetClosed.addFile(testFileD)
+        testFilesetClosed.commit()
+
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
+                                 name = "wf001")
+        testWorkflow1.create()
+        testWorkflow1.addOutput("out1", testOutputFileset1)
+        testWorkflow1.addOutput("out2", testOutputFileset2)
+
+        testWorkflow2 = Workflow(spec = "spec2.xml", owner = "Steve",
+                                 name = "wf002")
+        testWorkflow2.create()
+        testWorkflow2.addOutput("out3", testOutputFileset3)
+
+        testWorkflow3 = Workflow(spec = "spec4.xml", owner = "Steve",
+                                 name = "wf004")
+        testWorkflow3.create()
+        testWorkflow3.addOutput("out4", testOutputFileset4)
+
+        testSubscription1 = Subscription(fileset = testFilesetClosed,
+                                         workflow = testWorkflow1)
+        testSubscription1.create()
+        testSubscription1.completeFiles([testFileC, testFileD])
+        testSubscription2 = Subscription(fileset = testFilesetOpen,
+                                         workflow = testWorkflow2)
+        testSubscription2.create()
+        testSubscription2.completeFiles([testFileA, testFileB])
+        testSubscription3 = Subscription(fileset = testFilesetClosed,
+                                         workflow = testWorkflow3)
+        testSubscription3.create()        
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
+        closableFilesets = closableFilesetDAO.execute()
+
+        goldenFilesets = ["TestOutputFileset1", "TestOutputFileset2"]
+
+        for closableFileset in closableFilesets:
+            newFileset = Fileset(id = closableFileset)
+            newFileset.load()
+
+            assert newFileset.name in goldenFilesets, \
+                   "Error: Unknown closable fileset"
+
+            goldenFilesets.remove(newFileset.name)
+
+        assert len(goldenFilesets) == 0, \
+               "Error: Filesets are missing"
+        return
+        
 if __name__ == "__main__":
         unittest.main()

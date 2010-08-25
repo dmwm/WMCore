@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.21 2010/03/23 21:26:29 sfoulkes Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.22 2010/04/07 19:08:49 mnorman Exp $"
+__version__ = "$Revision: 1.22 $"
 
 import os
 import threading
@@ -349,6 +349,55 @@ class AccountantWorker:
 
         return
 
+
+    def findDBSParents(self, lfn):
+        """
+        _findDBSParents_
+        
+        Find the parent of the file in DBS
+        This is meant to be called recursively
+        """
+        myThread = threading.currentThread()
+        logging.error("In findDBSParents")
+        parentsInfo = self.getParentInfoAction.execute([lfn],
+                                                       conn = self.transaction.conn,
+                                                       transaction = True)
+        logging.error(parentsInfo)
+
+        newParents = set()
+        for parentInfo in parentsInfo:
+
+            # This will catch straight to merge files that do not have redneck
+            # parents.  We will mark the straight to merge file from the job
+            # as a child of the merged parent.
+            if int(parentInfo["merged"]) == 1:
+                newParents.add(parentInfo["lfn"])
+
+            elif parentInfo['gpmerged'] == None:
+                logging.error('Have no grandparent')
+                continue
+
+
+            # Handle the files that result from merge jobs that aren't redneck
+            # children.  We have to setup parentage and then check on whether or
+            # not this file has any redneck children and update their parentage
+            # information.
+            elif int(parentInfo["gpmerged"]) == 1:
+                newParents.add(parentInfo["gplfn"])
+
+            # If that didn't work, we've reached the great-grandparents
+            # And we have to work via recursion
+            else:
+                logging.error("I couldn't find a parent; going to search at gp level")
+                parentSet = self.findDBSParents(lfn = parentInfo['gplfn'])
+                for parent in parentSet:
+                    logging.error("Adding parent via recursion")
+                    logging.error(parent)
+                    newParents.add(parent)
+
+        return newParents
+        
+
     def setupDBSFileParentage(self, outputFile):
         """
         _setupDBSFileParentage_
@@ -356,81 +405,15 @@ class AccountantWorker:
         Setup file parentage inside DBSBuffer, properly handling redneck
         parentage.
         """
-        parentsInfo = self.getParentInfoAction.execute([outputFile["lfn"]],
-                                                       conn = self.transaction.conn,
-                                                       transaction = True)
 
-        newParents = set()
-        redneckChildren = set()
-        for parentInfo in parentsInfo:
-            # This will catch straight to merge files that do not have redneck
-            # parents.  We will mark the straight to merge file from the job
-            # as a child of the merged parent.
-            if int(parentInfo["merged"]) == 1 and parentInfo["redneck_parent_fileset"] == None:
-                newParents.add(parentInfo["lfn"])
-
-                # If there are any merged redneck children for this file we need
-                # to find them, add this file as their parent and add them to
-                # the redneck children list so we can fixup their status later.
-                if parentInfo["redneck_child_fileset"] != None:
-                    children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["lfn"],
-                                                                    parentFileset = parentInfo["redneck_child_fileset"],
-                                                                    conn = self.transaction.conn, transaction = True)
-                    for child in children:
-                        dbsFile = DBSBufferFile(lfn = child)
-                        dbsFile.load()
-                        dbsFile.addParents([outputFile["lfn"]])
-                        redneckChildren.add(child)
-
-            # This will catch redneck children.  We need to discover any merged
-            # parents that already exist and add them as parents of the output
-            # file.  We also need to add the output file to the list of redneck
-            # children so that it's status can be updated.
-            elif parentInfo["redneck_parent_fileset"] != None:
-                redneckChildren.add(outputFile["lfn"])
-                self.dbsStatusAction.execute([outputFile["lfn"]], "WaitingForParents",
-                                             conn = self.transaction.conn, transaction = True)                
-                children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["gplfn"],
-                                                                parentFileset = parentInfo["redneck_parent_fileset"],
-                                                                conn = self.transaction.conn, transaction = True)
-                for child in children:
-                    newParents.add(child)
-
-                # A redneck child can be a redneck parent at the same time.  If
-                # that is the case then we need to discover any merged redneck
-                # children and setup the parentage information accordingly.
-                if parentInfo["redneck_child_fileset"] != None:
-                    children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["gplfn"],
-                                                                    parentFileset = parentInfo["redneck_child_fileset"],
-                                                                    conn = self.transaction.conn, transaction = True)
-                    for child in children:
-                        dbsFile = DBSBufferFile(lfn = child)
-                        dbsFile.load()
-                        dbsFile.addParents([outputFile["lfn"]])
-                        redneckChildren.add(child)     
-            # Handle the files that result from merge jobs that aren't redneck
-            # children.  We have to setup parentage and then check on whether or
-            # not this file has any redneck children and update their parentage
-            # information.
-            else:
-                if int(parentInfo["gpmerged"]) == 1:
-                    newParents.add(parentInfo["gplfn"])
-                if parentInfo["redneck_child_fileset"] != None:
-                    children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["gplfn"],
-                                                                    parentFileset = parentInfo["redneck_child_fileset"],
-                                                                    conn = self.transaction.conn, transaction = True)
-                    for child in children:
-                        dbsFile = DBSBufferFile(lfn = child)
-                        dbsFile.load()
-                        dbsFile.addParents([outputFile["lfn"]])
-                        redneckChildren.add(child)
+        newParents = self.findDBSParents(lfn = outputFile['lfn'])
 
         if len(newParents) > 0:
             dbsFile = DBSBufferFile(lfn = outputFile["lfn"])
             dbsFile.load()
             dbsFile.addParents(list(newParents))
 
-        self.fixupDBSFileStatus(redneckChildren)
+        #self.fixupDBSFileStatus(redneckChildren)
         return
 
     def addFileToWMBS(self, jobType, fwjrFile, jobMask, jobID = None):

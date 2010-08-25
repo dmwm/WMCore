@@ -6,8 +6,8 @@ Verify that the whole FWJR chain works correctly:
   CMSSW XML -> XMLParser -> Report -> Pickle -> UnPickle -> Accountant
 """
 
-__revision__ = "$Id: ReportIntegration_t.py,v 1.2 2010/03/30 20:48:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ReportIntegration_t.py,v 1.3 2010/08/02 17:56:34 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
 import os
@@ -302,6 +302,7 @@ class ReportIntegrationTest(unittest.TestCase):
         Verify that we're able to parse a CMSSW report, convert it to a Report()
         style report, pickle it and then have the accountant process it.
         """
+        raise RuntimeError, "Failing this test because it takes forever to run"
         self.procPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                     "test/python/WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         

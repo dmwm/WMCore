@@ -7,8 +7,8 @@ or a a set of files for each job.
 
 """
 
-__revision__ = "$Id: SizeBased.py,v 1.6 2009/12/16 18:54:43 mnorman Exp $"
-__version__  = "$Revision: 1.6 $"
+__revision__ = "$Id: SizeBased.py,v 1.7 2010/03/31 21:35:30 sfoulkes Exp $"
+__version__  = "$Revision: 1.7 $"
 
 import logging
 
@@ -28,37 +28,32 @@ class SizeBased(JobFactory):
         size_per_job 
         """
         sizePerJob = kwargs.get("size_per_job", 1000)
-
-        baseName = makeUUID()
-                
         locationDict = self.sortByLocation()
 
         for location in locationDict.keys():
             self.newGroup()
             fileList     = locationDict[location]
-            self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+            self.newJob(name = makeUUID())
             currentSize = 0
             
             for f in fileList:
                 sizeOfFile = f['size']
                 if sizeOfFile > sizePerJob:
                     if currentSize > 0:
-                        self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                        self.newJob(name = makeUUID())
                     self.currentJob.addFile(f)
                     currentSize += sizeOfFile
-                    #self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
-                    #currentSize = 0
 
                 else:
                     if currentSize + sizeOfFile > sizePerJob:
                         #Create new jobs, because we are out of room
-                        self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                        self.newJob(name = makeUUID())
                         currentSize = 0
 
                     if currentSize + sizeOfFile <= sizePerJob:
                     
                         if not self.currentJob:
-                            self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1))
+                            self.newJob(name = makeUUID())
                         #Add if it will be smaller
                         self.currentJob.addFile(f)
                         currentSize += sizeOfFile

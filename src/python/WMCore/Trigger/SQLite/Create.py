@@ -8,8 +8,8 @@ Class for creating SQLite specific schema for the trigger
 
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/05/14 15:46:13 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/07/23 14:06:42 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -32,23 +32,22 @@ class Create(DBCreator):
         self.constraints = {}
         self.create['a_tr_trigger'] = """
 CREATE TABLE tr_trigger(
-   id VARCHAR(32) NOT NULL,
+   id         VARCHAR(32) NOT NULL,
    trigger_id VARCHAR(32) NOT NULL,
-   flag_id VARCHAR(32) NOT NULL,
-   time timestamp NOT NULL default CURRENT_TIMESTAMP,
-   UNIQUE(id,trigger_id,flag_id),
-   INDEX(trigger_id)
+   flag_id    VARCHAR(32) NOT NULL,
+   time       timestamp   NOT NULL    default CURRENT_TIMESTAMP,
+   UNIQUE(id,trigger_id,flag_id)
    );
 """
         self.create['b_tr_trigger'] = """
 CREATE TABLE tr_action(
-   id VARCHAR(32) NOT NULL,
-   trigger_id VARCHAR(32) NOT NULL,
+   id          VARCHAR(32) NOT NULL,
+   trigger_id  VARCHAR(32) NOT NULL,
    /* Action name associated to this trigger. This name
    is associated to some python code in an action registery
    */
    action_name VARCHAR(255) NOT NULL,
-   payload text,
+   payload     text,
    UNIQUE(id,trigger_id)
    );
 """

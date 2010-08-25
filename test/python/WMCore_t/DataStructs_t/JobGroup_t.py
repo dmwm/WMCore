@@ -163,8 +163,6 @@ class JobGroupTest(unittest.TestCase):
 
         """
 
-        #print "testLen"
-
         #This is simple.  It should just have a length equal to the number of committed
         #And yet to be committed jobs
 

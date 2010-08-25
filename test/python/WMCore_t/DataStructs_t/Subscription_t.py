@@ -7,8 +7,9 @@ Testcase for the Subscription class
 """ 
 
 
+
 import unittest, os, logging, commands, random
-from sets import Set
+
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Workflow import Workflow
@@ -41,7 +42,7 @@ class SubscriptionTest(unittest.TestCase):
 
         #Initial testcase environment
         self.dummyFile = File('/tmp/dummyfile',9999,0,0,0)
-        self.dummySet = Set() 
+        self.dummySet = set() 
         self.dummySet.add(self.dummyFile)
         self.dummyFileSet = Fileset(name = 'SubscriptionTestFileset', 
                                     files = self.dummySet)
@@ -111,7 +112,7 @@ class SubscriptionTest(unittest.TestCase):
 
         #Second test - Test if target files are inserted at the acquired set        
 
-        dummyFileList = Set()
+        dummyFileList = set()
         #Populating the dummy List with a random number of files
         for i in range(1, random.randint(100,1000)):
             lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999),
@@ -121,9 +122,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, 
-                        size=size, 
-                        events=events,cksum = 1)
+            file = File(lfn = lfn, size = size, events = events,
+                        checksums = {"cksum": "1"})
             file.addRun(Run(run, *[lumi]))
             dummyFileList.add(file)
 
@@ -226,7 +226,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file = File(lfn = lfn, size = size, events = events,
+                        checksums = {"cksum": "1"})
             file.addRun(Run(run, *[lumi]))
             dummyFileList.append(file)
         #Add the new files
@@ -306,7 +307,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file = File(lfn = lfn, size = size, events = events,
+                        checksums = {"cksum": "1"})
             file.addRun(Run(run, *[lumi]))
             dummyFileList.append(file)
         #Add the new files
@@ -382,7 +384,7 @@ class SubscriptionTest(unittest.TestCase):
         white list is present in the subscription.
         """
         count = 0
-        dummyFileList = Set()
+        dummyFileList = set()
         for i in range(1, 100):
             lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999),
                                               random.randint(1000, 9999))
@@ -391,7 +393,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file = File(lfn = lfn, size = size, events = events,
+                        checksums = {"cksum": "1"})
             file.addRun(Run(run, *[lumi]))
             if random.randint(1, 2) > 1:
                 file.setLocation('goodse.cern.ch')
@@ -412,7 +415,7 @@ class SubscriptionTest(unittest.TestCase):
         Testcase for the availableFiles method of the Subscription Class
         """
         count = 0
-        dummyFileList = Set()
+        dummyFileList = set()
         for i in range(1, 100):
             lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999),
                                               random.randint(1000, 9999))
@@ -421,7 +424,8 @@ class SubscriptionTest(unittest.TestCase):
             run = random.randint(0, 2000)
             lumi = random.randint(0, 8)
 
-            file = File(lfn=lfn, size=size, events=events, cksum = 1)
+            file = File(lfn = lfn, size = size, events = events,
+                        checksums = {"cksum": "1"})
             file.addRun(Run(run, *[lumi]))
             if random.randint(1, 2) > 1:
                 file.setLocation('goodse.cern.ch')

@@ -5,10 +5,9 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: RunBased_t.py,v 1.3 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: RunBased_t.py,v 1.4 2009/12/16 18:55:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
-from sets import Set
 import unittest
 import os
 import threading
@@ -154,9 +153,6 @@ class EventBasedTest(unittest.TestCase):
         exactly the same as the number of events in the input file.
         """
 
-        print "testExactRuns"
-        
-        
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
 
@@ -184,8 +180,6 @@ class EventBasedTest(unittest.TestCase):
         greater than the number of runs in the input file.
         """
 
-        print "testMoreRuns"
-        
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
         
@@ -213,8 +207,6 @@ class EventBasedTest(unittest.TestCase):
 
         """
 
-        print "testMultipleRuns"
-
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
         
@@ -239,8 +231,6 @@ class EventBasedTest(unittest.TestCase):
         less then the number of files, with multiple files
 
         """
-
-        print "testMultipleRunsCombine"
 
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleRunSubscription)
@@ -270,8 +260,6 @@ class EventBasedTest(unittest.TestCase):
         less then and indivisible by the number of files, with multiple files.
 
         """
-
-        print "testSingleRunsCombineUneven"
 
         #This should return two jobs, one with 8 and one with 2 files
 

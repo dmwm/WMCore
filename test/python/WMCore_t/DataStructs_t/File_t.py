@@ -29,8 +29,6 @@ class FileTest(unittest.TestCase):
 
         """
 
-        print "testDefinition"
-
         testLFN     = "lfn"
         testSize    = "1024"
         testEvents  = "100"
@@ -53,8 +51,6 @@ class FileTest(unittest.TestCase):
         This tests the addRun() function of a DataStructs File object
 
         """
-
-        print "testAddRun"
 
         testLFN     = "lfn"
         testSize    = "1024"

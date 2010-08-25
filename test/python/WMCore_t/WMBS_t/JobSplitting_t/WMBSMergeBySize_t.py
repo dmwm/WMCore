@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.9 2009/12/16 17:45:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.10 2009/12/16 18:55:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
 import os
@@ -305,7 +305,7 @@ class EventBasedTest(unittest.TestCase):
                        "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
-                    assert fileEvent > currentEvent, \
+                    assert fileEvent >= currentEvent, \
                            "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
@@ -372,7 +372,7 @@ class EventBasedTest(unittest.TestCase):
                        "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
-                    assert fileEvent > currentEvent, \
+                    assert fileEvent >= currentEvent, \
                            "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
@@ -446,7 +446,7 @@ class EventBasedTest(unittest.TestCase):
                        "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
-                    assert fileEvent > currentEvent, \
+                    assert fileEvent >= currentEvent, \
                            "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
@@ -519,7 +519,7 @@ class EventBasedTest(unittest.TestCase):
                        "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
-                    assert fileEvent > currentEvent, \
+                    assert fileEvent >= currentEvent, \
                            "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
@@ -590,14 +590,14 @@ class EventBasedTest(unittest.TestCase):
                     continue
 
                 assert fileRun >= currentRun, \
-                       "ERROR: Files not sorted by run."
+                       "ERROR: Files not sorted by run: %s, %s" % (fileRun, currentRun)
 
                 if fileRun == currentRun:
                     assert fileLumi >= currentLumi, \
                            "ERROR: Files not ordered by lumi"
 
                     if fileLumi == currentLumi:
-                        assert fileEvent > currentEvent, \
+                        assert fileEvent >= currentEvent, \
                                "ERROR: Files not ordered by first event"
 
                 currentRun = fileRun
@@ -670,7 +670,7 @@ class EventBasedTest(unittest.TestCase):
                        "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
-                    assert fileEvent > currentEvent, \
+                    assert fileEvent >= currentEvent, \
                            "ERROR: Files not ordered by first event"
 
             currentRun = fileRun

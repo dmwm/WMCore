@@ -29,8 +29,6 @@ class WorkflowTest(unittest.TestCase):
 
         """
 
-        print "testDefinition"
-
         testSpec  = "test"
         testOwner = "mnorman"
         testName  = "testName"
@@ -49,8 +47,6 @@ class WorkflowTest(unittest.TestCase):
         Tests the AddObject functionality of the DataStruct Workflow
 
         """
-
-        print "testAddObject"
 
         testName    = "test"
         testFileset = "testFileset"

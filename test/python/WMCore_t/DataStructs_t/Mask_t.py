@@ -30,8 +30,6 @@ class MaskTest(unittest.TestCase):
 
         """
 
-        print "testSetMaxAndSkipEvents"
-
         testMask = Mask()
         maxEvents  = 100
         skipEvents = 10
@@ -50,8 +48,6 @@ class MaskTest(unittest.TestCase):
 
         """
 
-        print "testSetMaxAndSkipLumis"
-
         testMask  = Mask()
         maxLumis  = 10
         skipLumis = 2
@@ -69,8 +65,6 @@ class MaskTest(unittest.TestCase):
         test class for setMaxAndSkipRuns in Mask.py
 
         """
-
-        print "testSetMaxAndSkipRuns"
 
         testMask  = Mask()
         maxRuns   = 1000
@@ -96,8 +90,6 @@ class MaskTest(unittest.TestCase):
         #remember that.
         # -mnorman
 
-        print "getMaxEvents"
-
         testMask = Mask()
         maxEvents  = 100
         skipEvents = 0
@@ -118,8 +110,6 @@ class MaskTest(unittest.TestCase):
         test class for the getMax() routine added to Mask.py
 
         """
-
-        print "testGetMax"
 
         testMask  = Mask()
         maxRuns   = 1000

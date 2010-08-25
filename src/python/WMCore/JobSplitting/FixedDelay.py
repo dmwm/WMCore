@@ -6,8 +6,8 @@ If the current time is beyond trigger_time, add
 any unacquired jobs to 
 """
 
-__revision__ = "$Id: FixedDelay.py,v 1.4 2009/12/15 14:07:09 spiga Exp $"
-__version__  = "$Revision: 1.4 $"
+__revision__ = "$Id: FixedDelay.py,v 1.5 2009/12/16 18:55:44 sfoulkes Exp $"
+__version__  = "$Revision: 1.5 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
@@ -32,8 +32,8 @@ class FixedDelay(JobFactory):
         #//
         fileset = self.subscription.getFileset()
         trigger_time = kwargs['trigger_time']
-        if (trigger_time < time.gmtime()):
-            availFiles = self.subscription.fileset.getFiles()
+        if (trigger_time < time.time()):
+            availFiles = self.subscription.availableFiles()
             if (len(availFiles) == 0):
                 # no files to acquire
                 return []

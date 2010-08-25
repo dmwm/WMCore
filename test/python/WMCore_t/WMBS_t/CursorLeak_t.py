@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: CursorLeak_t.py,v 1.4 2009/10/13 23:00:06 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CursorLeak_t.py,v 1.5 2009/12/16 18:55:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import logging
@@ -14,7 +14,6 @@ import os
 import commands
 import threading
 import random
-from sets import Set
 
 from WMCore.Database.DBCore import DBInterface
 from WMCore.Database.DBFactory import DBFactory
@@ -76,12 +75,14 @@ class CursorLeakTest(unittest.TestCase):
         fileList = []
         parentFile = None
         for i in range(100):
-            testFile = File(lfn = "/this/is/a/lfn%s" % i, size = 1024, events = 10, cksum=1111)            
+            testFile = File(lfn = "/this/is/a/lfn%s" % i, size = 1024, events = 10,
+                            checksums = {"cksum": "1"})
             testFile.addRun(Run(1, *[i]))
             testFile.create()
             
             for j in range(5):
-                parentFile = File(lfn = "/this/is/a/lfnP%s" % j, size = 1024, events = 10, cksum=1111)            
+                parentFile = File(lfn = "/this/is/a/lfnP%s" % j, size = 1024,
+                                  events = 10, checksums = {"cksum": "1"})
                 parentFile.addRun(Run(1, *[j]))
                 parentFile.create()
                 testFile.addParent(parentFile['lfn'])
@@ -104,18 +105,18 @@ class CursorLeakTest(unittest.TestCase):
         verify that the query to return grandparents works correctly.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        cksum = 1, locations = "se1.fnal.gov")
+                        checksums = {"cksum": "1"}, locations = "se1.fnal.gov")
         testFileA.create()
 
         for i in xrange(15):
             testParent = File(lfn = makeUUID(), size = 1024, events = 10,
-                              cksum = 1, locations = "se1.fnal.gov")
+                              checksums = {"cksum": "1"}, locations = "se1.fnal.gov")
             testParent.create()
             testFileA.addParent(testParent["lfn"])
 
             for i in xrange(100):
                 testGParent = File(lfn = makeUUID(), size = 1024, events = 10,
-                                   cksum = 1, locations = "se1.fnal.gov")
+                                   checksums = {"cksum": "1"}, locations = "se1.fnal.gov")
                 testGParent.create()
                 testParent.addParent(testGParent["lfn"])                
 

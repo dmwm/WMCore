@@ -5,8 +5,8 @@ Locations_t
 Unit tests for the Locations DAO objects.
 """
 
-__revision__ = "$Id: Locations_t.py,v 1.10 2009/10/27 09:02:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Locations_t.py,v 1.11 2009/12/16 18:55:42 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import unittest
@@ -49,8 +49,6 @@ class LocationsTest(unittest.TestCase):
         Test the creation, listing and deletion of locations in WMBS.
         """
 
-        print "testCreateDeleteList"
-        
         goldenLocations = ["goodse.cern.ch", "goodse.fnal.gov"]
         
         myThread = threading.currentThread()        
@@ -107,8 +105,6 @@ class LocationsTest(unittest.TestCase):
 
         """
 
-        print "testListSites"
-
         myThread = threading.currentThread()        
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
@@ -133,8 +129,6 @@ class LocationsTest(unittest.TestCase):
         
         Test our ability to set jobSlots
         """
-
-        print "testJobSlots"
 
         myThread = threading.currentThread()        
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,

@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 """
-_EventBased_t_
+_LumiBased_t
 
-Event based splitting test.
+Test lumi based splitting.
 """
 
-__revision__ = "$Id: LumiBased_t.py,v 1.6 2009/11/19 21:14:50 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: LumiBased_t.py,v 1.7 2009/12/16 18:55:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
-from sets import Set
 import os
 import threading
 import logging
@@ -27,7 +26,7 @@ from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
 
-class EventBasedTest(unittest.TestCase):
+class LumiBasedTest(unittest.TestCase):
     """
     _EventBasedTest_
 
@@ -155,8 +154,6 @@ class EventBasedTest(unittest.TestCase):
         exactly the same as the lumi in the input file.
         """
 
-        print "testExactLumi"
-
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
@@ -184,8 +181,6 @@ class EventBasedTest(unittest.TestCase):
         more than the lumis in the input file.
         """
 
-        print "testMoreLumi"
-
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
 
@@ -208,22 +203,9 @@ class EventBasedTest(unittest.TestCase):
         same lumi
         """
 
-        print "testFileBasedSplitting"
-        
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleLumiSubscription)
 
-#        jobGroups = jobFactory(files_per_job = 1)
-#
-#
-#        self.assertEqual(len(jobGroups),         1)
-#        self.assertEqual(len(jobGroups[0].jobs), 10)
-#
-#        jobGroup2 = jobFactory(files_per_job = 2)
-#
-#        self.assertEqual(len(jobGroup2),         1)
-#        self.assertEqual(len(jobGroup2[0].jobs), 5)
-#
         jobGroup3 = jobFactory(files_per_job = 8)
 
         self.assertEqual(len(jobGroup3),                       1)
@@ -241,23 +223,8 @@ class EventBasedTest(unittest.TestCase):
         lumis
         """
 
-        print "testLumiBasedSplitting"
-        
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleLumiSubscription)
-
-#        jobGroups = jobFactory(lumis_per_job = 1)
-#
-#
-#        self.assertEqual(len(jobGroups),         1)
-#        self.assertEqual(len(jobGroups[0].jobs), 4)
-#
-#        jobGroup2 = jobFactory(lumis_per_job = 2)
-#
-#        self.assertEqual(len(jobGroup2),                       1)
-#        self.assertEqual(len(jobGroup2[0].jobs),               2)
-#        self.assertEqual(len(jobGroup2[0].jobs[0].getFiles()), 6)
-#        self.assertEqual(len(jobGroup2[0].jobs[1].getFiles()), 4)
 
         jobGroup3 = jobFactory(lumis_per_job = 4)
 
@@ -276,24 +243,10 @@ class EventBasedTest(unittest.TestCase):
         a single lumi
         """
 
-        print "testEventBasedSplitting"
-
         myThread = threading.currentThread()
         
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleLumiSubscription)
-
-#        jobGroups = jobFactory(events_per_job = 100)
-#
-#        self.assertEqual(len(jobGroups),         1)
-#        self.assertEqual(len(jobGroups[0].jobs), 10)
-#
-#        jobGroup2 = jobFactory(events_per_job = 220)
-#
-#        self.assertEqual(len(jobGroup2),                       1)
-#        self.assertEqual(len(jobGroup2[0].jobs),               5)
-#        self.assertEqual(len(jobGroup2[0].jobs[0].getFiles()), 2)
-#        self.assertEqual(len(jobGroup2[0].jobs[1].getFiles()), 2)
 
         jobGroup3 = jobFactory(events_per_job = 800)
 
@@ -313,26 +266,9 @@ class EventBasedTest(unittest.TestCase):
         
         """
 
-        print "testMultipleLumi"
-
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleLumiSubscription)
 
-#        jobGroups = jobFactory(files_per_job = 1)
-#
-#
-#        self.assertEqual(len(jobGroups),         4)
-#        self.assertEqual(len(jobGroups[0].jobs), 3)
-#        self.assertEqual(len(jobGroups[3].jobs), 1)
-#        self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 1)
-#
-#        jobGroup2 = jobFactory(files_per_job = 2)
-#
-#        self.assertEqual(len(jobGroup2),         4)
-#        self.assertEqual(len(jobGroup2[0].jobs), 2)
-#        self.assertEqual(len(jobGroup2[3].jobs), 1)
-#        self.assertEqual(len(jobGroup2[1].jobs[0].getFiles()), 2)
-#
         jobGroup3 = jobFactory(files_per_job = 8)
 
         self.assertEqual(len(jobGroup3),                       4)

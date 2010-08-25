@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.25 2009/08/21 10:01:18 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: File_t.py,v 1.26 2009/09/10 15:58:38 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import unittest
 import logging
@@ -203,6 +203,7 @@ class FileTest(unittest.TestCase):
         testFile.addParent("/this/is/a/parent/lfn")
 
         info = testFile.getInfo()
+
         assert info[0] == testFile["lfn"], \
                "ERROR: File returned wrong LFN"
         
@@ -710,6 +711,68 @@ class FileTest(unittest.TestCase):
               "ERROR: level 3 desc test failed"
 
         return
+
+
+        return
+
+
+
+    def testGetBulkLocations(self):
+        """
+        _testGetBulkLocations_
+
+        Checks to see whether the code that we have will enable us to get the locations
+        of all files at once
+        """
+
+        myThread = threading.currentThread()
+
+        daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging, dbinterface = myThread.dbi)
+        locationAction = daoFactory(classname = "Locations.New")
+        locationAction.execute(siteName = "se2.fnal.gov")
+        locationAction.execute(siteName = "se3.fnal.gov")
+        locationAction.execute(siteName = "se4.fnal.gov")
+        locationAction.execute(siteName = "se5.fnal.gov")
+        locationAction.execute(siteName = "se6.fnal.gov")
+        
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                        cksum = 1, locations = "se1.fnal.gov")
+        testFileA.create()
+        
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                        cksum = 1, locations = "se2.fnal.gov")
+        testFileB.create()
+        
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
+                        cksum = 1, locations = "se3.fnal.gov")
+        testFileC.create()
+        
+        testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
+                        cksum = 1, locations = "se4.fnal.gov")
+        testFileD.create()
+        
+        testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
+                        cksum = 1, locations = "se5.fnal.gov")
+        testFileE.create()
+        
+        testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
+                        cksum = 1, locations = "se6.fnal.gov")
+        testFileF.create()
+
+        files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]
+        
+
+        locationFac = daoFactory(classname = "Files.GetBulkLocation")
+        location  = locationFac.execute(files = files)
+
+        for f in files:
+            self.assertEqual(location[f.exists()], list(f['locations']))
+
+
+        return
+
+
+
 
 if __name__ == "__main__":
     unittest.main() 

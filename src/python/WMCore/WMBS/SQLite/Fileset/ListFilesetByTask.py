@@ -6,14 +6,11 @@ SQLite implementation of Fileset.ListFilesetByTask
 """
 
 __all__ = []
-__revision__ = "$Id: ListFilesetByTask.py,v 1.2 2010/06/01 21:17:35 riahi Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: ListFilesetByTask.py,v 1.3 2010/06/23 14:40:00 metson Exp $"
+__version__ = "$Revision: 1.3 $"
 
 
 from WMCore.WMBS.MySQL.Fileset.ListFilesetByTask import ListFilesetByTask as ListFilesetByTaskMySQL
 
 class ListFilesetByTask(ListFilesetByTaskMySQL):
     sql = ListFilesetByTaskMySQL.sql
-~                                     
-
-

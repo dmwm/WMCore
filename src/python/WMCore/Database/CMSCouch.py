@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.61 2010/05/05 21:30:56 sfoulkes Exp $"
-__version__ = "$Revision: 1.61 $"
+__revision__ = "$Id: CMSCouch.py,v 1.62 2010/05/18 19:30:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.62 $"
 
 import urllib
 import datetime
@@ -372,6 +372,9 @@ class CouchServer(CouchDBRequests):
         """
         Set up a connection to the CouchDB server
         """
+        if dburl.find("http://") == 0:
+            dburl = dburl[7:]
+            
         CouchDBRequests.__init__(self, dburl)
         self.url = dburl
 

@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: ExecuteMaster.py,v 1.13 2010/05/06 16:25:47 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: ExecuteMaster.py,v 1.14 2010/05/17 20:46:32 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import threading
 
@@ -48,7 +48,7 @@ class ExecuteMaster:
         
         for step in task.steps().nodeIterator():
             try:
-                myThread.watchdogMonitor.notifyStepStart(step)
+                #myThread.watchdogMonitor.notifyStepStart(step)
                 helper = WMStepHelper(step)
                 stepType = helper.stepType()
                 stepName = helper.name()
@@ -75,6 +75,11 @@ class ExecuteMaster:
 
 
         """
+        myThread = threading.currentThread
+        # Tell the watchdog that we're starting the step
+        myThread.watchdogMonitor.notifyStepStart(step)
+
+        
         self.toStepDirectory(step)
         executor.initialise(step, job)
         executionObject = executor
@@ -110,6 +115,10 @@ class ExecuteMaster:
             executor.report.setStepStatus(stepName = executor.stepName,
                                           status = 0)
         executor.saveReport()
+
+        # Tell the watchdog that we're done with the step
+        myThread.watchdogMonitor.notifyStepEnd(step = step,
+                                               stepReport = executor.report)
 
     def toStepDirectory(self, step):
         """

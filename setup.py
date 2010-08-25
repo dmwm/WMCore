@@ -5,6 +5,7 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser
 import os, sys
+
 try:
     from pylint import lint
     #PyLinter
@@ -183,6 +184,8 @@ class ReportCommand(Command):
         cfg = ConfigParser()
         cfg.read('standards/.pylintrc')
         
+        bak = sys.stderr
+        sys.stderr = open('/dev/null', 'w')
     
         for stats in lint_files(files):
             error += stats['error']
@@ -190,6 +193,8 @@ class ReportCommand(Command):
             refactor += stats['refactor']
             convention += stats['convention'] 
             statement += stats['statement']
+        
+        sys.stderr = bak
         
         stats = {'error': error,
             'warning': warning,

@@ -3,8 +3,8 @@
 The actual JobStatus process scheduling algorithm
 """
 __all__ = []
-__revision__ = "$Id: StatusScheduling.py,v 1.1 2010/05/13 15:55:49 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: StatusScheduling.py,v 1.2 2010/05/18 07:31:01 mcinquil Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
@@ -45,7 +45,7 @@ class StatusScheduling(BaseWorkerThread):
 
 
         self.processPool = ProcessPool( \
-                           "JobStatus.StatusWorker", \
+                           "JobStatusLite.StatusWorker", \
                            config.JobStatusLite.processes, \
                            componentDir = self.config.JobStatusLite.componentDir, \
                            config = self.config, slaveInit = configDict \

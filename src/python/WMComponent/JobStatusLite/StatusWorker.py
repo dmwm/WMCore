@@ -3,8 +3,8 @@
 The JobStatus subprocess worker for the status check/update
 """
 __all__ = []
-__revision__ = "$Id: StatusWorker.py,v 1.1 2010/05/13 15:55:49 mcinquil Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: StatusWorker.py,v 1.2 2010/05/18 07:31:01 mcinquil Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
@@ -13,7 +13,7 @@ import time
 #from WMCore.DAOFactory                      import DAOFactory
 from WMCore.Database.Transaction            import Transaction
 from WMCore.Agent.Configuration             import Configuration
-from WMComponent.JobStatus.JobStatusWork    import JobStatusWork
+from WMComponent.JobStatusLite.JobStatusWork    import JobStatusWork
 
 
 class StatusWorker:

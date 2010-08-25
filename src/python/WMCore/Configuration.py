@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.16 2010/04/07 14:00:05 valya Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Configuration.py,v 1.17 2010/07/29 20:59:24 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import os
 import imp
@@ -120,6 +120,7 @@ class ConfigSection(object):
                 if type(val) not in _SimpleTypes:
                     msg = "Complex Value type in sequence:"
                     msg += "%s\n" % type(val)
+                    msg += "for name: %s and value: %s\n" % (name, value)
                     msg += "Added to WMAgent Configuration"
                     raise RuntimeError, msg
         object.__setattr__(self, name, value)

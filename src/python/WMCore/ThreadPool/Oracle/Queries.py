@@ -8,9 +8,9 @@ This module implements the Oracle backend for the persistent threadpool.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.3 2009/06/16 14:41:06 mnorman Exp $"
+    "$Id: Queries.py,v 1.4 2009/07/17 16:02:00 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.3 $"
+    "$Revision: 1.4 $"
 __author__ = \
     "mnorman@fnal.gov"
 
@@ -207,27 +207,3 @@ VALUES(:event,:payload)
                 'payload':args['payload']})
 
         return
-
-
-
-    def execute(self, sqlStr, args):
-        """
-        __execute__
-        Executes the queries by getting the current transaction
-        and dbinterface object that is stored in the reserved words of
-        the thread it operates in.
-        """
-        #FIXME: we use this method in all kinds of places perhaps upgrade
-        #FIXME: this method?
-        myThread = threading.currentThread()
-        myThread.transaction.begin()
-        result = myThread.dbi.processData(sqlStr, args)
-        myThread.transaction.commit()
-
-        return result
-        
-
-
-
-
-

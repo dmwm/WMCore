@@ -8,8 +8,8 @@ Class for creating Oracle specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2009/07/06 19:05:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Create.py,v 1.5 2009/08/12 21:07:38 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -43,9 +43,15 @@ class Create(DBCreator):
 
     
     
-    def __init__(self):
+    def __init__(self,logger=None, dbi=None):
         myThread = threading.currentThread()
-        DBCreator.__init__(self, myThread.logger, myThread.dbi)
+
+        if logger == None:
+            logger = myThread.logger
+        if dbi == None:
+            dbi = myThread.dbi
+            
+        DBCreator.__init__(self, logger, dbi)
         self.create = {}
         self.constraints = {}
 

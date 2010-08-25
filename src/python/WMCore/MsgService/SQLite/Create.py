@@ -5,8 +5,8 @@ _Create_
 Class for creating SQLite specific schema for persistent messages.
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/07/02 16:55:16 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/08/12 21:07:37 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import logging
 import threading
@@ -22,9 +22,15 @@ class Create(DBCreator):
     
     
     
-    def __init__(self):
+    def __init__(self, logger=None, dbi=None):
         myThread = threading.currentThread()
-        DBCreator.__init__(self, myThread.logger, myThread.dbi)
+
+        if logger == None:
+            logger = myThread.logger
+        if dbi == None:
+            dbi = myThread.dbi
+            
+        DBCreator.__init__(self, logger, dbi)
         self.create = {}
         self.constraints = {}
         msg = """

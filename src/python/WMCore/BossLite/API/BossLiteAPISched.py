@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPISched.py,v 1.3 2010/05/26 22:44:16 spigafi Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: BossLiteAPISched.py,v 1.4 2010/06/28 18:26:38 spigafi Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 
 # db interaction
@@ -94,7 +94,7 @@ class BossLiteAPISched(object):
         return self.bossLiteLogger
     
     
-    def submit( self, taskId, jobRange='all', 
+    def submit( self, taskId = None, taskObj = None, jobRange='all', 
                         requirements='', schedulerAttributes=None ):
         """
         Submit to the scheduler (eventually it creates running instances
@@ -103,13 +103,33 @@ class BossLiteAPISched(object):
         - requirements are scheduler attributes affecting all jobs
         - jobAttributes is a map of running attributes
         """
-
+        
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+            
         task = None
-
+        
         try:
-            # load task
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
 
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
+            
             # create or load running instances
             for job in task.jobs:
                 if job.runningJob is not None :
@@ -135,7 +155,7 @@ class BossLiteAPISched(object):
         return task
     
     
-    def resubmit( self, taskId, jobRange='all', 
+    def resubmit( self, taskId = None, taskObj = None, jobRange='all', 
                         requirements='', schedulerAttributes=None ):
         """
         It archives existing submission and creates a new entry for the next
@@ -147,12 +167,31 @@ class BossLiteAPISched(object):
         - jobAttributes is a map of running attributes
         """
         
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+            
         task = None
 
         try:
-
-            # load task
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
+            
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
 
             # get new running instance
             for job in task.jobs:
@@ -180,7 +219,8 @@ class BossLiteAPISched(object):
         return task
     
     
-    def query( self, taskId, jobRange='all', queryType='node' ):
+    def query( self, taskId = None, taskObj = None, 
+                                    jobRange='all', queryType='node' ):
         """
         query status and eventually other scheduler related information
         - taskId can be both a Task object or the task id
@@ -189,13 +229,32 @@ class BossLiteAPISched(object):
                             'node' otherwise
         """
         
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+        
         task = None
 
         try:
-
-            # load task - NEED TO CHECK
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
-
+            
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
+            
             # scheduler query
             self.scheduler.query( task, queryType )
 
@@ -216,7 +275,8 @@ class BossLiteAPISched(object):
         return task
     
     
-    def getOutput( self, taskId, jobRange='all', outdir='' ):
+    def getOutput( self, taskId = None, taskObj = None, 
+                                            jobRange='all', outdir='' ):
         """
         It retrieves the output or just put it in the destination directory
         - taskId can be both a Task object or the task id
@@ -224,13 +284,32 @@ class BossLiteAPISched(object):
         - outdir is the output directory for files retrieved
         """
         
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+        
         task = None
 
         try:
 
-            # load task
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
-
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
+            
             # scheduler query
             self.scheduler.getOutput( task, outdir )
 
@@ -251,20 +330,39 @@ class BossLiteAPISched(object):
         return task
     
     
-    def kill( self, taskId, jobRange='all' ):
+    def kill( self, taskId = None, taskObj = None, jobRange='all' ):
         """
         It kills job instances
         - taskId can be both a Task object or the task id
         - jobRange can be of the form: 'a,b:c,d,e' OR ['a',b','c'] OR 'all'
         """
         
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                        'Use only taskId or taskObj at the same time' )
+        
         task = None
 
         try:
 
-            # load task
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
-
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
+            
             # scheduler query
             self.scheduler.kill( task )
 
@@ -285,7 +383,7 @@ class BossLiteAPISched(object):
         return task
     
     
-    def matchResources( self, taskId, jobRange='all', 
+    def matchResources( self, taskId = None, taskObj = None, jobRange='all', 
                                 requirements='', schedulerAttributes=None ) :
         """
         It performs a resources discovery
@@ -293,13 +391,32 @@ class BossLiteAPISched(object):
         - jobRange can be of the form: 'a,b:c,d,e' OR ['a',b','c'] OR 'all'
         """
         
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+        
         task = None
 
         try:
 
-            # load task
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
-
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
+            
             # retrieve running instances
             for job in task.jobs:
                 if job.runningJob is not None :
@@ -325,7 +442,7 @@ class BossLiteAPISched(object):
         return resources
     
     
-    def jobDescription ( self, taskId, jobRange='all', 
+    def jobDescription ( self, taskId = None, taskObj = None, jobRange='all', 
                                 requirements='', schedulerAttributes=None ):
         """
         It queries status and eventually other scheduler related information
@@ -335,12 +452,33 @@ class BossLiteAPISched(object):
         - jobAttributes is a map of running attributes
         """
         
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+        
         task = None
 
         try:
-            # load task
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
-
+            
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+                
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
+            
             # retrieve running instances
             for job in task.jobs:
                 if job.runningJob is not None :
@@ -360,19 +498,40 @@ class BossLiteAPISched(object):
         return jdString
     
     
-    def purgeService( self, taskId, jobRange='all') :
+    def purgeService( self, taskId = None, taskObj = None, jobRange='all') :
         """
         It purges the service used by the scheduler
         - taskId can be both a Task object or the task id
         - jobRange can be of the form: 'a,b:c,d,e' OR ['a',b','c'] OR 'all'
         """
         
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+        
         task = None
 
         try:
-            # load task
-            task = self.bossLiteSession.loadTask( taskId, jobRange )
-
+            
+            if taskObj and (not taskId):
+                # task already loaded
+                task = taskObj
+                
+            elif taskId and (not taskObj) :
+                # load task
+                task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                        jobRange = jobRange )
+                
+            else :
+                # something goes wrong ...
+                raise SchedulerError( 'Invalid parameter', \
+                                  'Check taskId or taskObj parameter' )
+            
             # purge task
             self.scheduler.purgeService( task )
 
@@ -393,17 +552,39 @@ class BossLiteAPISched(object):
         return task
     
     
-    def postMortem ( self, taskId, jobRange='all', outfile='loggingInfo.log') :
+    def postMortem ( self, taskId = None, taskObj = None, 
+                                jobRange='all', outfile='loggingInfo.log') :
         """
         It executes a post-mortem command
         - taskId can be both a Task object or the task id
         - jobRange can be of the form: 'a,b:c,d,e' OR ['a',b','c'] OR 'all'
         - outfile is the physical file where to log post-mortem informations
         """
-
-        # load task
-        task = self.bossLiteSession.loadTask( taskId, jobRange )
-
+        
+        # checks...
+        if not taskId and not taskObj :
+            raise SchedulerError( 'Invalid parameter', \
+                                  'Missing taskId or taskObj parameter' )
+            
+        if taskId and taskObj :
+            raise SchedulerError( 'Too many parameter', \
+                            'Use only taskId or taskObj at the same time' )
+        
+        
+        if taskObj and (not taskId):
+            # task already loaded
+            task = taskObj
+                
+        elif taskId and (not taskObj) :
+            # load task
+            task = self.bossLiteSession.loadTask( taskId = taskId, \
+                                                    jobRange = jobRange )
+            
+        else :
+            # something goes wrong ...
+            raise SchedulerError( 'Invalid parameter', \
+                              'Check taskId or taskObj parameter' )
+        
         # scheduler query
         self.scheduler.postMortem( task, outfile )
 

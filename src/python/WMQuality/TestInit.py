@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.8 2009/02/27 22:18:02 fvlingen Exp $"
+    "$Id: TestInit.py,v 1.9 2009/06/05 16:47:09 sryu Exp $"
 __version__ = \
-    "$Revision: 1.8 $"
+    "$Revision: 1.9 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -142,7 +142,7 @@ class TestInit:
             for entry in result:
                 print(str(entry))
         else:
-            self.init.clearDatabases(modules)
+            self.init.clearDatabase(modules)
 
 
 

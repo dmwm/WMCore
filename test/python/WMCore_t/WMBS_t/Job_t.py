@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.24 2009/08/21 10:45:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: Job_t.py,v 1.25 2009/09/09 19:09:18 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import unittest
 import logging
@@ -616,6 +616,28 @@ class JobTest(unittest.TestCase):
 
         return
 
+    def testJobCacheDir(self):
+        """
+        _testJobCacheDir_
+        
+        Check retrieval of the jobCache directory
+        """
+
+        testJobA = self.createTestJob()
+
+        value = testJobA.getCache()
+
+        self.assertEqual(value, 'None')
+
+        testJobA.setCache('UnderTheDeepBlueSea')
+
+        value = testJobA.getCache()
+
+        self.assertEqual(value, 'UnderTheDeepBlueSea')
+
+        return
+        
+    
     def testGetOutputParentLFNs(self):
         """
         _testGetOutputParentLFNs_
@@ -694,6 +716,7 @@ class JobTest(unittest.TestCase):
             "ERROR: LFNs are missing..."
         
         return
+
 
 if __name__ == "__main__":
     unittest.main() 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.40 2010/02/26 12:56:27 swakef Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Page.py,v 1.41 2010/04/16 20:46:32 sryu Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import urllib
 import cherrypy
@@ -99,7 +99,7 @@ class TemplatedPage(Page):
             return template.respond()
         else:
             self.warning("%s not found at %s" % (file, self.templatedir))
-            return "Template %s not known" % file
+            return "Template %s/%s not known" % (self.templatedir, file)
 
 class SecuredPage(Page):
     def authenticate(self):

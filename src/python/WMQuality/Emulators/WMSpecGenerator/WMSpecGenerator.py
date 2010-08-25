@@ -57,7 +57,7 @@ class WMSpecGenerator(object):
         return self._selectReturnType(spec, returnType)    
     
     def createReRecoSpec(self, specName, returnType="spec"):
-        spec = ReReco.rerecoWorkload(specName, ReRecoParams.MinBiasWithoutEmulator) 
+        spec = ReReco.rerecoWorkload(specName, ReRecoParams.getParams()) 
         return self._selectReturnType(spec, returnType)    
     
     def createRandomProductionSpecs(self, size=10):

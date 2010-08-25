@@ -1,7 +1,14 @@
 # this is for actual test
 from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
 
-MinBiasWithoutEmulator = getTestArguments()
+def getParams():
+    testArgs = getTestArguments()
+    # remove couch config
+    testArgs.update({'CouchUrl': None, 'CouchDBName': None})
+    
+    return testArgs
+
+# remove couch config
 
 
 # This for the emulator test.

@@ -4,8 +4,8 @@ _BossLiteAPI_
 
 """
 
-__version__ = "$Id: BossLiteAPI.py,v 1.5 2010/05/14 11:21:50 spigafi Exp $"
-__revision__ = "$Revision: 1.5 $"
+__version__ = "$Id: BossLiteAPI.py,v 1.6 2010/05/17 13:04:06 spigafi Exp $"
+__revision__ = "$Revision: 1.6 $"
 
 import logging
 import copy
@@ -208,43 +208,32 @@ class BossLiteAPI(object):
 
         return job
 
-
-    # this method is broken!!!! 
-    def loadJobsByAttr( self, jobAttribute, value) :
+    
+    def loadJobsByAttr( self, binds) :
         """
         retrieve job information from db for job matching attributes
         """
         
-        """
-        jobList = []
-        binds = []
-        if type(value) == list:
-            for entry in value:
-                binds.append({'value': entry})
-        else:
-            binds = value
-
-        action = self.daofactory(classname = "Job.SelectJob")
-        result = action.execute(column = jobAttribute,
-                                value = binds,
-                                conn = self.getDBConn(),
-                                transaction = self.existingTransaction)
-
-        for entry in result:
-            job = Job()
-            job.data.update(entry)
-            jobList.append(job)
-        """
+        if not type(binds) == dict :
+            # 'binds' must be a dictionary!
+            raise Exception
         
-        # creating jobs
-        job = Job( jobAttribute )
-
-        # load job from db
-        jobList = self.db.select(job)
-
-        return jobList
+        jobs = []
+        
+        result = self.db.objAdvancedLoad(obj = Job(), binds = binds)
+        
+        # if not type(result) == list :
+        #    result = [result]
+        
+        for x in result : 
+            tmp = Job()
+            tmp.data.update(x)
+            tmp.existsInDataBase = True
+            jobs.append(tmp)
+            
+        return jobs
     
-
+    
     def loadJobByName( self, jobName ) :
         """
         retrieve job information from db for jobs with name 'name'
@@ -252,11 +241,44 @@ class BossLiteAPI(object):
 
         params = {'name': jobName}
         job = Job(parameters = params)
-        job.load(load.db)
+        job.load(self.db)
 
         return job
 
-  
+
+    def getTaskFromJob( self, job):
+        """
+        retrieve Task object from Job object and perform association
+        """
+
+        # creating/load task
+        task = self.loadTask(taskId = job['taskId'], jobRange = None)
+
+        # perform association
+        task.appendJob(job)
+
+        # operation validity checks -- are necessary?
+        if len( task.jobs ) != 1 :
+            raise Exception( "ERROR: too many jobs loaded %s" % \
+                                 len( task.jobs ))
+        if id( task.jobs[0] ) != id( job ) :
+            raise Exception( "Fatal ERROR: mismatching job" )
+
+        # return task
+        return task
+    
+    
+    def removeJob( self, job ):
+        """
+        remove job and its running instances from db
+        NOT SQLite safe --> why??
+        """
+        
+        return job.remove(self.db)
+    
+
+    ############################################################################
+
     def getRunningInstance( self, job, runningAttrs = None ) :
         """
         retrieve RunningInstance where existing or create it
@@ -403,30 +425,6 @@ class BossLiteAPI(object):
 
         return
 
-    ############################################################################
-        
-    def getTaskFromJob( self, job):
-        """
-        retrieve Task object from Job object and perform association
-        """
-
-        # creating task
-        task = self.loadTask(taskId = job['taskId'], jobRange = None)
-
-        # perform association
-        task.appendJob(job)
-
-        # operation validity checks
-        if len( task.jobs ) != 1 :
-            raise DbError( "ERROR: too many jobs loaded %s" % \
-                                 len( task.jobs ))
-        if id( task.jobs[0] ) != id( job ) :
-            raise DbError( "Fatal ERROR: mismatching job" )
-
-        # return task
-        return task
-
-
 
     ############################################################################
 
@@ -450,25 +448,6 @@ class BossLiteAPI(object):
         return task
 
 
-    ##########################################################################
-
-
-    ##########################################################################
-    
-    def removeJob( self, job ):
-        """
-        remove job and its running instances from db
-        NOT SQLite safe
-        """
-
-        # remove job
-        job.remove()
-
-        job = None
-
-        return job
-
-
     #def loadLastJobByName( self, jobName ) :
     #    """
     #    retrieve job information from db for jobs with name 'name'
@@ -488,36 +467,6 @@ class BossLiteAPI(object):
     # And this is where I stopped working
     #   -mnorman
     ######################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
 
     ##########################################################################
     def connect ( self ) :

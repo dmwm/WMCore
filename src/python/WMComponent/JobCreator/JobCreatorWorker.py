@@ -11,8 +11,8 @@
 The JobCreator Poller for the JSM
 """
 __all__ = []
-__revision__ = "$Id: JobCreatorWorker.py,v 1.17 2010/08/02 21:39:55 sfoulkes Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: JobCreatorWorker.py,v 1.18 2010/08/03 15:13:52 mnorman Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import threading
 import logging
@@ -214,7 +214,8 @@ class JobCreatorWorker:
                     seederList = []
 
             logging.info("About to enter JobFactory")
-
+            logging.debug("Going to call wmbsJobFactory with limit %i" % (self.limit))
+            
             # My hope is that the job factory is smart enough only to split un-split jobs
             wmbsJobFactory = self.splitterFactory(package = "WMCore.WMBS",
                                                   subscription = wmbsSubscription,
@@ -261,6 +262,9 @@ class JobCreatorWorker:
                 
             
                 for wmbsJobGroup in wmbsJobGroups:
+
+                    logging.debug("Processing jobGroup %i" % (wmbsJobGroup.exists()))
+                    logging.debug("Processing %i jobs" % (len(wmbsJobGroup.jobs)) )
                 
                     # Create a directory
                     self.createWorkArea.processJobs(jobGroup = wmbsJobGroup,
@@ -289,7 +293,7 @@ class JobCreatorWorker:
 
                     self.createJobGroup(wmbsJobGroup)
 
-                    logging.info("Finished call for jobGroup %i" \
+                    logging.debug("Finished call for jobGroup %i" \
                                  %(wmbsJobGroup.exists()))
 
 

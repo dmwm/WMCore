@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: LocalQueueProfile_t.py,v 1.1 2010/08/09 20:20:42 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LocalQueueProfile_t.py,v 1.2 2010/08/09 20:58:26 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 #setup emulator for test, this needs to be at top of the file
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
@@ -31,6 +31,9 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         If we dont have a wmspec file create one
         """
         WorkQueueTestCase.setUp(self)
+        GlobalParams.setNumOfBlocksPerDataset(1)
+        GlobalParams.setNumOfFilesPerBlock(100)
+        
         self.specGenerator = WMSpecGenerator()
         self.specs = self.createReRecoSpec(1, "file")
         
@@ -41,13 +44,13 @@ class WorkQueueProfileTest(WorkQueueTestCase):
                                      NegotiationTimeout = 0,
                                      QueueURL = 'global.example.com')
         
-        GlobalParams.setNumOfFilesPerBlock(100)
         
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
         try:
             shutil.rmtree( self.cacheDir )
+            self.specGenerator.removeSpecs()
         except:
             pass
         

@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueueProfile_t.py,v 1.3 2010/08/09 20:20:42 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueProfile_t.py,v 1.4 2010/08/09 20:58:26 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 #setup emulator for test, this needs to be at top of the file
 from WMQuality.Emulators.EmulatorSetup import emulatorSetup, deleteConfig
@@ -46,6 +46,7 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         WorkQueueTestCase.tearDown(self)
         try:
             shutil.rmtree( self.cacheDir )
+            self.specGenerator.removeSpecs()
         except:
             pass
         

@@ -4,13 +4,14 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.11 2009/05/15 15:46:12 mnorman Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.12 2009/06/10 16:35:50 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
 import logging
 import os
+import os.path
 import threading
 import time
 import unittest
@@ -45,6 +46,11 @@ class DBSBufferTest(unittest.TestCase):
 
             	myThread = threading.currentThread()
             	myThread.logger = logging.getLogger('DBSBufferTest')
+
+                #handler = logging.handlers.RotatingFileHandler('%s.log' % __file__, maxBytes=50000, backupCount=5)
+
+                #myThread.logger.addHandler(handler)
+                
             	#myThread.dialect = 'MySQL'
                 myThread.dialect = os.getenv("DIALECT")
 
@@ -163,6 +169,24 @@ class DBSBufferTest(unittest.TestCase):
             + '/mysqldata/mysql.sock --exec "create database ' \
             +os.getenv('DBNAME')+ '"'
             commands.getstatusoutput(command)
+        #elif DBSBufferTest._teardown and myThread.dialect == 'Oracle':
+        #    if myThread.database == None:
+        #        print "No DATABASE"
+        #        return
+        #    clearLocation = ''
+        #    if   os.path.exists(os.getcwd() + 'OracleReset.sql'):
+        #        clearLocation = os.getcwd() + 'OracleReset.sql'
+        #    elif os.path.exists(os.getenv('WMCOREBASE') + '../T0/src/sql/OracleReset.sql'):
+        #        clearLocation = os.getenv('WMCOREBASE') + '../T0/src/sql/OracleReset.sql'
+        #    elif os.path.exists(os.getenv('HOME') + 'T0/src/sql/OracleReset.sql'):
+        #        clearLocation = os.getenv('HOME') + 'T0/src/sql/OracleReset.sql'
+        #    else:
+        #        print "Could not fine OracleReset.sql"
+        #        return
+        #    clearCommand = "sqlplus %s < %s" %(myThread.database, clearLocation)
+        #
+        #    result = commands.getstatusoutput(clearCommand)
+            
         DBSBufferTest._teardown = False
 
 
@@ -241,10 +265,11 @@ class DBSBufferTest(unittest.TestCase):
 			testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
 	"""
 
-	fjr_path='/uscms/home/anzar/work/FJR/forAnzar/Run67838'
+	#fjr_path='/uscms/home/anzar/work/FJR/forAnzar/Run67838'
+        fjr_path = 'FmwkJobReports'
         count = 0;
 	for aFJR in os.listdir(fjr_path):
-            if myThread.dialect.lower() == 'oracle' and count > 10:
+            if myThread.dialect.lower() == 'oracle' and count > 100:
                 continue
             if aFJR.endswith('.xml') and aFJR.startswith('FrameworkJobReport'):
                 count = count + 1
@@ -255,11 +280,102 @@ class DBSBufferTest(unittest.TestCase):
 			
         #########myThread.transaction.commit()
          
-        while threading.activeCount() > 1:
+        while threading.activeCount() > 2:
             print('Currently: '+str(threading.activeCount())+\
                 ' Threads. Wait until all our threads have finished')
             time.sleep(1)
         DBSBufferTest._teardown = True
+
+
+
+    def testSingleJobFrameworkReport(self):
+        """
+        This should test the output on one JobFrameworkReport
+
+        
+        """
+
+        # read the default config first.
+        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
+            'src/python/WMComponent/DBSBuffer/DefaultConfig.py'))
+
+        # some general settings that would come from the general default 
+        # config file
+        config.Agent.contact = "anzar@fnal.gov"
+        config.Agent.teamName = "DBS"
+        config.Agent.agentName = "DBS Buffer"
+
+        config.section_("General")
+        if not os.getenv("TESTDIR") == None:
+            config.General.workDir = os.getenv("TESTDIR")
+        else:
+            config.General.workDir = os.getcwd()
+            
+	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        myThread = threading.currentThread()
+        myThread.logger = logging.getLogger('DBSBufferTest')
+
+        config.section_("CoreDatabase")
+        config.CoreDatabase.dialect = 'mysql'
+        if not os.getenv("DIALECT") == None:
+            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
+        #config.CoreDatabase.socket = os.getenv("DBSOCK")
+        if not os.getenv("DBUSER") == None:
+            config.CoreDatabase.user = os.getenv("DBUSER")
+        else:
+            config.CoreDatabase.user = os.getenv("USER")
+        if not os.getenv("DBHOST") == None:
+            config.CoreDatabase.hostname = os.getenv("DBHOST")
+        else:
+            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
+        config.CoreDatabase.passwd = os.getenv("DBPASS")
+        if not os.getenv("DBNAME") == None:
+            config.CoreDatabase.name = os.getenv("DBNAME")
+        else:
+            config.CoreDatabase.name = os.getenv("DATABASE")
+        if not os.getenv("DATABASE") == None:
+            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+            myThread.database              = os.getenv("DATABASE")
+        else:
+            print "ERROR: Could not find database setting in environment!"
+            print "ABORT: Cannot start without a database"
+            raise 'Exception'
+            
+
+        options = {}
+        if not os.getenv("DBSOCK") == None:
+            options['unix_socket'] = os.getenv("DBSOCK")
+        if not os.getenv("DIALECT") == None:
+            myThread.dialect = os.getenv("DIALECT")
+        else:
+            print "No dialect found in environment!  Grabbing from database!"
+            if os.getenv("DATABASE").lower().find('oracle') != -1:
+                myThread.dialect = 'Oracle'
+            elif os.getenv("DATABASE").lower().find('mysql') != -1:
+                myThread.dialect = 'MySQL'
+            elif os.getenv("DATABASE").lower().find('sqlite') != -1:
+                myThread.dialect = 'SQLite'
+            else:
+                print "Could not parse DATABASE.  Using Oracle"
+                myThread.dialect = 'Oracle'
+
+        testDBSBuffer = DBSBuffer(config)
+        testDBSBuffer.prepareToStart()
+
+
+        
+        dbFactory = DBFactory(myThread.logger, myThread.database, options)
+        myThread.dbi = dbFactory.connect()
+        myThread.transaction = Transaction(myThread.dbi)
+
+        #Find the test job
+        FJR = os.getcwd() + '/testFrameworkJobReport.xml'
+        if not os.path.exists(FJR):
+            print "ERROR: Test Framework Job Report %s missing!" %(FJR)
+            print "ABORT: Cannot test without test Job Report!"
+            raise 'exception'
+        testDBSBuffer.handleMessage('JobSuccess', FJR)
+
 
     def runTest(self):
         self.testA()

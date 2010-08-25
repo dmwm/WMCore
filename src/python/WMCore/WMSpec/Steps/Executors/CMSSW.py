@@ -5,17 +5,25 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.6 2009/10/19 20:32:05 evansde Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: CMSSW.py,v 1.7 2009/11/17 15:04:25 evansde Exp $"
+__version__ = "$Revision: 1.7 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
-import WMCore.WMException as WMException
+from WMCore.WMException import WMException
 from WMCore.WMSpec.WMStep import WMStepHelper
+from WMCore.WMRuntime.Tools.Scram import Scram
+
+from WMCore.FwkJobReport.Report import Report
 
 import tempfile
 import subprocess
+import sys
 import os
 import select
+
+
+
+getStepName = lambda step: WMStepHelper(step).name()
 
 class CMSSW(Executor):
     """
@@ -35,19 +43,21 @@ class CMSSW(Executor):
         """
         if (emulator != None):
             return emulator.emulatePre( step )
-        helper = WMStepHelper(step)
-        stepName = helper.name()
+        stepName = getStepName(step)
+        stepSpace = self.stepSpace(stepName)
+
         if hasattr(step.application.configuration, 'configCacheUrl'):
             # means we have a configuration & tweak in the sandbox
             psetFile = step.application.command.configuration
             psetTweak = step.application.command.psetTweak
-            stepSpace = self.stepSpace(stepName)
             stepSpace.getFromSandbox(psetFile)
             stepSpace.getFromSandbox(psetTweak)
+            step.runtime.scramPreScripts.append(
+                "WMCore.WMRuntime.Scripts.InstallPSetTweak")
+
+
         #TODO: Handle case where we have a config library instead
 
-
-        print "Steps.Executors.CMSSW.pre called"
         return None
 
 
@@ -57,8 +67,23 @@ class CMSSW(Executor):
 
 
         """
+
+        stepName = getStepName(step)
+        stepModule = "WMTaskSpace.%s" % stepName
         if (emulator != None):
             return emulator.emulate( step )
+
+
+        stepSpace = self.stepSpace(stepName)
+        task = stepSpace.getWMTask()
+
+        # initialise the framework job report
+        self.report = Report(stepName)
+        self.report.data.id = "%s/%s" % (task.getPathName(), stepName)
+        self.report.data.task = task.name()
+        self.report.data.workload = stepSpace.taskSpace.workloadName()
+        self.report.data.id = wmbsJob['id']
+
 
 
         # write the wrapper script to a temporary location
@@ -73,9 +98,68 @@ class CMSSW(Executor):
         cmsswConfig    = step.application.command.configuration
         cmsswArguments = step.application.command.arguments
 
-        (handle, configPath) = tempfile.mkstemp('.sh')
-        os.write( handle, configBlob )
-        os.close( handle )
+        #
+        # scram bootstrap
+        #
+        scram = Scram(
+            command = scramCommand,
+            version = cmsswVersion,
+            initialisation = step.application.setup.softwareEnvironment,
+            directory = step.builder.workingDir
+            )
+
+        projectOutcome = scram.project()
+        if projectOutcome > 0:
+            msg = scram.diagnostic()
+            self.report.addError(60513, "ScramSetupFailure", msg)
+            return
+        runtimeOutcome = scram.runtime()
+        if runtimeOutcome > 0:
+            msg = scram.diagnostic()
+            self.report.addError(60513, "ScramSetupFailure", msg)
+            return
+
+
+        #
+        # pre scripts
+        #
+        for script in step.runtime.preScripts:
+            # TODO: Exception handling and error handling & logging
+            scriptProcess = subprocess.Popen(
+                ["/bin/bash"], shell=True, cwd=step.builder.workingDir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                stdin=subprocess.PIPE,
+                )
+            invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
+                sys.executable,
+                stepModule,
+                script)
+
+            scriptProcess.stdin.write(invokeCommand)
+            stdout, stderr = scriptProcess.communicate()
+            retCode = scriptProcess.returncode
+            print stdout, stderr, retCode
+
+
+        #
+        # pre scripts with scram
+        #
+        for script in step.runtime.scramPreScripts:
+            "invoke scripts with scram()"
+            invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
+                sys.executable,
+                stepModule,
+                script)
+
+
+            retCode = scram(invokeCommand)
+            print scram.stdout, scram.stderr, retCode
+
+        configPath = "%s/%s-main.sh" % (step.builder.workingDir, helper.name())
+        handle = open(configPath, 'w')
+        handle.write(configBlob)
+        handle.close()
         # spawn this new process
         # the script looks for:
         # <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION> <JOB_REPORT> <EXECUTABLE>
@@ -121,26 +205,25 @@ class CMSSW(Executor):
         # 73 scram runtime fail
         # FIXME python doesn't have a switch construct, is there a nicer
         #    way to do this?
-        argsDump = { arguments: args}
+        argsDump = { 'arguments': args}
         if (spawnedChild.returncode == 70):
             raise WMException("Wrong number of arguments to cmssw wrapper"
-                              ,None,argsDump)
+                              ,None,**argsDump)
         elif (spawnedChild.returncode == 71):
             raise WMException("Failure in scram project"
-                              ,None,argsDump)
+                              ,None,**argsDump)
         elif (spawnedChild.returncode == 72):
             raise WMException("Failed to chdir to the cmssw directory"
-                              ,None,argsDump)
+                              ,None,**argsDump)
         elif (spawnedChild.returncode == 73):
             raise WMException("Failed to execute the scram runtime"
-                              ,None,argsDump)
+                              ,None,**argsDump)
         elif (spawnedChild.returncode != 0):
-            raise WMException("Unknown error in cmsRun. Code: %i"
-                                % spawnedChild.returncode, None, argsDump)
+            raise WMException("Unknown error in cmsRun. Code: %i" % spawnedChild.returncode, None, **argsDump)
         step.section_("execution")
         step.execution.exitStatus = spawnedChild.returncode
-
-        print "Steps.Executors.CMSSW.execute called"
+        step.execution.executionReport = "FrameworkJobReport.pcl"
+        return
 
 
     def post(self, step, emulator = None):

@@ -145,6 +145,12 @@ class CMSSW(Template):
 
         step.output.section_("analysisFiles")
 
+        step.section_("runtime")
+        step.runtime.preScripts = []
+        step.runtime.scramPreScripts = []
+        step.runtime.postScripts = []
+        step.runtime.postScramScripts = []
+
         step.section_("debug")
         step.debug.verbosity = 0
         step.debug.keepLogs = False

@@ -81,6 +81,7 @@ class Executor:
         you use it
 
         """
+
         modName = "WMTaskSpace"
         if modName in sys.modules.keys():
             taskspace = sys.modules[modName]

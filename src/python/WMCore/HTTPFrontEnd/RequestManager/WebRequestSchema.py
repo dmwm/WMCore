@@ -152,7 +152,6 @@ class WebRequestSchema(TemplatedPage):
             # No idea what I'm doing here
             schema['CmsGenParameters'] = {'generator' : 'madgraph'}
             schema['CmsGenConfiguration'] = """madgraph\nttjets\ntarballnamehere"""
-        print "WEBREQUEST " + str(schema)
         cherrypy.session['schema'] = schema
 
         schema["Scenario"] = ""

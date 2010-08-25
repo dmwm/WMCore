@@ -77,7 +77,7 @@ class CMSSWStepHelper(CoreHelper):
         docUrl = "%s/%s/%s" % (url, dbName, document)
         self.data.application.configuration.configUrl = docUrl
         self.data.application.configuration.retrieveConfigUrl = \
-                                        "%s/pickled_script" % docUrl
+                                        "%s/original_script" % docUrl
 
 
 
@@ -157,7 +157,7 @@ class CMSSW(Template):
         step.application.command.executable = "cmsRun"
         step.application.command.configuration = "PSet.py"
         step.application.command.configurationHash = None
-        step.application.command.psetTweak = "PSetTweak.json"
+        step.application.command.psetTweak = None
         step.application.command.arguments = ""
         step.output.jobReport = "FrameworkJobReport.xml"
         step.output.stdout = "%s-stdout.log" % stepname

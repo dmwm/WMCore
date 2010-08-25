@@ -75,21 +75,21 @@ class PhEDEx(AuthorisedService):
         #elif self.responseType == 'xml':
             #self.parser = XMLParser()
             
-        if os.getenv('CMS_SITEDB_CACHE_DIR'):
-            dict['cachepath'] = os.getenv('CMS_SITEDB_CACHE_DIR') + '/.cms_sitedbcache'
+        if os.getenv('CMS_PHEDEX_CACHE_DIR'):
+            dict['cachepath'] = os.getenv('CMS_PHEDEX_CACHE_DIR') + '/.cms_phedexcache'
         elif os.getenv('HOME'):
-            dict['cachepath'] = os.getenv('HOME') + '/.cms_sitedbcache'
+            dict['cachepath'] = os.getenv('HOME') + '/.cms_phedexcache'
         else:
-            dict['cachepath'] = '/tmp/sitedbjson_' + pwd.getpwuid(os.getuid())[0]
+            dict['cachepath'] = '/tmp/phedex_' + pwd.getpwuid(os.getuid())[0]
         if not os.path.isdir(dict['cachepath']):
             os.mkdir(dict['cachepath'])
         if 'logger' not in dict.keys():
             logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename=dict['cachepath'] + '/sitedbjsonparser.log',
+                    filename=dict['cachepath'] + '/phedexdbjsonparser.log',
                     filemode='w')
-            dict['logger'] = logging.getLogger('SiteDBParser')
+            dict['logger'] = logging.getLogger('PhEDExParser')
         
         #TODO if service doesn't need to be authorized, have switch to use Service
         AuthorisedService.__init__(self, dict)

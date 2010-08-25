@@ -7,46 +7,43 @@ class PhEDExSubscription(object):
     data structure which contains PHEDEx fields for 
     PhEDEx subscription data service 
     """
-    def __init__(self, datasetPathTuple, nodeTuple, priority='high', 
-                 requestOnly='y'):
+    def __init__(self, datasetPathList, nodeList, group,
+                 level='dataset', priority='high', move='n', static='n', 
+                 custodial='n', requestOnly='y'):
         """
         initialize PhEDEx subscription with default value
         """
-        if type(datasetPathTuple) == tuple:
-            datasetPathIDs = [datasetPathTuple[0]]
-            datasetPaths = [datasetPathTuple[1]]
+        if type(datasetPathList) == str:
+            datasetPathList = [datasetPathList]
         else:
             raise TypeError, "First argument should be tuple (dataPathID, datasetPath)"
             
-        if type(nodeTuple) == tuple:
-            nodeIDs = [nodeTuple[0]]
-            nodes = [nodeTuple[1]]
+        if type(nodeList) == str:
+            nodeList = [nodeList]
         else:
             raise TypeError, "First argument should be tuple (nodeID, node)"
             
-        self.datasetPaths = frozenset(datasetPaths)
-        self.datasetPathIDs = frozenset(datasetPathIDs)
+        self.datasetPaths = frozenset(datasetPathList)
         
         logging.debug("SubPolicy class dataset path %s" % self.datasetPaths)
-        self.nodeIDs = frozenset(nodeIDs)
-        self.nodes = frozenset(nodes)
+        self.nodes = frozenset(nodeList)
         
-        self.level = 'dataset'
+        self.level = level.lower()
         # tier0 specific default
         self.priority = priority.lower() #subscription priority, 
         # either 'high', 'normal', or 'low'. Default is 'low' in PhEDEx
 
         # To check: move subscription should be 'y'
         # but automatic deletion should be turned off
-        self.move = 'n'
+        self.move = move.lower()
         # make growing subscription
-        self.static = 'n'
+        self.static = static.lower()
         self.requesterID = None
         self.status = "New"
-        self.group = "DataOps"
-        self.custodial = 'y' # 'y' or 'n', if 'y' then create the request but 
+        self.group = group
+        self.custodial = custodial.lower() # 'y' or 'n', if 'y' then create the request but 
         # do not approve.  Default is 'n' in PhEDEx
-        self.request_only = requestOnly #'y' or 'n', if 'y' then create the request 
+        self.request_only = requestOnly.lower() #'y' or 'n', if 'y' then create the request 
         # but do not approve.  Default is 'n' in PhEDEx
         
         
@@ -73,34 +70,25 @@ class PhEDExSubscription(object):
         if self.requesterID != None:
             msg = """ PhEDEx subscription is already made with id: %s\n
                       Create a new subscription
-                  """ (self.requesterID)
+                  """ % (self.requesterID)
             raise Exception, msg
         
-        self.datasetPathIDs = \
-                self.datasetPathIDs.union(subscription.datasetPathIDs)
         self.datasetPaths = self.datasetPaths.union(subscription.datasetPaths)
     
     def addNodes(self, subscription):
         if self.requesterID != None:
             msg = """ PhEDEx subscription is already made with id: %s\n
                       Create a new subscription
-                  """ (self.requesterID)
+                  """ % (self.requesterID)
             raise Exception, msg
         
-        self.nodeIDs = self.nodeIDs.union(subscription.nodeIDs)
         self.nodes = self.nodes.union(subscription.nodes)
-    
-    def getDatasetPathIDs(self):
-        return list(self.datasetPathIDs)
     
     def getDatasetPaths(self):
         return list(self.datasetPaths)
     
     def getNodes(self):
         return list(self.nodes)
-    
-    def getNodeIDs(self):
-        return list(self.nodeIDs)
     
     def getRequesterID(self):
         return self.requesterID
@@ -112,18 +100,21 @@ class PhEDExSubscription(object):
         else:
             msg = """ PhEDEx subscription is already made with id: %s\n
                       Create a new subscription
-                  """ (self.requesterID)
+                  """ % (self.requesterID)
             raise Exception, msg
         
              
-class SubscriptionPolicy(object):
+class SubscriptionList(object):
     """
     _SubscriptionPolicy_
     
     class represents collection of subscription.
+    This organize the subscription in a way to minimize the number of PhEDEx Subscription made
+    Currently it will be organized by node.
+    TODO: add more smarter way to organize subscription 
     """
     def __init__(self):
-        self.subscriptionList = []
+        self._subList = []
         
     def addSubscription(self, subObj):
         """
@@ -136,21 +127,21 @@ class SubscriptionPolicy(object):
         or dataset paths 
         """
             
-        for subscription in self.subscriptionList:
+        for subscription in self._subList:
             if subscription.isEqualOptions(subObj):
                 if subscription.isEqualNode(subObj):
                     subscription.addDatasetPaths(subObj)
                     return
         
-        self.subscriptionList.append(subObj)
+        self._subList.append(subObj)
         
         return
     
     def getSubscriptionList(self):
-        return self.subscriptionList
+        return self._subList
 
 if __name__ == "__main__":
-    policy = SubscriptionPolicy()
+    policy = SubscriptionList()
     # what will you do with run ID.
     row = [6, "/Cosmics/Test-CRAFTv8/RAW",1, "T2_CH_CAF" , 'high', 'y']
     results = []

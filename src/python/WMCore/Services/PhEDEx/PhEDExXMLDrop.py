@@ -228,7 +228,7 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
     return xmlString
 
 
-def makePhEDExXMLForDatasets(globalDbsUrl, datasetPaths):        
+def makePhEDExXMLForDatasets(dbsUrl, datasetPaths):        
     
     """
     _makePhEDExDropForDataset_
@@ -236,15 +236,14 @@ def makePhEDExXMLForDatasets(globalDbsUrl, datasetPaths):
     Given a DBS Url, list of dataset path name, 
     generate an XML structure for injection
    
+   TODO: not sure whether merge this interface with makePhEDExDrop
     """
-    spec = XMLInjectionSpec(globalDbsUrl)
+    spec = XMLInjectionSpec(dbsUrl)
     for datasetPath in datasetPaths:
         spec.getDataset(datasetPath)
         
     improv = spec.save()
     xmlString = improv.makeDOMElement().toprettyxml()
-    logging.debug("From DastsetPath")
-    logging.debug(xmlString)
     return xmlString
 
     

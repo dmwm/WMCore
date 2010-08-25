@@ -113,7 +113,7 @@ class WorkQueue(Service):
             args['elementIDs'] = elementIDs
         
         callname = 'status'
-        return self._getResult(callname, args = args, verb = "GET")
+        return self._getResult(callname, args = args, verb = "POST")
     
     def synchronize(self, child_url, child_report):
         """

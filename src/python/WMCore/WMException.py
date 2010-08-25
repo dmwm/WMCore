@@ -6,8 +6,8 @@ General Exception class for WM modules
 
 """
 
-__revision__ = "$Id: WMException.py,v 1.1 2008/08/16 05:07:13 fvlingen Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WMException.py,v 1.2 2010/02/04 17:52:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "fvlingen@caltech.edu"
 
 
@@ -43,7 +43,7 @@ class WMException(exceptions.Exception):
         else:
             self.data.setdefault("ErrorNr", errorNo)
         
-        self.message = message
+        self._message = message
         self.data.update(data)
 
         #  //
@@ -105,7 +105,7 @@ class WMException(exceptions.Exception):
         strg += "%s\n" % self.name
         strg += "</Object>\n"
         strg += "<Message>\n"
-        strg += self.message
+        strg += self._message
         strg += "</Message>\n"
         strg += "<DataItems>\n"
         for key, value in self.data.items():
@@ -125,7 +125,7 @@ class WMException(exceptions.Exception):
     def __str__(self):
         """create a string rep of this exception"""
         strg = "%s\n" % self.name
-        strg += "Message: %s\n" % self.message
+        strg += "Message: %s\n" % self._message
         for key, value in self.data.items():
             strg += "\t%s : %s\n" % (key, value, )
         return strg

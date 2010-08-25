@@ -17,9 +17,9 @@ requestedDB     = sys.argv[2]
 
 
 # the buildconfig file will end up being in the buildslave's main path
-sys.path.insert(0,'../../..')
-sys.path.insert(0,'../..')
-sys.path.insert(0,'..')
+sys.path.append('../../..')
+sys.path.append('../..')
+sys.path.append('..')
 
 
 print "this is ridiculous"

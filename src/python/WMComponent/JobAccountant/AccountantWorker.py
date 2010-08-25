@@ -8,8 +8,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.10 2009/11/17 18:48:01 mnorman Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.11 2010/01/14 14:54:28 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import threading
@@ -54,9 +54,15 @@ class AccountantWorker:
 
         self.newLocationAction = self.daoFactory(classname = "Locations.New")
         self.getOutputMapAction = self.daoFactory(classname = "Jobs.GetOutputMap")
-        self.getOutputDBSParentAction = self.daoFactory(classname = "Jobs.GetOutputParentLFNs")
         self.bulkAddToFilesetAction = self.daoFactory(classname = "Fileset.BulkAdd")
+        self.bulkParentageAction = self.daoFactory(classname = "Files.AddBulkParentage")
         self.getJobTypeAction = self.daoFactory(classname = "Jobs.GetType")
+        self.getParentInfoAction = self.daoFactory(classname = "Files.GetParentInfo")
+        self.getMergedChildrenAction = self.daoFactory(classname = "Files.GetMergedChildren")
+
+        self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
+        self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
+        self.dbsChildrenAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetChildren")
 
         config = Configuration()
         config.section_("JobStateMachine")
@@ -100,7 +106,7 @@ class AccountantWorker:
         # job report.
         if len(jobReports) == 0:
             logging.error("Bad FWJR: %s" % jobReportPath)
-            return None
+            return self.createMissingFWKJR(parameters, 99996, 'JobReport empty')
 
         return jobReports[0]
    
@@ -118,9 +124,7 @@ class AccountantWorker:
         fwkJobReport = self.loadJobReport(parameters)
         jobSuccess = None
 
-        if fwkJobReport == None or fwkJobReport.status != "Success":
-            if fwkJobReport == None:
-                fwkJobReport = self.createMissingFWKJR(parameters)
+        if fwkJobReport.status != "Success":
             logging.error("I have a bad jobReport for %i" %(parameters['id']))
             self.handleFailed(jobID = parameters["id"],
                               fwkJobReport = fwkJobReport)
@@ -128,9 +132,6 @@ class AccountantWorker:
         else:
             self.handleSuccessful(jobID = parameters["id"],
                                   fwkJobReport = fwkJobReport)
-            logging.error("This is a FWJR dummy!")
-            logging.error(fwkJobReport.__class__)
-            logging.error(fwkJobReport)
             jobSuccess = True
 
         self.transaction.commit()
@@ -142,7 +143,7 @@ class AccountantWorker:
 
         Determine if the file should be placed in any other fileset.  Note that
         this will not return the JobGroup output fileset as all jobs will have
-        their output placed their.
+        their output placed there.
 
         If a file is merged and the output map has it going to a merge
         subscription the file will be placed in the output fileset of the merge
@@ -163,7 +164,7 @@ class AccountantWorker:
 
         return outputMap[moduleLabel]["fileset"]        
 
-    def addFileToDBS(self, jobReportFile, fileParentLFNs):
+    def addFileToDBS(self, jobReportFile):
         """
         _addFileToDBS_
 
@@ -174,7 +175,8 @@ class AccountantWorker:
         dbsFile = DBSBufferFile(lfn = jobReportFile["LFN"],
                                 size = jobReportFile["Size"],
                                 events = jobReportFile["TotalEvents"],
-                                cksum = jobReportFile["Checksum"])
+                                checksums = jobReportFile.checksums,
+                                status = "NOTUPLOADED")
         dbsFile.setAlgorithm(appName = datasetInfo["ApplicationName"],
                              appVer = datasetInfo["ApplicationVersion"],
                              appFam = datasetInfo["OutputModuleName"],
@@ -190,18 +192,168 @@ class AccountantWorker:
 
         dbsFile.create()
         dbsFile.setLocation(se = jobReportFile["SEName"])
-        dbsFile.addParents(fileParentLFNs)
+        return
+
+    def fixupDBSFileStatus(self, redneckChildren):
+        """
+        _fixupDBSFileStatus_
+
+        Fixup file status in DBS for redneck children.  Given a list of redneck
+        children this method will determine if the redneck parents for the given
+        child have been merged and update the file status in DBS accordingly.
+        If a redneck child has it's status changed from "WaitingForParents" to
+        "NOTUPLOADED" all of it's redneck children will be checked as well to
+        determine if their status can be updated.
+        """
+        while len(redneckChildren) > 0:
+            redneckChild = redneckChildren.pop()
+
+            # Find all the redneck parents for this redneck child and iterate
+            # through them.  For each redneck parent we check to see if it has
+            # a merged child.  If it doesn't, we bail out of the loop and update
+            # the child's status to be "WaitingForParents".  If all of the
+            # redneck parents have merged children we can safely change the
+            # status of the redneck child to "NOTUPLOADED" so that it is picked
+            # up by the DBSUpload component.
+            parentsInfo = self.getParentInfoAction.execute([redneckChild],
+                                                           conn = self.transaction.conn,
+                                                           transaction = True)
+            for parentInfo in parentsInfo:
+                if parentInfo["redneck_parent_fileset"] != None:
+                    # We need to determine the correct input LFN for the
+                    # GetMergedChildren DAO.  The GetParentInfo DAO will return
+                    # the file's parent and grand parent LFN but does not state
+                    # which was the input to the processing job, which is what
+                    # we're really after.  Here, I'm going to assume that if the
+                    # parent file is merged than it was the input to the
+                    # processing job.  This assumption prevents us from running
+                    # redneck workflows over unmerged files, but that seems like
+                    # a reasonable compromise.
+                    if int(parentInfo["merged"]) == 1:
+                        inputLFN = parentInfo["lfn"]
+                    else:
+                        inputLFN = parentInfo["gplfn"]
+                        
+                    children = self.getMergedChildrenAction.execute(inputLFN = inputLFN,
+                                                                    parentFileset = parentInfo["redneck_parent_fileset"],
+                                                                    conn = self.transaction.conn,
+                                                                    transaction = True)
+
+                    if len(children) == 0:
+                        self.dbsStatusAction.execute([redneckChild], "WaitingForParents",
+                                                     conn = self.transaction.conn,
+                                                     transaction = True)
+                        break
+            else:
+                # All of the redneck parents for this file have been merged but
+                # we still need to verify that the parents themselves are not
+                # waiting for their parents to be merged.  This will check the
+                # status of all parents to verify that they aren't waiting for
+                # parents.
+                parentStatus = self.dbsParentStatusAction.execute(lfn = redneckChild,
+                                                                  conn = self.transaction.conn,
+                                                                  transaction = True)
+
+                if "WaitingForParents" not in parentStatus:
+                    children = self.dbsChildrenAction.execute(redneckChild,
+                                                              conn = self.transaction.conn,
+                                                              transaction = True)
+                    for child in children:
+                        redneckChildren.add(child)
+                    self.dbsStatusAction.execute([redneckChild], "NOTUPLOADED",
+                                                 conn = self.transaction.conn, transaction = True)
 
         return
 
-    def addFileToWMBS(self, jobType, fwjrFile, jobMask, inputFiles,
-                      dbsParentLFNs):
+    def setupDBSFileParentage(self, outputFile):
+        """
+        _setupDBSFileParentage_
+
+        Setup file parentage inside DBSBuffer, properly handling redneck
+        parentage.
+        """
+        parentsInfo = self.getParentInfoAction.execute([outputFile["lfn"]],
+                                                       conn = self.transaction.conn,
+                                                       transaction = True)
+
+        newParents = set()
+        redneckChildren = set()
+        for parentInfo in parentsInfo:
+            # This will catch straight to merge files that do not have redneck
+            # parents.  We will mark the straight to merge file from the job
+            # as a child of the merged parent.
+            if int(parentInfo["merged"]) == 1 and parentInfo["redneck_parent_fileset"] == None:
+                newParents.add(parentInfo["lfn"])
+
+                # If there are any merged redneck children for this file we need
+                # to find them, add this file as their parent and add them to
+                # the redneck children list so we can fixup their status later.
+                if parentInfo["redneck_child_fileset"] != None:
+                    children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["lfn"],
+                                                                    parentFileset = parentInfo["redneck_child_fileset"],
+                                                                    conn = self.transaction.conn, transaction = True)
+                    for child in children:
+                        dbsFile = DBSBufferFile(lfn = child)
+                        dbsFile.load()
+                        dbsFile.addParents([outputFile["lfn"]])
+                        redneckChildren.add(child)
+
+            # This will catch redneck children.  We need to discover any merged
+            # parents that already exist and add them as parents of the output
+            # file.  We also need to add the output file to the list of redneck
+            # children so that it's status can be updated.
+            elif parentInfo["redneck_parent_fileset"] != None:
+                redneckChildren.add(outputFile["lfn"])
+                self.dbsStatusAction.execute([outputFile["lfn"]], "WaitingForParents",
+                                             conn = self.transaction.conn, transaction = True)                
+                children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["gplfn"],
+                                                                parentFileset = parentInfo["redneck_parent_fileset"],
+                                                                conn = self.transaction.conn, transaction = True)
+                for child in children:
+                    newParents.add(child)
+
+                # A redneck child can be a redneck parent at the same time.  If
+                # that is the case then we need to discover any merged redneck
+                # children and setup the parentage information accordingly.
+                if parentInfo["redneck_child_fileset"] != None:
+                    children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["gplfn"],
+                                                                    parentFileset = parentInfo["redneck_child_fileset"],
+                                                                    conn = self.transaction.conn, transaction = True)
+                    for child in children:
+                        dbsFile = DBSBufferFile(lfn = child)
+                        dbsFile.load()
+                        dbsFile.addParents([outputFile["lfn"]])
+                        redneckChildren.add(child)     
+            # Handle the files that result from merge jobs that aren't redneck
+            # children.  We have to setup parentage and then check on whether or
+            # not this file has any redneck children and update their parentage
+            # information.
+            else:
+                if int(parentInfo["gpmerged"]) == 1:
+                    newParents.add(parentInfo["gplfn"])
+                if parentInfo["redneck_child_fileset"] != None:
+                    children = self.getMergedChildrenAction.execute(inputLFN = parentInfo["gplfn"],
+                                                                    parentFileset = parentInfo["redneck_child_fileset"],
+                                                                    conn = self.transaction.conn, transaction = True)
+                    for child in children:
+                        dbsFile = DBSBufferFile(lfn = child)
+                        dbsFile.load()
+                        dbsFile.addParents([outputFile["lfn"]])
+                        redneckChildren.add(child)
+
+        if len(newParents) > 0:
+            dbsFile = DBSBufferFile(lfn = outputFile["lfn"])
+            dbsFile.load()
+            dbsFile.addParents(list(newParents))
+
+        self.fixupDBSFileStatus(redneckChildren)
+        return
+
+    def addFileToWMBS(self, jobType, fwjrFile, jobMask, inputFiles):
         """
         _addFileToWMBS_
 
-        Add a file that was produced in a job to WMBS.  Take care of file
-        parentage as well as adding the file to DBS if necessary.  All merged
-        files are added to DBS.
+        Add a file that was produced in a job to WMBS.  
         """
         firstEvent = jobMask["FirstEvent"]
         lastEvent = jobMask["LastEvent"]
@@ -223,7 +375,7 @@ class AccountantWorker:
         wmbsFile = File(lfn = fwjrFile["LFN"],
                         size = fwjrFile["Size"],
                         events = fwjrFile["TotalEvents"],
-                        cksum = fwjrFile["Checksum"],
+                        checksums = fwjrFile.checksums,
                         locations = fwjrFile["SEName"],
                         first_event = firstEvent,
                         last_event = lastEvent,
@@ -241,9 +393,9 @@ class AccountantWorker:
                 wmbsFile.addParent(inputFile["lfn"])
 
         if merged:
-            self.addFileToDBS(fwjrFile, dbsParentLFNs)
-
-        return (wmbsFile["id"], fwjrFile["ModuleLabel"], merged)
+            self.addFileToDBS(fwjrFile)
+            
+        return (wmbsFile, fwjrFile["ModuleLabel"], merged)
 
     def handleSuccessful(self, jobID, fwkJobReport):
         """
@@ -261,9 +413,6 @@ class AccountantWorker:
 
         wmbsJob["fwjr"] = fwkJobReport
 
-        dbsParentLFNs = self.getOutputDBSParentAction.execute(jobID = jobID,
-                                                              conn = self.transaction.conn,
-                                                              transaction = True)
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.transaction.conn,
                                                     transaction = True)
@@ -276,25 +425,29 @@ class AccountantWorker:
                                                 transaction = True)
 
         filesetAssoc = []
+        outputFiles = {}
+        mergedOutputFiles = []
         for fwjrFile in fwkJobReport.files:
-            (fileID, moduleLabel, merged) = \
-                     self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
-                                        jobFiles, dbsParentLFNs)
+            (wmbsFile, moduleLabel, merged) = \
+                     self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"], jobFiles)
+            outputFiles[moduleLabel] = wmbsFile
 
-            logging.info("Job: %s, %s, %s, %s" % (jobID, outputMap, merged, moduleLabel)) 
-            outputFileset = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
-            logging.info("Output fileset: %s" % outputFileset)
+            if merged:
+                mergedOutputFiles.append(wmbsFile)
+
+            filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": wmbsJobGroup.output.id})
+            outputFileset = self.outputFilesetsForJob(outputMap, wmbsFile["merged"], moduleLabel)
             if outputFileset != None:
-                filesetAssoc.append({"fileid": fileID, "fileset": outputFileset})
-
-            filesetAssoc.append({"fileid": fileID, "fileset": wmbsJobGroup.output.id})
+                filesetAssoc.append({"fileid": wmbsFile["id"], "fileset": outputFileset})
 
         self.bulkAddToFilesetAction.execute(binds = filesetAssoc,
                                             conn = self.transaction.conn,
                                             transaction = True)
-        wmbsJob.completeInputFiles()
-        
+        wmbsJob.completeInputFiles()        
         self.stateChanger.propagate([wmbsJob], "success", "complete")
+
+        for mergedOutputFile in mergedOutputFiles:
+            self.setupDBSFileParentage(mergedOutputFile)
 
         return
         
@@ -327,7 +480,6 @@ class AccountantWorker:
         
         Create a missing FWJR if the report can't be found by the code in the path location
         """
-
         report = FwkJobReport()
         report.addError(errorCode, errorDescription)
         report.status = 'Failed'

@@ -5,8 +5,8 @@ _Fileset_t_
 Unit tests for the WMBS Fileset class.
 """
 
-__revision__ = "$Id: Fileset_t.py,v 1.23 2010/05/11 17:28:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Fileset_t.py,v 1.24 2010/06/01 17:26:55 riahi Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import unittest
 import logging
@@ -853,6 +853,37 @@ class FilesetTest(unittest.TestCase):
 
         assert testFilesetD.lastUpdate == 20, \
                "ERROR: lastUpdate of FilesetD should be 20."
+
+    def testListFilesetByTask(self):
+        """
+        _testListFilesetByTask_
+        Verify that Fileset.ListFilesetByTask DAO correct turns
+        the list of fileset by task
+        """
+
+
+        testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Hassen",
+                                 name = "wf001", task = "sometask")
+        testWorkflow1.create()
+        testFilesetA = Fileset(name = "TestFileset1")
+        testFilesetA.create()
+        testSubscription1 = Subscription(fileset = testFilesetA,
+                                         workflow = testWorkflow1)
+        testSubscription1.create()
+
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        listFilesetByTaskDAO = daoFactory(classname = "Fileset.ListFilesetByTask")
+        listFilesetByTask = listFilesetByTaskDAO.execute(task=testWorkflow1.task)
+
+        assert len(listFilesetByTask) == 1, \
+               "ERROR: listFilesetByTask should be 1."
+
+        assert listFilesetByTask[0]['name'] == "TestFileset1", \
+               "ERROR: the fileset  should be TestFileset1."
+
+        return
         
         
 if __name__ == "__main__":

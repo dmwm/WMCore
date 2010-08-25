@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.40 2010/02/16 16:38:41 mnorman Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: File_t.py,v 1.41 2010/02/26 20:46:31 mnorman Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import unittest
 import logging
@@ -23,6 +23,7 @@ from WMCore.WMBS.Fileset       import Fileset
 from WMCore.WMBS.Workflow      import Workflow
 from WMCore.WMBS.Subscription  import Subscription
 from WMCore.WMBS.JobGroup      import JobGroup
+from WMCore.WMBS.Job           import Job
 from WMCore.WMFactory          import WMFactory
 from WMQuality.TestInit        import TestInit
 from WMCore.DataStructs.Run    import Run
@@ -45,11 +46,11 @@ class FileTest(unittest.TestCase):
                                 useDefault = False)
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
 
-        locationAction = daofactory(classname = "Locations.New")
+        locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
 
@@ -1313,6 +1314,61 @@ class FileTest(unittest.TestCase):
         self.assertEqual(wmFile == inputFile, True)
 
         return
+
+
+    def testParentageByJob(self):
+        """
+        _testParentageByJob_
+        
+        Tests the DAO that assigns parentage by Job
+        """
+
+        testWorkflow = Workflow(spec = 'hello', owner = "mnorman",
+                                name = "wf001", task="basicWorkload/Production")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
+        testSubscription.create()
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                              events = 20, checksums = {'cksum': 1})
+        testFileParentA.addRun(Run( 1, *[45]))
+        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                              events = 20, checksums = {'cksum': 1})
+        testFileParentB.addRun(Run( 1, *[45]))
+        testFileParentA.create()
+        testFileParentB.create()
+
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+
+        testJobA = Job()
+        testJobA.create(group = testJobGroup)
+        testJobA.addFile(testFileParentA)
+        testJobA.addFile(testFileParentB)
+        testJobA.associateFiles()
+
+
+        parentAction = self.daofactory(classname = "Files.SetParentageByJob")
+        parentAction.execute(jobID = testJobA.exists(), child = testFileA['id'])
+
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            assert parentFile in goldenFiles, \
+                   "ERROR: Unknown parent file"
+            goldenFiles.remove(parentFile)
+
+        assert len(goldenFiles) == 0, \
+              "ERROR: Some parents are missing"
 
 
     

@@ -154,7 +154,9 @@ class OidConsumer(cherrypy.Tool):
             # it will be sent securely.
             sreg_request = sreg.SRegRequest(required=['role',
                                                       'group',
-                                                      'site'])
+                                                      'site',
+                                                      'fullname'],
+                                            optional=['email'])
             #sreg_request = sreg.SRegRequest(required=['nickname'],
                                            # optional=['fullname', 'email'])
             oidrequest.addExtension(sreg_request)
@@ -221,13 +223,14 @@ class OidConsumer(cherrypy.Tool):
             # The authorization information is supposed to come in here.
             sreg_data = sreg.SRegResponse.fromSuccessResponse(info)            
             if sreg_data:
-                for i in ['role', 'group', 'site']:
+                for i in ['role', 'group', 'site', 'fullname']:
                     cherrypy.session[self.session_name][i] = \
                                       sreg_data.get(i,None)
             else:
                 cherrypy.session[self.session_name]['role']  = None
                 cherrypy.session[self.session_name]['group'] = None
                 cherrypy.session[self.session_name]['site']  = None
+                cherrypy.session[self.session_name]['fullname']  = None
                 
             # Set the new session state to authenticated
             cherrypy.session[self.session_name]['status'] = AUTHENTICATED

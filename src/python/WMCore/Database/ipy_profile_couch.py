@@ -5,8 +5,8 @@
 Couch DB command line admin tool
 """
 
-__revision__   = "$Id: ipy_profile_couch.py,v 1.3 2009/06/22 17:58:56 valya Exp $"
-__version__    = "$Revision: 1.3 $"
+__revision__   = "$Id: ipy_profile_couch.py,v 1.4 2009/06/24 14:05:14 valya Exp $"
+__version__    = "$Revision: 1.4 $"
 __author__     = "Valentin Kuznetsov"
 __license__    = "GPL"
 __version__    = "1.0.1"
@@ -355,13 +355,13 @@ def load_module(arg):
     obj  = compile(str(stm), '<string>', 'exec')
     try:
         eval(obj)
+        msg  = "Loaded %s module. " % arg
+        msg += "Use " + PM.msg_blue("%s_help" %arg) + \
+                    " for concrete module help if it's implemented"
+        print msg
     except:
         traceback.print_exc()
         pass
-    msg  = "Loaded %s module. " % arg
-    msg += "Use " + PM.msg_blue("%s_help" %arg) + \
-                " for concrete module help if it's implemented"
-    print msg
 
 # keep magic list as global since it's used in couch_help
 magic_list = [

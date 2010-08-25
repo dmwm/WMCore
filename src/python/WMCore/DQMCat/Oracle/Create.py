@@ -8,8 +8,8 @@ at some high value.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.1 2009/12/16 18:53:35 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Create.py,v 1.2 2009/12/16 18:56:03 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -19,15 +19,6 @@ class Create(CreateWMBSBase):
     Class to set up the WMBS schema in an Oracle database
     """
     sequence_tables = []
-    sequence_tables.append('wmbs_fileset')
-    sequence_tables.append('wmbs_file_details')
-    sequence_tables.append('wmbs_location')
-    sequence_tables.append('wmbs_workflow') 
-    sequence_tables.append('wmbs_subscription') 
-    sequence_tables.append('wmbs_jobgroup')
-    sequence_tables.append('wmbs_job')
-    sequence_tables.append('wmbs_job_state')
-    sequence_tables.append('wmbs_checksum_type')
     
     def __init__(self, logger = None, dbi = None, params = None):
         """

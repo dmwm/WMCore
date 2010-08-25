@@ -6,6 +6,9 @@ Runtime script that installs the scenario based configuration PSet into the job
 
 """
 
+import logging
+import sys
+import traceback
 
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 
@@ -13,7 +16,7 @@ from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from PSetTweaks.WMTweak import makeTweak, makeJobTweak
 from PSetTweaks.WMTweak import makeOutputTweak, applyTweak
 
-applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], a['writeTiers'])
+applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], [], a['writeTiers'])
 applySkimming = lambda s, a: s.skimming(a['skims'])
 
 
@@ -64,14 +67,19 @@ class InstallScenario(ScriptInterface):
             }
         
         print "InstallScenario for %s: %s.%s" % (self.step.name(), scenario, funcName)
-
         applicationFunc = funcMap[funcName]
+
         try:
             process = applicationFunc(scenarioInst,  funcArgs.dictionary_())
         except Exception, ex:
             msg = "Failed to invoke %s.%s with args %s\n" % (scenario, funcName, funcArgs.dictionary_())
             msg += str(ex)
             print msg
+            crashMessage = ""
+            stackTrace = traceback.format_tb(sys.exc_info()[2], None)
+            for stackFrame in stackTrace:
+                crashMessage += stackFrame
+            print crashMessage
             return 50203
 
         # apply task PSet Tweaks
@@ -94,8 +102,6 @@ class InstallScenario(ScriptInterface):
             mod = cmsswStep.getOutputModule(om)
             outTweak = makeOutputTweak(mod, self.job)
             applyTweak(process, outTweak)
-
-
 
         # revlimiter for testing
         process.maxEvents.input = 2

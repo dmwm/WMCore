@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.17 2010/03/09 18:52:48 mnorman Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.18 2010/03/09 20:05:52 mnorman Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import os
 import threading
@@ -58,8 +58,9 @@ class AccountantWorker:
         self.getMergedChildrenAction = self.daoFactory(classname = "Files.GetMergedChildren")
         self.setParentageByJob       = self.daoFactory(classname = "Files.SetParentageByJob")
         self.setFileRunLumi          = self.daoFactory(classname="Files.AddRunLumi")
-        self.setFileLocation         = self.daoFactory(classname="Files.SetLocation")
-        self.setFileAddChecksum      = self.daoFactory(classname="Files.AddChecksum")
+        self.setFileLocation         = self.daoFactory(classname="Files.SetLocationByLFN")
+        self.setFileAddChecksum      = self.daoFactory(classname="Files.AddChecksumByLFN")
+        self.addFileAction           = self.daoFactory(classname = "Files.Add")
 
         self.dbsStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
@@ -615,20 +616,37 @@ class AccountantWorker:
         parentageBinds = []
         runLumiBinds   = []
         fileCksumBinds = []
-        fileIDs        = []
+        fileLFNs        = []
+        fileCreate     = []
+
+        
         for wmbsFile in self.wmbsFilesToBuild:
-            fileID        = wmbsFile['id']
+            lfn           = wmbsFile['lfn']
             selfChecksums = wmbsFile['checksums']
-            parentageBinds.append({'child': fileID, 'jobid': jobID})
-            runLumiBinds.append({'lfn': wmbsFile['lfn'], 'runs': wmbsFile['runs']})
-            fileIDs.append(fileID)
+            parentageBinds.append({'child': lfn, 'jobid': jobID})
+            runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
+            fileLFNs.append(lfn)
 
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
                 for entry in selfChecksums.keys():
-                    fileCksumBinds.append({'fileid': fileID, 'cksum' : selfChecksums[entry],
+                    fileCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
                                            'cktype' : entry})
+
+            fileCreate.append([lfn,
+                               wmbsFile['size'],
+                               wmbsFile['events'],
+                               None,
+                               wmbsFile["first_event"],
+                               wmbsFile["last_event"],
+                               wmbsFile['merged']])
+
+
+        
+        self.addFileAction.execute(files = fileCreate,
+                                   conn = self.transaction.conn,
+                                   transaction = True)
 
         
         self.setParentageByJob.execute(binds = parentageBinds,
@@ -643,7 +661,7 @@ class AccountantWorker:
                                         conn = self.transaction.conn,
                                         transaction = True)
         if self.fileLocation:
-            self.setFileLocation.execute(file = fileIDs,
+            self.setFileLocation.execute(lfn = fileLFNs,
                                          location = self.fileLocation,
                                          conn = self.transaction.conn,
                                          transaction = True)
@@ -678,20 +696,20 @@ class AccountantWorker:
         self.fileLocation = seName
 
         # THIS IS DANGEROUS
-        existingTransaction = wmbsFile.beginTransaction()
-
-        addAction = wmbsFile.daofactory(classname = "Files.Add")
-        addAction.execute(files = wmbsFile["lfn"], size = wmbsFile["size"],
-                          events = wmbsFile["events"],
-                          first_event = wmbsFile["first_event"],
-                          last_event = wmbsFile["last_event"],
-                          merged = wmbsFile["merged"],
-                          conn = wmbsFile.getDBConn(),
-                          transaction = wmbsFile.existingTransaction())
-
-        wmbsFile.exists()
-
-        wmbsFile.commitTransaction(existingTransaction)
+        #existingTransaction = wmbsFile.beginTransaction()
+        #
+        #addAction = wmbsFile.daofactory(classname = "Files.Add")
+        #addAction.execute(files = wmbsFile["lfn"], size = wmbsFile["size"],
+        #                  events = wmbsFile["events"],
+        #                  first_event = wmbsFile["first_event"],
+        #                  last_event = wmbsFile["last_event"],
+        #                  merged = wmbsFile["merged"],
+        #                  conn = wmbsFile.getDBConn(),
+        #                  transaction = wmbsFile.existingTransaction())
+        #
+        #wmbsFile.exists()
+        #
+        #wmbsFile.commitTransaction(existingTransaction)
 
 
 

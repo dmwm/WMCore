@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.29 2010/06/30 18:46:58 mnorman Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.30 2010/07/08 15:43:23 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -41,6 +41,18 @@ class BadJobError(Exception):
     except signal
 
     """
+    pass
+
+
+class FullSitesError(Exception):
+    """
+    Another signal passing exception
+
+    """
+
+    def __init__(self, jobType):
+        self.jobType = jobType
+
     pass
 
 def sortListOfDictsByKey(inList, key):
@@ -91,7 +103,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
 
         configDict = {"submitDir": self.config.JobSubmitter.submitDir,
-                      "submitNode": self.config.JobSubmitter.submitNode}
+                      "submitNode": self.config.JobSubmitter.submitNode,
+                      "agentName": self.config.Agent.agentName}
         
         if hasattr(self.config.JobSubmitter, "submitScript"):
             configDict["submitScript"] = self.config.JobSubmitter.submitScript
@@ -101,6 +114,10 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         if hasattr(self.config.JobSubmitter, 'inputFile'):
             configDict['inputFile'] = self.config.JobSubmitter.inputFile
+
+        if hasattr(self.config, 'BossAir'):
+            configDict['pluginName'] = config.BossAir.pluginName
+            configDict['pluginName'] = config.BossAir.pluginDir 
 
         workerName = "%s.%s" % (self.config.JobSubmitter.pluginDir, \
                                 self.config.JobSubmitter.pluginName)
@@ -339,8 +356,15 @@ class JobSubmitterPoller(BaseWorkerThread):
             for key in self.sites[tmpSite].keys():
                 self.sites[tmpSite][key]['total_running_jobs'] += 1
         else:
-            logging.error("Could not find site for job %i; all sites may be full" % (job['id']))
-
+            #logging.error("Could not find site for job %i; all sites may be full" % (job['id']))
+            sitesFull = True
+            for siteName in self.sites.keys():
+                site = self.sites[siteName][jobType]
+                if site['task_running_jobs'] < site['max_slots']:
+                    # Then at least one site has space...
+                    sitesFull = False
+                if sitesFull:
+                    raise FullSitesError(jobType)
 
         return tmpSite
 
@@ -463,48 +487,83 @@ class JobSubmitterPoller(BaseWorkerThread):
         failList = []
         jList2   = []
         killList = []
+        fullList = []
+        skippedJobs = 0
+        noSiteJobs  = 0
 
         for job in jobList:
+            if job['type'] in fullList:
+                # Then the sites are all full for that type
+                # Skip that job
+                skippedJobs += 1
+                continue
+                
             if not os.path.isdir(job['cache_dir']):
-                #Well, then we're in trouble, because we need that info
-                failList.append(job)
+                # Well, then we're in trouble, because we need that info
+                # Kill this job
+                killList.append(job)
                 continue
             jobPickle  = os.path.join(job['cache_dir'], 'job.pkl')
             if not os.path.isfile(jobPickle):
-                failList.append(job)
+                # Then we don't have a pickle file, and we're screwed
+                # Kill this job
+                killList.append(job)
                 continue
             fileHandle = open(jobPickle, "r")
             loadedJob  = cPickle.load(fileHandle)
             loadedJob['type'] = job['type']
+
             try:
                 loadedJob['location'] = self.findSiteForJob(loadedJob)
+                
             except BadJobError:
                 # Really fail this job!  This means that something's
                 # gone wrong in how sites were enabled.
                 msg = ''
                 msg += "Failing job %i: Encountered a job with no possible sites\n" % (job['id'])
-                msg += "Job should enter submitFailed"
+                msg += "Job should enter submitFailed\n"
                 logging.error(msg)
-                failList.append(job)
                 killList.append(job)
                 continue
-            loadedJob['custom']['location'] = loadedJob['location']
+            
+            except FullSitesError as e:
+                # If we've gotten here, we're in it deep
+                # This means that all the sites are over their max limit
+                msg = ''
+                msg += 'All sites are full for type %s.\n' % (e.jobType)
+                msg += 'No further jobs of that type will run this cycle\n'
+                logging.error(msg)
+                fullList.append(e.jobType)
+                continue
+
             # If we didn't get a site, all sites are full
             if loadedJob['location'] == None:
                 # Ignore this job until the next round
-                failList.append(loadedJob)
+                noSiteJobs += 1
                 continue
+
+            
+            loadedJob['custom']['location'] = loadedJob['location']
             loadedJob['retry_count'] = job['retry_count']
-            jList2.append(loadedJob)
             if not 'sandbox' in loadedJob.keys() or not 'task' in loadedJob.keys():
                 # You know what?  Just fail the job
                 failList.append(loadedJob)
                 continue
 
+            jList2.append(loadedJob)
+
+
+            
+
 
         for job in failList:
             if job in jList2:
                 jList2.remove(job)
+
+        if skippedJobs > 0:
+            logging.error("Skipped %i jobs because all sites were full." % (skippedJobs) )
+        if noSiteJobs > 0:
+            logging.error("Skipped %i jobs because we couldn't find a site for them" % (noSiteJobs) )
 
 
 

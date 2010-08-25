@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.9 2009/06/22 19:49:18 evansde Exp $"
-__revision__ = "$Revision: 1.9 $"
+__version__ = "$Id: WMTask.py,v 1.10 2009/08/17 20:51:42 mnorman Exp $"
+__revision__ = "$Revision: 1.10 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -234,6 +234,49 @@ class WMTaskHelper(TreeHelper):
         """
         datadict = getattr(self.data.input, "splitting")
         return datadict.dictionary_()
+
+    def getSeederConfigs(self):
+        """
+        _getSeederConfigs_
+        
+        Returns a list of seeder config options in a dict with the seeder name as the key.
+        """
+
+        result = []
+
+        if not hasattr(self.data, "seeders"):
+            return result
+
+        for seederName in self.data.seeders.listSections_():
+            confValues = TreeHelper(getattr(self.data.seeders, seederName))
+            args = {}
+            tempArgs = confValues.pythoniseDict(sections = False)
+            for entry in tempArgs.keys():
+                args[entry.split('%s.' %seederName)[1]] = tempArgs[entry]
+            result.append({seederName: args})
+
+        return result
+
+
+    def addSeeder(self, seederName, args = None):
+        """
+        _addSeeder_
+        
+        This SHOULD allow you to add a new seeder to the config section with any variable you want
+        """
+
+        if not 'seeders' in self.data.listSections_():
+            self.data.section_('seeders')
+        if not seederName in self.data.seeders.listSections_():
+            self.data.seeders.section_(seederName)
+
+        if args:
+            helper = TreeHelper(getattr(self.data.seeders, seederName))
+            helper.addValue(args)
+
+        return
+
+        
 
 class WMTask(ConfigSectionTree):
     """

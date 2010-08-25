@@ -20,15 +20,14 @@ class RequestManager(Service):
     
     """
 
-    def __init__(self, dict = {}, responseType = "json", secure = False):
+    def __init__(self, dict = {}, secure = False):
         """
         responseType will be either xml or json
         """
-        self.responseType = responseType.lower()
 
         if not dict.has_key('endpoint'):
             #TODO needs to change proper default location
-            dict['endpoint'] = "%cmssrv49.fnal.gov:8585/requestmgr/" % \
+            dict['endpoint'] = "%scmssrv49.fnal.gov:8585/requestmgr/" % \
                                 ((secure and "https://" or "http://"))
         if dict.has_key('cachepath'):
             pass
@@ -47,7 +46,8 @@ class RequestManager(Service):
                     filename = dict['cachepath'] + '/jsonparser.log',
                     filemode = 'w')
             dict['logger'] = logging.getLogger('RequestMgrParser')
-
+            dict['accept_type'] = 'text/json'
+        
         Service.__init__(self, dict)
 
     def _getResult(self, callname, clearCache = True,
@@ -101,7 +101,7 @@ class RequestManager(Service):
         callname = 'request'
         return self._getResult(callname, args = args, verb="GET")
     
-    def getAssignment(self, teamName, request):
+    def getAssignment(self, teamName=None, request=None):
         
         args = {}
         args['teamName'] = teamName
@@ -109,4 +109,11 @@ class RequestManager(Service):
         
         callname = 'assignment'
         return self._getResult(callname, args = args, verb="GET")
+    
+    def postAssignment(self, requestName, prodAgentUrl=None):
+        args = {}
+        args['requestName'] = requestName
+        
+        callname = 'assignment'
+        return self._getResult(callname, args = args, verb="POST")
     

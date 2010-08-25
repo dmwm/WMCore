@@ -33,4 +33,11 @@ class RESTFormatter(TemplatedPage):
         return data
     
     def format(self, data, datatype):
-        return self.supporttypes[datatype](data)
+        try:
+            return self.supporttypes[datatype](data)
+        except HTTPError, h:
+            cherrypy.response.status = h[0]
+            return self.supporttypes[datatype](h[1])
+        except Exception, e:
+            cherrypy.response.status = 500
+            return self.supporttypes[datatype](e.message)

@@ -14,11 +14,10 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.32 2009/08/26 16:32:37 sfoulkes Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Job.py,v 1.33 2009/08/26 16:52:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import datetime
-import simplejson
 from sets import Set
 
 from WMCore.DataStructs.Job import Job as WMJob
@@ -300,4 +299,4 @@ class Job(WMBSBase, WMJob):
         for inputFile in self["input_files"]:
             jobDict["input_files"].append(buildFileDict(inputFile))
 
-        return simplejson.dumps(jobDict)
+        return jobDict

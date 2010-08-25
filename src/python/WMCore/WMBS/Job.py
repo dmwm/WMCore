@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.28 2009/05/11 14:47:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: Job.py,v 1.29 2009/05/12 16:19:50 sfoulkes Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import datetime
 from sets import Set
@@ -54,6 +54,9 @@ class Job(WMBSBase, WMJob):
         
         Write the job to the database.
         """
+        if self["id"] != None:
+            return
+
         existingTransaction = self.beginTransaction()
 
         self["jobgroup"] = group.id

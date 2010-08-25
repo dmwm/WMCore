@@ -29,6 +29,10 @@ comment=no
 # Include message's id in output
 include-ids=no
 
+[MESSAGES CONTROL]
+# disable F0401 - could not import module
+
+disable-msg=F0401
 
 
 # checks for :

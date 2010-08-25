@@ -55,7 +55,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         wqApi = WorkQueueDS(self.params)
 
         data = wqApi.getWork({'SiteB' : 15, 'SiteA' : 15}, "http://test.url")
-        assert len(data) == 1, "only 1 element needs to be back. Got (%s)" % len(data['data'])
+        assert len(data) == 1, "only 1 element needs to be back. Got (%s)" % len(data)
         assert data[0]['wmspec_name'] == 'BasicProduction', "spec name is not BasicProduction: %s" \
                                 % data['wmspec_name']
          
@@ -70,7 +70,7 @@ class WorkQueueServiceTest(RESTBaseUnitTest):
         childResources = []
         #print wqApi.synchronize(childUrl, childResources)
         
-    def atestStatusChange(self):
+    def testStatusChange(self):
         
         self.globalQueue.queueWork(createProcessingSpec())
         wqApi = WorkQueueDS(self.params)

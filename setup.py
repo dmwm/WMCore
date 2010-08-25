@@ -27,11 +27,38 @@ except:
 
 try:
     import nose
+    from nose.plugins import Plugin, PluginTester
+    import nose.failure
+    import nose.case
     can_nose = True
 except:
     pass
 
 if can_nose:
+    class DetailedOutputter(Plugin):
+        name = "detailed"
+        def __init__(self):
+            pass
+        
+        def setOutputStream(self, stream):
+            """Get handle on output stream so the plugin can print id #s
+            """
+            self.stream = stream
+        
+        def beforeTest(self, test):
+            if ( test.id().startswith('nose.failure') ):
+                pass
+                #Plugin.beforeTest(self, test)
+            else:
+                
+                self.stream.write('%s -- ' % (test.id(), ))
+            
+        def configure(self, options, conf):
+            """
+                Configure plugin. Skip plugin is enabled by default.
+            """
+            self.enabled = True   
+        
     class TestCommand(Command):
         """Runs our test suite"""
         # WARNING WARNING WARNING
@@ -59,12 +86,13 @@ if can_nose:
                 sys.stdout.flush()
                 import WMQuality.TestInit
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
-                time.sleep(3)
+                time.sleep(4)
             
             if self.buildBotMode:
                 retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             else:    
-                retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python','-a','!integration'])
+                retval =  nose.run(argv=['sup.py','--all-modules','-v','test/python','-a','!integration'],
+                                    addplugins=[DetailedOutputter()])
                 
             if retval:
                 sys.exit( 0 ) 

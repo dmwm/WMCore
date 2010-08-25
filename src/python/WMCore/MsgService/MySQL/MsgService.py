@@ -34,11 +34,6 @@ messages after it is handled.
 """
 
 
-    "$Id: MsgService.py,v 1.12 2010/08/18 15:38:34 meloam Exp $"
-
-    "$Revision: 1.12 $"
-
-    "fvlingen@caltech.edu"
 
 import os
 import socket

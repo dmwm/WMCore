@@ -5,7 +5,6 @@ Slave used for AddWorkflowToManage handler
 
 __all__ = []
 
-    "$Id: AddWorkflowToManageSlave.py,v 1.5 2010/08/18 15:40:03 meloam Exp $"
 
 
 import logging

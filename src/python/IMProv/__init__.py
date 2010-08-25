@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# $Id: __init__.py,v 1.2 2010/08/18 15:39:15 meloam Exp $
-
 
 """
 _IMProv_

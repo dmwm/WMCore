@@ -9,12 +9,6 @@ This module implements the mysql backend for the TQComp
 """
 
 
-    "$Id: Queries.py,v 1.9 2010/08/18 15:39:46 meloam Exp $"
-
-    "$Revision: 1.9 $"
-
-    "delgadop@cern.ch"
-
 import threading
 import logging
 

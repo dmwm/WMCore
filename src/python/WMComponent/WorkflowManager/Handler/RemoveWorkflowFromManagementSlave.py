@@ -6,8 +6,6 @@ Slave used for RemoveWorkflowFromManagement handler
 
 __all__ = []
 
-    "$Id: RemoveWorkflowFromManagementSlave.py,v 1.5 2010/08/18 15:40:03 meloam Exp $"
-
 
 import logging
 import threading

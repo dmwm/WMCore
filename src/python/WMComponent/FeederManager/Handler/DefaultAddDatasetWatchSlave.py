@@ -5,10 +5,6 @@ Slave used for default AddDatasetWatch behavior
 
 __all__ = []
 
-"$Id: DefaultAddDatasetWatchSlave.py,v 1.9 2010/08/18 15:39:13 meloam Exp $"
-
-
-    "james.jackson@cern.ch"
 
 import logging
 import threading

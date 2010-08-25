@@ -8,12 +8,6 @@ This module implements the mysql backend for the trigger.
 """
 
 
-    "$Id: Queries.py,v 1.5 2010/08/18 15:40:06 meloam Exp $"
-
-    "$Revision: 1.5 $"
-
-    "fvlingen@caltech.edu"
-
 import threading
 
 from WMCore.Database.DBFormatter import DBFormatter

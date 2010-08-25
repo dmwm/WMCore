@@ -8,11 +8,6 @@ This module implements the Oracle backend for the persistent threadpool.
 """
 
 
-    "$Id: Queries.py,v 1.6 2010/08/18 15:38:17 meloam Exp $"
-
-    "$Revision: 1.6 $"
-
-    "mnorman@fnal.gov"
 
 import threading
 

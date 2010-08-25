@@ -5,7 +5,6 @@ Default slave for FeederManager
 
 __all__ = []
 
-    "$Id: DefaultSlave.py,v 1.3 2010/08/18 15:39:13 meloam Exp $"
 
 
 import threading

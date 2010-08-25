@@ -5,8 +5,6 @@ Default slave, handles loading of shared DB code
 
 __all__ = []
 
-    "$Id: DefaultSlave.py,v 1.5 2010/08/18 15:40:03 meloam Exp $"
-
 
 import threading
 import pickle

@@ -38,11 +38,6 @@ messages after it is handled.
 # -mnorman
 
 
-    "$Id: MsgService.py,v 1.4 2010/08/18 15:39:10 meloam Exp $"
-
-    "$Revision: 1.4 $"
-
-    "mnorman@fnal.gov"
 
 import os
 import socket

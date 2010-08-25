@@ -13,11 +13,6 @@ service.
 """
 
 
-    "$Id: Queries.py,v 1.9 2010/08/18 15:38:34 meloam Exp $"
-
-    "$Revision: 1.9 $"
-
-    "fvlingen@caltech.edu"
 
 import threading
 

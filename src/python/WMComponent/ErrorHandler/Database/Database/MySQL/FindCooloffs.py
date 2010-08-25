@@ -10,12 +10,6 @@ retry manager, for locating the jobs in cooloff state state
 """
 
 
-    "$Id: FindCooloffs.py,v 1.2 2010/08/18 15:38:37 meloam Exp $"
-
-    "$Revision: 1.2 $"
-
-    "anzar@fnal.gov"
-
 import threading
 
 from WMCore.Database.DBFormatter import DBFormatter

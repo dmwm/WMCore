@@ -10,12 +10,6 @@ errorhandler, for locating the failed job creation
 """
 
 
-    "$Id: FindFailedCreates.py,v 1.2 2010/08/18 15:38:24 meloam Exp $"
-
-    "$Revision: 1.2 $"
-
-    "anzar@fnal.gov"
-
 import threading
 
 from WMCore.Database.DBFormatter import DBFormatter

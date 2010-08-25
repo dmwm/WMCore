@@ -8,11 +8,6 @@ This module implements the oracle backend for the trigger.
 """
 
 
-    "$Id: Queries.py,v 1.2 2010/08/18 15:38:16 meloam Exp $"
-
-    "$Revision: 1.2 $"
-
-    "fvlingen@caltech.edu"
 
 from WMCore.Trigger.MySQL.Queries import Queries as MySQLQueries
 

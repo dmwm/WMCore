@@ -10,11 +10,6 @@ errorhandler, for locating the fialed jobs in certain state
 """
 
 
-    "$Id: FindFailed.py,v 1.3 2010/08/18 15:38:24 meloam Exp $"
-
-    "$Revision: 1.3 $"
-
-    "anzar@fnal.gov"
 
 import threading
 

@@ -21,11 +21,14 @@ class ContentTypeHandler:
         TODO: corrently it only works with cjson not json from python2.6.
         There is issues of converting unit code to string.
         """
-        from WMCore.Wrappers import JsonWrapper
-        params = request.body.read()
-        if params:
-            kw = JsonWrapper.loads(params)
-            kwargs.update(kw)
+        #if get verb doesn't have request.boby 
+        #TODO: maybe this should filtered on upper level
+        if request.body != None:
+            from WMCore.Wrappers import JsonWrapper
+            params = request.body.read()
+            if params:
+                kw = JsonWrapper.loads(params)
+                kwargs.update(kw)
         return args, kwargs
     
     def jsonThunkerHandler(self, args, kwargs):

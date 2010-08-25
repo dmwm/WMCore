@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.63 2010/06/10 18:24:46 sfoulkes Exp $"
-__version__ = "$Revision: 1.63 $"
+__revision__ = "$Id: CMSCouch.py,v 1.64 2010/06/11 16:18:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.64 $"
 
 import urllib
 import datetime
@@ -288,12 +288,13 @@ class Database(CouchDBRequests):
 
         more info: http://wiki.apache.org/couchdb/HTTP_view_API
         """
+        encodedOptions = {}
         for k,v in options.iteritems():
-            options[k] = self.encode(v)
-        # the following is CouchDB 090 only, this is the reference platform
+            encodedOptions[k] = self.encode(v)
+
         if len(keys):
-            if (options):
-                data = urllib.urlencode(options)
+            if (encodedOptions):
+                data = urllib.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_view/%s?%s' % \
                             (self.name, design, view, data), {'keys':keys})
             else:
@@ -301,7 +302,7 @@ class Database(CouchDBRequests):
                             (self.name, design, view), {'keys':keys})
         else:
             retval = self.get('/%s/_design/%s/_view/%s' % \
-                            (self.name, design, view), options)
+                            (self.name, design, view), encodedOptions)
             
         if ('error' in retval):
             raise RuntimeError ,\

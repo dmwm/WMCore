@@ -8,8 +8,8 @@ in the T0 and will only return jobs for runs that have been enabled
 for RECO.
 """
 
-__revision__ = "$Id: T0PromptRecoEventBased.py,v 1.3 2009/10/29 09:57:54 sfoulkes Exp $"
-__version__  = "$Revision: 1.3 $"
+__revision__ = "$Id: T0PromptRecoEventBased.py,v 1.4 2009/10/29 10:54:35 sfoulkes Exp $"
+__version__  = "$Revision: 1.4 $"
 
 from sets import Set
 import threading
@@ -54,6 +54,12 @@ class T0PromptRecoEventBased(JobFactory):
             loadedFile = File(id = f["file"])
             loadedFile.load()
             eventsInFile = loadedFile['events']
+
+            if eventsInFile == 0:
+                self.newJob(name = makeUUID())
+                self.currentJob.addFile(f)
+                self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, 0)
+                continue
 
             currentEvent = 0
             while currentEvent < eventsInFile:

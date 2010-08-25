@@ -37,6 +37,7 @@ class TestChangeState(unittest.TestCase):
         self.testInit = TestInit(__file__, os.getenv("DIALECT"))
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+    
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -112,14 +113,6 @@ class TestChangeState(unittest.TestCase):
         testJobGroupA = JobGroup(subscription = testSubscription)
         testJobGroupA.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
-        testFileA.addRun(Run(10, *[12312]))
-
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
-        testFileB.addRun(Run(10, *[12312]))
-        testFileA.create()
-        testFileB.create()
-
         testJobA = Job(name = "TestJobA")
         testJobA.create(testJobGroupA)
         testJobA.addFile(testFileA)
@@ -132,9 +125,10 @@ class TestChangeState(unittest.TestCase):
         
         testJobGroupA.add(testJobA)
         testJobGroupA.add(testJobB)
-        testJobGroupA.commit()
         
-        self.change.persist([testJobA, testJobB], 'new', 'none')
+        testJobGroupA.commit()
+    
+        self.change.persist([testJobA, testJobB], 'none', 'new')
 
 
     def testPropagate(self):

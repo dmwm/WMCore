@@ -9,11 +9,11 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.35 2010/06/28 19:01:21 sfoulkes Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Create.py,v 1.36 2010/07/30 14:05:37 sfoulkes Exp $"
+__version__ = "$Revision: 1.36 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
-from WMCore.JobStateMachine.ChangeState import Transitions
+from WMCore.JobStateMachine.Transitions import Transitions
 
 class Create(CreateWMBSBase):
     """

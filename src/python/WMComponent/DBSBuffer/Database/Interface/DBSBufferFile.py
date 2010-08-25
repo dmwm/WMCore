@@ -5,10 +5,10 @@ _DBSBufferFile_
 A simple object representing a file in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.9 2009/12/10 17:25:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.10 2009/12/15 15:32:46 mnorman Exp $"
+__version__ = "$Revision: 1.10 $"
 
-from sets import Set
+#from sets import Set
 import time
 import threading
 import logging
@@ -30,7 +30,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                         checksums = checksums, parents = parents, merged = True)
         self.setdefault("status", status)
         self.setdefault("id", id)
-        self.setdefault("location", Set())
+        self.setdefault("location", set())
 
         # Parameters for the algorithm
         self.setdefault("appName", None)
@@ -41,7 +41,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("datasetPath", None)
         
         if locations == None:
-            self.setdefault("newlocations", Set())
+            self.setdefault("newlocations", set())
         else:
             self.setdefault("newlocations", self.makeset(locations))
 

@@ -5,13 +5,13 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.10 2009/12/10 17:23:43 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.11 2009/12/15 15:32:14 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import os
 import threading
-from sets import Set
+#from sets import Set
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -31,6 +31,7 @@ class DBSBufferFileTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.testInit.clearDatabase(modules = ["WMComponent.DBSBuffer.Database"])
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
                                 useDefault = False)
 
@@ -42,6 +43,7 @@ class DBSBufferFileTest(unittest.TestCase):
         locationAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")        
+
         
     def tearDown(self):        
         """
@@ -478,7 +480,7 @@ class DBSBufferFileTest(unittest.TestCase):
         single string instead of a set.
         """
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                  locations = Set(["se1.fnal.gov"]))
+                                  locations = set(["se1.fnal.gov"]))
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -534,20 +536,21 @@ class DBSBufferFileTest(unittest.TestCase):
         testFile.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         
         testFile.create()
-        runSet = Set()
+        runSet = set()
         runSet.add(Run( 1, *[45]))
         runSet.add(Run( 2, *[67, 68]))
         testFile.addRunSet(runSet)
         
-        assert (runSet - testFile["runs"]) == Set(), \
+        assert (runSet - testFile["runs"]) == set(), \
             "Error: addRunSet is not updating set correctly"
 
-    def testSetBlock(self):
+    def testXSetBlock(self):
         """
         _testSetBlock_
 
         Verify that the [Set|Get]Block DAOs work correctly.
         """
+        
         myThread = threading.currentThread()
         uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
                                    logger = myThread.logger,

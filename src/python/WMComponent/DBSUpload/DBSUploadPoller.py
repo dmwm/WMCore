@@ -3,15 +3,15 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.15 2009/12/07 21:55:09 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.16 2009/12/15 15:37:26 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import threading
 import logging
 import re
 import os
 import time
-from sets import Set
+#from sets import Set
 
 import inspect
 
@@ -149,7 +149,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 fileLFNs.append(file["lfn"])
                 #Now really stupid stuff has to happen.
                 initSet = file['locations']
-                locations = Set()
+                locations = set()
                 for loc in initSet:
                     locations.add(str(loc))
                 file['locations'] = locations

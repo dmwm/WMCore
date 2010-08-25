@@ -13,8 +13,8 @@ If you just want to retrieve the data without caching use the Requests class
 directly.
 """
 
-__revision__ = "$Id: Service.py,v 1.15 2009/07/11 08:48:16 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Service.py,v 1.16 2009/07/13 17:54:31 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import datetime
 import os
@@ -33,6 +33,8 @@ class Service(Requests):
         # Inherit from Resource
         # then split the endpoint into netloc and basepath
         endpoint = urlparse(dict['endpoint'])
+        
+        #Only works on python 2.5 or above
         self.setdefault("basepath", endpoint.path)
         Requests.__init__(self, endpoint.netloc)
         

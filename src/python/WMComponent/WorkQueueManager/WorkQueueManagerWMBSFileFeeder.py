@@ -3,8 +3,8 @@
 pullWork poller
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerWMBSFileFeeder.py,v 1.3 2010/05/14 18:56:45 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueManagerWMBSFileFeeder.py,v 1.4 2010/07/29 21:37:49 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 import threading
@@ -25,15 +25,9 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         
         self.queue = queue
-        myThread = threading.currentThread()
-        #DAO factory for WMBS objects
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = self.queue.logger, 
-                                     dbinterface = myThread.dbi)
-       
-        self.topOffFactor = 1.0
-        self.sites = {}
-        self.slots = {}
+        
+        self.previousWorkList = []
+        
         self.resourceControl = ResourceControl()
         
     def algorithm(self, parameters):
@@ -41,80 +35,47 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         Pull in work
         """
         # reinitialize site and slot
-        self.sites = {}
-        self.slots = {}
-        self.pollJobs()
-        self.getWorks()
+        if self.checkJobCreation():
+            self.getWorks()
         
     def getWorks(self):
         
+        
         self.queue.logger.info("Getting work and feeding WMBS files")
 
+        # need to make sure jobs are created
+        siteRCDict = self.resourceControl.listThresholdsForCreate()
+        
         workQueueDict = {}
 
-        for location in self.sites.keys():
+        for site in siteRCDict.keys():
             #This is the number of free slots
             # - the number of Created but not Exectuing jobs
-            freeSlots = (self.slots[location] * self.topOffFactor) \
-                        - self.sites[location]
-
+            freeSlots = siteRCDict[site]['total_slots'] - siteRCDict[site]['running_jobs'] 
             #I need freeSlots jobs on site location
-            self.queue.logger.info('I need %s jobs on site %s' %(freeSlots, location))
+            self.queue.logger.info('I need %s jobs on site %s' %(freeSlots, site))
 
             if freeSlots < 0:
                 freeSlots = 0
-            workQueueDict[location] = freeSlots
+            workQueueDict[site] = freeSlots
 
-        self.queue.getWork(workQueueDict)
-
+        self.previousWorkList = self.queue.getWork(workQueueDict)
+        
         return
 
+    def checkJobCreation(self):
+        # check to see whether there is job created for all the file 
+        # in the given subscription
+        self.queue.logger.info("Checking the JobCreation from previous pulled work")
+        for workUnit in self.previousWorkList:
+            if len(workUnit["subscription"].filesOfStatus("Available")) > 0:
+                self.queue.logger.info("Not all the jobs are created.\nWill get the work later")
+                return False
         
-    
-    def pollJobs(self):
-        """
-        Survey sites for number of open slots; number of running jobs
-
-        """
-
-        siteRCDict = self.resourceControl.listThresholdsForCreate()
-
-        # This should be two tiered: 1st location, 2nd number of slots
-
-        for site in siteRCDict.keys():
-            self.sites[site] = siteRCDict[site]['running_jobs']
-            self.slots[site] = siteRCDict[site]['total_slots']
-            self.queue.logger.info("There are now %s jobs for site %s" \
-                         %(self.sites[site], site))
-
-
-        # Now we have to make some quick guesses about jobs not yet submitted:
-        jobAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        jobList   = jobAction.execute(state = 'Created')
-        for jobID in jobList:
-            job = Job(id = jobID)
-            job["location"] = self.findSiteForJob(job)
-            self.sites[job["location"]] += 1
-
-    def findSiteForJob(self, job):
-        """
-        _findSiteForJob_
-
-        This searches all known sites and finds the best match for this job
-        """
-
-        # Assume that jobSplitting has worked,
-        # and that every file has the same set of locations
-        sites = list(job.getFileLocations())
-
-        tmpSite  = ''
-        tmpSlots = -999999
-        for loc in sites:
-            if not loc in self.slots.keys() or not loc in self.sites.keys():
-                self.queue.logger.error('Found job for unknown site %s' %(loc))
-                return
-            if self.slots[loc] - self.sites[loc] > tmpSlots:
-                tmpSlots = self.slots[loc] - self.sites[loc]
-                tmpSite  = loc
-
-        return tmpSite
+        self.queue.logger.info("All the jobs are created.\nWill get the work now")
+        #reset previousWorkList to [] since all the jobs are created
+        self.previousWorkList = []
+        return True
+        
+        
+        

@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.125 2010/07/29 15:41:54 swakef Exp $"
-__version__ = "$Revision: 1.125 $"
+__revision__ = "$Id: WorkQueue.py,v 1.126 2010/07/29 21:39:19 sryu Exp $"
+__version__ = "$Revision: 1.126 $"
 
 
 import time
@@ -319,9 +319,14 @@ class WorkQueue(WorkQueueBase):
             #make one transaction      
             with self.transactionContext():
                 if self.params['PopulateFilesets']:    
-                    self._wmbsPreparation(match, wmSpecCache[wmSpecInfo['id']],
+                    subscription = self._wmbsPreparation(match, 
+                                          wmSpecCache[wmSpecInfo['id']],
                                           wmSpecInfo, blockName, dbsBlock)
-                        
+                    # subscription object can be added since this call will be
+                    # made in local queue (doen't have worry about jsonizing the
+                    # result for remote call (over http))
+                    wmSpecInfo["subscription"] = subscription    
+                
                 self.setStatus(status, match['id'], 'id', pullingQueueUrl)
                 self.logger.info("Updated status for %s '%s'" % 
                                   (match['id'], status))       
@@ -387,7 +392,7 @@ class WorkQueue(WorkQueueBase):
 
         self.logger.info('WMBS subscription (%s) is created for element (%s)' 
                          % (sub['id'], match['id']))
-        return
+        return sub
 
     def doneWork(self, elementIDs, id_type = 'id'):
         """

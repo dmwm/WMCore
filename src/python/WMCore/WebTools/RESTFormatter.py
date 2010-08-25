@@ -38,8 +38,10 @@ class RESTFormatter(TemplatedPage):
         except HTTPError, h:
             cherrypy.response.status = h[0]
             return self.supporttypes[datatype]({'exception': h[0],
+                                                'type': 'HTTPError',
                                                 'message': h[1]})
         except Exception, e:
             cherrypy.response.status = 500
             return self.supporttypes[datatype]({'exception': 500,
+                                                'type': type(e),
                                                 'message': e.message})

@@ -141,7 +141,7 @@ class JobSubmitterTest(unittest.TestCase):
         Gets a basic config from default location
         """
         config = self.testInit.getConfiguration(configPath)
-        self.testInit.getWorkDir( config )
+        self.testInit.generateWorkDir( config )
         return config
 
     def testBasicSubmission(self):

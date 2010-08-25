@@ -3,8 +3,8 @@
 The DBSUpload algorithm
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.8 2009/09/03 15:22:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.9 2009/09/03 18:52:38 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import logging
@@ -111,12 +111,16 @@ class DBSUploadPoller(BaseWorkerThread):
             for algo in algos:
                 #if algo['InDBS'] == 0:
                 #Then we have an algo that's not in DBS.  It needs to go there
+                logging.debug('About to insert algo into DBS')
                 newAlgos.append(DBSWriterObjects.createAlgorithm(dict(algo), configMetadata = None, apiRef = self.dbsapi))
-                addToBuffer.addAlgo(algo)
+                #Algo should be in DBS now.
+                addToBuffer.updateAlgo(algo, 1)
+
 
                     
             #Now all the algos should be there, so we can create the dataset
             #I'm unhappy about this because I don't know how to put a dataset in more then one algo
+            logging.debug('About to begin entering primary, processed datasets into DBS')
             primary = DBSWriterObjects.createPrimaryDataset(datasetInfo = dataset, apiRef = self.dbsapi)
             logging.debug('Created Primary Dataset')
             processed = DBSWriterObjects.createProcessedDataset(primaryDataset = primary, algorithm = newAlgos, \

@@ -5,8 +5,8 @@ _ProcessPool_
 
 """
 
-__revision__ = "$Id: ProcessPool.py,v 1.12 2010/04/28 16:22:26 mnorman Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: ProcessPool.py,v 1.13 2010/05/12 19:19:29 mnorman Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import subprocess
 import sys
@@ -23,9 +23,78 @@ from WMCore           import WMLogging
 
 from WMCore.Services.Requests import JSONRequests
 
+
+class WorkerProcess:
+    """
+    Class for holding the subproc objects
+    Makes it easier to do internal bookkeeping on
+    how much work has been generated.
+    """
+    def __init__(self, subproc):
+        """
+        This class just holds active ProcessPool subprocesses and does
+        its own bookkeeping
+
+        """
+
+
+        self.subproc   = subproc
+        self.workCount = 0
+
+        return
+
+    def enqueue(self, work, length = 1):
+        """
+        Handle writing to the stdin of the subproc
+
+        """
+
+        self.subproc.stdin.write("%s\n" % work)
+        self.subproc.stdin.flush()
+        self.workCount += length
+
+
+    def dequeue(self):
+        """
+        Handle reading out of the subproc
+
+        """
+        if self.workCount == 0:
+            # Then we have no work to return
+            logging.error("Asked to return work for a thread that has no work assigned")
+            #raise
+            return
+
+        output = self.subproc.stdout.readline()
+        self.workCount -= 1
+
+        return output
+
+
+    def delete(self):
+        """
+        Delete the worker thread
+
+        """
+
+        self.subproc.stdin.write("\n")
+        self.subproc.stdin.flush()
+
+        return
+
+
+    def runningWork(self):
+        """
+        Accessor method for the workCount
+
+        """
+
+        return self.workCount
+        
+
 class ProcessPool:
     def __init__(self, slaveClassName, totalSlaves, componentDir,
-                 config, slaveInit = None):
+                 config, slaveInit = None, namespace = None):
         """
         __init__
 
@@ -42,6 +111,7 @@ class ProcessPool:
         """
         self.enqueueIndex = 0
         self.dequeueIndex = 0
+        self.runningWork  = 0
 
         #Use the Services.Requests JSONizer, which handles __to_json__ calls
         self.jsonHandler = JSONRequests()
@@ -76,6 +146,9 @@ class ProcessPool:
                     "connectUrl": config.CoreDatabase.connectUrl,
                     "socket": socket,
                     "componentDir": componentDir}
+        if namespace:
+            # Then add a namespace to the config
+            dbConfig['namespace'] = namespace
         encodedDBConfig = self.jsonHandler.encode(dbConfig)
 
         if slaveInit == None:
@@ -97,7 +170,7 @@ class ProcessPool:
                 slaveProcess.stdin.write("%s\n" % encodedSlaveInit)
                 
             slaveProcess.stdin.flush()
-            self.workers.append(slaveProcess)
+            self.workers.append(WorkerProcess(subproc = slaveProcess))
             totalSlaves -= 1
             
         return
@@ -111,8 +184,7 @@ class ProcessPool:
         """
         for worker in self.workers:
             try:
-                worker.stdin.write("\n")
-                worker.stdin.flush()
+                worker.delete()
             except Exception, ex:
                 pass
 
@@ -135,21 +207,24 @@ class ProcessPool:
         while(len(work) > workIndex):
             workForWorker = work[workIndex : workIndex + workPerWorker]
             workIndex += workPerWorker
+            length = len(workForWorker)
+            
 
             encodedWork = self.jsonHandler.encode(workForWorker)
 
             worker = self.workers[self.enqueueIndex]
             self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
-            worker.stdin.write("%s\n" % encodedWork)
-            worker.stdin.flush()
+            worker.enqueue(work = encodedWork, length = length)
+            self.runningWork += length
 
         if len(work) > workIndex:
             encodedWork = self.jsonHandler.encode(work[workIndex:])
+            length = len(work[workIndex:])
 
             worker = self.workers[self.enqueueIndex]
             self.enqueueIndex = (self.enqueueIndex + 1) % len(self.workers)
-            worker.stdin.write("%s\n" % encodedWork)
-            worker.stdin.flush()
+            worker.enqueue(work = encodedWork, length = length)
+            self.runningWork += length
             
         return
 
@@ -162,12 +237,23 @@ class ProcessPool:
         """
         completedWork = []
 
+        if totalItems > self.runningWork:
+            msg = "Asked to dequeue more work then is running!\n"
+            msg += "Failing"
+            logging.error(msg)
+            raise Exception(msg)
+
         while totalItems > 0:
             worker = self.workers[self.dequeueIndex]
             self.dequeueIndex = (self.dequeueIndex + 1) % len(self.workers)
 
+            if not worker.runningWork() > 0:
+                # Then the worker we've picked has no running work
+                continue
+
             try:
-                output = worker.stdout.readline()
+                output = worker.dequeue()
+                self.runningWork -= 1
                 
                 if output == None:
                     logging.info("No output from worker node line in ProcessPool")
@@ -253,7 +339,9 @@ if __name__ == "__main__":
     setupLogging(config["componentDir"])
     setupDB(config, wmInit)
 
-    wmFactory = WMFactory(name = "slaveFactory", namespace = "WMComponent")
+    namespace = config.get('namespace', 'WMComponent')
+
+    wmFactory = WMFactory(name = "slaveFactory", namespace = namespace)
     slaveClass = wmFactory.loadObject(classname = slaveClassName, args = slaveInit)
 
     logging.error("Have slave class")

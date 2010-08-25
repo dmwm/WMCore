@@ -5,8 +5,8 @@ _SAM_
 Talk to the SAM Service to get site status from the results of SAM tests.
 """
 
-__revision__ = "$Id: SAM.py,v 1.1 2008/09/18 15:43:56 metson Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SAM.py,v 1.2 2009/07/07 18:56:43 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from BeautifulSoup import BeautifulSoup
 from WMCore.Services.AuthorisedService import AuthorisedService
@@ -17,7 +17,7 @@ class SAM(AuthorisedService):
         Contact the SAM test page and get the tested, installed software on a CE.
         TODO: improved error handling
         """
-        url = "%sfunct=TestResultLatest&nodename=%s&vo=cms&testname=CE-cms-swinst" % (self.endpoint, ce)
+        url = "funct=TestResultLatest&nodename=%s&vo=cms&testname=CE-cms-swinst" % ce
         file = 'sam_cmssw_inst_%s.html' % ce
         pageSoup = BeautifulSoup(self.refreshCache(file, url))
         

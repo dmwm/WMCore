@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.6 2009/05/22 16:04:49 evansde Exp $"
-__revision__ = "$Revision: 1.6 $"
+__version__ = "$Id: WMTask.py,v 1.7 2009/06/12 16:53:20 evansde Exp $"
+__revision__ = "$Revision: 1.7 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
@@ -19,22 +19,8 @@ from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
+import WMCore.WMSpec.Utilities as SpecUtils
 
-
-def findTaskAboveNode(node):
-    """
-    _findTaskAboveNode_
-
-    Given a config section (tree or not) traverse up the parent
-    structure until finding the first entry containing an objectType
-    setting that is set to WMTask
-
-    """
-    if getattr(node, "objectType", None) == "WMTask":
-        return node
-    if node._internal_parent_ref == None:
-        return None
-    return findTaskAboveNode(node._internal_parent_ref)
 
 def getTaskFromStep(stepRef):
     """
@@ -48,7 +34,7 @@ def getTaskFromStep(stepRef):
     if isinstance(stepRef, WMStepHelper):
         nodeData = stepRef.data
 
-    taskNode = findTaskAboveNode(nodeData)
+    taskNode = SpecUtils.findTaskAboveNode(nodeData)
     if taskNode == None:
         msg = "Unable to find Task containing step\n"
         #TODO: Replace with real exception class
@@ -117,6 +103,7 @@ class WMTaskHelper(TreeHelper):
         """
         step = self.steps()
         return step.allNodeNames()
+
 
     def getStep(self, stepName):
         """get a particular step from the workflow"""
@@ -190,6 +177,31 @@ class WMTaskHelper(TreeHelper):
         return
 
 
+    def setInputReference(self, stepRef, **extras):
+        """
+        _setInputReference_
+
+        Add details to the input reference for the task providing
+        input to this task.
+        The reference is the step in the input task, plus
+        any extra information.
+
+
+        """
+        stepId = SpecUtils.stepIdentifier(stepRef)
+        setattr(self.data.input, "inputStep", stepId)
+        [ setattr(self.data.input, key, val)
+          for key, val in extras.items() ]
+        return
+
+    def inputReference(self):
+        """
+        _inputReference_
+
+        Get information about the input reference for this task.
+
+        """
+        return self.data.input
 
 
 class WMTask(ConfigSectionTree):
@@ -209,6 +221,7 @@ class WMTask(ConfigSectionTree):
         self.section_("parameters")
         self.section_("pythonLibs")
         self.section_("constraints")
+        self.section_("input")
         self.constraints.section_("sites")
         self.constraints.sites.whitelist = []
         self.constraints.sites.blacklist = []

@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.9 2009/07/24 13:43:50 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: RESTApi.py,v 1.10 2009/07/24 15:36:51 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml
@@ -113,7 +113,9 @@ class RESTApi(WebAPI):
         elif datatype == 'application/atom+xml':
             # Serialise to atom
             data = self.formatter.atom(data)
-
+        else:
+            # Just assume a string will do...
+            data = str(data)
         # TODO: Add other specific content types
         response.headers['Content-Length'] = len(data)
         return data

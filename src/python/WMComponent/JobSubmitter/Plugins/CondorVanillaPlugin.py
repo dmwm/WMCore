@@ -10,8 +10,8 @@ _CondorVanillaPlugin_
 A plug-in that should submit directly to vanilla condor CEs
 """
 
-__revision__ = "$Id: CondorVanillaPlugin.py,v 1.4 2010/08/05 03:56:06 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: CondorVanillaPlugin.py,v 1.5 2010/08/11 20:11:44 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import os.path
@@ -220,7 +220,7 @@ class CondorVanillaPlugin(PluginBase):
                        % (self.sandbox, self.packageDir,
                           'JobPackage.pkl', self.unpacker))
             argString = "arguments = %s %i\n" \
-                        % (os.path.basename(self.sandbox), index)
+                        % (os.path.basename(self.sandbox), job['id'])
             jdl.append(argString)
 
             jobCE = self.getCEName(jobSite = job['location'])

@@ -5,8 +5,8 @@ _FeederManager_t_
 Unit tests for the FeederManager_t.
 """
 
-__revision__ = "$Id: FeederManager_t.py,v 1.2 2010/02/04 22:36:34 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FeederManager_t.py,v 1.3 2010/02/05 21:11:48 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import time
 import unittest
@@ -34,7 +34,7 @@ class FeederManagerTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-
+        self.testInit.generateWorkDir()
         self.testInit.setSchema(customModules = \
                          ['WMComponent.FeederManager.Database',
                           'WMCore.ThreadPool',

@@ -7,10 +7,15 @@ into an object with an API for getting info from it
 
 """
 
+__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SiteLocalConfig.py,v 1.2 2009/11/19 21:21:21 mnorman Exp $"
+
 import os
 
 from IMProv.IMProvLoader import loadIMProvFile
 from IMProv.IMProvQuery import IMProvQuery
+
+from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
 from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC
 
@@ -126,132 +131,184 @@ class SiteLocalConfig:
             msg += str(ex)
             raise SiteConfigError, msg
 
-        #  //
-        # // site name
-        #//
-        nameQ = IMProvQuery("/site-local-config/site")
-        nameNodes = nameQ(node)
-        if len(nameNodes) == 0:
+        node2 = xmlFileToNode(self.siteConfigFile)
+        nodeResult =  nodeReader(node2)
+
+        if not nodeResult.has_key('siteName'):
             msg = "Unable to find site name in SiteConfigFile:\n"
             msg += self.siteConfigFile
             raise SiteConfigError, msg
-        self.siteName = str(nameNodes[0].attrs.get("name"))
-
-        #  //
-        # // event data (Read Trivial Catalog location)
-        #//
-        
-        catalogQ = IMProvQuery("/site-local-config/site/event-data/catalog")
-        catNodes = catalogQ(node)
-        if len(catNodes) == 0:
-            msg = "Unable to find catalog entry for event data in:\n"
+        if not nodeResult.has_key('catalog'):
+            msg = "Unable to find catalog entry for event data in SiteConfigFile:\n"
             msg += self.siteConfigFile
             raise SiteConfigError, msg
-
-        self.eventData['catalog'] = str(catNodes[0].attrs.get("url"))
-
-        #  //
-        # // local stage out information
-        #//
-        stageOutQ = IMProvQuery(
-            "/site-local-config/site/local-stage-out"
-            )
-        stageOutNodes = stageOutQ(node)
-        if len(stageOutNodes) == 0:
+        if not nodeResult.has_key('localStageOut'):
             msg = "Error:Unable to find any local-stage-out"
             msg += "information in:\n"
             msg += self.siteConfigFile
             raise SiteConfigError, msg
-        else:
-            #  //
-            # // Assume single local-stage-out node.
-            #//  Extract details from it:
-            localSO = stageOutNodes[0]
-            self.localStageOut = self.readLocalStageOut(localSO)
-            
-        #  //
-        # // remote stage out information
-        #//  Assume that there are N of them, in order of preference
-        fallbackQ = IMProvQuery(
-            "/site-local-config/site/fallback-stage-out"
-            )
-        fallbackNodes = fallbackQ(node)
-        for fallbackNode in fallbackNodes:
-            nodeContent = self.readFallbackStageOut(fallbackNode)
-            self.fallbackStageOut.append(nodeContent)
-            
-        #  //
-        # // calib data
-        #//
-        
-        calibQ = IMProvQuery("/site-local-config/site/calib-data/*")
-        
-        calibNodes = calibQ(node)
-        if len(calibNodes) == 0:
+        if not nodeResult.has_key('calib-data'):
             msg = "Unable to find calib data entry in:\n"
             msg += self.siteConfigFile
             raise SiteConfigError, msg
-        for calibNode in calibNodes:
-            self.calibData[str(calibNode.name)] = \
-                      str(calibNode.attrs.get("url"))
+
+        self.siteName             = nodeResult.get('siteName', None)
+        self.eventData['catalog'] = nodeResult.get('catalog', None)
+        self.localStageOut        = nodeResult.get('localStageOut', [])
+        self.fallbackStageOut     = nodeResult.get('fallbackStageOut', [])
+        for entry in nodeResult.get('calib-data', None):
+            for event in entry.keys():
+                self.calibData[str(event)] = str(entry.get(event, None))
+
 
         return
 
 
 
 
-    def readLocalStageOut(self, node):
-        """
-        _readLocalStageOut_
+def coroutine(func):
+    """
+    _coroutine_
 
-        Extract data from local stage out node, return it as a dictionary
+    Decorator method used to prime coroutines
 
-        """
-        result = {}
-        result.setdefault("catalog", None)
-        result.setdefault("se-name", None)
-        result.setdefault("command", None)
-        result.setdefault("option", None)
-        for child in node.children:
-            if child.name == "catalog":
-                result['catalog'] = str(child.attrs['url'])
-                continue
-            if child.name == "se-name":
-                result['se-name'] = str(child.attrs['value'])
-                continue
-            if child.name == "command":
-                result['command'] = str(child.attrs['value'])
-                continue
-            if child.name == "option":
-                result['option'] = str(child.attrs['value'])
-                continue
-            
-        return result
+    """
+    def start(*args,**kwargs):
+        cr = func(*args,**kwargs)
+        cr.next()
+        return cr
+    return start
 
-    def readFallbackStageOut(self, node):
-        """
-        _readFallbackStageOut_
 
-        Extract data from fallback stage out node, return it as a dictionary
 
-        """
-        result = {}
-        result.setdefault("lfn-prefix", None)
-        result.setdefault("se-name", None)
-        result.setdefault("command", None)
-        result.setdefault("option", None)
-        for child in node.children:
-            if child.name == "lfn-prefix":
-                result['lfn-prefix'] = str(child.attrs['value'])
-                continue
-            if child.name == "se-name":
-                result['se-name'] = str(child.attrs['value'])
-                continue
-            if child.name == "command":
-                result['command'] = str(child.attrs['value'])
-                continue
-            if child.name == "option":
-                result['option'] = str(child.attrs['value'])
-                continue
-            
-        return result
+def nodeReader(node):
+    """
+    _nodeReader_
+    
+    Given a node, see if we can find what we're looking for
+    """
+
+    processSiteInfo = {
+        'event-data': processEventData(),
+        'local-stage-out': processLocalStageOut(),
+        'calib-data': processCalibData(),
+        'fallback-stage-out': processFallbackStageOut()
+        }
+
+    report = {}
+
+    sProcess = processSite(processSiteInfo)
+
+    processor = processNode(sProcess)
+
+    processor.send((report, node))
+
+    return report
+
+@coroutine
+def processNode(target):
+    """
+    Starts at the top of the tree and finds the site
+    """
+    while True:
+        report, node = (yield)
+        for subnode in node.children:
+            if subnode.name == 'site-local-config':
+                for child in subnode.children:
+                    if child.name == 'site':
+                        target.send((report, child))
+
+
+@coroutine
+def processSite(targets):
+    """
+    Process the site tree in a config.
+
+    """
+
+    while True:
+        report, node = (yield)
+        #Get the name first
+        report['siteName'] = node.attrs.get('name', None)
+        for subnode in node.children:
+            if subnode.name == 'event-data':
+                targets['event-data'].send((report, subnode))
+            elif subnode.name == 'calib-data':
+                targets['calib-data'].send((report, subnode))
+            elif subnode.name == 'local-stage-out':
+                targets['local-stage-out'].send((report, subnode))
+            elif subnode.name == 'fallback-stage-out':
+                targets['fallback-stage-out'].send((report, subnode))
+
+
+
+@coroutine
+def processEventData():
+    """
+    Process eventData in a site
+    
+    """
+
+    while True:
+        report, node = (yield)
+        for subnode in node.children:
+            if subnode.name == 'catalog':
+                report['catalog'] = str(subnode.attrs.get('url', None))
+
+@coroutine
+def processLocalStageOut():
+    """
+    Find the local-stage-out directory
+
+    """
+
+    while True:
+        report, node = (yield)
+        localReport = {}
+        for subnode in node.children:
+            if subnode.name == 'se-name':
+                localReport['se-name'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'command':
+                localReport['command'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'option':
+                localReport['option'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'catalog':
+                localReport['catalog'] = subnode.attrs.get('url', None)
+        report['localStageOut'] = localReport
+
+@coroutine
+def processFallbackStageOut():
+    """
+    Find the processed stage out directory
+
+    """
+
+    while True:
+        report, node = (yield)
+        localReport = {}
+        for subnode in node.children:
+            if subnode.name == 'se-name':
+                localReport['se-name'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'command':
+                localReport['command'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'option':
+                localReport['option'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'lfn-prefix':
+                localReport['lfn-prefix'] = subnode.attrs.get('value', None)
+        report['fallbackStageOut'] = localReport
+
+
+@coroutine
+def processCalibData():
+    """
+    Process calib-data
+
+    """
+
+    while True:
+        report, node = (yield)
+        tmpReport = []
+        for subnode in node.children:
+            tmpReport.append({subnode.name: subnode.attrs.get('url', None)})
+        report['calib-data'] = tmpReport
+

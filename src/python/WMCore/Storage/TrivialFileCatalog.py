@@ -28,9 +28,12 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 import os
 import re
 import urlparse
+import xml.parsers.expat
 
 from IMProv.IMProvLoader import loadIMProvFile
 from IMProv.IMProvQuery import IMProvQuery
+
+from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
 _TFCArgSplit = re.compile("\?protocol=")
 
@@ -141,26 +144,26 @@ def readTFC(filename):
 
 
     try:
-        node = loadIMProvFile(filename)
+        node = xmlFileToNode(filename)
     except StandardError, ex:
         msg = "Error reading TrivialFileCatalog: %s\n" % filename
         msg += str(ex)
         raise RuntimeError, msg
 
-    query = IMProvQuery("storage-mapping/lfn-to-pfn")
-    mappings = query(node)
+    parsedResult = nodeReader(node)
 
     tfcInstance = TrivialFileCatalog()
 
-    for mapping in mappings:
-        protocol = mapping.attrs.get("protocol", None)
-        match = mapping.attrs.get("path-match", None)
-        result = mapping.attrs.get("result", None)
-        chain = mapping.attrs.get("chain", None)
-        if True in (protocol, match, mapping == None):
+    for entry in parsedResult:
+        protocol = entry.get("protocol", None)
+        match    = entry.get("path-match", None)
+        result   = entry.get("result", None)
+        chain    = entry.get("chain", None)
+        if True in (protocol, match == None):
             continue
         tfcInstance.addMapping(str(protocol), str(match), str(result), chain)
-        
+
+
     return tfcInstance
 
 
@@ -178,3 +181,131 @@ def loadTFC(contactString):
     instance = readTFC(catalog)
     instance.preferredProtocol = protocol
     return instance
+
+
+def coroutine(func):
+    """
+    _coroutine_
+
+    Decorator method used to prime coroutines
+
+    """
+    def start(*args,**kwargs):
+        cr = func(*args,**kwargs)
+        cr.next()
+        return cr
+    return start
+
+
+
+def nodeReader(node):
+    """
+    _nodeReader_
+    
+    Given a node, see if we can find what we're looking for
+    """
+
+    processLfnPfn = {
+        'path-match': processPathMatch(),
+        'protocol': processProtocol(),
+        'result': processResult(),
+        'chain': processChain()
+        }
+
+    report = []
+
+    processSMT = processSMType(processLfnPfn)
+
+    processor = processStorageMapping(processSMT)
+
+    processor.send((report, node))
+
+    return report
+
+
+@coroutine
+def processStorageMapping(target):
+    """
+    Process everything
+
+    """
+
+    while True:
+        report, node = (yield)
+        for subnode in node.children:
+            if subnode.name == 'storage-mapping':
+                target.send((report, subnode))
+
+
+@coroutine
+def processSMType(targets):
+    """
+    Process the type of storage-mapping
+
+    """
+
+    while True:
+        report, node = (yield)
+        for subnode in node.children:
+            if subnode.name == 'lfn-to-pfn':
+                tmpReport = {'path-match-expr': subnode.name}
+                targets['protocol'].send((tmpReport, subnode.attrs.get('protocol', None)))
+                targets['path-match'].send((tmpReport, subnode.attrs.get('path-match', None)))
+                targets['result'].send((tmpReport, subnode.attrs.get('result', None)))
+                targets['chain'].send((tmpReport, subnode.attrs.get('chain', None)))
+                report.append(tmpReport)
+        #print report
+
+                
+@coroutine
+def processPathMatch():
+    """
+    Process path-match
+    
+    """
+
+    while True:
+        report, value = (yield)
+        report['path-match'] = value
+
+
+@coroutine
+def processProtocol():
+    """
+    Process protocol
+    
+    """
+
+    while True:
+        report, value = (yield)
+        report['protocol'] = value
+
+@coroutine
+def processResult():
+    """
+    Process result
+    
+    """
+
+    while True:
+        report, value = (yield)
+        report['result'] = value
+
+
+@coroutine
+def processChain():
+    """
+    Process chain
+    
+    """
+
+    while True:
+        report, value = (yield)
+        report['chain'] = value
+
+
+
+
+
+
+

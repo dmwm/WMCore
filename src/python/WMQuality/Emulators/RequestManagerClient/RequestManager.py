@@ -3,6 +3,7 @@ from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 class RequestManager(object):
     
     def __init__(self, *args, **kwargs):
+        print "Using RequestManager Emulator"
         self.specGenerator = WMSpecGenerator()
         self.count = 0
     

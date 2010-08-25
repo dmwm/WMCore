@@ -7,8 +7,8 @@ for each step
 
 """
 __author__ = "evansde"
-__revision__ = "$Id: BuildMaster.py,v 1.1 2009/05/07 17:53:18 evansde Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: BuildMaster.py,v 1.2 2009/05/08 14:54:46 evansde Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -29,4 +29,10 @@ class BuildMaster:
 
         """
 
-        pass
+
+
+        for step in task.steps().nodeIterator():
+            stepType = step.stepType
+            template = StepFactory.getStepBuilder(stepType)
+            template.build(step)
+

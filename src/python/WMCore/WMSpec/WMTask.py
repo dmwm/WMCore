@@ -10,13 +10,14 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.2 2009/05/08 13:12:05 evansde Exp $"
-__revision__ = "$Revision: 1.2 $"
+__version__ = "$Id: WMTask.py,v 1.3 2009/05/08 14:54:46 evansde Exp $"
+__revision__ = "$Revision: 1.3 $"
 
 
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
+from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 
 
 class WMTaskHelper(TreeHelper):
@@ -100,6 +101,20 @@ class WMTaskHelper(TreeHelper):
             stepType = step.stepType
             template = StepFactory.getStepTemplate(stepType)
             template.install(step)
+
+
+    def build(self, workingDir):
+        """
+        _build_
+
+        Invoke the build process to create the job in the working dir provided
+
+        """
+        master = BuildMaster(workingDir)
+        master()
+        return
+
+
 
 
 

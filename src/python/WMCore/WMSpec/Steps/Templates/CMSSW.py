@@ -26,6 +26,16 @@ class CMSSWStepHelper(WMStepHelper):
         the value is provided in details
 
         """
+        modules = self.data.output.modules
+
+        if getattr(modules, moduleName, None) == None:
+            modules.section_(moduleName)
+        module = getattr(modules, moduleName)
+
+        for key, value in details.items():
+            setattr(module, key, value)
+
+        return
 
 
 
@@ -50,9 +60,11 @@ class CMSSW(Template):
         stepname = nodeName(step)
         step.stepType = "CMSSW"
         step.application.section_("setup")
+        step.application.setup.scramCommand = "scramv1"
         step.application.setup.scramProject = "CMSSW"
         step.application.setup.cmsswVersion = None
         step.application.setup.scramArch = None
+        step.application.setup.buildArch = None
         step.application.setup.softwareEnvironment = None
 
         step.application.section_("command")
@@ -63,6 +75,18 @@ class CMSSW(Template):
         step.output.stderr = "%s-stderr.log" % stepname
         step.output.section_("modules")
 
+        step.output.section_("analysisFiles")
+
+        step.section_("debug")
+        step.debug.verbosity = 0
+        step.debug.keepLogs = False
+
+        step.section_("user")
+        step.user.inputSandboxes = []
+        step.user.script = None
+        step.user.outputFiles = []
+
+        step.section_("monitoring")
 
         print step
 

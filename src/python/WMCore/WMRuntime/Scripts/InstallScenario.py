@@ -99,6 +99,9 @@ class InstallScenario(ScriptInterface):
             if hasattr(process.maxEvents, "input"):
                 process.maxEvents.input = 2
 
+        if not process.services.has_key("AdaptorConfig"):
+            process.add_(cms.Service("AdaptorConfig"))
+
         process.services["AdaptorConfig"].cacheHint = cms.untracked.string("lazy-download")
         process.services["AdaptorConfig"].readHint = cms.untracked.string("auto-detect")
         process.source.cacheSize = cms.untracked.uint32(100000000)

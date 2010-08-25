@@ -152,7 +152,7 @@ def runUnitTests():
         try:
             __import__(oneModule)
             modules.append(sys.modules[oneModule])
-        except ImportError, e:
+        except Exception, e:
             print "ERROR: Can't load %s - %s" % (oneModule, e)    
         else:
             print "Loaded %s" % oneModule

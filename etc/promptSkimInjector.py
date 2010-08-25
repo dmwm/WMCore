@@ -218,7 +218,8 @@ createTableNames = ["processed_dataset", "primary_dataset", "data_tier",
                     "block_migrate_status", "run_stream_cmssw_assoc",
                     "cmssw_version", "t1skim_config", "phedex_subscription",
                     "storage_node", "run", "block_run_assoc", "block",
-                    "wmbs_file_dataset_path_assoc", "wmbs_file_block_assoc"]
+                    "wmbs_file_dataset_path_assoc", "wmbs_file_block_assoc",
+                    "block_parentage"]
 
 tableInfo = determineSchema(remoteDbi)
 for tableName in tableInfo.keys():
@@ -240,6 +241,17 @@ blockSelect = """SELECT id, dataset_path_id, block_size, file_count, status,
                  WHERE block_run_assoc.run_id = :runid"""
 
 copyTableSubset(remoteDbi, localDbi, "block", blockSelect, {"runid": runNum})
+
+blockParentSelect = """SELECT input_id, output_id FROM block_parentage
+                         INNER JOIN
+                           (SELECT DISTINCT(id) AS id FROM block
+                              INNER JOIN block_run_assoc ON
+                                block.id = block_run_assoc.block_id
+                            WHERE block_run_assoc.run_id = :runid) block_run ON
+                           input_id = block_run.id"""
+
+copyTableSubset(remoteDbi, localDbi, "block_parentage", blockParentSelect,
+                {"runid": runNum})
 
 fileBlockSelect = """SELECT DISTINCT(file_id), block_id FROM wmbs_file_block_assoc
                        INNER JOIN wmbs_file_runlumi_map ON

@@ -6,10 +6,11 @@ MySQL implementation of BossLite.Jobs.Create
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.1 2010/03/30 10:23:30 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2010/05/09 20:07:58 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.BossLite.Common.System import listToStr
 
 class New(DBFormatter):
     sql = """INSERT INTO bl_runningjob (job_id, task_id, submission, state, scheduler, service,
@@ -26,7 +27,48 @@ class New(DBFormatter):
                 :wrapperReturnCode, :processStatus, :closed)
                 """
 
-
+    def preFormat(self, entry):
+        """
+        This method maps database fields with object dictionary and 
+        it translate python List and timestamps in well formatted string
+        """
+        
+        result = {}  
+        
+        #result['id']                    = entry['id']
+        result['jobId']                 = entry['jobId']
+        result['taskId']                = entry['taskId']
+        result['submission']            = entry['submission']
+        result['state']                 = entry['state']
+        result['scheduler']             = entry['scheduler']
+        result['service']               = entry['service']
+        result['schedulerAttributes']   = entry['schedulerAttributes']
+        result['schedulerId']           = entry['schedulerId']
+        result['schedulerParentId']     = entry['schedulerParentId']
+        result['statusScheduler']       = entry['statusScheduler']
+        result['status']                = entry['status']
+        result['statusReason']          = entry['statusReason']
+        result['destination']           = entry['destination']
+        result['lbTimestamp']           = entry['lbTimestamp']
+        result['submissionTime']        = entry['submissionTime']
+        result['scheduledAtSite']       = entry['scheduledAtSite']
+        result['startTime']             = entry['startTime']
+        result['stopTime']              = entry['stopTime']
+        result['stageOutTime']          = entry['stageOutTime']
+        result['getOutputTime']         = entry['getOutputTime']
+        result['outputRequestTime']     = entry['outputRequestTime']
+        result['outputEnqueueTime']     = entry['outputEnqueueTime']
+        result['getOutputRetry']        = entry['getOutputRetry']
+        result['outputDirectory']       = entry['outputDirectory']
+        result['storage']               = listToStr(entry['storage'])
+        result['lfn']                   = listToStr(entry['lfn'])
+        result['applicationReturnCode'] = entry['applicationReturnCode']
+        result['wrapperReturnCode']     = entry['wrapperReturnCode']
+        result['processStatus']         = entry['processStatus']
+        result['closed']                = entry['closed']
+            
+        return result
+    
     def execute(self, binds, conn = None, transaction = False):
         """
         This assumes that you are passing in binds in the same format
@@ -35,7 +77,9 @@ class New(DBFormatter):
         parsing the binds
         """
         
-        self.dbi.processData(self.sql, binds, conn = conn,
+        ppBinds = self.preFormat(binds)
+        
+        self.dbi.processData(self.sql, ppBinds, conn = conn,
                              transaction = transaction)
         return
     

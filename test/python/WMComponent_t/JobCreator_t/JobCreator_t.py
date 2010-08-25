@@ -321,14 +321,8 @@ class JobCreatorTest(unittest.TestCase):
         #Now the CoreDatabase information
         #This should be the dialect, dburl, etc
         config.section_("CoreDatabase")
-        config.CoreDatabase.dialect    = os.getenv("DIALECT")
-        myThread.dialect               = os.getenv('DIALECT')
-        config.CoreDatabase.user       = os.getenv("DBUSER", os.getenv("USER"))
-        config.CoreDatabase.hostname   = os.getenv("DBHOST", os.getenv("HOSTNAME"))
-        config.CoreDatabase.passwd     = os.getenv("DBPASS")
-        config.CoreDatabase.name       = os.getenv("DBNAME", os.getenv("DATABASE"))
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.dbsock     = os.getenv("DBSOCK")
+        config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
         config.component_("JobCreator")
         config.JobCreator.namespace = 'WMComponent.JobCreator.JobCreator'

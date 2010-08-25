@@ -12,8 +12,8 @@ import os
 import logging
 import select, signal, fcntl
 
-__version__ = "$Id: System.py,v 1.7 2010/05/18 13:48:35 spigafi Exp $"
-__revision__ = "$Revision: 1.7 $"
+__version__ = "$Id: System.py,v 1.8 2010/06/28 19:19:48 spigafi Exp $"
+__revision__ = "$Revision: 1.8 $"
 
 
 def setPgid():
@@ -93,22 +93,11 @@ def decodeTimestamp( tmp ) :
     """
     decodeTimestamp
     """
-
+    
     if not tmp :
         return 0
-    if type(tmp) == str :
-        # SQLite case --> string
-        extractedTuple = time.strptime(tmp,'%Y-%m-%d %H:%M:%S')
-        
-    else :
-        # MySQL case --> datetime object
-        extractedTuple =  tmp.timetuple()
     
-    # add/subtract the timezone ...
-    result = time.mktime(extractedTuple[0:6] + (0,0,0)) - time.timezone    
-    
-    # Rounding ...
-    return int(result)
+    return tmp
 
 
 def encodeTimestamp( tmp ) :
@@ -116,16 +105,7 @@ def encodeTimestamp( tmp ) :
     encodeTimestamp
     """
     
-    try:
-        # if I can, I convert...
-        return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(tmp)))
-    except TypeError :
-        pass
-    except ValueError :
-        pass
-    
-    # 0 / invalid value -> 1970-01-01 00:00:00
-    return time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(0)))
+    return tmp
 
 
 def strToList( tmp ) :

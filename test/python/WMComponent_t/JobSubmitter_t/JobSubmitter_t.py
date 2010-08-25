@@ -4,7 +4,8 @@
 
 import unittest
 import threading
-
+import os
+import os.path
 
 
 from WMQuality.TestInit import TestInit

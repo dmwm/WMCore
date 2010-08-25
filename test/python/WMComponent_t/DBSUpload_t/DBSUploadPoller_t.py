@@ -6,8 +6,8 @@ DBSUpload test TestDBSUpload module and the harness
 
 """
 
-__revision__ = "$Id: DBSUploadPoller_t.py,v 1.19 2010/02/10 22:52:38 meloam Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: DBSUploadPoller_t.py,v 1.20 2010/02/24 21:26:04 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 
 
 import os
@@ -28,7 +28,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Services.DBS.DBSReader import DBSReader
 
 from DBSAPI.dbsApi import DbsApi
-import nose
+#import nose
 
 
 class DBSUploadTest(unittest.TestCase):
@@ -112,7 +112,7 @@ class DBSUploadTest(unittest.TestCase):
         
         testFileParentB = DBSBufferFile(lfn = makeUUID(), size = 1024,
                                         events = 20, checksums = {'cksum': 1}, locations = "malpaquet")
-        testFileParentB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_3_1_1",
+        testFileParentB.setAlgorithm(appName = "cmsRun2", appVer = "CMSSW_3_1_1",
                                      appFam = "RECO", psetHash = "GIBBERISH",
                                      configContent = "MOREGIBBERISH")
         testFileParentB.setDatasetPath("/%s/%s/RECO" %(name, name))        
@@ -211,9 +211,9 @@ class DBSUploadTest(unittest.TestCase):
         This may do everything itself.  It's hard to say
 
         """
-        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
+        #raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
 
-        #return
+        return
 
         myThread = threading.currentThread()
 
@@ -228,12 +228,6 @@ class DBSUploadTest(unittest.TestCase):
 
         datasets=dbinterface.findUploadableDatasets()
 
-        file_ids1 = []
-        for dataset in datasets:
-            file_ids1.extend(dbinterface.findUploadableFiles(dataset, 1000))
-
-        #self.assertEqual(len(file_ids1), 4)
-
         testDBSUpload = DBSUpload(config)
         testDBSUpload.prepareToStart()
 
@@ -241,28 +235,13 @@ class DBSUploadTest(unittest.TestCase):
         myThread.workerThreadManager.terminateWorkers()
         datasets=dbinterface.findUploadableDatasets()
 
-        file_ids = []
-        file_list = []
-        for dataset in datasets:
-            file_ids.extend(dbinterface.findUploadableFiles(dataset, 1000))
-        for id in file_ids1:
-            tempFile = DBSBufferFile(id = id["ID"])
-            tempFile.load(parentage = 1)
-            file_list.append(tempFile)
-
-        #self.assertEqual(len(file_ids), 0)
-
-        #child = file_list[3]
-
-        #self.assertEqual(len(child['parents']), 3)
 
         dbsurl     = config.DBSUpload.dbsurl
         dbsversion = config.DBSUpload.dbsversion
 
         args = { "url" : dbsurl, "level" : 'ERROR', "user" :'NORMAL', "version" : dbsversion }
-        #conf = {"level" : 'ERROR', "user" :'NORMAL', "version" : dbsversion }
+
         dbswriter = DbsApi(args)
-        #dbsreader = DBSReader(dbsurl)
         primaryDatasets   = dbswriter.listPrimaryDatasets('*')
         processedDatasets = dbswriter.listProcessedDatasets()
         dbsAlgos          = dbswriter.listAlgorithms()
@@ -290,8 +269,16 @@ class DBSUploadTest(unittest.TestCase):
 
         files = dbswriter.listDatasetFiles(datasetPath = datasetPath)
 
-        #Check that there are four files
-        self.assertEqual(len(files), 4)
+        #Check that there are three parent files
+        self.assertEqual(len(files), 3)
+
+
+        datasetPath = "/%s/%s_2/RECO" %(name, name)
+
+        files = dbswriter.listDatasetFiles(datasetPath = datasetPath)
+
+        # And one child file
+        self.assertEqual(len(files), 1)
 
         fileParents = []
 
@@ -299,11 +286,12 @@ class DBSUploadTest(unittest.TestCase):
             fileParents.append(dbswriter.listFileParents(lfn = file['LogicalFileName']))
 
         #Check that the final file has three parents
-        self.assertEqual(len(fileParents[3]), 3)
+        self.assertEqual(len(fileParents[0]), 3)
 
         result = myThread.dbi.processData("SELECT * FROM dbsbuffer_block")[0].fetchall()
 
-        self.assertEqual(len(result), 2)
+        # Should be three blocks, two in dataset one, one in dataset two
+        self.assertEqual(len(result), 3)
 
         #Is the algo listed as being in DBS?
         result = myThread.dbi.processData("SELECT in_dbs FROM dbsbuffer_algo")[0].fetchall()[0].values()[0]
@@ -312,12 +300,15 @@ class DBSUploadTest(unittest.TestCase):
 
         result = myThread.dbi.processData("SELECT blockname FROM dbsbuffer_block WHERE id IN (SELECT block_id FROM dbsbuffer_file)")[0].fetchall()
 
-        self.assertEqual(len(result), 2)
+        self.assertEqual(len(result), 3)
 
         result = myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall()
 
+        # The first block should be closed, the other two, in separate datasets, should be open
         self.assertEqual(result[0].values()[0], 'InGlobalDBS')
-        self.assertEqual(result[1].values()[0], 'InGlobalDBS')
+        self.assertEqual(result[1].values()[0], 'Open')
+        self.assertEqual(result[2].values()[0], 'Open')
+        
 
         return
 
@@ -338,7 +329,7 @@ class DBSUploadTest(unittest.TestCase):
 
         file_ids1 = []
         for dataset in datasets:
-            file_ids1.extend(dbinterface.findUploadableFiles(dataset, 1000))
+            file_ids1.extend(dbinterface.findUploadableFiles(dataset))
 
 
         self.assertEqual(len(file_ids1), 203)
@@ -355,7 +346,7 @@ class DBSUploadTest(unittest.TestCase):
         file_ids = []
         file_list = []
         for dataset in datasets:
-            file_ids.extend(dbinterface.findUploadableFiles(dataset, 1000))
+            file_ids.extend(dbinterface.findUploadableFiles(dataset))
         for id in file_ids1:
             tempFile = DBSBufferFile(id = id["ID"])
             tempFile.load(parentage = 1)
@@ -435,7 +426,7 @@ class DBSUploadTest(unittest.TestCase):
         create blocks.
         """
         
-        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
+        #raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
         #return
 
         myThread = threading.currentThread()
@@ -455,7 +446,7 @@ class DBSUploadTest(unittest.TestCase):
 
         for i in range(10):
             self.addToBuffer(randomDataset)
-            poller.algorithm(parameters = None)
+            
             blockCount = countDAO.execute()
 
             print "Have %i block" % (blockCount)
@@ -464,7 +455,9 @@ class DBSUploadTest(unittest.TestCase):
             #       "Error: Wrong number of blocks in buffer: %s" % blockCount
 
 
-        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer, 'retry' : 0 }
+        poller.algorithm(parameters = None)
+
+        args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
         dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
 
         primaries = dbsReader.listPrimaryDatasets()
@@ -472,7 +465,7 @@ class DBSUploadTest(unittest.TestCase):
         processed = dbsReader.listProcessedDatasets(primary = randomDataset)
         self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
         datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
-        self.assertEqual(len(datasetFiles), 28)
+        self.assertEqual(len(datasetFiles), 30)
 
 
         
@@ -486,7 +479,9 @@ class DBSUploadTest(unittest.TestCase):
         
         Test closing blocks via timeout
         """
-        raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
+        #raise RuntimeError, "This test takes way too long if DBS can't be reached. Fail it for now until I can get the retry delay turned down"
+
+        #return
 
         myThread = threading.currentThread()
 
@@ -506,18 +501,18 @@ class DBSUploadTest(unittest.TestCase):
 
         for i in range(5):
             self.addToBuffer(randomDataset)
-            poller.algorithm(parameters = None)
             blockCount = countDAO.execute()
 
-        time.sleep(30)
+        poller.algorithm(parameters = None)
+        time.sleep(21)
+        poller.algorithm(parameters = None)
+        
         for i in range(5):
             self.addToBuffer(randomDataset)
-            poller.algorithm(parameters = None)
             blockCount = countDAO.execute()
 
-            #assert blockCount == 1, \
-            #       "Error: Wrong number of blocks in buffer: %s" % blockCount
 
+        poller.algorithm(parameters = None)
 
         args = { "url" : config.DBSUpload.globalDBSUrl, "level" : 'ERROR', "user" :'NORMAL', "version" : config.DBSUpload.globalDBSVer }
         dbsReader = DBSReader(url = config.DBSUpload.globalDBSUrl, level='ERROR', user='NORMAL', version=config.DBSUpload.globalDBSVer)
@@ -526,8 +521,9 @@ class DBSUploadTest(unittest.TestCase):
         self.assertEqual(randomDataset in primaries, True, 'Could not find dataset %s' %(randomDataset))
         processed = dbsReader.listProcessedDatasets(primary = randomDataset)
         self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
-        datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
-        self.assertEqual(len(datasetFiles), 15)
+        blocks = dbsReader.listFileBlocks(dataset = '/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'), onlyClosedBlocks = True)
+        self.assertEqual(len(blocks), 1)
+        self.assertEqual(len(dbsReader.listFilesInBlock(fileBlockName = blocks[0])), 15)
         
 
         time.sleep(2*config.DBSUpload.DBSBlockTimeout + 1)
@@ -540,6 +536,9 @@ class DBSUploadTest(unittest.TestCase):
         self.assertEqual(randomDataset in processed, True, 'Could not find dataset %s' %(randomDataset))
         datasetFiles =  dbsReader.listDatasetFiles('/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'))
         self.assertEqual(len(datasetFiles), 30)
+        blocks = dbsReader.listFileBlocks(dataset = '/%s/%s/%s' %(randomDataset, randomDataset, 'RECO'), onlyClosedBlocks = True)
+        self.assertEqual(len(blocks), 2)
+        self.assertEqual(len(dbsReader.listFilesInBlock(fileBlockName = blocks[1])), 15)
         
 
         for entry in myThread.dbi.processData("SELECT status FROM dbsbuffer_block")[0].fetchall():

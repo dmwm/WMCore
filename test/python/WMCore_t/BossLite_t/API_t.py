@@ -4,8 +4,8 @@ _API_t_
 
 """
 
-__revision__ = "$Id: API_t.py,v 1.12 2010/05/20 12:20:24 spigafi Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: API_t.py,v 1.13 2010/05/30 14:49:28 spigafi Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import unittest
 import os
@@ -89,7 +89,7 @@ class APITest(unittest.TestCase):
     
     def testA_TaskSerializeDeserialize(self):
         """
-        test BossLiteAPI.serialize & BossLiteAPI.deserialize
+        Test BossLiteAPI.serialize & BossLiteAPI.deserialize
         """
         
         testAPI = BossLiteAPI()
@@ -132,7 +132,7 @@ class APITest(unittest.TestCase):
     
     def testB_TaskMethods(self):
         """
-        put a description here
+        Test Task methods
         """
 
         testAPI = BossLiteAPI()
@@ -197,7 +197,7 @@ class APITest(unittest.TestCase):
 
     def testC_JobMethods(self):
         """
-        put a description here
+        Test Job methods
         """
 
         testAPI = BossLiteAPI()
@@ -253,79 +253,165 @@ class APITest(unittest.TestCase):
     
     def testD_RunningJobMethods(self):
         """
-        put a description here
+        Test RunningJob methods
         """
 
         testAPI = BossLiteAPI()
         
-        # First create a job
         task = Task()
-        task.create(testAPI.db)
-        job = Job(parameters = {'name': 'Hadrian', 
-                                'jobId': 101, 
-                                'taskId': task.exists(testAPI.db)})
-        job.create(testAPI.db)
+        testAPI.saveTask(task)
+                
+        job1 = Job(parameters = { 'standardError' : 'hostname.err',
+                                 'standardOutput' : 'hostname.out' } )
+        task.addJob(job1)
+        tmp = testAPI.getNewRunningInstance(job = job1, runningAttrs = { 
+                                            'processStatus' :  'not_handled',
+                                            'service' : 'vattelapesca',
+                                            'status' : 'W' } )
         
-        self.assertEqual(job.runningJob, None)
-
-        testAPI.getNewRunningInstance(job = job, 
-                    runningAttrs = {'status': 'Dead', 
-                                    'statusReason': 'WentToTheForum',
-                                    'schedulerId' : 'myChild:0',
-                                    'schedulerParentId' : 'myParent:1'} )
-
-        self.assertEqual(job.runningJob['jobId'], 101)
-        self.assertEqual(job.runningJob['submission'], 1)
-        self.assertEqual(job.runningJob['status'], 'Dead')
-        self.assertEqual(job.runningJob['statusReason'], 'WentToTheForum')
-        self.assertEqual(job.runningJob['schedulerId'], 'myChild:0')
-        self.assertEqual(job.runningJob['schedulerParentId'], 'myParent:1')
-
-        job.runningJob.save(testAPI.db)
-
-        # Load the job
-        task.loadJobs(testAPI.db)
-
-        job.runningJob['service'] = 'IdesOfMarch'
-        job.updateRunningInstance(testAPI.db)
-          
-        job3 = Job(parameters = {'name': 'Trajan', 
-                                 'jobId': 102, 
-                                 'taskId': task.exists(testAPI.db)})
-        job3.create(testAPI.db)
+        self.assertEqual(job1.runningJob['status'], 'W')
+        self.assertEqual(job1.runningJob['submission'], 1)
+        self.assertEqual(job1.runningJob['submission'], 
+                                    job1['submissionNumber'])
         
-        testAPI.getRunningInstance(job = job3, 
-                                   runningAttrs = {'storage': 'Ravenna'})
+        # testAPI.saveTask(task)
+        testAPI.updateDB(task)
         
-        self.assertEqual(job3.runningJob['jobId'], 102)
+        job2 = Job(parameters = { 'standardError' : 'date.err',
+                                 'standardOutput' : 'date.out' } )
+        task.addJob(job2)
+        tmp = testAPI.getNewRunningInstance(job = job2, runningAttrs = { 
+                                            'processStatus' :  'handled',
+                                            'service' : 'cippirimerlo',
+                                            'status' : 'F' } )
+        tmp = testAPI.getNewRunningInstance(job = job2, runningAttrs = { 
+                                            'processStatus' :  'not_handled',
+                                            'service' : 'cippirimerlo',
+                                            'status' : 'D' } )
+        tmp = testAPI.getNewRunningInstance(job = job2, runningAttrs = { 
+                                            'processStatus' :  'not_handled',
+                                            'service' : 'cippirimerlo',
+                                            'status' : 'T' } ) 
+        
+        self.assertEqual(job2.runningJob['status'], 'T')
+        self.assertEqual(job2.runningJob['submission'], 3)
+        self.assertEqual(job2.runningJob['submission'], 
+                                    job2['submissionNumber'])
+        
+        # testAPI.saveTask(task)
+        testAPI.updateDB(task)
+        
+        job3 = Job(parameters = { 'standardError' : 'top.err',
+                                 'standardOutput' : 'top.out' } )
+        task.addJob(job3)
+        tmp = testAPI.getNewRunningInstance(job = job3, runningAttrs = { 
+                                            'processStatus' :  'terminated',
+                                            'service' : 'cacao',
+                                            'status' : 'T' } ) 
+        
+        self.assertEqual(job3.runningJob['status'], 'T')
         self.assertEqual(job3.runningJob['submission'], 1)
-        self.assertEqual(job3.runningJob['status'], None)
-        self.assertEqual(job3.runningJob['statusReason'], None)
-        self.assertEqual(job3.runningJob['storage'], 'Ravenna')
-
-        # Now test if we can load by attribute
+        self.assertEqual(job3.runningJob['submission'], 
+                                    job3['submissionNumber'])
+          
+        # testAPI.saveTask(task)
+        testAPI.updateDB(task)
+        
+        job4 = Job(parameters = { 'standardError' : 'uname.err',
+                                 'standardOutput' : 'uname.out' } )
+        task.addJob(job4)
+        tmp = testAPI.getNewRunningInstance(job = job4, runningAttrs = { 
+                                            'processStatus' :  'handled',
+                                            'service' : 'ramato',
+                                            'status' : 'F' } )
+        tmp = testAPI.getNewRunningInstance(job = job4, runningAttrs = { 
+                                            'processStatus' :  'not_handled',
+                                            'service' : 'ramato',
+                                            'status' : 'S' } )   
+        
+        self.assertEqual(job4.runningJob['status'], 'S')
+        self.assertEqual(job4.runningJob['submission'], 2)
+        self.assertEqual(job4.runningJob['submission'], 
+                                    job4['submissionNumber'])
+        
+        # testAPI.saveTask(task)
+        testAPI.updateDB(task)
+        
+        loadedTask = testAPI.loadTask(taskId = task['id'])
+        
+        self.assertEqual(len(loadedTask.jobs), len(task.jobs))
+        self.assertEqual(loadedTask.jobs[0].runningJob['status'], 'W')
+        self.assertEqual(loadedTask.jobs[1].runningJob['status'], 'T')
+        self.assertEqual(loadedTask.jobs[2].runningJob['status'], 'T')
+        self.assertEqual(loadedTask.jobs[3].runningJob['status'], 'S')
+        
+        self.assertEqual(loadedTask.jobs[0].runningJob['processStatus'], 
+                                                    'not_handled')
+        self.assertEqual(loadedTask.jobs[1].runningJob['processStatus'], 
+                                                    'not_handled')
+        self.assertEqual(loadedTask.jobs[2].runningJob['processStatus'], 
+                                                    'terminated')
+        self.assertEqual(loadedTask.jobs[3].runningJob['processStatus'], 
+                                                    'not_handled')
+        
+        self.assertEqual(loadedTask.jobs[0].runningJob['submission'], 
+                                    loadedTask.jobs[0]['submissionNumber'])
+        self.assertEqual(loadedTask.jobs[1].runningJob['submission'], 
+                                    loadedTask.jobs[1]['submissionNumber'])
+        self.assertEqual(loadedTask.jobs[2].runningJob['submission'], 
+                                    loadedTask.jobs[2]['submissionNumber'])
+        self.assertEqual(loadedTask.jobs[3].runningJob['submission'], 
+                                    loadedTask.jobs[3]['submissionNumber'])
+        
         jobList = testAPI.loadJobsByRunningAttr(
-                            binds = {'schedulerParentId': 'myParent:1'} )
+                            binds = {'status': 'T'} )
+        
+        self.assertEqual(len(jobList), 2)
+        tmpJ = ['top.out', 'date.out']
+        self.assertTrue(jobList[0]['standardOutput'] in tmpJ )
+        self.assertTrue(jobList[1]['standardOutput'] in tmpJ )
+        tmpRJ = ['cacao', 'cippirimerlo']
+        self.assertTrue(jobList[0].runningJob['service'] in tmpRJ )
+        self.assertTrue(jobList[1].runningJob['service'] in tmpRJ )
+        
+        jobList = testAPI.loadJobsByRunningAttr(
+                            binds = {'status': 'S'} )
         
         self.assertEqual(len(jobList), 1)
+        self.assertEqual(jobList[0]['standardError'], 'uname.err')
+        self.assertTrue(jobList[0].runningJob['service'], 'ramato' )
         
-        job4 = jobList[0]
-        job4['submissionNumber'] = 1 # need to ckeck...
-        testAPI.getRunningInstance(job = job4)
+        jobList = testAPI.loadJobsByRunningAttr(
+                            binds = {'processStatus': 'not_handled'} )
         
-        self.assertEqual(job4.runningJob['jobId'], 101)
-        self.assertEqual(job4.runningJob['submission'], 1)
-        self.assertEqual(job4.runningJob['status'], 'Dead')
-        self.assertEqual(job4.runningJob['statusReason'], 'WentToTheForum')
-        self.assertEqual(job4.runningJob['schedulerId'], 'myChild:0')
-        self.assertEqual(job4.runningJob['schedulerParentId'], 'myParent:1')
+        self.assertEqual(len(jobList), 3)
+        tmp = ['hostname.out', 'uname.out', 'date.out']
+        self.assertTrue(jobList[0]['standardOutput'] in tmp)
+        self.assertTrue(jobList[1]['standardOutput'] in tmp)
+        self.assertTrue(jobList[2]['standardOutput'] in tmp)
+        tmpRJ = ['ramato', 'vattelapesca', 'cippirimerlo']
+        self.assertTrue(jobList[0].runningJob['service'] in tmpRJ )
+        self.assertTrue(jobList[1].runningJob['service'] in tmpRJ )
+        self.assertTrue(jobList[2].runningJob['service'] in tmpRJ )
+        
+        jobList = testAPI.loadJobsByRunningAttr(
+                            binds = {'processStatus': 'handled', } )
+        
+        self.assertEqual(len(jobList), 0)
+        
+        jobList = testAPI.loadJobsByRunningAttr( binds = 
+                            { 'processStatus': 'not_handled', 'status': 'T'} )
+        
+        self.assertEqual(len(jobList), 1)
+        self.assertEqual(jobList[0]['standardError'], 'date.err')
+        self.assertTrue(jobList[0].runningJob['service'], 'cippirimerlo' )
             
         return
     
     
     def testE_CombinedMethods(self):
         """
-        This is only another test ...
+        Test Combined Methods
         """
 
         testAPI = BossLiteAPI()
@@ -370,7 +456,7 @@ class APITest(unittest.TestCase):
     
     def testF_ByRunningAttr(self):
         """
-        This is only another test ...
+        Test loadCreated, loadSubmitted, loadEnded and loadFailed
         """
 
         testAPI = BossLiteAPI()
@@ -447,6 +533,44 @@ class APITest(unittest.TestCase):
         
         self.assertEqual(result[0]['name'], 'Stargate Universe') 
         self.assertEqual(result[1]['name'], 'Caprica') 
+        
+        return
+    
+
+    def testG_LoadJobRange(self):
+        """
+        Test loadTask using jobRange
+        """
+
+        testAPI = BossLiteAPI()
+        
+        task = populateDb(testAPI.db, numtask= 1, numjob= 10)
+        
+        testAPI.saveTask(task)
+        
+        loadedTask = testAPI.loadTask(taskId = 1 )
+        self.assertEqual(len(loadedTask.jobs), 10)
+        # print loadedTask.jobIndex
+        
+        loadedTask = testAPI.loadTask(taskId = 1, jobRange='1' )
+        self.assertEqual(len(loadedTask.jobs), 1)
+        # print loadedTask.jobIndex
+                         
+        loadedTask = testAPI.loadTask(taskId = 1, jobRange='10' )
+        self.assertEqual(len(loadedTask.jobs), 1)
+        # print loadedTask.jobIndex
+        
+        loadedTask = testAPI.loadTask(taskId = 1, jobRange='1,2,3,4,5' )
+        self.assertEqual(len(loadedTask.jobs), 5)
+        # print loadedTask.jobIndex
+        
+        loadedTask = testAPI.loadTask(taskId = 1, jobRange='1:5' )
+        self.assertEqual(len(loadedTask.jobs), 5)
+        # print loadedTask.jobIndex
+        
+        loadedTask = testAPI.loadTask(taskId = 1, jobRange='1:3,8:10' )
+        self.assertEqual(len(loadedTask.jobs), 6)
+        # print loadedTask.jobIndex
         
         return
     

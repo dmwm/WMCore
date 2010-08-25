@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.34 2010/05/26 16:14:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.35 2010/07/06 18:07:53 mnorman Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import logging
 import os.path
@@ -345,7 +345,7 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
-    def verifyFileMetaData(self, jobID, fwkJobReportFiles):
+    def verifyFileMetaData(self, jobID, fwkJobReportFiles, site = "cmssrm.fnal.gov"):
         """
         _verifyFileMetaData_
 
@@ -368,6 +368,9 @@ class JobAccountantTest(unittest.TestCase):
             outputFile = File(lfn = fwkJobReportFile["lfn"])
             outputFile.load()
             outputFile.loadData(parentage = 1)
+
+            # Output file should be at the same location as the input files
+            self.assertEqual(outputFile['locations'], set([site]))
 
             assert outputFile["events"] == int(fwkJobReportFile["events"]), \
                    "Error: Output file has wrong events: %s, %s" % \
@@ -571,7 +574,7 @@ class JobAccountantTest(unittest.TestCase):
         fwjrBasePath = WMCore.WMInit.getWMBASE() + "/test/python/WMComponent_t/JobAccountant_t/fwjrs/"
         jobReport = Report()
         jobReport.unpersist(fwjrBasePath + "SplitSuccessA.pkl")
-        self.verifyFileMetaData(self.testJobA["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobA["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
         self.verifyJobSuccess(self.testJobA["id"])
 
         self.recoOutputFileset.loadData()
@@ -601,7 +604,7 @@ class JobAccountantTest(unittest.TestCase):
 
         jobReport = Report()
         jobReport.unpersist(fwjrBasePath + "SplitSuccessB.pkl")
-        self.verifyFileMetaData(self.testJobB["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobB["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
         self.verifyJobSuccess(self.testJobB["id"])
 
         self.recoOutputFileset.loadData()
@@ -617,7 +620,7 @@ class JobAccountantTest(unittest.TestCase):
 
         jobReport = Report()
         jobReport.unpersist(fwjrBasePath + "SplitSuccessC.pkl")
-        self.verifyFileMetaData(self.testJobC["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJobC["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
         self.verifyJobSuccess(self.testJobC["id"])
 
         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
@@ -744,7 +747,7 @@ class JobAccountantTest(unittest.TestCase):
         jobReport.unpersist(os.path.join(WMCore.WMInit.getWMBASE(),
                                          "test/python/WMComponent_t/JobAccountant_t/fwjrs",
                                          "MergedSkimSuccess.pkl"))
-        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"))
+        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
         self.verifyJobSuccess(self.testJob["id"])
 
         self.recoOutputFileset.loadData()
@@ -1321,7 +1324,7 @@ class JobAccountantTest(unittest.TestCase):
         inputFileset.commit()
         return
 
-    def testZ_BigHeritage(self):
+    def testZ1_BigHeritage(self):
         """
         _testBigHeritage_
 
@@ -1367,6 +1370,8 @@ class JobAccountantTest(unittest.TestCase):
         #p.print_stats()
 
         return
+
+
 
 if __name__ == '__main__':
     unittest.main()

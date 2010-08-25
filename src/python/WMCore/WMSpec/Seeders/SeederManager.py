@@ -30,11 +30,11 @@ class SeederManager:
             return
         #Otherwise we have a fully formed task of some type
 
-        configList = task.getSeederConfigs()
+        configList = task.listGenerators()
 
-        for seederConfig in configList:
-            seederName = seederConfig.keys()[0]
-            self.addSeeder(seederName, **seederConfig[seederName])
+        for seederName in configList:
+            self.addSeeder(seederName, task.getGeneratorSettings(seederName))
+
 
         return
 
@@ -65,4 +65,19 @@ class SeederManager:
         """
         [ map(seeder, jobGroup.jobs) for seeder in self.seeders.values()]
         return
+
+
+    def getSeederList(self):
+        """
+        _getSeederList_
+
+        Returns a list of all seeders for usage in JobSplitting
+        """
+        seederList = []
+
+        for name in self.seeders.keys():
+            seederList.append(self.seeders[name])
+
+        return seederList
+
 

@@ -13,7 +13,7 @@ export TESTDIR=/home/fvlingen/programFiles/CMS_CVS/WMCORE_TEST
 # location of WMCORE
 export WMCOREBASE=/home/fvlingen/programFiles/CMS_CVS/WMCORE
 # webtools base (only for webtools related files and modules)
-export WMCORE_ROOT=$WMCOREBASE/src
+export WTBASE=$WMCOREBASE/src
 # yui home (only for webtools related files and modules)
 export YUIHOME=/put/your/value/here
 # path settings for incorporating wmcore binaries.

@@ -5,8 +5,8 @@ Slave used for default AddDatasetWatch behavior
 
 __all__ = []
 __revision__ = \
-"$Id: DefaultAddDatasetWatchSlave.py,v 1.6 2009/12/15 23:15:11 riahi Exp $"
-__version__ = "$Revision: 1.6 $"
+"$Id: DefaultAddDatasetWatchSlave.py,v 1.7 2010/05/04 22:28:32 riahi Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = \
     "james.jackson@cern.ch"
 
@@ -47,6 +47,7 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
         startRun = message["StartRun"]
 
         logging.debug("Dataset " + filesetName + " arrived")
+ 
         fileset = Fileset(name = filesetName+':'\
           +feederType+':'+fileType+':'+startRun)
 
@@ -71,18 +72,37 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
             
                 # Check if we have a feeder in DB
                 if self.queries.checkFeeder(feederType):
+
                     # Have feeder, get info
                     logging.info("Getting Feeder from DB")
                     feederId = self.queries.getFeederId(feederType)
                     logging.info(feederId)
                     myThread.runningFeeders[feederType] = feederId
                 else:
+
                     # Create feeder
                     logging.info("Adding Feeder to DB")
                     self.queries.addFeeder(feederType, "StatePath")
                     feederId = self.queries.getFeederId(feederType)
                     logging.info(feederId)
                     myThread.runningFeeders[feederType] = feederId
+
+
+            if feederType == 'DBS':
+                filesetBase = Fileset(name = filesetName+':'\
+                         +feederType)
+                if filesetBase.exists() == False:
+                    filesetBase.create()
+
+                    # Fileset/Feeder association
+                    self.queries.addFilesetToManage(filesetBase.id, \
+                                  myThread.runningFeeders[feederType])
+                    logging.info("Fileset %s is added to feeder %s" \
+                %(filesetBase.id, myThread.runningFeeders[feederType])) 
+                else:
+                    logging.info("Fileset Base %s is already there" \
+                                  %filesetBase.name)
+
 
             # Fileset/Feeder association 
             self.queries.addFilesetToManage(fileset.id, \

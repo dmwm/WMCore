@@ -7,8 +7,8 @@ Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
 
-__revision__ = "$Id: LumiBased.py,v 1.10 2009/11/19 20:59:20 mnorman Exp $"
-__version__  = "$Revision: 1.10 $"
+__revision__ = "$Id: LumiBased.py,v 1.11 2009/11/19 21:16:41 mnorman Exp $"
+__version__  = "$Revision: 1.11 $"
 
 from sets import Set
 
@@ -84,7 +84,6 @@ class LumiBased(JobFactory):
         
         for lumi in lumiDict.keys():
             self.newGroup()
-            baseName = makeUUID()
             jobFiles = Fileset()
             
             #Now split them into sections according to files per job
@@ -98,16 +97,14 @@ class LumiBased(JobFactory):
                     jobFiles.addFile(f)
                 #Now is it too big?
                 if len(jobFiles) == filesPerJob:
-                    self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
-                                      files = jobFiles)
+                    self.newJob(name = makeUUID(), files = jobFiles)
                     self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
                     jobFiles = Fileset()
 
             #If we've run out of files before completing a job
             if len(jobFiles) != 0:
                 
-                self.newJob(name = '%s-%s' % (baseName, len(self.currentGroup.jobs) + 1),
-                                  files = jobFiles)
+                self.newJob(name = makeUUID(), files = jobFiles)
                 self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
                 jobFiles = Fileset()
 
@@ -119,7 +116,6 @@ class LumiBased(JobFactory):
 
         currentLumis  = 0
         jobFiles      = Fileset()
-        baseName = makeUUID()
 
         assignedFiles = []
         # We only make a single JobGroup for all the lumi's
@@ -143,9 +139,7 @@ class LumiBased(JobFactory):
 
             #If we now have enough lumis, we end.
             if currentLumis >= lumisPerJob:
-                self.newJob(name = '%s-%s' % (baseName, \
-                                              len(self.currentGroup.jobs) + 1),
-                                  files = jobFiles)
+                self.newJob(name = makeUUID(), files = jobFiles)
                 self.currentJob["mask"].setMaxAndSkipLumis(currentLumis, lumi)
                 #Wipe clean
                 currentLumis = 0
@@ -153,9 +147,7 @@ class LumiBased(JobFactory):
 
         if not len(jobFiles.getFiles()) == 0:
             #Then we have files we need to check in because we ran out of lumis before filling the last job
-            self.newJob(name = '%s-%s' % (baseName, \
-                                          len(self.currentGroup.jobs) + 1),
-                              files = jobFiles)
+            self.newJob(name = makeUUID(), files = jobFiles)
             self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, lumi)
             
 
@@ -166,7 +158,6 @@ class LumiBased(JobFactory):
         """
         
         currentEvents = 0
-        baseName = makeUUID()
         assignedFiles = []
         
         for lumi in lumiDict.keys():
@@ -189,9 +180,7 @@ class LumiBased(JobFactory):
                     jobFiles.addFile(file)
                 #If you have enough events, end the job and start a new one
                 else:
-                    self.newJob(name = '%s-%s' % (baseName, \
-                                                  len(self.currentGroup.jobs) + 1),
-                                      files = jobFiles)
+                    self.newJob(name = makeUUID(), files = jobFiles)
                     self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
                     
                     #Clear Fileset
@@ -203,9 +192,7 @@ class LumiBased(JobFactory):
                     
             #If we have excess events, make a final job
             if not currentEvents == 0:
-                self.newJob(name = '%s-%s' % (baseName, \
-                                              len(self.currentGroup.jobs) + 1),
-                                  files = jobFiles)
+                self.newJob(name = makeUUID(), files = jobFiles)
                 self.currentJob["mask"].setMaxAndSkipLumis(1, lumi)
                 jobFiles = Fileset()
                 currentEvents = 0

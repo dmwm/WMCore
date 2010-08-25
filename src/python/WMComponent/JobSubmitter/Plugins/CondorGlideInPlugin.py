@@ -6,14 +6,14 @@
 # E1103: The thread will have a logger and a dbi before it gets here
 
 """
-_CondorGlobusPlugin_
+_CondorGlideInPlugin_
 
 A plug-in that should submit directly to condor glide-in nodes
 
 """
 
-__revision__ = "$Id: CondorGlideInPlugin.py,v 1.1 2010/04/26 15:10:45 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: CondorGlideInPlugin.py,v 1.2 2010/04/26 15:14:07 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -28,9 +28,9 @@ from WMCore.WMInit import getWMBASE
 
 from WMComponent.JobSubmitter.Plugins.PluginBase import PluginBase
 
-class CondorGlobusPlugin(PluginBase):
+class CondorGlideInPlugin(PluginBase):
     """
-    _CondorGlobusPlugin_
+    _CondorGlideInPlugin_
     
     A plug-in that should submit directly to condor glide-in nodes
     """
@@ -129,7 +129,7 @@ class CondorGlobusPlugin(PluginBase):
 
         
         jdl.append("universe = vanilla\n")
-        jdl.append('(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\")')
+        jdl.append('(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\")\n')
         jdl.append("should_transfer_executable = TRUE\n")
         jdl.append("transfer_output_files = Report.pkl\n") 
         jdl.append("should_transfer_files = YES\n")
@@ -141,8 +141,8 @@ class CondorGlobusPlugin(PluginBase):
         jdl.append("Error = condor.$(Cluster).$(Process).err\n")
         jdl.append("Log = condor.$(Cluster).$(Process).log\n")
         # Things that are necessary for the glide-in
-        jdl.append('+DESIRED_Sites = \"FNAL\"')
-        jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"')
+        jdl.append('+DESIRED_Sites = \"FNAL\"\n')
+        jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
         
         return jdl
     

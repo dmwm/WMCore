@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.51 2010/02/09 01:39:46 metson Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: CMSCouch.py,v 1.52 2010/02/20 20:04:43 metson Exp $"
+__version__ = "$Revision: 1.52 $"
 
 try:
     # Python 2.6
@@ -122,6 +122,7 @@ class Database(CouchDBRequests):
         self.name = urllib.quote_plus(dbname)
         self._queue_size = size
         self.threads = []
+        self.last_seq = 0
 
     def timestamp(self, data):
         """
@@ -215,6 +216,17 @@ class Database(CouchDBRequests):
         """
         return self.post('/%s/_compact' % self.name)
 
+    def changes(self, since=-1):
+        """
+        Get the changes since sequence number. Store the last sequence value to
+        self.last_seq. If the since is negative use self.last_seq. 
+        """
+        if since < 0:
+            since = self.last_seq
+        data = self.get('/%s/_changes/?since=%s' % (self.name, since))
+        self.last_seq = data['last_seq']
+        return data
+        
     def loadView(self, design, view, options = {}, keys = []):
         """
         Load a view by getting, for example:

@@ -15,11 +15,9 @@ class MsgServiceApp(unittest.TestCase):
     """
     TestCase for modules
     """
-    def __init__(self, name):
-        unittest.TestCase.__init__(self)
-        self.name = name
-        self._maxMessage = 10
 
+    _maxMessage = 10
+    name = "MsgServiceTest"
 
 
     def setUp(self):
@@ -56,6 +54,7 @@ class MsgServiceApp(unittest.TestCase):
         Database deletion
         """
         self.testInit.clearDatabase()
+        
     def testA(self):
         config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'), \
                         'src/python/WMComponent/ErrorHandler/DefaultConfig.py'))
@@ -82,5 +81,7 @@ class MsgServiceApp(unittest.TestCase):
         #print str(ms.pendingMsgs())
         myThread.transaction.commit()
         
-        
+
+if __name__ == '__main__':
+    unittest.main()        
 

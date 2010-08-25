@@ -13,12 +13,14 @@ from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 class Exit127(DiagnosticHandler):
     def __call__(self, errCode, executor, **args):
         msg = "Executable Not Found"
-        executor.report.addError(50110, "ExecutableNotFound", msg)
+        executor.report.addError(executor.step._internal_name,
+                                 50110, "ExecutableNotFound", msg)
         
 class Exit126(DiagnosticHandler):
     def __call__(self, errCode, executor, **args):
         msg = "Executable permissions not executable"
-        executor.report.addError(50111, "ExecutableBadPermissions", msg)
+        executor.report.addError(executor.step._internal_name,
+                                 50111, "ExecutableBadPermissions", msg)
 
 
 class CMSRunHandler(DiagnosticHandler):
@@ -42,14 +44,18 @@ class CMSRunHandler(DiagnosticHandler):
         if os.path.exists(jobRepXml):
             # job report XML exists, load the exception information from it
             executor.report.parse(jobRepXml)
-
+            reportStep = executor.report.retrieveStep(executor.step._internal_name)
+            reportStep.status = self.code
+                
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
-            executor.report.addError(self.code, self.desc, msg)
+            executor.report.addError(executor.step._internal_name,
+                                     self.code, self.desc, msg)
         else:
             if not hasattr(errSection, self.desc):
-                executor.report.addError(self.code, self.desc, msg)
+                executor.report.addError(executor.step._internal_name,
+                                         self.code, self.desc, msg)
 
         print executor.report.report.errors
         return
@@ -77,7 +83,8 @@ class EDMExceptionHandler(DiagnosticHandler):
         if not os.path.exists(jobRepXml):
             # no report => Error
             msg = "No Job Report Found: %s" % jobRepXml
-            executor.report.addError(50115, "MissingJobReport", msg)
+            executor.report.addError(executor.step._internal_name,
+                                     50115, "MissingJobReport", msg)
             return
         
         # job report XML exists, load the exception information from it
@@ -88,14 +95,16 @@ class EDMExceptionHandler(DiagnosticHandler):
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
             msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
-            executor.report.addError(50116, "MissingErrorReport", msg)
+            executor.report.addError(executor.step._internal_name,
+                                     50116, "MissingErrorReport", msg)
             return
 
         else:
             #check exit code in report is non zero
             if executor.report.report.status == 0:
                 msg = "Job Report contains no error report, but cmsRun exited non-zero: %s" % errCode
-                executor.report.addError(50116, "MissingErrorReport", msg)
+                executor.report.addError(executor.step.internal_name,
+                                         50116, "MissingErrorReport", msg)
         return
 
 

@@ -5,8 +5,8 @@ _XMLParser_
 Read the raw XML output from the cmsRun executable. 
 """
 
-__version__ = "$Revision: 1.6 $"
-__revision__ = "$Id: XMLParser.py,v 1.6 2010/03/23 21:26:29 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: XMLParser.py,v 1.7 2010/04/09 15:57:17 sfoulkes Exp $"
 
 import xml.parsers.expat
 
@@ -156,14 +156,18 @@ def errorHandler():
     """
     _errorHandler_
 
-    Handle FrameworkError reports
-
+    Handle FrameworkError reports.
     """
     while True:
         report, node = (yield)
         excepcode = node.attrs.get("ExitStatus", 8001)
         exceptype = node.attrs.get("Type", "CMSException")
-        report.addError(excepcode, exceptype, node.text)
+
+        # There should be atmost one step in the report at this point in time.
+        if len(report.listSteps()) == 0:
+            report.addError("unknownStep", excepcode, exceptype, node.text)
+        else:
+            report.addError(report.listSteps()[0], excepcode, exceptype, node.text)            
 
 @coroutine
 def skippedFileHandler():

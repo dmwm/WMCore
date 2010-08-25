@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.18 $"
-__revision__ = "$Id: Report.py,v 1.18 2010/04/07 15:36:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Report.py,v 1.19 2010/04/09 15:57:17 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -118,6 +118,14 @@ class Report:
             self.addStep(reportname = reportname)
 
         return
+
+    def listSteps(self):
+        """
+        _listSteps_
+
+        List the names of all the steps in the report.
+        """
+        return self.data.steps
 
     def parse(self, xmlfile):
         """

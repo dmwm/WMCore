@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.16 2009/07/01 19:16:55 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Create.py,v 1.17 2009/08/06 14:32:11 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -284,7 +284,7 @@ class Create(CreateWMBSBase):
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState
             self.inserts["job_state_%s" % jobState] = jobStateQuery
           
-        for subType in ("Processing", "Merge"):
+        for subType in ("Processing", "Merge", "Harvesting"):
             subTypeQuery = """INSERT INTO wmbs_subs_type (id, name) 
                           values (wmbs_subs_type_SEQ.nextval, '%s')""" % subType
             self.inserts["wmbs_subs_type_%s" % subType] = subTypeQuery

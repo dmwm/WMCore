@@ -4,12 +4,10 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.9 2009/07/28 21:28:24 mnorman Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.10 2009/10/13 21:09:38 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
-import commands
-import logging
 import os
 import threading
 import time
@@ -17,10 +15,6 @@ import unittest
 
 from WMComponent.ErrorHandler.ErrorHandler import ErrorHandler
 
-from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.Database.Transaction import Transaction
-from WMCore.WMFactory     import WMFactory
 from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -42,8 +36,6 @@ class ErrorHandlerTest(unittest.TestCase):
     TestCase for TestErrorHandler module 
     """
 
-    _setup_done = False
-    _teardown = False
     _maxMessage = 10
 
     def setUp(self):
@@ -58,7 +50,6 @@ class ErrorHandlerTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        ErrorHandlerTest._setup_done = True
         
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
@@ -72,17 +63,7 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         Database deletion
         """
-        myThread = threading.currentThread()
-
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-
-        ErrorHandlerTest._teardown = False
+        self.testInit.clearDatabase()
 
 
 
@@ -90,43 +71,11 @@ class ErrorHandlerTest(unittest.TestCase):
                                                 'src/python/WMComponent/ErrorHandler/DefaultConfig.py')):
 
 
-        if os.path.isfile(configPath):
-            # read the default config first.
-            config = loadConfigurationFile(configPath)
-        else:
-            config = Configuration()
-            config.component_("JobAccountant")
-            #The log level of the component. 
-            config.JobAccountant.logLevel = 'INFO'
-            config.JobAccountant.pollInterval = 10
-
-        myThread = threading.currentThread()
-
-        config.section_("General")
-        
-        config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database = os.getenv("DATABASE")
-
+        config = self.testInit.getConfiguration()
+        config.component_("JobAccountant")
+        #The log level of the component. 
+        config.JobAccountant.logLevel = 'INFO'
+        config.JobAccountant.pollInterval = 10
 
 
         return config
@@ -346,14 +295,6 @@ class ErrorHandlerTest(unittest.TestCase):
 
         return
 
-
-
-
-    def runTest(self):
-        """
-        Run error handler test.
-        """
-        self.testA()
 
 if __name__ == '__main__':
     unittest.main()

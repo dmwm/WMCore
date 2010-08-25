@@ -1,13 +1,14 @@
 #!/usr/bin/env python
+#pylint: disable-msg=W0102
+#W0102: We want to pass blank lists by default for the whitelist and the blacklist
 
 """
 Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.3 2009/11/06 19:29:49 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
-__author__ = "anzar@fnal.gov"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.4 2009/11/17 16:52:47 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -23,23 +24,13 @@ import string
 
 #WMBS objects
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup     import JobGroup
-from WMCore.WMBS.Job          import Job as Job
-from WMCore.WMBS.Workflow     import Workflow
+from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
-from WMCore.WMFactory         import WMFactory
 
 from WMCore.WMSpec.WMWorkload                 import WMWorkload, WMWorkloadHelper
-from WMCore.WMSpec.WMTask                     import WMTask, WMTaskHelper
-
-
-from WMCore.JobStateMachine.ChangeState import ChangeState
-
-
-from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
-
-
-from WMCore.ProcessPool.ProcessPool                     import ProcessPool
+from WMCore.JobStateMachine.ChangeState       import ChangeState
+from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
+from WMCore.ProcessPool.ProcessPool           import ProcessPool
 
 
 
@@ -58,8 +49,9 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging, dbinterface = myThread.dbi)
 
         #Dictionary definitions
-        self.slots = {}
-        self.sites = {}
+        self.slots     = {}
+        self.sites     = {}
+        self.locations = {}
 
         #Set config objects
         self.database = config.CoreDatabase.connectUrl
@@ -67,15 +59,16 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         self.session = None
         self.schedulerConfig = {}
-        self.cfg_params = None
         self.config = config
 
         BaseWorkerThread.__init__(self)
 
         configDict = {'submitDir': self.config.JobSubmitter.submitDir, 'submitNode': self.config.JobSubmitter.submitNode,
                       'submitScript': self.config.JobSubmitter.submitScript}
+        if hasattr(self.config.JobSubmitter, 'inputFile'):
+            configDict['inputFile'] = self.config.JobSubmitter.inputFile
 
-        workerName = "%s.%s" %(self.config.JobSubmitter.pluginDir, self.config.JobSubmitter.pluginName)
+        workerName = "%s.%s" % (self.config.JobSubmitter.pluginDir, self.config.JobSubmitter.pluginName)
 
         self.processPool = ProcessPool(workerName,
                                        totalSlaves = self.config.JobSubmitter.workerThreads,
@@ -108,8 +101,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         Keeps track of, and does, everything
         """
 
-        myThread = threading.currentThread()
-
         #self.configure()
         self.setLocations()
         self.pollJobs()
@@ -122,8 +113,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         idList = []
         for job in jobList:
             idList.append({'jobid': job['id'], 'location': job['location']})
-        SetLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
-        SetLocationAction.execute(bulkList = idList)
+        setLocationAction = self.daoFactory(classname = "Jobs.SetLocation")
+        setLocationAction.execute(bulkList = idList)
                           
 
         return
@@ -181,7 +172,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         This searches all known sites and finds the best match for this job
         """
 
-        myThread = threading.currentThread()
+        #myThread = threading.currentThread()
 
         #Assume that jobSplitting has worked, and that every file has the same set of locations
         sites = list(job.getFiles()[0]['locations'])
@@ -191,7 +182,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         for loc in sites:
             if not loc in self.slots.keys() or not loc in self.sites.keys():
                 logging.error('Found job for unknown site %s' %(loc))
-                logging.error('ABORT: Am not processing jobGroup %i' %(wmbsJobGroup.id))
+                #logging.error('ABORT: Am not processing jobGroup %i' %(wmbsJobGroup.id))
                 return
             if self.slots[loc] - self.sites[loc] > tmpSlots:
                 tmpSlots = self.slots[loc] - self.sites[loc]
@@ -205,8 +196,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         Poller for checking all active jobs and seeing how many are in each site
 
         """
-
-        myThread = threading.currentThread()
 
         #Then get all locations
         locationList  = self.daoFactory(classname = "Locations.ListSites")
@@ -229,7 +218,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         return
 
 
-    def submitJobs(self, jobList, localConfig = {}, subscription = None):
+    def submitJobs(self, jobList):
         """
         _submitJobs_
         
@@ -274,7 +263,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         #Pass the successful jobs, and fail the bad ones
         myThread.transaction.begin()
         changeState.propagate(successList, 'executing',    'created')
-        changeState.propagate(failList,    'SubmitFailed', 'Created')
+        changeState.propagate(failList,    'submitfailed', 'created')
 
         myThread.transaction.commit()
 
@@ -331,7 +320,12 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return jobList
 
-    def terminate(self,params):
+    def terminate(self, params):
+        """
+        _terminate_
+        
+        Terminate code after final pass.
+        """
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
 

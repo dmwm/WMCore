@@ -6,10 +6,9 @@ Implementation of an Executor for a LogArchive step
 
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.2 2009/12/21 16:04:49 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: LogArchive.py,v 1.3 2010/03/03 19:38:07 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
-import inspect
 import os
 import os.path
 import logging
@@ -20,7 +19,6 @@ import signal
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-from WMCore.FwkJobReport.Report             import Report
 import WMCore.Storage.StageOutMgr as StageOutMgr
 
 
@@ -81,13 +79,6 @@ class LogArchive(Executor):
         logFilesForTransfer = []
         #Look in the taskSpace first
         logFilesForTransfer.extend(self.findFilesInDirectory(self.stepSpace.taskSpace.location, matchFiles))
-        #Now check the step spaces
-        #for step in self.stepSpace.taskSpace.stepSpaces():
-        #    if step == self.stepName:
-        #        #Don't try to parse yourself, it never works
-        #        continue
-        #    stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
-        #    logFilesForTransfer.extend(self.findFilesInDirectory(stepLocation, matchFiles))
 
         #What if it's empty?
         if len(logFilesForTransfer) == 0:
@@ -99,8 +90,8 @@ class LogArchive(Executor):
         tarName         = 'logArchive.tar.gz'
         tarBallLocation = os.path.join(self.stepSpace.location, tarName)
         tarBall         = tarfile.open(tarBallLocation, 'w:gz')
-        for file in logFilesForTransfer:
-            tarBall.add(file)
+        for f in logFilesForTransfer:
+            tarBall.add(f)
         tarBall.close()
 
 
@@ -159,15 +150,15 @@ class LogArchive(Executor):
 
 
         logFiles = []
-        for file in os.listdir(dirName):
-            fileName = os.path.join(dirName, file)
+        for f in os.listdir(dirName):
+            fileName = os.path.join(dirName, f)
             if os.path.isdir(fileName):
                 #If directory, use recursion
                 logFiles.extend(self.findFilesInDirectory(fileName, matchFiles))
             else:
                 for match in matchFiles:
                     #Go through each type of match
-                    if re.search(match, file):
+                    if re.search(match, f):
                         logFiles.append(fileName)
                         break
 
@@ -189,8 +180,8 @@ class LogArchive(Executor):
         runPadding = None
         runNumber  = None
 
-        for file in self.job['input_files']:
-            for run in file['runs']:
+        for f in self.job['input_files']:
+            for run in f['runs']:
                 runNumber  = int(run.run)
                 runPadding = str(runNumber // 1000).zfill(4)
 

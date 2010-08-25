@@ -9,8 +9,8 @@ wrapper class), a retry count for that state, and an id for the couchdb record
 """
 
 __all__ = []
-__revision__ = "$Id: ChangeState.py,v 1.4 2009/07/16 21:06:09 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ChangeState.py,v 1.5 2009/07/16 22:02:59 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -44,6 +44,14 @@ class ChangeState(DBFormatter):
         jobs is a list of Job objects (dicts)
         """
         binds = self.getBinds(jobs)
-        print self.dbi.processData(self.sql, binds, conn = conn,
+        result =  self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
+        numberOfResults = result[0].rowcount
+        
+        if (numberOfResults != len(jobs)):
+            raise RuntimeError,\
+         "Integrity failure: we tried to update %i records and only %i worked"\
+            % (len(jobs),numberOfResults)
+
+
         return

@@ -1,12 +1,12 @@
 """
-_New_
+_GetElements_
 
 MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.2 2009/06/24 21:00:25 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetElements.py,v 1.3 2009/06/26 21:06:23 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter

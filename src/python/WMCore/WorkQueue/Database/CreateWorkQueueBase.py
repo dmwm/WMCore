@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.6 2009/06/25 16:02:21 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.7 2009/06/26 21:06:23 sryu Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 
@@ -137,7 +137,7 @@ class CreateWorkQueueBase(DBCreator):
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_status
                  FOREIGN KEY(status) REFERENCES wq_element_status(id)"""
         
-        wqStatus = ["Available", "Acquired", "Done"]
+        wqStatus = ["Available", "Acquired", "Done", "Failed"]
         for i in range(3):
             self.inserts["%swq_elem_status_insert" % (60 + i)]=\
                 """INSERT INTO wq_element_status (id, status) VALUES (%d, '%s')

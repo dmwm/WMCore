@@ -30,7 +30,10 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                    'children':[]
                    }
                   ]
-     }
+    }
+     
+    Nodes may optionally include 'height' or 'colour', to override the defaults.
+    
     
     etc, etc. This data should always include a root element reflecting the
     total volume, but which will not be shown. Elements from depth=1 will be
@@ -71,6 +74,11 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
     def validate(self,input):
        if not 'data' in input:
            return "No 'data' element."
+       data = input['data']
+       if data.get('value',0)<=0: 
+           return "Root element value is 0 or negative."
+       if len(data.get('children',[]))==0:
+           return "Root element has no children."
        return True
     def extract(self,input):
         self.props.data = input['data']
@@ -79,8 +87,8 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
         axes.set_axis_off()
          
         def depth_recursor(here):
-            if len(here['children'])>0:
-                return max([depth_recursor(c) for c in here['children']])+1
+            if len(here.get('children',[]))>0:
+                return max([depth_recursor(c) for c in here.get('children',[])])+1
             return 1
         
         self.props.max_depth = depth_recursor(self.props.data)
@@ -88,11 +96,8 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
     def data(self):
         
         axes = self.figure.gca()
-        
-        if self.props.data['value']==0:
-            return    
 
-        theta = lambda x: x*(2*math.pi)/self.props.data['value']
+        theta = lambda x: x*(2*math.pi)/self.props.data.get('value',0)
         rad = lambda depth, radians: ((((float(depth)+2)/(self.props.max_depth+3))*self.props.width)/2.)*radians
         
         if self.props.format=='binary':
@@ -106,28 +111,28 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
             formatter = lambda x: str(x)
         
         def bar_recursor(depth,here,startx):
-            if len(here['children'])>0:
+            if len(here.get('children',[]))>0:
                 left=[theta(startx)]
-                height=[1]
-                width=[theta(here['value'])]
+                height=[here.get('height',1)]
+                width=[theta(here.get('value',0))]
                 bottom=[depth]
-                name=[here['label']]
-                value=[here['value']]
+                name=[here.get('label','')]
+                value=[here.get('value',0)]
+                colour=[here.get('colour',None)]
                 dumped = 0
-                for c in here['children']:
-                    #if c['value']>here['value']*threshold:
-                    #if theta(c['value'])>(9./(depth+1)**2)*math.pi/180:
-                    if rad(depth,theta(c['value']))>self.props.minpixel:
-                        cleft,cheight,cwidth,cbottom,cname,cvalue = bar_recursor(depth+1,c,startx)
+                for c in here.get('children',[]):
+                    if rad(depth,theta(c.get('value',0)))>self.props.minpixel:
+                        cleft,cheight,cwidth,cbottom,cname,cvalue,ccolour = bar_recursor(depth+1,c,startx)
                         left.extend(cleft)
                         height.extend(cheight)
                         width.extend(cwidth)
                         bottom.extend(cbottom)
                         name.extend(cname)
                         value.extend(cvalue)
-                        startx += c['value']
+                        colour.extend(ccolour)
+                        startx += c.get('value',0)
                     else:
-                        dumped += c['value']
+                        dumped += c.get('value',0)
                 if dumped>0:
                     left.append(theta(startx))
                     height.append(0.75)
@@ -135,24 +140,26 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                     bottom.append(depth+1)
                     name.append('')
                     value.append(dumped)
-                return left,height,width,bottom,name,value
+                    colour.append('dumped_colour')
+                return left,height,width,bottom,name,value,colour
             else:
-                return [theta(startx)],[1],[theta(here['value'])],[depth],[here['label']],[here['value']]
+                return [theta(startx)],[here.get('height',1)],[theta(here.get('value',0))],[depth],[here.get('label','')],[here.get('value',0)],[here.get('colour',None)]
     
-        left,height,width,bottom,name,value = bar_recursor(0,self.props.data,0)
+        left,height,width,bottom,name,value,colours = bar_recursor(0,self.props.data,0)
         
-        colours = [self.props.colourmap(l/(2*math.pi)) for l in left]
-        for i,h in enumerate(height):
-            if h<1:
+        for i,l in enumerate(left):
+            if colours[i]==None:
+                colours[i] = self.props.colourmap(l/(2*math.pi))
+            elif colours[i]=='dumped_colour':
                 colours[i] = self.props.dropped_colour
-    
+        
         self.props.max_height = max(bottom)
     
         unit = self.props.unit
         
         if self.props.scale:
             
-            boundaries = locator.bin_boundaries(0,self.props.data['value'])[:-1]
+            boundaries = locator.bin_boundaries(0,self.props.data.get('value',0))[:-1]
             for b in boundaries:
                 lx = theta(b)
                 if self.props.external:
@@ -212,5 +219,5 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
                         if text_size>=self.props.text_size_min:
                             axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=text_size)
             if self.props.central_label:
-                axes.text(0,0,formatter(self.props.data['value'])+unit,horizontalalignment='center',verticalalignment='center',weight='bold')
+                axes.text(0,0,formatter(self.props.data.get('value',0))+unit,horizontalalignment='center',verticalalignment='center',weight='bold')
         

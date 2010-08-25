@@ -24,7 +24,7 @@ def random_colour():
 def random_baobab():
     def random_recurse(total,depth_left):
         if depth_left==0:
-            return {'label':random.choice(WORDS), 'value':total, 'children':[]}
+            return {'label':random.choice(WORDS), 'value':total}
         else:
             children = []
             use = (0.5+random.random()*0.5)*total

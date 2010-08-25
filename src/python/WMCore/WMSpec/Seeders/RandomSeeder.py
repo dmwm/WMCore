@@ -16,18 +16,18 @@ class RandomSeeder(SeederInterface):
 
     """
     def __init__(self, **options):
-        self.seedlist = options.keys()
+        self.options  = options
         self._inst    = random.SystemRandom()
         self._MAXINT  = 900000000
         #Allow the user to set the integer range
         if 'MAXINT' in options.keys():
-            self._MAXINT = options['MAXINT']
-            self.seedlist.remove('MAXINT')
+            self._MAXINT = int(options['MAXINT'])
+            del self.options['MAXINT']
 
     def __call__(self, wmbsJob):
         baggage = wmbsJob.getBaggage()
-        for x in self.seedlist:
-            wmbsJob.addBaggageParameter("RandomSeeder.%s.initialSeed" %(x), self._inst.randint(1, self._MAXINT))
+        for x in self.options.keys():
+            wmbsJob.addBaggageParameter("RandomSeeder.%s" %(x), self._inst.randint(1, self._MAXINT))
 
 
 

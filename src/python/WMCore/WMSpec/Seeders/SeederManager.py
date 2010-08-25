@@ -7,11 +7,10 @@ and then apply them to job groups
 
 """
 
-import inspect
-
 from WMCore.WMSpec.Seeders.SeederFactory import getSeeder
 
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.WMSpec.ConfigSectionTree import *
 
 class SeederManager:
     """
@@ -30,12 +29,13 @@ class SeederManager:
             #We have a blank task with no seeders
             return
         #Otherwise we have a fully formed task of some type
+
         for seederName in task.data.seeders.listSections_():
             confValues = getattr(task.data.seeders, seederName)
             args = {}
-            for entry in confValues.listSections_():
-                value = getattr(confValues, entry)
-                args[entry] = value
+            tempArgs = confValues.pythoniseDict_(sections = False)
+            for entry in tempArgs.keys():
+                args[entry.split('%s.' %seederName)[1]] = tempArgs[entry]
             self.addSeeder(seederName, **args)
 
 

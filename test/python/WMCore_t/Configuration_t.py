@@ -248,7 +248,7 @@ class ConfigurationTest(unittest.TestCase):
 
     def testF(self):
         """
-        Test internal functions pythonise_, pythoniseDict_, listSections_
+        Test internal functions pythonise_, listSections_
 
         Added by mnorman for his functions
         """
@@ -272,17 +272,6 @@ class ConfigurationTest(unittest.TestCase):
         assert "SectionA.section_('Section1')" in pythonise, "Pythonise failed: Could not find Section1"
         assert "SectionA.Section1.x = 100"     in pythonise, "Pythonise failed: Could not find x"        
         
-        pythonDict = config.pythoniseDict_()
-
-        self.assertEqual(pythonDict['config.SectionA.Section1.x'], 100)
-        self.assertEqual(pythonDict['config.SectionA.Section1.y'], 100)
-
-
-        pythonDict = config.SectionA.pythoniseDict_()
-
-        self.assertEqual(pythonDict['SectionA.Section1.x'], 100)
-        self.assertEqual(pythonDict['SectionA.Section1.y'], 100)
-
         self.assertEqual(config.listSections_(), ['SectionB', 'SectionA'])
         self.assertEqual(config.SectionA.listSections_(), ['Section2', 'Section1'])
 

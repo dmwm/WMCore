@@ -5,6 +5,7 @@ from WMQuality.TestInit import TestInit
 from WMCore.BossLite.DbObjects.Job         import Job
 from WMCore.BossLite.DbObjects.Task        import Task
 from WMCore.BossLite.DbObjects.RunningJob  import RunningJob
+from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 
 from WMCore.BossLite.DbObjects.BossLiteDBWM  import BossLiteDBWM
 from WMCore.BossLite.Common.Exceptions  import DbError
@@ -30,33 +31,36 @@ class JobStatusLite_t(unittest.TestCase):
 
         return
 
-    def popolateDatabase(self, numtask = 2, numjob = 50):
+    def fillDatabase(self, numtask = 2, numjob = 50, status = 'R', p_status = 'handled'):
         print "Populating database"
-        myThread = threading.currentThread()
         db = BossLiteDBWM()
         count_job = 0
+        names = []
         for t in xrange(numtask):
             try:
                 task = Task()
                 task.data['name'] = 'task_%s'%str(t)
+                names.append('task_%s'%str(t))
                 task.create(db)
-                for j in xrange(numjob):
+                for j in xrange(1, 1+numjob):
                     job_static = { \
                                    'name':      '%s_job_%s'%(str(t),str(j)), \
                                    'jobId':     j, \
                                    'taskId':    task.exists(db), \
+                                   'submissionNumber': 1, \
                                    'closed':    'N' \
                                  }
                     job = Job(parameters = job_static)
                     job.create(db)
                     job.save(db)
                     job_run = { \
-                                'jobId':        job.data['jobId'], \
-                                'taskId':       task.exists(db), \
-                                'submission':   1, \
-                                'schedulerId':  'id_scheduler', \
-                                'processStatus':'not_handled', \
-                                'closed':       'N' \
+                                'jobId':         job.data['jobId'], \
+                                'taskId':        task.exists(db), \
+                                'submission':    1, \
+                                'schedulerId':   'id_scheduler', \
+                                'processStatus': p_status, \
+                                'closed':        'N', \
+                                'status':        status \
                                }
                     runJob = RunningJob(parameters = job_run)
                     runJob.create(db)
@@ -66,7 +70,7 @@ class JobStatusLite_t(unittest.TestCase):
                 print "ERROR: '%s'"%str(ex)
                 print "\ttask_" +str(t)
         print "..finished."
-        return count_job
+        return names, count_job
 
 
     def createConfig(self):
@@ -87,29 +91,71 @@ class JobStatusLite_t(unittest.TestCase):
 
         return config
 
-    def testA_Polling(self):
+
+    def testA_PollingFailed(self):
         config = self.createConfig()
-        tot_added = self.popolateDatabase(3,50)
+        t_added, n_job = self.fillDatabase(1, 10, 'A', 'handled')
         print "Calling JobStatusPoller"
         obj1 = JobStatusPoller(config)
         obj1.setup(None)
         obj1.algorithm(None)
         obj1.terminate(None)
         print "..finished."
-        ## No check to do till BossLiteAPI are not available
-        #print "Checking jobs were processed" 
-        #myThread = threading.currentThread()
-        #db = BossLiteDBWM()
+        print "Checking jobs were processed" 
+        bliteapi = BossLiteAPI()
+        task = bliteapi.loadTaskByName(t_added[0])
+        for job in task.jobs:
+            self.assertEqual(job.runningJob['processStatus'], 'failed')
 
-        ## check if failed jobs have been processed
-         
-        ## check if done jobs have been processed
-
-        ## check if jobs have been polled
-
-    def testB_GroupAssignment(self):
+    def testB_PollingSuccess(self):
         config = self.createConfig()
-        tot_added = self.popolateDatabase(3,50)
+        t_added, n_job = self.fillDatabase(1, 10, 'SD', 'handled')
+        print "Calling JobStatusPoller"
+        obj1 = JobStatusPoller(config)
+        obj1.setup(None)
+        obj1.algorithm(None)
+        obj1.terminate(None)
+        print "..finished."
+        bliteapi = BossLiteAPI()
+        task = bliteapi.loadTaskByName(t_added[0])
+        for job in task.jobs:
+            self.assertEqual(job.runningJob['processStatus'], 'output_requested')
+
+    def testC_PollingNew(self):
+        config = self.createConfig()
+        t_added, n_job = self.fillDatabase(1, 10, 'S', 'not_handled')
+        print "Calling JobStatusPoller"
+        obj1 = JobStatusPoller(config)
+        obj1.setup(None)
+        obj1.algorithm(None)
+        obj1.terminate(None)
+        print "..finished."
+        print "Checking jobs were processed"
+        bliteapi = BossLiteAPI()
+        task = bliteapi.loadTaskByName(t_added[0])
+        for job in task.jobs:
+            self.assertEqual(job.runningJob['processStatus'], 'handled')
+
+    def testD_PollingKilled(self):
+        config = self.createConfig()
+        t_added, n_job = self.fillDatabase(1, 10, 'K', 'handled')
+        print "Calling JobStatusPoller"
+        obj1 = JobStatusPoller(config)
+        obj1.setup(None)
+        obj1.algorithm(None)
+        obj1.terminate(None)
+        print "..finished."
+        print "Checking jobs were processed"
+        db = BossLiteDBWM()
+        bliteapi = BossLiteAPI()
+        task = bliteapi.loadTaskByName(t_added[0])
+        for job in task.jobs:
+            self.assertEqual(job.runningJob['processStatus'], 'failed')
+
+
+    def testZ_GroupAssignment(self):
+        config = self.createConfig()
+        t_added, n_job = self.fillDatabase(5,50)
         print "Calling StatusScheduling"
         obj1 = StatusScheduling(config)
         obj1.setup(None)
@@ -117,7 +163,6 @@ class JobStatusLite_t(unittest.TestCase):
         obj1.terminate(None)
         print "..finished."
         print "Checking jobs were processed"
-        myThread = threading.currentThread()
         db = BossLiteDBWM()
 
         ## check if jobs have been selected as new jobs
@@ -128,7 +173,7 @@ class JobStatusLite_t(unittest.TestCase):
                                "order by j.group_id, j.task_id, j.job_id;" \
                               )
         raws = result[0].fetchall()
-        self.assertEqual(len(raws), tot_added)
+        self.assertEqual(len(raws), n_job)
         for tupla in raws:
             group, task, job = tupla
             self.assertNotEqual(group, 0)

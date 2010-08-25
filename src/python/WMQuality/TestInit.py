@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.42 2010/02/09 16:15:03 meloam Exp $"
+    "$Id: TestInit.py,v 1.43 2010/02/09 16:25:15 meloam Exp $"
 __version__ = \
-    "$Revision: 1.42 $"
+    "$Revision: 1.43 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -142,6 +142,9 @@ class TestInit:
                 print "we got the following result for SHOW TABLES: %s " % result
 
                 for oneTable in result:
+                    # sqlite stores some magic in the database
+                    if ( oneTable[0].startsWith('sqlite_') ):
+                        continue
                     query = "DROP TABLE IF EXISTS %s" % oneTable[0]
                     print query
                     formatter.sql = query

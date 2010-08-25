@@ -4,13 +4,14 @@
 The actual subscription creation algorithm
 """
 __all__ = []
-__revision__ = "$Id: WorkflowManagerPoller.py,v 1.5 2009/02/05 23:21:44 jacksonj Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WorkflowManagerPoller.py,v 1.6 \
+            2009/07/27 23:21:44 riahi Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
 import re
-from sets import Set
+#from sets import Set
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -47,15 +48,18 @@ class WorkflowManagerPoller(BaseWorkerThread):
         available, create the subscriptions
         """
         # Get all watched mappings
-        managedWorkflows = self.queries.getManagedWorkflows()
-        logging.debug("Found %s managed workflows" % len(managedWorkflows))
+        #managedWorkflows = self.queries.getManagedWorkflows()
+        availableWorkflows = self.queries.getUnsubscribedWorkflows() 
+        logging.debug("Found %s unsubscribed managed workflows" \
+              % len(availableWorkflows))
         
         # Get the details of all unsubscribed filesets
-        availableFilesets = self.queries.getUnsubscribedFilesets()
-        logging.debug("Found %s unsubscribed filesets" % len(availableFilesets))
+        #availableFilesets = self.queries.getUnsubscribedFilesets()
+        availableFilesets = self.queries.getAllFilesets()
+        logging.debug("Found %s filesets" % len(availableFilesets))
             
         # Match filesets to managed workflows  
-        for managedWorkflow in managedWorkflows:
+        for managedWorkflow in availableWorkflows:
             # Workflow object cache to pass into Subscription constructor
             wfObj = None
             
@@ -64,14 +68,15 @@ class WorkflowManagerPoller(BaseWorkerThread):
                 fsObj = None
 
                 # Load the location information
-                whitelist = Set()
-                blacklist = Set()
-                locations = self.queries.getLocations(managedWorkflow['id'])
-                for location in locations:
-                    if bool(int(location['valid'])) == True:
-                        whitelist.add(location['se_name'])
-                    else:
-                        blacklist.add(location['se_name'])
+                #whitelist = Set()
+                #blacklist = Set()
+                # Location is only caf  
+                #locations = self.queries.getLocations(managedWorkflow['id'])
+                #for location in locations:
+                #    if bool(int(location['valid'])) == True:
+                #        whitelist.add(location['site_name'])
+                #    else:
+                #        blacklist.add(location['site_name'])
                 
                 # Attempt to match workflows to filesets
                 if re.match(managedWorkflow['fileset_match'], fileset['name']):
@@ -93,8 +98,8 @@ class WorkflowManagerPoller(BaseWorkerThread):
                     # Create the subscription
                     newSub = Subscription(fileset = fsObj, \
                                      workflow = wfObj, \
-                                     whitelist = whitelist, \
-                                     blacklist = blacklist, \
+                                     #whitelist = whitelist, \
+                                     #blacklist = blacklist, \
                                      split_algo = managedWorkflow['split_algo'],
                                      type = managedWorkflow['type'])
                     newSub.create()

@@ -5,8 +5,8 @@ _Step.Executor.LogArchive_
 Implementation of an Executor for a LogArchive step
 """
 
-__revision__ = "$Id: LogArchive.py,v 1.24 2010/07/27 20:22:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: LogArchive.py,v 1.25 2010/08/06 20:35:40 mnorman Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import os
 import os.path
@@ -220,8 +220,8 @@ class LogArchive(Executor):
 
         year, month, day = reqTime[:3]
 
-        LFN = "/store/temp/WMAgent/unmerged/logs/prod/%s/%s/%s%s/%s/%i/%s-%i-%s" % \
-              (year, month, day, self.task.getPathName(),
+        LFN = "%s/logs/prod/%s/%s/%s%s/%s/%i/%s-%i-%s" % \
+              (self.task.taskLogLFN(), year, month, day, self.task.getPathName(),
                lfnGroup(self.job), self.job.get('retry_count', 0), self.job["name"],
                self.job.get('retry_count', 0),
                tarName)

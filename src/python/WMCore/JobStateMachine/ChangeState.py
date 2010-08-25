@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.25 2009/08/13 18:25:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: ChangeState.py,v 1.26 2009/08/20 10:57:13 mnorman Exp $"
+__version__ = "$Revision: 1.26 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -29,6 +29,7 @@ class ChangeState(WMObject, WMConnectionBase):
     def __init__(self, config={}, couchDbName = 'jsm_job_history'):
         WMObject.__init__(self, config)
         WMConnectionBase.__init__(self, "WMCore.WMBS")
+
         self.myThread = threading.currentThread()
         self.attachmentList = {}
         self.logger = self.myThread.logger
@@ -38,10 +39,10 @@ class ChangeState(WMObject, WMConnectionBase):
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = self.logger,
                                      dbinterface = self.dbi)
-
         self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
         if self.dbname not in self.couchdb.listDatabases():
             self.createDatabase()
+
         self.database = self.couchdb.connectDatabase(couchDbName)
 
     def propagate(self, jobs, newstate, oldstate):
@@ -51,6 +52,10 @@ class ChangeState(WMObject, WMConnectionBase):
         Return the jobs back, throw assertion error if the state change is not allowed
         and other exceptions as appropriate
         """
+        
+        if jobs == []:
+            return []
+
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
         # 2. Document the state transition
@@ -92,7 +97,11 @@ class ChangeState(WMObject, WMConnectionBase):
         else:            
             return self.database.loadView('jobs','get_by_job_id',{},[id])
         
+
     def getCouchByJobIDAndState(self, ids, state):
+        if ids == []:
+            return []
+        ids = list(ids)
         keylist = []
         for oneid in ids:
             keylist.append([oneid, state])
@@ -113,6 +122,9 @@ class ChangeState(WMObject, WMConnectionBase):
         check that the transition is allowed. return a tuple of the transition
         if it is allowed, throw up an exception if not.
         """
+        newstate = newstate.lower()
+        oldstate = oldstate.lower()
+        
         # Check for wrong transitions
         transitions = Transitions()
         assert newstate in transitions[oldstate], \
@@ -128,7 +140,6 @@ class ChangeState(WMObject, WMConnectionBase):
         couch_parent - the state transition before thisone
         couch_record - the document describing this state transition        
         """
-        
         for job in jobs:
             newCouchID = makeUUID()
             doc = {'type': 'state change'}
@@ -138,14 +149,12 @@ class ChangeState(WMObject, WMConnectionBase):
             if not 'couch_head' in job:
                 job['couch_head'] = newCouchID
             doc['couch_head'] = job['couch_head']
-            
             if 'couch_record' in job:
                 doc['couch_parent'] = job['couch_record']
                 job['couch_parent'] = job['couch_record']
-            
+
             job['couch_record'] = newCouchID
             doc['job'] = job
-            
             # it's gross, but we have to base64 encode the attachments to use the bulk api
             if job['id'] in self.attachmentList:
                 if not '_attachments' in doc:
@@ -157,16 +166,15 @@ class ChangeState(WMObject, WMConnectionBase):
                     doc['_attachments'][attachmentName] = {
                                         "content_type":"test\/plain",
                                         "data": base64Attachment}
-                                                           
-                
-            
+
             self.database.queue(doc, timestamp=True)
             
         goodresult = self.database.commit()
-        
+
         assert len(jobs) == len(goodresult), \
                     "Got less than I was expecting from CouchDB: \n %s" %\
                         (goodresult,)
+        
         if oldstate == 'none':
             def function(item1, item2):
                 item1['couch_record'] = item2['id']

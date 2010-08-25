@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.85 2010/03/19 17:29:47 swakef Exp $"
-__version__ = "$Revision: 1.85 $"
+__revision__ = "$Id: WorkQueue.py,v 1.86 2010/03/22 13:17:44 swakef Exp $"
+__version__ = "$Revision: 1.86 $"
 
 
 import time
@@ -24,6 +24,7 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 
 from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
@@ -133,6 +134,9 @@ class WorkQueue(WorkQueueBase):
         self.dbsHelpers.update(self.params.get('DBSReaders', {}))
         if not self.dbsHelpers.has_key(self.params["GlobalDBS"]):
             self.dbsHelpers[self.params["GlobalDBS"]] = DBSReader(self.params["GlobalDBS"])
+
+        self.SiteDB = SiteDB()
+
     #  //
     # // External API
     #//
@@ -464,7 +468,9 @@ class WorkQueue(WorkQueueBase):
         fullResync = time.time() > self.lastLocationUpdate + \
                                 self.params['FullLocationRefreshInterval']
 
-        mapping = self._getLocations([x['name'] for x in blocks], fullResync)
+        #query may not support partial update - allow them to change fullResync
+        mapping, fullResync = self._getLocations([x['name'] for x in blocks],
+                                                 fullResync)
 
         if not mapping:
             return
@@ -732,10 +738,10 @@ class WorkQueue(WorkQueueBase):
         """
         Return mapping of item to location as given by phedex
         """
-
         args = {}
         if self.params['TrackLocationOrSubscription'] == 'subscription':
-            return self._getPhEDExSubscriptions(dataNames, fullRefresh)
+            # PhEDEx subscriptions api doesn't support partial updates
+            return self._getPhEDExSubscriptions(dataNames), True
         elif self.params['TrackLocationOrSubscription'] == 'location':
             args['block'] = dataNames
             if not self.params['ReleaseIncompleteBlocks']:
@@ -751,13 +757,15 @@ class WorkQueue(WorkQueueBase):
             result = {}
             for block in response['block']:
                 result.setdefault(block['name'], [])
-                result[block['name']].extend([se['se'] for se in block['replica']])
-            return result
+                nodes = [self.SiteDB.phEDExNodetocmsName(se['node']) \
+                                                for se in block['replica']]
+                result[block['name']].extend(nodes)
+            return result, fullRefresh
         else:
             raise RuntimeError, "invalid selection"
 
 
-    def _getPhEDExSubscriptions(self, dataNames, fullRefresh):
+    def _getPhEDExSubscriptions(self, dataNames):
         """
         Return mapping of block/dataset to subscribed locations
         """
@@ -765,8 +773,6 @@ class WorkQueue(WorkQueueBase):
         # TODO: Bug in which this option causes no results to be returned
         # uncomment when https://savannah.cern.ch/bugs/index.php?64617 fixed
         # args['suspended'] = 'n' # require subscription to be active
-        if not fullRefresh:
-            args['update_since'] = self.lastLocationUpdate
         args['block'], args['dataset'] = [], []
         for item in dataNames:
             if item.find('#') != -1:
@@ -778,6 +784,7 @@ class WorkQueue(WorkQueueBase):
         self.lastLocationUpdate = response['request_timestamp']
         result = {}
 
+        #TODO: Add test cases - maybe move into Service.PhEDEx?
         # iterate over response as can't jump to specific datasets
         for dset in response['dataset']:
 
@@ -786,7 +793,10 @@ class WorkQueue(WorkQueueBase):
                 # we have work for the dataset
                 if dset['subscription']:
                     # dataset level subscription
-                    result[dset['name']] = [x['node'] for x in dset['subscription'] if x['suspended'] == 'n']
+                    nodes = [self.SiteDB.phEDExNodetocmsName(x['node'])
+                                            for x in dset['subscription']
+                                            if x['suspended'] == 'n']
+                    result[dset['name']] = nodes
                 else:
                     # block level subscription
                     # Create dataset level subscription from ensemble
@@ -794,14 +804,19 @@ class WorkQueue(WorkQueueBase):
                     #TODO: Does this check all blocks not just those updated
                     commonSites = set()
                     for block in dset['block']:
-                        commonSites = commonSites & set([x['node'] for x in block['subscription']])
+                        nodes = set([self.SiteDB.phEDExNodetocmsName(x['node'])
+                                     for x in block['subscription']
+                                     if x['suspended'] == 'n'])
+                        commonSites = commonSites & nodes
                     result[dset['name']] = list(commonSites)
 
             else:
                 # have work for some blocks in this dataset
                 if dset.has_key('subscription'):
                     # work for block and have dataset level subscription
-                    subs = [x['node'] for x in dset['subscription'] if x['suspended'] == 'n']
+                    subs = [self.SiteDB.phEDExNodetocmsName(x['node'])
+                            for x in dset['subscription']
+                            if x['suspended'] == 'n']
                     for block in dset['block']:
                         if block['name'] in args['block']:
                             result[block['name']] = subs
@@ -810,7 +825,10 @@ class WorkQueue(WorkQueueBase):
                     for block in dset['block']:
                         # record blocks we have work for
                         if block['name'] in args['block']:
-                            result[block['name']] = [x['node'] for x in block['subscription'] if x['suspended'] == 'n']
+                            nodes = [self.SiteDB.phEDExNodetocmsName(x['node'])
+                                     for x in block['subscription']
+                                     if x['suspended'] == 'n']
+                            result[block['name']] = nodes
 
         return result
 

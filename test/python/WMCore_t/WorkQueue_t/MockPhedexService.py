@@ -3,8 +3,8 @@
     Mocked Phedex interface
 """
 
-__revision__ = "$Id: MockPhedexService.py,v 1.2 2010/03/19 17:29:47 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: MockPhedexService.py,v 1.3 2010/03/22 13:17:45 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 # need to clean this up at some point
 
@@ -28,9 +28,9 @@ class MockPhedexService:
         blocks = data['phedex']['block']
         for dataset in self.datasets:
             blocks.append({"files":"5", "name": dataset + '#1',
-                          'replica' : [{'se' : x } for x in self.locations[dataset + '#1']]})
+                          'replica' : [{'node' : x } for x in self.locations[dataset + '#1']]})
             blocks.append({"files":"10", "name": dataset + '#2',
-                          'replica' : [{'se' : x } for x in self.locations[dataset + '#2']]})
+                          'replica' : [{'node' : x } for x in self.locations[dataset + '#2']]})
         return data
 
     def subscriptions(self, **args):

@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.28 2010/03/17 14:28:08 swakef Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.29 2010/03/22 13:17:45 swakef Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import unittest
 import os
@@ -28,6 +28,12 @@ from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 # Thus total element counts etc count elements in all queues
 
 rerecoArgs = {"InputDatasets" : "/MinimumBias/BeamCommissioning09-v1/RAW"}
+
+class fakeSiteDB:
+    def phEDExNodetocmsName(self, node):
+        return node.replace('_MSS',
+                            '').replace('_Buffer',
+                                        '').replace('_Export', '')
 
 class WorkQueueTest(WorkQueueTestCase):
     """
@@ -96,6 +102,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         for queue in (self.queue, self.localQueue, self.globalQueue):
             queue.phedexService = MockPhedexService(dataset)
+            queue.SiteDB = fakeSiteDB()
 
     def tearDown(self):
         """tearDown"""

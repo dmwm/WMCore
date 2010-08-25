@@ -2,512 +2,83 @@
 <html>
 
 <head>
-<title>WMBS Status</title>
-<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo/yahoo-min.js&2.8.0r4/build/event/event-min.js&2.8.0r4/build/connection/connection-min.js"></script> 
-<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.0r4/build/datatable/assets/skins/sam/datatable.css"> 
-<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js&2.8.0r4/build/dragdrop/dragdrop-min.js&2.8.0r4/build/element/element-min.js&2.8.0r4/build/datasource/datasource-min.js&2.8.0r4/build/datatable/datatable-min.js"></script> 
+<title>$instance Subscription Status</title>
+<!-- Combo-handled YUI CSS files: -->
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.0r4/build/reset-fonts/reset-fonts.css&2.8.0r4/build/assets/skins/sam/skin.css">
+<!-- Combo-handled YUI JS files: -->
+<script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js&2.8.0r4/build/connection/connection-min.js&2.8.0r4/build/dragdrop/dragdrop-min.js&2.8.0r4/build/container/container-min.js&2.8.0r4/build/datasource/datasource-min.js&2.8.0r4/build/element/element-min.js&2.8.0r4/build/paginator/paginator-min.js&2.8.0r4/build/datatable/datatable-min.js&2.8.0r4/build/json/json-min.js&2.8.0r4/build/menu/menu-min.js"></script>
 
 <style type="text/css">
-a.jobSuccess:link { color: green; }
-a.jobSuccess:visited { color: green; }
-a.jobSuccess:hover { color: white; background-color: green; }
-a.jobFailure:link { color: red; }
-a.jobFailure:visited { color: red; }
-a.jobFailure:hover { color: white; background-color: red; }
-a.jobRunning:link { color: blue; }
-a.jobRunning:visited { color: blue; }
-a.jobRunning:hover { color: white; background-color: blue }
-
 /* custom styles for this example */
 .yui-skin-sam .yui-dt-liner { white-space:nowrap; } 
 
-/** 
-*
-* Style the yui-dt-expandablerow-trigger column 
-*
-**/
-.yui-dt-expandablerow-trigger{
-	width:18px;
-	height:22px;
-	cursor:pointer;
-}
-.yui-dt-expanded .yui-dt-expandablerow-trigger{
-	background:url(http://developer.yahoo.com/yui/examples/datatable/assets/images/arrow_open.png) 4px 4px no-repeat;
-}
-.yui-dt-expandablerow-trigger, .yui-dt-collapsed .yui-dt-expandablerow-trigger{
-	background:url(http://developer.yahoo.com/yui/examples/datatable/assets/images/arrow_closed.png) 4px 4px no-repeat;
-}
-.yui-dt-expanded .yui-dt-expandablerow-trigger.spinner{
-	background:url(http://developer.yahoo.com/yui/examples/datatable/assets/img/spinner.gif) 1px 4px no-repeat;
-}
+h2 { font-family: arial; text-align: center; font-size: 1.75em;}
+h3 { font-family: arial; text-align: center; font-size: 1.5em;}
 </style>
 
 <body class="yui-skin-sam">
-<h1>Tier1 Skimming WMBS Status</h1>
-<hr>
-<div id="subscriptionTypes"</div>
-<hr>
-<div id="subscriptionStatus"></div>
+<h2>$instance Subscription Status</h2>
+<h3><div id="updated"></div></h3>
+<div align="center" id="subscriptionStatus"></div>
 
 <script>
-/* This code should not be modified */
-
-(function(){
-
-var Dom = YAHOO.util.Dom,
-
-    STRING_STATENAME  = 'yui_dt_state',
-
-    CLASS_EXPANDED    = 'yui-dt-expanded',
-    CLASS_COLLAPSED   = 'yui-dt-collapsed',
-    CLASS_EXPANSION   = 'yui-dt-expansion',
-    CLASS_LINER       = 'yui-dt-liner',
-
-    //From YUI 3
-    indexOf = function(a, val) {
-        for (var i=0; i<a.length; i=i+1) {
-            if (a[i] === val) {
-                return i;
-            }
-        }
-
-        return -1;
-    };
-
-YAHOO.lang.augmentObject(
-        YAHOO.widget.DataTable.prototype , {
-
-        ////////////////////////////////////////////////////////////////////
-        //
-        // Private members
-        //
-        ////////////////////////////////////////////////////////////////////
-
-        /**
-            * Gets state object for a specific record associated with the
-            * DataTable.
-            * @method _getRecordState
-            * @param {Mixed} record_id Record / Row / or Index id
-            * @param {String} key Key to return within the state object.
-            * Default is to return all as a map
-            * @return {Object} State data object
-            * @type mixed
-            * @private
-        **/
-        _getRecordState : function( record_id, key ){
-            var row_data    = this.getRecord( record_id ),
-                row_state   = row_data.getData( STRING_STATENAME ),
-                state_data  = (row_state && key) ? row_state[ key ]:row_state;
-
-            return state_data || {};
-        },
-
-        /**
-            * Sets a value to a state object with a unique id for a record
-            * which is associated with the DataTable
-            * @method _setRecordState
-            * @param {Mixed} record_id Record / Row / or Index id
-            * @param {String} key Key to use in map
-            * @param {Mixed} value Value to assign to the key
-            * @return {Object} State data object
-            * @type mixed
-            * @private
-        **/
-        _setRecordState : function( record_id, key, value ){
-            var row_data      = this.getRecord( record_id ).getData(),
-                merged_data   = row_data[ STRING_STATENAME ] || {};
-
-            merged_data[ key ] = value;
-
-            this.getRecord(record_id).setData(STRING_STATENAME, merged_data);
-
-            return merged_data;
-
-        },
-
-        //////////////////////////////////////////////////////////////////////
-        //
-        // Public methods
-        //
-        //////////////////////////////////////////////////////////////////////
-
-        /**
-            * Over-ridden initAttributes method from DataTable
-            * @method initAttributes
-            * @param {Mixed} record_id Record / Row / or Index id
-            * @param {String} key Key to use in map
-            * @param {Mixed} value Value to assign to the key
-            * @return {Object} State data object
-            * @type mixed
-        **/
-        initAttributes : function( oConfigs ) {
-
-            oConfigs = oConfigs || {};
-
-            YAHOO.widget.DataTable.superclass.initAttributes.call(this,
-                oConfigs);
-
-                /**
-                * @attribute rowExpansionTemplate
-                * @description Value for the rowExpansionTemplate attribute.
-                * @type {Mixed}
-                * @default ""
-                **/
-                this.setAttributeConfig("rowExpansionTemplate", {
-                        value: "",
-                        validator: function( template ){
-                    return (
-                        YAHOO.lang.isString( template ) ||
-                        YAHOO.lang.isFunction( template )
-                    );
-                },
-                method: this.initRowExpansion
-                });
-
-        },
-
-        /**
-            * Initializes row expansion on the DataTable instance
-            * @method initRowExpansion
-            * @param {Mixed} template a string template or function to be
-            * called when Row is expanded
-            * @type mixed
-        **/
-        initRowExpansion : function( template ){
-            //Set subscribe restore method
-            this.subscribe('postRenderEvent',
-                this.onEventRestoreRowExpansion);
-
-            //Setup template
-            this.rowExpansionTemplate = template;
-
-            //Set table level state
-            this.a_rowExpansions = [];
-        },
-
-        /**
-            * Toggles the expansion state of a row
-            * @method toggleRowExpansion
-            * @param {Mixed} record_id Record / Row / or Index id
-            * @type mixed
-        **/
-        toggleRowExpansion : function( record_id ){
-            var state = this._getRecordState( record_id );
-            
-            if( state && state.expanded ){
-                this.collapseRow( record_id );
-            } else {
-                this.expandRow( record_id );
-            }
-        },
-
-        /**
-            * Sets the expansion state of a row to expanded
-            * @method expandRow
-            * @param {Mixed} record_id Record / Row / or Index id
-            * @param {Boolean} restore will restore an exisiting state for a
-            * row that has been collapsed by a non user action
-            * @return {Boolean} successful
-            * @type mixed
-        **/
-        expandRow : function( record_id, restore ){
-
-            var state = this._getRecordState( record_id );
-
-            if( !state.expanded || restore ){
-
-                var row_data          = this.getRecord( record_id ),
-                    row               = this.getRow( row_data ),
-                    new_row           = document.createElement('tr'),
-                    column_length     = this.getFirstTrEl().childNodes.length,
-                    expanded_data     = row_data.getData(),
-                    expanded_content  = null,
-                    template          = this.rowExpansionTemplate,
-                    next_sibling      = Dom.getNextSibling( row );
-
-                //Construct expanded row body
-                new_row.className = CLASS_EXPANSION;
-                var new_column = document.createElement( 'td' );
-                new_column.colSpan = column_length;
-
-                new_column.innerHTML = '<div class="'+CLASS_LINER+'"></div>';
-                new_row.appendChild( new_column );
-
-                var liner_element = new_row.firstChild.firstChild;
-
-                if( YAHOO.lang.isString( template ) ){
-
-                    liner_element.innerHTML = YAHOO.lang.substitute( 
-                        template, 
-                        expanded_data
-                    );
-
-                } else if( YAHOO.lang.isFunction( template ) ) {
-
-                    template( {
-                        row_element : new_row,
-                        liner_element : liner_element,
-                        data : row_data, 
-                        state : state 
-
-                    } );
-
-                } else {
-                    return false;
-                }
-
-                //Insert new row
-                newRow = Dom.insertAfter( new_row, row );
-
-                if (newRow.innerHTML.length) {
-
-                    this._setRecordState( record_id, 'expanded', true );
-
-                    if( !restore ){
-                        this.a_rowExpansions.push(
-                            this.getRecord(record_id).getId()
-                        );
-                    }
-
-                    Dom.removeClass( row, CLASS_COLLAPSED );
-                    Dom.addClass( row, CLASS_EXPANDED );
-
-                    //Fire custom event
-                    this.fireEvent( "rowExpandEvent",
-                        { record_id : row_data.getId() } );
-
-                    return true;
-                } else {
-                    return false;
-                } 
-            }
-        },
-
-        /**
-            * Sets the expansion state of a row to collapsed
-            * @method collapseRow
-            * @param {Mixed} record_id Record / Row / or Index id
-            * @return {Boolean} successful
-            * @type mixed
-        **/
-        collapseRow : function( record_id ){
-            var row_data    = this.getRecord( record_id ),
-                row         = Dom.get( row_data.getId() ),
-                state       = row_data.getData( STRING_STATENAME );
-
-            if( state && state.expanded ){
-                var next_sibling = Dom.getNextSibling( row ),
-                        hash_index = indexOf(this.a_rowExpansions, record_id);
-
-                if( Dom.hasClass( next_sibling, CLASS_EXPANSION ) ) {
-                    next_sibling.parentNode.removeChild( next_sibling );
-                    this.a_rowExpansions.splice( hash_index, 1 );
-                    this._setRecordState( record_id, 'expanded', false );
-
-                    Dom.addClass( row, CLASS_COLLAPSED );
-                    Dom.removeClass( row, CLASS_EXPANDED );
-
-                    //Fire custom event
-                    this.fireEvent("rowCollapseEvent",
-                        {record_id:row_data.getId()});
-
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        },
-
-        /**
-            * Collapses all expanded rows. This should be called before any
-            * action where the row expansion markup would interfere with
-            * normal DataTable markup handling. This method does not remove
-            * events attached during implementation. All event handlers should
-            * be removed separately.
-            * @method collapseAllRows
-            * @type mixed
-        **/
-        collapseAllRows : function(){
-            var rows = this.a_rowExpansions;
-
-            for( var i = 0, l = rows.length; l > i; i++ ){
-                //Always pass 0 since collapseRow
-                //removes item from the a_rowExpansions array
-                this.collapseRow( rows[ 0 ] );
-
-            }
-
-            a_rowExpansions = [];
-
-        },
-
-        /**
-            * Restores rows which have an expanded state but no markup. This
-            * is to be called to restore row expansions after the DataTable
-            * renders or the collapseAllRows is called.
-            * @method collapseAllRows
-            * @type mixed
-        **/
-        restoreExpandedRows : function(){
-            var expanded_rows = this.a_rowExpansions;
-            
-            if( !expanded_rows.length ){
-                return;
-            }
-
-            if( this.a_rowExpansions.length ){
-                for( var i = 0, l = expanded_rows.length; l > i; i++ ){
-                    this.expandRow( expanded_rows[ i ] , true );
-                }
-            }
-        },
-
-        /**
-            * Abstract method which restores row expansion for subscribing to
-            * the DataTable postRenderEvent.
-            * @method onEventRestoreRowExpansion
-            * @param {Object} oArgs context of a subscribed event
-            * @type mixed
-        **/
-        onEventRestoreRowExpansion : function( oArgs ){
-            this.restoreExpandedRows();
-        },
-
-        /**
-            * Abstract method which toggles row expansion for subscribing to
-            * the DataTable postRenderEvent.
-            * @method onEventToggleRowExpansion
-            * @param {Object} oArgs context of a subscribed event
-            * @type mixed
-        **/
-        onEventToggleRowExpansion : function( oArgs ){
-            if(YAHOO.util.Dom.hasClass(oArgs.target,
-                'yui-dt-expandablerow-trigger')){
-                this.toggleRowExpansion( oArgs.target );
-            }
-        }
-
-    }, true //This boolean needed to override members of the original object
-);
-
-})();
-
-var expansionFormatter  = function(el, oRecord, oColumn, oData) {
-    var cell_element    = el.parentNode;
-
-    //Set trigger
-    if( oData ){ //Row is closed
-        YAHOO.util.Dom.addClass( cell_element,
-                "yui-dt-expandablerow-trigger" );
-        }
-    };
-
 var futonUrl = "http://cmssrv48:5984/_utils/document.html?tier1_skimming/";
 
-var handleRowSuccess = function(o){
-    if(o.responseText !== undefined) {
-        var subJobs = eval("(" + o.responseText + ")");
-
-        o.argument.rowElement.innerHTML = "";
-        for(i = 0; i < subJobs.length; i++) {
-            var jobState = subJobs[i].jobstate;
-            if (jobState == "cleanout" || jobState == 'exhausted' || 
-                jobState == 'success') {
-                if (subJobs[i].outcome == 1) { 
-                    var linkClass = "jobSuccess"; 
-                    }
-                else { 
-                    var linkClass = "jobFailure"; 
-                    }
-                }
-            else {  
-                var linkClass = "jobRunning";
-                } 
-            jobHTML = '<a href="' + futonUrl + subJobs[i].couch_record + '" ';
-            jobHTML += 'class="' + linkClass + '" target="_blank">';
-            jobHTML += subJobs[i].jobname + '</a> '; 
-            o.argument.rowElement.innerHTML += jobHTML;
-            }
-       }
-    }
-
-var handleRowFailure = function(o) {
-    if(o.responseText !== undefined){
-        }
-    }
-
-var listJobFunc = function(expansionObj) {
-    //                    row_element : new_row,
-    //                    liner_element : liner_element,
-    //                    data : row_data, 
-    //                    state : state 
-    rowObject = expansionObj.data.getData();
-    expansionObj.liner_element.innerHTML = "Loading...";
-
-    var callback =
-    {
-       success: handleRowSuccess,
-       failure: handleRowFailure,
-       argument: {rowElement: expansionObj.liner_element}
-    };
-
-    reqUrl = "/wmbs/listjobsbysub/" + rowObject.subscriptionId;
-    var request = YAHOO.util.Connect.asyncRequest('GET', reqUrl, callback);
-    };
-
-var sUrl = "/wmbs/subscriptionstatus/";
 var currentSubType = "$subType";
 
+var subscriptionFormatter = function(elLiner, oRecord, oColumn, oData) {
+    var subId = oData;
+    subHTML = '<a href="/wmbs/monitoring/subscription/?return_type=text/html;subscriptionId=' + subId;
+    subHTML += '" target="_blank">' + subId + '</a>';
+    elLiner.innerHTML = subHTML;
+    };
+
 var myColumnDefs = [
-    {key:"subscriptionId", "label": "", formatter: expansionFormatter}, 
-    {key:"workflowName", label:"Workflow", sortable:true, resizeable:true},
-    {key:"filesetName", label:"Input Fileset", sortable:true, resizeable:true},
-    {key:"running", label:"Running", sortable:true, resizable:true},
-    {key:"success", label:"Success", sortable:true, resizable:true},
-    {key:"failure", label:"Failure", sortable:true, resizable:true}];
+    {key:"subscription_id", label:"Sub", sortable:true, resizeable:true, formatter:subscriptionFormatter},
+    {key:"workflow_name", label:"Workflow", sortable:true, resizeable:true, width:550},
+    {key:"fileset_name", label:"Input Fileset", sortable:true, resizeable:true, width: 400},
+    {key:"percent_complete", label:"Complete", sortable:true, resizable:true},
+    {key:"percent_success", label:"Successful", sortable:true, resizable:true}]
 
-var handleSuccess = function(o){
-    if(o.responseText !== undefined) {
-        var wmbsSubStatus = eval("(" + o.responseText + ")");
+var sUrl = "/wmbs/subscriptionstatus/?return_type=application/json;subType=$subType";
 
-        var myDataSource = new YAHOO.util.DataSource(wmbsSubStatus);
-        myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
-        myDataSource.responseSchema = {
-            fields: ["subscriptionId", "workflowName","filesetName","running", "success", "failure"]
-        };
+var myDataSource = new YAHOO.util.DataSource(sUrl);
+myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;
+myDataSource.connXhrMode = "queueRequests";
+myDataSource.responseSchema = {
+    resultsList: "results",
+    fields: ["subscription_id", "workflow_name","fileset_name","percent_complete", "percent_success"]
+    };
 
-        var myDataTable = new YAHOO.widget.DataTable("subscriptionStatus",
-                myColumnDefs, myDataSource, 
-                {rowExpansionTemplate: listJobFunc});
+var oConfigs = {paginator: new YAHOO.widget.Paginator({rowsPerPage: 15 })};
+var myDataTable = new YAHOO.widget.DataTable("subscriptionStatus", myColumnDefs, 
+                                             myDataSource, oConfigs);
 
-        myDataTable.subscribe( 'cellClickEvent',
-            myDataTable.onEventToggleRowExpansion );
-       }
-    }
-
-var handleFailure = function(o) {
-    if(o.responseText !== undefined){
-        }
-    }
-
-var callback =
-{
-  success: handleSuccess,
-  failure: handleFailure,
-  argument: {}
+var mySuccessHandler = function(oRequest, oParsedResponse, oPayload) {
+    lastUpdateEl = document.getElementById("updated");
+    lastUpdateEl.innerHTML = "Last Updated: " + new Date().toString();
+    this.set("sortedBy", null);
+    this.onDataReturnInitializeTable(oRequest, oParsedResponse, oPayload);
 };
 
-if (currentSubType != "All") {
-    sUrl += currentSubType;
-    }
+var myFailureHandler = function() {
+    this.showTableMessage(YAHOO.widget.DataTable.MSG_ERROR, YAHOO.widget.DataTable.CLASS_ERROR);
+};
 
-var request = YAHOO.util.Connect.asyncRequest('GET', sUrl, callback);
+var callbackObj = {
+    success: mySuccessHandler,
+    failure: myFailureHandler,
+    scope: myDataTable,
+    argument: myDataTable.getState()
+};
 
-var subTypesUrl = "/wmbs/listsubtypes";
+myDataSource.setInterval(60000, "", callbackObj);
+
+var subTypesUrl = "/wmbs/listsubtypes?return_type=application/json";
 
 var handleSubTypeSuccess = function(o){
     if(o.responseText !== undefined) {
-        var wmbsSubTypes = eval("(" + o.responseText + ")");
+        var wmbsSubTypes = eval("(" + o.responseText + ")").results;
 	wmbsSubTypes.push("All");
 
         subTypesEl = document.getElementById("subscriptionTypes");
@@ -518,10 +89,10 @@ var handleSubTypeSuccess = function(o){
                 subTypesEl.innerHTML += currentSubType + " ";
                 }
             else if (wmbsSubTypes[i] == "All") {
-                subTypesEl.innerHTML += '<a href="/wmbs/monitoring">All</a> ';
+                subTypesEl.innerHTML += '<a href="/wmbs/monitoring/?return_type=text/html">All</a> ';
                 }
             else {
-                subTypesEl.innerHTML += '<a href="/wmbs/monitoring/?subType=' + wmbsSubTypes[i] + '">' + wmbsSubTypes[i];
+                subTypesEl.innerHTML += '<a href="/wmbs/monitoring/?return_type=text/html;subType=' + wmbsSubTypes[i] + '">' + wmbsSubTypes[i];
                 subTypesEl.innerHTML += '</a> ';
                 }
             }
@@ -540,7 +111,7 @@ var subTypeCallback =
     argument: {}
 };
 
-var request2 = YAHOO.util.Connect.asyncRequest('GET', subTypesUrl, subTypeCallback);
+//var request2 = YAHOO.util.Connect.asyncRequest('GET', subTypesUrl, subTypeCallback);
 </script>
 </body>
 </html>

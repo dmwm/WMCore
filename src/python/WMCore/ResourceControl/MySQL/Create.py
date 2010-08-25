@@ -5,8 +5,8 @@ _Create_
 Class for creating MySQL specific schema for resource control.
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2010/02/09 17:59:14 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2010/03/03 16:29:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 from WMCore.Database.DBCreator import DBCreator
@@ -17,7 +17,7 @@ class Create(DBCreator):
     
     Class for creating MySQL specific schema for resource control.
     """
-    def __init__(self):
+    def __init__(self, logger = None, dbi = None, params = None):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}

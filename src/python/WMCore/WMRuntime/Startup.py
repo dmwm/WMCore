@@ -12,6 +12,9 @@ import WMCore.WMRuntime.Bootstrap as Bootstrap
 if __name__ == '__main__':
     job = Bootstrap.loadJobDefinition()
     task = Bootstrap.loadTask(job)
+    Bootstrap.createInitialReport(job = job,
+                                  task = task,
+                                  logLocation = "Report.pkl")
     monitor = Bootstrap.setupMonitoring()
 
     Bootstrap.setupLogging(os.getcwd())

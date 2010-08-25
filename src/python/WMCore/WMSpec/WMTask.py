@@ -1,5 +1,6 @@
-
 #!/usr/bin/env python
+#pylint: disable-msg=E1101
+# E1101:  Doesn't recognize section_() as defining objects
 """
 _WMTask_
 
@@ -11,8 +12,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.31 2010/05/12 19:44:53 mnorman Exp $"
-__revision__ = "$Revision: 1.31 $"
+__version__ = "$Id: WMTask.py,v 1.32 2010/05/13 18:32:19 mnorman Exp $"
+__revision__ = "$Revision: 1.32 $"
 
 import os
 import os.path
@@ -181,7 +182,7 @@ class WMTaskHelper(TreeHelper):
         stepName = stepHelper.name()
         stepHelper.setTopOfTree()
         setattr(self.data.steps, stepName, stepData)
-        setattr(self.data.steps, "topStepName" ,stepName)
+        setattr(self.data.steps, "topStepName", stepName)
         return
 
     
@@ -297,7 +298,8 @@ class WMTaskHelper(TreeHelper):
 
         for key in envDict.keys():
             if str(envDict[key].__class__) == "<class 'WMCore.Configuration.ConfigSection'>":
-                #At this point we do not support the setting of sub-sections for environment variables
+                # At this point we do not support the
+                # setting of sub-sections for environment variables
                 continue
             else:
                 os.environ[key] = envDict[key]
@@ -399,6 +401,10 @@ class WMTaskHelper(TreeHelper):
 
     
     def listGenerators(self):
+        """
+        _listGenerators_
+
+        """
         generators = getattr(self.data, "generators", None)
         if generators == None:
             return []
@@ -406,6 +412,11 @@ class WMTaskHelper(TreeHelper):
 
     
     def getGeneratorSettings(self, generatorName):
+        """
+        _getGeneratorSettings_
+
+        Extract the settings from the generator fields
+        """
         generators = getattr(self.data, "generators", None)
         if generators == None:
             return {}
@@ -470,7 +481,8 @@ class WMTaskHelper(TreeHelper):
         
         for opt, arg in options.items():
             # already handled/checked
-            if opt in ['primary', 'processed', 'tier']: continue
+            if opt in ['primary', 'processed', 'tier']:
+                continue
             # blocks
             if opt == 'block_blacklist':
                 self.data.input.dataset.blocks.blacklist = arg

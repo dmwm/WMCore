@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.26 2009/03/31 09:45:34 metson Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: DBCore.py,v 1.27 2009/04/07 20:20:51 sryu Exp $"
+__version__ = "$Revision: 1.27 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -98,6 +98,8 @@ class DBInterface(WMObject):
         
         returns a list of sqlalchemy.engine.base.ResultProxy objects
         """
+        
+        s = s.strip()
         if s.lower().endswith('select', 0, 6):
             """
             Trying to select many

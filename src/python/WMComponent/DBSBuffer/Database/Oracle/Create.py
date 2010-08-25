@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.17 2009/12/03 17:40:58 mnorman Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: Create.py,v 1.18 2009/12/03 17:51:13 mnorman Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import threading
 
@@ -224,12 +224,12 @@ class Create(DBCreator):
 
         self.constraints["02_fk_dbsbuffer_file_checksums"] = \
           """ALTER TABLE dbsbuffer_file_checksums ADD                   
-               (CONSTRAINT fk_filechecksums_cktype FOREIGN KEY (typeid)
+               (CONSTRAINT fk_dbsfilechecksums_cktype FOREIGN KEY (typeid)
                   REFERENCES dbsbuffer_checksum_type(id) ON DELETE CASCADE)"""
 
         self.constraints["03_fk_dbsbuffer_file_checksums"] = \
           """ALTER TABLE dbsbuffer_file_checksums ADD                   
-               (CONSTRAINT fk_filechecksums_file FOREIGN KEY (fileid)
+               (CONSTRAINT fk_dbsfilechecksums_file FOREIGN KEY (fileid)
                   REFERENCES dbsbuffer_file(id) ON DELETE CASCADE)"""
 
         self.indexes["01_pk_dbsbuffer_dataset"] = \

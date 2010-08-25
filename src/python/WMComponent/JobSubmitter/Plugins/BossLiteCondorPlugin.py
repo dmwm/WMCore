@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: BossLiteCondorPlugin.py,v 1.1 2010/07/08 15:44:09 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: BossLiteCondorPlugin.py,v 1.2 2010/07/27 15:22:19 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import os.path
@@ -169,6 +169,19 @@ class BossLiteCondorPlugin(PluginBase):
             task = mySchedAPI.submit( taskId = 1,
                                       requirements = requirements )
 
+            successList = []
+            failList    = []
 
             for job in jobList:
                 result['Success'].append(job['id'])
+                job['couch_record'] = None
+                successList.append(job)
+
+
+            if len(successList) > 0:
+                self.passJobs(jobList = successList)
+            if len(failList) > 0:
+                self.failJobs(jobList = failList)
+
+
+            return result

@@ -10,8 +10,8 @@ _CondorVanillaPlugin_
 A plug-in that should submit directly to vanilla condor CEs
 """
 
-__revision__ = "$Id: CondorVanillaPlugin.py,v 1.2 2010/07/12 21:04:21 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: CondorVanillaPlugin.py,v 1.3 2010/07/13 18:20:26 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 import os.path
@@ -173,7 +173,6 @@ class CondorVanillaPlugin(PluginBase):
         jdl.append("Requirements = OpSys == \"LINUX\" && (Arch == \"INTEL\" || Arch == \"x86_64\")\n")
         jdl.append("should_transfer_executable = TRUE\n")
         jdl.append("transfer_output_files = Report.pkl\n")
-        jdl.append("transfer_output_remaps = \"Report.pkl = Report.$(Cluster).$(Process).pkl\"\n")
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")
         jdl.append("log_xml = True\n" )
@@ -215,6 +214,8 @@ class CondorVanillaPlugin(PluginBase):
                 continue
             job['location'] = job['custom'].get('location', None)
             jdl.append("initialdir = %s\n" % job['cache_dir'])
+            jdl.append("transfer_output_remaps = \"Report.pkl = Report.%i.pkl\"\n" \
+                       % (job["retry_count"]))
             jdl.append("transfer_input_files = %s, %s/%s, %s\n" \
                        % (self.sandbox, self.packageDir,
                           'JobPackage.pkl', self.unpacker))

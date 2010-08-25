@@ -8,8 +8,8 @@ Performs bulk DBS File(s) insertion by :
 	if buffer has hit the configured limit
 """
 
-__revision__ = "$Id: DBSUpload.py,v 1.4 2009/07/20 18:13:29 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBSUpload.py,v 1.5 2009/08/12 17:54:09 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -31,27 +31,26 @@ from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 class DBSUpload(Harness):
 
     def __init__(self, config):
-        # call the base class
-        Harness.__init__(self, config)
-        self.pollTime = 1
-        
-	print "DBSUpload.__init__"
+		# call the base class
+		Harness.__init__(self, config)
+		self.pollTime = 1
+		print "DBSUpload.__init__"
 
     def preInitialization(self):
-	print "DBSUpload.preInitialization"
-
-        # use a factory to dynamically load handlers.
-        factory = WMFactory('generic')
-        
-
-        # Add event loop to worker manager
-        myThread = threading.currentThread()
-        
-        pollInterval = self.config.DBSUpload.pollInterval
-        logging.info("Setting poll interval to %s seconds" % pollInterval)
-        myThread.workerThreadManager.addWorker(DBSUploadPoller(self.config), pollInterval)
-
-        return
+		print "DBSUpload.preInitialization"
+		
+		# use a factory to dynamically load handlers.
+		factory = WMFactory('generic')
+		
+		
+		# Add event loop to worker manager
+		myThread = threading.currentThread()
+		
+		pollInterval = self.config.DBSUpload.pollInterval
+		logging.info("Setting poll interval to %s seconds" % pollInterval)
+		myThread.workerThreadManager.addWorker(DBSUploadPoller(self.config), pollInterval)
+		
+		return
 
 
 

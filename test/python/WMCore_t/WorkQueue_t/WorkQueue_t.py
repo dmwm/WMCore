@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.42 2010/07/30 16:51:32 swakef Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.43 2010/08/03 14:48:23 swakef Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import unittest
 import os
@@ -134,7 +134,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         specfile = self.spec.specUrl()
         numUnit = 2
-        jobSlot = [1] * numUnit # array of jobs per block
+        jobSlot = [10] * numUnit # array of jobs per block
         total = sum(jobSlot)
         
         for _ in range(numUnit):
@@ -158,9 +158,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Test priority change functionality
         """
-        # default queue is set to get 10 times more jobs than slot size
         totalJobs = 10
-        jobSlot = 1 
+        jobSlot = 10
 
         self.queue.queueWork(self.spec.specUrl())
 
@@ -181,7 +180,7 @@ class WorkQueueTest(WorkQueueTestCase):
         Enqueue and get work for a processing WMSpec.
         """
         specfile = self.processingSpec.specUrl()
-        njobs = [1, 1] # array of jobs per block
+        njobs = [5, 10] # array of jobs per block
         total = sum(njobs)
 
         # Queue Work & check accepted
@@ -422,7 +421,7 @@ class WorkQueueTest(WorkQueueTestCase):
         
         specfile = spec.specUrl()
         numElements = 3
-        njobs = [1] * numElements # array of jobs per block
+        njobs = [10] * numElements # array of jobs per block
         total = sum(njobs)
 
         # Queue Work &njobs check accepted

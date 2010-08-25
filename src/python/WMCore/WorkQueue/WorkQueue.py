@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.131 2010/08/02 19:06:41 sryu Exp $"
-__version__ = "$Revision: 1.131 $"
+__revision__ = "$Id: WorkQueue.py,v 1.132 2010/08/03 14:48:22 swakef Exp $"
+__version__ = "$Revision: 1.132 $"
 
 
 import time
@@ -55,7 +55,6 @@ def globalQueue(logger = None, dbi = None, **kwargs):
                                         {'name': 'Dataset', 
                                          'args': {}}
                                       },
-                 'JobSlotMultiplier': 1000
                 }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
@@ -128,11 +127,6 @@ class WorkQueue(WorkQueueBase):
                                                    {'name': 'Block',
                                                     'args': {}}
                                                   )
-        
-        # define how many more works to retrieve from the queue
-        # i.e. if JobSlotMultiplier is set to 1000 it will pull down 
-        # 1000 times more jobs than available slot
-        self.params['JobSlotMultiplier'] = 10
         
         self.params.setdefault('EndPolicySettings', {})
 
@@ -286,9 +280,6 @@ class WorkQueue(WorkQueueBase):
         """
         results = []
         subResults = []
-        for k, v in siteJobs.items():
-            siteJobs[k] = self.params['JobSlotMultiplier'] * v
-            
         matches, unmatched = self._match(siteJobs, team)
 
         # if talking to a child and have resources left get work from parent
@@ -673,14 +664,12 @@ class WorkQueue(WorkQueueBase):
                     # get more work than we have slots - QueueDepth param
                     sites = {}
                     [sites.__setitem__(name,
-                        self.params['QueueDepth'] * slots['total_slots'] * self.params['JobSlotMultiplier'])
+                        self.params['QueueDepth'] * slots['total_slots'])
                         for name, slots in rc_sites.items() if slots['total_slots'] > 0]
                     self.logger.info("""Pull work for sites %s 
-                                        with %s queue depth and 
-                                        %s multiply factor
+                                        with %s queue depth
                                      """ % (str(sites), 
-                                            self.params['QueueDepth'], 
-                                            self.params['JobSlotMultiplier']))
+                                            self.params['QueueDepth']))
                     _, resources = self._match(sites)
 
                 # if we have sites with no queued work try and get some

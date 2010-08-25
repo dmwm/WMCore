@@ -5,7 +5,7 @@ CouchDB instance, and is not going to work in an automated way just yet - we'll
 need to add Couch as an external, include it in start up scripts etc.
 """
 
-from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Database.CMSCouch import CouchServer, Document
 import random
 import unittest
 
@@ -31,9 +31,33 @@ class CMSCouchTest(unittest.TestCase):
             dbname = 'cmscouch_unittest_%s' % testname.lower()
             self.server.deleteDatabase(dbname)
     
+    def testCommitOne(self):
+        # Can I commit one dict
+        doc = {'foo':123, 'bar':456}
+        id = self.db.commitOne(doc, returndocs=True)[0]['id']
+        # What about a Document
+        doc = Document(dict=doc)
+        id = self.db.commitOne(doc, returndocs=True)[0]['id']
+        
+    def testCommitOneWithQueue(self):
+        """
+        CommitOne bypasses the queue, but it should maintain the queue if 
+        present for a future call to commit.
+        """         
+        # Queue up five docs
+        doc = {'foo':123, 'bar':456}
+        for i in range(1,6):
+            self.db.queue(doc)
+        # Commit one Document
+        doc = Document(dict=doc)
+        id = self.db.commitOne(doc, returndocs=True)[0]['id']
+        self.assertEqual(1, len(self.db.allDocs()['rows']))
+        self.db.commit()
+        self.assertEqual(6, len(self.db.allDocs()['rows']))
+        
     def testTimeStamping(self):
         doc = {'foo':123, 'bar':456}
-        id = self.db.commitOne(doc, timestamp=True, returndocs=True)['id']
+        id = self.db.commitOne(doc, timestamp=True, returndocs=True)[0]['id']
         doc = self.db.document(id)
         self.assertTrue('timestamp' in doc.keys())
                 
@@ -55,6 +79,7 @@ class CMSCouchTest(unittest.TestCase):
         self.db.queue(doc1)
         self.db.queue(doc2)
         self.db.commit()
+        
         all_docs = self.db.allDocs()
         self.assertEqual(2, len(all_docs['rows']))
         for res in all_docs['rows']:

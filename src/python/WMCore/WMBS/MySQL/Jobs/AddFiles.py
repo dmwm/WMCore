@@ -1,22 +1,16 @@
 #!/usr/bin/env python
 """
 _AddFiles_
+
 MySQL implementation of Jobs.AddFiles
 """
-
-__all__ = []
-
-
 
 import logging
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddFiles(DBFormatter):
-    sql = """INSERT INTO wmbs_job_assoc (job, file)
-               SELECT :jobid, :fileid FROM dual WHERE NOT EXISTS
-                 (SELECT * FROM wmbs_job_assoc
-                  WHERE job = :jobid AND file = :fileid)"""
+    sql = "INSERT INTO wmbs_job_assoc (job, file) VALUES (:jobid, :fileid)"
     
     def getBinds(self, jobDict):
         binds = []

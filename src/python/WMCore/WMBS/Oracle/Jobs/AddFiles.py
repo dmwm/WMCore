@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 _AddFiles_
 
@@ -12,7 +13,4 @@ class AddFiles(AddFilesJobMySQL):
     
     Oracle specific query: file is a reserved word
     """
-    sql = """INSERT INTO wmbs_job_assoc (job, fileid)
-               SELECT :jobid, :fileid FROM dual WHERE NOT EXISTS
-                 (SELECT * FROM wmbs_job_assoc
-                  WHERE job = :jobid AND fileid = :fileid)"""    
+    sql = "INSERT INTO wmbs_job_assoc (job, fileid) VALUES (:jobid, :fileid)"

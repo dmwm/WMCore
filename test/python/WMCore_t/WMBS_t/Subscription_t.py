@@ -1206,19 +1206,35 @@ class SubscriptionTest(unittest.TestCase):
         testJobGroupB.commit() 
 
         firstResult = testSubscription.getJobGroups()
-        self.assertEquals(firstResult.sort(), [testJobGroupA,testJobGroupB].sort(), \
-                                 "Two jobgroups should be available not: %s"
-                                     %firstResult)
-        stateChanger.propagate([testJobA], 'created', 'new')
+        for jobGroup in [testJobGroupA.id, testJobGroupB.id]:
+            assert jobGroup in firstResult, \
+                   "Error: jobgroup %s is missing. " % jobGroup
+            firstResult.remove(jobGroup)
+
+        assert len(firstResult) == 0, \
+               "Error: Too monay job groups in result."
+        
+        stateChanger.propagate([testJobA], "created", "new")
         secondResult = testSubscription.getJobGroups()
-        self.assertEquals(secondResult.sort(), [testJobGroupA,testJobGroupB].sort(),\
-                            "Should be two jobgroups available, found %s" % secondResult)
-        stateChanger.propagate([testJobB], 'created', 'new')
+        for jobGroup in [testJobGroupA.id, testJobGroupB.id]:
+            assert jobGroup in secondResult, \
+                   "Error: jobgroup %s is missing. " % jobGroup
+            secondResult.remove(jobGroup)
+
+        assert len(secondResult) == 0, \
+               "Error: Too monay job groups in result."
+        
+        stateChanger.propagate([testJobB], "created", "new")
+        thirdResult = testSubscription.getJobGroups()
+        for jobGroup in [testJobGroupB.id]:
+            assert jobGroup in thirdResult, \
+                   "Error: jobgroup %s is missing. " % jobGroup
+            thirdResult.remove(jobGroup)
+
+        assert len(thirdResult) == 0, \
+               "Error: Too monay job groups in result."
         
         return
-        
-
-
 
     def testDeleteEverything(self):
         """

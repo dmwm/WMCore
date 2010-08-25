@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.54 2010/01/25 16:54:12 swakef Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: WorkQueue.py,v 1.55 2010/01/26 18:24:19 swakef Exp $"
+__version__ = "$Revision: 1.55 $"
 
 
 import uuid
@@ -203,12 +203,14 @@ class WorkQueue(WorkQueueBase):
 
         # if talking to a child and have resources left get work from parent
         if pullingQueueUrl and unmatched:
+            self.logger.debug('getWork() asking %s for work' % pullingQueueUrl)
             try:
+                #TODO: Add a timeout thats shorter than normal
                 if self.pullWork(unmatched):
                     matches, _ = self._match(siteJobs)
-            except RuntimeError:
-                # log failure to contact parent queue
-                pass
+            except RuntimeError, ex:
+                msg = "Error contacting parent queue %s: %s"
+                self.logger.error(msg % (pullingQueueUrl, str(ex)))
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
 
         for match in matches:
@@ -373,6 +375,8 @@ class WorkQueue(WorkQueueBase):
                                              blocks, parentQueueId,
                                              topLevelTask)
             self.commitTransaction(trans)
+        self.logger.info("Queued %s unit(s) for %s" % (len(units),
+                                                       wmspec.name()))
         return len(units)
 
 
@@ -408,6 +412,10 @@ class WorkQueue(WorkQueueBase):
         # may need to change child status - i.e. if canceled in parent
         child_update = defaultdict(set) # need to be set as have many children
 
+        self.logger.info("synchronize queue with child %s" % child_url)
+        self.logger.debug("report contents: %s" % str(child_report))
+        self.logger.debug("current state: %s" % str(my_details))
+
         for item in child_report:
             item_id = item['ParentQueueId']
 
@@ -425,6 +433,8 @@ class WorkQueue(WorkQueueBase):
 
             # Negotiation failure - Another queue has the work
             if my_item['ChildQueueUrl'] != child_url:
+                msg = "Negotiation failure for element %s now assigned to %s"
+                self.logger.warning(msg % (item_id, my_item['ChildQueueUrl']))
                 child_update['Canceled'].add(my_item['Id'])
                 continue
 
@@ -441,12 +451,14 @@ class WorkQueue(WorkQueueBase):
 
             to_update[item['Status']].add(my_item['Id'])
 
+        self.logger.debug('Synchronise() updates: %s' % str(to_update))
         trans = self.beginTransaction()
         for status, items in to_update.items():
             self.setStatus(status, items, source = child_url)
         self.commitTransaction(trans)
 
         # return to the child queue the elements that it needs to update
+        self.logger.debug('Updates to child queue: %s' % str(child_update))
         return child_update
 
 
@@ -462,6 +474,7 @@ class WorkQueue(WorkQueueBase):
                               transaction = self.existingTransaction())
         if items:
             # log negotiation failures and setStatus to available
+            self.logger.info("Reset expired negotiations: %s" % str(items))
             self.setStatus('Available', [x['id'] for x in items])
         return len(items)
 
@@ -524,6 +537,7 @@ class WorkQueue(WorkQueueBase):
                 [sites.__setitem__(name,
                                    self.params['QueueDepth'] * slots) for _,
                                    name, slots in wmbs_sites if slots > 0]
+                self.logger.info("Pull work for sites %s" % str(sites))
                 _, resources = self.getWork(sites)
 
             if resources:
@@ -564,21 +578,25 @@ class WorkQueue(WorkQueueBase):
                            self.params['EndPolicySettings']) for \
                                                     group in elements.values()]
         if items:
+            self.logger.debug("Update parent queue with: %s" % str(items))
             try:
                 # send to remote queue
                 # check that we don't have an error from incompatible states
                 # i.e. canceled in parent - if so cancel here...
                 result = self.parent_queue.synchronize(self.params['QueueURL'],
                                                        items)
-            except RuntimeError:
+            except RuntimeError, ex:
                 # log a failure to communicate
-                raise
+                msg = "Unable to send update to parent queue, error: %s"
+                self.logger.warning(msg % str(ex))
 
             # some of our element status's may be overriden by the parent
             # e.g. if request is canceled at top level
             if result:
+                msg = "Parent queue status override to %s for %s"
                 trans = self.beginTransaction()
                 for status, items in result.items():
+                    self.logger.info(msg % (status, list(items)))
                     self.setStatus(status, items, id_type = 'parent_queue_id')
                 self.commitTransaction(trans)
 
@@ -798,6 +816,5 @@ class WorkQueue(WorkQueueBase):
         try:
             return self.remote_queues[queue]
         except KeyError:
-            #TODO: instantiate REST connector here, add to dict
             self.remote_queues[queue] = WorkQueueDS({'endpoint':queue})
             return self.remote_queues[queue]

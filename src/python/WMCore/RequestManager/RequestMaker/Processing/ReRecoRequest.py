@@ -50,7 +50,7 @@ class ReRecoSchema(RequestSchema):
             ]
         self.optionalFields = [
             "SiteWhitelist",
-            "SiteBlackList",
+            "SiteBlacklist",
             "BlockWhitelist",
             "BlockBlacklist",
             "RunWhitelist",

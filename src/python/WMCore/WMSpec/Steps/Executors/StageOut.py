@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#pylint: disable-msg=E1101, W6501, W0142
+# E1101:  Doesn't recognize section_() as defining objects
+# W6501:  String formatting in log output
+# W0142:  Dave likes himself some ** magic
+
 """
 _Step.Executor.StageOut_
 
@@ -6,20 +11,19 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.20 2010/05/11 16:07:41 mnorman Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: StageOut.py,v 1.21 2010/05/13 20:00:15 mnorman Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import os
 import os.path
 import logging
 import signal
-import string
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.FwkJobReport.Report             import Report
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
-from WMCore.Storage.StageOutError import StageOutFailure
+#from WMCore.Storage.StageOutError import StageOutFailure
 
 from WMCore.WMSpec.ConfigSectionTree import nodeParent, nodeName
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
@@ -99,7 +103,8 @@ class StageOut(Executor):
             logging.info("Beginning report processing for step %s" % (step))
             reportLocation = os.path.join(stepLocation, 'Report.pkl')
             if not os.path.isfile(reportLocation):
-                logging.error("Cannot find report for step %s in space %s" % (step, stepLocation))
+                logging.error("Cannot find report for step %s in space %s" \
+                              % (step, stepLocation))
                 continue
             # First, get everything from a file and 'unpersist' it
             stepReport = Report(step)
@@ -125,7 +130,8 @@ class StageOut(Executor):
                 # Support direct-to-merge
                 # This requires pulling a bunch of stuff from everywhere
                 # First check if it's needed
-                if hasattr(self.step.output, 'minMergeSize') and hasattr(file, 'size') \
+                if hasattr(self.step.output, 'minMergeSize') \
+                       and hasattr(file, 'size') \
                        and not getattr(file, 'merged', False):
                     # We need both of those to continue, and we don't
                     # direct-to-merge 
@@ -133,7 +139,7 @@ class StageOut(Executor):
                         # Then this goes direct to merge
                         try:
                             file = self.handleLFNForMerge(file = file)
-                        except:
+                        except Exception, ex:
                             stepReport.addError(self.stepName, 50011,
                                                 "DirectToMergeFailure", str(ex))
                 
@@ -157,7 +163,8 @@ class StageOut(Executor):
                     msg = "Indefinite hang during stageOut of logArchive"
                     logging.error(msg)
                 except Exception, ex:
-                    stepReport.addError(self.stepName, 1, "StageOutFailure", str(ex))
+                    stepReport.addError(self.stepName, 1,
+                                        "StageOutFailure", str(ex))
                     stepReport.setStepStatus(self.stepName, 1)
                     stepReport.persist("Report.pkl")                        
                     raise
@@ -172,7 +179,8 @@ class StageOut(Executor):
 
                 
 
-        #Done with all steps, and should have a list of stagedOut files in fileForTransfer
+        #Done with all steps, and should have a list of
+        #stagedOut files in fileForTransfer
         logging.info("Transferred %i files" %(len(filesTransferred)))
         return
     
@@ -198,7 +206,7 @@ class StageOut(Executor):
 
 
     # Accessory methods
-    def handleLFNForMerge(self, file):
+    def handleLFNForMerge(self, mergefile):
         """
         _handleLFNForMerge_
 
@@ -210,22 +218,23 @@ class StageOut(Executor):
         # First get the output module
         # Do this by finding the name in the step report
         # And then finding that module in the WMStep Helper
-        outputRef = nodeParent(file)
+        outputRef = nodeParent(mergefile)
         if not outputRef:
-            logging.error("Direct to merge failed due to broken config parentage")
-            return file
+            logging.error("Direct to merge failed: broken config")
+            return mergefile
         outputName = nodeName(outputRef)
         if outputName.lower() == "merged":
             # Don't skip merge for merged files!
-            return file
+            return mergefile
         helper     = getStepTypeHelper(self.step)
         outputMod  = helper.getOutputModule(moduleName = outputName)
 
         if not outputMod:
             # Then we couldn't get the output module
             logging.error("Attempt to directly merge failed " \
-                          + "due to no output module %s in WMStep" %(outputName))
-            return file
+                          + "due to no output module %s in WMStep" \
+                          % (outputName))
+            return mergefile
 
 
         # Okay, now we should have the output Module
@@ -234,18 +243,19 @@ class StageOut(Executor):
         newBase = getattr(outputMod, 'mergedLFNBase', None)
         oldBase = getattr(outputMod, 'lfnBase', None)
 
-        if not lfnBase:
+        if not newBase:
             # Then we don't have a base to change it to
-            logging.error("Direct to Merge failed due to no mergedLFNBase in %s" %(outputName))
-            return file
+            logging.error("Direct to Merge failed due to no mergedLFNBase in %s" \
+                          % (outputName))
+            return mergefile
 
         # Replace the actual LFN base
-        oldLFN = getattr(file, 'lfn')
+        oldLFN = getattr(mergefile, 'lfn')
         newLFN = oldLFN.replace(oldBase, newBase)
 
         # Set the file attributes
-        setattr(file, 'lfn', newLFN)
-        setattr(file, 'merged', True)
+        setattr(mergefile, 'lfn', newLFN)
+        setattr(mergefile, 'merged', True)
 
         # Return the file
-        return file
+        return mergefile

@@ -6,8 +6,8 @@ Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
 
-__revision__ = "$Id: FileBased.py,v 1.19 2009/09/30 12:30:54 metson Exp $"
-__version__  = "$Revision: 1.19 $"
+__revision__ = "$Id: FileBased.py,v 1.20 2009/09/30 15:09:58 mnorman Exp $"
+__version__  = "$Revision: 1.20 $"
 
 from sets import Set
 from sets import ImmutableSet
@@ -40,12 +40,8 @@ class FileBased(JobFactory):
         """
         myThread = threading.currentThread()
         
-        self.newGroup()
-        
         filesPerJob  = int(kwargs.get("files_per_job", 10))
         filesInJob   = 0
-        totalJobs    = 0 
-        jobs         = []
         listOfFiles  = []
 
         #Get a dictionary of sites, files
@@ -55,12 +51,14 @@ class FileBased(JobFactory):
             #Now we have all the files in a certain location
             fileList   = locationDict[location]
             filesInJob = 0
+            self.newGroup()
             if len(fileList) == 0:
+                #No files for this location
+                #This isn't supposed to happen, but better safe then sorry
                 continue
             for file in fileList:
                 if filesInJob == 0 or filesInJob == filesPerJob:
                     self.newJob(name = self.getJobName(length=filesInJob))
-                    totalJobs += 1
                     filesInJob = 0
                     
                 filesInJob += 1
@@ -70,3 +68,5 @@ class FileBased(JobFactory):
 
         #We need here to acquire all the files we have assigned to jobs
         self.subscription.acquireFiles(files = listOfFiles)
+
+        return

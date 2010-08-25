@@ -8,6 +8,17 @@ Factory implementation to retrieve Step Template instances
 
 
 from WMCore.WMFactory import WMFactory
+from WMCore.WMException import WMException
+
+class StepFactoryException(WMException):
+    """
+    _StepFactortyException_
+
+    Exception for missing objects or problems
+
+    """
+    pass
+
 
 
 class TemplateFactory(WMFactory):
@@ -70,7 +81,15 @@ def getStepTemplate(stepType):
     name of the step
 
     """
-    return _TemplateFactory.loadObject(stepType)
+    try:
+        return _TemplateFactory.loadObject(stepType)
+    except WMException, wmEx:
+        msg = "TemplateFactory Unable to load Object: %s" % stepType
+        raise StepFactoryException(msg)
+    except Exception, ex:
+        msg = "Error creating object %s in TemplateFactory:\n" % stepType
+        msg += str(ex)
+        raise StepFactoryException(msg)
 
 
 def getStepBuilder(stepType):
@@ -78,7 +97,15 @@ def getStepBuilder(stepType):
     _getStepBuilder_
 
     """
-    return _BuilderFactory.loadObject(stepType)
+    try:
+        return _BuilderFactory.loadObject(stepType)
+    except WMException, wmEx:
+        msg = "BuilderFactory Unable to load Object: %s" % stepType
+        raise StepFactoryException(msg)
+    except Exception, ex:
+        msg = "Error creating object %s in BuilderFactory:\n" % stepType
+        msg += str(ex)
+        raise StepFactoryException(msg)
 
 def getStepExecutor(stepType):
     """
@@ -87,7 +114,16 @@ def getStepExecutor(stepType):
     Get an Executor for the given step type
 
     """
-    return _ExecutorFactory.loadObject(stepType)
+    try:
+        return _ExecutorFactory.loadObject(stepType)
+    except WMException, wmEx:
+        msg = "ExecutorFactory Unable to load Object: %s" % stepType
+        raise StepFactoryException(msg)
+    except Exception, ex:
+        msg = "Error creating object %s in ExecutorFactory:\n" % stepType
+        msg += str(ex)
+        raise StepFactoryException(msg)
+
 
 def getStepEmulator(stepEmuName):
     """
@@ -98,4 +134,12 @@ def getStepEmulator(stepEmuName):
     ways to emulate a given step
 
     """
-    return _EmulatorFactory.loadObject(stepEmuName)
+    try:
+        return _EmulatorFactory.loadObject(stepEmuName)
+    except WMException, wmEx:
+        msg = "EmulatorFactory Unable to load Object: %s" % stepEmuName
+        raise StepFactoryException(msg)
+    except Exception, ex:
+        msg = "Error creating object %s in EmulatorFactory:\n" % stepEmuName
+        msg += str(ex)
+        raise StepFactoryException(msg)

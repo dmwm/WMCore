@@ -43,12 +43,12 @@ if can_nose:
             pass
     
         def run(self):
-            print "committed at abour 11:23 AM"
+            print "committed at abour 14:11"
             retval =  nose.run(argv=[__file__,'--all-modules','-v','test/python'])
             if retval:
-                sys.exit( 1 ) 
+                sys.exit( 0 ) 
             else:
-                sys.exit( 0 )
+                sys.exit( 1 )
 else:
     class TestCommand(Command):
         user_options = [ ]

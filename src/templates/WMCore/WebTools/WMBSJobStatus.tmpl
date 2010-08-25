@@ -38,8 +38,12 @@ function updateInfoLine() {
     }
 
     infoEl = document.getElementById("infoLine");
-    infoEl.innerHTML = 'Displaying jobs that entered the "' + currentJobState;
-    infoEl.innerHTML += '" state in the last ' + intervalString;
+    if (currentJobState != "running") {
+        infoEl.innerHTML = 'Displaying jobs that entered the "' + currentJobState;
+        infoEl.innerHTML += '" state in the last ' + intervalString;
+    } else {
+        infoEl.innerHTML = 'Displaying jobs that are currently running.';
+    }
     return;
 }
 
@@ -177,6 +181,7 @@ var menuItems = [
      submenu: {
          id: "jobStateSubMenu",
          itemdata: [{text: "all", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "all"}}},
+                    {text: "running", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "running"}}},
                     {text: "new", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "new"}}},
                     {text: "complete", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "complete"}}},
                     {text: "created", onclick: {fn: menuItemHandler, obj: {menu: "jobState", value: "created"}}},

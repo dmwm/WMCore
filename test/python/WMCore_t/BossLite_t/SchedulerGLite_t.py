@@ -4,8 +4,8 @@ _APISched_t_
 
 """
 
-__revision__ = "$Id: SchedulerGLite_t.py,v 1.1 2010/05/26 09:03:16 spigafi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SchedulerGLite_t.py,v 1.2 2010/06/02 16:04:26 spigafi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import time
@@ -22,18 +22,18 @@ from WMCore.BossLite.DbObjects.Task        import Task
 from WMCore.BossLite.API.BossLiteAPI       import BossLiteAPI
 from WMCore.BossLite.API.BossLiteAPISched  import BossLiteAPISched
 
+from WMCore.BossLite.Common.System import executeCommand
+
 def fakeTask(db, numjob):
     """
     This procedure create a fakeTask
     """
 
-    taskParams = {'name' : 'testTask' }
+    taskParams = {'name' : 'testTask',
+                  'globalSandbox' : '/etc/redhat-release' }
 
     jobParams = {'executable' : '/bin/hostname',
-                 'arguments' : '-f',
-                 'standardError' : 'hostname.err',
-                 'standardOutput' : 'hostname.out',
-                 'outputFiles' : ['hostname.out'] }
+                 'arguments' : '-f' }
 
 
     task = Task(taskParams)
@@ -41,7 +41,12 @@ def fakeTask(db, numjob):
     # self.assertEqual(tmpId, task.exists(db))
     task.exists(db)
     for j in xrange(numjob):
+        
         jobParams['name'] = 'Fake_job_%s' % str(j)
+        jobParams['standardError'] = 'hostname-%s.err' % str(j)
+        jobParams['standardOutput'] = 'hostname-%s.out' % str(j)
+        jobParams['outputFiles'] = [ jobParams['standardOutput'] ]
+        
         job = Job( parameters = jobParams )
         job.newRunningInstance(db)
         task.addJob(job)
@@ -51,14 +56,15 @@ def fakeTask(db, numjob):
     return
 
 
-def printDebug(task):
+def printDebug(task, runningInstance = False):
     """
     printDebug
     """
     
-    msg = '\n >> schedulerParentId: ' + \
-                str(task.jobs[0].runningJob['schedulerId']) + '\n' 
-    print msg
+    if not runningInstance :
+        msg = '\n >> schedulerParentId: ' + \
+                    str(task.jobs[0].runningJob['schedulerParentId']) + '\n' 
+        print msg
     
     msg = 'schedulerId'.ljust(52) + 'status'.ljust(6) + \
                 'statusScheduler'.ljust(20) + 'destination'.ljust(20)
@@ -88,6 +94,9 @@ class APISched(unittest.TestCase):
     Unit-test for BossLiteAPISched
     """
     
+    numjob = 8
+    stoppingCriteria = 4
+    
     def testA_databaseStartup(self):
         """
         testA_databaseStartup
@@ -102,7 +111,7 @@ class APISched(unittest.TestCase):
         
         # populate DB
         myBossLiteAPI = BossLiteAPI()
-        fakeTask(myBossLiteAPI.db, numjob= 3)
+        fakeTask(myBossLiteAPI.db, numjob = self.numjob )
         
         return
 
@@ -119,10 +128,7 @@ class APISched(unittest.TestCase):
                                        schedulerConfig = mySchedConfig )
         
         task = mySchedAPI.submit( taskId = 1 )
-        
-        #### DEBUG ####
-        printDebug(task)
-        
+              
         return
     
     
@@ -146,13 +152,13 @@ class APISched(unittest.TestCase):
             #### DEBUG ####
             printDebug(task)
             
-            exitCondition = True
+            exitCondition = 0
             
             for x in task.jobs :
-                if x.runningJob['status'] != 'SD' :
-                    exitCondition = False
-                    
-            if exitCondition:
+                if x.runningJob['status'] == 'SD' :
+                    exitCondition += 1
+            
+            if exitCondition > (self.stoppingCriteria - 1 ) :
                 break
             
             # sleeping for a while...
@@ -172,7 +178,18 @@ class APISched(unittest.TestCase):
         mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, 
                                        schedulerConfig = mySchedConfig )
         
-        task = mySchedAPI.getOutput( taskId = 1, outdir='/tmp/' )
+        command = "mkdir ./test"
+        out, ret = executeCommand( command )
+        
+        extractedJob = myBossLiteAPI.loadEnded()
+        
+        if len(extractedJob) > 0 :
+            jobRange = str(extractedJob[0]['jobId'])
+            
+            task = mySchedAPI.getOutput( taskId = 1, jobRange = jobRange, outdir = './test' )
+            
+            #### DEBUG ####
+            printDebug(task, runningInstance = True)
         
         return
     
@@ -188,7 +205,15 @@ class APISched(unittest.TestCase):
         mySchedAPI = BossLiteAPISched( bossLiteSession = myBossLiteAPI, 
                                        schedulerConfig = mySchedConfig )
         
-        # do something ...
+        extractedJob = myBossLiteAPI.loadSubmitted(limit = 1)
+        
+        if len(extractedJob) > 0 :
+            jobRange = str(extractedJob[0]['jobId'])
+            
+            task = mySchedAPI.kill( taskId = 1, jobRange = jobRange)
+            
+            #### DEBUG ####
+            printDebug(task, runningInstance = True)
         
         return
     

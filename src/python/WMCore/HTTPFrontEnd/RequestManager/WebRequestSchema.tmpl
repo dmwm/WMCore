@@ -79,16 +79,16 @@ DBS: <input type="text" name="dbs" VALUE="http://cmsdbsprod.cern.ch/cms_dbs_prod
 #def skimBlock
 Skim Input: <INPUT TYPE="text", NAME="skimInput" SIZE=40 VALUE="output"/><BR/>
 Skim Config: <INPUT TYPE="text" NAME="skimConfig" VALUE=$defaultSkimConfig size=80/><br>
-Merged LFN Base: <SELECT name="mergedLFNBase"> VALUE="/store/data" size=40/><br/>
-  <OPTION>/store/unmerged</OPTION>
-  <OPTION>/store/temp</OPTION>
-  <OPTION>/store/temp/WMAgent</OPTION>
-</SELECT><BR>
-Unmerged LFN Base: <SELECT name="unmergedLFNBase">
+Merged LFN Base: <SELECT name="mergedLFNBase"><br/>
   <OPTION>/store/data</OPTION>
-  <OPTION>/store/temp/WMAgent</OPTION>
+  <OPTION>/store/temp/WMAgent/merged</OPTION>
   <OPTION>/store/backfill/1</OPTION>
   <OPTION>/store/backfill/2</OPTION>
+</SELECT><BR>
+Unmerged LFN Base: <SELECT name="unmergedLFNBase">
+  <OPTION>/store/unmerged</OPTION>
+  <OPTION>/store/temp/unmerged</OPTION>
+  <OPTION>/store/temp/WMAgent/unmerged</OPTION>
 </SELECT><BR>
 
 Min Merge Size <INPUT TYPE="text" name="minMergeSize" VALUE=500000000 size=10/>

@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.15 2009/04/28 06:57:53 metson Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: CMSCouch.py,v 1.16 2009/04/28 21:21:46 metson Exp $"
+__version__ = "$Revision: 1.16 $"
 
 try:
     # Python 2.6
@@ -162,7 +162,6 @@ class Database(CouchDBRequests):
         Time stamp each doc in a list - should really edit in place, something 
         is up with the references...
         """
-        print 'timestamping'
         if type(data) == type({}):
             data['timestamp'] = str(datetime.datetime.now())
             return data
@@ -198,7 +197,6 @@ class Database(CouchDBRequests):
         2009/01/30 18:04:11 - this will be the timestamp of when the commit was 
         called, it will not override an existing timestamp field.   
         """
-        print "committing", doc, returndocs, timestamp
         result = ()
         if len(self._queue) > 0:
             if doc:
@@ -211,7 +209,6 @@ class Database(CouchDBRequests):
         elif doc:
             if timestamp:
                 doc = self.timestamp(doc)
-            print doc
             if  '_id' in doc.keys():
                 return self.put('/%s/%s' % (self.name, 
                                             urllib.quote_plus(doc['_id'])), 

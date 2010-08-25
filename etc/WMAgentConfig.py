@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.16 2010/05/27 14:59:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.17 2010/05/28 15:47:36 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import os
 import WMCore.WMInit
@@ -171,8 +171,8 @@ workqueue.queueParams.setdefault('QueueURL', 'http://%s:%s/%s' % (config.Agent.h
 workqueuemonitor = config.WorkQueueService.views.active.section_('workqueuemonitor')
 workqueuemonitor.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueMonitorPage'
 workqueuemonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
-workqueuemonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/WMCore/WebTools')
-workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/WorkQueue')
+workqueuemonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
+workqueuemonitor.html = os.path.join(WMCore.WMInit.getWMBASE(), 'src/html/')
 
 config.webapp_("WMBSMonitoring")
 config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"

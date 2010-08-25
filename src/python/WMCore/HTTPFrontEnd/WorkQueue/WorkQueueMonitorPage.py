@@ -4,8 +4,8 @@
 The documentation for the framework
 """
     
-__revision__ = "$Id: WorkQueueMonitorPage.py,v 1.3 2010/05/19 16:56:59 sryu Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueMonitorPage.py,v 1.4 2010/05/28 15:48:52 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage
@@ -23,7 +23,7 @@ class WorkQueueMonitorPage(TemplatedPage):
         """
         The index of the documentation
         """
-        return serve_file(os.path.join(self.config.html, 'index.html'),
+        return serve_file(os.path.join(self.config.html, 'WorkQueue', 'index.html'),
                               content_type='text/html')
         
     @expose
@@ -38,8 +38,12 @@ class WorkQueueMonitorPage(TemplatedPage):
 
     @expose
     def javascript(self, *args):
-        return serve_file(os.path.join(self.config.javascript, *args),
-                              content_type='text/html')
+        if args[0] == "external":
+            return serve_file(os.path.join(self.config.javascript, *args),
+                              content_type='application/javascript')
+        return serve_file(os.path.join(self.config.javascript, 
+                                      'WMCore', 'WebTools', *args),
+                              content_type='application/javascript')
     
     @expose
     def css(self, *args):
@@ -49,7 +53,8 @@ class WorkQueueMonitorPage(TemplatedPage):
     @expose
     def examples(self, *args):
         if len(args) == 0:
-            examples = listdir(os.path.join(self.config.html, 'examples'))
+            examples = listdir(os.path.join(self.config.html, 
+                                            'WorkQueue', 'examples'))
             index = "<h1>WorkQueuMonitor Examples</h1>\n<ol>"
             for t in examples:
                 index = """%s\n<li>
@@ -57,5 +62,6 @@ class WorkQueueMonitorPage(TemplatedPage):
                            </li>""" % (index, t, t)
             return index
         
-        return serve_file(os.path.join(self.config.html, 'examples', *args),
-                              content_type='text/html')
+        return serve_file(os.path.join(self.config.html, 'WorkQueue',
+                                       'examples', *args),
+                          content_type='text/html')

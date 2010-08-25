@@ -23,29 +23,32 @@ User: $requestor&nbsp Group:
     #end for
 </select></br>
 
-<select name="cmsswVersion">
-#for $version in $versions
-    #if $version == $defaultVersion
-        <OPTION SELECTED>$version</OPTION>
-    #else
-        <OPTION>$version</OPTION>
-    #end if
-#end for
-</SELECT>
-
-<SELECT NAME="scramArch">
-    <OPTION>slc4_ia32_gcc345</OPTION>
-    <OPTION SELECTED>slc5_ia32_gcc434</OPTION>
-    <OPTION>slc5_amd64_gcc434</OPTION>
-</SELECT>
-
 Request Priority: <input type="text" name="requestPriority" size=2 value=1 /><br/>
+#end def
+
+#def softwareBlock
+Software Release: <select name="cmsswVersion">
+			#for $version in $versions
+    				#if $version == $defaultVersion
+        				<OPTION SELECTED>$version</OPTION>
+    				#else
+        				<OPTION>$version</OPTION>
+    				#end if
+			#end for
+		   </SELECT>
+
+		   <SELECT NAME="scramArch">
+    			<OPTION>slc4_ia32_gcc345</OPTION>
+    			<OPTION SELECTED>slc5_ia32_gcc434</OPTION>
+    			<OPTION>slc5_amd64_gcc434</OPTION>
+		   </SELECT><br/>
+
+#end def 
+
+#def configBlock
 # of Events: <input type="text" name="requestSizeEvents" size=10 value=-1 />
 # of Files: <input type="text" name="requestSizeFiles" size=5 value=1 /><br/>
 Acquisition Era: <INPUT TYPE="text" name="acquisitionEra" SIZE=20></BR>
-#end def
-
-#def configBlock
 Configuration <BR>
   <INPUT TYPE="radio" NAME="inputMode" VALUE="scenario"> Scenario
     <select name="scenario">
@@ -73,7 +76,13 @@ Global Tag: <input type="text" name="globalTag" size=20 value=""/> &nbsp &nbsp
 #def ioBlock
 Input Dataset: <input type="text" name="filein" size=40 /><br/>
 
-DBS: <input type="text" name="dbs" VALUE="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" size=80/><br/>
+DBS: <!--input type="text" name="dbs" VALUE="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" size=80/><br/-->
+<select name="dbs">
+                <option>None</option>
+		<option>http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet</option>
+                <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_01/servlet/DBSServlet</option>
+                <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet</option>
+</select></br>
 #end def
 
 #def skimBlock($skimNum)
@@ -189,6 +198,7 @@ Site Blacklist:
     <DIV CLASS="yui-content">
         <DIV ID="rereco">
             $headerBlock
+            $softwareBlock
             ProcessingVersion  <input type="text" name="processingVersion"  size=20 /><br/>
             $configBlock
             $ioBlock
@@ -201,6 +211,7 @@ Site Blacklist:
         </DIV>
         <DIV ID="mc">
             $headerBlock
+            $softwareBlock
             $configBlock
             $ioBlock
             $siteBlock
@@ -208,8 +219,9 @@ Site Blacklist:
         </DIV>
         <DIV ID="storeResults">
             $headerBlock
+            $softwareBlock
             $ioBlock
-            $siteBlock
+            $trailerBlock("StoreResults")
         </DIV>
         <DIV ID="kungFuBear">
             <object width="500" height="405"><param name="movie" value="http://www.youtube.com/v/Ghgg_fukbvU&amp;hl=en_US&amp;fs=1?rel=0&amp;border=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/Ghgg_fukbvU&amp;hl=en_US&amp;fs=1?rel=0&amp;border=1" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" width="500" height="405"></embed></object>

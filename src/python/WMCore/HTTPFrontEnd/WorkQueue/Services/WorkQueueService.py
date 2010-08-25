@@ -7,6 +7,7 @@ Rest Model for WMBS Monitoring.
 from WMCore.Wrappers import JsonWrapper
 from WMCore.HTTPFrontEnd.WorkQueue.Services.ServiceInterface import ServiceInterface
 from cherrypy import HTTPError
+from cherrypy.lib.static import serve_file
 
 #TODO: needs to point to the global workqueue if it can make it for the both
 from WMCore.WorkQueue.WorkQueue import WorkQueue
@@ -30,10 +31,7 @@ def serveWorkflow(workqueue, name):
         raise HTTPError(403)
     if not path.exists(name):
         raise HTTPError(404, "%s not found" % name)
-    data = ''
-    with open(name, 'rb') as infile:
-        data = infile.read()
-    return data
+    return serve_file(name, "application/x-download", "attachment")
 
 
 class WorkQueueService(ServiceInterface):
@@ -42,7 +40,10 @@ class WorkQueueService(ServiceInterface):
     implementing the GET verb.
     """
     def register(self):
-        
+
+        if not hasattr(self.model.config, 'queueParams'):
+            self.model.config.queueParams = {}
+
         # we don't populate wmbs - WorkQueueManager does (in the LocalQueue)
         self.model.config.queueParams['PopulateFilesets'] = False
         self.wq = WorkQueue(logger=self.model, dbi=self.model.dbi, **self.model.config.queueParams)

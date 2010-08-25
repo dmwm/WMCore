@@ -8,11 +8,11 @@ On MySQL transactions only work for innodb tables.
 
 On SQLite transactions only work if isolation_level is not null. This can be set
 in the DBFactory class by passing in options={'isolation_level':'DEFERRED'}. If
-you set {'isolation_level':None} all sql will be implicitly committed and the 
+you set {'isolation_level':None} all sql will be implicitly committed and the
 Transaction object will be meaningless.
 """
-__revision__ = "$Id: Transaction.py,v 1.6 2009/01/08 22:49:44 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Transaction.py,v 1.7 2009/05/18 19:41:19 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import logging
 import time
@@ -23,30 +23,41 @@ from WMCore.WMExceptions import WMEXCEPTION
 
 class Transaction(WMObject):
     dbi = None
-    
+   
     def __init__(self, dbinterface = None):
         """
         Get the connection from the DBInterface and open a new transaction on it
         """
+        #print "Transaction::__init__()"
         self.dbi = dbinterface
+        self.conn = None
+        self.transaction = None
         self.begin()
         # retries when disconnect
         self.retries = 5
         # buffer for losing connection
         self.sqlBuffer = []
-        
+       
     def begin(self):
-        self.conn = self.dbi.connection()
-        self.transaction = self.conn.begin()
+        #print "Transaction::begin(%s) pre: %s, %s" % (id(self), self.conn, self.transaction)
 
+        if self.conn == None:
+            self.conn = self.dbi.connection()
+
+        self.transaction = self.conn.begin()
+        return
+   
     def processData(self, sql, binds={}):
-        """ 
+        """
         Propagates the request to the proper dbcore backend,
         and performs checks for lost (or closed) connection.
-        """ 
+        """
         self.sqlBuffer.append( (sql, binds) )
-        # but we might dealing with a closed or 
+        # but we might dealing with a closed or
         # lost connection.
+        if not self.conn == None:
+            if self.conn.closed:
+                self.conn = None
         try:
             result = self.dbi.processData(sql, binds, conn = self.conn, \
                 transaction = True)
@@ -61,41 +72,51 @@ class Transaction(WMObject):
             logging.warning("Trying to reconnect")
             result = self.redo()
 
-        return result 
+        return result
 
     def commit(self):
         """
         Commit the transaction and return the connection to the pool
         """
-        try:
-            self.transaction.commit()
-        except Exception, ex:
-            logging.warning("Problem connecting to database: "+str(ex))
-            logging.warning("Be patient!")
-            logging.warning("Trying to close existing connection")
+        #print "Transaction::commit(%s)" % id(self)
+        if not self.transaction == None:
             try:
-                self.conn.close()
-            except:
-                pass
-            logging.warning("Trying to reconnect")
-            self.redo()
-            self.transaction.commit()
+                self.transaction.commit()
+            except Exception, ex:
+                print "PROBLEM: %s" % str(ex)
+                logging.warning("Problem connecting to database: "+str(ex))
+                logging.warning("Be patient!")
+                logging.warning("Trying to close existing connection")
+                try:
+                    self.conn.close()
+                except:
+                    pass
+                logging.warning("Trying to reconnect")
+                self.redo()
+                self.transaction.commit()
+        else:
+            print "Transaction::commit(%s) had null transaction object" %id(self)
+            
+            
         self.sqlBuffer = []
-        self.conn.close()
+        if not self.conn == None:
+            self.conn.close()
         self.conn = None
-        
+        self.transaction = None
+       
     def rollback(self):
         """
-        To be called if there is an exception and you want to roll back the 
+        To be called if there is an exception and you want to roll back the
         transaction and return the connection to the pool
         """
         self.sqlBuffer = []
         self.transaction.rollback()
         self.conn.close()
         self.conn = None
+        self.transaction = None
 
     def redo(self):
-        """ 
+        """
         Tries to re-execute all statements that where not committed,
         before the connection was lost.
         """
@@ -104,7 +125,7 @@ class Transaction(WMObject):
         connectionProblem = True
         fatalError = False
         ## try several time to connect.
-        waitTime = 1 
+        waitTime = 1
         reportedError = ''
         while tries < self.retries and connectionProblem:
             #try reconnecting
@@ -125,7 +146,7 @@ class Transaction(WMObject):
                     fatalError = True
                 ##else:
                 ##connectionProblem = False
-                ##tries = self.retries 
+                ##tries = self.retries
             # wait a few seconds if connection failed again:
             # multiply wait time.
             if connectionProblem:
@@ -136,4 +157,3 @@ class Transaction(WMObject):
             raise WMException(WMEXCEPTION['WMCORE-12']+str(reportedError), \
                 'WMCORE-12')
         return result
-

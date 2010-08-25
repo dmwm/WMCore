@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.55 2010/02/11 21:14:29 meloam Exp $"
+    "$Id: TestInit.py,v 1.56 2010/02/11 21:17:46 meloam Exp $"
 __version__ = \
-    "$Revision: 1.55 $"
+    "$Revision: 1.56 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -128,7 +128,7 @@ class TestInit:
                 for oneTable in result:
                     allTables.append( oneTable[0] )
                     
-                if len(allTables == 0):
+                if len(allTables) == 0:
                     return
                 
                 print "all tables is %s" % allTables

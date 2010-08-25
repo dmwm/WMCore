@@ -7,8 +7,8 @@ So far we use simplejson (json) and cjson, other modules can be
 added in addition.
 """
 
-__revision__ = "$Id: __init__.py,v 1.5 2010/01/11 14:14:17 metson Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: __init__.py,v 1.1 2010/01/27 19:32:07 meloam Exp $"
+__version__ = "$Revision: 1.1 $"
 
 _module = "json"
 

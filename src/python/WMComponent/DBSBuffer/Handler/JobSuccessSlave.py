@@ -4,8 +4,8 @@ DBS Buffer handler for JobSuccess event
 """
 __all__ = []
 
-__revision__ = "$Id: JobSuccessSlave.py,v 1.3 2009/07/15 20:41:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobSuccessSlave.py,v 1.4 2009/07/27 20:06:37 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "mnorman@fnal.gov"
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -24,7 +24,7 @@ import exceptions
 import time
 import threading
 
-from ProdCommon.FwkJobRep.ReportParser import readJobReport
+from WMCore.FwkJobReport.FJRParser import readJobReport
 
 class JobSuccessSlave(ThreadSlave):
     """

@@ -51,7 +51,7 @@ config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
 #config.CernOpenID.store.database = 'sqlite://'
 config.SecurityModule.session_name = 'SecurityModule'
 config.SecurityModule.oid_server = 'http://localhost:8000/'
-config.SecurityModule.handler = 'WMCore.WebTools.CernOidDefaultHandler'
+config.SecurityModule.handler = 'WMCore.WebTools.OidDefaultHandler'
 
 # The section name is also the location the class will be located
 # e.g. http://localhost:8080/documentation
@@ -75,11 +75,12 @@ active.securedocumentation.object = 'WMCore.WebTools.SecureDocumentation'
 #active.welcome.object = 'WMCore.WebTools.Welcome'
 
 # Controllers are standard way to return minified gzipped css and js
+# Please install YUI or provide another reset.css file
 active.section_('controllers')
 # The class to load for this view/page
 active.controllers.object = 'WMCore.WebTools.Controllers'
 # The configuration for this object - the location of css and js
-active.controllers.css = {'reset.css': environ['YUI_ROOT'] + '/reset/reset.css', 
+active.controllers.css = {'reset.css': environ['YUI_ROOT'] + '/build/reset/reset.css', 
         'cms_reset.css': environ['WTBASE'] + '/css/WMCore/WebTools/cms_reset.css', 
         'style.css': environ['WTBASE'] + '/css/WMCore/WebTools/style.css'}
 active.controllers.js = {}
@@ -91,14 +92,16 @@ active.masthead.object = 'WMCore.WebTools.Masthead'
 active.masthead.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/Masthead'
 
 # This is how you would configure a RESTful service
-active.section_('rest')
-active.rest.object = 'WMCore.WebTools.RESTApi'
-active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
+# You need to install py2-sqlalchemy to be able to use it. Put it on the
+# spec file of your webtools package
+#active.section_('rest')
+#active.rest.object = 'WMCore.WebTools.RESTApi'
+#active.rest.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'
 # Dummy in memory SQLite DB
-active.rest.database = 'sqlite://'
-active.rest.section_('model')
-active.rest.model.object = 'RESTModel'
-active.rest.section_('formatter')
-active.rest.formatter.object = 'RESTFormatter'
+#active.rest.database = 'sqlite://'
+#active.rest.section_('model')
+#active.rest.model.object = 'RESTModel'
+#active.rest.section_('formatter')
+#active.rest.formatter.object = 'RESTFormatter'
 # You could override the templates/database here, for instance:
 #active.rest.formatter.templates = environ['WTBASE'] + '/templates/WMCore/WebTools/'

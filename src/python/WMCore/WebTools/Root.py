@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.31 2009/10/09 16:55:40 diego Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Root.py,v 1.32 2009/11/05 13:33:16 diego Exp $"
+__version__ = "$Revision: 1.32 $"
 
 # CherryPy
 import cherrypy
@@ -23,9 +23,9 @@ from optparse import OptionParser
 # Factory to load pages dynamically
 from WMCore.WMFactory import WMFactory
 # Database access and DAO 
-from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.DAOFactory import DAOFactory
+#from WMCore.Database.DBCore import DBInterface
+#from WMCore.Database.DBFactory import DBFactory
+#from WMCore.DAOFactory import DAOFactory
 # Logging
 import WMCore.WMLogging
 import logging 

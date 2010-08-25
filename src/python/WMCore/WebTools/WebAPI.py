@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-from WMCore.WebTools.Page import DatabasePage, exposexml, exposejson
+from WMCore.WebTools.Page import exposexml, exposejson
 from WMCore.WebTools.Page import exposedasplist, exposedasjson, exposedasxml
+from WMCore.WebTools.DatabasePage import DatabasePage
 from WMCore.Lexicon import sitetier, countrycode
 from cherrypy import expose, HTTPRedirect
 import sys

@@ -3,8 +3,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.13 2009/07/17 15:59:40 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: DBSBuffer_t_anzar.py,v 1.14 2009/07/27 20:11:28 mnorman Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -23,6 +23,8 @@ from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
+from WMCore.Agent.Configuration import Configuration
+
 class DBSBufferTest(unittest.TestCase):
     """
     TestCase for DBSBuffer module 
@@ -39,7 +41,8 @@ class DBSBufferTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         DBSBuffer tables.  Also add some dummy locations.
         """
-        self.config = loadConfigurationFile(os.getenv("WMAGENT_CONFIG"))
+        #self.config = loadConfigurationFile(os.getenv("WMAGENT_CONFIG"))
+        self.config = self.getConfig()
         myThread = threading.currentThread()
         myThread.dialect = self.config.CoreDatabase.dialect
         
@@ -49,13 +52,15 @@ class DBSBufferTest(unittest.TestCase):
         myThread.dbFactory = DBFactory(myThread.logger, self.config.CoreDatabase.connectUrl)
         myThread.dbi = myThread.dbFactory.connect()
         myThread.transaction = Transaction(myThread.dbi)
+
+        #self.tearDown()
         
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
                                 useDefault = True)
 
-        myThread.transaction = None
-        myThread.dbi = None
-        myThread.dbFactory = None
+        #myThread.transaction = None
+        #myThread.dbi = None
+        #myThread.dbFactory = None
         return
           
     def tearDown(self):        
@@ -64,24 +69,89 @@ class DBSBufferTest(unittest.TestCase):
         
         Drop all the DBSBuffer tables.
         """
-        return
         
         myThread = threading.currentThread()
         
         if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
+            myThread.transaction = Transaction(myThread.dbi)
         
         myThread.transaction.begin()
 
         factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")        
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
         destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
         if not destroyworked:
             raise Exception("Could not complete DBSBuffer tear down.")
+
+        factory = WMFactory("DBSBuffer", "WMCore.ThreadPool")        
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete ThreadPool tear down.")
+
+        factory = WMFactory("DBSBuffer", "WMCore.MsgService")        
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete MsgService tear down.")
+
+        factory = WMFactory("DBSBuffer", "WMCore.Trigger")        
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        if not destroyworked:
+            raise Exception("Could not complete Trigger tear down.")
         
         myThread.transaction.commit()    
         return
+
+
+    def getConfig(self):
+        """
+        _getConfig_
+
+        Gets config object for testing
+        """
+
+        myThread = threading.currentThread()
+
+        config = Configuration()
+        config.component_("DBSBuffer")
+        config.DBSBuffer.logLevel = 'INFO'
+        config.DBSBuffer.namespace = 'WMComponent.DBSBuffer.DBSBuffer'
+        config.DBSBuffer.maxThreads = 1
+        config.DBSBuffer.jobSuccessHandler = \
+                                           'WMComponent.DBSBuffer.Handler.JobSuccess'
+
+        config.section_("General")
+        
+        if not os.getenv("TESTDIR") == None:
+            config.General.workDir = os.getenv("TESTDIR")
+        else:
+            config.General.workDir = os.getcwd()
+        
+        config.section_("CoreDatabase")
+        if not os.getenv("DIALECT") == None:
+            config.CoreDatabase.dialect = os.getenv("DIALECT")
+            myThread.dialect = os.getenv('DIALECT')
+        if not os.getenv("DBUSER") == None:
+            config.CoreDatabase.user = os.getenv("DBUSER")
+        else:
+            config.CoreDatabase.user = os.getenv("USER")
+        if not os.getenv("DBHOST") == None:
+            config.CoreDatabase.hostname = os.getenv("DBHOST")
+        else:
+            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
+        config.CoreDatabase.passwd = os.getenv("DBPASS")
+        if not os.getenv("DBNAME") == None:
+            config.CoreDatabase.name = os.getenv("DBNAME")
+        else:
+            config.CoreDatabase.name = os.getenv("DATABASE")
+        if not os.getenv("DATABASE") == None:
+            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
+            myThread.database = os.getenv("DATABASE")
+
+
+        return config
 
     def testA(self):
         """
@@ -105,10 +175,12 @@ class DBSBufferTest(unittest.TestCase):
                 count = count + 1
                 testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
                 
-        while threading.activeCount() > 2:
+        while threading.activeCount() > 1:
+
             print('Currently: '+str(threading.activeCount())+\
                 ' Threads. Wait until all our threads have finished')
             time.sleep(1)
+            
         DBSBufferTest._teardown = True
 
     def testSingleJobFrameworkReport(self):
@@ -118,74 +190,16 @@ class DBSBufferTest(unittest.TestCase):
         
         """
 
-        # read the default config first.
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), \
-            'src/python/WMComponent/DBSBuffer/DefaultConfig.py'))
-
-        # some general settings that would come from the general default 
-        # config file
-        config.Agent.contact = "anzar@fnal.gov"
-        config.Agent.teamName = "DBS"
-        config.Agent.agentName = "DBS Buffer"
-
-        config.section_("General")
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-            
-	#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        return
+        
         myThread = threading.currentThread()
-        myThread.logger = logging.getLogger('DBSBufferTest')
 
-        config.section_("CoreDatabase")
-        config.CoreDatabase.dialect = 'mysql'
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT").lower()
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            myThread.database              = os.getenv("DATABASE")
-        else:
-            print "ERROR: Could not find database setting in environment!"
-            print "ABORT: Cannot start without a database"
-            raise 'Exception'
-            
-
-        options = {}
-        if not os.getenv("DBSOCK") == None:
-            options['unix_socket'] = os.getenv("DBSOCK")
-        if not os.getenv("DIALECT") == None:
-            myThread.dialect = os.getenv("DIALECT")
-        else:
-            print "No dialect found in environment!  Grabbing from database!"
-            if os.getenv("DATABASE").lower().find('oracle') != -1:
-                myThread.dialect = 'Oracle'
-            elif os.getenv("DATABASE").lower().find('mysql') != -1:
-                myThread.dialect = 'MySQL'
-            elif os.getenv("DATABASE").lower().find('sqlite') != -1:
-                myThread.dialect = 'SQLite'
-            else:
-                print "Could not parse DATABASE.  Using Oracle"
-                myThread.dialect = 'Oracle'
-
-        testDBSBuffer = DBSBuffer(config)
+        testDBSBuffer = DBSBuffer(self.config)
         testDBSBuffer.prepareToStart()
 
-
+        options = {} 	 
+        if not os.getenv("DBSOCK") == None: 	 
+            options['unix_socket'] = os.getenv("DBSOCK") 	 
         
         dbFactory = DBFactory(myThread.logger, myThread.database, options)
         myThread.dbi = dbFactory.connect()
@@ -198,6 +212,15 @@ class DBSBufferTest(unittest.TestCase):
             print "ABORT: Cannot test without test Job Report!"
             raise 'exception'
         testDBSBuffer.handleMessage('JobSuccess', FJR)
+
+        while threading.activeCount() > 1:
+            
+            print('Currently: '+str(threading.activeCount())+\
+                  ' Threads. Wait until all our threads have finished')
+            time.sleep(1)
+
+
+        return
 
 
     def runTest(self):

@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.29 2010/02/05 14:17:35 meloam Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: Harness.py,v 1.30 2010/02/10 16:03:44 swakef Exp $"
+__version__ = "$Revision: 1.30 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -29,6 +29,7 @@ import os
 import sys
 import threading
 import time
+import traceback
 
 from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Database.DBFactory import DBFactory
@@ -502,6 +503,9 @@ which have a handler, have been found: diagnostic: %s and component specific: %s
                 errormsg = """ 
 PostMortem: choked when initializing with error: %s
                 """ % (str(ex))
+                stackTrace = traceback.format_tb(sys.exc_info()[2], None)
+                for stackFrame in stackTrace:
+                    errormsg += stackFrame         
             else:
                 logging.info(\
                     ">>>Fatal error, rollback all non-committed transactions")

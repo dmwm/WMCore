@@ -184,9 +184,11 @@ class ReportCommand(Command):
         cfg = ConfigParser()
         cfg.read('standards/.pylintrc')
         
-        bak = sys.stderr
+        err_bak = sys.stderr
+        out_bak = sys.stdout
         sys.stderr = open('/dev/null', 'w')
-    
+        sys.stdout = open('/dev/null', 'w')
+        
         for stats in lint_files(files):
             error += stats['error']
             warning += stats['warning']
@@ -194,7 +196,8 @@ class ReportCommand(Command):
             convention += stats['convention'] 
             statement += stats['statement']
         
-        sys.stderr = bak
+        sys.stderr = err_bak
+        sys.stdout = out_bak
         
         stats = {'error': error,
             'warning': warning,

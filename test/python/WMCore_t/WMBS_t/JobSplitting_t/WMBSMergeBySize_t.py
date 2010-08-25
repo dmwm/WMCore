@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.11 2010/03/08 17:06:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.12 2010/03/11 19:22:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import unittest
 import os
@@ -133,7 +133,39 @@ class WMBSMergeBySize(unittest.TestCase):
         testJob4["retry_count"] = 0
         testJob4["outcome"] = "failure"
         testJob4.save()        
-        changeStateDAO.execute([testJob4])        
+        changeStateDAO.execute([testJob4])
+
+        # We'll simulate a failed split by event job that the merger should
+        # ignore.
+        parentFile5 = File(lfn = "parentFile5")
+        parentFile5.create()        
+
+        testJob5 = Job()
+        testJob5.addFile(parentFile5)
+        testJob5.create(jobGroup2)
+        testJob5["state"] = "cleanout"
+        testJob5["oldstate"] = "new"
+        testJob5["couch_record"] = "somejive"
+        testJob5["retry_count"] = 0
+        testJob5["outcome"] = "success"
+        testJob5.save()        
+        changeStateDAO.execute([testJob5])
+
+        testJob6 = Job()
+        testJob6.addFile(parentFile5)
+        testJob6.create(jobGroup2)
+        testJob6["state"] = "cleanout"
+        testJob6["oldstate"] = "new"
+        testJob6["couch_record"] = "somejive"
+        testJob6["retry_count"] = 0
+        testJob6["outcome"] = "failure"
+        testJob6.save()        
+        changeStateDAO.execute([testJob6])                
+
+        badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024, first_event = 0)
+        badFile1.addRun(Run(1, *[45]))
+        badFile1.create()
+        badFile1.addParent(parentFile5["lfn"])
 
         file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0)
         file1.addRun(Run(1, *[45]))
@@ -211,10 +243,13 @@ class WMBSMergeBySize(unittest.TestCase):
         jobGroup2.output.addFile(fileX)
         jobGroup2.output.addFile(fileY)
         jobGroup2.output.addFile(fileZ)
+        jobGroup2.output.addFile(badFile1)
         jobGroup2.output.commit()
 
         self.mergeFileset = Fileset(name = "mergeFileset")
         self.mergeFileset.create()
+        self.bogusFileset = Fileset(name = "bogusFileset")
+        self.bogusFileset.create()        
 
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
                                  owner = "Steve", task="Test")
@@ -224,22 +259,17 @@ class WMBSMergeBySize(unittest.TestCase):
                                               workflow = mergeWorkflow,
                                               split_algo = "WMBSMergeBySize")
         self.mergeSubscription.create()
-        
-        self.mergeFileset.addFile(file1)
-        self.mergeFileset.addFile(file2)
-        self.mergeFileset.addFile(file3)
-        self.mergeFileset.addFile(file4)
-        self.mergeFileset.addFile(fileA)
-        self.mergeFileset.addFile(fileB)
-        self.mergeFileset.addFile(fileC)
-        self.mergeFileset.addFile(fileI)
-        self.mergeFileset.addFile(fileII)
-        self.mergeFileset.addFile(fileIII)
-        self.mergeFileset.addFile(fileIV)
-        self.mergeFileset.addFile(fileX)
-        self.mergeFileset.addFile(fileY)
-        self.mergeFileset.addFile(fileZ)        
+        self.bogusSubscription = Subscription(fileset = self.bogusFileset,
+                                              workflow = mergeWorkflow,
+                                              split_algo = "WMBSMergeBySize")
+
+        for file in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
+                     fileII, fileIII, fileIV, fileX, fileY, fileZ, badFile1]:
+            self.mergeFileset.addFile(file)
+            self.bogusFileset.addFile(file)
+
         self.mergeFileset.commit()
+        self.bogusFileset.commit()
 
         return
 
@@ -257,8 +287,8 @@ class WMBSMergeBySize(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 20000, max_merge_size = 200000,
-                            max_merge_events = 20000)
+        result = jobFactory(min_merge_size = 20000, max_merge_size = 2000000000,
+                            max_merge_events = 200000000)
 
         assert len(result) == 0, \
                "ERROR: No job groups should be returned."

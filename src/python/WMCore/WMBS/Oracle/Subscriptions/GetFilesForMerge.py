@@ -5,9 +5,8 @@ _GetFilesForMerge_
 Oracle implementation of Subscription.GetFilesForMerge
 """
 
-__all__ = []
-__revision__ = "$Id: GetFilesForMerge.py,v 1.7 2010/03/08 17:06:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: GetFilesForMerge.py,v 1.8 2010/03/11 19:22:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.8 $"
 
 from WMCore.WMBS.MySQL.Subscriptions.GetFilesForMerge import GetFilesForMerge as GetFilesForMergeMySQL
 
@@ -19,51 +18,50 @@ class GetFilesForMerge(GetFilesForMergeMySQL):
 
     See the MySQL version of this object for a narrative on this query.
     """
-    sql = """SELECT wmbs_file_details.id AS file_id,
+    sql = """SELECT merge_files.fileid AS file_id,
+                    merge_files.parent AS file_parent,
                     wmbs_file_details.events AS file_events,
                     wmbs_file_details.filesize AS file_size,
                     wmbs_file_details.lfn AS file_lfn,
                     wmbs_file_details.first_event AS file_first_event,
-                    wmbs_file_runlumi_map.run AS file_run,
-                    wmbs_file_runlumi_map.lumi AS file_lumi,
-                    MIN(wmbs_file_parent.parent) AS file_parent
-             FROM wmbs_file_details
+                    MIN(wmbs_file_runlumi_map.run) AS file_run,
+                    MIN(wmbs_file_runlumi_map.lumi) AS file_lumi
+             FROM (
+               SELECT wmbs_fileset_files.fileid AS fileid,
+                      MIN(wmbs_file_parent.parent) AS parent,
+                      COUNT(wmbs_fileset_files.fileid),
+                      COUNT(b.id)
+               FROM wmbs_fileset_files
+               INNER JOIN wmbs_subscription ON
+                 wmbs_subscription.fileset = wmbs_fileset_files.fileset AND
+                 wmbs_subscription.id = :p_1
+               LEFT OUTER JOIN wmbs_sub_files_acquired ON
+                 wmbs_fileset_files.fileid = wmbs_sub_files_acquired.fileid AND
+                 wmbs_sub_files_acquired.subscription = :p_1
+               LEFT OUTER JOIN wmbs_sub_files_complete ON
+                 wmbs_fileset_files.fileid = wmbs_sub_files_complete.fileid AND
+                 wmbs_sub_files_complete.subscription = :p_1
+               LEFT OUTER JOIN wmbs_sub_files_failed ON
+                 wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid AND
+                 wmbs_sub_files_failed.subscription = :p_1
+               INNER JOIN wmbs_file_parent ON
+                 wmbs_file_parent.child = wmbs_fileset_files.fileid
+               INNER JOIN wmbs_job_assoc ON
+                 wmbs_file_parent.parent = wmbs_job_assoc.fileid
+               INNER JOIN wmbs_job a ON
+                 a.id = wmbs_job_assoc.job
+               LEFT OUTER JOIN wmbs_job b ON
+                 b.id = wmbs_job_assoc.job AND
+                 b.outcome = 1
+               WHERE wmbs_sub_files_acquired.fileid IS NULL AND
+                     wmbs_sub_files_complete.fileid IS NULL AND
+                     wmbs_sub_files_failed.fileid IS NULL
+               GROUP BY wmbs_fileset_files.fileid, a.jobgroup
+               HAVING COUNT(wmbs_fileset_files.fileid) = COUNT(b.id)) merge_files
+             INNER JOIN wmbs_file_details ON
+               wmbs_file_details.id = merge_files.fileid
              INNER JOIN wmbs_file_runlumi_map ON
-               wmbs_file_details.id = wmbs_file_runlumi_map.fileid
-             INNER JOIN
-               (SELECT wmbs_fileset_files.fileid AS fileid FROM wmbs_fileset_files
-                  INNER JOIN wmbs_subscription ON
-                    wmbs_fileset_files.fileset = wmbs_subscription.fileset
-                  LEFT OUTER JOIN wmbs_sub_files_acquired ON
-                    wmbs_fileset_files.fileid = wmbs_sub_files_acquired.fileid AND
-                    wmbs_sub_files_acquired.subscription = wmbs_subscription.id
-                  LEFT OUTER JOIN wmbs_sub_files_complete ON
-                    wmbs_fileset_files.fileid = wmbs_sub_files_complete.fileid AND
-                    wmbs_sub_files_complete.subscription = wmbs_subscription.id
-                  LEFT OUTER JOIN wmbs_sub_files_failed ON
-                    wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid AND
-                    wmbs_sub_files_failed.subscription = wmbs_subscription.id                    
-                  WHERE wmbs_subscription.id = :p_1 AND
-                        wmbs_sub_files_acquired.fileid IS NULL AND
-                        wmbs_sub_files_complete.fileid IS NULL AND
-                        wmbs_sub_files_failed.fileid IS NULL) merge_fileset ON
-               wmbs_file_details.id = merge_fileset.fileid
-             LEFT OUTER JOIN wmbs_file_parent ON
-               wmbs_file_details.id = wmbs_file_parent.child
-             WHERE wmbs_file_details.id NOT IN
-               (SELECT child FROM wmbs_file_parent
-                  INNER JOIN wmbs_job_assoc ON
-                    wmbs_file_parent.parent = wmbs_job_assoc.fileid
-                  INNER JOIN wmbs_job ON
-                    wmbs_job_assoc.job = wmbs_job.id
-                  INNER JOIN wmbs_jobgroup ON
-                    wmbs_job.jobgroup = wmbs_jobgroup.id
-                  INNER JOIN wmbs_job_state ON
-                    wmbs_job.state = wmbs_job_state.id
-                WHERE wmbs_job.outcome = 0 OR
-                      wmbs_job_state.name != 'cleanout' AND
-                      wmbs_jobgroup.subscription = :p_1)
-             GROUP BY wmbs_file_details.id, wmbs_file_details.events,
-                    wmbs_file_details.filesize, wmbs_file_details.lfn,
-                    wmbs_file_details.first_event, wmbs_file_runlumi_map.run,
-                    wmbs_file_runlumi_map.lumi"""
+               wmbs_file_runlumi_map.fileid = merge_files.fileid
+             GROUP BY merge_files.fileid, merge_files.parent,
+                      wmbs_file_details.events, wmbs_file_details.filesize,
+                      wmbs_file_details.lfn, wmbs_file_details.first_event"""

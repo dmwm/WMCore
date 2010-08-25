@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.18 2009/11/20 22:54:10 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.19 2009/11/30 21:45:00 sryu Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import unittest
 import os
@@ -361,7 +361,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 0)
 
         fakeDBS = self.queue.dbsHelpers['http://example.com']
-        fakeDBS.locations['/fake/test/RAW#1'] = ['SiteA', 'SiteB']
+        fakeDBS.locations['/fake/test/RAW#1'] = ['SiteA', 'SiteB', 'SiteAA']
         self.queue.phedexService.locations.update(fakeDBS.locations)
         self.queue.updateLocationInfo()
 
@@ -388,7 +388,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(work), 0)
 
         # Site B can run 
-        work = self.queue.getWork({'SiteB' : total})
+        work = self.queue.getWork({'SiteB' : total, 'SiteAA' : total})
         self.assertEqual(len(work), 2)
 
 

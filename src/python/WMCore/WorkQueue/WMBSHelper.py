@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.31 2010/06/07 15:33:27 sfoulkes Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.32 2010/06/18 15:12:53 swakef Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import logging
 
@@ -17,6 +17,17 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.Run import Run
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+
+def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
+    """Function to return status of wmbs subscriptions
+    """
+    from WMCore.DAOFactory import DAOFactory
+    action = DAOFactory(package = 'WMBS',
+                        logger = logger,
+                        dbinterface = dbi)('Monitoring.SubscriptionStatus')
+    return action.execute(conn = conn,
+                          transaction = transaction)
+
 
 class WMBSHelper:
 

@@ -2,6 +2,7 @@ import urllib
 import logging
 import os
 import pwd
+from urllib import urlencode
 
 from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.Service import Service
@@ -102,13 +103,25 @@ class RequestManager(Service):
     def postAssignment(self, requestName, prodAgentUrl = None):
         args = {}
 
-        callname = 'assignment/%s/%s' % (requestName, str(prodAgentUrl))
+        callname = 'workqueue/%s/%s' % (requestName, str(prodAgentUrl))
         return self._getResult(callname, args = args, verb = "POST")
 
     def putTeam(self, team):
         args = {}
         callname = 'team/%s' % team
         return self._getResult(callname, args = args, verb = "PUT")
+
+    def reportRequestProgress(self, requestName, **args):
+        """Update ReqMgr with request progress"""
+        callname = 'request/%s?%s' % (requestName,
+                                      urlencode(args))
+        return self._getResult(callname, verb = "POST")
+
+    def reportRequestStatus(self, requestName, status):
+        """Update reqMgr about request"""
+        callname = 'request/%s?status=%s' % (requestName,
+                                             status)
+        return self._getResult(callname, verb = "PUT")
 
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 

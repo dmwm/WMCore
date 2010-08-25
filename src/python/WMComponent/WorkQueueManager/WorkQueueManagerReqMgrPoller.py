@@ -3,12 +3,13 @@
 Poll request manager for new work
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.8 2010/06/07 19:04:46 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WorkQueueManagerReqMgrPoller.py,v 1.9 2010/06/18 15:12:50 swakef Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import re
 import os
 import os.path
+import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -25,6 +26,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
         self.reqMgr = reqMgr
         self.wq = queue
         self.config = config
+        # on restart send updates for last day
+        self.lastReport = int(time.time()) - 24*60*60
 
     def algorithm(self, parameters):
         """
@@ -57,10 +60,10 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     # Done as reporting back to ReqMgr is done per request not bulk
                     with self.wq.transactionContext():
                         for unit in units:
-                            self.wq._insertWorkQueueElement(unit)
+                            self.wq._insertWorkQueueElement(unit, requestName = reqName)
                         try:
                             self.reqMgr.postAssignment(reqName, 
-                                            self.config.get('monitorURL', ''))
+                                            self.wq.params.get('monitorURL', ''))
                         except Exception, ex:
                             # added for debuging but should be removed since remote call 
                             # doesn't make send to trace the stack.
@@ -75,6 +78,8 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
                     self.wq.logger.exception("Error processing request %s" % reqName)
 
             self.logger.info("%s element(s) obtained from RequestManager" % work)
+
+            self.reportToReqMgr()
         return
 
 
@@ -105,3 +110,25 @@ class WorkQueueManagerReqMgrPoller(BaseWorkerThread):
 #        for requestName in requestNames:
 #            result = self.reqMgr.postAssignment(requestName)
 
+    def reportToReqMgr(self):
+        """Report request status to ReqMgr"""
+        now = int(time.time())
+        try:
+            elements = self.wq.status(since = self.lastReport)
+            for ele in elements:
+                args = {'percent_complete' : ele['PercentComplete'],
+                        'percent_success' : ele['PercentSuccess']}
+                self.reqMgr.reportRequestProgress(ele['RequestName'], **args)
+
+                status = None
+                if ele.isComplete():
+                    status = 'completed'
+                elif ele.isFailed():
+                    status = 'failed'
+                elif ele.isRunning():
+                    status = 'running'
+                self.reqMgr.reportRequestStatus(ele['RequestName'], status)
+        except RuntimeError, ex:
+            self.wq.logger.warning('Error reporting to ReqMgr: %s' % str(ex))
+        else:
+            self.lastReport = now

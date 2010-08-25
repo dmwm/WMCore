@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.37 2010/06/11 20:40:27 sryu Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.38 2010/06/18 15:12:53 swakef Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import unittest
 import os
@@ -392,9 +392,20 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # finish work locally and propagate to global
         self.localQueue.doneWork([str(x['element_id']) for x in work])
-        self.assertEqual(len(self.globalQueue.status('Done')), len(work))
-        self.localQueue.updateParent() # will delete elements from local
-        self.assertEqual(len(self.globalQueue.status('Done')), 1)
+        [x.update({'Id' : x['element_id'], 'PercentComplete' : 100,
+                   'PercentSuccess' : 99}) for x in work]
+        [self.localQueue.setProgress(x) for x in work]
+        elements = self.localQueue.status('Done')
+        self.assertEqual(len(elements), len(work))
+        self.assertEqual([x['PercentComplete'] for x in elements],
+                         [100] * len(work))
+        self.assertEqual([x['PercentSuccess'] for x in elements],
+                         [99] * len(work))
+        self.localQueue.updateParent(skipWMBS = True) # will delete elements from local
+        elements = self.globalQueue.status('Done')
+        self.assertEqual(len(elements), 1)
+        self.assertEqual([x['PercentComplete'] for x in elements], [100])
+        self.assertEqual([x['PercentSuccess'] for x in elements], [99])
 
 
     def testMultiTaskProduction(self):

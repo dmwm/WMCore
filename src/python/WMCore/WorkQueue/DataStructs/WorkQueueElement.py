@@ -4,8 +4,8 @@ WorkQueueElement
 A dictionary based object meant to represent a WorkQueue element
 """
 
-__revision__ = "$Id: WorkQueueElement.py,v 1.3 2010/02/12 14:49:26 swakef Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WorkQueueElement.py,v 1.4 2010/06/18 15:12:51 swakef Exp $"
+__version__ = "$Revision: 1.4 $"
 
 STATES = ('Available', 'Negotiating', 'Acquired',
             'Done', 'Failed', 'Canceled')
@@ -21,6 +21,7 @@ class WorkQueueElement(dict):
 
         self.update(kwargs)
 
+        self.setdefault('Modified', False)
         self.setdefault('Data', None)
         self.setdefault('ParentData', [])
         self.setdefault('Jobs', None)
@@ -35,6 +36,11 @@ class WorkQueueElement(dict):
         self.setdefault('Priority', None)
         self.setdefault('SubscriptionId', None)
         self.setdefault('Status', None)
+        self.setdefault('EventsWritten', 0)
+        self.setdefault('FilesProcessed', 0)
+        self.setdefault('PercentComplete', 0)
+        self.setdefault('PercentSuccess', 0)
+        self.setdefault('RequestName', None)
 
     def inEndState(self):
         """Have we finished processing"""
@@ -54,3 +60,26 @@ class WorkQueueElement(dict):
 
     def isCanceled(self):
         return self['Status'] == 'Canceled'
+
+    def updateFromSubscription(self, wmbsStatus):
+        """Get subscription status"""
+        mapping = {'EventsWritten' : 'events_written',
+                   'FilesProcessed' : 'files_processed',
+                   'PercentComplete' : 'percent_complete',
+                   'PercentSuccess' : 'percent_success'}
+        for ourkey, wmbskey in mapping.items():
+            if wmbsStatus.has_key(wmbskey) and self[ourkey] != wmbsStatus[wmbskey]:
+                self['Modified'] = True
+                self[ourkey] = wmbsStatus[wmbskey]
+
+    def progressUpdate(self, progressReport):
+        """Take a progress report and update ourself
+           Return True if progress updated"""
+        progressValues = ('EventsWritten', 'FilesProcessed',
+                          'PercentComplete', 'PercentSuccess')
+        modified = False
+        for val in progressValues:
+            if self[val] != progressReport[val]:
+                self[val] = progressReport[val]
+                modified = True
+        return modified

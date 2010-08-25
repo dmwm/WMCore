@@ -6,8 +6,8 @@ A dictionary based object meant to represent a WorkQueue block
 
 #Can we re-use WorkQueueElement for this?
 
-__revision__ = "$Id: WorkQueueElementResult.py,v 1.4 2010/06/02 14:42:08 swakef Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueueElementResult.py,v 1.5 2010/06/18 15:12:51 swakef Exp $"
+__version__ = "$Revision: 1.5 $"
 
 class WorkQueueElementResult(dict):
     """Class to hold the status of a related group of WorkQueueElements"""
@@ -19,6 +19,16 @@ class WorkQueueElementResult(dict):
         self.setdefault('WMSpec', None)
         self.setdefault('Elements', [])
         self.setdefault('Status', self.status())
+        self.setdefault('EventsWritten',
+                        sum([x['EventsWritten'] for x in self['Elements']]))
+        self.setdefault('FilesProcessed',
+                        sum([x['FilesProcessed'] for x in self['Elements']]))
+        self.setdefault('PercentComplete',
+                        int(sum([x['PercentComplete'] for x in self['Elements']],
+                            0.0) / len(self['Elements'])))
+        self.setdefault('PercentSuccess',
+                        int(sum([x['PercentSuccess'] for x in self['Elements']],
+                            0.0) / len(self['Elements'])))
 
     def fractionComplete(self):
         """Return fraction successful"""
@@ -72,3 +82,12 @@ class WorkQueueElementResult(dict):
             if not element.inEndState():
                 return False
         return True
+
+    def formatForWire(self):
+        """Format used to send data over network
+        """
+        to_remove = ['Elements', 'WMSpec']
+        result = dict(self)
+        for item in to_remove:
+            result.pop(item)
+        return result

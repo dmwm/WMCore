@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.117 2010/06/11 19:38:36 sryu Exp $"
-__version__ = "$Revision: 1.117 $"
+__revision__ = "$Id: WorkQueue.py,v 1.118 2010/06/18 15:12:53 swakef Exp $"
+__version__ = "$Revision: 1.118 $"
 
 
 import time
@@ -193,6 +193,20 @@ class WorkQueue(WorkQueueBase):
         # Would be quicker than waiting for the next status updates
         # but would need listening services and firewall holes etc.
 
+    def setProgress(self, workQueueEle, id = 'Id'):
+        """Update an elements processing progress.
+
+        id may be be ParentQueueId if passed a WorkQueueElementResult
+        """
+        updateAction = self.daofactory(classname =
+                                       "WorkQueueElement.UpdateProgress")
+        ids = [workQueueEle[id]]
+        id_type = 'id'
+        affected = updateAction.execute(ids, workQueueEle, id_type,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+        if not affected:
+            raise RuntimeError, "Progress not changed: No matching elements"
 
     def setPriority(self, newpriority, *workflowNames):
         """
@@ -429,7 +443,7 @@ class WorkQueue(WorkQueueBase):
 
 
     def status(self, status = None, before = None, after = None, elementIDs = None,
-               dictKey = None):
+               dictKey = None, syncWithWMBS = False):
         """Return status of elements
            if given only return elements updated since the given time
         """
@@ -440,6 +454,19 @@ class WorkQueue(WorkQueueBase):
                               elementIDs = elementIDs,
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
+
+        if syncWithWMBS:
+            from WMCore.WorkQueue.WMBSHelper import wmbsSubscriptionStatus
+            wmbs_status = wmbsSubscriptionStatus(logger = self.logger,
+                                                 dbi = self.dbi,
+                                                 conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+            for item in items:
+                for wmbs in wmbs_status:
+                    if item['SubscriptionId'] == wmbs['subscription_id']:
+                        item.updateFromSubscription(wmbs)
+                        break
+
         # if dictKey given format as a dict with the appropriate key
         if dictKey:
             tmp = defaultdict(list)
@@ -459,6 +486,8 @@ class WorkQueue(WorkQueueBase):
         to_update = defaultdict(set)
         # may need to change child status - i.e. if canceled in parent
         child_update = defaultdict(set) # need to be set as have many children
+        # elements who need their progress updated
+        progress_updates = []
 
         self.logger.info("synchronize queue with child %s" % child_url)
         self.logger.debug("report contents: %s" % str(child_report))
@@ -486,6 +515,9 @@ class WorkQueue(WorkQueueBase):
                 child_update['Canceled'].add(my_item['Id'])
                 continue
 
+            if my_item.progressUpdate(item):
+                progress_updates.append(item)
+
             # if status's the same no need to update anything
             if item['Status'] == my_item['Status']:
                 continue
@@ -501,6 +533,9 @@ class WorkQueue(WorkQueueBase):
 
         self.logger.debug('Synchronise() updates: %s' % str(to_update))
         with self.transactionContext():
+            for ele in progress_updates:
+                self.setProgress(ele, id = 'ParentQueueId')
+
             for status, items in to_update.items():
                 self.setStatus(status, items, source = child_url)
 
@@ -601,11 +636,11 @@ class WorkQueue(WorkQueueBase):
                             self._insertWorkQueueElement(unit)
         return len(totalUnits)
 
-    def updateParent(self, full = False):
+    def updateParent(self, full = False, skipWMBS = False):
         """
         Report status of elements to the parent queue
 
-        Either report status's as provided or get all elements
+        By default only report elements that have changed since the last update
         """
         if self.parent_queue is None:
             return
@@ -620,21 +655,16 @@ class WorkQueue(WorkQueueBase):
         else:
             since = self.lastReportToParent
 
-        # Get queue elements grouped by their parent
-        elements = self.status(after = since, dictKey = "ParentQueueId")
-
+        # Get queue elements grouped by their parent with updated wmbs progress
+        useWMBS = not skipWMBS and self.params['PopulateFilesets']
+        elements = self.status(after = since, dictKey = "ParentQueueId",
+                               syncWithWMBS = useWMBS)
         # apply end policy to elements grouped by parent
         results = [endPolicy(group,
                              self.params['EndPolicySettings']) for \
                              group in elements.values()]
-        items = []
         # Need to be in dict format for sending over the wire
-        for x in results:
-            # Strip out data members we don't want to send to the server
-            i = dict(x)
-            i.pop('Elements', None)
-            i.pop('WMSpec', None)
-            items.append(i)
+        items = [x.formatForWire() for x in results]
 
         if items:
             self.logger.debug("Update parent queue with: %s" % str(items))
@@ -652,9 +682,18 @@ class WorkQueue(WorkQueueBase):
             else:
                 # some of our element status's may be overriden by the parent
                 # e.g. if request is canceled at top level
-                if result:
-                    msg = "Parent queue status override to %s for %s"
+                # also, save new wmbs status
+                wmbs_updated = []
+                for i in elements.values():
+                    wmbs_updated.extend([x for x in i if x['Modified']])
+                if result or wmbs_updated:
                     with self.transactionContext():
+
+                        # first update status from wmbs
+                        for ele in wmbs_updated:
+                            self.setProgress(ele)
+
+                        msg = "Parent queue status override to %s for %s"
                         for status, ids in result.items():
                             self.logger.info(msg % (status, list(ids)))
                             self.setStatus(status, ids, id_type = 'parent_queue_id')
@@ -713,7 +752,7 @@ class WorkQueue(WorkQueueBase):
             totalUnits.extend(units)
         return totalUnits
 
-    def _insertWorkQueueElement(self, unit):
+    def _insertWorkQueueElement(self, unit, requestName = None):
         """
         Persist a block to the database
         """
@@ -734,8 +773,9 @@ class WorkQueue(WorkQueueBase):
         parentFlag = parentInputs and 1 or 0
         priority = wmspec.priority() or 1
 
-        elementID = wqAction.execute(wmspec.name(), task.name(), primaryInput, nJobs,
-                         priority, parentFlag, parentQueueId, conn = self.getDBConn(),
+        elementID = wqAction.execute(wmspec.name(), task.name(), primaryInput,
+                         nJobs, priority, parentFlag, parentQueueId,
+                         requestName, conn = self.getDBConn(),
                          transaction = self.existingTransaction())
 
         whitelist = task.siteWhitelist()
@@ -744,7 +784,7 @@ class WorkQueue(WorkQueueBase):
         blacklist = task.siteBlacklist()
         if blacklist:
             self._insertBlackList(elementID, blacklist)
-            
+
         return elementID
 
     def _insertWMSpec(self, wmSpec):

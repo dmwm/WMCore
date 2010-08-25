@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.16 2010/04/29 14:48:06 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.17 2010/07/02 14:25:53 mnorman Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import os
 import threading
@@ -101,10 +101,11 @@ class ErrorHandlerTest(unittest.TestCase):
 
         return config
 
-    def createTestJobGroup(self):
+    def createTestJobGroup(self, nJobs = 10):
         """
         Creates a group of several jobs
         """
+
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -133,7 +134,7 @@ class ErrorHandlerTest(unittest.TestCase):
         testFileA.create()
         testFileB.create()
 
-        for i in range(0,self.nJobs):
+        for i in range(0, nJobs):
             testJob = Job(name = makeUUID())
             testJob.addFile(testFileA)
             testJob.addFile(testFileB)
@@ -157,7 +158,7 @@ class ErrorHandlerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in create stage.
         """
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
         
         config = self.getConfig()
         changer = ChangeState(config)
@@ -183,7 +184,7 @@ class ErrorHandlerTest(unittest.TestCase):
         
         Mimics creation of component and test jobs failed in submit stage.
         """
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
         changer = ChangeState(config)
@@ -210,7 +211,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
         Mimics creation of component and test jobs failed in execute stage.
         """
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
         
         config = self.getConfig()
         changer = ChangeState(config)
@@ -241,7 +242,7 @@ class ErrorHandlerTest(unittest.TestCase):
         Test that the system can exhaust jobs correctly
         """
 
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
         config.ErrorHandler.maxRetries = 1
@@ -277,6 +278,51 @@ class ErrorHandlerTest(unittest.TestCase):
         # Did we fail the files?
         self.assertEqual(len(testSubscription.filesOfStatus("Acquired")), 0)
         self.assertEqual(len(testSubscription.filesOfStatus("Failed")), 2)
+
+
+
+    def testZ_Profile(self):
+        """
+        _testProfile_
+
+        Do a full profile of the poller
+        """
+
+        return
+
+        import cProfile, pstats
+
+        nJobs = 1000
+
+        testJobGroup = self.createTestJobGroup(nJobs = nJobs)
+        
+        config = self.getConfig()
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
+
+        idList = self.getJobs.execute(state = 'CreateFailed')
+        self.assertEqual(len(idList), nJobs)
+
+        testErrorHandler = ErrorHandlerPoller(config)
+        testErrorHandler.setup(None)
+        startTime = time.time()
+        #cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename = "profStats.stat")
+        testErrorHandler.algorithm()
+        stopTime = time.time()
+
+        idList = self.getJobs.execute(state = 'CreateFailed')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'CreateCooloff')
+        self.assertEqual(len(idList), nJobs)
+
+        print("Took %f seconds to run polling algo" % (stopTime - startTime))
+
+        p = pstats.Stats('profStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats(0.2)
+        
+        return
 
 if __name__ == '__main__':
     unittest.main()

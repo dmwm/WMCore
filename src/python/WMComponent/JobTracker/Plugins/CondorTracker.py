@@ -3,8 +3,8 @@
 #Basic model for a tracker plugin
 #Should do nothing
 
-__revision__ = "$Id: CondorTracker.py,v 1.5 2010/06/23 23:08:27 meloam Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: CondorTracker.py,v 1.6 2010/06/23 23:29:35 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 import logging
@@ -62,7 +62,7 @@ class CondorTracker(TrackerPlugin):
 
         jobInfo = {}
         if hasattr(self.config.JobTracker, 'CondorPoolHost'):
-            command = ['condor_q', '-pool', self.config.JobTracker.CondorPoolHost,
+            command = ['condor_q', '-pool', self.config.JobTracker.CondorPoolHost, '-global',
                        '-constraint', 'WMAgent_JobID =!= UNDEFINED',
                        '-constraint', 'WMAgent_AgentName =?= "%s"' % (self.config.Agent.agentName),
                        '-format', '(JobStatus:\%s)  ', 'JobStatus',

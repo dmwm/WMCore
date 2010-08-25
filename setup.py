@@ -5,7 +5,6 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser
 import os, sys
-import coverage
 try:
     from pylint import lint
     import coverage
@@ -86,10 +85,10 @@ def runUnitTests():
 
 
 class TestCommand(Command):
+    description = "Handle setup.py test with this class - walk through the " + \
+    "directory structure building up a list of tests, then build a test " + \
+    " suite and execute it."
     """
-    Handle setup.py test with this class - walk through the directory structure 
-    and build up a list of tests, then build a test suite and execute it.
-    
     TODO: Pull database URL's from environment, and skip tests where database 
     URL is not present (e.g. for a slave without Oracle connection)
     
@@ -160,9 +159,7 @@ class TestCommand(Command):
         
             
 class CleanCommand(Command):
-    """
-    Clean up (delete) compiled files
-    """
+    description = "Clean up (delete) compiled files"
     user_options = [ ]
 
     def initialize_options(self):
@@ -183,9 +180,8 @@ class CleanCommand(Command):
                 pass
             
 class LintCommand(Command):
+    description = "Lint all files in the src tree"
     """
-    Lint all files in the src tree
-    
     TODO: better format the test results, get some global result, make output 
     more buildbot friendly.    
     """
@@ -210,9 +206,8 @@ class LintCommand(Command):
             result.append(lint_files([filepath]))
             
 class ReportCommand(Command):
+    description = "Generate a simple html report for ease of viewing in buildbot"
     """
-    Generate a simple html report for ease of viewing in buildbot
-    
     To contain:
         average lint score
         % code coverage
@@ -306,10 +301,10 @@ class ReportCommand(Command):
         print "</table>"
             
 class CoverageCommand(Command):
+    description = "Run code coverage tests"
     """
-    Run code coverage tests
-      to do this, we need to run all the unittests within the coverage
-      framework to record all the lines(and branches) executed
+    To do this, we need to run all the unittests within the coverage
+    framework to record all the lines(and branches) executed
     unfortunately, we have multiple code paths per database schema, so
     we need to find a way to merge them.
       
@@ -354,9 +349,7 @@ class CoverageCommand(Command):
         return 0
     
 class DumbCoverageCommand(Command):
-    """
-    Run a simple coverage test - find classes that don't have a unit test    
-    """
+    description = "Run a simple coverage test - find classes that don't have a unit test"
     
     user_options = [ ]
     
@@ -413,7 +406,45 @@ class DumbCoverageCommand(Command):
         print '----------------------------------------------------------------'
         print 'Code coverage (%s packages) is %.2f percent' % (pkgcnt, coverage)
         return coverage
+
+class EnvCommand(Command):
+    description = "Configure the PYTHONPATH, DATABASE and PATH variables to" +\
+    "some sensible defaults, if not already set. Call with -q when eval-ing," +\
+    """  e.g.:
+        eval `python setup.py -q env`
+    """
     
+    user_options = [ ]
+    
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+    
+    def run(self):
+        if not os.getenv('DATABASE', False):
+            # Use an in memory sqlite one if none is configured. 
+             print 'export DATABASE=sqlite://'
+            
+        here = os.path.abspath('.')
+        tests = here + '/test/python'
+        source = here + '/src/python'
+        webpth = source + '/WMCore/WebTools'
+         
+        pypath=os.getenv('PYTHONPATH', '').split(':')
+        for pth in [tests, source]:
+            if pth not in pypath:
+                pypath.append(pth)
+                
+        expath=os.getenv('PATH', '').split(':')
+        for pth in [webpth]:
+            if pth not in expath:
+                expath.append(pth)
+              
+        print 'export PYTHONPATH=%s' % ':'.join(pypath)
+        print 'export PATH=%s' % ':'.join(expath)
+
 def getPackages(package_dirs = []):
     packages = []
     for dir in package_dirs:
@@ -438,7 +469,8 @@ setup (name = 'wmcore',
                    'lint': LintCommand,
                    'report': ReportCommand,
                    'coverage': CoverageCommand ,
-                   'missing': DumbCoverageCommand },
+                   'missing': DumbCoverageCommand,
+                   'env': EnvCommand },
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
 

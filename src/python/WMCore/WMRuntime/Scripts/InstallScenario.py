@@ -10,7 +10,8 @@ Runtime script that installs the scenario based configuration PSet into the job
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 
 
-from PSetTweaks.WMTweak import makeTweak, makeJobTweak, applyTweak
+from PSetTweaks.WMTweak import makeTweak, makeJobTweak
+from PSetTweaks.WMTweak import makeOutputTweak, applyTweak
 
 applyPromptReco = lambda s, a: s.promptReco(a['globalTag'], a['writeTiers'])
 applySkimming = lambda s, a: s.skimming(a['skims'])
@@ -81,6 +82,14 @@ class InstallScenario(ScriptInterface):
         jobTweak = makeJobTweak(self.job)
         applyTweak(process, jobTweak)
         
+        # output modules
+        cmsswStep = self.step.getTypeHelper()
+        for om in cmsswStep.listOutputModules():
+            mod = cmsswStep.getOutputModule(om)
+            outTweak = makeOutputTweak(mod, self.job)
+            applyTweak(process, outTweak)
+
+
 
         # revlimiter for testing
         process.maxEvents.input = 2

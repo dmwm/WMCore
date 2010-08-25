@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.47 2009/09/18 13:26:42 sfoulkes Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: CMSCouch.py,v 1.48 2009/10/27 21:14:51 sryu Exp $"
+__version__ = "$Revision: 1.48 $"
 
 try:
     # Python 2.6
@@ -90,22 +90,20 @@ class CouchDBRequests(BasicAuthJSONRequests):
         Check the HTTP status and raise an appropriate exception 
         """
         if (status == 400 ):
-            raise CouchBadRequestError( reason, result, data )
+            raise CouchBadRequestError( reason, data, result )
         elif (status == 404):
-            raise CouchNotFoundError( reason, result,  data )
+            raise CouchNotFoundError( reason, data, result )
         elif (status == 405):
-            raise CouchNotAllowedError( reason,  result, data )
+            raise CouchNotAllowedError( reason, data, result )
         elif (status == 409):
-            raise CouchConflictError( reason, result,  data )
+            raise CouchConflictError( reason, data, result )
         elif (status == 412):
-            raise CouchPreconditionFailedError( reason, result,  data )
+            raise CouchPreconditionFailedError( reason, data, result )
         elif (status == 500):
-            raise CouchInternalServerError( reason, result,  data )
+            raise CouchInternalServerError( reason, data, result )
         elif (status >= 400):
             # we have a new error status, log it
-            raise CouchError("""NEW ERROR STATUS! UPDATE CMSCOUCH.PY! 
-            status: %s reason: %s data: %s result: %s""" % 
-                            (status, reason, data, result))
+            raise CouchError(reason, data, result, status)
         else:
             return
         
@@ -341,21 +339,26 @@ class CouchServer(CouchDBRequests):
 #  http://wiki.apache.org/couchdb/HTTP_status_list
 
 class CouchError(Exception):
-    def __init__(self, reason, data, result):
+    def __init__(self, reason, data, result, status = None):
         self.reason = reason
         self.data = data
         self.result = result
         self.type = "CouchError"
+        self.status = status
     
     def __str__(self):
-        return "%s - reason: %s, data: %s result: %s" % (self.type, 
+        if self.status != None:
+            errorMsg = "NEW ERROR STATUS! UPDATE CMSCOUCH.PY!: %s\n" % self.status 
+        else:
+            errorMsg = ""
+        return errorMsg + "%s - reason: %s, data: %s result: %s" % (self.type, 
                                              self.reason, 
                                              repr(self.data),
                                              self.result)
     
 class CouchBadRequestError(CouchError):
-    def __init__(self, reason, data):
-        CouchError.__init__(reason, data)
+    def __init__(self, reason, data, result):
+        CouchError.__init__(reason, data, result)
         self.type = "CouchBadRequestError"
                 
 class CouchNotFoundError(CouchError):

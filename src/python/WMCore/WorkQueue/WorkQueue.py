@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.39 2009/12/03 14:48:46 swakef Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: WorkQueue.py,v 1.40 2009/12/04 16:20:57 swakef Exp $"
+__version__ = "$Revision: 1.40 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -54,8 +54,7 @@ def globalQueue(logger = None, dbi = None, **kwargs):
     """
     defaults = {'SplitByBlock' : False,
                 'PopulateFilesets' : False,
-                'SplittingMapping' : {'DatasetBlock' : ('Dataset',
-                                                    {'SliceSize' : 100000})}
+                'SplittingMapping' : {'DatasetBlock' : ('Dataset', {})}
                 }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
@@ -88,7 +87,7 @@ class WorkQueue(WorkQueueBase):
         self.parent_queue = None
         self.params = params
         self.params.setdefault('ParentQueue', None) # Get more work from here
-        self.params.setdefault('QueueDepth', 100) # when less than this locally
+        self.params.setdefault('QueueDepth', 2) # when less than this locally
         self.params.setdefault('SplitByBlock', True)
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
         self.params.setdefault('FullLocationRefreshInterval', 3600)
@@ -203,19 +202,24 @@ class WorkQueue(WorkQueueBase):
            to each jobgroup. also doneWork parameter should be list of workqueue element not list 
            of subscription
         """
-        # if update is called twice  causes mysql connection lost - don't know why
-        # self.updateLocationInfo()
         results = []
         subResults = []
-        matches = self._match(siteJobs)
+        matches, unmatched = self._match(siteJobs)
 
+        # if talking to a child and have resources left get work from parent
+        if pullingQueueUrl and unmatched:
+            try:
+                if self.pullWork(unmatched):
+                    matches, _ = self._match(siteJobs)
+            except RuntimeError:
+                # log failure to contact parent queue
+                pass
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
 
         for match in matches:
             wmSpecInfo = wmSpecInfoAction.execute(match['wmtask_id'],
-                                                  conn = self.getDBConn(),
-                                                  transaction = self.existingTransaction())
-            #something only needed for local queue
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
             trans = self.beginTransaction()
             if self.params['PopulateFilesets']:
 
@@ -505,22 +509,35 @@ class WorkQueue(WorkQueueBase):
     def pullWork(self, resources):
         """
         Pull work from another WorkQueue to be processed
+
+        If resources passed in get work for them, if not get from wmbs.
         """
-        # Should this use job count instead
-        # monitor queue depth (jobs) per site?
-        if not self.parent_queue or \
-                                len(self) > self.params['QueueDepth']:
-            return 0
-
-        work = self.parent_queue.getWork(resources, self.params['QueueURL'])
-
-        # start a transaction here (if one doesn'st exist)
         amount = 0
-        for element in work:
-            amount += self.queueWork(element['url'],
-                                    parentQueueId = element['element_id'])
-        return amount
+        if self.parent_queue:
+            if not resources:
+                from WMCore.DAOFactory import DAOFactory
+                action = DAOFactory(package = 'WMBS.Database',
+                                    logger = self.logger,
+                                    dbinterface = self.dbi)('Locations.List')
+                wmbs_sites = action.execute(conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+                sites = {}
+                # get more work for the future
+                [sites.__setitem__(name,
+                                   self.params['QueueDepth'] * slots) for _,
+                                   name, slots in wmbs_sites]
+                _, resources = self.getWork(sites)
 
+            if resources:
+                work = self.parent_queue.getWork(resources,
+                                             self.params['QueueURL'])
+                if work:
+                    trans = self.beginTransaction()
+                    for element in work:
+                        amount += self.queueWork(element['url'],
+                                                 element['element_id'])
+                    self.commitTransaction(trans)
+        return amount
 
     def updateParent(self, full = False):
         """
@@ -681,10 +698,10 @@ class WorkQueue(WorkQueueBase):
         Match resources to available work
         """
         matchAction = self.daofactory(classname = "WorkQueueElement.GetWork")
-        elements = matchAction.execute(conditions, self.params['ItemWeight'],
+        elements, unmatched = matchAction.execute(conditions, self.params['ItemWeight'],
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
-        return elements
+        return elements, unmatched
 
 
     def _getLocations(self, dataNames, fullRefresh):

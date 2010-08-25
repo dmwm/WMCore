@@ -6,8 +6,8 @@ Controllers return java script and/or css from a static directory, after
 minimising setting appropriate headers and etags and gzip.  
 """
 
-__revision__ = "$Id: Controllers.py,v 1.10 2009/03/25 13:32:30 metson Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Controllers.py,v 1.11 2009/06/07 23:14:28 valya Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from cherrypy import expose, log, response
 from cherrypy import config as cherryconf
@@ -63,11 +63,12 @@ minimising setting appropriate headers and etags and gzip.
         if id not in self.cache.keys():
             data = '@CHARSET "UTF-8";'
             for script in args:
-                path = os.path.join(sys.path[0], self.cssmap[script])
-                path = os.path.normpath(path)
-                file = open(path)
-                data = "\n".join ([data, file.read().replace('@CHARSET "UTF-8";', '')])
-                file.close()
+                if  self.cssmap.has_key(script):
+                    path = os.path.join(sys.path[0], self.cssmap[script])
+                    path = os.path.normpath(path)
+                    file = open(path)
+                    data = "\n".join ([data, file.read().replace('@CHARSET "UTF-8";', '')])
+                    file.close()
             #self.setHeaders ("text/css")
             self.cache[id] = self.minify(data)
         return self.cache[id] 

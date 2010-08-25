@@ -5,12 +5,17 @@ Example of data formatter used by REST service
 """
 
 __author__ = "Valentin Kuznetsov <vkuznet at gmail dot com>"
-__revision__ = "$Id: TestFormatter.py,v 1.4 2008/12/19 01:17:10 valya Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TestFormatter.py,v 1.5 2009/06/07 23:14:27 valya Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 import traceback
-import simplejson
+try:
+    # Python 2.6
+    import json
+except:
+    # Prior to 2.6 requires simplejson
+    import simplejson as json
 import time
 import types
 
@@ -85,7 +90,7 @@ class TestFormatter(object):
         self._data = data
         if  not data:
             return {}
-        return simplejson.dumps(data, sort_keys=True, indent=4)
+        return json.dumps(data, sort_keys=True, indent=4)
 
     def to_html(self, url, data):
         """This method shows how to convert input data into HTML form"""

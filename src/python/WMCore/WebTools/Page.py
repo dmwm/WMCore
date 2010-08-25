@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.27 2009/06/03 19:58:24 valya Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Page.py,v 1.28 2009/06/07 23:14:28 valya Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import md5
 import urllib
@@ -10,7 +10,11 @@ from cherrypy import log as cplog
 from cherrypy import request
 from Cheetah.Template import Template
 from Cheetah import Version
-from simplejson import JSONEncoder
+try:
+    from json import JSONEncoder
+except:
+    # Prior python 2.6 json comes from simplejson
+    from simplejson import JSONEncoder
 import logging, os, types
 import time
 from datetime import datetime, timedelta

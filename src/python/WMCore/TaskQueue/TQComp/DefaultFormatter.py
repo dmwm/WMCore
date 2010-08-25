@@ -9,19 +9,24 @@ implementing the interface that this class shows may be set at configuration
 time. Otherwise, the default one in this module is used.
 """
 
-__revision__ = "$Id: DefaultFormatter.py,v 1.2 2009/06/01 09:57:08 delgadop Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultFormatter.py,v 1.3 2009/06/07 23:14:27 valya Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "antonio.delgado.peris@cern.ch"
 
 
 from cherrypy import response
 from cherrypy.lib.cptools import accept
-import simplejson
+try:
+    # Python 2.6
+    import json
+except:
+    # Prior to 2.6 requires simplejson
+    import simplejson as json
 
 class DefaultFormatter(object):
     """ 
     _DefaultFormatter_. This formatter is capable of encoding in json, using
-    simplejson. If you need support for other data types, please implement
+    json. If you need support for other data types, please implement
     your own class offering a 'supportedTypes' attribute and a 'format' method
     (include the cherrypy methods in this example for user preference).
     """
@@ -51,4 +56,4 @@ class DefaultFormatter(object):
         """
         Returns a string represent 'data' in json format.
         """
-        return simplejson.dumps(data)
+        return json.dumps(data)

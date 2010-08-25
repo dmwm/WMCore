@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.3 2009/12/14 22:20:29 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.4 2010/03/22 19:18:39 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import threading
 import logging
@@ -13,10 +13,11 @@ import time
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Job          import Job
-from WMCore.DAOFactory        import DAOFactory
-
+from WMCore.WMBS.Subscription   import Subscription
+from WMCore.WMBS.Job            import Job
+from WMCore.WMBS.Fileset        import Fileset
+from WMCore.DAOFactory          import DAOFactory
+from WMCore.WorkQueue.WorkQueue import localQueue
 
 class TaskArchiverPoller(BaseWorkerThread):
     """
@@ -34,6 +35,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+        
+        self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
     
     def setup(self, parameters):
         """
@@ -123,13 +126,20 @@ class TaskArchiverPoller(BaseWorkerThread):
         or set of subscriptions, is done.  Receives confirmation
         """
 
-        doneList = []
+        subIDs = []
 
         #In the future, this will talk to the workQueue
         #Right now it doesn't because I'm not sure how to do it
-        doneList = subList
-
-        return doneList
+        
+        for sub in subList:
+            subIDs.append(sub['id'])        
+        
+        #TODO: needs proper handling on this
+        try:
+            self.workQueue.doneWork(subIDs, id_type = "subscription_id")
+            return subList
+        except:
+            return []
 
 
     def killSubscriptions(self, doneList):

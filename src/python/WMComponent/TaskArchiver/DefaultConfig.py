@@ -5,8 +5,8 @@ Defines default config values for JobAccountant specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/12/14 22:27:35 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.3 2010/03/22 19:18:39 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import os
 
@@ -17,7 +17,7 @@ config.component_("TaskArchiver")
 config.TaskArchiver.logLevel = 'SQLDEBUG'
 config.TaskArchiver.pollInterval = 10
 config.TaskArchiver.timeOut      = 0
-
+config,TaskArchiver.WorkQueueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 
 config.component_('JobStateMachine')
 config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')

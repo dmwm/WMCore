@@ -34,10 +34,12 @@
 					    #end if
 					    <p class="small">
                             #if 'version' in $methods[$verb][$m].keys					    
-                            version $methods[$verb][$m]['version'] | <a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
-					    	#else
-					    	<a href='xml/$m'>xml</a> <a href='json/$m'>json</a> <a href='das/$m'>das</a>
+                            version $methods[$verb][$m]['version'] | 
 					    	#end if
+					    	available as 
+                            #for t in $types
+                                <b>$t</b>
+                            #end for
 					    </p>
 					    </dd>
 					    <hr/>

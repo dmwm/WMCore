@@ -3,25 +3,16 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.1 2009/10/30 13:43:05 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.2 2009/11/17 19:33:18 mnorman Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import threading
 import logging
-import re
-import os
 import os.path
-from sets import Set
-
-from subprocess import Popen, PIPE
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Workflow     import Workflow
-from WMCore.WMBS.Job          import Job
-from WMCore.WMFactory         import WMFactory
 from WMCore.DAOFactory        import DAOFactory
 
 class TaskArchiverPoller(BaseWorkerThread):
@@ -34,25 +25,29 @@ class TaskArchiverPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
+
+        myThread = threading.currentThread()
+        
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                     logger = myThread.logger,
+                                     dbinterface = myThread.dbi)
     
     def setup(self, parameters):
         """
         Load DB objects required for queries
         """
 
-        myThread = threading.currentThread()
-
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-
-
         return
 
 
 
 
-    def terminate(self,params):
+    def terminate(self, params):
+        """
+        _terminate_
+
+        This function terminates the job after a final pass
+        """
         logging.debug("terminating. doing one more pass before we die")
         self.algorithm(params)
         return
@@ -66,7 +61,6 @@ class TaskArchiverPoller(BaseWorkerThread):
 	And deal with it as desired.
         """
         logging.debug("Running algorithm for finding finished subscriptions")
-        myThread = threading.currentThread()
         try:
             self.archiveTasks()
         except:
@@ -84,8 +78,6 @@ class TaskArchiverPoller(BaseWorkerThread):
         finishing things up.
         """
 
-
-        myThread = threading.currentThread()
 
         subList  = self.findFinishedSubscriptions()
         doneList = self.notifyWorkQueue(subList)

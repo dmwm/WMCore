@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.30 2010/01/08 23:24:51 metson Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Service.py,v 1.31 2010/01/09 09:18:17 metson Exp $"
+__version__ = "$Revision: 1.31 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -55,8 +55,13 @@ class Service(dict):
         for a in ['logger', 'endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
 
+        scheme = ''
+        netloc = ''
+        path = ''
+        
         # then split the endpoint into netloc and basepath
         endpoint = urlparse(dict['endpoint'])
+        
         try:
             #Only works on python 2.5 or above
             scheme = endpoint.scheme
@@ -64,23 +69,6 @@ class Service(dict):
             path = endpoint.path
         except AttributeError:
             scheme, netloc, path = endpoint[:3]
-
-        # Is this a secure service - add other schemes as we need them
-        if dict.get('secure') or scheme in SECURE_SERVICES:
-            # only bring in ssl stuff if we really need it
-            from WMCore.Services.Requests import SecureRequests
-            requests = SecureRequests
-        else:
-            requests = Requests
-
-        try:
-            self.setdefault("basepath", path)
-            # Instantiate a Request
-            self.setdefault("requests", requests(netloc))
-        except WMException, ex:
-            msg = str(ex)
-            self["logger"].exception(msg)
-            raise WMException(msg)
 
         #set up defaults
         self.setdefault("inputdata", {})
@@ -94,8 +82,25 @@ class Service(dict):
 
         # then update with the incoming dict
         self.update(dict)
-        self["requests"]["accept_type"] = self["accept_type"]
 
+        # Get the request class, to instatiate later
+        # Is this a secure service - add other schemes as we need them
+        if self.get('secure', False) or scheme in SECURE_SERVICES:
+            # only bring in ssl stuff if we really need it
+            from WMCore.Services.Requests import SecureRequests
+            requests = SecureRequests
+        else:
+            requests = Requests
+
+        try:
+            self.setdefault("basepath", path)
+            # Instantiate a Request
+            self.setdefault("requests", requests(netloc, dict))
+        except WMException, ex:
+            msg = str(ex)
+            self["logger"].exception(msg)
+            raise WMException(msg)
+        
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours)""" %
                   (self, self["requests"]["host"], self["basepath"],

@@ -7,8 +7,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.29 $"
-__revision__ = "$Id: Report.py,v 1.29 2010/07/06 15:44:47 mnorman Exp $"
+__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Report.py,v 1.30 2010/07/08 20:08:27 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -164,7 +164,7 @@ class Report:
                 cfgSectionRuns = jsonFile["runs"]
                 jsonFile["runs"] = {}
                 for runNumber in cfgSectionRuns.listSections_():
-                    jsonFile["runs"][int(runNumber)] = getattr(cfgSectionRuns,
+                    jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
                                                                runNumber)
                 jsonFiles.append(jsonFile)
 

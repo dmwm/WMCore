@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.67 2010/07/19 19:13:20 sfoulkes Exp $"
-__version__ = "$Revision: 1.67 $"
+__revision__ = "$Id: CMSCouch.py,v 1.68 2010/07/19 19:21:01 sfoulkes Exp $"
+__version__ = "$Revision: 1.68 $"
 
 import urllib
 import datetime
@@ -114,7 +114,7 @@ class CouchDBRequests(BasicAuthJSONRequests):
             raise CouchPreconditionFailedError(reason, data, result)
         elif status == 500:
             raise CouchInternalServerError(reason, data, result)
-        elif status >= 400:
+        else:
             # We have a new error status, log it
             raise CouchError(reason, data, result, status)
 

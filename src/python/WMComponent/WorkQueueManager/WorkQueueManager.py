@@ -6,8 +6,8 @@ Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
 
-__revision__ = "$Id: WorkQueueManager.py,v 1.13 2010/06/24 20:33:18 sryu Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: WorkQueueManager.py,v 1.14 2010/07/02 16:30:59 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import logging
 import threading
@@ -43,7 +43,7 @@ class WorkQueueManager(Harness):
         self.logger = None
         self.wq = None
         self.reqMgr = None
-
+        
         print "WorkQueueManager.__init__"
 
     def setConfig(self, config):
@@ -117,8 +117,11 @@ class WorkQueueManager(Harness):
         pollInterval = self.config.WorkQueueManager.pollInterval
 
         # Update Locations 
-        self.wq.params.setdefault('LocationRefreshInterval', pollInterval)
-        
+        # set the location interval to 30 min if it is smaller than that.
+        minLocationInterval = 1800 
+        self.wq.params.setdefault('LocationRefreshInterval', minLocationInterval)
+        if (self.wq.params['LocationRefreshInterval'] < minLocationInterval):
+            self.wq.params['LocationRefreshInterval'] = minLocationInterval    
         myThread.workerThreadManager.addWorker(
                                     WorkQueueManagerLocationPoller(self.wq),
                                     self.wq.params['LocationRefreshInterval'])

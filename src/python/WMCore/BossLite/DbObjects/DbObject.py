@@ -5,8 +5,8 @@ _DbObject_
 Base class for all objects in the database
 """
 
-__version__ = "$Id: DbObject.py,v 1.3 2010/04/22 14:32:05 spigafi Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: DbObject.py,v 1.4 2010/04/27 14:37:52 spigafi Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 import logging
 import traceback
@@ -32,7 +32,7 @@ def dbTransaction(func):
             msg = "Failure in DbObject method"
             msg += str(ex)
             msg += str(traceback.format_exc())
-            logging.error(msg)
+            # temporary comment # logging.error(msg)
             #TODO: Add this to WMConnectionBase?
             myThread = threading.currentThread()
             myThread.transaction.rollback()
@@ -188,7 +188,7 @@ class DbObject(WMConnectionBase):
 
     ##########################################################################
 
-    def save(self):
+    def save(self, deep = True):
         """
         save object into database
         """

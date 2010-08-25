@@ -5,8 +5,8 @@ _ProcessPool_
 
 """
 
-__revision__ = "$Id: ProcessPool.py,v 1.15 2010/08/04 15:17:14 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: ProcessPool.py,v 1.16 2010/08/04 15:40:46 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import subprocess
 import sys
@@ -235,6 +235,8 @@ class ProcessPool:
             except Exception, ex:
                 pass
 
+        self.workers = []
+
         return
 
     def enqueue(self, work):
@@ -249,9 +251,6 @@ class ProcessPool:
 
         if workPerWorker == 0:
             workPerWorker = 1
-
-        print "About to enqueue"
-        print len(work)
 
         workIndex = 0
         while(len(work) > workIndex):

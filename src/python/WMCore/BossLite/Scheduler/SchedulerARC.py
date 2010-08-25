@@ -5,7 +5,7 @@
 #
 # Maintainers:
 # Erik Edelmann <erik.edelmann@ndgf.fi>
-# Jesper Koivumï¿½ki <jesper.koivumaki@hip.fi>
+# Jesper Koivumäki <jesper.koivumaki@hip.fi>
 # 
 
 """
@@ -164,7 +164,7 @@ class TimeoutFunction:
             result = self.function(*args)
         finally: 
             signal.signal(signal.SIGALRM, old)
-        signal.alarm(0)
+            signal.alarm(0)
         return result 
 
 
@@ -500,7 +500,7 @@ class SchedulerARC(SchedulerInterface):
         jobsFile, arcId2job = self.createJobsFile(joblist, "Will query")
 
         if len(arcId2job) == 0:
-            self.logging.info("No active (and valid) jobs!")
+            self.logging.info("No (valid) jobs to query")
             return
 
         cmd = 'ngstat -i %s' % jobsFile.name

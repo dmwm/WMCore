@@ -23,6 +23,7 @@ import os
 import tarfile
 import getopt
 import shutil
+import traceback
 
 from subprocess import Popen, PIPE
 
@@ -78,14 +79,14 @@ def createWorkArea(sandbox):
         os.makedirs(jobDir)
 
 
-    #tfile = tarfile.open(sandbox, "r")
-    #tfile.extractall(jobDir)
-    #tfile.close()
+    tfile = tarfile.open(sandbox, "r")
+    tfile.extractall(jobDir)
+    tfile.close()
 
-    os.chdir(jobDir)
-    pipe = Popen(['tar', '-jxvf', '../%s' %(sandbox)], stdout = PIPE, stderr = PIPE, shell=False)
-    pipe.communicate()
-    os.chdir(currentDir)
+    #os.chdir(jobDir)
+    #pipe = Popen(['tar', '-jxvf', '../%s' %(sandbox)], stdout = PIPE, stderr = PIPE, shell=False)
+    #pipe.communicate()
+    #os.chdir(currentDir)
 
 
     print "export PYTHONPATH=$PYTHONPATH:%s" % jobDir
@@ -104,7 +105,6 @@ def installPackage(jobArea, jobPackage, jobIndex):
     #shutil.copy(jobPackage, pkgTarget)
     os.system("/bin/cp %s %s" % (jobPackage, pkgTarget))
 
-
     indexPy = "%s/JobIndex.py" % target
     handle = open(indexPy, 'w')
     handle.write("jobIndex = %s\n" % jobIndex)
@@ -113,9 +113,30 @@ def installPackage(jobArea, jobPackage, jobIndex):
     return
 
 
+def runUnpacker(sandbox, package, jobIndex, jobname):
+    """
+    Run everything in the unpacker
+
+    """
+    
+
+
+    try:
+        jobArea = createWorkArea(sandbox)
+        installPackage(jobArea, package, jobIndex)
+        #sys.exit(0)
+    except Exception, ex:
+        msg = "Unable to create job area for bootstrap\n"
+        msg += str(ex)
+        msg += str(traceback.format_exc())
+        makeErrorReport(jobname, 1, msg)
+        print msg
+        sys.exit(1)
 
 
 if __name__ == '__main__':
+
+
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", options.keys())
     except getopt.GetoptError, ex:
@@ -154,15 +175,8 @@ if __name__ == '__main__':
         makeErrorReport(jobname, 1, msg)
         print msg
         sys.exit(1)
+    
+    runUnpacker(sandbox = sandbox, package = package,
+                jobIndex = jobIndex, jobname = jobname)
 
 
-    try:
-        jobArea = createWorkArea(sandbox)
-        installPackage(jobArea, package, jobIndex)
-        #sys.exit(0)
-    except Exception, ex:
-        msg = "Unable to create job area for bootstrap\n"
-        msg += str(ex)
-        makeErrorReport(jobname, 1, msg)
-        print msg
-        sys.exit(1)

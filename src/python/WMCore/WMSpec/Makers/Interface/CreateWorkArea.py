@@ -120,6 +120,7 @@ class CreateWorkArea:
         self.subscript     = None
         self.workflow      = None
         self.collectionDir = None
+        self.wmWorkload    = None
         if not startDir:
             self.startDir     = os.getcwd()
         else:
@@ -133,10 +134,27 @@ class CreateWorkArea:
 
         return
 
+    def reset(self):
+        """
+        Reset key variables between runs
 
-    def processJobs(self, jobGroupID, startDir):
+        """
 
-        self.getNewJobGroup(jobGroupID = jobGroupID, startDir = startDir)
+        self.workflow   = None
+        self.wmWorkload = None
+
+
+    def processJobs(self, jobGroup, startDir, wmWorkload = None, workflow = None):
+        """
+        Process the work
+
+        This allows you to pass in two pre-loaded objects, the WMWorkloadSpace and the
+        WMBS workflow, to save loading time
+        """
+        self.reset()
+        self.wmWorkload = wmWorkload
+        self.workflow   = workflow
+        self.getNewJobGroup(jobGroup = jobGroup, startDir = startDir)
         self.createJobGroupArea()
         self.createWorkArea()
 
@@ -146,15 +164,15 @@ class CreateWorkArea:
 
 
 
-    def getNewJobGroup(self, jobGroupID = None, startDir = None):
+    def getNewJobGroup(self, jobGroup = None, startDir = None):
         """
         This gets a job group passed to the thread
         """
 
         #See if we actually have a jobGroupID
-        if jobGroupID:
-            self.jobGroupID = jobGroupID
-        elif not self.jobGroupID:
+        if jobGroup:
+            self.jobGroupID = jobGroup.id
+        else:
             #Then we have no jobGroup
             return
 
@@ -163,16 +181,16 @@ class CreateWorkArea:
 
         myThread = threading.currentThread()
 
-        #Load the JobGroup object
-        jobGroup = JobGroup(id = self.jobGroupID)
-
-        jobGroup.load()
-        #We need the subscription mostly to get the workflow
-        self.subscript = jobGroup.subscription
-        self.subscript.load()
+        
         #We need the workflow to get the spec
-        self.workflow  = self.subscript['workflow']
-        self.workflow.load()
+        if self.workflow == None:
+            # If we have something in the workflow,
+            # assume we were passed a loaded workflow
+            # We need the subscription mostly to get the workflow
+            self.subscript = jobGroup.subscription
+            self.subscript.load()
+            self.workflow  = self.subscript['workflow']
+            self.workflow.load()
 
         if not jobGroup.exists():
             msg = 'JobMaker: Was passed a non-existant Job Group ID %i' %(self.jobGroupID)
@@ -426,7 +444,9 @@ class CreateWorkArea:
 
         """
 
-        if not os.path.exists(self.workflow.spec):
+        if self.wmWorkload != None:
+            workload = self.wmWorkload.name()
+        elif not os.path.exists(self.workflow.spec):
             logging.error("Could not find Workflow spec %s; labeling jobs by job ID only!" %(self.workflow.spec))
             return os.path.join(self.startDir, self.jobGroup.uid), os.path.join(self.startDir, self.jobGroup.uid)
         else:
@@ -435,10 +455,10 @@ class CreateWorkArea:
 
             workload = wmWorkload.name()
 
-            task = self.workflow.task
-            if task.startswith("/" + workload + "/"):
-                task = task[len(workload) + 2:]
-                
-            return os.path.join(self.startDir, workload), os.path.join(self.startDir, workload, task)
+        task = self.workflow.task
+        if task.startswith("/" + workload + "/"):
+            task = task[len(workload) + 2:]
+            
+        return os.path.join(self.startDir, workload), os.path.join(self.startDir, workload, task)
 
 

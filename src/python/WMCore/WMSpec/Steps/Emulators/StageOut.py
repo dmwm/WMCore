@@ -15,10 +15,20 @@ class StageOut(Emulator):
     Emulate the execution of a StageOut Step
 
     """
-    def emulate(self, step):
+    def pre(self):
         """
-        _emulate_
+        _pre_
 
+        Emulate the stage out pre step
+
+        """
+        return None
+
+    def execute(self):
+        """
+        _execute_
+
+        Emulate StageOut execution
 
         """
         step.section_("execution")
@@ -27,3 +37,13 @@ class StageOut(Emulator):
         step.emulation.emulatedBy = str(self.__class__.__name__)
 
         print "Emulating StageOut Step"
+
+
+    def post(self):
+        """
+        _post_
+
+        Emulate post stage out
+
+        """
+        return None

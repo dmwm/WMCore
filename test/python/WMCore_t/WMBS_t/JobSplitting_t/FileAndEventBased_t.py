@@ -5,8 +5,8 @@ _FileAndEventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FileAndEventBased_t.py,v 1.3 2009/04/05 21:47:00 gowdy Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FileAndEventBased_t.py,v 1.4 2009/04/20 16:57:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -71,7 +71,7 @@ class FileAndEventBasedTest(unittest.TestCase):
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
-        newFile = File("/some/file/name", size = 1000, events = 100,
+        newFile = File("/some/single/file/name", size = 1000, events = 100,
                        locations = Set(["somese.cern.ch"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
@@ -149,7 +149,7 @@ class FileAndEventBasedTest(unittest.TestCase):
 
         job = jobGroups[0].jobs.pop()
 
-        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+        assert job.getFiles(type = "lfn") == ["/some/single/file/name"], \
                "ERROR: Job contains unknown files."
         
         assert job.mask.getMaxEvents() == 100, \
@@ -211,7 +211,7 @@ class FileAndEventBasedTest(unittest.TestCase):
 
         job = jobGroups[0].jobs.pop()
 
-        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+        assert job.getFiles(type = "lfn") == ["/some/single/file/name"], \
                "ERROR: Job contains unknown files."
         
         assert job.mask.getMaxEvents() == 1000, \
@@ -241,7 +241,7 @@ class FileAndEventBasedTest(unittest.TestCase):
                "ERROR: JobFactory didn't create two jobs."
 
         for job in jobGroups[0].jobs:
-            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+            assert job.getFiles(type = "lfn") == ["/some/single/file/name"], \
                    "ERROR: Job contains unknown files."
         
             assert job.mask.getMaxEvents() == 50, \
@@ -271,7 +271,7 @@ class FileAndEventBasedTest(unittest.TestCase):
                "ERROR: JobFactory didn't create two jobs."
 
         for job in jobGroups[0].jobs:
-            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+            assert job.getFiles(type = "lfn") == ["/some/single/file/name"], \
                    "ERROR: Job contains unknown files."
         
             assert job.mask.getMaxEvents() == 99, \

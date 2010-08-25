@@ -17,7 +17,6 @@ requestedDB     = sys.argv[2]
 
 # the buildconfig file will end up being in the buildslave's main path
 
-
 sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
 import buildslave
 

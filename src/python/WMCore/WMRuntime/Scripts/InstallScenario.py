@@ -92,7 +92,7 @@ class InstallScenario(ScriptInterface):
             applyTweak(process, outTweak)
 
         if funcName == "alcaSkim":
-            process.GlobalTag.globaltag = "GR09_R_34X_V5::All"
+            process.GlobalTag.globaltag = ""
 
         # revlimiter for testing
         if hasattr(process, "maxEvents"):

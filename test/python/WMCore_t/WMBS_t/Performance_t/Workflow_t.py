@@ -93,7 +93,7 @@ class WorkflowTest(unittest.TestCase, WMBSBase):
  
         for i in range(times):
             startTime = time.time()    
-            testWorkflow = Workflow(spec = list[i].spec, owner = list[i].owner, name = list[i].name)
+            testWorkflow = Workflow(spec = list[i].spec, owner = list[i].owner, name = list[i].name, task="Test")
             testWorkflow.exists()
             endTime = time.time()
             elapsedTime = endTime - startTime   
@@ -117,7 +117,7 @@ class WorkflowTest(unittest.TestCase, WMBSBase):
        
         for i in range(times):
             startTime = time.time()    
-            testWorkflow = Workflow(spec = "Test"+str(i), owner = "PerformanceTestcase", name = "testNew"+str(i))
+            testWorkflow = Workflow(spec = "Test"+str(i), owner = "PerformanceTestcase", name = "testNew"+str(i), task="Test")
             testWorkflow.create()
             endTime = time.time()
             elapsedTime = endTime - startTime
@@ -249,7 +249,7 @@ class WorkflowTest(unittest.TestCase, WMBSBase):
 
         for i in range(times):
             startTime = time.time()    
-            testWorkflow = Workflow(spec = list[i].spec, owner = list[i].owner, name = list[i].name)
+            testWorkflow = Workflow(spec = list[i].spec, owner = list[i].owner, name = list[i].name, task="Test")
             testWorkflow.create()
             testWorkflow.addOutput("testFilesetA", testFilesetA)
             endTime = time.time()

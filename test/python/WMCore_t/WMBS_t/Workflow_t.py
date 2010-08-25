@@ -5,8 +5,8 @@ _Workflow_t_
 Unit tests for the WMBS Workflow class.
 """
 
-__revision__ = "$Id: Workflow_t.py,v 1.10 2009/04/01 18:42:30 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: Workflow_t.py,v 1.11 2009/05/09 12:05:27 sryu Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import os
@@ -72,7 +72,7 @@ class WorkflowTest(unittest.TestCase):
         called before and after creation and after deletion.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
 
         assert testWorkflow.exists() == False, \
                "ERROR: Workflow exists before it was created"
@@ -102,7 +102,7 @@ class WorkflowTest(unittest.TestCase):
         myThread.transaction.begin()
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
 
         assert testWorkflow.exists() == False, \
                "ERROR: Workflow exists before it was created"
@@ -130,7 +130,7 @@ class WorkflowTest(unittest.TestCase):
         after the transaction is rolled back.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
 
         assert testWorkflow.exists() == False, \
                "ERROR: Workflow exists before it was created"
@@ -166,10 +166,10 @@ class WorkflowTest(unittest.TestCase):
           Workflow.LoadFromSpecOwner
         """
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                 name = "wf001")
+                                 name = "wf001", task='Test')
         testWorkflowA.create()
 
-        testWorkflowB = Workflow(name = "wf001")
+        testWorkflowB = Workflow(name = "wf001", task='Test')
         testWorkflowB.load()
 
         assert type(testWorkflowB.id) == int, \
@@ -193,7 +193,7 @@ class WorkflowTest(unittest.TestCase):
                (testWorkflowA.owner == testWorkflowC.owner), \
                "ERROR: Workflow.LoadFromID Failed"
         
-        testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon")
+        testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon", task='Test')
         testWorkflowD.load()
 
         assert type(testWorkflowD.id) == int, \
@@ -221,10 +221,10 @@ class WorkflowTest(unittest.TestCase):
         testFilesetB.create()
         
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                 name = "wf001")
+                                 name = "wf001", task='Test')
         testWorkflowA.create()
 
-        testWorkflowB = Workflow(name = "wf001")
+        testWorkflowB = Workflow(name = "wf001", task='Test')
         testWorkflowB.load()
 
         assert len(testWorkflowB.outputMap.keys()) == 0, \
@@ -233,7 +233,7 @@ class WorkflowTest(unittest.TestCase):
         testWorkflowA.addOutput("outModOne", testFilesetA)
         testWorkflowA.addOutput("outModTwo", testFilesetB)        
 
-        testWorkflowC = Workflow(name = "wf001")
+        testWorkflowC = Workflow(name = "wf001", task='Test')
         testWorkflowC.load()
 
         assert len(testWorkflowC.outputMap.keys()) == 2, \

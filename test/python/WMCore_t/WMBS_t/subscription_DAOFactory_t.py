@@ -7,8 +7,8 @@ are database dialect neutral.
 
 """
 
-__revision__ = "$Id: subscription_DAOFactory_t.py,v 1.2 2008/10/28 17:40:11 metson Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: subscription_DAOFactory_t.py,v 1.3 2009/05/09 12:05:27 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest, logging, os, commands, random, datetime
 import sys, traceback
@@ -104,6 +104,7 @@ class SubscriptionBusinessObjectTestCase(BaseFilesTestCase):
                 self.workflow.append(Workflow(spec='/home/metson/workflow.xml', 
                                      owner='metson', 
                                      name='My Analysis', 
+                                     task='Test',
                                      logger=self.testlogger, 
                                      dbfactory=dbi))
                 self.workflow[c].create()

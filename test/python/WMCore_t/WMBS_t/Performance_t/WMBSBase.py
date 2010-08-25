@@ -28,7 +28,7 @@ from sets import Set
 #Needed for TestInit
 from WMQuality.TestInit import TestInit
 
-__revision__ = "$Id: WMBSBase.py,v 1.16 2009/04/30 20:54:03 mnorman Exp $"
+__revision__ = "$Id: WMBSBase.py,v 1.17 2009/05/09 12:05:28 sryu Exp $"
 __version__ = "$Reivison: $"
 
 class WMBSBase(Performance):
@@ -174,7 +174,8 @@ class WMBSBase(Performance):
         for i in range(rangemax):        
             workflow = Workflow(spec = name+'Spec'+str(i), 
                                 owner = name+'Owner'+str(i), 
-                                name = name+'Workflow'+str(i) )
+                                name = name+'Workflow'+str(i),
+                                task="Test"+str(i))
             list.append(workflow)
 
         return list

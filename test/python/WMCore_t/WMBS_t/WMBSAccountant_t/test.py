@@ -44,7 +44,7 @@ class WMBSAccountantTester(unittest.TestCase):
         # will throw if not in db
         workflow = Workflow('StuartTest-RelValSingleElectronPt10-999',
                             'StuartTest-RelValSingleElectronPt10-999',
-                self.wmbsAccountant.label, dbfactory=self.wmbsAccountant.db)
+                self.wmbsAccountant.label, task='Test', dbfactory=self.wmbsAccountant.db)
         inputDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-RelVal-1209247429-IDEAL_V1-2nd-IDEAL_V1/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO',
                                dbfactory=self.wmbsAccountant.db).populate()
         unmergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999-unmerged/GEN-SIM-DIGI-RECO',
@@ -71,7 +71,7 @@ class WMBSAccountantTester(unittest.TestCase):
         """
         
         workflow = Workflow('StuartTest-RelValSingleElectronPt10-999', 'StuartTest-RelValSingleElectronPt10-999',
-                                self.wmbsAccountant.label, dbfactory=self.wmbsAccountant.db)
+                                self.wmbsAccountant.label, task='Test', dbfactory=self.wmbsAccountant.db)
         inputDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-RelVal-1209247429-IDEAL_V1-2nd-IDEAL_V1/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO',
                                dbfactory=self.wmbsAccountant.db).populate()
         unmergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999-unmerged/GEN-SIM-DIGI-RECO',
@@ -104,7 +104,7 @@ class WMBSAccountantTester(unittest.TestCase):
         file = File('/store/unmerged/mc/PreCSA08/GEN-SIM-RAW/STARTUP_V2/6763/6467AF28-F31B-DD11-B1EF-003048772324.root',
                     dbfactory=self.wmbsAccountant.db).load()
         workflow = Workflow('StuartTest-RelValSingleElectronPt10-999', 'StuartTest-RelValSingleElectronPt10-999',
-                                self.wmbsAccountant.label, dbfactory=self.wmbsAccountant.db)
+                             task='Test', self.wmbsAccountant.label, dbfactory=self.wmbsAccountant.db)
         inputDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-RelVal-1209247429-IDEAL_V1-2nd-IDEAL_V1/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO',
                                dbfactory=self.wmbsAccountant.db).populate()
         unmergedDataset = Fileset('/RelValSingleElectronPt10/CMSSW_2_0_5-StuartTest-999-unmerged/GEN-SIM-DIGI-RECO',

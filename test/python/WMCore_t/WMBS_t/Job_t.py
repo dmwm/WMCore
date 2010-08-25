@@ -5,8 +5,8 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
-__revision__ = "$Id: Job_t.py,v 1.16 2009/04/29 23:24:23 sryu Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Job_t.py,v 1.17 2009/05/09 12:05:27 sryu Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import logging
@@ -88,7 +88,7 @@ class JobTest(unittest.TestCase):
         create the testJobA with 2 files in it and 
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task="Test")
         testWorkflow.create()
         
         testWMBSFileset = WMBSFileset(name = "TestFileset")
@@ -122,7 +122,7 @@ class JobTest(unittest.TestCase):
         created, after it has been created and after it has been deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task="Test")
         testWorkflow.create()
         
         testWMBSFileset = WMBSFileset(name = "TestFileset")
@@ -167,7 +167,7 @@ class JobTest(unittest.TestCase):
         transaction and verify that the job is no longer in the database.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task="Test")
         testWorkflow.create()
         
         testWMBSFileset = WMBSFileset(name = "TestFileset")
@@ -217,7 +217,7 @@ class JobTest(unittest.TestCase):
         job is once again in the database.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task="Test")
         testWorkflow.create()
         
         testWMBSFileset = WMBSFileset(name = "TestFileset")
@@ -272,7 +272,7 @@ class JobTest(unittest.TestCase):
         and after it has been deleted.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task="Test")
         testWorkflow.create()
         
         testWMBSFileset = WMBSFileset(name = "TestFileset")

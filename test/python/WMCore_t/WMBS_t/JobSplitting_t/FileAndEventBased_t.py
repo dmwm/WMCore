@@ -5,8 +5,8 @@ _FileAndEventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: FileAndEventBased_t.py,v 1.4 2009/04/20 16:57:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FileAndEventBased_t.py,v 1.5 2009/05/09 12:05:29 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 import unittest
@@ -86,7 +86,7 @@ class FileAndEventBasedTest(unittest.TestCase):
         self.zeroEventFileset.commit()        
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001")
+                                name = "wf001", task="Test")
         testWorkflow.create()
         self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
                                                      workflow = testWorkflow,

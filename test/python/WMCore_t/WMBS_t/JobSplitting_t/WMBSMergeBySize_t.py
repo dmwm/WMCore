@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.3 2009/03/29 23:22:38 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.4 2009/05/09 12:05:29 sryu Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -94,7 +94,7 @@ class EventBasedTest(unittest.TestCase):
         bunkFileset.create()
 
         bunkWorkflow = Workflow(name = "bunkWorkflow", spec = "bunk",
-                                owner = "Steve")
+                                owner = "Steve", task="Test")
         bunkWorkflow.create()
         
         bunkSubscription = Subscription(fileset = bunkFileset,
@@ -179,7 +179,7 @@ class EventBasedTest(unittest.TestCase):
         self.mergeFileset.create()
 
         mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
-                                 owner = "Steve")
+                                 owner = "Steve", task="Test")
         mergeWorkflow.create()
         
         self.mergeSubscription = Subscription(fileset = self.mergeFileset,

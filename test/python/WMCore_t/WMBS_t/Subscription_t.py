@@ -78,7 +78,7 @@ class SubscriptionTest(unittest.TestCase):
     def createSubscriptionWithFileABC(self):
         
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
@@ -228,7 +228,7 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.create()
 
         dummyWorkflow = Workflow(spec = "spec1.xml", owner = "Simon",
-                                name = "wf002")
+                                name = "wf002", task='Test')
         dummyWorkflow.create()        
 
         failSubscription = Subscription(fileset = testFileset,
@@ -312,7 +312,7 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.create()
  
         dummyWorkflow = Workflow(spec = "spec2.xml", owner = "Simon",
-                                name = "wf003")
+                                name = "wf003", task='Test')
         dummyWorkflow.create()      
 
         completeSubscription = Subscription(fileset = testFileset,
@@ -396,7 +396,7 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.create()
         
         dummyWorkflow = Workflow(spec = "spec2.xml", owner = "Simon",
-                                name = "wf003")
+                                name = "wf003", task='Test')
         dummyWorkflow.create()
          
         acquireSubscription = Subscription(fileset = testFileset,
@@ -475,7 +475,7 @@ class SubscriptionTest(unittest.TestCase):
         as available.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
@@ -546,7 +546,7 @@ class SubscriptionTest(unittest.TestCase):
         that all the files are listed as available.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
         testWorkflow.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
@@ -632,7 +632,7 @@ class SubscriptionTest(unittest.TestCase):
         white list is present in the subscription.
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
         testWorkflow.create()
 
         testFileset = Fileset(name = "TestFileset")
@@ -677,7 +677,7 @@ class SubscriptionTest(unittest.TestCase):
         Testcase for the availableFiles method of the Subscription Class
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
         testWorkflow.create()
 
         testFileset = Fileset(name = "TestFileset")
@@ -722,7 +722,7 @@ class SubscriptionTest(unittest.TestCase):
         both a white and black list are provided
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
         testWorkflow.create()
 
         testFileset = Fileset(name = "TestFileset")
@@ -861,9 +861,9 @@ class SubscriptionTest(unittest.TestCase):
         object returns their IDs.
         """
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
+                                name = "wf001", task='Test')
         testWorkflowB = Workflow(spec = "spec2.xml", owner = "Simon",
-                                name = "wf002")
+                                name = "wf002", task='Test')
         testWorkflowA.create()
         testWorkflowB.create()        
 

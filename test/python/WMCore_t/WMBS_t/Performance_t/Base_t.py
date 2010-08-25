@@ -96,7 +96,7 @@ class BaseTest:
         self.testFileset.create()     
 
         #Creating mySQL Workflow
-        self.testWorkflow = Workflow(spec='Test', owner='PerformanceTestCase', name='TestWorkflow', logger=self.logger, dbfactory=self.dbf)
+        self.testWorkflow = Workflow(spec='Test', owner='PerformanceTestCase', name='TestWorkflow', task="Test", logger=self.logger, dbfactory=self.dbf)
         self.testWorkflow.create()
 
         #Creating MySQL Subscription

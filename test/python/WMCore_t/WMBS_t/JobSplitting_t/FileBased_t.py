@@ -5,8 +5,8 @@ _FileBased_t_
 File based splitting test.
 """
 
-__revision__ = "$Id: FileBased_t.py,v 1.1 2009/02/19 19:50:05 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FileBased_t.py,v 1.2 2009/05/09 12:05:29 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from sets import Set
 import unittest
@@ -78,7 +78,7 @@ class FileBasedTest(unittest.TestCase):
         self.singleFileFileset.commit()
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001")
+                                name = "wf001", task="Test" )
         testWorkflow.create()
         self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
                                                      workflow = testWorkflow,

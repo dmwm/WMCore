@@ -49,9 +49,9 @@ class WMBSTester(unittest.TestCase):
             self.fs1 = Fileset('/Higgs/SimonsCoolData/RECO', self.wmbs).populate()
             self.dataset1 = Fileset('dataset1', self.wmbs).populate()
             self.dataset2 = Fileset('dataset2', self.wmbs).populate()
-            self.workflow1 = Workflow('myworkflow1', 'testsystem', self.wmbs).create()
-            self.workflow2 = Workflow('myworkflow2', 'testsystem', self.wmbs).create()
-            self.workflow3 = Workflow('myworkflow3', 'testsystem', self.wmbs).create()
+            self.workflow1 = Workflow('myworkflow1', 'testsystem', self.wmbs, task='Test').create()
+            self.workflow2 = Workflow('myworkflow2', 'testsystem', self.wmbs, task='Test').create()
+            self.workflow3 = Workflow('myworkflow3', 'testsystem', self.wmbs, task='Test').create()
         except:
             pass
         
@@ -321,7 +321,7 @@ class WMBSTester(unittest.TestCase):
         parentDataset = Fileset('parentDataset', wmbs=self.wmbs).create()
         childDataset = Fileset('childDataset', parents=[parentDataset],
                                                  wmbs=self.wmbs).create()
-        workflow = Workflow('WorkflowWithParentage', 'testsystem', self.wmbs).create()
+        workflow = Workflow('WorkflowWithParentage', 'testsystem', self.wmbs, task='Test').create()
         sub = Subscription(childDataset, workflow, type='Processing',
                            parentage=1, wmbs=self.wmbs).create()
         # should do nothing

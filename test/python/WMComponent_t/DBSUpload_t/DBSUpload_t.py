@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.12 $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -160,10 +160,6 @@ class DBSUploadTest(unittest.TestCase):
             print('Currently: '+str(threading.activeCount())+\
                 ' Threads. Wait until all our threads have finished')
             time.sleep(1)
-
-
-    def runTest(self):
-        self.testA()
 
 if __name__ == '__main__':
     unittest.main()

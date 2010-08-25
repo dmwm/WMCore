@@ -23,38 +23,22 @@ from DBSAPI.dbsApi import DbsApi
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
 
 arguments = {
-    "acquisitionEra": "WMAgentCommissioning10",
-    "owner": "sfoulkes@fnal.gov",
-    "inputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-    "frameworkVersion": "CMSSW_3_5_8_patch3",
-    "scramArch": "slc5_ia32_gcc434",
-    "processingVersion": "v2scf",
-    "skimInput": "output",
-    "globalTag": "GR10_P_v4::All",
-
-    "processingOutputModules": {"output": {"dataTier": "RECO", "filterName": ""},
-                                "ALCARECOStreamTkAlMinBias": {"dataTier": "ALCARECO", "filterName": "TkAlMinBias"},
-                                "ALCARECOStreamSiStripCalZeroBias": {"dataTier": "ALCARECO", "filterName": "SiStripCalZeroBias"},
-                                "ALCARECOStreamTkAlMuonIsolated": {"dataTier": "ALCARECO", "filterName": "TkAlMuonIsolated"},
-                                "ALCARECOStreamMuAlCalIsolatedMu": {"dataTier": "ALCARECO", "filterName": "MuAlCalIsolatedMu"},
-                                "ALCARECOStreamSiStripCalMinBias": {"dataTier": "ALCARECO", "filterName": "SiStripCalMinBias"},
-                                "ALCARECOStreamHcalCalIsoTrk": {"dataTier": "ALCARECO", "filterName": "HcalCalIsoTrk"},
-                                "ALCARECOStreamHcalCalDijets": {"dataTier": "ALCARECO", "filterName": "HcalCalDijets"},
-                                "ALCARECOStreamEcalCalElectron": {"dataTier": "ALCARECO", "filterName": "EcalCalElectron"},
-                                "ALCARECOStreamMuAlOverlaps": {"dataTier": "ALCARECO", "filterName": "MuAlOverlaps"}},
-
-    "skimOutputModules": {"fakeSkimOut1": {"dataTier": "AOD", "filterName": "PreScaleThingy5"},
-                          "fakeSkimOut2": {"dataTier": "AOD", "filterName": "PreScaleThingy1"},
-                          "fakeSkimOut3": {"dataTier": "AOD", "filterName": "PreScaleThingy10"},
-                          "fakeSkimOut4": {"dataTier": "AOD", "filterName": "PreScaleThingy50"},
-                          "fakeSkimOut5": {"dataTier": "FEVT", "filterName": "PreScaleThingy200"}},
+    "CmsPath": "/uscmst1/prod/sw/cms",
+    "AcquisitionEra": "WMAgentCommissioning10",
+    "Owner": "sfoulkes@fnal.gov",
+    "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
+    "FrameworkVersion": "CMSSW_3_5_8_patch3",
+    "ScramArch": "slc5_ia32_gcc434",
+    "ProcessingVersion": "v2scf",
+    "SkimInput": "output",
+    "GlobalTag": "GR10_P_v4::All",
     
-    "processingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
-    "skimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
+    "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
+    "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
     
-    "couchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
-    "couchDBName": "wmagent_config_cache",
-    "scenario": ""
+    "CouchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
+    "CouchDBName": "wmagent_config_cache",
+    "Scenario": ""
 #     "scenario": "cosmics",
 #     "processingOutputModules": {"outputRECORECO": {"dataTier": "RECO", "filterName": ""},
 #                                 "outputALCARECOALCARECO": {"dataTier": "ALCARECO", "filterName": ""}},

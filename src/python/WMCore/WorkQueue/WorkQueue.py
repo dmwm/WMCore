@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.114 2010/06/02 15:22:36 swakef Exp $"
-__version__ = "$Revision: 1.114 $"
+__revision__ = "$Id: WorkQueue.py,v 1.115 2010/06/11 10:08:43 swakef Exp $"
+__version__ = "$Revision: 1.115 $"
 
 
 import time
@@ -218,15 +218,15 @@ class WorkQueue(WorkQueueBase):
         matches, unmatched = self._match(siteJobs)
 
         # if talking to a child and have resources left get work from parent
-        if pullingQueueUrl and unmatched:
-            self.logger.debug('getWork() asking %s for work' % pullingQueueUrl)
+        if pullingQueueUrl and unmatched and self.params['ParentQueue']:
+            self.logger.debug('getWork() asking %s for work' % self.params['ParentQueue'])
             try:
                 #TODO: Add a timeout thats shorter than normal
                 if self.pullWork(unmatched):
                     matches, _ = self._match(siteJobs)
             except RuntimeError, ex:
                 msg = "Error contacting parent queue %s: %s"
-                self.logger.error(msg % (pullingQueueUrl, str(ex)))
+                self.logger.error(msg % (self.params['ParentQueue'], str(ex)))
         wmSpecInfoAction = self.daofactory(classname = "WMSpec.GetWMSpecInfo")
         
         wmSpecCache = {}

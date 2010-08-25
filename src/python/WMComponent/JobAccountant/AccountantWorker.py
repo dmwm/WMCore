@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.1 2009/10/14 17:49:36 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.2 2009/10/14 19:18:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import time
@@ -36,7 +36,7 @@ from WMCore.JobStateMachine import DefaultConfig
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 
 class AccountantWorker:
-    def __init__(self):
+    def __init__(self, **kwargs):
         """
         __init__
 
@@ -58,8 +58,8 @@ class AccountantWorker:
 
         config = Configuration()
         config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl = os.getenv("COUCHURL")
-        config.JobStateMachine.couchDBName = "job_accountant_t"
+        config.JobStateMachine.couchurl = kwargs["couchURL"]
+        config.JobStateMachine.couchDBName = kwargs["couchDBName"]
 
         self.stateChanger = ChangeState(config,
                                         config.JobStateMachine.couchDBName)

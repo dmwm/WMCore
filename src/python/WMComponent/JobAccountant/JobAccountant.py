@@ -5,8 +5,8 @@ _JobAccountant_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountant.py,v 1.2 2009/10/14 16:49:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: JobAccountant.py,v 1.3 2009/10/14 19:18:41 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import time
 import threading
@@ -29,10 +29,13 @@ class JobAccountant(Harness):
         Instantiate the requisite number of accountant workers and create a
         processpool with them.  Also instantiate all the DAOs that we will use.
         """
+        slaveInit = {"couchURL": self.config.JobStateMachine.couchurl,
+                     "couchDBName": self.config.JobStateMachine.couchDBName}
         self.processPool = ProcessPool("JobAccountant.AccountantWorker",
                                        totalSlaves = self.config.JobAccountant.workerThreads,
                                        componentDir = self.config.JobAccountant.componentDir,
-                                       config = self.config)
+                                       config = self.config,
+                                       slaveInit = slaveInit)
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS", logger = myThread.logger,

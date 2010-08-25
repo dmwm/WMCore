@@ -12,9 +12,9 @@ class ConfigDBMap(ConfigDBMapInterface):
         self.dbUrl = config.CoreDatabase.connectUrl
         self.option = {}
         if hasattr(config.CoreDatabase, "socket"):
-            self.option["unix_socket"] = config.database.socket
+            self.option["unix_socket"] = config.CoreDatabase.socket
         if hasattr(config.CoreDatabase, "engineParameters"):
-            self.option['engine_parameters'] = config.database.engineParameters
+            self.option['engine_parameters'] = config.CoreDatabase.engineParameters
             
     def getDBUrl(self):
         return self.dbUrl

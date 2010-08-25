@@ -103,6 +103,11 @@ def loadJobDefinition():
         msg = "Failed to extract Job\n"
         msg += str(ex)
         raise BootstrapException, msg
+    diagnostic = """
+    Job Index = %s
+    Job Instance = %s
+    """ % (index, job)
+    logging.info(diagnostic)
 
     return job
 
@@ -114,7 +119,7 @@ def loadWorkload():
 
     """
     sandboxLoc = locateWMSandbox()
-    workloadPcl = "%s/WMWorkload.pcl" % sandboxLoc
+    workloadPcl = "%s/WMWorkload.pkl" % sandboxLoc
     handle = open(workloadPcl, 'r')
     wmWorkload = pickle.load(handle)
     handle.close()

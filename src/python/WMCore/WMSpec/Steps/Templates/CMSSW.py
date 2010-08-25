@@ -38,6 +38,24 @@ class CMSSWStepHelper(CoreHelper):
 
         return
 
+    def listOutputModules(self):
+        """
+        _listOutputModules_
+
+        retrieve list of output module names
+
+        """
+        return self.data.output.modules.dictionary_().keys()
+
+    def getOutputModule(self, name):
+        """
+        _getOutputModule_
+
+        retrieve the data structure for an output module by name
+        None if not found
+
+        """
+        return getattr(self.data.output.modules, name, None)
 
 
 

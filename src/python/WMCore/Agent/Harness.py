@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.34 2010/02/15 21:13:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: Harness.py,v 1.35 2010/02/15 22:49:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.35 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -170,7 +170,7 @@ class Harness:
                 myThread.dialect = 'MySQL'
             elif connectDialect.lower() == 'oracle':
                 myThread.dialect = 'Oracle'
-            elif connectionDialect.lower() == 'sqlite':
+            elif connectDialect.lower() == 'sqlite':
                 myThread.dialect = 'SQLite' 
             logging.info(">>>Initializing MsgService Factory")
             WMFactory("msgService", "WMCore.MsgService."+ \

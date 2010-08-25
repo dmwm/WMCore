@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.22 2009/08/20 15:35:28 swakef Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: WorkQueue.py,v 1.23 2009/08/24 15:00:56 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -190,6 +190,25 @@ class WorkQueue(WorkQueueBase):
         """
         _getWork_
         siteJob is dict format of {site: estimateJobSlot}
+        
+        JobCreator calls this method, it will 
+        1. match jobs with work queue element
+        2. create the subscription for it if it is not already exist. 
+           (currently set to have one subscription per a workload)
+           (associate the subscription to workload - currently following naming convention,
+            so it can retrieved by workflow name - but might needs association table)
+        3. fill up the fileset with files in the subscription 
+           when if it is processing jobs. if it is production jobs (MC) fileset will be empty
+        4. TODO: close the fileset if the last workqueue element of the workload is processed. 
+        5. update the workqueue status to ('Acquired') might need finer status change 
+           if it fails to create wmbs files partially
+        6. return list of subscription (or not)
+           it can be only tracked only subscription (workload) level job done
+           or
+           return workquue element list:
+           if we want to track partial level of success. But requires JobCreate map workqueue element
+           to each jobgroup. also doneWork parameter should be list of workqueue element not list 
+           of subscription
         """
         results = []
         blockLoader = self.daofactory(classname = "Block.LoadByID")
@@ -278,9 +297,8 @@ class WorkQueue(WorkQueueBase):
         self.beginTransaction()
 
         for primaryBlock, blocks, jobs in units:
-            wmbsHelper = WMBSHelper(spec, primaryBlock)
+            wmbsHelper = WMBSHelper(spec, primaryBlock['Name'])
             sub = wmbsHelper.createSubscription()
-            sub.create()
 
             self._insertWorkQueueElement(spec, jobs, primaryBlock,
                                          blocks, sub['id'])

@@ -133,8 +133,8 @@ particular message to the proxy which forwards it.
 
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.12 2009/10/13 22:02:46 meloam Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: Proxy_t.py,v 1.13 2010/02/02 19:45:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -169,30 +169,19 @@ class ProxyTest(unittest.TestCase):
         """
         setup for test.
         """
-        msg = """
-To run this test you need to have an old msg service 
-setup in a different database and its contact parameters 
-need to be defined in the PROXYDATABASE variable
-"""
-        #raw_input(msg)
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema()
+
+        return
         
-        # create the schema in the proxy database
-        myThread = threading.currentThread()
-        options = {}
-        options['unix_socket'] = os.getenv("DBSOCK")
-        dbFactory = DBFactory(myThread.logger, os.getenv("PROXYDATABASE"), \
-            options)
-        
-        dbi = dbFactory.connect()
-        transaction = Transaction(dbi)
-        create = OldMsgService()
-        create.execute(conn = transaction.conn)
-        transaction.commit()
-        
+        #myThread = threading.currentThread()
+        #myThread.transaction.begin()
+        #create = OldMsgService()
+        #create.execute(conn = myThread.transaction.conn)
+        #myThread.transaction.commit()
+        #return
 
     def tearDown(self):
         """

@@ -5,19 +5,13 @@ _DBSBufferAlgo_t_
 Unit tests for manipulating algorithm in DBSBuffer.
 """
 
-__revision__ = "$Id: DBSBufferAlgo_t.py,v 1.2 2009/10/13 20:49:44 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DBSBufferAlgo_t.py,v 1.3 2009/10/13 20:52:20 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import unittest
-import logging
-import os
-import commands
 import threading
-import random
-from sets import Set
 
-from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.DBFactory import DBFactory
+
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
@@ -34,7 +28,7 @@ class DBSBufferDatasetTest(unittest.TestCase):
         """
 
 
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
@@ -52,22 +46,8 @@ class DBSBufferDatasetTest(unittest.TestCase):
         
         Drop all the DBSBuffer tables.
         """
-        myThread = threading.currentThread()
-        
+        self.testInit.clearDatabase()
 
-        if myThread.transaction == None:
-            myThread.transaction = Transaction(self.dbi)
-        
-        myThread.transaction.begin()
-
-        factory = WMFactory("DBSBuffer", "WMComponent.DBSBuffer.Database")        
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-
-        if not destroyworked:
-            raise Exception("Could not complete DBSBuffer tear down.")
-        
-        myThread.transaction.commit()    
             
     def testCreate(self):
         """

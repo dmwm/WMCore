@@ -5,8 +5,8 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.1 2009/05/11 16:49:04 afaq Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.2 2009/05/12 11:52:35 afaq Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -24,12 +24,5 @@ config.RetryManager.maxThreads = 30
 config.RetryManager.maxRetries = 10
 # depending on the application an operator can reconfigure what we use.
 # but these are the default settings.
-
-config.RetryManager.createCooloffHandler = \
-    'WMComponent.RetryManager.Handler.DefaultCreate'
-config.RetryManager.submitCooloffHandler = \
-    'WMComponent.RetryManager.Handler.DefaultSubmit'
-config.RetryManager.jobCooloffHandler = \
-    'WMComponent.RetryManager.Handler.DefaultJob'
-
-
+# The poll interval at which to look for failed jobs
+config.ErrrorHandler.pollInterval = 60

@@ -6,6 +6,7 @@ from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
 from WMCore.Services.Requests import JSONRequests
 from WMCore.HTTPFrontEnd.RequestManager.CmsDriverWebRequest import CmsDriverWebRequest
 import WMCore.Wrappers.JsonWrapper as JsonWrapper
+from httplib import HTTPException
 import cherrypy
 import os
 import time
@@ -98,8 +99,12 @@ class WebRequestSchema(TemplatedPage):
         schema["RunBlacklist"] = eval("[%s]"%runBlacklist)
         schema["BlockWhitelist"] = eval("[%s]"%blockWhitelist)
         schema["BlockBlacklist"] = eval("[%s]"%blockBlacklist)
-        schema["SiteWhitelist"] = siteWhitelist
-        schema["SiteBlacklist"] = siteBlacklist
+        if siteWhitelist == None:
+            siteWhitelist = ""
+        if siteBlacklist == None:
+            siteBlacklist = ""
+        schema["SiteWhitelist"] = eval("[%s]"%siteWhitelist)
+        schema["SiteBlacklist"] = eval("[%s]"%siteBlacklist)
         schema['CmsPath'] = self.cmsswInstallation
         schema['ProcessingVersion'] = processingVersion
         schema["CouchUrl"] = self.couchUrl
@@ -189,6 +194,9 @@ class WebRequestSchema(TemplatedPage):
         if newLabel != None:
            schema['Label'] = newLabel
         schema['ProductionChannel'] = cherrypy.session.get('ProductionChannel', None)
-        result = self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
+        try:
+            result = self.jsonSender.put('/reqMgr/request/'+schema['RequestName'], schema)
+        except HTTPException, ex:
+            return ex.reason+' '+ex.result
         raise cherrypy.HTTPRedirect('http://'+self.reqMgrHost+'/reqMgrBrowser/requestDetails/'+schema['RequestName'])
     submit.exposed = True

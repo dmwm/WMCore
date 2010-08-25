@@ -129,10 +129,10 @@ def loadTask(job):
     except Exception, ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
-        raise BootstrapError, msg
+        raise BootstrapException, msg
     if task == None:
         msg = "Unable to look up task %s from Workload\n" % job['task']
         msg += "Task name not matched"
-        raise BootstrapError, msg
+        raise BootstrapException, msg
     return task
 

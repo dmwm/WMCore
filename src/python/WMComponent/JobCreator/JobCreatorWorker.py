@@ -21,7 +21,6 @@ import os.path
 
 
 import gc
-import sys
 
 import cPickle
 
@@ -34,13 +33,19 @@ from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
                                             
 from WMCore.WMSpec.Seeders.SeederManager                import SeederManager
 from WMCore.JobStateMachine.ChangeState                 import ChangeState
-from WMCore.WMSpec.Makers.Interface.CreateWorkArea      import CreateWorkArea
+from WMComponent.JobCreator.CreateWorkArea              import CreateWorkArea
 
 from WMCore.Agent.Configuration import Configuration
 
 
+#pylint: disable-msg=C0103
+# I borrowed this code from elsewhere
+# So I'm not changing it
+# See: http://code.activestate.com/recipes/286222-memory-usage/
+
 def _VmB(VmKey):
     '''Private.
+    Code from http://code.activestate.com/recipes/286222-memory-usage/
     '''
     _proc_status = '/proc/%d/status' % os.getpid()
     _scale = {'kB': 1024.0, 'mB': 1024.0*1024.0,
@@ -60,6 +65,9 @@ def _VmB(VmKey):
         return 0.0  # invalid format?
     # convert Vm value to bytes
     return float(v[1]) * _scale[v[2]]
+
+
+#pylint: enable-msg=C0103
 
 def retrieveWMSpec(subscription):
     """
@@ -110,16 +118,33 @@ def retrieveJobSplitParams(wmWorkload, task):
 
 
 def runSplitter(jobFactory, splitParams):
-        """
-        _runSplitter_
+    """
+    _runSplitter_
+    
+    Run the jobSplitting as a coroutine method, yielding values as required
+    """
+    
+    groups = ['test']
+    while groups != []:
+        groups = jobFactory(**splitParams)
+        yield groups
 
-        Run the jobSplitting as a coroutine method, yielding values as required
-        """
 
-        groups = ['test']
-        while groups != []:
-            groups = jobFactory(**splitParams)
-            yield groups
+def doMemoryCheck(msgString):
+    """
+    _doMemoryCheck_
+    
+    Check the memory usage
+    Print to log debug
+    """
+
+    logging.debug(msgString)
+    logging.debug(_VmB('VmSize:'))
+    logging.debug(_VmB('VmRSS:'))
+    logging.debug(_VmB('VmStk:'))
+    logging.debug(gc.get_count())
+
+    return
 
 
 
@@ -164,6 +189,8 @@ class JobCreatorWorker:
 
         
         self.createWorkArea  = CreateWorkArea()
+
+        self.changeState = ChangeState(self.config)
 
         return
 
@@ -257,7 +284,7 @@ class JobCreatorWorker:
                     logging.info("Retrieved %i jobGroups from jobSplitter" % (len(wmbsJobGroups)))
                 except StopIteration:
                     # If you receive a stopIteration, we're done
-                    logging.error("Completed iteration over subscription %i" % (subscriptionID))
+                    logging.info("Completed iteration over subscription %i" % (subscriptionID))
                     continueSubscription = False
                     continue
 
@@ -278,6 +305,7 @@ class JobCreatorWorker:
                                                     startDir = self.jobCacheDir,
                                                     workflow = workflow,
                                                     wmWorkload = wmWorkload)
+
                     
                     for job in wmbsJobGroup.jobs:
                         jobNumber += 1
@@ -306,19 +334,11 @@ class JobCreatorWorker:
 
 
             # About to check memory
-            logging.debug("About to get memory references: End of subscription loop")
-            logging.debug(_VmB('VmSize:'))
-            logging.debug(_VmB('VmRSS:'))
-            logging.debug(_VmB('VmStk:'))
-            logging.debug(gc.get_count())
+            doMemoryCheck("About to get memory references: End of subscription loop")
 
 
         # Final memory check
-        logging.debug("About to get memory references: End of __call__()")
-        logging.debug(_VmB('VmSize:'))
-        logging.debug(_VmB('VmRSS:'))
-        logging.debug(_VmB('VmStk:'))
-        logging.debug(gc.get_count())
+        doMemoryCheck("About to get memory references: End of __call__()")
 
 
         logging.debug("About to return from JobCreatorWorker.__call__()")
@@ -337,8 +357,9 @@ class JobCreatorWorker:
             # If we managed to load the task,
             # so the url should be valid
             job['spec']    = workflow.spec
-            job['sandbox'] = wmTask.data.input.sandbox
             job['task']    = wmTask.getPathName()
+            if job.get('sandbox', None) == None:
+                job['sandbox'] = wmTask.data.input.sandbox
 
         job['counter']  = jobNumber
         cacheDir = job.getCache()
@@ -363,10 +384,10 @@ class JobCreatorWorker:
 
         myThread.transaction.begin()
 
-        changeState = ChangeState(self.config)
+
 
         #Create the job
-        changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
+        self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
         myThread.transaction.commit()
 
         logging.info("JobCreator has created jobGroup %i and is ending" \

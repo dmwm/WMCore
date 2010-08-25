@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.44 2010/02/09 16:42:54 meloam Exp $"
+    "$Id: TestInit.py,v 1.45 2010/02/09 17:43:29 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.44 $"
+    "$Revision: 1.45 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -268,8 +268,10 @@ class TestInit:
         Database deletion. If no modules are specified
         it will clear the tables we added with setschema
         """
-        if (modules == []):
+        if modules == []:
             modules = self.currModules
+
+        modules.reverse()
         self.init.clearDatabase(modules)
 
 

@@ -4,6 +4,7 @@ from unittest import TextTestRunner, TestLoader, TestSuite
 from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 import os
+from pylint import lint
 
 """
 Build, clean and test the WMCore package.
@@ -77,6 +78,37 @@ class CleanCommand(Command):
             except:
                 pass
             
+class LintCommand(Command):
+    user_options = [ ]
+    
+    def initialize_options(self):
+        self._dir = os.getcwd()
+
+    def finalize_options(self):
+        pass
+    
+    def run(self):
+        '''
+        Find the code and run lint on it
+        '''
+        files = [ ]
+        # Walk the directory tree
+        for dirpath, dirnames, filenames in os.walk('./src/python/'):
+            # skipping CVS directories and their contents
+            pathelements = dirpath.split('/')
+            if not 'CVS' in pathelements:
+                # to build up a list of file names which contain tests
+                for file in filenames:
+                    filepath = '/'.join([dirpath, file]) 
+                    files.append(filepath)
+                    # run individual tests as follows
+                    lint.Run(['--rcfile=standards/.pylintrc', filepath])
+        # Could run a global test as:
+        #input = ['--rcfile=standards/.pylintrc']
+        #input.extend(files)
+        #lint.Run(input)
+                    
+                    
 def getPackages(package_dirs = []):
     packages = []
     for dir in package_dirs:
@@ -95,7 +127,9 @@ package_dir = {'WMCore': 'src/python/WMCore',
 
 setup (name = 'wmcore',
        version = '1.0',
-       cmdclass = { 'test': TestCommand, 'clean': CleanCommand },
+       cmdclass = { 'test': TestCommand, 
+                   'clean': CleanCommand, 
+                   'lint': LintCommand },
        package_dir = package_dir,
        packages = getPackages(package_dir.values()),)
 

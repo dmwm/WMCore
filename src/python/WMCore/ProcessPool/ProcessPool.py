@@ -5,8 +5,8 @@ _ProcessPool_
 
 """
 
-__revision__ = "$Id: ProcessPool.py,v 1.16 2010/08/04 15:40:46 mnorman Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: ProcessPool.py,v 1.17 2010/08/13 16:02:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import subprocess
 import sys
@@ -33,12 +33,11 @@ class WorkerProcess:
     """
     def __init__(self, subproc):
         """
+        __init__
+        
         This class just holds active ProcessPool subprocesses and does
-        its own bookkeeping
-
+        its own bookkeeping.
         """
-
-
         self.subproc   = subproc
         self.workCount = 0
 
@@ -46,22 +45,20 @@ class WorkerProcess:
 
     def enqueue(self, work, length = 1):
         """
+        _enqueue_
+        
         Handle writing to the stdin of the subproc
-
         """
-
-        logging.info("Enqueue called with work")
-        logging.info(work)
-
         self.subproc.stdin.write("%s\n" % work)
         self.subproc.stdin.flush()
         self.workCount += length
-
+        return
 
     def dequeue(self):
         """
+        _dequeue_
+        
         Handle reading out of the subproc
-
         """
         if self.workCount == 0:
             # Then we have no work to return
@@ -74,27 +71,24 @@ class WorkerProcess:
 
         return output
 
-
     def delete(self):
         """
+        _delete_
+        
         Delete the worker thread
-
         """
-
         self.subproc.stdin.write("\n")
         self.subproc.stdin.flush()
 
         return
 
-
     def runningWork(self):
         """
-        Accessor method for the workCount
-
-        """
-
-        return self.workCount
+        _runningWork_
         
+        Accessor method for the workCount
+        """
+        return self.workCount
 
 class ProcessPool:
     def __init__(self, slaveClassName, totalSlaves, componentDir,
@@ -306,6 +300,7 @@ class ProcessPool:
 
             try:
                 output = worker.dequeue()
+                logging.error("dequeue: %s" % output)
                 self.runningWork -= 1
                 
                 self.heartbeatAPI.updateWorkerHeartbeat(

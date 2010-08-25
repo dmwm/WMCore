@@ -1,7 +1,11 @@
 #
 # This is an example configuration which loads the documentation classes for
-# the webtools package. In general your application should have it's own 
-# configuration and not use this, other than as a guideline.
+# the webtools package and shows you how to configure the various different 
+# classes available. Your application should have it's own configuration in it's
+# CVS area and not use this, other than as a guideline. Applications deployed at
+# CERN will need to meet the CERN web service SLA:
+#     https://twiki.cern.ch/twiki/bin/view/CMS/DMWTServiceLevelAgreement 
+# This includes committing configuration files to appropriate locations in CVS.
 #
 from WMCore.Configuration import Configuration
 from os import environ
@@ -10,10 +14,14 @@ config = Configuration()
 
 # This component has all the configuration of CherryPy
 config.component_('Webtools')
+# We could change port, set logging etc here like so:
+#config.Webtools.port = 8011
+#config.Webtools.environment = development
+# etc. Check Root.py for all configurables
 
 # This is the application
 config.Webtools.application = 'WebtoolsDocs'
-config.Webtools.port = 8010
+
 # This is the config for the application
 config.component_('WebtoolsDocs')
 # Define the default location for templates for the app
@@ -22,8 +30,12 @@ config.WebtoolsDocs.admin = 'your@email.com'
 config.WebtoolsDocs.title = 'CMS WMCore/WebTools Documentation'
 config.WebtoolsDocs.description = 'Documentation on the WMCORE/WebTools'
 
-# Define the class that is the applications index
+# We could define the class that is the applications index
 #config.WebtoolsDocs.index = 'welcome'
+# but instead we'll leave it blank and use the default (Welcome.py) which 
+# inspects the pages that are loaded and auto-generates a page based on the 
+# classes doc strings. You can hide a view from the welcome page by setting 
+# hidden=True in its configuration - useful for "admin" pages.
 
 # Views are all pages 
 config.WebtoolsDocs.section_('views')
@@ -36,6 +48,12 @@ active.section_('documentation')
 active.documentation.object = 'WMCore.WebTools.Documentation'
 # I could add a variable to the documenation object if I wanted to as follows:
 # active.documentation.foo = 'bar'
+
+# I can reuse a class
+active.section_('secretdocumentation')
+active.secretdocumentation.object = 'WMCore.WebTools.Documentation'
+# I don't want the world to see the secret documents on the welcome page. 
+active.secretdocumentation.hidden = True
 
 #active.section_('welcome')
 #active.welcome.object = 'WMCore.WebTools.Welcome'

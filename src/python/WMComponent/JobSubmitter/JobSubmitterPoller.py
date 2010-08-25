@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.39 2010/07/29 18:43:47 mnorman Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.40 2010/07/29 20:06:48 mnorman Exp $"
+__version__ = "$Revision: 1.40 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -492,8 +492,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             raise Exception(msg)
 
         idList = []
-        for job in jobsToSubmit:
-            idList.append({'jobid': job[0], 'location': job[5]})
+        for package in jobsToSubmit.keys():
+            for job in jobsToSubmit.get(package, []):
+                idList.append({'jobid': job['id'], 'location': job['custom']['location']})
         self.setLocationAction.execute(bulkList = idList)
 
 

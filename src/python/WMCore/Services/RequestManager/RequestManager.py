@@ -68,7 +68,7 @@ class RequestManager(Service):
             # rely on str() sorts dictionary by keys.
             #TODO: it is not guaranteed to generate unique hash for the different args
             argString = str(hash(str(args)))
-        file = callname + argString + '.cache'
+        file = callname.replace("/", "_") + argString + '.cache'
         if clearCache:
             self.clearCache(file, verb, args)
 
@@ -80,7 +80,8 @@ class RequestManager(Service):
 #            decoder = json.JSONDecoder()
 #            return decoder.decode(result)
 
-        result = JsonWrapper.loads(result)
+        if result:
+            result = JsonWrapper.loads(result)
         return result
 
     def getRequest(self, requestName = None):
@@ -106,10 +107,14 @@ class RequestManager(Service):
 
     def postAssignment(self, requestName, prodAgentUrl = None):
         args = {}
-        args['requestName'] = requestName
 
-        callname = 'assignment'
+        callname = 'assignment/%s/%s' % (requestName, str(prodAgentUrl))
         return self._getResult(callname, args = args, verb = "POST")
+
+    def putTeam(self, team):
+        args = {}
+        callname = 'team/%s' % team
+        return self._getResult(callname, args = args, verb = "PUT")
 
 # TODO: find the better way to handle emulation:
 # hacky code: swap the namespace if emulator config is set 

@@ -5,8 +5,8 @@ _DBSBufferFile_
 A simple object representing a file in WMBS
 """
 
-__revision__ = "$Id: DBSBufferFile.py,v 1.4 2009/09/22 19:49:22 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: DBSBufferFile.py,v 1.5 2009/10/14 17:50:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from sets import Set
 
@@ -141,17 +141,29 @@ class DBSBufferFile(WMBSBase, WMFile):
             return
 
         algoAction = self.daofactory(classname = "NewAlgo")
-        algoAction.execute(appName = self["appName"], appVer = self["appVer"],
-                           appFam = self["appFam"], psetHash = self["psetHash"],
-                           configContent = self["configContent"])
+        try:
+            algoAction.execute(appName = self["appName"], appVer = self["appVer"],
+                               appFam = self["appFam"], psetHash = self["psetHash"],
+                               configContent = self["configContent"],
+                               conn = self.getDBConn(),
+                               transaction = self.existingTransaction())
+        except Exception, e:
+            pass
 
         datasetAction = self.daofactory(classname = "NewDataset")
-        datasetAction.execute(datasetPath = self["datasetPath"])
+        datasetAction.execute(datasetPath = self["datasetPath"],
+                              conn = self.getDBConn(),
+                              transaction = self.existingTransaction())
 
         assocAction = self.daofactory(classname = "AlgoDatasetAssoc")
-        assocID = assocAction.execute(appName = self["appName"], appVer = self["appVer"],
-                                      appFam = self["appFam"], psetHash = self["psetHash"],
-                                      datasetPath = self["datasetPath"])
+        try:
+            assocID = assocAction.execute(appName = self["appName"], appVer = self["appVer"],
+                                          appFam = self["appFam"], psetHash = self["psetHash"],
+                                          datasetPath = self["datasetPath"],
+                                          conn = self.getDBConn(),
+                                          transaction = self.existingTransaction())
+        except Exception, e:
+            pass
 
         addAction = self.daofactory(classname = "DBSBufferFiles.Add")
         addAction.execute(files = self["lfn"], size = self["size"],

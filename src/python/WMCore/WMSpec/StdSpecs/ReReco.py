@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.38 2010/07/13 14:51:58 sfoulkes Exp $"
-__revision__ = "$Revision: 1.38 $"
+__version__ = "$Id: ReReco.py,v 1.39 2010/07/14 14:21:02 swakef Exp $"
+__revision__ = "$Revision: 1.39 $"
 
 import subprocess
 
@@ -91,7 +91,8 @@ class ReRecoWorkloadFactory(object):
 
         returnCode = outmodProcess.wait()
         if returnCode != 0:
-            raise Exception("Failed to get output module config.")
+            msg = "Failed to get output module config: %s"
+            raise Exception(msg % outmodProcess.stdout.read())
         
         output = outmodProcess.stdout.readline()
         return self.encoder.decode(output)

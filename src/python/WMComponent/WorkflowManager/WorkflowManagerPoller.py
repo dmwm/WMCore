@@ -5,8 +5,6 @@ The actual subscription creation algorithm
 """
 __all__ = []
 
-            2009/07/27 23:21:44 riahi Exp $"
-
 
 import threading
 import logging

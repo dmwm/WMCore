@@ -168,6 +168,7 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_acquired (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
+             PRIMARY KEY (subscription, file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -178,6 +179,7 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_failed (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
+             PRIMARY KEY (subscription, file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
@@ -187,6 +189,7 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_sub_files_complete (
              subscription INTEGER NOT NULL,
              file         INTEGER NOT NULL,
+             PRIMARY KEY (subscription, file),
              FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
                ON DELETE CASCADE,
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)

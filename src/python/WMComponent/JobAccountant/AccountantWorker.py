@@ -12,9 +12,6 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-
-
-
 import os
 import threading
 import logging
@@ -74,7 +71,6 @@ class AccountantWorker(WMConnectionBase):
         self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
         self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi     = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
-
 
         self.dbsNewAlgoAction    = self.dbsDaoFactory(classname = "NewAlgo")
         self.dbsNewDatasetAction = self.dbsDaoFactory(classname = "NewDataset")
@@ -220,10 +216,13 @@ class AccountantWorker(WMConnectionBase):
             self.bulkAddToFilesetAction.execute(binds = self.filesetAssoc,
                                                 conn = self.getDBConn(),
                                                 transaction = self.existingTransaction())
-        # Now do WMBSJobs
+
+        self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
+
         idList = []
         for wmbsJob in self.listOfJobsToSave:
             idList.append(wmbsJob['id'])
+
         if len(idList) > 0:
             self.jobCompleteInput.execute(id = idList,
                                           conn = self.getDBConn(),
@@ -232,8 +231,6 @@ class AccountantWorker(WMConnectionBase):
         # Straighten out DBS Parentage
         if len(self.mergedOutputFiles) > 0:
             self.handleDBSBufferParentage()
-
-        self.stateChanger.propagate(self.listOfJobsToSave, "success", "complete")
 
         self.commitTransaction(existingTransaction = False)
         self.reset()
@@ -369,7 +366,7 @@ class AccountantWorker(WMConnectionBase):
         wmbsJob.getMask()
         outputID = wmbsJob.loadOutputID()
 
-        wmbsJob["fwjr"]    = fwkJobReport
+        wmbsJob["fwjr"] = fwkJobReport
 
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.getDBConn(),

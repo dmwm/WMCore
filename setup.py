@@ -59,21 +59,19 @@ MODULE_EXTENSIONS = set('.py'.split())
 all_test_suites = []
 
 def unit_test_extractor(tup, path, filenames):
-    """Pull ``unittest.TestSuite``s from modules in path
-    if the path represents a valid Python package. Accumulate
-    results in `tup[1]`.
-    """
     package_path, suites = tup
     logging.debug('Path: %s', path)
     logging.debug('Filenames: %s', filenames)
-    relpath = os.path.relpath(path, package_path)
+    relpath = path[ len(package_path) + 1: ]
+    #relpath = os.path.relpath(path, package_path)
+    print "relpath is %s for path %s and package_path %s" % (relpath, path, package_path)
     relpath_pieces = relpath.split(os.sep)
-
+    print "pieces as %s" % relpath_pieces
     if relpath_pieces[0] == '.': # Base directory.
         relpath_pieces.pop(0) # Otherwise, screws up module name.
-    #elif not any(os.path.exists(os.path.join(path, '__init__' + ext))
-    #        for ext in MODULE_EXTENSIONS):
-    #    return # Not a package directory and not the base directory, reject.
+#elif not any(os.path.exists(os.path.join(path, '__init__' + ext))
+#        for ext in MODULE_EXTENSIONS):
+#    return # Not a package directory and not the base directory, reject.
 
     logging.info('Base: %s', '.'.join(relpath_pieces))
     for filename in filenames:
@@ -94,6 +92,8 @@ def unit_test_extractor(tup, path, filenames):
             all_test_suites.append(module_suites)
         #except Exception, e:
         #    print("LoadFail: %s %s" % (filename, e))
+
+
 
 
 def get_test_suites(path):

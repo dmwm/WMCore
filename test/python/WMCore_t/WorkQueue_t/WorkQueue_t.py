@@ -3,12 +3,13 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.7 2009/07/02 18:30:46 sryu Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.8 2009/08/12 17:15:10 sryu Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import unittest
 import pickle
 import os
+
 from WMCore.WorkQueue.WorkQueue import WorkQueue, _WQElement
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMTask import makeWMTask
@@ -60,6 +61,24 @@ class MockDBSReader:
         self.locations = {'/fake/test/RAW#1' : ['SiteA'],
                 '/fake/test/RAW#2' : ['SiteA', 'SiteB']}
     
+        # this can be just dictionary but use dbs object for accuracy
+        dbsFile1 = {'Checksum': "12345",
+                    'LogicalFileName': "/store/data/fake/RAW/file1",
+                    'NumberOfEvents': 1000,
+                    'FileSize': 102400,
+                    'ParentList': [] 
+                    }
+        
+        dbsFile2 = {'Checksum': "123456",
+                    'LogicalFileName': "/store/data/fake/RECO/file2",
+                    'NumberOfEvents': 1001,
+                    'FileSize': 103400,
+                    'ParentList': ["/store/data/fake/file2parent"] 
+                    }
+        
+        self.files = {'/fake/test/RAW#1' : [dbsFile1],
+                      '/fake/test/RAW#2' : [dbsFile2]}
+    
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks=True):
         """Fake block info"""
         return self.blocks[dataset]
@@ -67,6 +86,10 @@ class MockDBSReader:
     def listFileBlockLocation(self, block):
         """Fake locations"""
         return self.locations[block]
+    
+    def listFilesInBlock(self, block):
+        """Fake files"""
+        return self.files[block]
 # pylint: enable-msg=W0613,R0201
         
 
@@ -132,28 +155,38 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([], work)
         work = self.queue.getWork({'SiteA' : njobs[0]})
         self.assertEqual(len(work), 1)
-        work = self.queue.getWork({'SiteA' : njobs[0], 'SiteB' : njobs[1]})
-        self.assertEqual(len(work), 2)
         
+        #siteA jobs are already acquired
+        work = self.queue.getWork({'SiteA' : njobs[0], 'SiteB' : njobs[1]})
+        self.assertEqual(len(work), 1)
+        
+        
+    def testPriority(self):
+        specfile = self.specFile
+        numBlocks = 2
+        njobs = [10] * numBlocks # array of jobs per block
+        total = sum(njobs)
+        
+        # Queue Work & check accepted
+        for _ in range (0, numBlocks):
+            self.queue.queueWork(specfile)
+            
+        self.queue.load()
         # priority change
         affectedBlocks = self.queue.setPriority(50, self.specFile)
-        self.assertNotEqual(0, affectedBlocks)
+        self.assertEqual(True, affectedBlocks)
         affectedBlocks = self.queue.setPriority(50, 'blahhhhhh')
         self.assertFalse(affectedBlocks)
         
-        # check work still available if not claimed
-        work = self.queue.getWork({'SiteA' : 10000})
-        self.assertEqual(len(work), numBlocks)
         
         # claim all work
         work = self.queue.getWork({'SiteA' : total})
         self.assertEqual(len(work), numBlocks)
-        gotWork = self.queue.gotWork(*work)
-        self.assertTrue(gotWork)
+        #gotWork = self.queue.gotWork(*work)
+        #self.assertTrue(gotWork)
         
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
-
 
     def testProcessing(self):
         """
@@ -169,22 +202,35 @@ class WorkQueueTest(WorkQueueTestCase):
         # Queue Work & check accepted
         self.queue.queueWork(specfile)
         #self.assertEqual(numBlocks, len(self.queue))
+        
+        # Not quite enough resources
+        work = self.queue.getWork({'SiteA' : njobs[0]-1, 'SiteB' : njobs[1]-1})
+        self.assertEqual(len(work), 0)
+
+        # Only 1 block at SiteB
+        #work = self.queue.getWork({'SiteB' : total})
+        #self.assertEqual(len(work), 1)
+        # 1st block cant run anywhere
+        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
+        self.assertEqual(len(work), 1)
+        
+        
+    def testBlackList(self):
+        
+        specfile = self.processingSpecFile
+        njobs = [5, 10] # array of jobs per block
+        numBlocks = len(njobs)
+        total = sum(njobs)
+        
+        # Queue Work & check accepted
+        self.queue.queueWork(specfile)
+        #self.assertEqual(numBlocks, len(self.queue))
 
         # Check splitting
         #In blacklist
         work = self.queue.getWork({'SiteA' : total})
         self.assertEqual(len(work), 0)
-        # Not quite enough resources
-        work = self.queue.getWork({'SiteA' : njobs[0]-1, 'SiteB' : njobs[1]-1})
-        self.assertEqual(len(work), 0)
-        # Only 1 block at SiteB
-        work = self.queue.getWork({'SiteB' : total})
-        self.assertEqual(len(work), 1)
-        # 1st block cant run anywhere
-        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
-        self.assertEqual(len(work), 1)
         
-        # update locations - put block1 at SiteA & SiteB
         self.__class__.queue.dbsHelpers['http://example.com'].locations['/fake/test/RAW#1'] = ['SiteA', 'SiteB']
         self.queue.updateLocationInfo()
         # SiteA still blacklisted for all blocks
@@ -194,7 +240,6 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'SiteB' : total})
         self.assertEqual(len(work), 2)
        
-
 #    def testRestore(self):
 #        """
 #        Create a WorkQueue destroy it and restore
@@ -225,6 +270,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """run all tests"""
         self.testProduction() 
         self.testProcessing()
+        self.testPriority()
+        self.testBlackList()
 
 
 if __name__ == "__main__":

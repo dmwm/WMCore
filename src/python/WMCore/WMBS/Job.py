@@ -14,8 +14,8 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
-__revision__ = "$Id: Job.py,v 1.30 2009/07/10 20:04:22 mnorman Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: Job.py,v 1.31 2009/08/21 10:04:17 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import datetime
 from sets import Set
@@ -229,16 +229,32 @@ class Job(WMBSBase, WMJob):
 
         return
 
-
     def getState(self):
         """
         _getState_
 
         Retrieve the state that the job is currently in.
-
         """
-
         action = self.daofactory(classname = "Jobs.GetState")
-        state = action.execute(self["id"], conn = self.getDBConn(), transaction = self.existingTransaction)
+        state = action.execute(self["id"], conn = self.getDBConn(), 
+                               transaction = self.existingTransaction)
 
         return state
+
+    def getOutputDBSParentLFNs(self):
+        """
+        _getOutputDBSParentLFNs_
+
+        Retrieve the LFNs of the files that should be marked as the parents of
+        the output of this job.  This will be the closest relative of the input
+        for the job that is marked as merged.
+
+        Note: This assumes that the input for the job will consist of files that
+        are either all merged or all unmerged.  It will not work correctly if
+        the input for the job consists of a mix of merged and unmerged files.
+        """
+        action = self.daofactory(classname = "Jobs.GetOutputParentLFNs")
+        parentLFNs = action.execute(self["id"], conn = self.getDBConn(), 
+                                    transaction = self.existingTransaction)
+
+        return parentLFNs

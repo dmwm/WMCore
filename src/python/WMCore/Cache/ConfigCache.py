@@ -15,8 +15,8 @@ except:
 
 import PSetTweaks.PSetTweak as TweakAPI
 
-__revision__ = "$Id: ConfigCache.py,v 1.16 2010/05/18 19:30:59 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: ConfigCache.py,v 1.17 2010/05/19 17:39:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 class WMConfigCache:
     '''
@@ -78,7 +78,7 @@ class WMConfigCache:
             retval2 = self.database.addAttachment(docsCommitted[0]["id"],
                                                   docsCommitted[0]["rev"],
                                                   configString,
-                                                  "pickled_script")
+                                                  "original_script")
             return (retval2["id"], retval2["rev"])
         elif (len(viewresult["rows"]) == 1):
             return (viewresult["rows"][0]["value"]["_id"],
@@ -86,16 +86,14 @@ class WMConfigCache:
         else:
             raise IndexError, "More than one record has the same MD5"
 
-    def addOriginalConfig(self, docid, rev, configPath):
+    def addPickledConfig(self, docid, rev, configPath):
         """
-        _addOriginalConfig_
+        _addPickledConfig_
         
-        Adds the human-readable script to the given id.  Makes it easy to see
-        what you're doing since the pickled version isn't legible.
         """
         configString = urllib.urlopen(configPath).read(-1)
         retval = self.database.addAttachment(docid, rev, configString,
-                                             "original_script")
+                                             "pickled_script")
         return (retval["id"], retval["rev"])
 
     def getOriginalConfigByDocID(self, docid):

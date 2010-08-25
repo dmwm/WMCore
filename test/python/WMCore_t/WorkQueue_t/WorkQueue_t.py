@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.10 2009/09/03 13:27:17 swakef Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.11 2009/09/07 14:41:12 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import unittest
 import pickle
@@ -97,6 +97,13 @@ class MockDBSReader:
             }
                    }
         return result
+
+    def getDatasetInfo(self, dataset):
+        """Dataset summary"""
+        result = {}
+        result['number_of_events'] = sum([x['NumEvents'] for x in self.blocks[dataset]])
+        result['number_of_files'] = sum([x['NumFiles'] for x in self.blocks[dataset]])
+        return result
 # pylint: enable-msg=W0613,R0201
 
 
@@ -119,9 +126,17 @@ class WorkQueueTest(WorkQueueTestCase):
                                             self.processingSpecName + ".pckl")
         createSpec(self.processingSpecName,
                    self.processingSpecFile, ['/fake/test/RAW'])
-        self.__class__.queue = WorkQueue()
+
+        self.globalQueue = WorkQueue(SplitByBlock = False) # Global queue
+        self.midQueue = WorkQueue(SplitByBlock = False,
+                            ParentQueue = self.globalQueue) # mid-level queue
+        self.localQueue = WorkQueue(SplitByBlock = True,
+                            ParentQueue = self.midQueue) # local queue
+        self.queue = WorkQueue() # standalone queue for unit tests
         mockDBS = MockDBSReader('http://example.com')
-        self.__class__.queue.dbsHelpers['http://example.com'] = mockDBS
+        for queue in (self.queue, self.localQueue,
+                      self.midQueue, self.globalQueue):
+            queue.dbsHelpers['http://example.com'] = mockDBS
 
 
     def tearDown(self):
@@ -147,7 +162,6 @@ class WorkQueueTest(WorkQueueTestCase):
         # Queue Work & check accepted
         for _ in range (0, numBlocks):
             self.queue.queueWork(specfile)
-        # commented out for now queueWork only update the database for now
         self.assertEqual(numBlocks, len(self.queue))
 
         # try to get work
@@ -167,6 +181,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Test priority change functionality
         """
+        #TODO: This tests nothing! Fix.
+
         numBlocks = 2
         njobs = [10] * numBlocks # array of jobs per block
         total = sum(njobs)
@@ -217,6 +233,9 @@ class WorkQueueTest(WorkQueueTestCase):
 
 
     def testBlackList(self):
+        """
+        Black & White list functionality
+        """
 
         specfile = self.processingSpecFile
         njobs = [5, 10] # array of jobs per block
@@ -245,12 +264,40 @@ class WorkQueueTest(WorkQueueTestCase):
         #TODO: Add whitelist test here
 
 
+    def testGlobalQueue(self):
+        """
+        Global Queue
+        """
+        pass
+
+    def testQueueChaining(self):
+        """
+        Chain WorkQueues, pull work down and report status
+        """
+        # NOTE: All queues point to the same backend (i.e. same database table)
+        # Thus total element counts etc need to be adjusted for the other queues
+        self.assertEqual(0, len(self.globalQueue))
+        # check no work in local queue
+        self.assertEqual(0, len(self.localQueue.getWork({'SiteA' : 1000})))
+        # Add work to top most queue
+        self.globalQueue.queueWork(self.processingSpecFile)
+        self.assertEqual(1, len(self.globalQueue))
+        # pull work down to the lowest queue
+        work = self.localQueue.getWork({'SiteA' : 1000})
+        # check work passed down to lower queue where it was acquired
+        # work should have expanded and parent element marked as acquired
+        self.assertEqual(2, len(work))
+        # mark work done & check this passes upto the top level
+        self.localQueue.setStatus('Done', *work)
+        # TODO: Check status of element in gloal queue
+
     def runTest(self):
         """run all tests"""
         self.testProduction()
         self.testProcessing()
         self.testPriority()
         self.testBlackList()
+        self.testQueueChaining()
 
 
 if __name__ == "__main__":

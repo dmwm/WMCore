@@ -6,14 +6,11 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.11 2009/09/03 15:44:19 swakef Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.12 2009/09/07 14:41:36 swakef Exp $"
+__version__ = "$Revision: 1.12 $"
 
 from WMCore.Services.DBS.DBSReader import DBSReader
-from ProdCommon.MCPayloads.UUID import makeUUID
-
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, newWorkload
-from WMCore.WorkQueue.DataStructs.Block import Block
+from urllib import urlopen
 
 #TODO: Pull useful stuff out of wmspec then free it - large data structure
 #TODO: Cleanup, logArchive etc. WorkflowTypes needed???
@@ -29,7 +26,7 @@ class WorkSpecParser:
     def __init__(self, url):
         self.specUrl = url
         import pickle
-        inp = open(self.specUrl)
+        inp = urlopen(self.specUrl) #TODO: Add client name to http headers
         self.wmSpec = pickle.load(inp) #TODO: Replace by WMSpec load method
         self.initialTask = self.wmSpec.taskIterator().next()
         inp.close()
@@ -59,7 +56,7 @@ class WorkSpecParser:
 #        input.close()
 
 
-    def split(self, dbs_pool = None):
+    def split(self, split = True, dbs_pool = None):
         """
         Take the wmspec and divide into units of work
         
@@ -73,42 +70,58 @@ class WorkSpecParser:
         results = []
 
         if not self.inputDatasets:
-            # we don't have any input data - divide into one block
+            # we don't have any input data - divide into one chunk
             jobs = self.__estimateJobs(self.splitSize, self.totalEvents)
             results.append((None, [], jobs))
             return results
 
-        # data processing - assume blocks are reasonable size
-        #Only run over closed blocks - may need to change this
+        # data processing - need to contact dbs
         if dbs_pool and dbs_pool.has_key(self.dbs_url):
             dbs = dbs_pool[self.dbs_url]
         else:
             dbs = DBSReader(self.dbs_url)
-        for dataset in self.inputDatasets:
-            blocks = dbs.getFileBlocksInfo(dataset, onlyClosedBlocks = True)
-            for block in blocks:
-                #name = block['Name']
-                if self.splitType == 'Event':
-                    jobs = self.__estimateJobs(self.splitSize,
-                                               block['NumEvents'])
-                elif self.splitType == 'File':
-                    jobs = self.__estimateJobs(self.splitSize,
-                                               block['NumFiles'])
-                else:
-                    raise RuntimeError, \
-                                'Unsupported SplitType: %s' % self.splitType
 
-                parentBlocks = None
-                if self.parentFlag:
-                    parentBlocks = block['Parents']
-                    if not parentBlocks:
-                        msg = "Parentage required but no parents found for %s"
-                        raise RuntimeError, msg % block['Name']
-                else:
-                    parentBlocks = []
-                results.append((block['Name'], parentBlocks, jobs))
+        # prob don't need to handle multiple input datasets but just in case
+        for dataset in self.inputDatasets:
+            if not split:
+                # Don't split
+                # ignore parentage as dataset parents not always set
+                self.parentFlag = False
+                dsInfo = dbs.getDatasetInfo(dataset)
+                results.append(self._calculateParamsForData(dsInfo))
+            else:
+                # Split by block. Assume blocks are reasonable size
+                for block in dbs.getFileBlocksInfo(dataset):
+                    results.append(self._calculateParamsForData(block))
+
         return results
 
+
+    def _calculateParamsForData(self, data):
+        """
+        Calculate the properties for the data item given
+        """
+        # block and datasets have different names
+        if self.splitType == 'Event':
+            jobs = self.__estimateJobs(self.splitSize,
+                                       data.get('NumEvents',
+                                                data.get('number_of_events')))
+        elif self.splitType == 'File':
+            jobs = self.__estimateJobs(self.splitSize,
+                                       data.get('NumFiles',
+                                                data.get('number_of_files')))
+        else:
+            raise RuntimeError, \
+                        'Unsupported Splitting algo: %s' % self.splitType
+
+        parents = []
+        if self.parentFlag:
+            parents = data['Parents']
+            if not parents:
+                msg = "Parentage required but no parents found for %s"
+                raise RuntimeError, msg % data['Name']
+
+        return (data.get('Name', data.get('path')), parents, jobs)
 
 #    #Was used to split production into multiple blocks
 #    #Now dont split these
@@ -264,7 +277,6 @@ class WorkSpecParser:
         """Do we need parents"""
         return getattr(self.initialTask.data.parameters, 'parentage', False)
     parentFlag = property(parents)
-
 #    def simpleMemoize(self, name, obj, item, default = None):
 #        """Poor mans memoize"""
 #        try:

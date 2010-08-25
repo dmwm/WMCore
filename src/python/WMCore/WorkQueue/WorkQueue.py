@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.26 2009/09/03 15:44:19 swakef Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: WorkQueue.py,v 1.27 2009/09/07 14:41:33 swakef Exp $"
+__version__ = "$Revision: 1.27 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -42,12 +42,16 @@ class WorkQueue(WorkQueueBase):
     This  provide API for JSM (WorkQueuePool) - getWork(), gotWork()
     and injector
     """
-    def __init__(self):
+    def __init__(self, **params):
         WorkQueueBase.__init__(self)
         self.wmSpecs = {}
         self.elements = {}
         self.dbsHelpers = {}
-        self.itemWeight = 0.01  # weight for queuing time weighted average
+        self.params = params
+        self.params.setdefault('ParentQueue', None) # Get more work from here
+        self.params.setdefault('QueueDepth', 100) # when less than this locally
+        self.params.setdefault('SplitByBlock', True)
+        self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
 
 
     def __len__(self):
@@ -57,13 +61,11 @@ class WorkQueue(WorkQueueBase):
 
 
     def _insertWorkQueueElement(self, wmspec, nJobs, primaryInput,
-                                parentInputs, subscription):
+                                parentInputs, subscription, parentQueueId):
         """
         Persist a block to the database
         """
         self._insertWMSpec(wmspec)
-        #still need to insert fack block for production job
-        #if primaryBlock['NumFiles'] != 0: #TODO: change this
         if primaryInput:
             self._insertInputs(primaryInput, parentInputs)
 
@@ -71,7 +73,7 @@ class WorkQueue(WorkQueueBase):
         parentFlag = parentInputs and 1 or 0
         wqAction.execute(wmspec.name, primaryInput, nJobs,
                              wmspec.priority, parentFlag, subscription,
-                             conn = self.getDBConn(),
+                             parentQueueId, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
 
@@ -126,7 +128,7 @@ class WorkQueue(WorkQueueBase):
         Match resources to available work
         """
         matchAction = self.daofactory(classname = "WorkQueueElement.GetWork")
-        elements = matchAction.execute(conditions, self.itemWeight,
+        elements = matchAction.execute(conditions, self.params['ItemWeight'],
                                        conn = self.getDBConn(),
                                        transaction = self.existingTransaction())
         return elements
@@ -144,6 +146,9 @@ class WorkQueue(WorkQueueBase):
                              transaction = self.existingTransaction())
         if not affected:
             raise RuntimeError, "Status not changed: No matching elements"
+
+        if self.params['ParentQueue'] and status in ('Done', 'Failed'):
+            self.params['ParentQueue'].setStatus(status, *subscriptions)
 
 
     def setPriority(self, newpriority, *workflowNames):
@@ -210,36 +215,23 @@ class WorkQueue(WorkQueueBase):
            to each jobgroup. also doneWork parameter should be list of workqueue element not list 
            of subscription
         """
+
+        # Probably should move somewhere that doesn't block the client
+        self.pullWork(siteJobs)
+
         results = []
         blockLoader = self.daofactory(classname = "Data.LoadByID")
         parentBlockLoader = \
                     self.daofactory(classname = "Data.GetParentsByChildID")
         matches = self.match(siteJobs)
         for match in matches:
-            #wmbsHelper = WMBSHelper(wqElement.wmSpec)
-            #TODO: task maker will handle creating the subscription
-            #It will be already available by now - wqElement.wmSpec.subscriptionID?
-            #subscription = wmbsHelper.createSubscription()
-            #TODO: also fill up the files in the fileset
-            #      find out how to handle parent files
-            #dbs = self.dbsHelpers[wqElement.wmSpec.dbs_url]
-            #files, pfile = wqElement.listFilesInElement(dbs)
-            #wmbsHelper.createFilesAndAssociateToFileset(files)
-
-            #TODO: probably need to pass element id list as well if it needs track
-            # fine grained status
-            # also check if it is the last element in the given spec close the fileset.
-            #results.append(subscription)
-            #wqElement.subscription = subscription
-            #TODO: probably need to update the status here since this is not REST call.
-            # gotWork function won't be necessary
 
             sub = WMBSSubscription(id = match['subscription_id'])
             sub.load()
-
-            dbs = self.dbsHelpers.values()[0] #FIXME!!!
+            sub['workflow'].load()
 
             if match['input_id']:
+                dbs = self.dbsHelpers.values()[0] #FIXME!!!
                 block = blockLoader.execute(match['input_id'],
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
@@ -248,6 +240,7 @@ class WorkQueue(WorkQueueBase):
                 else:
                     dbsBlock = dbs.getFileBlock(block["name"])[block['name']]
 
+                # TODO: parent fileset
                 # should this be moved into gotWork()
                 fileset = sub["fileset"]
                 for dbsFile in dbsBlock['Files']:
@@ -285,7 +278,7 @@ class WorkQueue(WorkQueueBase):
         self.setStatus('Done', *subscriptions)
 
 
-    def queueWork(self, wmspec):
+    def queueWork(self, wmspec, parentQueueId = None):
         """
         Take and queue work from a WMSpec
         """
@@ -294,7 +287,8 @@ class WorkQueue(WorkQueueBase):
         if not self.dbsHelpers.has_key(spec.dbs_url):
             self.dbsHelpers[spec.dbs_url] = DBSReader(spec.dbs_url)
 
-        units = spec.split(dbs_pool = self.dbsHelpers)
+        units = spec.split(split = self.params['SplitByBlock'],
+                           dbs_pool = self.dbsHelpers)
 
         #TODO: Look at db transactions - try to minimize time active
         self.beginTransaction()
@@ -304,6 +298,22 @@ class WorkQueue(WorkQueueBase):
             sub = wmbsHelper.createSubscription()
 
             self._insertWorkQueueElement(spec, jobs, primaryBlock,
-                                         blocks, sub['id'])
+                                         blocks, sub['id'], parentQueueId)
 
         self.commitTransaction(self.existingTransaction())
+
+
+    def pullWork(self, resources):
+        """
+        Pull work from another WorkQueue to be processed
+        """
+        # Should this use job count instead
+        # monitor queue depth (jobs) per site?
+        if not self.params['ParentQueue'] or \
+                                        len(self) > self.params['QueueDepth']:
+            return
+
+        work = self.params['ParentQueue'].getWork(resources)
+        for element in work:
+            self.queueWork(element['workflow'].spec,
+                           parentQueueId = element['id'])

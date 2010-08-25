@@ -61,9 +61,8 @@ class PhEDExTest(unittest.TestCase):
         dict = {}
         dict['endpoint'] = self.phedexTestDS
         phedexApi = PhEDEx(dict)
-
         self.failUnless(phedexApi.getNodeSE('TX_Test4_MSS') == 'srm.test4.ch')
-        self.failUnless(phedexApi.getNodeName('srm.test1.ch') == 'TX_Test1_MSS')
+        self.failUnless(phedexApi.getNodeNames('srm.test1.ch') == [u'TX_Test1_MSS', u'TX_Test1_Buffer'])
 
 if __name__ == '__main__':
 

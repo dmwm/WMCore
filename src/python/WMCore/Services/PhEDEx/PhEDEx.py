@@ -228,17 +228,19 @@ class PhEDEx(Service):
         """
         return self._getResult("nodes", args = None)
 
-    def getNodeName(self, se):
+    def getNodeNames(self, se):
         """
         _getNodeName_
 
         Convert SE to Name
         """
+        names = []
         output = self.getNodeMap()
         nodeList = output['phedex']['node']
         for node in nodeList:
             if node['se'] == se:
-                return node['name']
+                names.append(node['name'])
+        return names
 
     def getNodeSE(self, name):
         """
@@ -251,3 +253,4 @@ class PhEDEx(Service):
         for node in nodeList:
             if node['name'] == name:
                 return node['se']
+        return None

@@ -71,12 +71,14 @@ class PhEDExTest(unittest.TestCase):
         self.failUnless(phedexApi.getNodeNames('srm.test1.ch') == [u'TX_Test1_MSS', u'TX_Test1_Buffer'])
 
     def testGetSubscriptionMapping(self):
+        #TODO: How to handle data no longer at these locations?
         dataset = '/MinimumBias/BeamCommissioning09-v1/RAW'
         blocks = [dataset + '#0bd096b1-0022-42df-a0d8-a8e6346080b8',
                   dataset + '#0beea1ae-8029-455c-9139-5acd6ba3b949']
         node = 'T0_CH_CERN_MSS'
         dict = {}
         #dict['endpoint'] = self.phedexTestDS
+        dict['endpoint'] = 'http://cmsweb-testbed.cern.ch/phedex/datasvc/json/prod/'
         phedexApi = PhEDEx(dict)
 
         # dataset level subscriptions
@@ -85,11 +87,15 @@ class PhEDExTest(unittest.TestCase):
         subs = phedexApi.getSubscriptionMapping(*blocks)
         self.assert_(node in subs[blocks[0]])
         self.assert_(node in subs[blocks[1]])
-        # block level subscription
+        # block level subscription (no dataset subscription)
         block = '/MinBias/Summer09-MC_31X_V3_7TeV-v1/GEN-SIM-RAW#814604df-507e-4354-9130-4d9f8c0cfc29'
         subs = phedexApi.getSubscriptionMapping(block)
         self.assert_('T2_UK_London_IC' in subs[block])
-        #TODO: Add test for dataset with block level subscriptions
+        # dataset with both block and dataset subscriptions
+        block = '/ZeroBias/Run2010A-357hltp4_HLTtest_v1/USER#dfaaa742-ad38-4bd9-855e-aed7bc16bcfa'
+        subs = phedexApi.getSubscriptionMapping(block)
+        self.assert_('T2_UK_London_IC' in subs[block]) #block
+        self.assert_('T1_US_FNAL_MSS' in subs[block]) #dataset
 
 if __name__ == '__main__':
 

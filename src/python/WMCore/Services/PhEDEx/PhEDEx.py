@@ -48,7 +48,7 @@ class PhEDEx(Service):
 
         Service.__init__(self, dict)
 
-    def _getResult(self, callname, clearCache = True,
+    def _getResult(self, callname, clearCache = False,
                    args = None, verb="POST"):
         """
         _getResult_
@@ -63,13 +63,10 @@ class PhEDEx(Service):
         file = callname.replace("/", "_")
         if clearCache:
             self.clearCache(file, args, verb = verb)
-        try:
-            f = self.refreshCache(file, callname, args, verb = verb)
-            result = f.read()
-            f.close()
 
-        except IOError, ex:
-            raise RuntimeError("URL not available: %s" % callname)
+        f = self.refreshCache(file, callname, args, verb = verb)
+        result = f.read()
+        f.close()
 
         if self.responseType == "json":
             return JsonWrapper.loads(result)
@@ -222,45 +219,33 @@ class PhEDEx(Service):
         """
         from collections import defaultdict
         result = defaultdict(set)
+        kwargs.setdefault('suspended', 'n') # require active subscription
 
         dataItems = list(set(dataItems)) # force unique items
 
-        # cache dataset calls - speed up per block searches where dataset sub
-        datasetMap = {}
-
-        # bug in phedex api means we can't query multiple datasets/blocks
-        # remove looping construct when fix deployed
+        # Hard to query all at once in one GET call, POST not cacheable
+        # hence, query individually - use httplib2 caching to protect service
         for item in dataItems:
 
-            # TODO: Bug in which this option causes no results to be returned
-            # uncomment when https://savannah.cern.ch/bugs/index.php?64617 deployed
-            # kwargs['suspended'] = 'n' # require subscription to be active
-
             # First query for a dataset level subscription (most common)
-            # then if its a block, query for a block level subscription
+            # this returns block level subscriptions also.
+            # Rely on httplib2 caching to not resend on every block in dataset
             kwargs['dataset'], kwargs['block'] = [item.split('#')[0]], []
-            try:
-                response = datasetMap[kwargs['dataset'][0]]
-            except KeyError:
-                response = self.subscriptions(**kwargs)['phedex']
-                datasetMap[kwargs['dataset'][0]] = response
+            response = self.subscriptions(**kwargs)['phedex']
 
             # iterate over response as can't jump to specific datasets
             for dset in response['dataset']:
-                if dset['subscription']:
+                if dset['name'] != item.split('#')[0]:
+                        continue
+                if dset.has_key('subscription'):
                     # dataset level subscription
-                    if dset['name'] == item.split('#')[0]:
-                        nodes = [x['node'] for x in dset['subscription']
-                                 if x['suspended'] == 'n']
-                        result[item].update(nodes)
-                        break
+                    nodes = [x['node'] for x in dset['subscription']
+                             if x['suspended'] == 'n']
+                    result[item].update(nodes)
 
-            #if we have a block we must check for block level subscription also
-            # combine with original query when can give both dataset and block
-            if item.find('#') > -1:
-                kwargs['dataset'], kwargs['block'] = [], [item]
-                response = self.subscriptions(**kwargs)['phedex']
-                for dset in response['dataset']:
+                #if we have a block we must check for block level subscription also
+                # combine with original query when can give both dataset and block
+                if item.find('#') > -1 and dset.has_key('block'):
                     for block in dset['block']:
                         if block['name'] == item:
                             nodes = [x['node'] for x in block['subscription']

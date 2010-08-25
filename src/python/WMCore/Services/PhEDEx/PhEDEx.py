@@ -66,9 +66,12 @@ class PhEDEx(AuthorisedService):
         responseType will be either xml or json
         """
         self.responseType = responseType.lower()
-        dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
-                            self.responseType
-        dict['key'], dict['cert'] = getKeyCert()
+        
+        if not dict.has_key('enpoint'):
+            dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
+                                self.responseType
+        if not dict.has_key('key') or not dict.has_key('cert'):
+            dict['key'], dict['cert'] = getKeyCert()
         
         #if self.responseType == 'json':
             #self.parser = JSONParser()
@@ -94,7 +97,7 @@ class PhEDEx(AuthorisedService):
         #TODO if service doesn't need to be authorized, have switch to use Service
         AuthorisedService.__init__(self, dict)
 
-    def _getResult(self, callname, file='result', clearCache=False, args=None):
+    def _getResult(self, callname, file='result', clearCache=True, args=None):
         """
         _getResult_
 
@@ -115,7 +118,7 @@ class PhEDEx(AuthorisedService):
             f = self.refreshCache(file, query)
             result = f.read()
             f.close()
-        except IOError:
+        except IOError, ex:
             raise RuntimeError("URL not available: %s" % callname )
         # TODO use parser (json, xml) if needed depending on the reply type
         # self.responseType
@@ -145,10 +148,10 @@ class PhEDEx(AuthorisedService):
         args.append(('verbose', verbose))
         args.append(('strict', strict))
         
-        return self._getResult(callname, args)
+        return self._getResult(callname, args=args)
      
     
-    def subscribe(self, subscription, dbsUrl):
+    def subscribe(self, dbsUrl, subscription):
         """
         _subscribe_
         
@@ -172,6 +175,6 @@ class PhEDEx(AuthorisedService):
         args.append(('group', '%s' % subscription.group))
         args.append(('request_only', '%s' % subscription.request_only))
         
-        return self._getResult(callname, args)
+        return self._getResult(callname, args=args)
      
         

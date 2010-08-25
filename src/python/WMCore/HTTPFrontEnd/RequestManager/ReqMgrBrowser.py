@@ -272,7 +272,7 @@ class ReqMgrBrowser(TemplatedPage):
            if key == "siteWhitelist":
                result += "Site Whitelist changed to " + str(value) + "<BR>"
                helper.setSiteWhitelist(value)
-               schema.SiteWhitelust = value
+               schema.SiteWhitelist = value
                helper.save(pfn)
            elif key == "siteBlacklist":
                result += "Site Blacklist changed to " + str(value) + "<BR>"

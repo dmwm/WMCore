@@ -9,8 +9,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.25 2010/08/04 21:26:41 sryu Exp $"
-__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.26 2010/08/05 14:52:23 sryu Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import os
 import WMCore.WMInit
@@ -233,6 +233,6 @@ wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'
 
 wmagentmonitor = config.WMBSMonitoring.views.active.section_('wmagentmonitor')
 wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
-wmagentmonitor.templates = path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
-wmagentmonitor.javascript = path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
+wmagentmonitor.templates = os.path.join(WMCore.WMInit.getWMBASE(), 'src/templates/WMCore/WebTools')
+wmagentmonitor.javascript = os.path.join(WMCore.WMInit.getWMBASE(), 'src/javascript/')
 wmagentmonitor.html = path.join(WMCore.WMInit.getWMBASE(), 'src/html/')

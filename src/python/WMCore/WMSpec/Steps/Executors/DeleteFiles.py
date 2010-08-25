@@ -7,12 +7,13 @@ Implementation of an Executor for a Delete step
 
 """
 
-__revision__ = "$Id: DeleteFiles.py,v 1.3 2010/05/11 16:01:59 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DeleteFiles.py,v 1.4 2010/07/23 14:36:24 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os.path
 import logging
 import signal
+import traceback
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 
@@ -104,8 +105,13 @@ class DeleteFiles(Executor):
             except Alarm:
                 msg = "Indefinite hang during stageOut of logArchive"
                 logging.error(msg)
-            except:
-                self.report.addError(self.stepName, 1, "StageOutFailure", str(ex))
+            except Exception, ex:
+                msg = "General failure in StageOut for DeleteFiles"
+                msg += str(ex)
+                logging.error(msg)
+                logging.error("Traceback: ")
+                logging.error(traceback.format_exc())
+                self.report.addError(self.stepName, 1, "StageOutFailure", str(msg))
                 self.report.setStepStatus(self.stepName, 1)
                 self.report.persist("Report.pkl")
                 raise

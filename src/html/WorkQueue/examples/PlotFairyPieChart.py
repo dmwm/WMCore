@@ -56,7 +56,9 @@ plotDefinition = \
     "title": "Element status",
     "series": series,
     "shadow": True,
-    "percentage": True,
+    "percentage": False,
+    "labels": False, # don't print labels when having legend
+    "legend": "topright",
     "sort": "value"
 }
 plotDefinition["title"] = "Element status - hard-coded"

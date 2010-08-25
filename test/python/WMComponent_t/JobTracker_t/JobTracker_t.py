@@ -4,8 +4,8 @@
 JobTracker test 
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.6 2010/05/28 16:34:00 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: JobTracker_t.py,v 1.7 2010/06/02 19:53:28 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import os.path
@@ -16,6 +16,10 @@ import stat
 import shutil
 import subprocess
 import getpass
+import time
+
+import cProfile
+import pstats
 
 import WMCore.WMInit
 from WMQuality.TestInit   import TestInit
@@ -378,6 +382,107 @@ class JobTrackerTest(unittest.TestCase):
 
 
         return
+
+
+    def testB_ReallyLongTest(self):
+        """
+        _ReallyLongTest_
+
+        Run a really long test using the condor plugin
+        """
+
+        #return
+
+        # This has to be run with an empty queue
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+
+
+        myThread = threading.currentThread()
+
+        # This has to be run with an empty queue
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+
+        nJobs  = 5000
+        jobCE  = 'cmsosgce.fnal.gov/jobmanager-condor'
+
+        # Create directories
+        cacheDir  = os.path.join(self.testDir, 'CacheDir')
+        submitDir = os.path.join(self.testDir, 'SubmitDir')
+
+        if not os.path.isdir(cacheDir):
+            os.makedirs(cacheDir)
+        if not os.path.isdir(submitDir):
+            os.makedirs(submitDir)
+
+
+        # Get config
+        config = self.getConfig()
+
+        # Get jobGroup
+        testJobGroup = self.createTestJobs(nJobs = nJobs, cacheDir = cacheDir)
+
+        # Propogate jobs
+        changer = ChangeState(config)
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+
+
+
+        jobTracker = JobTrackerPoller(config)
+        jobTracker.setup()
+
+
+        # Now create some jobs
+        for job in testJobGroup.jobs[:(nJobs/2)]:
+            jdl = createJDL(id = job['id'], directory = submitDir, jobCE = jobCE)
+            jdlFile = os.path.join(submitDir, 'condorJDL_%i.jdl' % (job['id']))
+            handle = open(jdlFile, 'w')
+            handle.writelines(jdl)
+            handle.close()
+
+            command = ["condor_submit", jdlFile]
+            pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
+                                    stderr = subprocess.PIPE, shell = False)
+            pipe.communicate()
+
+
+        startTime = time.time()
+        cProfile.runctx("jobTracker.algorithm()", globals(), locals(), filename = "testStats.stat")
+        #jobTracker.algorithm()
+        stopTime  = time.time()
+
+
+        # Are jobs in the right state?
+        result = self.getJobs.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nJobs/2)
+
+        result = self.getJobs.execute(state = 'Complete', jobType = "Processing")
+        self.assertEqual(len(result), nJobs/2)
+
+
+        # Then we're done
+        killList = [x['id'] for x in testJobGroup.jobs]
+        jobTracker.killJobs(jobList = killList)
+
+        # No jobs should be left
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0)
+
+
+        print ("Process took %f seconds to process %i classAds" %((stopTime - startTime),
+                                                                  nJobs/2))
+
+
+        p = pstats.Stats('testStats.stat')
+        p.sort_stats('cumulative')
+        p.print_stats()
+
+        return
+
+        
 
 
 if __name__ == '__main__':

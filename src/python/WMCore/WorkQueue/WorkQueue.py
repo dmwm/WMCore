@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.104 2010/05/06 12:54:50 swakef Exp $"
-__version__ = "$Revision: 1.104 $"
+__revision__ = "$Id: WorkQueue.py,v 1.105 2010/05/12 16:35:13 sryu Exp $"
+__version__ = "$Revision: 1.105 $"
 
 
 import time
@@ -311,7 +311,7 @@ class WorkQueue(WorkQueueBase):
                                 transaction = self.existingTransaction())
 
         self.logger.info('WMBS subscription (%s) is created for element (%s)' 
-                         % (match['id'], sub['id']))
+                         % (sub['id'], match['id']))
         return
 
     def doneWork(self, elementIDs, id_type = 'id'):

@@ -1,56 +1,66 @@
 #!/usr/bin/env python
-
-
 """
-Checks for files in state Complete and handles them
+_JobAccountant_
+
+Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountant.py,v 1.1 2009/07/28 21:41:18 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "mnorman@fnal.gov"
+__revision__ = "$Id: JobAccountant.py,v 1.2 2009/10/14 16:49:02 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
-import logging
+import time
 import threading
 
-# harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
-# we do not import failure handlers as they are dynamicly 
-# loaded from the config file.
-from WMCore.WMFactory import WMFactory
-
-from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
-
-from WMComponent.DBSBuffer.DBSBuffer import DBSBuffer
-
-
-
+from WMCore.DAOFactory import DAOFactory
+from WMCore.ProcessPool.ProcessPool import ProcessPool
 
 class JobAccountant(Harness):
-
     def __init__(self, config):
-        # call the base class
         Harness.__init__(self, config)
-        self.pollTime = 1
-
         self.config = config
-        
-	print "JobAccountant.__init__"
-
+        self.pollInterval = config.JobAccountant.pollInterval
+        return
+    
     def preInitialization(self):
-	print "JobAccountant.preInitialization"
+        """
+        _preInitialization_
 
-        # Add event loop to worker manager
+        Instantiate the requisite number of accountant workers and create a
+        processpool with them.  Also instantiate all the DAOs that we will use.
+        """
+        self.processPool = ProcessPool("JobAccountant.AccountantWorker",
+                                       totalSlaves = self.config.JobAccountant.workerThreads,
+                                       componentDir = self.config.JobAccountant.componentDir,
+                                       config = self.config)
+
         myThread = threading.currentThread()
+        daoFactory = DAOFactory(package = "WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        self.getJobsAction = daoFactory(classname = "Jobs.GetFWJRByState")
+        return
+    
+    def pollForJobs(self):
+        """
+        _pollForJobs_
 
-        print "About to run test"
-        testDBSBuffer = DBSBuffer(self.config)
+        Poll WMBS for jobs in the "Complete" state and then pass them to the
+        ThreadPool so that they can be processed.
+        """
+        completeJobs = self.getJobsAction.execute(state = "complete")
+        self.processPool.enqueue(completeJobs)
+        return
 
-        print "2a"
+    def startComponent(self):
+        """
+        _startComponent_
+
+        Start the component.  Loop forever and poll for jobs.
+        """
+        myThread = threading.currentThread()
         
-        testDBSBuffer.prepareToStart()
-        
-        pollInterval = self.config.JobAccountant.pollInterval
-        logging.info("Setting poll interval to %s seconds" % pollInterval)
-        myThread.workerThreadManager.addWorker(JobAccountantPoller(self.config, testDBSBuffer), pollInterval)
-
+        while True:
+            self.pollForJobs()
+            time.sleep(self.pollInterval)
+            
         return

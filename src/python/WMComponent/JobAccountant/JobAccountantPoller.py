@@ -5,20 +5,19 @@ _JobAccountantPoller_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountantPoller.py,v 1.10 2010/04/27 21:18:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: JobAccountantPoller.py,v 1.11 2010/04/29 16:03:24 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import time
 import threading
 import logging
 
-from logging.handlers import RotatingFileHandler
-
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Agent.Harness import Harness
 from WMCore.DAOFactory import DAOFactory
-from WMCore.ProcessPool.ProcessPool import ProcessPool
+
+from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
 
 class JobAccountantPoller(BaseWorkerThread):
     def __init__(self, config):
@@ -33,13 +32,8 @@ class JobAccountantPoller(BaseWorkerThread):
         Instantiate the requisite number of accountant workers and create a
         processpool with them.  Also instantiate all the DAOs that we will use.
         """
-        slaveInit = {"couchURL": self.config.JobStateMachine.couchurl,
-                     "couchDBName": self.config.JobStateMachine.couchDBName}
-        self.processPool = ProcessPool("JobAccountant.AccountantWorker",
-                                       totalSlaves = self.config.JobAccountant.workerThreads,
-                                       componentDir = self.config.JobAccountant.componentDir,
-                                       config = self.config,
-                                       slaveInit = slaveInit)
+        self.accountantWorker = AccountantWorker(couchURL = self.config.JobStateMachine.couchurl,
+                                                 couchDBName = self.config.JobStateMachine.couchDBName)
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS", logger = myThread.logger,
@@ -52,8 +46,7 @@ class JobAccountantPoller(BaseWorkerThread):
         _algorithm_
 
         Poll WMBS for jobs in the 'Complete' state and then pass them to the
-        ThreadPool so that they can be processed.  This will block until all
-        jobs have been processed.
+        accountant worker.
         """
         completeJobs = self.getJobsAction.execute(state = "complete")
         logging.info("Jobs: %s" % completeJobs)
@@ -62,7 +55,6 @@ class JobAccountantPoller(BaseWorkerThread):
             # Then we have no work to do.  Bye!
             return
         
-        self.processPool.enqueue(completeJobs)
-        self.processPool.dequeue(len(completeJobs))
+        self.accountantWorker(completeJobs)
 
         return

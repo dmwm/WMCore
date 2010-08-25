@@ -95,7 +95,7 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
                                   split_algo = task.jobSplittingAlgorithm(),
                                   type = task.taskType())
     mySubscription.create()
-    mySubscription.markLocation("fnal.gov")
+    mySubscription.markLocation("T1_US_FNAL")
 
     outputModules =  task.getOutputModulesForStep(task.getTopStepName())
     for outputModuleName in outputModules.listSections_():
@@ -137,7 +137,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     for dbsResult in dbsResults:
         myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],
                       events = dbsResult["NumberOfEvents"], checksums = {"cksum": dbsResult["Checksum"]},
-                      locations = "fnal.gov")
+                      locations = "T1_US_FNAL")
         myRun = Run(runNumber = dbsResult["LumiList"][0]["RunNumber"])
         for lumi in dbsResult["LumiList"]:
             myRun.lumis.append(lumi["LumiSectionNumber"])

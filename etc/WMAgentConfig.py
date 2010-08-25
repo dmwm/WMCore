@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.15 2010/05/24 18:01:38 sryu Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.16 2010/05/27 14:59:36 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import os
 import WMCore.WMInit
@@ -139,7 +139,7 @@ config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
 config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = "DEBUG"
 config.TaskArchiver.pollInterval = 10
-config.TaskArchiver.timeOut      = 0
+config.TaskArchiver.timeOut      = 3600
 # TaskArchiver workQueueParams should be empty.
 # Or both ParentQueue and QueueURL need to be set (Although they are not used)
 config.TaskArchiver.WorkQueueParams = {}

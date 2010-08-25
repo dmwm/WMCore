@@ -24,8 +24,8 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
-__revision__ = "$Id: DBSUploadPoller.py,v 1.18 2010/02/24 21:43:36 mnorman Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: DBSUploadPoller.py,v 1.19 2010/02/28 14:57:20 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import threading
 import logging
@@ -206,8 +206,13 @@ class DBSUploadPoller(BaseWorkerThread):
                         newAlgos.append(DBSWriterObjects.createAlgorithm(algo, configMetadata = None, apiRef = self.dbsapi))
                         addToBuffer.updateAlgo(algo, 1)
 
-                if not datasetAlgo['DatasetInDBS']:
+
+                # WARNING!  This is a temporary fix
+                # Don't count on it staying around!
+                # Also, I know it's clumsy.  Not particularly caring about that now.
+                if not datasetAlgo['DatasetInDBS'] and dataset['PrimaryDataset'].lower() != 'bogus':
                     # We should add the dataset too
+
                     logging.info('Entering primary, processed datasets into DBS')
                     logging.info(dataset)
                     primary = DBSWriterObjects.createPrimaryDataset(datasetInfo = dataset,

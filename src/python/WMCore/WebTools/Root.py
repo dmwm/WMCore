@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.38 2010/01/15 16:31:26 diego Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Root.py,v 1.39 2010/01/21 14:47:28 valya Exp $"
+__version__ = "$Revision: 1.39 $"
 
 # CherryPy
 import cherrypy
@@ -39,6 +39,14 @@ class Root(WMObject):
         self.config = config.section_("Webtools")
         self.appconfig = config.section_(self.config.application)
         self.app = self.config.application
+        config_dict = self.appconfig.dictionary_()
+        must_have_keys = ['admin', 'description', 'title', 'templates']
+        for key in must_have_keys:
+            if  not config_dict.has_key(key):
+                msg  = "Application configuration "
+                msg += "'%s' does not contain '%s' key"\
+                        % (self.app, key)
+                raise Exception(msg)
         self.homepage = None
         self.secconfig = config.section_("SecurityModule")
         

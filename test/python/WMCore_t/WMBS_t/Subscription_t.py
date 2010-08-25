@@ -1354,7 +1354,26 @@ class SubscriptionTest(unittest.TestCase):
         testFileA.delete()
         testFileB.delete()
         testFileC.delete()        
-        return    
+        return
+
+
+    def testGetSubTypes(self):
+        """
+        _testGetSubTypes_
+        
+        Test the getSubTypes function
+        """
+        myThread   = threading.currentThread()
+        daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        
+        getSubTypes = daoFactory(classname = "Subscriptions.GetSubTypes")
+
+        result = getSubTypes.execute()
+        self.assertEqual(result, ['Harvesting', 'Merge', 'Processing'])
+
+        return
+        
 
 if __name__ == "__main__":
     unittest.main()

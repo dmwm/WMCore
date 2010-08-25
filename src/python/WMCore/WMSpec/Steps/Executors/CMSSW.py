@@ -2,17 +2,11 @@
 """
 _Step.Executor.CMSSW_
 
-Implementation of an Executor for a CMSSW step
-
+Implementation of an Executor for a CMSSW step.
 """
-__revision__ = "$Id: CMSSW.py,v 1.19 2010/05/11 16:05:21 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
 
-from WMCore.WMSpec.Steps.Executor import Executor
-from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-from WMCore.WMRuntime.Tools.Scram import Scram
-
-from WMCore.FwkJobReport.Report import Report
+__revision__ = "$Id: CMSSW.py,v 1.20 2010/05/19 17:38:34 sfoulkes Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import tempfile
 import subprocess
@@ -21,9 +15,11 @@ import os
 import select
 import time
 
+from WMCore.WMSpec.Steps.Executor import Executor
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+from WMCore.WMRuntime.Tools.Scram import Scram
 
-
-
+from WMCore.FwkJobReport.Report import Report
 
 class CMSSW(Executor):
     """
@@ -49,19 +45,12 @@ class CMSSW(Executor):
             psetFile = self.step.application.command.configuration
             psetTweak = self.step.application.command.psetTweak
             self.stepSpace.getFromSandbox(psetFile)
-            self.stepSpace.getFromSandbox(psetTweak)
-            self.step.runtime.scramPreScripts.append(
-                "InstallPSetTweak")
 
+            if psetTweak:
+                self.stepSpace.getFromSandbox(psetTweak)
 
-        if hasattr(self.step.application.configuration, 'scenario'):
-            self.step.runtime.scramPreScripts.append(
-                "InstallScenario")
-
-
+        self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
         return None
-
-
 
     def execute(self, emulator = None):
         """

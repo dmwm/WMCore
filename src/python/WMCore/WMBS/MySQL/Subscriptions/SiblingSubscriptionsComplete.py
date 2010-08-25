@@ -5,8 +5,8 @@ _SiblingSubscriptionsComplete_
 MySQL implementation of Subscription.SiblingSubscriptionsComplete
 """
 
-__revision__ = "$Id: SiblingSubscriptionsComplete.py,v 1.3 2010/07/27 16:18:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: SiblingSubscriptionsComplete.py,v 1.4 2010/08/12 21:53:40 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -37,7 +37,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
                         wmbs_fileset_files.fileset = :fileset) available_files ON
                  wmbs_file_details.id = available_files.file       
                LEFT OUTER JOIN
-                 (SELECT wmbs_sub_files_complete.file AS file, COUNT(*) AS complete_files
+                 (SELECT DISTINCT wmbs_sub_files_complete.file AS file, COUNT(DISTINCT file) AS complete_files
                     FROM wmbs_sub_files_complete
                     INNER JOIN wmbs_subscription ON
                       wmbs_sub_files_complete.subscription = wmbs_subscription.id AND
@@ -45,7 +45,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
                   GROUP BY wmbs_sub_files_complete.file) complete_files ON
                  wmbs_file_details.id = complete_files.file
                LEFT OUTER JOIN
-                 (SELECT wmbs_sub_files_failed.file AS file, COUNT(*) AS failed_files
+                 (SELECT DISTINCT wmbs_sub_files_failed.file AS file, COUNT(DISTINCT file) AS failed_files
                     FROM wmbs_sub_files_failed
                     INNER JOIN wmbs_subscription ON
                       wmbs_sub_files_failed.subscription = wmbs_subscription.id AND

@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.33 2010/06/21 19:01:31 sfoulkes Exp $"
-__revision__ = "$Revision: 1.33 $"
+__version__ = "$Id: ReReco.py,v 1.34 2010/06/29 19:47:39 sfoulkes Exp $"
+__revision__ = "$Revision: 1.34 $"
 
 import subprocess
 
@@ -156,6 +156,10 @@ class ReRecoWorkloadFactory(object):
         procTaskLogArch = procTaskCmssw.addStep("logArch1")
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()
+
+        splitArgs["siteBlackList"] = self.siteBlackList
+        splitArgs["siteWhiteList"] = self.siteWhileList
+        
         procTask.setSplittingAlgorithm(splitAlgo, **splitArgs)
         procTask.addGenerator("BasicNaming")
         procTask.addGenerator("BasicCounter")
@@ -169,8 +173,6 @@ class ReRecoWorkloadFactory(object):
                                      block_whitelist = self.blockWhiteList,
                                      run_blacklist = self.runBlackList,
                                      run_whitelist = self.runWhiteList)
-            procTask.data.constraints.sites.whitelist = self.siteWhiteList
-            procTask.data.constraints.sites.blacklist = self.siteBlackList
         else:
             procTask.setInputReference(inputStep, outputModule = inputModule)
 
@@ -262,7 +264,9 @@ class ReRecoWorkloadFactory(object):
         mergeTask.setSplittingAlgorithm("WMBSMergeBySize",
                                         max_merge_size = self.maxMergeSize,
                                         min_merge_size = self.minMergeSize,
-                                        max_merge_events = self.maxMergeEvents)
+                                        max_merge_events = self.maxMergeEvents,
+                                        siteWhiteList = self.siteWhiteList,
+                                        siteBlackList = self.siteBlackList)
     
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",

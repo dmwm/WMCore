@@ -7,8 +7,8 @@ has a cache (though this may not be used), an endpoint (the url the service
 exists on) a logger and a type (json, xml etc).
 """
 
-__revision__ = "$Id: Service.py,v 1.7 2009/03/25 15:21:23 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: Service.py,v 1.8 2009/03/25 15:41:39 ewv Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import datetime
 import os
@@ -21,10 +21,10 @@ class Service:
         #The following should (also) read the configuration class
         for a in ['logger', 'endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
-        
+
         self.logger = dict['logger']
         self.endpoint = dict['endpoint']
-        
+
         if 'cachepath' in dict.keys():
             self.path = dict['cachepath']
         else:
@@ -37,7 +37,7 @@ class Service:
             self.type = dict['type']
         else:
             self.type = 'text/xml'
-            
+
         #Set a timeout for the socket
         timeout = 30
         if 'timeout' in dict.keys() and int(dict['timeout']) > timeout:
@@ -66,7 +66,7 @@ class Service:
                 self.logger.exception(e)
                 raise e
         return open(cachefile, 'r')
-    
+
     def forceRefresh(self, cachefile, url):
         cachefile = "%s/%s" % (self.path, cachefile)
 
@@ -81,7 +81,10 @@ class Service:
             self.logger.exception(e)
             raise e
         return open(cachefile, 'r')
-    
+
     def clearCache(self, cachefile):
         cachefile = "%s/%s" % (self.path, cachefile)
-        os.remove(cachefile)
+        try:
+            os.remove(cachefile)
+        except OSError: # File doesn't exist
+            return

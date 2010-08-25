@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.4 2009/12/18 21:35:18 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueueManagerPoller.py,v 1.5 2009/12/18 21:54:38 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
@@ -19,7 +19,6 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WorkQueue import WorkQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.Services.Requests import JSONRequests
-from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
 class WorkQueueManagerPoller(BaseWorkerThread):
     """

@@ -13,7 +13,7 @@ class RequestManager(object):
         #specName = "FakeProcessingSpec_%s" % self.count
         #specUrl =self.specGenerator.createProcessingSpec(specName, "file")
         specName = "MinBiasProcessingSpec_Test_%s" % self.count
-        specUrl =self.specGenerator.createProcessingSpec(specName, "file")
+        specUrl =self.specGenerator.createReRecoSpec(specName, "file")
         
         self.count += 1
         return {specName:specUrl}

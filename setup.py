@@ -627,7 +627,9 @@ class EnvCommand(Command):
         
         tests = here + '/test/python'
         source = here + '/src/python'
-        webpth = source + '/WMCore/WebTools'
+        # Stuff we want on the path
+        exepth = [source + '/WMCore/WebTools',
+                  here + '/bin']
         
         pypath=os.getenv('PYTHONPATH', '').strip(':').split(':')
          
@@ -637,7 +639,7 @@ class EnvCommand(Command):
         
         # We might want to add other executables to PATH
         expath=os.getenv('PATH', '').split(':')
-        for pth in [webpth]:
+        for pth in exepth:
             if pth not in expath:
                 expath.append(pth)
               

@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.8 2009/09/28 20:57:35 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WMWorkload.py,v 1.9 2009/10/15 16:10:03 evansde Exp $"
+__version__ = "$Revision: 1.9 $"
 
 
 
@@ -15,6 +15,11 @@ from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+
+
+
+
+parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
 
 
 def getWorkloadFromTask(taskRef):
@@ -56,14 +61,14 @@ class WMWorkloadHelper(PersistencyHelper):
     """
     def __init__(self, wmWorkload = None):
         self.data = wmWorkload
-        
+
     def setSpecUrl(self, url):
         self.data.persistency.specUrl = url
-        
+
     def specUrl(self):
         """
         _specUrl_
-        
+
         return url location of workload
         """
         return self.data.persistency.specUrl
@@ -71,7 +76,7 @@ class WMWorkloadHelper(PersistencyHelper):
     def name(self):
         """
         _name_
-        
+
         return name of the workload
         """
         return self.data._internal_name
@@ -82,15 +87,15 @@ class WMWorkloadHelper(PersistencyHelper):
         return owner information
         """
         return self.data.owner
-    
+
     def priority(self):
         """
         _priority_
         return priorty of workload
         """
         return self.data.request.priority
-    
-        
+
+
     def getTask(self, taskName):
         """
         _getTask_
@@ -102,6 +107,44 @@ class WMWorkloadHelper(PersistencyHelper):
         if task == None:
             return None
         return WMTaskHelper(task)
+
+    def getTaskByPath(self, taskPath):
+        """
+        _getTask_
+
+        Get a task instance based on the path name
+
+        """
+        mapping = {}
+        for t in self.taskIterator():
+            [mapping.__setitem__(x.getPathName, x.name())
+             for x in t.taskIterator()]
+
+        taskList = parseTaskPath(taskPath)
+        if taskList[0] != self.name(): # should always be workload name first
+            msg = "Workload name does not match:\n"
+            msg += "requested name %s from workload %s " % (taskList[0],
+                                                            self.name())
+            raise RuntimeError, msg
+        if len(taskList) < 2:
+            # path should include workload and one task
+            msg = "Task Path does not contain a top level task:\n"
+            msg += taskPath
+            raise RuntimeError, msg
+
+
+        topTask = self.getTask(taskList[1])
+        if topTask == None:
+            msg = "Task /%s/%s Not Found in Workload" % (taskList[0],
+                                                         taskList[1])
+            raise RuntimeError, msg
+        for x in topTask.taskIterator():
+            if x.getPathName() == taskPath:
+                return x
+        return None
+
+
+
 
 
     def taskIterator(self):
@@ -191,7 +234,7 @@ class WMWorkload(ConfigSection):
         # // request related information
         #//
         self.section_("request")
-        self.request.priority = None # what should be the default value 
+        self.request.priority = None # what should be the default value
         #  //
         # // owner related information
         #//

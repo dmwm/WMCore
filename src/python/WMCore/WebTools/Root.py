@@ -8,8 +8,8 @@ dynamically and can be turned on/off via configuration file.
 
 """
 
-__revision__ = "$Id: Root.py,v 1.36 2009/12/22 18:05:53 akhukhun Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Root.py,v 1.37 2009/12/29 21:54:18 metson Exp $"
+__version__ = "$Revision: 1.37 $"
 
 # CherryPy
 import cherrypy
@@ -131,7 +131,7 @@ class Root(WMObject):
                 
         if hasattr(self.appconfig.views, 'maintenance'):
             for i in self.appconfig.views.maintenance:
-                #TODO: Show a maintenance page
+                #TODO: Show a maintenance page with a 503 Service Unavailable header
                 pass
     
     def mountPage(self, view, mount_point, globalconf, factory):

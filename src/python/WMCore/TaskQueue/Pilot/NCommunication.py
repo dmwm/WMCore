@@ -6,8 +6,8 @@ provides communication plugin for pilotjob
 
 """
 
-__revision__ = "$Id: NCommunication.py,v 1.1 2009/07/30 22:30:12 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: NCommunication.py,v 1.2 2009/09/11 01:29:16 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import threading
@@ -20,7 +20,10 @@ import simplejson
 import time
 import sys
 
-class Communication(threading.Thread):
+# ANTO: don't send heartbeats so often!
+HBEAT_TIME=600
+
+class Communication:
     """
     __Communication__ 
     Communication between pilot and taskqueue 
@@ -29,9 +32,9 @@ class Communication(threading.Thread):
         """ 
         __init__ 
         """ 
-        threading.Thread.__init__(self)    
+        #threading.Thread.__init__(self)    
         self.serverMode = serverMode
-        self.stopIt = False
+        #self.stopIt = False
         self.pilotInstance = pilotInstance
         self.taskQAddress = self.pilotInstance.taskQAddress
         self.commProtocol = 'http'
@@ -49,7 +52,7 @@ class Communication(threading.Thread):
         try:
             f = urllib2.urlopen(callurl)
             result = f.read()
-            #conver to json string
+            #convert to json string
 	    if ( result != None):
                 result = simplejson.loads(result)
 		
@@ -118,7 +121,7 @@ class Communication(threading.Thread):
 
         msg = {'se': se, 'ttl': ttl, \
                'cacheDir': cacheDir, 'host': self.pilotInstance.pilotHost, \
-               'scram':scram, 'cms_sw':cms_sw}
+               'scram':scram, 'cmssw':cms_sw}
         print msg
         p = simplejson.dumps ( msg )
         fmsg = urlencode ( [ ('ARG', p) ] )
@@ -135,7 +138,7 @@ class Communication(threading.Thread):
     #inform taskqueue about the taskid which is 
     #completed successfully
     #############################################
-    def informJobEnd(self, taskid):
+    def informJobEnd(self, taskid, status):
         """ 
         __informJobEnd__
      
@@ -143,7 +146,8 @@ class Communication(threading.Thread):
  
         """
         print 'informJobEnd():'
-        msg = {'pilotId':self.pilotInstance.pilotId, 'taskId': taskid}
+        msg = {'pilotId':self.pilotInstance.pilotId, 'taskId': taskid, \
+               'exitStatus': status}
         p = simplejson.dumps( msg )
         fmsg = urlencode( [ ('ARG', p)] )
 
@@ -181,6 +185,14 @@ class Communication(threading.Thread):
     #pilot shutdown
     ######################
     def pilotShutdown (self, reason):
+
+# ANTO: Move shutdownPilot docstring here
+        """ __pilotShutdown__
+
+        This function is called when pilot dies gracefully.
+        This will send shutdown msg to TQ just to inform that 
+        this pilot is no longer available.
+        """       
         msg = {'pilotId':self.pilotInstance.pilotId, \
                'reason':reason }
         print msg
@@ -246,23 +258,24 @@ class Communication(threading.Thread):
 
         return specfilename
    
-    ###########################
-    # Shutdown pilot
-    ###########################
-    def shutdownPilot( self ):
-        """ __shutdownPilot__
+# ANTO: delete pilotShutdown, use shutdownPilot instead
+#    ###########################
+#    # Shutdown pilot
+#    ###########################
+#    def shutdownPilot( self ):
+#        """ __shutdownPilot__
 
-	This function is called when pilot dies gracefully.
-	This function will send shutdown msg to TQ just to inform that 
-	this pilot is no longer available.
-        """       
-	msg = {'pilotid':self.pilotInstance.pilotId}
-        p = simplejson.dumps( msg )
-	fmsg = urlencode( [('ARG', p)] )
-	url = 'http://%s/msg?msgType=heartbeat&payload=%s' % \
-               (self.taskQAddress, fmsg[4:])
-        #call this url	
-        self.send ( url )	
+#	This function is called when pilot dies gracefully.
+#	This function will send shutdown msg to TQ just to inform that 
+#	this pilot is no longer available.
+#        """       
+#	msg = {'pilotid':self.pilotInstance.pilotId}
+#        p = simplejson.dumps( msg )
+#	fmsg = urlencode( [('ARG', p)] )
+#	url = 'http://%s/msg?msgType=heartbeat&payload=%s' % \
+#               (self.taskQAddress, fmsg[4:])
+#        #call this url	
+#        self.send ( url )	
 	
     ######################	
     # sendHeartbearMsg	
@@ -291,19 +304,27 @@ class Communication(threading.Thread):
         return result
 
     # run    
-    def run(self):
-        """ 
-        _run_ 
-        """
-        
-        while ( not self.stopIt ):
-            #first varify that pilot has got the ID
-            if ( self.pilotInstance.pilotId == None ):
-                time.sleep(5)
-                continue
+#    def run(self):
+#        """ 
+#        _run_ 
+#        """
+#        # This time also configurable? Not really needed...
+#        sleepTime = 30
+#        hbeatTimer = 0
+#        while ( not self.stopIt ):
 
-            self.sendHeartbeatMsg()
-            #this time is also configurable
-            time.sleep(15)
+            # First verify that pilot has got the ID
+#            if ( self.pilotInstance.pilotId == None ):
+#                time.sleep(5)
+#                continue
+
+            # Check heartbeat
+ #           hbeatTimer += sleepTime
+ #           if hbeatTimer >= HBEAT_TIME:
+ #               self.sendHeartbeatMsg()
+ #               hbeatTimer = 0
+
+            # Go to sleep
+ #           time.sleep(sleepTime)
 
 

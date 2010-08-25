@@ -7,8 +7,8 @@ _PilotComponent_
 
 """
 
-__revision__ = "$Id: PilotJob.py,v 1.1 2009/07/30 22:30:12 khawar Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: PilotJob.py,v 1.2 2009/09/11 01:29:16 khawar Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -27,6 +27,8 @@ import socket
 import logging
 
 from NCommunication import Communication 
+from Heartbeat import HeartBeat
+
 import CommonUtil
 from CommonUtil import CMSSW_INFO, CMS_ARCH, getCMSSWInfo, \
 getScramInfo, removeJobDir , remove, getOutputName, \
@@ -85,6 +87,27 @@ def parseJR(fwReport):
         traceback.print_exc(file=sys.stdout)
         return {'Error':'Parse_Error'}
 
+
+def parseJobStatus(fwReport):
+
+    print 'reading %s to get job status' % fwReport
+    jobStatus = 'Failed'
+    try:
+        doc = xml.dom.minidom.parse(fwReport)
+        fwNode = doc.getElementsByTagName('FrameworkJobReport')
+        if ( fwNode ):
+            fwNode = fwNode[0]
+            #get the attribute
+            if fwNode.hasAttributes():
+                jobStatus = fwNode.attributes["Status"].value
+
+    except:
+        jobStatus = 'NotKnown'
+        print 'problem with parsing job report for job status'
+
+    return jobStatus
+ 
+
 def parseJobSpec(jobspec):
     try:
         doc = xml.dom.minidom.parse(jobspec)
@@ -100,41 +123,9 @@ def getText(nodelist):
             rc = rc + node.data
     return rc
 
-
-def getlogger():
-    """
-    __startlogging__
-    this will add logging handle for incoming name
-    
-    Argument:
-        name -> name of logging
-             
-    Return:
-        nothing
-    """
-
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-
-    #create console handler and set level to debug
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
-
-    #create formatter
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - " \
-                                   "%(message)s")
-    #add formatter to ch
-    handler.setFormatter(formatter)
-
-    #add ch to logger
-    logger.addHandler(handler)
- 
-    return logger
-
-
-'''
+"""
 Class represents PilotJob 
-'''
+"""
 class PilotJob:  
     """ 
     _PilotJob_
@@ -158,7 +149,6 @@ class PilotJob:
 
         self.pilotId = None 
         self.ttl = config["TTL"]
-        print self.ttl		
         #get hostname of the pilot job
         self.pilotHost = socket.getfqdn()
         self.pilotSite = None
@@ -169,7 +159,10 @@ class PilotJob:
 
         #start communication module
         self.commPlugin = Communication(False, self)
-        self.commPlugin.start()
+	
+	#heartbeat thread
+	self.heartbeat = HeartBeat(self.commPlugin, self) 
+        #self.heartbeat.start()	
 	
         msg = "PilotJob Started:\n"
         print(msg)
@@ -193,13 +186,17 @@ class PilotJob:
                     localStageOut = site.getElementsByTagName('local-stage-out')[0]
                     node = localStageOut.getElementsByTagName('se-name')[0]
                     self.pilotSite = node.getAttribute('value')
+                    return True
                 else:
                     print 'there is no site tag in site-local-config.xml'  
+                    return False
             except:
                 print 'getPilotSite():Problem %s:%s' \
                 (sys.exc_info()[0], sys.exc_info()[1])
+                return False
         else: 
             print 'could not find CMS_PATH variable' 
+            return False
 
  
 
@@ -279,32 +276,20 @@ class PilotJob:
 	__registerPilot__
         """
         #add cmssw info with the registration request
-        global CMSSW_INFO, CMS_ARCH 
-        cmsinfo = getCMSSWInfo()
-        scraminfo = getScramInfo()
-        cms_sw = None
-        scram = None
-        if ( cmsinfo.has_key('ERROR') ):
-            print 'Error: %s' % cmsinfo['ERROR']
-        else:
-            cms_sw = cmsinfo['CMSSW']
-            CMSSW_INFO = cmsinfo['CMSSW']
+        global CMSSW_INFO, CMS_ARCH
 
-        if ( scraminfo.has_key('ERROR') ):
-            print 'Error :%s' % cmsinfo['ERROR']
-        else: 
-             scram = scraminfo['SCRAM_ARCH']
-             CMS_ARCH = scram 
-
-        if ( cms_sw is None ):
+        #print CMSSW_INFO 
+        if ( CMSSW_INFO is None ):
             return False
 
-        print 'CMSSW_INFO %s' % CMSSW_INFO
-        print 'SCRAM %s' % CMS_ARCH
+        #print 'CMSSW_INFO %s' % CMSSW_INFO
+        #print 'SCRAM %s' % CMS_ARCH
 
         #use plugin to register this pilot with PA
         print 'going for pilot registration'
-        jsonResult = self.commPlugin.register(self.pilotCacheDir, self.pilotSite, self.ttl, scram, cms_sw)
+        jsonResult = self.commPlugin.register(self.pilotCacheDir, self.pilotSite, \
+                     self.ttl, CMS_ARCH, CMSSW_INFO)
+
         print jsonResult
         
         if ( jsonResult == 'NoData' or jsonResult == 'ConnectionError'):
@@ -321,7 +306,7 @@ class PilotJob:
     #############################################    
     # realTaskExecutionScript
     #############################################
-    def realTaskExecutionScript(self, taskDir, sandboxUrl, specUrl, logDir):
+    def realTaskExecutionScript(self, taskDir, sandboxUrl, specUrl, logDir, jobWF):
         """
 	__realTaskExecutionScript__
         """
@@ -336,7 +321,10 @@ class PilotJob:
         if ( rind != -1 ):
             tarName = sandboxUrl[rind+1:]
             #TODO: extract it from the taskqueue information 
-            rind = tarName.find('-Processing')
+            rind = tarName.rfind('-%s'%jobWF)
+            if ( rind < 0):
+                rind = tarName.rfind("-");
+
             tarNameWOExt = tarName[0:rind]
             #tarNameWOExt = tarName
 
@@ -375,7 +363,7 @@ class PilotJob:
         scriptlines += 'echo "Running the actual job" \n'
         scriptlines += '( /usr/bin/time ./run.sh $PILOT_DIR/$JOB_SPEC_FILE 2>&1'
         scriptlines += ' ) | gzip > ./run.log.gz\n'
-        scriptlines += 'rfcp run.log.gz vocms13.cern.ch:/data/khawar/prototype/run.log.gz \n'
+        #scriptlines += 'rfcp run.log.gz vocms13.cern.ch:/data/khawar/prototype/run.log.gz \n'
         scriptlines += ' cp run.log.gz ../JobLogArea/%s \n' % logDir
         #scriptlines += ' find . -name "FrameworkJobReport.xml"' 
         #scriptlines += ' find . -name "*root"' 
@@ -400,6 +388,55 @@ class PilotJob:
             print str(ioinst)
             raise ioinst
 
+
+    ###################################
+    # performs initial checks
+    ###################################
+    def initialChecks(self):
+        """ __initialChecks__ 
+
+        performs some preliminary checks before fetching a job
+        
+        """
+        global CMSSW_INFO, CMS_ARCH
+
+        #test the environment settings
+        print 'Check1: Environment Variable check start \n'
+        chk = self.pilotEnvironmentCheck()
+        print 'Check1: result: %s \n\n' % chk
+
+        #set pilot site info
+        print 'Check2: PilotSite info start\n'
+        chk = self.getPilotSite()
+        print 'Check2: PilotSite info: %s \n\n' % chk 
+
+        #get CMSSW and SCRAM info
+        print 'Check3: CMSSW and Scram start\n'  
+        cmsinfo = getCMSSWInfo()
+        scraminfo = getScramInfo()   
+
+        if ( cmsinfo.has_key('ERROR') ):
+            print 'Error: %s' % cmsinfo['ERROR']
+        else:
+            cms_sw = cmsinfo['CMSSW']
+            CMSSW_INFO = cmsinfo['CMSSW']
+
+        if ( scraminfo.has_key('ERROR') ):
+            print 'Error :%s' % cmsinfo['ERROR']
+        else:
+             scram = scraminfo['SCRAM_ARCH']
+             CMS_ARCH = scram
+
+        print 'Scram: %s' % CMS_ARCH
+        print 'CMSSW: %s \n\n' % CMSSW_INFO
+
+        #set pilot cache dir
+        if ( not self.setPilotCacheDir() ):
+            print 'Check4: Could not create CacheArea. So Stop it'
+            return           
+
+        print 'Check4: Cache Directory created successfully' 
+
     #################################
     #main entry point for the pilot
     #################################
@@ -409,20 +446,10 @@ class PilotJob:
         
         start the pilot job
         """
+
+        #initial checks
+        self.initialChecks()
  
-        #test the environment settings
-        self.pilotEnvironmentCheck()
-        
-        #set pilot site info
-        self.getPilotSite()
-
-        #set pilot cache dir 
-        if ( not self.setPilotCacheDir() ):
-            print 'Could not create CacheArea. So Stop it'
-            #send error msg to TaskQueue
-            self.commPlugin.stopIt = True
-            return  
-
         #register pilot and get id from TaskQueue
         self.registerPilot()
         
@@ -432,12 +459,15 @@ class PilotJob:
              self.registerPilot()
              #if it remains none: stop the pilot
              if ( self.pilotId == None): 
-                 self.commPlugin.stopIt = True
                  print 'PILOT COULD NOT REGISTER WITH TQ %s' %\
                         self.taskQAddress 
                  #send error msg to TaskQueue
                  return
-           
+		 
+        #once registration is successful, now start the heartbeat thread
+	self.heartbeat.start()
+	
+	   
         #first recover the cache    
         self.dataCacheRecovery()
 
@@ -448,10 +478,16 @@ class PilotJob:
             print ( 'Pilot First process old jobs, if possible' )
         
         #stopPilot = False
+        badRequestThreshold=self.config['badAttempts']
+        emptyRequestThreshold=self.config['noTaskAttempts']
+        print 'badRequestThreshold: %s' % badRequestThreshold 
+        print 'emptyRequestThreshold: %s' % emptyRequestThreshold
+
         stopRequest = False 
         badRequestCount = 0
         emptyRequestCount = 0
         prMsg = ''
+        shutReason = 'normal'
         #get job from task queue
         while ( not stopRequest ):
 
@@ -460,7 +496,7 @@ class PilotJob:
 
             #generate request
             jsonResult = self.commPlugin.requestJob(self.cacheFiles, \
-                         CMSSW_INFO, CMS_ARCH)
+                         CMS_ARCH, CMSSW_INFO)
 
             print ( jsonResult )
 
@@ -470,14 +506,14 @@ class PilotJob:
 
             if ( jsonResult == 'ConnectionError' or jsonResult == 'NoData' ):
                 badRequestCount = badRequestCount + 1
-                if ( badRequestCount == 4 ): 
+
+                if ( badRequestCount == int(badRequestThreshold) ): 
                     stopRequest = True
+                    shutReason = jsonResult
                     break 
-	  	#continue if policy says to try again
+	  	#continue till badRequestCount reaches value 4
                 continue
-                #otherwise break the loop
-                #break
-		    
+                		    
             elif ( jsonResult["msg"]["msgType"] == 'Error' ):
                 prMsg = "Error from TaskQueue\n"
                 prMsg += "Error %s due to %s" % (jsonResult["msg"]["msgType"], \
@@ -492,16 +528,18 @@ class PilotJob:
                 print('No Task Found in the TaskQueue\n waiting')
                 
                 emptyRequestCount = emptyRequestCount + 1
-                if ( emptyRequestCount == 4):
-                    prMsg = 'Pilot job tried 4 times but failed.\n'
+                print '2:condition:%s' % (emptyRequestCount == emptyRequestThreshold)
+                if ( emptyRequestCount == int(emptyRequestThreshold) ):
+                    prMsg = 'Pilot job tried %s times but failed.\n' % emptyRequestCount
                     print ('%s shutdown the pilot' % prMsg )
                     stopRequest = True
-                    self.commPlugin.pilotShutdown('noTask')
+                    shutReason = 'noTask'
+		    
                     #limit has reached so end this loop
                     break
                     #continue
                 
-                print ('Pilot ll generate %s request ' % \
+                print ('Pilot will generate %s request ' % \
                       (emptyRequestCount+1) )
                 #sleep for a while and re-generate the request    
                 time.sleep( 30 )
@@ -512,39 +550,51 @@ class PilotJob:
             jobinfo = jsonResult["msg"]["payload"]
 
             if ( jobinfo != None ):
-                #New Changes
+	        # reset counters 
+                emptyRequestCount = 0
+                badRequestCount = 0  
+                
                 print ('Pilot %s:%s:%s:%s' % (jobinfo, jobinfo['taskId'], \
                        jobinfo['sandboxUrl'], jobinfo['specUrl'] ))
-                jobReportUrl = jobinfo['reportUrl']
+
+                jobWF = jobinfo['workflowType']
+                print jobWF
+        
                 #process job
                 jobProcResult = self.processJob ( jobinfo['taskId'], \
-                                jobinfo['sandboxUrl'], jobinfo["specUrl"] )
-                #print jobProcResult     
+                                jobinfo['sandboxUrl'], jobinfo["specUrl"], jobWF )
+#                print jobProcResult     
+
+                jobReportPath = '%s/%s/%s/FrameworkJobReport.xml'% \
+                                    (self.pilotDir, jobinfo['taskId'], jobProcResult[2])
+
+                jobReportUrl = jobinfo['reportUrl']
+		print jobReportUrl
+                jobStatus = 'Failed'
+                if ( os.path.exists ( jobReportPath ) ):
+                    jobStatus =  parseJobStatus ( jobReportPath )
+                    print 'jobStatus from XML report: %s' % jobStatus  
 
                 #if job successfully done
                 if ( jobProcResult[0] == 'jobdone' ):
 
-                    #first look for jobframeworkReport
-                    #if it is there, it means job has done something
-                    #its upto TQ or other component to decide if job
-                    #has failed or not.
-                    jobReportPath = '%s/%s/%s/FrameworkJobReport.xml'% \
-                                    (self.pilotDir, jobinfo['taskId'], jobProcResult[2])
-
-                    #print jobReportPath
+                    #construct the logurl
+                    logUrl = jobReportUrl[:jobReportUrl.rfind("/")]; 
+                    logUrl = "%s/%s.tar.gz" % ( logUrl, jobProcResult[3])
                     logTarStatus = self.collectJobLogs(jobinfo['taskId'], \
-                                   jobProcResult[3], jobReportUrl)
-                    print logTarStatus
+                                   jobProcResult[3], logUrl)
+
                     if ( not os.path.exists(jobReportPath) ):
                         print 'Could not find the jobreport at %s. so shutdown pilot' % \
                                jobReportPath
                         #send error msg
-                        self.reportError(jobinfo['taskId', 'uploadJFR', \
+                        self.reportError(jobinfo['taskId'], 'uploadJFR', \
                                          102, 'FJR not found')
                         stopRequest = True
+                        shutReason='NoFJR'
                         continue
 
-                    #first upload the JR. if it is succesfull then say 'taskend'    
+                    #now upload the JR. if it is succesfull then say 'taskend'    
                     if ( jobReportUrl is not None ):
 
                         print 'reportUrl from tq: %s' % jobReportUrl
@@ -557,19 +607,26 @@ class PilotJob:
                         #succesfull then say 'taskend'    
                         uploadStatus = self.commPlugin.uploadFile(\
                                        '%s' % jobReportPath, reportUrl)
-                        #'./%s/FrameworkJobReport.xml' % jobProcResult[2], reportUrl)
                         print 'JFR upload status %s' % uploadStatus
-                        if ( uploadStatus == True ):
+                        #if ( uploadStatus == True ):
+
+                        if ( jobStatus == 'Success' ):
                             #now inform that the job is done
                             resp = self.commPlugin.informJobEnd ( jobinfo['taskId'], 'Done' )
                             print 'informJobEnd response: %s' % resp  
+
+                        elif ( jobStatus == 'Failed' ):
+                            print 'sending job status fail msg'  
+                            resp = self.commPlugin.informJobEnd ( jobinfo['taskId'], 'Failed')
+ 
 
                         #self.addToDataCache(jobinfo['taskId'], jobProcResult[2], jobReportPath)
                         #once it is done. remove the job directory 
                         removeJobDir("%s/%s" % (self.pilotDir, jobinfo['taskId'] ) )
                         print 'Job Dir is removed successfully'
  
-                #if job gets failed 
+                #if job gets failed
+                #get empty report if possible 
                 elif ( jobProcResult[0] == 'jobfail'):
                     print 'jobfail.send errorReport to TQ.'
                     self.commPlugin.informJobEnd(jobinfo['taskId'], 'Failed')
@@ -579,21 +636,23 @@ class PilotJob:
             #break
 
         #shutdown this pilot
-        self.shutdown()
+        self.shutdown(shutReason)
     
    
     #######################################    	    
     #gets the jobspec and process it    
     #######################################
-    def processJob(self, taskId, sandboxUrl, specUrl):
+    def processJob(self, taskId, sandboxUrl, specUrl, jobWF):
         """ 
         __processJob__
 
         process the real job   
         """
-        #create script for this real job
+        #create logDir name
         logDate = time.strftime('%Y%m%d_%H%M%S') 
-        script = self.realTaskExecutionScript(taskId, sandboxUrl, specUrl, logDate)
+        #create script for this real job
+        script = self.realTaskExecutionScript(taskId, sandboxUrl, \
+                specUrl, logDate, jobWF)
         try:
             #print ('process job: need some other libraries')
              
@@ -643,11 +702,11 @@ class PilotJob:
         print 'collectJobLogs(): for job %s n logDir %s' %(jobid, logDir)
         jobDir = os.path.join(os.getcwd(), jobid)
         logArea = os.path.join(os.getcwd(), \
-                  "%s/JobLogArea/%s" % (jobid, logDir) )
+                  "%s/JobLogArea" % (jobDir) )
         print 'logArea: %s' % logArea 
         runlog = None
         if ( os.path.exists(logArea) ):
-            runlog = os.path.join(logArea, 'run.log.gz')
+            runlog = os.path.join(logArea, '%s/run.log.gz'%logDir)
             print 'runlog: %s' % runlog
 
         if ( os.path.exists(runlog) ):
@@ -657,7 +716,8 @@ class PilotJob:
             os.system(tarCmd) 
             print tarCmd
             tarPath = os.path.join(jobDir, tarName)
-            reportUrl = uploadURL[uploadURL.find('/upload'):] 
+            reportUrl = uploadURL[uploadURL.find('/upload'):]
+            print 'logUpload Url: %s' % reportUrl 
             #tarPath = os.path.join(jobDir, tarName)
             tarUpStatus = self.commPlugin.uploadFile(tarName, reportUrl) 
             print 'tarUploadStatus: %s' % tarUpStatus
@@ -719,13 +779,14 @@ class PilotJob:
     ####################
     #shutdown  	    
     ####################
-    def shutdown(self):
+    def shutdown(self, reason):
         """ 
         __shutdown__ 
         """
         #stop or kill any process started by the pilot
-        #self.commPlugin.shutdownPilot()
-        self.commPlugin.stopIt = True
+        print 'shutdwon this pilot' 
+        self.heartbeat.stopIt = True
+        self.commPlugin.pilotShutdown(reason)
 
 
     def reportError(self, taskId, event, errorCode, errorMsg ):

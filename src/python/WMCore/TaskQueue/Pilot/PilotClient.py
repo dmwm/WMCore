@@ -7,8 +7,8 @@ Act as bootstrap for pilot job
 
 """
 
-__revision__ = "$Id: PilotClient.py,v 1.2 2009/07/31 11:18:30 khawar Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: PilotClient.py,v 1.3 2009/09/11 01:29:16 khawar Exp $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "Khawar.Ahmad@cern.ch"
 
 import os
@@ -24,7 +24,7 @@ import logging
 
 from PilotJob import PilotJob
 from PilotJob import getScramInfo,getCMSSWInfo,parseJobSpec, parseJR
-
+"""
 pilotConfig = {'pilotID':125, 'pilotName':'Pilot_125', \
                'serverMode':False, 'serverPort':10, \
                'tqaddress':'vocms13.cern.ch:8030', 'TTL':None }
@@ -32,8 +32,8 @@ pilotConfig = {'pilotID':125, 'pilotName':'Pilot_125', \
 pilotConfig = cPickle.dumps( pilotConfig )
 pilotConfig = encodestring( pilotConfig )
 print pilotConfig
-
 """
+
 valid = ['pconfig=','jobdir']
 
 try:
@@ -48,7 +48,7 @@ for opt, arg in opts:
     if opt=='--pconfig':
        pilotConfig = arg
 #pilotConfig = pilotConfig.replace(pilotConfig," ")
-"""
+
 if pilotConfig!= None or pilotConfig!='':
     #now decode it in the form which is required
     decodedConfig = decodestring( pilotConfig )

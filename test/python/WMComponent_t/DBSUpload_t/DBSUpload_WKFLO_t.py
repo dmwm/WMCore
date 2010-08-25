@@ -5,7 +5,7 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.2 $"
+__version__ = "$Revision: 1.3 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -150,7 +150,8 @@ class DBSUploadTest(unittest.TestCase):
         #                            'C:\\WORK\\FJR\\RepackMerge-Run58733-RAW-BarrelMuon-Merge-Workflow.xml')
 
         #wkflo_path = '/uscms/home/anzar/work/FJR/forAnzar/Run68141'
-        wkflo_path = '/uscms/home/anzar/work/FJR/forAnzar/Run67838/'
+        #wkflo_path = '/uscms/home/anzar/work/FJR/forAnzar/Run67838/'
+        wkflo_path = '../DBSBuffer_t/FmwkJobReports/'
         for wkflo in os.listdir(wkflo_path):
                 if wkflo.endswith('.xml') and wkflo.find('workflow') != -1:
                         testDBSUpload.handleMessage('NewWorkflow', wkflo_path+'/'+wkflo)

@@ -1476,7 +1476,7 @@ class SubscriptionTest(unittest.TestCase):
         return
         
 
-    def atestFilesOfStatusByLimit(self):
+    def testFilesOfStatusByLimit(self):
         """
         _testAvailableFiles_
 

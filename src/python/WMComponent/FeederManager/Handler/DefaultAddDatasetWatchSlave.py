@@ -5,14 +5,13 @@ Slave used for default AddDatasetWatch behavior
 
 __all__ = []
 __revision__ = \
-"$Id: DefaultAddDatasetWatchSlave.py,v 1.4 2009/10/19 13:08:34 riahi Exp $"
-__version__ = "$Revision: 1.4 $"
+"$Id: DefaultAddDatasetWatchSlave.py,v 1.5 2009/11/06 11:24:21 riahi Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = \
     "james.jackson@cern.ch"
 
 import logging
 import threading
-import pickle
 
 from WMComponent.FeederManager.Handler.DefaultSlave import DefaultSlave
 from WMCore.WMBS.Fileset import Fileset
@@ -32,19 +31,21 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
         """
         Perform the work required with the given parameters
         """
+        DefaultSlave.__call__(self, parameters)
 
-        # Unpickle the parameters
-        message = pickle.loads(str(parameters['payload']))
-        
+        # Handle the message
+        message = self.messageArgs
+
         # Lock on the running feeders list
         myThread = threading.currentThread()
         myThread.runningFeedersLock.acquire()
         
         # Create empty fileset if fileset.name doesn't exist
         filesetName = message["dataset"] 
-        logging.debug("Dataset " + filesetName + " arrived")
-        fileset = Fileset(name = filesetName+':'+message["FeederType"])
+        feederType = message["FeederType"]
 
+        logging.debug("Dataset " + filesetName + " arrived")
+        fileset = Fileset(name = filesetName+':'+feederType)
 
         # Check if the fileset is already there 
         if fileset.exists() == False:
@@ -79,21 +80,6 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
                     feederId = self.queries.getFeederId(feederType)
                     logging.info(feederId)
                     myThread.runningFeeders[feederType] = feederId
-
-
-        #// For any filesets, distinguish between:
-        #//  fileset/itsfeeder/filesetparameter 
-        #// Add fileset to manage by the feeder if not yet
-       # feederId = self.queries.getFeederId(feederType)
-        # //Add database track about feeder used for this fileset 
-        #if TempExist == False:
-
-          #  if len(self.queries.checkFileset(FilesetToUse.id,feederId)) > 0:
-                #// Fileset is managed by feeder
-          #      logging.info("NOTHING TO DO: \ 
-          #       fileset is already managed by feeder")
-                #// it is better to use insertion time
-          #  else:
 
             # Fileset/Feeder association 
             self.queries.addFilesetToManage(fileset.id, \

@@ -12,8 +12,8 @@ to pass arbitrary objects if needed through the parameters
 attribute.
 """
 
-__revision__ = "$Id: ThreadSlave.py,v 1.8 2009/08/31 20:31:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: ThreadSlave.py,v 1.9 2010/08/02 16:04:46 meloam Exp $"
+__version__ = "$Revision: 1.9 $"
 __author__ = "fvlingen@caltech.edu"
 
 import base64
@@ -98,6 +98,7 @@ class ThreadSlave:
         if self.component.config.CoreDatabase.dialect:
             myThread.dialect = self.component.config.CoreDatabase.dialect
         else:
+            # FIXME we aren't using the DIALECT environment variable anymore
             myThread.dialect = os.getenv("DIALECT")
         
         #TODO: remove as much as possible logging statements or make them debug

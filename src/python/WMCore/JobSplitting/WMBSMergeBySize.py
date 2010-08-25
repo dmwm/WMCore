@@ -6,8 +6,8 @@ Generic merging for WMBS.  This will correctly handle merging files that have
 been split up honoring the original file boundaries.
 """
 
-__revision__ = "$Id: WMBSMergeBySize.py,v 1.12 2010/07/06 15:33:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.12 $"
+__revision__ = "$Id: WMBSMergeBySize.py,v 1.13 2010/08/13 21:20:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.13 $"
 
 import threading
 
@@ -200,17 +200,20 @@ class WMBSMergeBySize(JobFactory):
         self.minMergeSize = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents = int(kwargs.get("max_merge_events", 50000))
 
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
         self.subscription["fileset"].load()
 
         if self.subscription["fileset"].open == True:
             self.forceMerge = False
         else:
+            orphanDAO = daoFactory(classname = "Subscriptions.FailOrphanFiles")
+            orphanDAO.execute(self.subscription["id"],
+                              self.subscription["fileset"].id)
             self.forceMerge = True
-
-        myThread = threading.currentThread()
-        daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
         
         mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForMerge")
         mergeableFiles = mergeDAO.execute(self.subscription["id"])

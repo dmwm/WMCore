@@ -5,8 +5,8 @@ _WMBSMergeBySize_t
 Unit tests for generic WMBS merging.
 """
 
-__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.16 2010/07/06 15:33:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: WMBSMergeBySize_t.py,v 1.17 2010/08/13 21:20:09 sfoulkes Exp $"
+__version__ = "$Revision: 1.17 $"
 
 import unittest
 import os
@@ -188,18 +188,18 @@ class WMBSMergeBySize(unittest.TestCase):
         changeStateDAO.execute([testJob6])                
 
         testJob7 = Job()
-        testJob6.addFile(self.parentFileSite2)
-        testJob6.create(jobGroup2)
-        testJob6["state"] = "cleanout"
-        testJob6["oldstate"] = "new"
-        testJob6["couch_record"] = "somejive"
-        testJob6["retry_count"] = 0
-        testJob6["outcome"] = "success"
-        testJob6.save()        
+        testJob7.addFile(self.parentFileSite2)
+        testJob7.create(jobGroup2)
+        testJob7["state"] = "cleanout"
+        testJob7["oldstate"] = "new"
+        testJob7["couch_record"] = "somejive"
+        testJob7["retry_count"] = 0
+        testJob7["outcome"] = "success"
+        testJob7.save()        
         changeStateDAO.execute([testJob7])
 
         badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024,
-                        first_event = 0)
+                        first_event = 0, locations = set(["somese.cern.ch"]))
         badFile1.addRun(Run(1, *[45]))
         badFile1.create()
         badFile1.addParent(parentFile5["lfn"])
@@ -1029,6 +1029,72 @@ class WMBSMergeBySize(unittest.TestCase):
                 assert list(inputFile["locations"])[0] == baseLocation, \
                        "Error: Wrong location."
                        
+        return
+
+    def testFilesetCloseout(self):
+        """
+        _testFilesetCloseout_
+
+        Verify that the merge algorithm works correctly when it's input fileset
+        is closed.  The split algorithm should create merge jobs for all files
+        regardless of size and then mark any orphaned files (files that are the
+        result of a split by lumi / split by event where one of the parent
+        processing jobs has failed while others have succeeded) as failed so
+        that the fileset closing works.
+        """
+        self.stuffWMBS()
+        #self.mergeFileset.markOpen(False)
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.mergeSubscription)
+
+        # Get out all the good merge jobs out of the way.
+        jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
+                   max_merge_events = 999999999)
+
+        # Verify that the bad files are the only "available" files
+        availableAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesMeta")
+        availFiles = availableAction.execute(self.mergeSubscription["id"])
+
+        assert len(availFiles) == 4, \
+               "Error: Wrong number of available files."
+
+        goldenFiles = ["badFile1", "badFileA", "badFileB", "badFileC"]
+        for availFile in availFiles:
+            assert availFile["lfn"] in goldenFiles, \
+                   "Error: Extra file is available."
+
+            goldenFiles.remove(availFile["lfn"])
+
+        self.mergeFileset.markOpen(False)
+        result = jobFactory(min_merge_size = 1, max_merge_size = 999999999999,
+                            max_merge_events = 999999999)
+
+        assert len(result) == 0, \
+               "Error: Merging should have returned zero jobs."
+
+        self.mergeFileset.markOpen(False)
+
+        availFiles2 = availableAction.execute(self.mergeSubscription["id"])
+
+        assert len(availFiles2) == 0, \
+               "Error: There should be no more available files."
+
+        failedAction = self.daoFactory(classname = "Subscriptions.GetFailedFiles")
+        failedFiles = failedAction.execute(self.mergeSubscription["id"])
+
+        assert len(failedFiles) == 4, \
+               "Error: Wrong number of failed files: %s" % failedFiles
+
+        goldenIDs = []
+        for availFile in availFiles:
+            goldenIDs.append(availFile["id"])
+
+        for failedFile in failedFiles:
+            assert failedFile["file"] in goldenIDs, \
+                   "Error: Extra failed file."
+
         return
     
 if __name__ == '__main__':

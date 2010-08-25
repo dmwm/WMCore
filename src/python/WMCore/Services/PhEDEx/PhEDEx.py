@@ -31,10 +31,10 @@ class PhEDEx(AuthorisedService):
         """
         self.responseType = responseType.lower()
         
-        if not dict.has_key('enpoint'):
+        if not dict.has_key('endpoint'):
             dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % \
                                 self.responseType
-        
+            
         #if self.responseType == 'json':
             #self.parser = JSONParser()
         #elif self.responseType == 'xml':

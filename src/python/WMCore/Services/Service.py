@@ -10,8 +10,8 @@ Has a default timeout of 30 seconds. Over ride this by passing in a timeout via
 the configuration dict, set to None if you want to turn off the timeout.
 """
 
-__revision__ = "$Id: Service.py,v 1.11 2009/06/24 13:35:55 spiga Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Service.py,v 1.12 2009/06/24 16:16:33 spiga Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import datetime
 import os
@@ -41,9 +41,6 @@ class Service:
         else:
             self.type = 'text/xml'
         
-        #get default timeout
-        self.defTimeout= socket.getdefaulttimeout()
-
         #Set a timeout for the socket
         self.timeout = 30
         if 'timeout' in dict.keys() and int(dict['timeout']) > self.timeout:
@@ -94,5 +91,5 @@ class Service:
         except Exception, e:
             self.logger.exception(e)
             raise e
-        # Reset the timeout to default
-        socket.setdefaulttimeout(self.defTimeout)
+        # Reset the timeout to None
+        socket.setdefaulttimeout(None)

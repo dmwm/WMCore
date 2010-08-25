@@ -5,8 +5,8 @@ _FeederManager_t_
 Unit tests for the FeederManager_t.
 """
 
-__revision__ = "$Id: FeederManager_t.py,v 1.4 2010/02/11 19:21:22 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: FeederManager_t.py,v 1.5 2010/02/11 19:23:54 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import time
 import unittest
@@ -72,6 +72,18 @@ class FeederManagerTest(unittest.TestCase):
         Handle AddDatasetWatch events  
         """ 
         raise RuntimeError, "This test hangs. please fix me"
+# this is the message before it hangs
+#    MComponent_t.FeederManager_t.FeederManager_t.FeederManagerTest.testA -- _testA_ ... Exception in thread Thread-2:
+#Traceback (most recent call last):
+#  File "/home/bbslave/shared/python26/lib/python2.6/threading.py", line 522, in __bootstrap_inner
+#    self.run()
+#  File "/home/bbslave/shared/python26/lib/python2.6/threading.py", line 477, in run
+#    self.__target(*self.__args, **self.__kwargs)
+#  File "/home/bbslave/buildslave/full-sl5-x86_64-python26-mysql/build/src/python/WMCore/ThreadPool/ThreadPool.py", line 228, in slaveThread
+#    results = slaveServer( *parameters )
+#  File "/home/bbslave/buildslave/full-sl5-x86_64-python26-mysql/build/src/python/WMComponent/FeederManager/Handler/DefaultAddDatasetWatchSlave.py", line 46, in __call__
+#    fileType = message["FileType"]
+#KeyError: 'FileType'
         myThread = threading.currentThread()
         config = self.getConfig()
         testFeederManager = FeederManager(config)

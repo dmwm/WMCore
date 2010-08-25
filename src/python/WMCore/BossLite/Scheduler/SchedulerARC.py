@@ -397,9 +397,10 @@ class SchedulerARC(SchedulerInterface):
 
         # User supplied thingies:
         xrsl += self.user_xrsl
-        for s in task['jobType'].split('&&'):
-            if re.match('^ *\(.*=.*\) *$', s):
-                xrsl += s
+        if task['jobType']:
+            for s in task['jobType'].split('&&'):
+                if re.match('^ *\(.*=.*\) *$', s):
+                    xrsl += s
 
         return xrsl
 

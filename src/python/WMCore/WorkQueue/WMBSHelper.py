@@ -5,8 +5,8 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-__revision__ = "$Id: WMBSHelper.py,v 1.30 2010/05/26 18:05:14 sryu Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.31 2010/06/07 15:33:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import logging
 
@@ -40,8 +40,8 @@ class WMBSHelper:
         self.topLevelSubscription = None    
         self.topLevelTask = wmSpec.getTask(self.topLevelTaskName)
 
-    def createSubscription(self):
-        self.createTopLevelFilesset()
+    def createSubscription(self, topLevelFilesetName = None):
+        self.createTopLevelFileset(topLevelFilesetName)
         return self._createChildSubscription(self.topLevelTask, self.topLevelFileset)
         
     def _createChildSubscription(self, task, fileset):
@@ -87,20 +87,26 @@ class WMBSHelper:
             
         return self.topLevelSubscription
 
-    def createTopLevelFilesset(self):
-        # create fileset
-        # make up fileset name from task name
-        filesetName = ("%s-%s" % (self.wmSpecName, self.topLevelTaskName))
-        if self.block:
-            filesetName += "-%s" % self.block
+    def createTopLevelFileset(self, topLevelFilesetName = None):
+        """
+        _createTopLevelFileset_
+
+        Create the top level fileset for the workflow.  If the name of the top
+        level fileset is not given create one.
+        """
+        if topLevelFilesetName == None:
+            filesetName = ("%s-%s" % (self.wmSpecName, self.topLevelTaskName))
+            if self.block:
+                filesetName += "-%s" % self.block
+            else:
+                #create empty fileset for production job
+                filesetName += "-%s" % makeUUID()
         else:
-            #create empty fileset for production job
-            filesetName += "-%s" % makeUUID()
+            filesetName = topLevelFilesetName
             
         self.topLevelFileset = Fileset(filesetName)
         self.topLevelFileset.create()
-        return self.topLevelFileset
-
+        return
 
     def addMCFakeFile(self):
         mcFakeFileName = "MCFakeFile-%s" % makeUUID()

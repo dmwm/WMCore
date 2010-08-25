@@ -70,7 +70,7 @@ class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
         super(Baobab,self).__init__(Axes_Projection='polar',Axes_Square=True,Padding_Left=50,Padding_Right=50,Padding_Bottom=50)
     def validate(self,input):
        if not 'data' in input:
-           return False
+           return "No 'data' element."
        return True
     def extract(self,input):
         self.props.data = input['data']

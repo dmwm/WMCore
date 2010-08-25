@@ -113,7 +113,9 @@ def random_pie():
             'series':random_labelled_series(count=random.randint(1,20)), #d20
             'shadow':rbool(),
             'percentage':rbool(),
-            'sort':random_sort()
+            'sort':random_sort(),
+            'legend':random_legend(),
+            'labels':rbool()
             }
 
 def random_sparkline():

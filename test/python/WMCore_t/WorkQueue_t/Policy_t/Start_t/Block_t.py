@@ -3,8 +3,8 @@
     WorkQueue.Policy.Start.Block tests
 """
 
-__revision__ = "$Id: Block_t.py,v 1.8 2010/07/14 14:46:38 swakef Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: Block_t.py,v 1.9 2010/07/14 16:27:09 swakef Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import shutil
@@ -62,6 +62,48 @@ class BlockTestCase(unittest.TestCase):
             count += 1
         self.assertEqual(tasks, count)
 
+
+    def testWhiteBlackLists(self):
+        """Block/Run White/Black lists"""
+        Tier1ReRecoWorkload = TestReRecoFactory()('ReRecoWorkload', rerecoArgs)
+        inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
+        dataset = "/%s/%s/%s" % (inputDataset.primary,
+                                     inputDataset.processed,
+                                     inputDataset.tier)
+        dbs = {inputDataset.dbsurl : MockDBSReader(inputDataset.dbsurl, dataset)}
+
+        # Block blacklist
+        rerecoArgs2 = {'BlockBlacklist' : [dataset + '#1']}
+        rerecoArgs2.update(rerecoArgs)
+        blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
+                                              rerecoArgs2)
+        task = blacklistBlockWorkload.taskIterator().next()
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        self.assertEqual(len(units), 1)
+        self.assertNotEqual(units[0]['Data'], rerecoArgs2['BlockBlacklist'][0])
+
+        # Block Whitelist
+        rerecoArgs2['BlockWhitelist'] = [dataset + '#1']
+        rerecoArgs2['BlockBlacklist'] = []
+        blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
+                                                     rerecoArgs2)
+        task = blacklistBlockWorkload.taskIterator().next()
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]['Data'], rerecoArgs2['BlockWhitelist'][0])
+
+        # Block Mixed Whitelist
+        rerecoArgs2['BlockWhitelist'] = [dataset + '#2']
+        rerecoArgs2['BlockBlacklist'] = [dataset + '#1']
+        blacklistBlockWorkload = TestReRecoFactory()('ReRecoWorkload',
+                                                     rerecoArgs2)
+        task = blacklistBlockWorkload.taskIterator().next()
+        units = Block(**self.splitArgs)(blacklistBlockWorkload, task, dbs)
+        self.assertEqual(len(units), 1)
+        self.assertEqual(units[0]['Data'], rerecoArgs2['BlockWhitelist'][0])
+
+        # TODO: Run blacklist
+        pass
 
 if __name__ == '__main__':
     unittest.main()

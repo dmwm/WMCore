@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.27 2009/06/22 16:04:32 valya Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: CMSCouch.py,v 1.28 2009/06/24 13:59:24 valya Exp $"
+__version__ = "$Revision: 1.28 $"
 
 try:
     # Python 2.6
@@ -18,23 +18,25 @@ except:
     import simplejson as json
 import urllib
 from httplib import HTTPConnection
+import httplib
 import time
 import datetime
 import thread
-from threading import Thread
+import threading
 import traceback
 import types
 
-def httpRequest(url, uri, data, request='POST'):
+def httpRequest(url, path, data, method='POST', viewlist=[]):
     """
     Make a request to the remote database. for a give URI. The type of
     request will determine the action take by the server (be careful with
     DELETE!). Data should usually be a dictionary of {dataname: datavalue}.
     """
     headers = {"Content-type": 'application/x-www-form-urlencoded', 
-               "Accept": 'text/plain'}
+               "Accept": 'text/plain',
+               'Connection':'Keep-Alive'}
     encoded_data = ''
-    if request != 'GET' and data:
+    if method != 'GET' and data:
         if  type(data) is types.StringType:
             encoded_data = data
         else:
@@ -44,22 +46,31 @@ def httpRequest(url, uri, data, request='POST'):
         #encode the data as a get string
         if  not data:
             data = {}
-        uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
+        path = "%s?%s" % (path, urllib.urlencode(data, doseq=True))
     conn = HTTPConnection(url)
-    conn.connect()
-    conn.request(request, uri, encoded_data, headers)
+#    httplib.HTTPConnecion.debuglevel = 1
+    conn.request(method, path, encoded_data, headers)
     response = conn.getresponse()
-    data = response.read()
+    if  method == 'POST':
+        data = {} # I don't need to read data on POST request
+    else:
+        data = response.read()
     conn.close()
+    for view in viewlist:
+        conn = HTTPConnection(url)
+        conn.request('GET', "%s?limit=1" % view)
+        res  = conn.getresponse()
+#        view_data = res.read()
+        conn.close()
     return response.status, data
 
-class HttpRequestThread(Thread):
-    def __init__(self, url, path, data, request):
-        Thread.__init__(self)
+class HttpRequestThread(threading.Thread):
+    def __init__(self, url, path, data, method):
+        threading.Thread.__init__(self)
         self.url = url
         self.path = path
         self.data = data
-        self.request = request
+        self.method = method
         self.retry = False
 
     def run(self):
@@ -69,13 +80,13 @@ class HttpRequestThread(Thread):
         """
         # TODO: think about failed request, how we can ensure
         # that all data will be injected properly
-        status, data = httpRequest(self.url, self.path , self.data, 'POST')
-        if  status - 400 >= 0 and not self.retry: 
+        status, data = httpRequest(self.url, self.path , self.data, self.method)
+#        if  status - 400 >= 0 and not self.retry: 
             # trigger all cases with HTTP response 400 and above
             # try one more time
-            time.sleep(1)
-            self.retry = True
-            return self.run()
+#            time.sleep(1)
+#            self.retry = True
+#            return self.run()
 
 class Document(dict):
     """
@@ -239,11 +250,12 @@ class Database(CouchDBRequests):
     TODO: remove leading whitespace when committing a view
     """
     def __init__(self, dbname = 'database', 
-                  url = 'localhost:5984/', size = 5000):
+                  url = 'localhost:5984/', size = 1000):
         self._queue = []
         self.name = urllib.quote_plus(dbname)
         JSONRequests.__init__(self, url)
         self._queue_size = size
+        self.threads = []
 
     def timestamp(self, data):
         """
@@ -258,7 +270,7 @@ class Database(CouchDBRequests):
                 doc['timestamp'] = str(datetime.datetime.now())
         return list
 
-    def queue(self, doc, timestamp = False):
+    def queue(self, doc, timestamp = False, viewlist=[]):
         """
         Queue up a doc for bulk insert. If timestamp = True add a timestamp
         field if one doesn't exist. Use this over commit(timestamp=True) if you
@@ -270,7 +282,7 @@ class Database(CouchDBRequests):
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print 'queue larger than %s records, committing' % self._queue_size
-            self.commit()
+            self.commit(viewlist=viewlist)
         self._queue.append(doc)
 
     def queueDelete(self, doc):
@@ -281,7 +293,7 @@ class Database(CouchDBRequests):
         doc['_deleted'] = True
         self.queue(doc)
 
-    def commit(self, doc=None, returndocs = False, timestamp = False, ):
+    def commit(self, doc=None, returndocs = False, timestamp = False, viewlist=[]):
         """
         Add doc and/or the contents of self._queue to the database. If returndocs
         is true, return document objects representing what has been committed. If
@@ -299,8 +311,17 @@ class Database(CouchDBRequests):
             # commit in thread to avoid blocking others
             uri  = '/%s/_bulk_docs/' % self.name
             data = {'docs': list(self._queue)}
-            thr  = HttpRequestThread(self.url, uri, data, 'POST')
-            thr.start() 
+            status, data = httpRequest(self.url, uri , data, 'POST', viewlist)
+#            thr  = HttpRequestThread(self.url, uri, data, 'POST')
+#            thr.start() 
+#            if  len(self._queue) < self._queue_size:
+                # no more outstanding request, wait for all threads to finish
+#                for ith in self.threads:
+#                    ith.join()
+#            else:
+                # add thread to pool
+#                self.threads.append(thr)
+
             # TODO: how to deal with threads, should we wait???
             # if we will wait for all request then we should use thr.join()
 #            result = self.post('/%s/_bulk_docs/' % self.name, 

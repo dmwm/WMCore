@@ -33,7 +33,7 @@ production.applyTemplates()
 #  //
 # // set up the merge task
 #//
-merge = workload.newTask("Merge")
+merge = production.addTask("Merge")
 mergeCmssw = merge.makeStep("cmsRun1")
 mergeCmssw.setStepType("CMSSW")
 mergeStageOut = mergeCmssw.addStep("stageOut1")

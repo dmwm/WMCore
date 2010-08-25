@@ -62,23 +62,33 @@ class Plotter(RESTModel):
         'labelled':False - draw names on each element
         'cm':'name of a matplotlib colourmap' - colouring to use for elements
         'threshold':0.05 - threshold of parent value below which children are culled to unclutter the plot
-	"""
+        """
         xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
         fig = figure(figsize=xy)
-        
+    
         axes = fig.add_axes([0.1,0.1,0.8,0.8],polar=True)
         axes.set_title(input.get('title',''))
         axes.set_axis_off()
-        
+    
         data_root = input['data']
         cmap = input.get('cm','Accent')
         cmap = cm.get_cmap(cmap)
         if not cmap:
-                cmap = cm.Accent 
-        
-        theta = lambda x: x*6.2831/data_root['value']
+            cmap = cm.Accent 
+    
+        theta = lambda x: x*(2*math.pi)/data_root['value']
         threshold = input.get('threshold',0.05)
         
+        
+    
+        def fontsize(n):
+            if len(n)>16:
+                return 6
+            if len(n)>8:
+                return 8
+            return 10
+     
+    
         def bar_recursor(depth,here,startx):
             if len(here['children'])>0:
                 left=[theta(startx)]
@@ -87,8 +97,10 @@ class Plotter(RESTModel):
                 bottom=[depth]
                 name=[here['label']]
                 value=[here['value']]
+                dumped = 0
                 for c in here['children']:
-                    if c['value']>here['value']*threshold:
+                    #if c['value']>here['value']*threshold:
+                    if theta(c['value'])>(9./(depth+1)**2)*math.pi/180:
                         cleft,cheight,cwidth,cbottom,cname,cvalue = bar_recursor(depth+1,c,startx)
                         left.extend(cleft)
                         height.extend(cheight)
@@ -97,38 +109,82 @@ class Plotter(RESTModel):
                         name.extend(cname)
                         value.extend(cvalue)
                         startx += c['value']
+                    else:
+                        dumped += c['value']
+                if dumped>0:
+                    left.append(theta(startx))
+                    height.append(0.75)
+                    width.append(theta(dumped))
+                    bottom.append(depth+1)
+                    name.append('')
+                    value.append(dumped)
                 return left,height,width,bottom,name,value
             else:
                 return [theta(startx)],[1],[theta(here['value'])],[depth],[here['label']],[here['value']]
-        
+    
         left,height,width,bottom,name,value = bar_recursor(0,data_root,0)
+    
+        colours = [cmap(l/(2*math.pi)) for l in left]
+        for i,h in enumerate(height):
+            if h<1:
+                colours[i] = '#cccccc'
+            
+    
+        font = FontProperties()
+    
+        max_height = max(bottom)
+    
+        unit = input.get('unit','')
         
-        colours = [cmap(l/6.2831) for l in left]
-        
+        if input.get('scale',False):
+            bar_location = data_root['value']/5.
+            magnitude = int(math.log10(bar_location))
+            possible = [i*10**magnitude for i in (1.,2.,5.,10.)]
+            best_delta = 10*10**magnitude
+            use_bar_location = 0
+            for p in possible:
+                if abs(p-bar_location)<best_delta:
+                    best_delta=abs(p-bar_location)
+                    use_bar_location=p
+    
+            for i in range(int(data_root['value']/use_bar_location)+1):
+                lx = theta(i*use_bar_location)
+                ly = max_height+3
+            
+                line = Line2D((lx,lx),(0.75,ly),linewidth=1,linestyle='-.',zorder=-2,color='blue')
+                axes.add_line(line)
+                axes.text(lx,ly,SIFormatter(i*use_bar_location,unit),horizontalalignment='center',verticalalignment='center',zorder=-1,color='blue')
+    
+    
         bars = axes.bar(left=left[1:],height=height[1:],width=width[1:],bottom=bottom[1:],color=colours[1:])
+    
         if input.get('labelled',False):
             max_height = max(bottom[1:])
             min_height = min(bottom[1:])
             for l,h,w,b,n,v in zip(left[1:],height[1:],width[1:],bottom[1:],name[1:],value[1:]):
                 cx = l+w*0.5
                 cy = b+h*0.5
-                        
-                angle_deg = cx*57.2957795
+                
+                angle_deg = cx*(180/math.pi)
                 angle_rad = angle_deg
                 angle_tan = angle_deg - 90
+                
                 if angle_deg>90 and angle_deg<=180:
                     angle_rad += 180
                 if angle_deg>180 and angle_deg<=270:
                     angle_rad -= 180
                     angle_tan -= 180
                 if angle_deg>270 and angle_deg<=360:
-                    angle_tan -= 180                                
+                    angle_tan -= 180                
                 if b==max_height:
-                    axes.text(cx,cy+1,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad)
+                    axes.text(cx,cy+1.5,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(n))
                 elif b==min_height:
-                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan)
+                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_tan,size=fontsize(n))
                 else:
-                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad)
+                    axes.text(cx,cy,n,horizontalalignment='center',verticalalignment='center',rotation=angle_rad,size=fontsize(n))
+    
+            axes.text(0,0,SIFormatter(data_root['value'],unit),horizontalalignment='center',verticalalignment='center',weight='bold')
+    
         return fig
     
     def bar(self, input):
@@ -172,19 +228,25 @@ class Plotter(RESTModel):
         """
         xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
         fig = figure(figsize=xy)
-        
+    
         axes = fig.add_axes([0.1,0.1,0.8,0.8])
         axes.set_title(input.get('title',''))
         xaxis = input.get('xaxis',{})
         yaxis = input.get('yaxis',{})
-        
+    
         axes.set_xlabel(xaxis.get('label',''))
         axes.set_ylabel(yaxis.get('label',''))
-        if yaxis.get('log',False):
-            axes.set_yscale('log')
-        
+
         xtype = xaxis.get('type','num')
         series = input.get('series',[])
+    
+        logmin = 0
+        if yaxis.get('log',False):
+            axes.set_yscale('log')
+            if len(series)>0:
+                logmin = min(1,filter(lambda x: x>0, series[0]['values']))
+    
+    
         if xtype=='labels':
             names = {}
             labels = xaxis.get('labels',[])
@@ -202,8 +264,9 @@ class Plotter(RESTModel):
             axes.set_xticks([i+0.5 for i in range(len(labels))])
             left = [names[n] for n in seennames]
             height = [values[n] for n in seennames]
+            bottom = [logmin for n in seennames]
             colour = [colours[n] for n in seennames]
-            axes.bar(left,height,width=1,color=colour)
+            axes.bar(left,height,width=1,bottom=bottom,color=colour)
         else:
             x_min = xaxis.get('min',0)
             x_max = xaxis.get('max',1)
@@ -211,7 +274,7 @@ class Plotter(RESTModel):
             x_range = x_max-x_min
             x_bins = int(x_range/x_width)
 
-            bottom = [0 for i in range(x_bins)]
+            bottom = [logmin for i in range(x_bins)]
             width = [x_width for i in range(x_bins)]
             left = [x_min+i*x_width for i in range(x_bins)]
             for s in series:
@@ -220,11 +283,11 @@ class Plotter(RESTModel):
                 colour = s['colour']
                 axes.bar(left,height,width,bottom,label=s['label'],facecolor=colour)
                 bottom = [b+h for b,h in zip(bottom,height)]
-                
+            
             if input.get('legend',False):
                 axes.legend(loc=0)
             if xtype=='time':
-                axes.xaxis_date()                
+                axes.xaxis_date()        
             axes.set_xbound(x_min,x_max)
         return fig
    
@@ -242,11 +305,15 @@ class Plotter(RESTModel):
         
         axes.set_xlabel(xaxis.get('label',''))
         axes.set_ylabel(yaxis.get('label',''))
-        if yaxis.get('log',False):
-                axes.set_yscale('log')
         
         xtype = xaxis.get('type','num')
         series = input.get('series',[])
+        
+        logmin = 0
+        if yaxis.get('log',False):
+            axes.set_yscale('log')
+            if len(series)>0:
+                logmin = min(1,filter(lambda x: x>0, series[0]['values']))
         
         x_min = xaxis.get('min',0)
         x_max = xaxis.get('max',1)
@@ -254,7 +321,7 @@ class Plotter(RESTModel):
         x_range = x_max-x_min
         x_bins = int(x_range/x_width)
         
-        y0 = [0 for i in range(x_bins)]
+        y0 = [logmin for i in range(x_bins)]
         x = [x_min+(i+1)*x_width for i in range(x_bins)]
         
         for s in series:
@@ -272,6 +339,66 @@ class Plotter(RESTModel):
         if input.get('legend',False):
             axes.legend([Rectangle((0,0),1,1,fc=s['colour']) for s in series],[s['label'] for s in series],loc=0)
         return fig
+        
+    def sparkline(self,input):
+        """
+        Draw an unlabelled line plot. Syntax is the same as for a pie chart.
+        { width, height, title etc
+          series: [
+            {label: 'label0', values: [0,1,2,3,4,5,6,7,8,9], colour: '#ffffff'},
+            {label: 'label1', values: [0,1,2,3,4,5,6,7,8,9], colour: '#ffffff'}, ...
+          ]
+        }
+        Optional arguments are:
+        'labelled': Add labels to the left of each plot.
+        'overlay': Overlay the plots, instead of making a stack of separate plots.
+        """
+        xy = (input['width']/input.get('dpi',96),input['height']/input.get('dpi',96))
+        fig = figure(figsize=xy)
+    
+        labelled = input.get('labelled',False)
+        overlay = input.get('overlay',False)
+    
+        data = input['series']    
+        for i,d in enumerate(data):
+            if not 'colour' in d:
+                d['colour'] = cm.Dark2(float(i)/len(data))
+            if not 'label' in d:
+                d['label'] = ''
+            if not 'values' in d:
+                d['values'] = [0]
+    
+        if len(data)>0:
+            if overlay and len(data)>1:
+                axes = fig.add_axes([0.1,0.1,0.9,0.9])
+                miny=maxy=0
+                maxlen=0
+                for i,d in enumerate(data):
+                    axes.plot(d['values'],color=d['colour'])
+                    miny=min(miny,min(d['values']))
+                    maxy=max(maxy,max(d['values']))
+                    maxlen=max(maxlen,len(d['values']))
+                axes.autoscale_view()
+                if labelled:
+                    for i,d in enumerate(data):
+                        cy = miny + (maxy-miny)*((float(i)/len(data))+(0.5/len(data)))
+                        axes.text(-1,cy,d['label'],horizontalalignment='right',verticalalignment='center',fontsize=10,color=d['colour'])
+                    axes.set_xlim(xmin=-0.2*maxlen)
+                axes.set_axis_off()
+        
+            
+            else:
+                for i,d in enumerate(data):
+                    axes = fig.add_subplot(len(data),1,i+1)
+                    axes.plot(d['values'],color=d['colour'])
+                    cy = 0.5*(max(d['values'])-min(d['values']))+min(d['values'])
+                    axes.set_axis_off()    
+                    if labelled:
+                        axes.text(-1,cy,d['label'],horizontalalignment='right',verticalalignment='center',fontsize=10,color=d['colour'])
+                        axes.set_xlim(xmin=-0.2*len(d['values']))
+        
+        return fig
+
                 
     def quality_map(self,input):
         """
@@ -369,10 +496,10 @@ class Plotter(RESTModel):
         fracs = []
         colours = []
         for s in input['series']:
-        	labels.append(s['label'])
-        	fracs.append(s['value'])
-        	colours.append(s['colour'])
-       	explode = [0] * len(fracs)
+            labels.append(s['label'])
+            fracs.append(s['value'])
+            colours.append(s['colour'])
+            explode = [0] * len(fracs)
         if 'explode' in input:
             ind = input['explode'] - 1
             explode[ind] = 0.05

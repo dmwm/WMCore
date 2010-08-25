@@ -38,7 +38,12 @@ def lint_files(files):
               '--output-format=parseable', 
               '--reports=n', ]
     input.extend(files)
-    lint_result = lint.Run(input)
+    try:
+        lint_result = lint.Run(input)
+    except NameError:
+        print "In order to run lint, you must have pylint installed"
+        print "lint failure."
+        sys.exit(1)
     return lint_result.linter.stats
 
 class TestCommand(Command):
@@ -48,6 +53,12 @@ class TestCommand(Command):
     
     TODO: Pull database URL's from environment, and skip tests where database 
     URL is not present (e.g. for a slave without Oracle connection)
+    
+    TODO: need to build a separate test runner for each test file, python is
+          keeping the test objects around, which is keeping it from destroying
+          filehandles, which is causing us to bomb out of a lot more tests than
+          necessary. Or, people could learn to close their files themselves.
+          either-or.
     """
     user_options = [ ]
 

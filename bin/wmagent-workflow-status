@@ -68,7 +68,7 @@ def getWorkflowStatus():
 
         if row["name"] in ["complete", "success", "exhausted", "cleanout"]:
             workflowInfo[row["owner"]][row["task"]]["complete"] += int(row["jobs"])
-        elif row["name"] in ["created"]:
+        elif row["name"] in ["created", "new"]:
             workflowInfo[row["owner"]][row["task"]]["pending"] += int(row["jobs"])        
         else:
             workflowInfo[row["owner"]][row["task"]]["running"] += int(row["jobs"])

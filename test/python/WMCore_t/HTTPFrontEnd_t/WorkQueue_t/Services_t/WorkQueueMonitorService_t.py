@@ -1,21 +1,21 @@
 """
-WMCore_t/HTTPFrontEnd_t/WorkQueue_t/WorkQueueMonitorService_t.py
+WMCore_t/HTTPFrontEnd_t/WorkQueue_t/Services_t/WorkQueueMonitorService_t.py
 
 unittest for
 WMCore/HTTPFrontEnd/WorkQueue/Services/WorkQueueMonitorService.py
 
 writing unittests / testing details:
-https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest - doesn't work (26/01)
+https://twiki.cern.ch/twiki/bin/view/CMS/RESTModelUnitTest - doesn't work (2010-01-26)
 
 guiding / reference classes:
-test/python/WMCore_t/Services_t/WorkQueue_t/WorkQueue_t.py - fails (26/01)
+test/python/WMCore_t/Services_t/WorkQueue_t/WorkQueue_t.py - fails (2010-01-26)
 test/python/WMCore_t/WorkQueue_t/WorkQueue_t.py (use use WMCore_t.WMSpec_t.samples.*) - works
 
 """
 
 
-__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.1 2010/03/11 18:07:49 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueMonitorService_t.py,v 1.2 2010/03/16 16:58:10 maxa Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 
@@ -37,7 +37,9 @@ from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-from WMCore_t.Services_t.WorkQueue_t.WorkQueuePopulator import createProductionSpec, getGlobalQueue, createProcessingSpec
+from WMCore_t.Services_t.WorkQueue_t.WorkQueuePopulator import createProductionSpec
+from WMCore_t.Services_t.WorkQueue_t.WorkQueuePopulator import getGlobalQueue
+from WMCore_t.Services_t.WorkQueue_t.WorkQueuePopulator import createProcessingSpec
 from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
 from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workload as Tier1ReRecoWorkload
 
@@ -77,7 +79,12 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
                                           CacheDir = 'global',
                                           NegotiationTimeout = 0,
                                           QueueURL = self.config.getServerUrl())
+        # emulator
         self.specGenerator = WMSpecGenerator("WMSpecs")
+        specName = "ProductionSpec1"
+        specUrl = self.specGenerator.createProductionSpec(specName, "file")
+        self.globalQueue.queueWork(specUrl)
+                
         
         """
         the rest of this method used for populating db, workqueues
@@ -143,6 +150,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
         """
 
 
+
     def _tester(self, testName, verb, code, partUrl, inpt = {}):
         print 80 * '#'
         print "test: %s" % testName
@@ -181,7 +189,7 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
     
 
 
-# skip for now - move back once using Emulator is set up / working
+# skip for now - example of testing REST API in general ... leave for reference
 #    def testNonExistingUrl(self):
 #        testName = inspect.stack()[0][3]        
 #        self._tester(testName, "GET", 404, "somethingWrong")
@@ -194,136 +202,121 @@ class WorkQueueMonitorServiceTest(RESTBaseUnitTest, EmulatorUnitTestBase):
 #    
 #        dataPrefix =  "date/time:"
 #        errMsg = "Expect data starting with '%s', got '%s'" % (dataPrefix, data)
-#        assert data["results"].startswith(dataPrefix), errMsg         
-#        
-#        
-#
-#    def testElementStatus(self):
-#        testName = inspect.stack()[0][3]
-#        data, exp = self._tester(testName, "GET", 200, "status")
-#        
-#        r = data["results"]
-#        self.assertEqual(len(r), 1, "Only 1 element needs to be back, got '%s'" % len(r))
-#        self.assertEqual(r[0]["Id"], 1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"])
-#        
+#        assert data["results"].startswith(dataPrefix), errMsg
+
+
+         
+    def testElementStatus(self):
+        testName = inspect.stack()[0][3]
+        data, exp = self._tester(testName, "GET", 200, "status")
+        r = data["results"]
+        self.assertEqual(len(r), 2, "Only 2 element need to be back, got '%s'" % len(r))
+        self.assertEqual(r[0]["Id"], 1, "Had 1 element, Id should be 1, got '%s'" % r[0]["Id"])
+        
                 
 
     def testElementsDAO(self):
-        specName = "ProductionSpec1"
-        specUrl = self.specGenerator.createProductionSpec(specName, "file")
-        self.globalQueue.queueWork(specUrl)
-        
         testName = inspect.stack()[0][3]
         data, exp = self._tester(testName, "GET", 200, "elements")
-        
         r = data["results"]           
         self.assertEqual(len(r) ,  2, "Only 2 elements need to be back, got '%s'" % len(r))
         self.assertEqual(data["request_method"] ,  "GET", "'request_method' not matching")
-        assert data["request_call"] == "dasjson", "'request_call' not matching"        
+        self.assertEqual(data["request_call"], "dasjson", "'request_call' not matching")        
 
         
 
-# TODO methods should use emulator        
-#    def testElementsByStateDAO(self):
-#        testName = inspect.stack()[0][3]
-#        inpt = {"status": "Available"}
-#        data, exp = self._tester(testName, "POST", 200, "elementsbystate", inpt = inpt)
-#        
-#        statusInt = data["results"][0]["status"]
-#        statusStr = States[statusInt]
-#        assert inpt["status"] == statusStr, ("Expecting element status '%s', got "
-#            "'%s'" % (inpt["status"], statusStr))
-#
-#
-#
-#    def testElementsNonExistingByStateDAO(self):
-#        testName = inspect.stack()[0][3]
-#        inpt = {"status": "Failed"}
-#        data, exp = self._tester(testName, "POST", 200, "elementsbystate", inpt = inpt)
-#        
-#        r = data["results"]
-#        assert len(r) == 0, ("Expecting empty result set, no elements with "
-#                             "status '%s'") % inpt["status"]
-#        
-#                         
-#
-#    def testElementsByStateIntegerDAO(self):
-#        testName = inspect.stack()[0][3]
-#        inpt = {"status": 4} # states by integers - not supported
-#        # call is expected to fail with code 400 and HTTPError
-#        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
-#        self._checkHTTPError(data)
-#        
-#        inpt = {"status": "4"} # states by integers - not supported
-#        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
-#        self._checkHTTPError(data)
-#
-#        inpt = {"status": 456} # states by integers - not supported
-#        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
-#        self._checkHTTPError(data)
-#
-#        
-#
-#    def testElementsByStateWrongStateDAO(self):
-#        testName = inspect.stack()[0][3]
-#        # test that the exception is raise on wrong inpt, error will be raised
-#        inpt = {"status": "nonsensestatus"}        
-#        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
-#        self._checkHTTPError(data)
-#        
-#        
-#
-#    def testElementsByIdIntegerDAO(self):
-#        testName = inspect.stack()[0][3]
-#        inpt = {"id": 1}
-#        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
-#                
-#        r = data["results"]
-#        self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
-#        # now could safely assume only one item in the list
-#        self.assertEqual( r[0]["id"] ,  1, "Returned element should have id 1, got %s" % r[0]["id"] )
-#        
-#        
-#        
-#    def testElementsByIdStringDAO(self):
-#        testName = inspect.stack()[0][3]
-#        inpt = {"id": "1"}
-#        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
-#                
-#        r = data["results"]
-#        self.assertEqual( len(r) ,  1, "Only 1 element needs to be back, got '%s'" % len(r) )
-#        # now could safely assume only one item in the list
-#        self.assertEqual( r[0]["id"] ,  1, "Returned element should have id 1, got %s" % r[0]["id"] )
-#        
-#        
-#        
-#    def testElementsByNonExistingIdDAO(self):
-#        testName = inspect.stack()[0][3]
-#        inpt = {"id": 100000}
-#        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
-#        
-#        r = data["results"]
-#        self.assertEqual( len(r) ,  0, "Expected empty result (0 items), got '%s'" % len(r) )
-#        
-#
-#
-#    def testElementsByIncorrectIntegerIdDAO(self):
-#        testName = inspect.stack()[0][3]        
-#        inpt = {"id": -10}
-#        data, exp = self._tester(testName, "POST", 400, "elementsbyid", inpt = inpt)
-#        
-#        self._checkHTTPError(data)
-#
-#
-#    def testElementsByIncorrectStringIdDAO(self):
-#        testName = inspect.stack()[0][3]
-#        inpt = {"id": "nonsenseelementid"}
-#        data, exp = self._tester(testName, "POST", 400, "elementsbyid", inpt = inpt)
-#        
-#        self._checkHTTPError(data)
+    def testElementsByStateDAO(self):
+        testName = inspect.stack()[0][3]
+        inpt = {"status": "Available"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbystate", inpt = inpt)
+        statusInt = data["results"][0]["status"]
+        statusStr = States[statusInt]
+        self.assertEqual(inpt["status"], statusStr, ("Expecting element status '%s', got "
+                                                     "'%s'" % (inpt["status"], statusStr)))
+
+
+
+    def testElementsNonExistingByStateDAO(self):
+        testName = inspect.stack()[0][3]
+        inpt = {"status": "Failed"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbystate", inpt = inpt)
+        r = data["results"]
+        self.assertEqual(len(r), 0, ("Expecting empty result set, no elements with "
+                                     "status '%s'") % inpt["status"])
+        
+                         
+
+    def testElementsByStateIntegerDAO(self):
+        testName = inspect.stack()[0][3]
+        inpt = {"status": 4} # states by integers - not supported
+        # call is expected to fail with code 400 and HTTPError
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
+        self._checkHTTPError(data)
+        
+        inpt = {"status": "4"} # states by integers - not supported
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
+        self._checkHTTPError(data)
+
+        inpt = {"status": 456} # states by integers - not supported
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
+        self._checkHTTPError(data)
+
+        
+
+    def testElementsByStateWrongStateDAO(self):
+        testName = inspect.stack()[0][3]
+        # test that the exception is raise on wrong inpt, error will be raised
+        inpt = {"status": "nonsensestatus"}        
+        data, exp = self._tester(testName, "POST", 400, "elementsbystate", inpt = inpt)
+        self._checkHTTPError(data)
+        
+        
+
+    def testElementsByIdIntegerDAO(self):
+        testName = inspect.stack()[0][3]
+        inpt = {"id": 1}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
+        r = data["results"]
+        self.assertEqual(len(r), 1, "Only 1 element needs to be back, got '%s'" % len(r))
+        # now could safely assume only one item in the list
+        self.assertEqual(r[0]["id"], 1, "Returned element should have id 1, got %s" % r[0]["id"])
+        
+        
+        
+    def testElementsByIdStringDAO(self):
+        testName = inspect.stack()[0][3]
+        inpt = {"id": "1"}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
+        r = data["results"]
+        self.assertEqual(len(r), 1, "Only 1 element needs to be back, got '%s'" % len(r))
+        # now could safely assume only one item in the list
+        self.assertEqual(r[0]["id"], 1, "Returned element should have id 1, got %s" % r[0]["id"])
+        
+        
+        
+    def testElementsByNonExistingIdDAO(self):
+        testName = inspect.stack()[0][3]
+        inpt = {"id": 100000}
+        data, exp = self._tester(testName, "POST", 200, "elementsbyid", inpt = inpt)
+        r = data["results"]
+        self.assertEqual(len(r), 0, "Expected empty result (0 items), got '%s'" % len(r))
+        
+
+
+    def testElementsByIncorrectIntegerIdDAO(self):
+        testName = inspect.stack()[0][3]        
+        inpt = {"id": -10}
+        data, exp = self._tester(testName, "POST", 400, "elementsbyid", inpt = inpt)        
+        self._checkHTTPError(data)
+
+
+    def testElementsByIncorrectStringIdDAO(self):
+        testName = inspect.stack()[0][3]
+        inpt = {"id": "nonsenseelementid"}
+        data, exp = self._tester(testName, "POST", 400, "elementsbyid", inpt = inpt)        
+        self._checkHTTPError(data)
         
     
         
 if __name__ == "__main__":
     unittest.main()
-     

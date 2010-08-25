@@ -5,8 +5,8 @@ _FailInput_
 MySQL implementation of Jobs.FailInput
 """
 
-__revision__ = "$Id: FailInput.py,v 1.2 2009/10/26 16:51:16 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: FailInput.py,v 1.3 2010/04/28 20:43:26 sfoulkes Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -18,42 +18,32 @@ class FailInput(DBFormatter):
     produced it.  This will clear out any reference to the input files in the
     wmbs_sub_files_acquired and wmbs_sub_files_complete tables.
     """
+    fileSelect = """SELECT wmbs_jobgroup.subscription AS subid,
+                           wmbs_job_assoc.file AS fileid FROM wmbs_job_assoc
+                      INNER JOIN wmbs_job ON
+                        wmbs_job_assoc.job = wmbs_job.id
+                      INNER JOIN wmbs_jobgroup ON
+                        wmbs_job.jobgroup = wmbs_jobgroup.id
+                    WHERE wmbs_job.id = :jobid"""
+
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
-                          WHERE subscription =
-                            (SELECT wmbs_subscription.id FROM wmbs_subscription
-                               INNER JOIN wmbs_jobgroup ON
-                                 wmbs_subscription.id = wmbs_jobgroup.subscription
-                               INNER JOIN wmbs_job ON
-                                 wmbs_jobgroup.id = wmbs_job.jobgroup
-                             WHERE wmbs_job.id = :jobid) AND file IN
-                             (SELECT file FROM wmbs_job_assoc
-                                WHERE job = :jobid)"""
+                        WHERE subscription = :subid AND file = :fileid"""
 
     completeDelete = """DELETE FROM wmbs_sub_files_complete
-                          WHERE subscription =
-                            (SELECT wmbs_subscription.id FROM wmbs_subscription
-                               INNER JOIN wmbs_jobgroup ON
-                                 wmbs_subscription.id = wmbs_jobgroup.subscription
-                               INNER JOIN wmbs_job ON
-                                 wmbs_jobgroup.id = wmbs_job.jobgroup
-                             WHERE wmbs_job.id = :jobid) AND file IN
-                             (SELECT file FROM wmbs_job_assoc
-                                WHERE job = :jobid)"""    
-                                 
+                      WHERE subscription = :subid AND file = :fileid"""    
+
     sql = """INSERT INTO wmbs_sub_files_failed (file, subscription)
-               SELECT file, wmbs_jobgroup.subscription AS subscription
-                      FROM wmbs_job_assoc
-                 INNER JOIN wmbs_job ON
-                   wmbs_job_assoc.job = wmbs_job.id
-                 INNER JOIN wmbs_jobgroup ON
-                   wmbs_job.jobgroup = wmbs_jobgroup.id
-               WHERE wmbs_job_assoc.job = :jobid"""
+               VALUES (:fileid, :subid)"""
 
     def execute(self, id, conn = None, transaction = False):
-        self.dbi.processData(self.acquiredDelete, {"jobid": id}, conn = conn,
+        results = self.dbi.processData(self.fileSelect, {"jobid": id}, conn = conn,
+                                       transaction = transaction)
+        delBinds = self.formatDict(results)
+
+        self.dbi.processData(self.acquiredDelete, delBinds, conn = conn,
+                             transaction = transaction)        
+        self.dbi.processData(self.completeDelete, delBinds, conn = conn,
                              transaction = transaction)
-        self.dbi.processData(self.completeDelete, {"jobid": id}, conn = conn,
-                             transaction = transaction)
-        self.dbi.processData(self.sql, {"jobid": id}, conn = conn,
+        self.dbi.processData(self.sql, delBinds, conn = conn,
                              transaction = transaction)        
         return

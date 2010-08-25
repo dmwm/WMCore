@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.23 2010/04/08 16:19:06 sfoulkes Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.24 2010/04/14 20:58:18 sfoulkes Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import os
 import threading
@@ -444,7 +444,7 @@ class AccountantWorker:
         wmbsJob.getMask()
         outputID = wmbsJob.loadOutputID()
 
-        wmbsJob["fwjr"]    = str(fwkJobReportPath)
+        wmbsJob["fwjr"]    = fwkJobReport
 
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.transaction.conn,

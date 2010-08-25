@@ -7,8 +7,8 @@ Class for creating Oracle specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.4 2009/08/31 20:35:25 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: Create.py,v 1.5 2009/09/10 15:37:48 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -105,11 +105,11 @@ class Create(DBCreator):
                  END;"""
 
         self.constraints["tp_threadpool_buffer_in_fk"] = \
-          """ALTER TABLE tp_threadpool_buffer_in
+          """ALTER TABLE tp_threadpool_buffer_in ADD
                (CONSTRAINT tp_threadpool_buffer_in_state CHECK(state IN ('queued', 'process')))"""
 
         self.indexes["tp_threadpool_buffer_in_pk"] = \
-          """ALTER TABLE tp_threadpool_buffer_in
+          """ALTER TABLE tp_threadpool_buffer_in ADD
                (CONSTRAINT tp_threadpool_buffer_in_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.create["tp_threadpool_buffer_out"] = \

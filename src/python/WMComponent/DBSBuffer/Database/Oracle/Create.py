@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for Oracle.
 """
 
-__revision__ = "$Id: Create.py,v 1.15 2009/12/02 14:39:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: Create.py,v 1.16 2009/12/02 20:14:19 mnorman Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import threading
 
@@ -192,7 +192,45 @@ class Create(DBCreator):
           FOR EACH ROW
           BEGIN
             SELECT dbsbuffer_block_seq.nextval INTO :new.id FROM dual;
-          END;"""       
+          END;"""
+
+        self.create["11dbsbuffer_checksum_type"] = \
+          """CREATE TABLE dbsbuffer_checksum_type (
+              id            INTEGER,
+              type          VARCHAR(255) 
+              ) %s""" % tablespaceTable
+
+        self.create["10dbsbuffer_checksum_type_seq"] = \
+          """CREATE SEQUENCE dbsbuffer_checksum_type_seq
+          start with 1
+          increment by 1
+          nomaxvalue"""
+
+        self.indexes["01_pk_dbsbuffer_checksum_type"] = \
+          """ALTER TABLE dbsbuffer_checksum_type ADD
+               (CONSTRAINT dbsbuffer_checksum_type_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+
+        self.create["12dbsbuffer_file_checksums"] = \
+          """CREATE TABLE dbsbuffer_file_checksums (
+              fileid        INTEGER,
+              typeid        INTEGER,
+              cksum         VARCHAR(100)
+              ) %s""" % tablespaceTable
+
+        self.indexes["02_uk_dbsbuffer_file_checksums"] = \
+          """ALTER TABLE dbsbuffer_file_checksums ADD
+               (CONSTRAINT dbsbuffer_file_checksums_uk UNIQUE (fileid, typeid) %s)""" % tablespaceIndex
+
+        self.constraints["02_fk_dbsbuffer_file_checksums"] = \
+          """ALTER TABLE dbsbuffer_file_checksums ADD                   
+               (CONSTRAINT fk_filechecksums_cktype FOREIGN KEY (typeid)
+                  REFERENCES dbsbuffer_checksum_type(id) ON DELETE CASCADE)"""
+
+        self.constraints["03_fk_dbsbuffer_file_checksums"] = \
+          """ALTER TABLE dbsbuffer_file_checksums ADD                   
+               (CONSTRAINT fk_filechecksums_file FOREIGN KEY (fileid)
+                  REFERENCES dbsbuffer_file(id) ON DELETE CASCADE)"""
 
         self.indexes["01_pk_dbsbuffer_dataset"] = \
           """ALTER TABLE dbsbuffer_dataset ADD

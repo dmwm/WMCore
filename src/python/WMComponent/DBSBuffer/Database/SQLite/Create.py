@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for SQLite
 """
 
-__revision__ = "$Id: Create.py,v 1.11 2009/12/02 14:39:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: Create.py,v 1.12 2009/12/02 20:14:19 mnorman Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import logging
 import threading
@@ -110,4 +110,17 @@ class Create(DBCreator):
              location    INTEGER      NOT NULL,
              status      VARCHAR(20),
              UNIQUE(blockname, location)
-             )"""  
+             )"""
+
+        self.create["11dbsbuffer_checksum_type"] = \
+          """CREATE TABLE dbsbuffer_checksum_type (
+              id            INTEGER      PRIMARY KEY AUTOINCREMENT,
+              type          VARCHAR(255) )"""
+
+
+        self.create["12dbsbuffer_file_checksums"] = \
+          """CREATE TABLE dbsbuffer_file_checksums (
+              fileid        INTEGER,
+              typeid        INTEGER,
+              cksum         VARCHAR(100),
+              UNIQUE(fileid, typeid))"""

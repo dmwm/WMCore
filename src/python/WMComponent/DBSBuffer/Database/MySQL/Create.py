@@ -4,8 +4,8 @@ _Create_DBSBuffer_
 Implementation of Create_DBSBuffer for MySQL.
 """
 
-__revision__ = "$Id: Create.py,v 1.27 2009/12/02 14:39:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Create.py,v 1.28 2009/12/02 20:14:19 mnorman Exp $"
+__version__ = "$Revision: 1.28 $"
 __author__ = "anzar@fnal.gov"
 
 import logging
@@ -67,7 +67,6 @@ class Create(DBCreator):
              lfn          VARCHAR(255) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
-             cksum        BIGINT UNSIGNED,
 	     dataset_algo BIGINT UNSIGNED   not null,
              block_id     BIGINT UNSIGNED,
 	     status       varchar(20),
@@ -109,5 +108,22 @@ class Create(DBCreator):
              location     INTEGER      NOT NULL,
              status       VARCHAR(20),
              UNIQUE(blockname, location))ENGINE=InnoDB"""
+
+        self.create["11dbsbuffer_checksum_type"] = \
+          """CREATE TABLE dbsbuffer_checksum_type (
+              id            INTEGER      PRIMARY KEY AUTO_INCREMENT,
+              type          VARCHAR(255) ) ENGINE=InnoDB"""
+
+
+        self.create["12dbsbuffer_file_checksums"] = \
+          """CREATE TABLE dbsbuffer_file_checksums (
+              fileid        INTEGER,
+              typeid        INTEGER,
+              cksum         VARCHAR(100),
+              UNIQUE (fileid, typeid), 
+              FOREIGN KEY (typeid) REFERENCES dbsbuffer_checksum_type(id)
+                ON DELETE CASCADE,
+              FOREIGN KEY (fileid) REFERENCES dbsbuffer_file(id)
+                ON DELETE CASCADE) ENGINE=InnoDB"""
              
              

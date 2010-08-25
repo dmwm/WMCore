@@ -2,8 +2,8 @@
 """
 Test case for SiteDB
 """
-__revision__ = "$Id: SiteDB_t.py,v 1.9 2010/03/22 12:24:56 swakef Exp $"
-__version__  = "$Revision: 1.9 $"
+__revision__ = "$Id: SiteDB_t.py,v 1.10 2010/07/30 12:15:44 swakef Exp $"
+__version__  = "$Revision: 1.10 $"
 __author__   = "ewv@fnal.gov"
 
 import unittest
@@ -44,8 +44,9 @@ class SiteDBTest(unittest.TestCase):
         self.failUnless(result == 'T1_US_FNAL')
         result = self.mySiteDB.phEDExNodetocmsName('T2_UK_London_IC')
         self.failUnless(result == 'T2_UK_London_IC')
-        self.assertRaises(ValueError, self.mySiteDB.phEDExNodetocmsName,
-                          'T9_DOESNT_EXIST_Buffer')
+        # don't check this anymore, see comment in phEDExNodetocmsName function
+        #self.assertRaises(ValueError, self.mySiteDB.phEDExNodetocmsName,
+        #                  'T9_DOESNT_EXIST_Buffer')
 
 
     def testCmsNametoSE(self):

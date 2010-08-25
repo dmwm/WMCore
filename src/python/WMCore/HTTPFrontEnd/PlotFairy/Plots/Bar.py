@@ -1,3 +1,7 @@
+from matplotlib.pyplot import figure
+import matplotlib.cm as cm
+from matplotlib.patches import Rectangle
+import numpy as np
 from Plot import Plot
 
 class Bar(Plot):

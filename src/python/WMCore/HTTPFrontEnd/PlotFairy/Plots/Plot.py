@@ -4,7 +4,7 @@ The Plot class is a base class for PlotFairy plots to inherit from. Authors of
 new plots should override the plot(self, data) method. Plots should be 
 instantiated via a factory, and be stateless.
 '''
-
+from matplotlib import pyplot 
 class Plot(object):
     def __call__(self, input):
         '''
@@ -14,7 +14,7 @@ class Plot(object):
         hopefully minimising memory leakage. 
         '''
         plot = self.plot(input)
-        matplotlib.pyplot.close()
+        pyplot.close()
         return plot
         
     def plot(self):

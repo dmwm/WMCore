@@ -6,8 +6,8 @@ Holds a bunch of helper methods to format input and output of sql
 interactions.
 """
 
-__revision__ = "$Id: DBFormatter.py,v 1.24 2010/02/15 22:35:49 sfoulkes Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: DBFormatter.py,v 1.25 2010/02/17 22:52:56 afaq Exp $"
+__version__ = "$Revision: 1.25 $"
 import datetime
 import time
 
@@ -104,22 +104,20 @@ class DBFormatter(WMObject):
         return dict(zip(description, r.fetchone()))
 
 
-    def formatCursor(self, cursor):
+    def formatCursor(self, cursor, size=10):
         """
         Fetch the driver cursor directly.
         Tested only with cx_Oracle. 
         Cursor must be already executed.
         Use fetchmany(size = default arraysize = 50)
 
-        TODO: support MySQLdb too.
         """
-        assert self.dbi.engine.dialect.name == 'oracle'
-
-        keys = [d[0].lower() for d in cursor.description]
+	keys = [x.lower() for x in cursor.keys]
+	print keys
         result = []
         rapp = result.append
         while True:
-            rows = cursor.fetchmany()
+            rows = cursor.fetchmany(size=size)
             if not rows: 
                 cursor.close()
                 break

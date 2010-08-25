@@ -24,6 +24,9 @@ def createWorkload(name="BasicProduction"):
     # // set up the production task
     #//
     production = workload.newTask("Production")
+    #TODO: Currently WMBS only support Processing, Merge, Harvesting type - may be add production type?
+    production.setTaskType("Merge")
+    
     production.addProduction(totalevents = 1000)
     prodCmssw = production.makeStep("cmsRun1")
     prodCmssw.setStepType("CMSSW")

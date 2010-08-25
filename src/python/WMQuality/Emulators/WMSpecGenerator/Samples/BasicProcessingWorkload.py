@@ -19,6 +19,7 @@ def createWorkload(name="BasicProcessing"):
     # // set up the production task
     #//
     rereco = workload.newTask("ReReco1")
+    rereco.setTaskType("Processing")
     rerecoCmssw = rereco.makeStep("cmsRun1")
     rerecoCmssw.setStepType("CMSSW")
     skimStageOut = rerecoCmssw.addStep("stageOut1")

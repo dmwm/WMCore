@@ -60,7 +60,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
     # // Set up the basic workload task and step structure
     #//
     workload = newWorkload(workloadName)
-    workload.setOwner(owner)
+    #workload.setOwner(owner)
     workload.setStartPolicy('DatasetBlock')
     workload.setEndPolicy('SingleShot')
     workload.data.properties.acquisitionEra = acquisitionEra
@@ -183,7 +183,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
         mergeRecoCmsswHelper.setDataProcessingConfig(scenario, "merge")
         mergeRecoCmsswHelper.addOutputModule(
             "Merged", primaryDataset = inputPrimaryDataset,
-            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion)
+            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "RECO",
             lfnBase = "%s/RECO/%s-Tier0ReReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
         )
@@ -265,7 +265,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
                 lfnBase = "%s/ALCARECO/%s-Tier0ReReco-%s-%s" % (commonLfnBase, acquisitionEra, skim, processingVersion)
                 )
 
-            mergeAlca.setInputReference(rerecoCmssw, outputModule = "ALCARECOStream%s" % skim)
+            mergeAlca.setInputReference(skimAlcaCmssw, outputModule = "ALCARECOStream%s" % skim)
 
         if emulationMode:
             mergeAlcaStageOutHelper = mergeAlcaStageOut.getTypeHelper()
@@ -298,7 +298,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
         mergeAodCmsswHelper.setDataProcessingConfig(scenario, "merge")
         mergeAodCmsswHelper.addOutputModule(
             "Merged", primaryDataset = inputPrimaryDataset,
-            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion)
+            processedDataset = "%s-Tier0ReReco-%s" % (acquisitionEra, processingVersion),
             dataTier = "AOD",
             lfnBase = "%s/AOD/%s-Tier0ReReco-%s" % (commonLfnBase, acquisitionEra, processingVersion)
         )

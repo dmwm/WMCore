@@ -218,6 +218,9 @@ else:
 """
 Build, clean and test the WMCore package.
 """
+     
+def get_relative_path():      
+    return os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), sys.argv[0])))
 
 def generate_filelist(basepath=None, recurse=True, ignore=False):
     if basepath:

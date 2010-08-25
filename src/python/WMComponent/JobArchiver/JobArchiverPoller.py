@@ -3,8 +3,8 @@
 The actual jobArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobArchiverPoller.py,v 1.5 2010/02/11 17:33:37 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: JobArchiverPoller.py,v 1.6 2010/03/03 22:49:24 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import threading
 import logging
@@ -39,6 +39,15 @@ class JobArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
+
+        if not os.path.isdir(config.JobArchiver.logDir):
+            if os.path.exists(config.JobArchiver.logDir):
+                # Then we have some weird file in the way
+                # FAIL
+                raise Exception("Pre-existing file at %s" % (config.JobArchiver.logDir))
+            else:
+                # Create the directory
+                os.makedirs(config.JobArchiver.logDir) 
     
     def setup(self, parameters):
         """

@@ -6,8 +6,8 @@ Create new block in dbsbuffer_block
 Update file to reflect block information
 
                                                                                                                                                                                                                                                                                                                                                                                                           """
-__revision__ = "$Id: SetBlockStatus.py,v 1.1 2009/08/12 22:15:09 mnorman Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: SetBlockStatus.py,v 1.2 2009/09/03 15:23:06 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 __author__ = "mnorman@fnal.gov"
 
 import threading
@@ -17,27 +17,26 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 
 class SetBlockStatus(DBFormatter):
-    sql = \
-    """INSERT INTO dbsbuffer_block(blockname, location) VALUES (:block,
-       (SELECT ID FROM dbsbuffer_location WHERE se_name =:location))"""
+    sql = """INSERT INTO dbsbuffer_block (blockname, location) VALUES
+               SELECT :block, id AS location FROM dbsbuffer_location
+               WHERE se_name = :location AND NOT EXISTS
+                 (SELECT * FROM dbsbuffer_block WHERE blockname = :block AND
+                    location = (SELECT id FROM dbsbuffer_location WHERE se_name = :location))"""
 
+    def execute(self, block, locations = None, conn = None, transaction = False):
+        """
+        _execute_
 
-
-    def __init__(self):
-        myThread = threading.currentThread()
-        DBFormatter.__init__(self, myThread.logger, myThread.dbi)
-
-        
-    def execute(self, block, locations = None, conn=None, transaction = False):
-
-        #How this works:
-        #Insert an entry into dbsbuffer_block for every location
-        #Unique ID that's not the block name
+        Given a block and a list of locations add entries to the dbsbuffer_block
+        table.
+        """
+        bindVars = []
 
         for location in locations:
-            try:
-                result = self.dbi.processData(self.sql, {'block': block, 'location': location}, conn = conn, transaction = transaction)
-            except Exception, ex:
-                raise ex
+            bindVars.append({"block": block, "location": location})
+
+        self.dbi.processData(self.sql, bindVars, conn = conn,
+                             transaction = transaction)
+        return
                                              
 

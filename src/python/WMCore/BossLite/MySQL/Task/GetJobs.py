@@ -6,10 +6,11 @@ MySQL implementation of BossLite.Jobs.Save
 """
 
 __all__ = []
-__revision__ = "$Id: GetJobs.py,v 1.2 2010/04/15 20:52:22 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: GetJobs.py,v 1.3 2010/05/09 20:03:03 spigafi Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
+from WMCore.BossLite.Common.System import strToList
 
 class GetJobs(DBFormatter):
     sql = """SELECT id as id, job_id as jobId, task_id as taskId,
@@ -20,7 +21,7 @@ class GetJobs(DBFormatter):
                 dls_destination as dlsDestination, submission_number as submissionNumber,
                 closed as closed
                 FROM bl_job
-                WHERE task_id = :id
+                WHERE task_id = :taskId
                 """
 
     def format(self, res):
@@ -42,9 +43,9 @@ class GetJobs(DBFormatter):
             result['standardInput']    = entry['standardinput']
             result['standardOutput']   = entry['standardoutput']
             result['standardError']    = entry['standarderror']
-            result['inputFiles']       = entry['inputfiles']
-            result['outputFiles']      = entry['outputfiles']
-            result['dlsDestination']   = entry['dlsdestination']
+            result['inputFiles']       = strToList(entry['inputfiles'])
+            result['outputFiles']      = strToList(entry['outputfiles'])
+            result['dlsDestination']   = strToList(entry['dlsdestination'])
             result['submissionNumber'] = entry['submissionnumber']
             result['closed']           = entry['closed']
 
@@ -52,14 +53,12 @@ class GetJobs(DBFormatter):
 
         return final
 
-    def execute(self, id, conn = None, transaction = False):
+    def execute(self, binds, conn = None, transaction = False):
         """
         Load everything using the database ID
         """
-        if type(id) == list:
-            binds = id
-        else:
-            binds = {'id': id}
+        
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
+        
         return self.format(result)

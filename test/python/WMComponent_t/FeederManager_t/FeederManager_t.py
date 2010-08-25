@@ -5,8 +5,8 @@ _FeederManager_t_
 Unit tests for the FeederManager_t.
 """
 
-__revision__ = "$Id: FeederManager_t.py,v 1.3 2010/02/05 21:11:48 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: FeederManager_t.py,v 1.4 2010/02/11 19:21:22 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import time
 import unittest
@@ -71,6 +71,7 @@ class FeederManagerTest(unittest.TestCase):
 
         Handle AddDatasetWatch events  
         """ 
+        raise RuntimeError, "This test hangs. please fix me"
         myThread = threading.currentThread()
         config = self.getConfig()
         testFeederManager = FeederManager(config)

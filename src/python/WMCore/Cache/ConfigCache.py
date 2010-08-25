@@ -6,9 +6,29 @@ import cherrypy
 
 class WMConfigCache:
     
-    def pullConfig(self, url):
-        ''' TODO: need to make a REST api for this '''
-        pass
+    def pullConfig(self, url, dbname, id, revision = None):
+        ''' TODO: pulls a document from another WMConfigCache to this one '''
+
+        # get the document
+        remote_couch = CMSCouch.CouchServer(database, url)
+        if dbname not in remote_couch.listDatabases():
+            raise RuntimeError, ("Remote database %s doesn't exist at url %s" %
+                                  (database, url))
+        remote_database = self.couch.connectDatabase(database)
+        document = remote_database.getDocumentByDocID(id, revision)
+        
+        # add the document to the database
+        del document[u'_rev']
+        (newid, newrev) = self.database.commit( document )
+        
+        # now we have the document, get the attachments
+        for attachment_name in document[u'_attachments'].keys():
+            attachment_value = remote_database.getAttachment(newid,
+                                                             attachment_name)
+            (newid, newrev) = self.database.addAttachment(newid, newrev,
+                                                             attachment_value,
+                                                             attachment_name)
+        return (newid, newrev)
     
     def deleteConfig(self, docid):
         '''
@@ -18,7 +38,7 @@ class WMConfigCache:
         self.database.queueDelete(document)
         self.database.commit()
         
-    def addConfig(self, new_config, config_name=None):
+    def addConfig(self, new_config ):
         '''
             injects a configuration into the cache, returning a tuple with the
             docid and the current revision, in that order. This
@@ -43,7 +63,7 @@ class WMConfigCache:
             retval2 = self.database.addAttachment( commit_info[u'id'], 
                                          commit_info[u'rev'], 
                                          config_string,
-                                         config_name )
+                                         'pickled_script')
             return ( retval2['id'],
                      retval2['rev'])
             
@@ -54,31 +74,66 @@ class WMConfigCache:
         else:
             raise IndexError, "More than one record has the same MD5"
             
-    
-    def getConfigByDocID(self, docid, config_name=None):
-        '''retrieves a configuration by the docid'''
-        retval = self.database.getAttachment( docid, config_name )
-        if (len(retval) < 100):
-            print retval
-        return retval
+    def addOriginalConfig(self, id, rev, config_path):
+        ''' Adds the human-readable script to the given id
+            Makes it easy to see what you're doing since
+            the pickled version isn't legible
+        '''
+        config_string = urllib.urlopen( config_path ).read(-1)
+        retval2 = self.database.addAttachment( id,
+                                         rev, 
+                                         config_string,
+                                         'original_script')
+        return ( retval2['id'],
+                 retval2['rev'])
         
     
-    def getConfigByHash(self, dochash, config_name=None):
+    def getOriginalConfigByDocID(self, docid):
+        '''retrieves a configuration by the docid'''
+        return self.database.getAttachment( docid, 'original_script' )
+
+        
+    
+    def getOriginalConfigByHash(self, dochash):
         '''retrieves a configuration by the pset_hash'''
         searchResult = self.searchByHash(dochash)[u'rows']
         if (len(searchResult) == 1):
             # found the configuration
-            return self.getConfigByDocID(searchResult[0]['id'], config_name)
+            return self.getConfigByDocID(searchResult[0]['id'],
+                                         'original_script')
+        else:
+            raise IndexError("Too many/few search results (%s) for hash %s" %
+                                ( len(searchResult), dochash) )      
+    
+    def getDocumentByDocID(self, docid, revid=None):
+        revision_string = None
+        if (revid):
+            revision_string = "rev=%s" % revid
+            
+        return self.database.get("/%s/%s" % (self.dbname, docid), revid)
+    
+               
+    def getConfigByDocID(self, docid):
+        '''retrieves a configuration by the docid'''
+        return self.database.getAttachment( docid,'pickled_script' )
+     
+
+    def getConfigByHash(self, dochash):
+        '''retrieves a configuration by the pset_hash'''
+        searchResult = self.searchByHash(dochash)[u'rows']
+        if (len(searchResult) == 1):
+            # found the configuration
+            return self.getConfigByDocID(searchResult[0]['id'])
         else:
             raise IndexError("Too many/few search results (%s) for hash %s" %
                                 ( len(searchResult), dochash) )    
     
-    def getConfigByMD5(self, md5hash, config_name=None):
+    def getConfigByMD5(self, md5hash):
         '''retrieves a configuration by the md5_hash'''
         searchResult = self.searchByMD5(md5hash)[u'rows']
         if (len(searchResult) == 1):
             # found the configuration
-            return self.getConfigByDocID(searchResult[0]['id'], config_name)
+            return self.getConfigByDocID(searchResult[0]['id'])
         else:
             raise IndexError("Too many/few search results (%s) for MD5 %s" %
                                 ( len(searchResult), md5hash) )    

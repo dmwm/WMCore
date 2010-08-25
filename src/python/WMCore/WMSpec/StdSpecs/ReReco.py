@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.29 2010/06/11 15:23:46 mnorman Exp $"
-__revision__ = "$Revision: 1.29 $"
+__version__ = "$Id: ReReco.py,v 1.30 2010/06/11 20:48:21 sryu Exp $"
+__revision__ = "$Revision: 1.30 $"
 
 import subprocess
 
@@ -63,7 +63,7 @@ def getTestArguments():
 
     return arguments
 
-class ReRecoWorkloadFactory():
+class ReRecoWorkloadFactory(object):
     """
     _ReRecoWorkloadFactory_
 
@@ -120,7 +120,7 @@ class ReRecoWorkloadFactory():
         """
         workload = newWorkload(self.workloadName)
         workload.setOwner(self.owner)
-        workload.setStartPolicy("DatasetBlock")
+        workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
         workload.setEndPolicy("SingleShot")
         workload.data.properties.acquisitionEra = self.acquisitionEra        
         return workload

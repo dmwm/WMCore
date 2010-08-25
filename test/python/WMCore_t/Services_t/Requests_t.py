@@ -124,8 +124,8 @@ class testRepeatCalls(RESTBaseUnitTest):
             print 'test %s starting at %s' % (i, time.time())
             try:
                 result = req.get('/', incoming_headers={'Cache-Control':'no-cache'})
-                assert False == result[3]
-                assert 200 == result[1]
+                self.assertEqual(False, result[3])
+                self.assertEqual(200, result[1])
                 time.sleep(i*5)
             except HTTPException, he:
                 print 'test %s raised a %s error' % (i, he.status)

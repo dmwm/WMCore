@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.32 2009/09/08 13:28:39 valya Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: Page.py,v 1.33 2009/09/22 16:52:02 metson Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import urllib
 import cherrypy
@@ -31,6 +31,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WMFactory import WMFactory
+
+from wsgiref.handlers import format_date_time
+from datetime import datetime, timedelta
+from time import mktime
 
 class Page(WMObject):
     """
@@ -173,7 +177,6 @@ def exposedasplist (func):
         import plistlib
         data_struct = runDas(self, func, *args, **kwds)
         plist_str = plistlib.writePlistToString(data_struct)
-        cherrypy.response.headers['ETag'] = das['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"
         return plist_str
     wrapper.__doc__ = func.__doc__
@@ -201,7 +204,6 @@ def exposedasxml (func):
             string = '%s %s="%s"' % (string, key, das[key])
         header = "%s\n<das %s>" % (header, string)
 
-        cherrypy.response.headers['ETag'] = das['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"
         xmldata = header + das['results'].__str__() + "</das>"
         return xmldata
@@ -224,7 +226,6 @@ def exposejson (func):
     def wrapper (self, *args, **kwds):
         encoder = JSONEncoder()
         data = func (self, *args, **kwds)
-        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
 #            jsondata = encoder.iterencode(data)
@@ -251,7 +252,6 @@ def exposedasjson (func):
     def wrapper (self, *args, **kwds):
         encoder = JSONEncoder()
         data = runDas(self, func, *args, **kwds)
-        cherrypy.response.headers['ETag'] = data['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
 #            jsondata = encoder.iterencode(data)
@@ -268,7 +268,6 @@ def exposedasjson (func):
 def exposejs (func):
     def wrapper (self, *args, **kwds):
         data = func (self, *args, **kwds)
-        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/javascript"
         return data
     wrapper.__doc__ = func.__doc__
@@ -300,9 +299,9 @@ def runDas(self, func, *args, **kwds):
     if  type(row) is types.StringType:
         row = eval(row)
     if  type(row) is types.DictType and row.has_key('expire'):
-        res_expire = row['expire']
+        res_expire = make_timestamp(row['expire'])
     else:
-        res_expire = 60*5 # 5 minutes
+        res_expire = make_timestamp(60*5) # 5 minutes
     try:
         factory = WMFactory('webtools_factory')
         model = factory.loadObject(self.config.model.object, self.config)
@@ -335,3 +334,9 @@ def runDas(self, func, *args, **kwds):
               }
     return dasdata
 
+def make_timestamp(seconds=0):
+    then = datetime.now() + timedelta(seconds=seconds)
+    return mktime(then.timetuple())
+
+def make_rfc_timestamp(seconds=0):
+    return format_date_time(make_timestamp(seconds))

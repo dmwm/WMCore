@@ -1,8 +1,8 @@
 #!/bin/env python
 
 
-__revision__ = "$Id: JobSubmitter_t.py,v 1.14 2010/06/03 21:32:53 mnorman Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: JobSubmitter_t.py,v 1.15 2010/06/08 20:08:19 mnorman Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import threading
@@ -15,6 +15,8 @@ import cProfile
 import pstats
 import copy
 import getpass
+import re
+import cPickle
 
 from subprocess import Popen, PIPE
 
@@ -35,7 +37,8 @@ from WMCore.WMBS.Job          import Job
 
 from WMComponent.JobSubmitter.JobSubmitter       import JobSubmitter
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-from WMComponent.JobSubmitter.Plugins.CondorGlobusPlugin import CondorGlobusPlugin
+from WMComponent.JobSubmitter.Plugins.CondorGlobusPlugin   import CondorGlobusPlugin
+from WMComponent.JobSubmitter.Plugins.BossLiteCondorPlugin import BossLiteCondorPlugin
 
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -52,7 +55,7 @@ from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload
+from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
 
 
 def parseJDL(jdlLocation):
@@ -154,7 +157,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService', 'WMCore.ResourceControl'])
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService', 'WMCore.ResourceControl'],
+        self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService', 'WMCore.ResourceControl', 'WMCore.BossLite'],
                                 useDefault = False)
         
         myThread = threading.currentThread()
@@ -169,7 +172,9 @@ class JobSubmitterTest(unittest.TestCase):
         self.user = getpass.getuser()
 
         #self.ceName = 'cms-sleepgw.fnal.gov/jobmanager-condor'
-        self.ceName = 'cmsosgce.fnal.gov/jobmanager-condor'
+        #self.ceName = 'cmsosgce.fnal.gov/jobmanager-condor'
+        #self.ceName = 'thisisnotarealserver.fnal.gov'
+        self.ceName = '127.0.0.1'
 
         for site in self.sites:
             locationAction.execute(siteName = site, seName = site, ceName = self.ceName)
@@ -332,7 +337,7 @@ class JobSubmitterTest(unittest.TestCase):
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
-        config.JobSubmitter.workerThreads = 4
+        config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
         config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
@@ -360,25 +365,28 @@ class JobSubmitterTest(unittest.TestCase):
         Creates a test workload for us to run on, hold the basic necessities.
         """
         # Create a new workload using StdSpecs.ReReco
-        arguments = {
-            "CmsPath": "/uscmst1/prod/sw/cms",
-            "AcquisitionEra": "WMAgentCommissioning10",
-            "Requester": "sfoulkes@fnal.gov",
-            "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-            "CMSSWVersion": "CMSSW_3_5_8_patch3",
-            "ScramArch": "slc5_ia32_gcc434",
-            "ProcessingVersion": "v2scf",
-            "SkimInput": "output",
-            "GlobalTag": "GR10_P_v4::All",
-            
-            "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
-            "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
-            
-            "CouchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
-            "CouchDBName": "wmagent_config_cache",
-            "Scenario": "",
-            "Emulate" : emulator,
-            }
+        #arguments = {
+        #    "CmsPath": "/uscmst1/prod/sw/cms",
+        #    "AcquisitionEra": "WMAgentCommissioning10",
+        #    "Requester": "sfoulkes@fnal.gov",
+        #    "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
+        #    "CMSSWVersion": "CMSSW_3_5_8_patch3",
+        #    "ScramArch": "slc5_ia32_gcc434",
+        #    "ProcessingVersion": "v2scf",
+        #    "SkimInput": "output",
+        #    "GlobalTag": "GR10_P_v4::All",
+        #    
+        #    "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
+        #    "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
+        #    
+        #    "CouchUrl": "http://dmwmwriter:gutslap!@cmssrv52.fnal.gov:5984",
+        #    "CouchDBName": "wmagent_config_cache",
+        #    "Scenario": "",
+        #    "Emulate" : emulator,
+        #    }
+
+
+        arguments = getTestArguments()
 
         workload = rerecoWorkload("Tier1ReReco", arguments)
         rereco = workload.getTask("ReReco")
@@ -526,7 +534,7 @@ class JobSubmitterTest(unittest.TestCase):
         changeState  = ChangeState(config)
 
         nSubs = 5
-        nJobs = 500
+        nJobs = 300
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -546,8 +554,8 @@ class JobSubmitterTest(unittest.TestCase):
 
         # Actually run it
         startTime = time.time()
-        #cProfile.runctx("jobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat")
-        jobSubmitter.algorithm()
+        cProfile.runctx("jobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat")
+        #jobSubmitter.algorithm()
         stopTime  = time.time()
 
         if os.path.isdir('CacheDir'):
@@ -585,7 +593,7 @@ class JobSubmitterTest(unittest.TestCase):
         """
 
 
-        return
+        #return
 
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
@@ -597,11 +605,12 @@ class JobSubmitterTest(unittest.TestCase):
         workload = self.createTestWorkload()
 
         config   = self.getConfig()
+        config.JobSubmitter.pluginName    = 'BossLiteCondorPlugin'
 
         changeState = ChangeState(config)
 
-        nSubs = 5
-        nJobs = 5000
+        nSubs = 2
+        nJobs = 250
         cacheDir = os.path.join(self.testDir, 'CacheDir')
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
@@ -648,11 +657,14 @@ class JobSubmitterTest(unittest.TestCase):
 
 
         # Now we submit them
+        #plugin = BossLiteCondorPlugin(submitDir    = config.JobSubmitter.submitDir,
         plugin = CondorGlobusPlugin(submitDir    = config.JobSubmitter.submitDir,
                                     submitScript = config.JobSubmitter.submitScript)
 
+        startTime = time.time()
         cProfile.runctx("plugin(parameters = subBundle)", globals(), locals(), filename = "profStats.stat")
         #plugin(parameters = subBundle)
+        stopTime  = time.time()
 
 
         # Check to make sure we have running jobs
@@ -666,6 +678,8 @@ class JobSubmitterTest(unittest.TestCase):
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
         pipe.communicate()
 
+
+        print "Job took %f seconds to run plugin" % (stopTime - startTime)
 
         p = pstats.Stats('profStats.stat')
         p.sort_stats('cumulative')

@@ -80,6 +80,28 @@ class CMSSWStepHelper(CoreHelper):
 
 
 
+    def cmsswSetup(self, cmsswVersion, **options):
+        """
+        _cmsswSetup_
+
+        Provide setup details for CMSSW.
+
+        cmsswVersion - required - version of CMSSW to use
+
+        Optional:
+
+        scramCommand - defaults to scramv1
+        scramProject - defaults to CMSSW
+        scramArch    - optional scram architecture, defaults to None
+        buildArch    - optional scram build architecture, defaults to None
+        softwareEnvironment - setup command to bootstrap scram,defaults to None
+        """
+        self.data.application.setup.cmsswVersion = cmsswVersion
+        for k,v in options.items():
+            setattr(self.data.application.setup, k, v)
+        return
+
+
 class CMSSW(Template):
     """
     _CMSSW_

@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.14 2010/02/01 21:42:53 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.15 2010/02/02 22:34:45 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import logging
 import os.path
@@ -103,7 +103,7 @@ class JobAccountantTest(unittest.TestCase):
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60
         config.JobAccountant.workerThreads = workerThreads
-        config.JobAccountant.componentDir = os.path.join(os.getcwd(), 'Components')
+        config.JobAccountant.componentDir = os.getcwd()
         config.JobAccountant.logLevel = 'SQLDEBUG'
 
         return config

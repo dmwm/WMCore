@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.14 2009/06/25 16:04:15 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WorkQueue.py,v 1.15 2009/06/25 16:48:26 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -401,19 +401,8 @@ class WorkQueue(WorkQueueBase):
         # might just return one  block
         wqElementList = self.match(siteJobs)
         for wqElement in wqElementList:
-            wmbsHelper = WMBSHelper(wqElement.wmSpec.wmSpec)
-            # create fileset workflow and subscription
-            # generate workflow name from wmSpec names
-            workflowName = "Workflow"
-
-            # generate fileset name from multiple blocks using some convention.
-            # fileset should be blocks processed in the same sites
-            filesetName = "Fileset"
-            try:
-                subscription = wmbsHelper.createSubscription(filesetName=workflowName,
-                                                	     workflowName=workflowName)
-            except:
-                subscription = 1 #Remove when this works!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            wmbsHelper = WMBSHelper(wqElement.wmSpec)
+            subscription = wmbsHelper.createSubscription()
             results.append(subscription)
             wqElement.subscription = subscription
 

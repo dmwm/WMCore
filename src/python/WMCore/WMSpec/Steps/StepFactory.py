@@ -64,13 +64,23 @@ class EmulatorFactory(WMFactory):
         WMFactory.__init__(self, self.__class__.__name__,
                            "WMCore.WMSpec.Steps.Emulators")
 
+class FetcherFactory(WMFactory):
+    """
+    _FetcherFactory_
+
+    Instantiate a WMFactory instance for the Fetchers package
+
+    """
+    def __init__(self):
+        WMFactory.__init__(self, self.__class__.__name__,
+                           "WMCore.WMSpec.Steps.Fetchers")
 
 
 _TemplateFactory = TemplateFactory()
-_BuilderFactory = BuilderFactory()
+_BuilderFactory  = BuilderFactory()
 _ExecutorFactory = ExecutorFactory()
 _EmulatorFactory = EmulatorFactory()
-
+_FetcherFactory  = FetcherFactory()
 
 
 def getStepTemplate(stepType):
@@ -159,5 +169,23 @@ def getStepEmulator(stepEmuName):
         raise StepFactoryException(msg)
     except Exception, ex:
         msg = "Error creating object %s in EmulatorFactory:\n" % stepEmuName
+        msg += str(ex)
+        raise StepFactoryException(msg)
+
+def getFetcher(fetcherName):
+    """
+    _getFetcher_
+
+    Get an instance of the named Fetcher implementation
+
+    """
+    try:
+        return _FetcherFactory.loadObject(fetcherName)
+
+    except WMException, wmEx:
+        msg = "FetcherFactory Unable to load Object: %s" % fetcherName
+        raise StepFactoryException(msg)
+    except Exception, ex:
+        msg = "Error creating object %s in FetcherFactory:\n" % fetcherName
         msg += str(ex)
         raise StepFactoryException(msg)

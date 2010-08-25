@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.113 2010/06/02 14:42:11 swakef Exp $"
-__version__ = "$Revision: 1.113 $"
+__revision__ = "$Id: WorkQueue.py,v 1.114 2010/06/02 15:22:36 swakef Exp $"
+__version__ = "$Revision: 1.114 $"
 
 
 import time
@@ -641,12 +641,17 @@ class WorkQueue(WorkQueueBase):
                             self.setStatus(status, ids, id_type = 'parent_queue_id')
 
                 # prune elements that are finished (after reporting to parent)
-                complete_elements = sum([list(x['Elements']) for x
-                                         in results if x.inEndState()], [])
-                if complete_elements:
+                complete_results = [x for x in results if x.inEndState()]
+                if complete_results:
                     action = self.daofactory(classname = "WorkQueueElement.Delete")
-                    complete_ids = [x['Id'] for x in complete_elements]
-                    self.logger.info('Finished with elements: %s' % str(complete_ids))
+                    complete_ids = []
+                    msg = 'Finished with task %s of workflow %s as it is %s'
+                    for result in complete_results:
+                        complete_ids.extend(x['Id'] for x in result['Elements'])
+                        an_element = result['Elements'][0]
+                        self.logger.info(msg % (an_element['Task'],
+                                                an_element['WMSpec'].name(),
+                                                result['Status']))
                     action.execute(ids = complete_ids,
                                   conn = self.getDBConn(),
                                   transaction = self.existingTransaction())

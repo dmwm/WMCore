@@ -166,7 +166,6 @@ class PhEDEx(AuthorisedService):
         """
         args = {"block": blockName}
         return self._getResult("filereplicas", args = args)        
-        pass
     
     def subscribe(self, dbsUrl, subscription):
         """

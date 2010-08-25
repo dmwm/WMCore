@@ -110,7 +110,7 @@ class TaskArchiverTest(unittest.TestCase):
         
         
 
-    def createTestJobGroup(self, name = "TestWorkthrough"):
+    def createTestJobGroup(self, config, name = "TestWorkthrough"):
         """
         Creates a group of several jobs
 
@@ -157,12 +157,20 @@ class TaskArchiverTest(unittest.TestCase):
         
         testJobGroup.commit()
 
+        changer = ChangeState(config)
+
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'success', 'complete')
+        changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
+
         testSubscription.completeFiles([testFileA, testFileB])
 
         return testJobGroup
 
 
-    def createGiantJobSet(self, name, nSubs = 10, nJobs = 10, nFiles = 1):
+    def createGiantJobSet(self, name, config, nSubs = 10, nJobs = 10, nFiles = 1):
         """
         Creates a massive set of jobs
 
@@ -228,6 +236,14 @@ class TaskArchiverTest(unittest.TestCase):
 
             testJobGroup.commit()
 
+            changer = ChangeState(config)
+
+            changer.propagate(testJobGroup.jobs, 'created', 'new')
+            changer.propagate(testJobGroup.jobs, 'executing', 'created')
+            changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+            changer.propagate(testJobGroup.jobs, 'success', 'complete')
+            changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
+
             testWMBSFileset.markOpen(0)
 
             testSubscription.completeFiles(filesToComplete)
@@ -247,15 +263,9 @@ class TaskArchiverTest(unittest.TestCase):
 
         config = self.getConfig()
 
-        testJobGroup = self.createTestJobGroup()
+        testJobGroup = self.createTestJobGroup(config = config)
 
-        changer = ChangeState(config)
-
-        changer.propagate(testJobGroup.jobs, 'created', 'new')
-        changer.propagate(testJobGroup.jobs, 'executing', 'created')
-        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
-        changer.propagate(testJobGroup.jobs, 'success', 'complete')
-        changer.propagate(testJobGroup.jobs, 'cleanout', 'success')
+        
 
         result = myThread.dbi.processData("SELECT * FROM wmbs_subscription")[0].fetchall()
         self.assertEqual(len(result), 1)
@@ -296,14 +306,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         config = self.getConfig()
 
-        jobList = self.createGiantJobSet(name = name, nSubs = 10, nJobs = 1000, nFiles = 10)
-        changer = ChangeState(config)
-
-        changer.propagate(jobList, 'created', 'new')
-        changer.propagate(jobList, 'executing', 'created')
-        changer.propagate(jobList, 'complete', 'executing')
-        changer.propagate(jobList, 'success', 'complete')
-        changer.propagate(jobList, 'cleanout', 'success')
+        jobList = self.createGiantJobSet(name = name, config = config,
+                                         nSubs = 10, nJobs = 1000, nFiles = 10)
 
         testTaskArchiver = TaskArchiverPoller(config = config)
 
@@ -334,15 +338,8 @@ class TaskArchiverTest(unittest.TestCase):
         name    = makeUUID()
 
         config  = self.getConfig()
-        jobList = self.createGiantJobSet(name = name, nSubs = 10, nJobs = 1000, nFiles = 10)
-        changer = ChangeState(config)
-
-        changer.propagate(jobList, 'created', 'new')
-        changer.propagate(jobList, 'executing', 'created')
-        changer.propagate(jobList, 'complete', 'executing')
-        changer.propagate(jobList, 'success', 'complete')
-        changer.propagate(jobList, 'cleanout', 'success')
-
+        jobList = self.createGiantJobSet(name = name, config = config, nSubs = 10,
+                                         nJobs = 1000, nFiles = 10)
 
 
         testTaskArchiver = TaskArchiverPoller(config = config)

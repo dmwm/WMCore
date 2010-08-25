@@ -200,7 +200,7 @@ else:
 Build, clean and test the WMCore package.
 """
 
-def generate_filelist(basepath=None, recurse=True):
+def generate_filelist(basepath=None, recurse=True, ignore=False):
     if basepath:
         walkpath = os.path.join(get_relative_path(), 'src/python', basepath)
     else:
@@ -209,7 +209,8 @@ def generate_filelist(basepath=None, recurse=True):
     files = []
     
     if walkpath.endswith('.py'):
-        files.append(walkpath)
+        if ignore and walkpath.endswith(ignore):
+            files.append(walkpath)
     else:
         for dirpath, dirnames, filenames in os.walk(walkpath):
             # skipping CVS directories and their contents
@@ -238,7 +239,7 @@ def lint_files(files, reports=False):
     
     rcfile=os.path.join(get_relative_path(),'standards/.pylintrc')
     
-    arguements = ['--rcfile=%s' % rcfile]
+    arguements = ['--rcfile=%s' % rcfile, '--ignore=DefaultConfig.py']
     
     if not reports:
         arguements.append('-rn')
@@ -479,16 +480,14 @@ class LintCommand(Command):
             
             files_to_lint = []
             
-            
-            
             if self.package:
                 if self.package.endswith('.py'):
                     cnt = self.package.count('.') - 1
-                    files_to_lint = generate_filelist(self.package.replace('.', '/', cnt))
+                    files_to_lint = generate_filelist(self.package.replace('.', '/', cnt), 'DeafultConfig.py')
                 else:
-                    files_to_lint = generate_filelist(self.package.replace('.', '/'))
+                    files_to_lint = generate_filelist(self.package.replace('.', '/'), 'DeafultConfig.py')
             else:
-                files_to_lint = generate_filelist()
+                files_to_lint = generate_filelist(ignore='DeafultConfig.py')
             
             results, evaluation = lint_files(files_to_lint, self.report)
             ln = len(results)

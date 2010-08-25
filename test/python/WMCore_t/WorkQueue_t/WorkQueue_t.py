@@ -10,7 +10,7 @@ import unittest
 import os
 
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
-from WorkQueueTestCase import WorkQueueTestCase
+from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 from WMCore_t.WMSpec_t.samples.BasicProductionWorkload \
                                     import workload as BasicProductionWorkload
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
@@ -55,7 +55,7 @@ class TestReRecoFactory(ReRecoWorkloadFactory):
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
     # http://www.logilab.org/ticket/8774
-    # pylint: disable=E1101,E1103
+    # pylint: disable-msg=E1101,E1103
     return wmspec.taskIterator().next()
 
 class WorkQueueTest(WorkQueueTestCase):

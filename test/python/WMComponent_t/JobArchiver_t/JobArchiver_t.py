@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: JobArchiver_t.py,v 1.4 2009/10/30 13:51:11 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobArchiver_t.py,v 1.5 2010/02/04 15:52:06 mnorman Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import os
 import logging
@@ -65,15 +65,22 @@ class JobArchiverTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
 
+        self.testDir = self.testInit.generateWorkDir(deleteOnDestruction = False)
 
         self.nJobs = 10
+
+        return
 
     def tearDown(self):
         """
         Database deletion
         """
 
-        self.testInit.clearDatabase()
+        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.MsgService", "WMCore.ThreadPool"])
+
+        self.testInit.delWorkDir()
+
+        return
 
 
     def getConfig(self):
@@ -94,7 +101,7 @@ class JobArchiverTest(unittest.TestCase):
         config.component_("JobArchiver")
         config.JobArchiver.pollInterval  = 60
         config.JobArchiver.logLevel      = 'INFO'
-        config.JobArchiver.logDir        = os.path.join(os.getcwd(), 'logs')
+        config.JobArchiver.logDir        = os.path.join(self.testDir, 'logs')
 
         return config        
         
@@ -195,30 +202,32 @@ class JobArchiverTest(unittest.TestCase):
 
         changer = ChangeState(config)
 
-        if not os.path.isdir('test'):
-            os.mkdir('test')
+        cacheDir = os.path.join(self.testDir, 'test')
+
+        if not os.path.isdir(cacheDir):
+            os.mkdir(cacheDir)
 
         if not os.path.isdir(config.JobArchiver.logDir):
             os.mkdir(config.JobArchiver.logDir)
+
+        print "Should be about to make job caches"
 
         for job in testJobGroup.jobs:
             myThread.transaction.begin()
             job["outcome"] = "success"
             job.save()
             myThread.transaction.commit()
-            path = os.path.join('test', job['name'])
-            os.mkdir(path)
+            path = os.path.join(cacheDir, job['name'])
+            os.makedirs(path)
             f = open('%s/%s.out' %(path, job['name']),'w')
             f.write(job['name'])
             f.close()
             job.setCache(path)
 
-
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         changer.propagate(testJobGroup.jobs, 'success', 'complete')
-
 
         testJobArchiver = JobArchiver(config)
         testJobArchiver.prepareToStart()
@@ -233,7 +242,7 @@ class JobArchiverTest(unittest.TestCase):
             self.assertEqual(val.values()[0], 11, "Job did not end in cleanout state, instead in state %i" %(val.values()[0]))
         
         
-        dirList = os.listdir('test')
+        dirList = os.listdir(cacheDir)
         for job in testJobGroup.jobs:
             self.assertEqual(job["name"] in dirList, False)
 
@@ -242,13 +251,13 @@ class JobArchiverTest(unittest.TestCase):
             self.assertEqual('Job_%s.tar' %(job['name']) in logList, True, 'Could not find transferred tarball for job %s' %(job['name']))
             pipe = Popen(['tar', '-xvf', '%s/Job_%s.tar' %(config.JobArchiver.logDir, job['name'])], stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
-            filename = 'test/%s/%s.out' %(job['name'], job['name'])
+            filename = '%s/%s/%s.out' %(cacheDir[1:], job['name'], job['name'])
             self.assertEqual(os.path.isfile(filename), True, 'Could not find file %s' %(filename))
             f = open(filename, 'r')
             fileContents = f.readlines()
             f.close()
             self.assertEqual(fileContents[0].find(job['name']) > -1, True)
-            shutil.rmtree('test/%s' %(job['name']))
+            shutil.rmtree(os.path.join(os.getcwd(), 'tmp'))  # We unpack the tarball locally, so we have to clean up
 
         return
 

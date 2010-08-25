@@ -3,8 +3,8 @@
 The actual jobTracker algorithm
 """
 __all__ = []
-__revision__ = "$Id: JobTrackerPoller.py,v 1.8 2010/05/03 19:24:22 mnorman Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: JobTrackerPoller.py,v 1.9 2010/05/03 19:47:15 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import threading
 import logging
@@ -221,8 +221,9 @@ class JobTrackerPoller(BaseWorkerThread):
             job = Job(id = jobID)
             job.load()
             listOfJobs.append(job)
-            job.setFWJRPath(os.path.join(job.getCache(), \
-                                         'Report.pkl'))
+            job.setFWJRPath(os.path.join(job.getCache(),
+                                         'Report.%i.pkl' % (job['retry_count'])))
+
             #logging.error("Job %i has finished on site" %(jobID))
 
         myThread.transaction.begin()

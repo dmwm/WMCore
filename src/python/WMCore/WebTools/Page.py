@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.31 2009/07/28 20:33:52 sryu Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Page.py,v 1.32 2009/09/08 13:28:39 valya Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import urllib
 import cherrypy
@@ -30,6 +30,7 @@ import traceback
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.DataStructs.WMObject import WMObject
+from WMCore.WMFactory import WMFactory
 
 class Page(WMObject):
     """
@@ -170,10 +171,9 @@ def exposedasplist (func):
     """
     def wrapper (self, *args, **kwds):
         import plistlib
-        data_struct = func(self, *args, **kwds)
-#        data_struct = runDas(self, func, *args, **kwds)
+        data_struct = runDas(self, func, *args, **kwds)
         plist_str = plistlib.writePlistToString(data_struct)
-#        cherrypy.response.headers['ETag'] = das['results'].__str__().__hash__()
+        cherrypy.response.headers['ETag'] = das['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/xml"
         return plist_str
     wrapper.__doc__ = func.__doc__
@@ -224,6 +224,7 @@ def exposejson (func):
     def wrapper (self, *args, **kwds):
         encoder = JSONEncoder()
         data = func (self, *args, **kwds)
+        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
 #            jsondata = encoder.iterencode(data)
@@ -250,7 +251,7 @@ def exposedasjson (func):
     def wrapper (self, *args, **kwds):
         encoder = JSONEncoder()
         data = runDas(self, func, *args, **kwds)
-        cherrypy.response.headers['ETag'] = data.__str__().__hash__()
+        cherrypy.response.headers['ETag'] = data['results'].__str__().__hash__()
         cherrypy.response.headers['Content-Type'] = "application/json"
         try:
 #            jsondata = encoder.iterencode(data)
@@ -298,31 +299,30 @@ def runDas(self, func, *args, **kwds):
         row = results
     if  type(row) is types.StringType:
         row = eval(row)
-#    if  type(results) is types.StringType:
-#        results = eval(results)
-#    if  type(row) is not types.DictType:
-#        data  = str(results)
-#        dtype = type(results)
-#        raise Exception("Unsupported data format '%s' data type '%s'" % (data, dtype))
     if  type(row) is types.DictType and row.has_key('expire'):
         res_expire = row['expire']
     else:
         res_expire = 60*5 # 5 minutes
-    if  type(row) is types.DictType and row.has_key('version'):
-        res_version = row['version']
-    else:
-        res_version = 'unknown'
+    try:
+        factory = WMFactory('webtools_factory')
+        model = factory.loadObject(self.config.model.object, self.config)
+        res_version = model.version
+    except:
+        msg  = 'The model class %s does not have version member data. '\
+        % self.config.application
+        msg += 'Unable to set the version.'
+        raise Exception(msg)
+
     try:
         keyhash = hashlib.md5()
     except:
-        # prior python 2.5
-        keyhash = md5.new()
+        keyhash = md5.new() # prior python 2.5
 
     keyhash.update(str(results))
     res_checksum = keyhash.hexdigest()
     dasdata = {'application':'%s.%s' % (self.config.application, func.__name__),
                'request_timestamp': start_time,
-               'request_url': request.base + request.path_info + \
+               'request_url': request.base + request.path_info + '?' + \
                                             request.query_string,
                'request_method' : request.method,
                'request_params' : request.params,
@@ -333,6 +333,5 @@ def runDas(self, func, *args, **kwds):
                'call_time': call_time,
                'results': results,
               }
-#    dasdata.update(func(self, *args, **kwds))
     return dasdata
 

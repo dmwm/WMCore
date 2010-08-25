@@ -112,7 +112,7 @@ def runUnitTests():
             __import__(oneModule)
             modules.append(sys.modules[oneModule])
         except Exception, e:
-            print "ERROR: Can't load %s - %s" % (oneModule, e)
+            print "ERROR: Can't load test case %s - %s" % (oneModule, e)
             loadFail.append(oneModule)    
 
     load = unittest.defaultTestLoader.loadTestsFromModule  
@@ -131,7 +131,7 @@ def runUnitTests():
     #sys.stderr = sys.__stderr__
     
     print sys.path
-    return (result, [], globalSuite.countTestCases())
+    return (result, loadFail, globalSuite.countTestCases())
 
 
 class TestCommand(Command):
@@ -187,30 +187,30 @@ class TestCommand(Command):
             
 
         if not result.wasSuccessful():
-            print "Tests unsuccessful. There were %s failures and %s errors"\
-                      % (len(result.failures), len(result.errors))
-            print "Failurelist:\n%s" % "\n".join(map(lambda x: \
-                                                        "FAILURE: %s\n%s" % (x[0],x[1] ), result.failures))
-            print "Errorlist:\n%s" % "\n".join(map(lambda x: \
-                                                        "ERROR:   %s\n%s" % (x[0],x[1] ), result.errors))
+            sys.stderr.write("Tests unsuccessful. There were %s failures and %s errors"\
+                      % (len(result.failures), len(result.errors)))
+            #print "Failurelist:\n%s" % "\n".join(map(lambda x: \
+             #                                           "FAILURE: %s\n%s" % (x[0],x[1] ), result.failures))
+            #print "Errorlist:\n%s" % "\n".join(map(lambda x: \
+             #                                           "ERROR:   %s\n%s" % (x[0],x[1] ), result.errors))
             
         if len(failedTestFiles):
-            print "The following tests failed to load: \n===============\n%s" %\
-                    "\n".join(failedTestFiles)    
-        print "------------------------------------"
-        print "test results"
-        print "------------------------------------"
-        print "Stats: %s successful, %s failures, %s errors, %s didn't run" %\
+            sys.stderr.write("The following tests failed to load: \n===============\n%s" %\
+                    "\n".join(failedTestFiles))    
+        sys.stderr.write("------------------------------------")
+        sys.stderr.write("test results")
+        sys.stderr.write("------------------------------------")
+        sys.stderr.write("Stats: %s successful, %s failures, %s errors, %s didn't run" %\
                 (totalTests - len(result.failures) - len(result.errors),\
                  len(result.failures),
                  len(result.errors),
-                 len(failedTestFiles))
+                 len(failedTestFiles)))
                 
         if (not result.wasSuccessful()) or len(result.errors):
-            print "FAILED: setup.py test" 
+            sys.stderr.write("FAILED: setup.py test") 
             sys.exit(1)
         else:
-            print "PASS: setup.py test"
+            sys.stderr.write("PASS: setup.py test")
             sys.exit(0)
            
 

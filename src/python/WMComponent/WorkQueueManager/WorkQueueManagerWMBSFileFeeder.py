@@ -3,8 +3,8 @@
 pullWork poller
 """
 __all__ = []
-__revision__ = "$Id: WorkQueueManagerWMBSFileFeeder.py,v 1.4 2010/07/29 21:37:49 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: WorkQueueManagerWMBSFileFeeder.py,v 1.5 2010/08/02 18:58:05 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 
 import threading
@@ -53,14 +53,19 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
             # - the number of Created but not Exectuing jobs
             freeSlots = siteRCDict[site]['total_slots'] - siteRCDict[site]['running_jobs'] 
             #I need freeSlots jobs on site location
-            self.queue.logger.info('I need %s jobs on site %s' %(freeSlots, site))
+            self.queue.logger.info("""I need %s jobs on site %s: 
+                                      %s total slots, %s pending jobs"""
+                                      % (freeSlots, site,
+                                         siteRCDict[site]['total_slots'],
+                                         siteRCDict[site]['running_jobs']))
 
             if freeSlots < 0:
                 freeSlots = 0
             workQueueDict[site] = freeSlots
 
         self.previousWorkList = self.queue.getWork(workQueueDict)
-        
+        self.queue.logger.info("%s of units of work acquired for file creation" 
+                               % len(self.previousWorkList))
         return
 
     def checkJobCreation(self):
@@ -68,8 +73,12 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         # in the given subscription
         self.queue.logger.info("Checking the JobCreation from previous pulled work")
         for workUnit in self.previousWorkList:
-            if len(workUnit["subscription"].filesOfStatus("Available")) > 0:
-                self.queue.logger.info("Not all the jobs are created.\nWill get the work later")
+            filesForPeningJobCreation = len(workUnit["subscription"].filesOfStatus("Available"))
+            if filesForPeningJobCreation > 0:
+                self.queue.logger.info("""Not all the jobs are created.
+                                          %s files left for job creation
+                                          Will get the work later""" % 
+                                          filesForPeningJobCreation)
                 return False
         
         self.queue.logger.info("All the jobs are created.\nWill get the work now")

@@ -29,5 +29,6 @@ workqueue.section_('model')
 workqueue.model.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTModel'
 workqueue.section_('formatter')
 workqueue.formatter.object = 'WMCore.WebTools.DASRESTFormatter'
+workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
 #TODO: find the way to get this from WorkQueueManager Config -should be the same value
 workqueue.queueParams = {}

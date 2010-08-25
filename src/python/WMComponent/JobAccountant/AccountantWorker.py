@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.26 2010/04/27 21:18:09 sfoulkes Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.27 2010/04/29 14:53:53 mnorman Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import os
 import threading
@@ -498,7 +498,6 @@ class AccountantWorker:
         wmbsJob["outcome"] = "failure"
         wmbsJob["retry_count"] += 1
         wmbsJob.save()
-        wmbsJob.failInputFiles()
         
         # We'll fake the rest of the state transitions here as the rest of the
         # WMAgent job submission framework is not yet complete.

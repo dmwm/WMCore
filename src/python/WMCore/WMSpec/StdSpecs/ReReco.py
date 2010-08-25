@@ -237,7 +237,7 @@ def rerecoWorkload(workloadName, arguments):
         cleanupRecoTask = rereco.addTask("CleanupUnmergedReco")
         cleanupRecoTask.setTaskType("Cleanup")
         cleanupRecoTask.setInputReference(rerecoCmssw, outputModule = outputModule("RECO"))
-        cleanupRecoTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 10)
+        cleanupRecoTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
        
         cleanupRecoStep = cleanupRecoTask.makeStep("cleanupUnmergedReco")
         cleanupRecoStep.setStepType("DeleteFiles")
@@ -283,7 +283,7 @@ def rerecoWorkload(workloadName, arguments):
         cleanupAlcaTask = rereco.addTask("CleanupUnmergedAlca")
         cleanupAlcaTask.setTaskType("Cleanup")
         cleanupAlcaTask.setInputReference(rerecoCmssw, outputModule = outputModule("ALCARECO"))
-        cleanupAlcaTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 10)
+        cleanupAlcaTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
        
         cleanupAlcaStep = cleanupAlcaTask.makeStep("cleanupUnmergedAlca")
         cleanupAlcaStep.setStepType("DeleteFiles")

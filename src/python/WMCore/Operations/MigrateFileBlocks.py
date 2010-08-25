@@ -3,8 +3,8 @@
 Code for migrating blocks to global DBS
 """
 
-__revision__ = "$Id: MigrateFileBlocks.py,v 1.2 2009/12/07 16:06:17 mnorman Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: MigrateFileBlocks.py,v 1.3 2009/12/07 18:55:32 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import logging
@@ -17,12 +17,16 @@ import inspect
 
 from WMCore.WMFactory  import WMFactory
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMInit     import WMInit
 
 from DBSAPI.dbsApi import DbsApi
 
 from WMQuality.TestInit import TestInit
 
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+
+from WMCore.Agent.Configuration import loadConfigurationFile
+from WMCore.Agent.Configuration import Configuration
 
 from WMCore.Services.DBS.DBSWriter import DBSWriter
 from WMCore.Services.DBS           import DBSWriterObjects
@@ -37,10 +41,11 @@ def usage():
     """
 
     print """Usage:
-    python MigrateFileBlocks.py [dataset path] [path to config file for DBSUpload]
+    python MigrateFileBlocks.py  [dataset path] [OPTIONAL: path to config file for DBSUpload]
 
     where [dataset path] is a formal dataset path (/Primary/Processed/Tier)
-    and the config file is probably the DBSUpload default config"""
+    and the config file is probably the DBSUpload default config
+    If path is not specified, uses WMAGENT_CONFIG out of the environment"""
 
 
 class MigrateFileBlocks:
@@ -91,8 +96,7 @@ class MigrateFileBlocks:
         for entry in blockNames:
             name = entry['blockname']
             self.dbswriter.manageFileBlock(name, maxFiles = 0, maxSize = None, timeOut = None)
-            block['OpenForWriting'] = 0
-            dbinterface.setBlockStatus(name, locations, block['OpenForWriting'])
+            self.dbinterface.setBlockStatus(name, locations = None, openStatus = 0)
 
 
         return
@@ -100,18 +104,31 @@ class MigrateFileBlocks:
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         usage()
         sys.exit(1)
 
-    configPath  = sys.argv[2]
     datasetPath = sys.argv[1]
 
-    testInit = TestInit(__file__)
-    testInit.setLogging()
-    testInit.setDatabaseConnection()
+    if len(sys.argv) < 3:  #No config path sent along
+        configPath = os.getenv('WMAGENT_CONFIG', None)
+    else:
+        configPath = sys.argv[2]
+        if not os.path.isfile(configPath):
+            configPath = os.getenv('WMAGENT_CONFIG', None)
 
-    config = testInit.getConfiguration(configPath)
+    if configPath:
+        config = loadConfigurationFile(configPath)
+    else:
+        print "Error!  No config could be found"
+        sys.exit(2)
+        
+        
+    wmInit = WMInit()
+    wmInit.setLogging()
+    wmInit.setDatabaseConnection(config.CoreDatabase.connectUrl,
+                                 config.CoreDatabase.dialect,
+                                 config.CoreDatabase.socket)
 
     migrateFileBlocks = MigrateFileBlocks(config = config)
     migrateFileBlocks.migrateDataset(datasetPath = datasetPath)

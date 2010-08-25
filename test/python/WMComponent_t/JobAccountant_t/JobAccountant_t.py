@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.19 2010/02/10 19:04:58 mnorman Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.20 2010/02/22 19:29:46 mnorman Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import logging
 import os.path
@@ -1771,12 +1771,9 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using one worker process.
         """
-<<<<<<< JobAccountant_t.py
 
-        print("  Filling DB...")
-=======
         logging.debug("  Filling DB...")
->>>>>>> 1.18
+
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 1)
 
@@ -1814,14 +1811,10 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using two worker processes.
         """
-<<<<<<< JobAccountant_t.py
 
-        print("Two process load test:")
-        print("  Filling DB...")
-=======
         logging.debug("Two process load test:")
         logging.debug("  Filling DB...")
->>>>>>> 1.18
+
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 2)
 
@@ -1859,14 +1852,9 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using four workers processes.
         """
-<<<<<<< JobAccountant_t.py
-
-        print("Four process load test:")
-        print("  Filling DB...")
-=======
         logging.debug("Four process load test:")
         logging.debug("  Filling DB...")
->>>>>>> 1.18
+
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 4)
 
@@ -1904,14 +1892,10 @@ class JobAccountantTest(unittest.TestCase):
 
         Run the load test using eight workers processes.
         """
-<<<<<<< JobAccountant_t.py
 
-        print("Eight process load test:")
-        print("  Filling DB...")
-=======
         logging.debug("Eight process load test:")
         logging.debug("  Filling DB...")
->>>>>>> 1.18
+
         self.setupDBForLoadTest()
         config = self.createConfig(workerThreads = 8)
 

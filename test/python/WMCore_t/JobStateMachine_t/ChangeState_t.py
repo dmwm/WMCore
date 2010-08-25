@@ -235,6 +235,18 @@ class TestChangeState(unittest.TestCase):
         self.assertEquals(len(our_records3['rows']), 7)
         our_records4 = self.change.getCouchByJobID(2)
         self.assertEquals(len(our_records4['rows']), 7)
+        # add more records
+        jsm = self.change.recordInCouch( jsm2 , "created", "new")
+        jsm = self.change.recordInCouch( jsm , "executing", "created")
+        jsm = self.change.recordInCouch( jsm , "complete", "executing")
+        targetID = jsm[0]['couch_record']
+        jsm = self.change.recordInCouch( jsm , "success", "complete")
+        jsm = self.change.recordInCouch( jsm , "closeout", "success")
+        jsm = self.change.recordInCouch( jsm , "cleanout", "closeout")
+        
+        targetDocs = self.change.getCouchByJobIDAndState([2], 'complete')
+        self.assertEquals(len(targetDocs),1)
+        self.assertEquals(targetDocs[0]['_id'], targetID)
         return
 
 

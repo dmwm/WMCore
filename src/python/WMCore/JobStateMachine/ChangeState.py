@@ -5,8 +5,8 @@ _ChangeState_
 Propagate a job from one state to another.
 """
 
-__revision__ = "$Id: ChangeState.py,v 1.17 2009/07/23 20:24:41 meloam Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: ChangeState.py,v 1.18 2009/07/23 21:10:40 meloam Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.DAOFactory import DAOFactory
@@ -58,7 +58,22 @@ class ChangeState(WMObject):
         return self.database.loadView('jobs','get_by_head_couch_id',{},[id])
     def getCouchByJobID(self, id):
         return self.database.loadView('jobs','get_by_job_id',{},[id])
+    def getCouchByJobIDAndState(self, ids, state):
+        keylist = []
+        for oneid in ids:
+            keylist.append([oneid, state])
 
+        possibleMatches = self.database.loadView('jobs','get_by_job_id_and_state',{},keylist)
+        retval = {}
+        for onematch in possibleMatches['rows']:
+            onematch = onematch['value']
+            if onematch['job']['id'] not in retval:
+                retval[onematch['job']['id']] = onematch
+            else:
+                if retval[onematch['job']['id']]['timestamp'] < onematch['timestamp']:
+                    retval[onematch['job']['id']] = onematch
+        return retval.values()
+    
     def check(self, newstate, oldstate):
         """
         check that the transition is allowed. return a tuple of the transition
@@ -130,7 +145,13 @@ class ChangeState(WMObject):
                                         emit(doc.job.id, doc);
                                       }
                                     }
-                                  }""" }}
+                                  }""" },
+                              'get_by_job_id_and_state': {"map":\
+                        """function(doc) {
+  if ( (doc.job)  && (doc.type) && (doc.new_state) && (doc.job.id)) {
+    emit([doc.job.id,doc.new_state],doc);
+  }
+}"""}}
      
         database.queue( hashViewDoc )
         database.commit()

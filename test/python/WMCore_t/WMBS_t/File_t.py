@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.42 2010/03/09 20:01:20 mnorman Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: File_t.py,v 1.43 2010/03/10 20:49:21 mnorman Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import unittest
 import logging
@@ -1433,8 +1433,9 @@ class FileTest(unittest.TestCase):
         testFileB.create()
 
         parentAction = self.daofactory(classname = "Files.SetLocationByLFN")
-        parentAction.execute(lfn = ["/this/is/a/lfnA", "/this/is/a/lfnB"],
-                             location = 'se1.fnal.gov')
+        binds = [{'lfn': "/this/is/a/lfnA", 'location': 'se1.fnal.gov'},
+                 {'lfn': "/this/is/a/lfnB", 'location': 'se1.fnal.gov'}]
+        parentAction.execute(lfn = binds)
 
         testFileC = File(id = testFileA["id"])
         testFileC.loadData()

@@ -11,10 +11,9 @@ import logging
 import subprocess
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 
-, retrieveStageOutImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
-
+from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.WMException import WMException
 from WMCore.WMBase import getWMBASE
 

@@ -37,6 +37,7 @@ class CouchCollection(Collection):
         """
         self.getCollectionId()
         if self['collection_id'] != None:
+            print "collection exists..."
             return self.get()
         document    = CMSCouch.Document()
         document['collection'] = self
@@ -44,6 +45,9 @@ class CouchCollection(Collection):
         commitInfo = self.couchdb.commitOne( document )
         commitInfo = commitInfo[0]
         self['collection_id'] = str(commitInfo['id'])
+        document['_id'] = commitInfo['id']
+        document['_rev'] = commitInfo['rev']
+        self.owner.ownThis(document)
         return
         
     @connectToCouch
@@ -55,9 +59,10 @@ class CouchCollection(Collection):
         Use owner and collection name to retrieve the ID of the collection
         """
         result = self.couchdb.loadView("ACDC", 'collection_name',
-             {'startkey' :[self['name'], self['owner_id']],
-               'endkey' : [self['name'], self['owner_id']]}, []
+             {'startkey' :[self['name'], self.owner.group['name'], self.owner['name']],
+               'endkey' : [self['name'], self.owner.group['name'], self.owner['name']]}, []
             )
+        
         if len(result['rows']) == 0:
             doc = None
         else:
@@ -113,18 +118,20 @@ class CouchCollection(Collection):
         self['collection_id'] = str(doc[u'_id'])
 
 
-from WMCore.ACDC.CouchOwner import CouchOwner
+from WMCore.GroupUser.User import makeUser
 
 class CouchCollectionTests(unittest.TestCase):
     def setUp(self):
         self.url = "127.0.0.1:5984"
-        self.database = "mytest2"
-        self.owner = CouchOwner(name = "evansde", group = "DMWM", database = self.database, url = self.url)
+        self.database = "acdc2"
+        self.owner = makeUser("DMWM", "evansde77", self.url, self.database)
+        self.owner.connect()
         self.owner.create()
         
     def tearDown(self):
         
         self.owner.drop()
+        self.owner.group.drop()
         pass
 
     def testA(self):
@@ -138,6 +145,9 @@ class CouchCollectionTests(unittest.TestCase):
         collection.create()
         
         collection.getCollectionId()
+        
+        print self.owner.couch.document(collection['collection_id'])
+        
         collection.drop()
        
         

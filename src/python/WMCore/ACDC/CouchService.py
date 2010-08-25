@@ -10,7 +10,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import sys
 import os
 from WMCore.ACDC.Service import Service
-from WMCore.ACDC.CouchOwner import CouchOwner
+from WMCore.GroupUser.User import User, makeUser
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
 import WMCore.ACDC.CouchUtils as CouchUtils
@@ -35,9 +35,13 @@ class CouchService(Service):
         List the owners in the DB
         
         """
-        result = self.couchdb.loadView("ACDC", 'owner_name_group', {}, [])
+        result = self.couchdb.loadView("GroupUser", 'name_map', {}, [])
+        users = []
         for row in result[u'rows']:
-            print row
+            group = row[u'key'][0]
+            user = row[u'key'][1]
+            users.append(makeUser(group, user, self.url, self.database))
+        return users
         
     @CouchUtils.connectToCouch
     def listCollections(self, owner):
@@ -48,8 +52,8 @@ class CouchService(Service):
         
         """
         result = self.couchdb.loadView("ACDC", 'owner_listcollections',
-             {'startkey' :[owner['owner_id']],
-               'endkey' : [owner['owner_id']]}, []
+             {'startkey' :[owner.group.name, owner.name],
+               'endkey' : [owner.group.name, owner.name]}, []
             )
     
 
@@ -86,14 +90,15 @@ class CouchService(Service):
         Remove an owner and all the associated collections and filesets
         
         """
-        result = self.couchdb.loadView("ACDC", 'owner_colls_and_filesets',
-             {'startkey' :[owner['owner_id']],
-               'endkey' : [owner['owner_id']]}, []
+        result = self.couchdb.loadView("GroupUser", 'owner_group_user',
+             {'startkey' :[owner.group.name, owner.name],
+               'endkey' : [owner.group.name, owner.name]}, []
             )
         for row in result[u'rows']:
+            print row[u'value']
             deleteMe = CMSCouch.Document()
-            deleteMe[u'_id'] = row[u'value'][u'_id']
-            deleteMe[u'_rev'] = row[u'value'][u'_rev']
+            deleteMe[u'_id'] = row[u'value'][u'id']
+            deleteMe[u'_rev'] = row[u'value'][u'rev']
             deleteMe.delete()
             self.couchdb.queue(deleteMe)
         self.couchdb.commit()
@@ -112,3 +117,7 @@ class CouchService(Service):
             deleteMe.delete()
             self.couchdb.queue(deleteMe)
         self.couchdb.commit()
+
+
+
+    

@@ -37,6 +37,7 @@ def initialiseCouch(objectRef):
         msg = "Exception instantiating couch services for :\n"
         msg += " url = %s\n database = %s\n" % (objectRef.url, objectRef.database)
         msg += " Exception: %s" % str(e)
+        print msg
         raise CouchConnectionError(msg)
         
 def connectToCouch(funcRef):

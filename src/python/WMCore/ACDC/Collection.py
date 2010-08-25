@@ -13,20 +13,11 @@ import unittest
 from WMCore.DataStructs.WMObject import WMObject
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 
+from WMCore.GroupUser.User import User
+import WMCore.GroupUser.Decorators as GUDecorators
 
-def requireOwner(func):
-    """
-    _requireOwner_
-    
-    Decorator to ensure that the owner attribute of the collection is not None
-    """
-    
-    def wrapper(self, *args, **opts):
-        if self.owner == None:
-            msg = "Owner not provided for Collection"
-            raise RuntimeError(msg)
-        return func(self, *args, **opts)
-    return wrapper
+
+
 
 
 class Collection(dict, WMObject):
@@ -35,24 +26,23 @@ class Collection(dict, WMObject):
         WMObject.__init__(self)
         self.setdefault("name", None)
         self.setdefault("collection_id", None)
-        self.setdefault("owner_id", None)
         self.setdefault("collection_type", CollectionTypes.GenericCollection)
         self.setdefault("associated_filesets", {}) 
         self.setdefault("filesets", {})
         self.update(options)
         self.owner = None   
 
-    def setOwner(self, ownerInstance):
+
+    def setOwner(self, userInstance):
         """
         _setOwner_
         
+        Provide a WMCore.GroupUser.User instance that will act as the owner of this 
+        collection
         
         """
-        self.owner = ownerInstance
-        self['owner_id'] = ownerInstance['owner_id']
-        return
-        
-    @requireOwner
+        self.owner = userInstance
+
     def create(self):
         """
         _create_

@@ -79,9 +79,10 @@ class CouchFileset(Fileset):
         document    = CMSCouch.Document()
         document['fileset'] = self
         commitInfo = self.couchdb.commitOne( document )
-        commitInfo = commitInfo[0]
-        couchid = str(commitInfo[u'id'])
-        self['fileset_id'] = couchid
+        self['fileset_id'] = commitInfo[0]['id']
+        document['_id'] = commitInfo[0]['id']
+        document['_rev'] = commitInfo[0]['rev']
+        self.owner.ownThis(document)
         return
         
     @connectToCouch
@@ -93,8 +94,8 @@ class CouchFileset(Fileset):
         map owner/collection/dataset triplet to the document ID
         """
         result = self.couchdb.loadView("ACDC", 'fileset_owner_coll_dataset',
-             {'startkey' :[self['owner_id'], self['collection_id'], self['dataset']],
-               'endkey' : [self['owner_id'], self['collection_id'], self['dataset']]}, []
+             {'startkey' :[self.owner.group.name, self.owner.name, self['collection_id'], self['dataset']],
+               'endkey' : [self.owner.group.name, self.owner.name, self['collection_id'], self['dataset']]}, []
             )
         if len(result['rows']) == 0:
             doc = None
@@ -244,7 +245,7 @@ class CouchFileset(Fileset):
         return count
 
 import random
-from WMCore.ACDC.CouchOwner import CouchOwner
+from WMCore.GroupUser.User import makeUser
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
@@ -253,9 +254,11 @@ from WMCore.Services.UUID import makeUUID
 class CouchFilesetTests(unittest.TestCase):
     def setUp(self):
         self.url = "127.0.0.1:5984"
-        self.database = "mytest2"
-        self.owner = CouchOwner(name = "evansde", group = "DMWM", database = self.database, url = self.url)
+        self.database = "acdc2"
+        self.owner = makeUser("DMWM", "evansde77", self.url, self.database)
+        self.owner.connect()
         self.owner.create()
+        
         self.collection = CouchCollection(database = self.database, url = self.url, name = "HellsBells2")
         self.collection.setOwner(self.owner)
         self.collection.create()
@@ -267,7 +270,7 @@ class CouchFilesetTests(unittest.TestCase):
         """
         self.collection.drop()
         self.owner.drop()
-        
+        self.owner.group.drop()
         
     def testA(self):
         """instantiation"""
@@ -275,7 +278,7 @@ class CouchFilesetTests(unittest.TestCase):
         fileset.setCollection(self.collection)
         fileset.create()
         
-        print fileset.get()
+        
         
         fileset.drop()
         

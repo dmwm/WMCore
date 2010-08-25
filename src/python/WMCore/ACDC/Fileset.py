@@ -19,7 +19,6 @@ class Fileset(dict, WMObject):
     def __init__(self, **options):
         dict.__init__(self)
         WMObject.__init__(self)
-        self.setdefault("owner_id", None)
         self.setdefault("collection_id", None)
         self.setdefault("fileset_id", None)
         self.setdefault("dataset", None)
@@ -38,7 +37,6 @@ class Fileset(dict, WMObject):
         self.collection = collectionInstance
         self['collection_id'] = collectionInstance['collection_id']
         self.owner = collectionInstance.owner
-        self['owner_id'] = self.owner['owner_id']
         return
     
     
@@ -56,6 +54,23 @@ class Fileset(dict, WMObject):
         """
         pass
         
+    def drop(self):
+        """
+        _drop_
+        
+        Remove the fileset from its collection
+        """
+        pass
+        
+    def add(self, *files):
+        """
+        _add_
+        
+        Add files to this fileset 
+        files should be a list of WMCore.DataStruct.File objects
+        
+        """
+        pass
         
     def files(self):
         """

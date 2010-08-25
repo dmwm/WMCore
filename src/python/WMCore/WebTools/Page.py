@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.23 2009/05/08 16:03:46 metson Exp $"
-__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: Page.py,v 1.24 2009/05/11 14:52:59 metson Exp $"
+__version__ = "$Revision: 1.24 $"
 
 import md5
 import urllib
@@ -153,7 +153,7 @@ def exposedasxml (func):
     TODO: pass in the call_time value, can we get this in a smart/neat way?
     TODO: include the request_version in the data hash - a new version should
     result in an update in a cache
-    TODO: "inherit" from the exposejson
+    TODO: "inherit" from the exposexml
     """
     def wrapper (self, *args, **kwds):
         das = runDas(self, func, *args, **kwds)

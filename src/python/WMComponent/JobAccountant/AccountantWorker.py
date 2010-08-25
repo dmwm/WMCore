@@ -5,8 +5,8 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
-__revision__ = "$Id: AccountantWorker.py,v 1.8 2009/11/09 14:54:12 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: AccountantWorker.py,v 1.9 2009/11/10 15:31:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import os
 import time
@@ -167,12 +167,10 @@ class AccountantWorker:
                                 size = jobReportFile["Size"],
                                 events = jobReportFile["TotalEvents"],
                                 cksum = jobReportFile["Checksum"])
-        logging.error("About to set algo")
         dbsFile.setAlgorithm(appName = datasetInfo["ApplicationName"],
                              appVer = datasetInfo["ApplicationVersion"],
                              appFam = datasetInfo["OutputModuleName"],
                              psetHash = "GIBBERISH", configContent = "MOREGIBBERISH")
-        logging.error("Set algo")
         
         dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["PrimaryDataset"],
                                               datasetInfo["ProcessedDataset"],

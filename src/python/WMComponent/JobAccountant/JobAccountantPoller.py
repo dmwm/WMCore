@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """
-_JobAccountant_
+_JobAccountantPoller_
 
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-__revision__ = "$Id: JobAccountantPoller.py,v 1.4 2009/11/06 22:13:15 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: JobAccountantPoller.py,v 1.5 2009/11/10 15:31:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import time
 import threading
@@ -26,9 +26,9 @@ class JobAccountantPoller(BaseWorkerThread):
         self.config = config
         return
     
-    def setup(self, parameters):
+    def setup(self, parameters = None):
         """
-        _preInitialization_
+        _setup_
 
         Instantiate the requisite number of accountant workers and create a
         processpool with them.  Also instantiate all the DAOs that we will use.
@@ -47,16 +47,15 @@ class JobAccountantPoller(BaseWorkerThread):
         self.getJobsAction = daoFactory(classname = "Jobs.GetFWJRByState")
         return
     
-    def algorithm(self, parameters):
+    def algorithm(self, parameters = None):
         """
-        _pollForJobs_
+        _algorithm_
 
         Poll WMBS for jobs in the "Complete" state and then pass them to the
         ThreadPool so that they can be processed.  This will block until all
         jobs have been processed.
         """
         completeJobs = self.getJobsAction.execute(state = "complete")
-        logging.info("algorithm(): %s" % completeJobs)        
         self.processPool.enqueue(completeJobs)
         self.processPool.dequeue(len(completeJobs))
         return

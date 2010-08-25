@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.26 $"
-__revision__ = "$Id: Report.py,v 1.26 2010/06/11 21:44:35 sfoulkes Exp $"
+__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: Report.py,v 1.27 2010/06/21 19:48:53 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -160,6 +160,7 @@ class Report:
             return jsonFiles
 
         jsonReport = {}
+        jsonReport["workload"] = self.data.workload
 
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)

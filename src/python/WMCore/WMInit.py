@@ -6,8 +6,8 @@ Init class that can be used by external projects
 that only use part of the libraries
 """
 
-__revision__ = "$Id: WMInit.py,v 1.14 2010/02/01 21:34:01 sfoulkes Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: WMInit.py,v 1.15 2010/02/01 22:14:16 sfoulkes Exp $"
+__version__ = "$Revision: 1.15 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -55,10 +55,7 @@ class WMInit:
         it by setting the flavor flag.
         """
         myThread = threading.currentThread()
-        if hasattr(myThread, "dbFactory") and myThread.dbFactory != None:
-            # Database is already initializated
-            return
-                                
+
         # check if connection string is  a string, if not it might be a dictionary.
         if not type(dbConfig) == str and flavor == 'ProdAgent':
             # modify db params to new WMCore conventions
@@ -86,19 +83,21 @@ class WMInit:
         myThread.dialect = dialect
 
         options = {}
-        if not type(dbConfig) == str:
-            myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDbConf)
-        else:
-            if myThread.dialect == 'MySQL':
-                if socketLoc != None:
-                    options['unix_socket'] = socketLoc
-            myThread.dbFactory = DBFactory(myThread.logger, dbConfig, options)
+        if not hasattr(myThread, "dbFactory"):
+            if not type(dbConfig) == str:
+                myThread.dbFactory = DBFactory(myThread.logger, dburl = None, options = wmDbConf)
+            else:
+                if myThread.dialect == 'MySQL':
+                    if socketLoc != None:
+                        options['unix_socket'] = socketLoc
+                myThread.dbFactory = DBFactory(myThread.logger, dbConfig, options)
 
-        myThread.dbi = myThread.dbFactory.connect()
+        if not hasattr(myThread, "dbi"):
+            myThread.dbi = myThread.dbFactory.connect()
+            
         myThread.transaction = Transaction(myThread.dbi)
-        myThread.transaction.commit()
-
-
+        myThread.transaction.commit()                
+        return
 
     def setSchema(self, modules = [], params = None):
         """

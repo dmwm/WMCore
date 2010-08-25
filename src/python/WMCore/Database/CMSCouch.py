@@ -7,8 +7,8 @@ A simple API to CouchDB that sends HTTP requests to the REST interface.
 http://wiki.apache.org/couchdb/API_Cheatsheet
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.75 2010/08/12 20:28:11 meloam Exp $"
-__version__ = "$Revision: 1.75 $"
+__revision__ = "$Id: CMSCouch.py,v 1.76 2010/08/13 15:41:47 metson Exp $"
+__version__ = "$Revision: 1.76 $"
 
 import urllib
 import datetime
@@ -211,6 +211,9 @@ class Database(CouchDBRequests):
             
         data = {'docs': [doc]}
         retval = self.post(uri , data)
+        for v in viewlist:
+            design, view = v.split('/')
+            self.loadView(design, view, {'limit': 0})
         return retval
 
     def commit(self, doc=None, returndocs = False, timestamp = False, 
@@ -242,7 +245,7 @@ class Database(CouchDBRequests):
         self._reset_queue()
         for v in viewlist:
             design, view = v.split('/')
-            self.loadView(design, view)
+            self.loadView(design, view, {'limit': 0})
         return retval
 
     def document(self, id):

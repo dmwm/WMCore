@@ -6,7 +6,6 @@ Filesets and Feeders manager
 
 __all__ = []
 
-     v 1.4 2009/11/06 12:08:15 riahi Exp $" 
 
 
 import threading

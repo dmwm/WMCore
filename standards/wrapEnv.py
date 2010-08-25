@@ -20,6 +20,8 @@ requestedDB     = sys.argv[2]
 sys.path.insert(0,'../../..')
 sys.path.insert(0,'../..')
 sys.path.insert(0,'..')
+
+print sys.path
 import buildslave
 
 if ( not (requestedPython in buildslave.conf) ):

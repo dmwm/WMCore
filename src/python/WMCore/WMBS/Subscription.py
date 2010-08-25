@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.64 2010/04/07 19:43:05 mnorman Exp $"
-__version__ = "$Revision: 1.64 $"
+__revision__ = "$Id: Subscription.py,v 1.65 2010/04/07 20:29:49 mnorman Exp $"
+__version__ = "$Revision: 1.65 $"
 
 import logging
 
@@ -419,7 +419,6 @@ class Subscription(WMBSBase, WMSubscription):
                                         transaction = self.existingTransaction())
             filesets.append(result['output'])
 
-
         # Get output filesets from the workflow
         self['workflow'].load()
         for entry in self['workflow'].outputMap:
@@ -427,7 +426,6 @@ class Subscription(WMBSBase, WMSubscription):
             if not id in filesets:
                 filesets.append(id)
 
-        
 
         # Do the input fileset LAST!
         filesets.append(self['fileset'].id)
@@ -462,8 +460,12 @@ class Subscription(WMBSBase, WMSubscription):
                 # If we did not delete the fileset, all files are still in use
                 # Now get rid of unused files
 
+                parent = self.daofactory(classname = "Files.DeleteParentCheck")
                 action = self.daofactory(classname = "Files.DeleteCheck")
                 for file in fileset.files:
+                    parent.execute(file = file['id'], fileset = fileset.id,
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())
                     action.execute(file = file['id'], fileset = fileset.id,
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())

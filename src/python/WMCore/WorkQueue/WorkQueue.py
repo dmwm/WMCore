@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.58 2010/01/27 17:28:35 sryu Exp $"
-__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: WorkQueue.py,v 1.59 2010/01/27 17:40:43 sryu Exp $"
+__version__ = "$Revision: 1.59 $"
 
 
 import uuid
@@ -125,12 +125,6 @@ class WorkQueue(WorkQueueBase):
             raise RuntimeError, "ParentQueue defined but not QueueURL"
         if self.params['ParentQueue'] is not None:
             self.parent_queue = self._get_remote_queue(self.params['ParentQueue'])
-        
-        if logger:
-            self.logger = logger
-        else:
-            import logging
-            self.logger = logging
 
     #  //
     # // External API

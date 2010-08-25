@@ -3,8 +3,8 @@
 Default handler for Job Success events.
 """
 __all__ = []
-__revision__ = "$Id: JobSuccess.py,v 1.15 2009/05/15 16:54:51 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobSuccess.py,v 1.16 2009/07/15 20:42:07 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
 
 
 from WMCore.Agent.BaseHandler import BaseHandler
@@ -35,16 +35,19 @@ class JobSuccess(BaseHandler):
     """
 
     def __init__(self, component):
-        BaseHandler.__init__(self, component)
-        # define a slave threadpool (this is optional
-        # and depends on the developer deciding how he/she
-        # wants to implement certain logic.
-        self.threadpool = ThreadPool(\
+      print "DBSBuffer::Handler::JobSuccess::init()"
+      BaseHandler.__init__(self, component)
+      # define a slave threadpool (this is optional
+      # and depends on the developer deciding how he/she
+      # wants to implement certain logic.
+      self.threadpool = ThreadPool(\
             "WMComponent.DBSBuffer.Handler.JobSuccessSlave", \
             self.component, 'JobSuccess', \
             1)
-        myThread = threading.currentThread()
-        myThread.msgService.purgeMessages()
+      myThread = threading.currentThread()
+      print "Trying purgeMessages()"
+      myThread.msgService.purgeMessages()
+      print "Done"
 
      # this we overload from the base handler
     def __call__(self, event, payload):

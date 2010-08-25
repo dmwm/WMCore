@@ -145,6 +145,7 @@ def printFWJRInfo():
     is found.
     """
     logArchiveLFNs = {}
+    print "This is our information %s" % fwjrDocs
     for retryNumber in fwjrDocs.keys():
         for stepName in fwjrDocs[retryNumber].keys():
             if fwjrDocs[retryNumber][stepName]["status"] != 0:

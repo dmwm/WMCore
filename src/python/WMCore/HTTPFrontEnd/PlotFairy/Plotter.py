@@ -4,6 +4,7 @@ Builds a plot form json data.
 from WMCore.WebTools.RESTModel import RESTModel
 from WMCore.Services.Requests import JSONRequests
 from matplotlib.pyplot import figure
+from cherrypy import request
 import numpy as np
 try:
     # Python 2.6
@@ -117,8 +118,16 @@ class Plotter(RESTModel):
             # We have a URL for some json - we hope!
             jr = JSONRequests(input['url'])
             input['data'] = jr.get()
+        media = request.headers['Accept'].split(';')[0].split(',')
+        images = ['image/png', 'image/*', 'application/pdf']
         
-        return self.plot_types[input['type']](input)
+
+        if [True for x in media if x in images]:
+            # make an image/pdf
+            return self.plot_types[input['type']](input)
+        else:
+            # return the validated data
+            return input
             
     def validate_input(self, input, verb, method):
         if not 'data' in input.keys():

@@ -5,14 +5,14 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.1 2010/03/30 10:28:28 mnorman Exp $"
-__revision__ = "$Revision: 1.1 $"
+__version__ = "$Id: RunningJob.py,v 1.2 2010/03/30 15:31:53 mnorman Exp $"
+__revision__ = "$Revision: 1.2 $"
 
 # imports
 import time
 import logging
 
-from WMCore.BossLite.DbObjects.DbObject import DbObject
+from WMCore.BossLite.DbObjects.DbObject import DbObject, dbTransaction
 from WMCore.BossLite.Common.Exceptions import JobError, DbError
 
 
@@ -120,6 +120,7 @@ class RunningJob(DbObject):
 
     ##########################################################################
 
+    @dbTransaction
     def exists(self, noDB = False):
         """
         Am I in the database?
@@ -131,36 +132,37 @@ class RunningJob(DbObject):
             else:
                 return False
         else:
-            existingTransaction = self.beginTransaction()
             action = self.daofactory(classname = "RunningJob.Exists")
             id = action.execute(submission = self.data['submission'],
                                 jobID = self.data['jobId'], taskID = self.data['taskId'],
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction)
                            
-            self.commitTransaction(existingTransaction)
             if id:
                 self.data['id'] = id
             self.existsInDataBase = True
             return id
 
+    #############################################################
+
+
+    @dbTransaction
     def create(self):
         """
         Create a new Running Job
         """
 
-        existingTransaction = self.beginTransaction()
         action = self.daofactory(classname = "RunningJob.New")
         action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
         
-        self.commitTransaction(existingTransaction)
 
         return
 
     ###############################################################
 
+    @dbTransaction
     def save(self):
         """
         Save the job
@@ -169,13 +171,11 @@ class RunningJob(DbObject):
         if not self.exists():
             self.create()
         else:
-            existingTransaction = self.beginTransaction()
             action = self.daofactory(classname = "RunningJob.Save")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
                            
-            self.commitTransaction(existingTransaction)
 
         self.existsInDataBase = True
         return        
@@ -183,13 +183,12 @@ class RunningJob(DbObject):
 
     ##############################################################
 
+    @dbTransaction
     def load(self):
         """
         Load from the database
 
         """
-        existingTransaction = self.beginTransaction()
-
         if self.data['id'] > 0:
             action = self.daofactory(classname = "RunningJob.LoadByID")
             result = action.execute(id = self.data['id'], 
@@ -204,10 +203,8 @@ class RunningJob(DbObject):
                                     transaction = self.existingTransaction)
         else:
             # We have nothing
-            self.commitTransaction(existingTransaction)
             return
             
-        self.commitTransaction(existingTransaction)
 
         if result == []:
             # Then the job did not exist

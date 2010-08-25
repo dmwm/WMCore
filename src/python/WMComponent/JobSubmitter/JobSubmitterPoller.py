@@ -9,8 +9,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.22 2010/05/21 15:55:54 mnorman Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.23 2010/05/28 15:00:50 mnorman Exp $"
+__version__ = "$Revision: 1.23 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -126,7 +126,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             msg += str(ex)
             msg += str(traceback.format_exc())
             msg += "\n\n"
-            if hasattr(myThread, 'transaction'):
+            if hasattr(myThread, 'transaction') and myThread.transaction != None:
                 myThread.transaction.rollback()
             raise
 
@@ -166,27 +166,38 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         newList = []
 
-        getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+        getJobs    = self.daoFactory(classname = "Jobs.GetAllJobs")
+        loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
         for jobType in self.types:
             jobList   = getJobs.execute(state = 'Created', jobType = jobType)
+
+            if len(jobList) == 0:
+                continue
+
+            binds = []
             for jobID in jobList:
-                job = Job(id = jobID)
-                job.load()
-                job.getMask()
+                binds.append({"jobid": jobID})
+
+            results = loadAction.execute(jobID = binds)
+
+            listOfJobs = []
+            for entry in results:
+                # One job per entry
+                tmpJob = Job(id = entry['id'])
+                tmpJob.update(entry)
+                listOfJobs.append(tmpJob)
+
+            for job in listOfJobs:
+                #job.getMask()
                 job['type']     = jobType
-                job["location"] = self.findSiteForJob(job)
+                job['location'] = self.findSiteForJob(job)
                 if not job['location']:
                     # Then all sites are full for this round
                     # Ignore this job until later
                     continue
                 job['custom']['location'] = job['location']    #Necessary for JSON
-                # Take care of accounting for the job
-                #self.sites[job['location']][jobType]['task_running_jobs'] += 1
-                #for key in self.sites[job['location']].keys():
-                #    self.sites[job['location']][key]['total_running_jobs'] += 1
-                # Now add the new job
                 newList.append(job)
-
+                
         logging.info("Have %i jobs in JobSubmitter.getJobs()" % len(newList))
 
         return newList
@@ -283,6 +294,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
+
         sortedJobList = sortListOfDictsByKey(jobList, 'sandbox')
 
         changeState = ChangeState(self.config)
@@ -312,24 +324,38 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.error('About to send jobs to Plugin')
             logging.error(len(listOfJobs))
 
+            # Now repack the jobs into a second list with only
+            # Essential components
+            finalList = []
+            for job in listOfJobs:
+                tmpJob = Job(id = job['id'])
+                tmpJob['custom']      = job['custom']
+                tmpJob['sandbox']     = job['sandbox']
+                tmpJob['name']        = job['name']
+                tmpJob['cache_dir']   = job['cache_dir']
+                tmpJob['retry_count'] = job['retry_count']
+                finalList.append(tmpJob)
+
 
             # We need to increment an index so we know what
             # number job we're submitting
             index = 0
-            
-            while len(listOfJobs) > self.config.JobSubmitter.jobsPerWorker:
-                listForSub = listOfJobs[:self.config.JobSubmitter.jobsPerWorker]
-                listOfJobs = listOfJobs[self.config.JobSubmitter.jobsPerWorker:]
+
+
+            while len(finalList) > self.config.JobSubmitter.jobsPerWorker:
+                listForSub = finalList[:self.config.JobSubmitter.jobsPerWorker]
+                finalList = finalList[self.config.JobSubmitter.jobsPerWorker:]
                 self.processPool.enqueue([{'jobs': listForSub,
                                            'packageDir': packagePath,
                                            'index': index}])
                 count += 1
                 index += len(listForSub)
-            if len(listOfJobs) > 0:
-                self.processPool.enqueue([{'jobs': listOfJobs,
+            if len(finalList) > 0:
+                self.processPool.enqueue([{'jobs': finalList,
                                            'packageDir': packagePath,
                                            'index': index}])
                 count += 1
+
 
         #result = self.processPool.dequeue(len(jobList))
         result = []

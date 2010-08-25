@@ -13,7 +13,7 @@ class StepSpace:
     Working area utils for a Step during execution
 
     """
-    def __init__(self):
+    def __init__(self, **args):
         pass
 
 

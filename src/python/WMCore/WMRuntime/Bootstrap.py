@@ -10,20 +10,20 @@ from WMCore.WMRuntime import TaskSpace
 from WMCore.WMRuntime import StepSpace
 
 
-def establishTaskSpace():
+def establishTaskSpace(**args):
     """
     _establishTaskSpace_
 
     Bootstrap method for the execution dir for a WMTask
 
     """
-    return TaskSpace()
+    return TaskSpace.TaskSpace(**args)
 
-def establishStepSpace():
+def establishStepSpace(**args):
     """
     _establishStepSpace_
 
     Bootstrap method for the execution dir of a WMStep within a WMTask
 
     """
-    return StepSpace()
+    return StepSpace.StepSpace(**args)

@@ -31,7 +31,7 @@ from WMCore.BossLite.Common.Exceptions      import SchedulerError
 #import threading
 import unittest
 import os
-
+from nose.plugins.attrib import nose
 
 def fakeTask( db, numjob ):
     """
@@ -204,7 +204,7 @@ class JobStatusLite_t( unittest.TestCase ):
         task = mySchedAPI.kill( taskid )
 
         return task['name']
-
+    @attr('integration')
     def testA_PollingFailed( self ):
         """
         testing the polling of failed jobs
@@ -224,7 +224,8 @@ class JobStatusLite_t( unittest.TestCase ):
         for job in task.jobs:
             self.assertEqual( job.runningJob['processStatus'], 'failed' )
         print "..finished."
-
+        
+    @attr('integration')
     def testB_PollingSuccess( self ):
         """
         testing the polling of success jobs
@@ -245,7 +246,8 @@ class JobStatusLite_t( unittest.TestCase ):
             self.assertEqual( job.runningJob['processStatus'], \
                               'output_requested' )
         print "..finished."
-
+        
+    @attr('integration')
     def testC_PollingNew( self ):
         """
         testing the polling of new jobs
@@ -265,7 +267,8 @@ class JobStatusLite_t( unittest.TestCase ):
         for job in task.jobs:
             self.assertEqual( job.runningJob['processStatus'], 'handled' )
         print "..finished."
-
+    
+    @attr('integration')
     def testD_PollingKilled( self ):
         """
         testing the polling of killed jobs
@@ -286,7 +289,7 @@ class JobStatusLite_t( unittest.TestCase ):
             self.assertEqual( job.runningJob['processStatus'], 'failed' )
         print "..finished."
 
-
+    @attr('integration')
     def testE_GroupAssignment( self ):
         """
         testing the group assignment for sub-processes
@@ -317,7 +320,8 @@ class JobStatusLite_t( unittest.TestCase ):
             group = tupla[0]
             self.assertNotEqual( group, 0 )
         print "..finished."
-
+    
+    @attr('integration')
     def testF_StatusCheck( self ):
         """
         testing the status check

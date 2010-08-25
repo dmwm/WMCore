@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.22 2009/12/14 13:56:40 swakef Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.23 2009/12/15 17:08:39 sryu Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import unittest
 import os
@@ -19,6 +19,7 @@ from WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicProductionWorkload
 from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workload as Tier1ReRecoWorkload
+from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
 from WMCore_t.WMSpec_t.samples.Tier1ReRecoWorkload import workingDir
 shutil.rmtree(workingDir, ignore_errors = True)
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
@@ -359,5 +360,40 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.status('Done')), 3)
 
 
+    def testMultiTaskProduction(self):
+        """
+        Test Multi top level task production spec.
+        multiTaskProduction spec consist 2 top level tasks each task has event size 1000 and 2000
+        respectfully  
+        """
+        # Basic production Spec
+        spec = MultiTaskProductionWorkload
+        spec.setSpecUrl(os.path.join(os.getcwd(), 'multiTaskProduction.spec'))
+        spec.save(spec.specUrl())
+        
+        specfile = spec.specUrl()
+        numElements = 3
+        njobs = [1] * numElements # array of jobs per block
+        total = sum(njobs)
+
+        # Queue Work & check accepted
+        self.queue.queueWork(specfile)
+        self.assertEqual(numElements, len(self.queue))
+
+        # try to get work
+        work = self.queue.getWork({'SiteA' : 0})
+        self.assertEqual([], work)
+        work = self.queue.getWork({'SiteA' : njobs[0]})
+        self.assertEqual(len(work), 1)
+        # claim all work
+        work = self.queue.getWork({'SiteA' : total, 'SiteB' : total})
+        self.assertEqual(len(work), numElements - 1)
+
+        #no more work available
+        self.assertEqual(0, len(self.queue.getWork({'SiteA' : total})))
+        try:
+            os.unlink(specfile)
+        except OSError:
+            pass
 if __name__ == "__main__":
     unittest.main()

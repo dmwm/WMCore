@@ -35,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.36 2010/02/22 18:36:22 swakef Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: Service.py,v 1.37 2010/02/25 18:31:09 swakef Exp $"
+__version__ = "$Revision: 1.37 $"
 
 SECURE_SERVICES = ('https',)
 
@@ -207,6 +207,10 @@ class Service(dict):
                                                     data = inputdata,
                                                     encoder = encoder,
                                                     decoder = decoder)
+            if status >= 400:
+                msg = "Error contacting %s, Status %s, Reason %s, Data %s"
+                raise IOError(msg % (url, status, reason, data))
+
             # Don't need to prepend the cachepath, the methods calling getData
             # have done that for us 
             f = open(cachefile, 'w')

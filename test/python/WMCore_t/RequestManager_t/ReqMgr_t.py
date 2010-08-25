@@ -27,11 +27,10 @@ class TestReqMgr(unittest.TestCase):
         self.assertTrue('me' in self.jsonSender.get('/reqMgr/group/PeopleLikeMe')[0])
         self.assertTrue('PeopleLikeMe' in self.jsonSender.get('/reqMgr/group?user=me')[0])
 
-        self.jsonSender.delete('/reqMgr/team/Angels')
-        self.assertFalse('Angels' in self.jsonSender.get('/reqMgr/team')[0])
-        self.assertEqual(self.jsonSender.put('/reqMgr/team/Angels')[1], 200)
-        self.assertTrue('Angels' in self.jsonSender.get('/reqMgr/team')[0])
-        self.jsonSender.put('/reqMgr/team/Dodgers')
+        self.jsonSender.delete(urllib.quote('/reqMgr/team/Red Sox'))
+        self.assertFalse('Red Sox' in self.jsonSender.get('/reqMgr/team')[0])
+        self.assertEqual(self.jsonSender.put(urllib.quote('/reqMgr/team/Red Sox'))[1], 200)
+        self.assertTrue('Red Sox' in self.jsonSender.get('/reqMgr/team')[0])
 
         # some foreign key stuff to dealwith
         #self.assertFalse('CMSSW_X_Y_Z' in self.jsonSender.get('/reqMgr/version')[0])
@@ -86,12 +85,12 @@ class TestReqMgr(unittest.TestCase):
             request = self.jsonSender.get('/reqMgr/request/'+requestName)[0]
             self.assertEqual(request['RequestStatus'], 'assignment-approved')
 
-            self.assertTrue(self.jsonSender.put('/reqMgr/assignment/Angels/'+requestName)[1] == 200)
-            requestsAndSpecs = self.jsonSender.get('/reqMgr/assignment/Angels')[0]
+            self.assertTrue(self.jsonSender.put(urllib.quote('/reqMgr/assignment/Red Sox/'+requestName))[1] == 200)
+            requestsAndSpecs = self.jsonSender.get(urllib.quote('/reqMgr/assignment/Red Sox'))[0]
             self.assertTrue(requestName in requestsAndSpecs.keys())
             workloadHelper = WMWorkloadCache.loadFromURL(requestsAndSpecs[requestName])
             self.assertEqual(workloadHelper.getOwner()['Requestor'], "me")
-            self.assertTrue(self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0] == ['Angels'])
+            self.assertTrue(self.jsonSender.get('/reqMgr/assignment?request='+requestName)[0] == ['Red Sox'])
 
             agentUrl = 'http://cmssrv96.fnal.gov'
             self.jsonSender.put('/reqMgr/workQueue/%s?url=%s'% (requestName, urllib.quote(agentUrl)) )

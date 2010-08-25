@@ -6,18 +6,20 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: StageOut.py,v 1.5 2009/12/09 21:52:53 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: StageOut.py,v 1.6 2009/12/21 16:05:20 mnorman Exp $"
+__version__ = "$Revision: 1.6 $"
 
 import inspect
 import os
 import os.path
 import logging
+import signal
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.FwkJobReport.Report             import Report
 import WMCore.Storage.StageOutMgr as StageOutMgr
+from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
 
 class StageOut(Executor):
     """
@@ -54,6 +56,9 @@ class StageOut(Executor):
         #Are we using emulators again?
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
+
+        #Set wait to 15 minutes
+        waitTime = overrides.get('waitTime', 900)
         
         # naw man, this is real
         # iterate over all the incoming files
@@ -98,6 +103,8 @@ class StageOut(Executor):
                                                            'PFN': getattr(file, 'PFN'), \
                                                            'SEName' : None, \
                                                            'StageOutCommand': None}
+                                        signal.signal(signal.SIGALRM, alarmHandler)
+                                        signal.alarm(waitTime)
                                         try:
                                             manager(fileForTransfer)
                                             #Afterwards, the file should have updated info.
@@ -105,10 +112,13 @@ class StageOut(Executor):
                                             file.StageOutCommand = fileForTransfer['StageOutCommand']
                                             file.SEName          = fileForTransfer['SEName']
                                             file.OutputPFN       = fileForTransfer['PFN']
-
+                                        except Alarm:
+                                            msg = "Indefinite hang during stageOut of logArchive"
+                                            logging.error(msg)
                                         except:
                                             print "Exception raised in stageout executor, how do we handle that?"
                                             raise
+                                        signal.alarm(0)
                                     else:
                                         msg = "Not a file"
 

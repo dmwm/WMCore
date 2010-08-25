@@ -38,6 +38,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
+        #self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.MsgService'])
         self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService'],
                                 useDefault = False)
         
@@ -63,7 +64,7 @@ class JobSubmitterTest(unittest.TestCase):
 
 
 
-    def createJobGroup(self, nSubs, config, instance = '', workloadSpec = None):
+    def createJobGroup(self, nSubs, config, instance = '', workloadSpec = None, nJobs = 100):
         """
         This function acts to create a number of test job group with jobs that we can submit
 
@@ -75,6 +76,10 @@ class JobSubmitterTest(unittest.TestCase):
 
         changeState = ChangeState(config)
 
+        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
+                                name = "wf001", task="basicWorkloadWithSandbox/Processing")
+        testWorkflow.create()
+
         for i in range(0, nSubs):
 
             nameStr = str(instance) + str(i)
@@ -84,15 +89,13 @@ class JobSubmitterTest(unittest.TestCase):
 
             myThread.transaction.begin()
 
-            testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                    name = "wf001"+nameStr, task="basicWorkloadWithSandbox/Processing")
-            testWorkflow.create()
+
         
             testFileset = Fileset(name = "TestFileset"+nameStr)
             testFileset.create()
         
 
-            for j in range(0,100):
+            for j in range(0,nJobs):
                 #pick a random site
                 site = self.sites[0]
                 testFile = File(lfn = "/singleLfn"+nameStr+str(j), size = 1024, events = 10)
@@ -136,7 +139,7 @@ class JobSubmitterTest(unittest.TestCase):
         self.testInit.generateWorkDir( config )
         return config
 
-    def testBasicSubmission(self):
+    def testA_BasicSubmission(self):
         """
         This is the simplest of tests
 
@@ -148,7 +151,7 @@ class JobSubmitterTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         config = self.getConfig()
-        config.JobSubmitter.submitDir = config.General.workDir
+        #config.JobSubmitter.submitDir = config.General.workDir
         if not os.path.isdir(config.JobSubmitter.submitDir):
             self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
         if not os.path.isfile('basicWorkloadWithSandbox.pcl'):
@@ -167,11 +170,10 @@ class JobSubmitterTest(unittest.TestCase):
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()
 
-
         result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
 
         for state in result:
-            self.assertEqual(state.values()[0], 15)
+            self.assertEqual(state.values()[0], 14)
 
 
         username = os.getenv('USER')
@@ -181,7 +183,113 @@ class JobSubmitterTest(unittest.TestCase):
 
         self.assertEqual(output.find(username) > 0, True, "I couldn't find your username in the local condor_q.  Check it manually to find your job")
 
+        print "You must check that you have 100 NEW jobs in the condor_q manually."
         print "WARNING!  REMOVE YOUR JOB FROM THE CONDOR_Q!"
+
+        os.popen3('rm %s/*.jdl' %(config.JobSubmitter.submitDir))
+
+        return
+
+
+    def testB_TestLongSubmission(self):
+        """
+        See if you can get Burt to kill you.
+
+        """
+
+        #return
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+        #config.JobSubmitter.submitDir = config.General.workDir
+        if not os.path.isdir(config.JobSubmitter.submitDir):
+            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
+        if not os.path.isfile('basicWorkloadWithSandbox.pcl'):
+            self.assertEqual(True, False, 'basicWorkloadWithSandbox.pcl must be present in working directory')
+
+        #Right now only works with 1
+        jobGroupList = self.createJobGroup(2, config, 'second', workloadSpec = 'basicWorkloadWithSandbox', nJobs = 1500)
+
+
+        # some general settings that would come from the general default 
+        # config file
+
+        testJobSubmitter = JobSubmitter(config)
+        testJobSubmitter.prepareToStart()
+
+        print "Killing"
+        myThread.workerThreadManager.terminateWorkers()
+
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
+
+        for state in result:
+            self.assertEqual(state.values()[0], 14)
+
+
+        username = os.getenv('USER')
+        pipe = Popen(['condor_q', username], stdout = PIPE, stderr = PIPE, shell = True)
+
+        output = pipe.communicate()[0]
+
+        self.assertEqual(output.find(username) > 0, True, "I couldn't find your username in the local condor_q.  Check it manually to find your job")
+
+        print "You must check that you have 3000 NEW jobs in the condor_q manually."
+        print "WARNING!  REMOVE YOUR JOB FROM THE CONDOR_Q!"
+
+        
+
+        return
+
+
+
+    def testC_ThisWillBreakEverything(self):
+        """
+        This test will fail.  I cannot make it work.
+
+        """
+
+        return
+
+        myThread = threading.currentThread()
+
+        config = self.getConfig()
+        #config.JobSubmitter.submitDir = config.General.workDir
+        if not os.path.isdir(config.JobSubmitter.submitDir):
+            self.assertEqual(True, False, "This code cannot run without a valid submit directory %s (from config)" %(config.JobSubmitter.submitDir))
+        if not os.path.isfile('basicWorkloadWithSandbox.pcl'):
+            self.assertEqual(True, False, 'basicWorkloadWithSandbox.pcl must be present in working directory')
+
+        #Right now only works with 1
+        jobGroupList = self.createJobGroup(2, config, 'second', workloadSpec = 'basicWorkloadWithSandbox', nJobs = 5000)
+
+
+        # some general settings that would come from the general default 
+        # config file
+
+        testJobSubmitter = JobSubmitter(config)
+        testJobSubmitter.prepareToStart()
+
+        print "Killing"
+        myThread.workerThreadManager.terminateWorkers()
+
+        result = myThread.dbi.processData("SELECT state FROM wmbs_job")[0].fetchall()
+
+        for state in result:
+            self.assertEqual(state.values()[0], 14)
+
+
+        username = os.getenv('USER')
+        pipe = Popen(['condor_q', username], stdout = PIPE, stderr = PIPE, shell = True)
+
+        output = pipe.communicate()[0]
+
+        self.assertEqual(output.find(username) > 0, True, "I couldn't find your username in the local condor_q.  Check it manually to find your job")
+
+        print "You must check that you have 1000 NEW jobs in the condor_q manually."
+        print "WARNING!  REMOVE YOUR JOB FROM THE CONDOR_Q!"
+
+        
 
         return
 

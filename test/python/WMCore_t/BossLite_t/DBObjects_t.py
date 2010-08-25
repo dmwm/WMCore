@@ -121,6 +121,9 @@ class DBObjectsTest(unittest.TestCase):
         
         job.data['standardOutput'] = 'MarcusAurelius'
         job.data['standardError']  = 'AntoniousPius'
+        job.data['dlsDestination'] = ['file:///www.google.com', 
+                                      'http://www.cern.ch',
+                                      'C:/windows/explorer.exe' ]
         job.save(db)
         
         self.assertTrue(job.exists(db))
@@ -169,20 +172,21 @@ class DBObjectsTest(unittest.TestCase):
         self.assertTrue(runJob.exists(db))
         
         runJob.data['state'] = 'Commodus'
+        runJob.data['lfn'] = ['001', '002', '003', '004', '005']
         runJob.save(db)
 
         # Test save() and load() by loading file by ID
         runJob2 = RunningJob(parameters = {'id': 1})
         runJob2.load(db)
         
-        for key in ['submission', 'jobId', 'taskId', 'state']:
+        for key in ['submission', 'jobId', 'taskId', 'state', 'lfn']:
             self.assertEqual(runJob2.data[key], runJob.data[key])
 
         # Test load by parameters
         runJob3 = RunningJob(parameters = {'jobId': job.data['jobId'], 'taskId': task.exists(db), 'submission': 1})
         runJob3.load(db)
         
-        for key in ['submission', 'jobId', 'taskId', 'state']:
+        for key in ['submission', 'jobId', 'taskId', 'state', 'lfn']:
             self.assertEqual(runJob3.data[key], runJob.data[key])
 
         # What happens if you load a non-existant job?
@@ -260,9 +264,9 @@ class DBObjectsTest(unittest.TestCase):
         task.jobs[0].runningJob['service'] = 'Unserved'
         
         task.update(db)
-
         job2 = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
         job2.load(db)
+        
         job2.getRunningInstance(db)
         self.assertEqual(job2.runningJob['service'], task.jobs[0].runningJob['service'])
         
@@ -346,14 +350,14 @@ class DBObjectsTest(unittest.TestCase):
         tmp = task.jobs[0].data['events']
         for jobId in range(0, nTestJobs):
             task.jobs[jobId].data['events'] = jobId+2000
-            
+        
         self.assertNotEqual(task.jobs[0].data['events'], tmp)
         
         task.update(db, deep=False)
 
         queryResult = db.executeSQL(query = "SELECT * FROM bl_job WHERE name = 'Doctore-0'")
         jobInfo = queryResult[0].fetchall()[0].values()
-    
+        
         self.assertEqual(jobInfo[5], tmp)
         
         task.update(db, deep=True)

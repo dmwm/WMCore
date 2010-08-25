@@ -82,7 +82,7 @@ class JobTest(unittest.TestCase):
         """
         dummyFileAddFile = File('/tmp/dummyFileAddFileTest',1234,1,2)
         self.dummyJob.addFile(dummyFileAddFile)
-        assert dummyFileAddFile in self.dummyJob.file_set.getFiles(), 'Couldn\'t add file to Job - addFile method error'
+        assert dummyFileAddFile in self.dummyJob.getFiles(), 'Couldn\'t add file to Job - addFile method error'
 
     def testaddOutput(self):
         """

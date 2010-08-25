@@ -3,7 +3,8 @@
 
 import unittest
 import os
-
+import tempfile
+import shutil
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.Agent.Configuration import saveConfigurationFile
@@ -16,19 +17,14 @@ class ConfigurationTest(unittest.TestCase):
     """
     def setUp(self):
         """set up"""
-        self.normalSave = "/tmp/WMCore_Agent_Configuration_t_normal.py"
-        self.docSave = "/tmp/WMCore_Agent_Configuration_t_documented.py"
-        self.commentSave = "/tmp/WMCore_Agent_Configuration_t_commented.py"
+        self.tempdir = tempfile.mkdtemp()
+        self.normalSave = os.path.join(self.tempdir, "WMCore_Agent_Configuration_t_normal.py")
+        self.docSave = os.path.join(self.tempdir, "WMCore_Agent_Configuration_t_documented.py")
+        self.commentSave = os.path.join(self.tempdir, "WMCore_Agent_Configuration_t_commented.py")
 
     def tearDown(self):
         """clean up"""
-        return
-        if os.path.exists(self.normalSave):
-            os.remove(self.normalSave)
-        if os.path.exists(self.docSave):
-            os.remove(self.docSave)
-        if os.path.exists(self.commentSave):
-            os.remove(self.commentSave)
+        shutil.rmtree( self.tempdir )
 
 
 
@@ -243,12 +239,6 @@ class ConfigurationTest(unittest.TestCase):
         #print docConfig.documentedString_()
         print docConfig.commentedString_()
 
-    def runTest(self):
-        self.testA()
-        self.testB()
-        self.testC()
-        self.testD()
-        self.testE()
 
 if __name__ == '__main__':
     #config = loadConfigurationFile("/home/evansde/work/cmssrv49/WMCORE/src/python/WMCore/Agent/testConfigs/test2.py")

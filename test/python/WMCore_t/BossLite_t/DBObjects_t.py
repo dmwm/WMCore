@@ -2,6 +2,7 @@
 
 import unittest
 import threading
+import string
 
 # Import key features
 from WMQuality.TestInit import TestInit
@@ -141,7 +142,6 @@ class DBObjectsTest(unittest.TestCase):
         self.assertFalse(job5.exists())
 
         return
-
     
 
     def testC_CreateRunningJobs(self):
@@ -183,18 +183,15 @@ class DBObjectsTest(unittest.TestCase):
         runJob3.remove()
         self.assertFalse(runJob3.exists())
         
+        return
 
 
     def testD_TestAssociations(self):
         """
         Test association between jobs, tasks, etc.
-        -> ok for consistency but this is not the right way to create task and job 
-           and connect them (NdFilippo)
 
         """
-
-        myThread = threading.currentThread()
-
+        
         task = Task()
         task.create()
         job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists()})
@@ -218,7 +215,6 @@ class DBObjectsTest(unittest.TestCase):
         runJob.load()
         self.assertEqual(runJob.data['closed'], 'Y')
 
-
         # Get jobs from task
         self.assertEqual(task.jobs, [])
         task.loadJobs()
@@ -236,9 +232,9 @@ class DBObjectsTest(unittest.TestCase):
         job2.load()
         job2.getRunningInstance()
         self.assertEqual(job2.runningJob['service'], task.jobs[0].runningJob['service'])
-
-
+        
         return
+    
 
     def testE_CreateTaskJobsCascade(self):
         """
@@ -251,7 +247,8 @@ class DBObjectsTest(unittest.TestCase):
         parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
         task = Task(parameters = parameters)
         
-        taskId = task.create()
+        task.create()
+        taskId = task.exists()
         
         task.data['startDirectory']  = 'Ilithyia'
         task.data['outputDirectory'] = 'Lucretia'
@@ -276,9 +273,9 @@ class DBObjectsTest(unittest.TestCase):
         for jobId in range(0, nTestJobs):
             for key in ['name', 'events'] :
                 self.assertEqual(task.jobs[jobId].data[key], task2.jobs[jobId].data[key])
-        
           
         return
+    
 
     def testF_DeepUpdate(self):
         """
@@ -292,7 +289,8 @@ class DBObjectsTest(unittest.TestCase):
         parameters = {'serverName': 'Spartacus', 'name': 'Ludus'}
         task = Task(parameters = parameters)
         
-        taskId = task.create()
+        task.create()
+        taskId = task.exists()
         
         task.data['startDirectory']  = 'Ilithyia'
         task.data['outputDirectory'] = 'Lucretia'
@@ -326,23 +324,17 @@ class DBObjectsTest(unittest.TestCase):
         jobInfo = myThread.dbi.processData("SELECT * FROM bl_job WHERE name = 'Doctore-0'")[0].fetchall()[0].values()
         self.assertNotEqual(jobInfo[5], tmp)
         
-        
         return
     
     
     def testG_JobRunningJob(self):
         """
-        Test load/save RunningJob correctly (draft)
+        Test load/save RunningJob correctly
 
         """ 
         
-        myThread = threading.currentThread()
-        
         parameters = {'name': 'Bishop'}
         task = Task(parameters)
-        
-        # without this nothing works! 
-        task.create()
         
         parameters = {'name': 'Walter', 'events' : 42 }
         job = Job( parameters )
@@ -354,11 +346,18 @@ class DBObjectsTest(unittest.TestCase):
         job.newRunningInstance(  )
         task.addJob(job)
         
+        self.assertEqual(task.exists(), False)
+        self.assertEqual(task.existsInDataBase, False)
+        
         task.save()
+        
+        self.assertEqual(task.exists(), 1)
+        self.assertEqual(task.existsInDataBase, True)
         
         task2 = Task(parameters = {'id': 1})  
         task2.load()
         
+        self.assertEqual(task2.existsInDataBase, True)
         self.assertEqual(task.data['name'], task2.data['name'])
         
         loadedJob = task2.getJob(2)
@@ -391,6 +390,31 @@ class DBObjectsTest(unittest.TestCase):
         
         
         return
+    
 
+    def testH_ExceptionHandling(self):
+        """
+        Test Exception Handling for Task, ...
+
+        """ 
+        
+        # invalid Task load, erroneous ID -> exception raised
+        task = Task(parameters= {'id': 666})
+        try:
+            task.load()
+        except Exception, ex:
+            msg = str(ex)
+            self.assertTrue( (string.find(msg, "task instances corresponds")) != -1 )
+        
+        # triggering Task removal before save -> exception raised
+        task2 = Task(parameters= {'id': 5})
+        try:
+            task2.remove()
+        except Exception, ex:
+            msg = str(ex)
+            self.assertTrue( (string.find(msg, "since it is not in the database")) != -1 )
+        
+        return
+    
 if __name__ == "__main__":
     unittest.main()

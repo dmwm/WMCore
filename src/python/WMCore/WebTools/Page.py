@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: Page.py,v 1.19 2009/03/05 15:04:20 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Page.py,v 1.20 2009/03/24 09:03:08 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import urllib
 import cherrypy
@@ -15,8 +15,9 @@ import datetime, time
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.DBFactory import DBFactory
-
-class Page(object):
+from WMCore.DataStructs.WMObject import WMObject
+ 
+class Page(WMObject):
     """
     __Page__
     

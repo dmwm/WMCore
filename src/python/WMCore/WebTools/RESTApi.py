@@ -19,8 +19,8 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.31 2009/12/23 22:30:54 metson Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: RESTApi.py,v 1.32 2010/01/06 15:48:24 valya Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.WebTools.Page import Page, exposejson, exposexml, make_rfc_timestamp
@@ -145,5 +145,8 @@ class RESTApi(WebAPI):
         data = self.formatter.format(data, datatype, expires)
         response.headers['ETag'] = data.__str__().__hash__()
         response.headers['Content-Type'] = datatype
-        response.headers['Content-Length'] = len(data)
+        if  data:
+            response.headers['Content-Length'] = len(data)
+        else:
+            response.headers['Content-Length'] = 0
         return data

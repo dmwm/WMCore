@@ -3,6 +3,7 @@
 import unittest
 import os
 import logging
+import socket
 from WMCore.Services.Service import Service
 
 class ServiceTest(unittest.TestCase):
@@ -51,11 +52,23 @@ class ServiceTest(unittest.TestCase):
                 'cacheduration': 100}
         service = Service(dict)
         assert service['cacheduration'] == dict['cacheduration']
+        
+    def testNoCacheDuration(self):
         dict = {'logger': logging.getLogger('ServiceTest'), 
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cacheduration': None}
         service = Service(dict)
         assert service['cacheduration'] == dict['cacheduration']
+        
+    def testSocketTimeout(self):
+        dict = {'logger': logging.getLogger('ServiceTest'), 
+                'endpoint':'http://cmssw.cvs.cern.ch',
+                'cacheduration': None,
+                'timeout': 10}
+        service = Service(dict)
+        deftimeout = socket.getdefaulttimeout()
+        service.getData('/tmp/socketresettest', '/cgi-bin/cmssw.cgi')
+        assert deftimeout == socket.getdefaulttimeout()
 
 if __name__ == '__main__':
     unittest.main()

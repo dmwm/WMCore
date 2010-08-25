@@ -20,8 +20,7 @@ class OidDefaultHandler:
 
     @expose
     def logout(self):
-        if cherrypy.session.has_key(self.session_name):
-            del cherrypy.session[self.session_name]
+        cherrypy.lib.sessions.expire() # Does a logout by expiring the session
         return "Disconnected"
 
     @expose

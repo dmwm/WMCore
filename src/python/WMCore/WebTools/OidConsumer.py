@@ -96,7 +96,7 @@ class OidConsumer(cherrypy.Tool):
         # Do not verify auth URLs like the page that requests the user login
         if cherrypy.request.path_info.startswith(self.base_path):
             return
-        
+
         # We could force the url of the server here somehow, but it needs to be
         # unset if the user isn't logged in...
         openid_url = cherrypy.request.params.get('openid_url',None)
@@ -113,12 +113,14 @@ class OidConsumer(cherrypy.Tool):
             session = self.get_session()
             session['info'] = msg
             raise cherrypy.HTTPRedirect(self.error_path)
-            
+
         # If the user requested to login again without logging out first,
         # force a logout
         if self.is_relogin(openid_url):
+            # *** Should call cherrypy.lib.sessions.expire() and reprocess
+            # the request instead of just deleting the session dict ***
             del cherrypy.session[self.session_name] # logout before continuing
-        
+
         # Do not start the verification process if it is was already started
         if self.is_processing():
             return
@@ -126,7 +128,6 @@ class OidConsumer(cherrypy.Tool):
         # If the user didn't inform his ID yet, redirect him to the login page
         if not openid_url:
             raise cherrypy.HTTPRedirect('%s?url=%s' % (self.login_path, current_url))
-
         #del cherrypy.request.params['openid_url']
 
         # Here it is where we start playing with OpenId
@@ -194,8 +195,7 @@ class OidConsumer(cherrypy.Tool):
 
         # Ask the oid library to verify the response received from the oid serv.
         current_url=cherrypy.session[self.session_name].get('return_to',None)
-        test_url=cherrypy.url(cherrypy.request.path_info)
-        info = oidconsumer.complete(cherrypy.request.params,test_url)
+        info = oidconsumer.complete(cherrypy.request.params,current_url)
 
         # Now verifies what it does mean
         if info.status == consumer.FAILURE:
@@ -221,16 +221,9 @@ class OidConsumer(cherrypy.Tool):
 
             # Gets additional information that came in the server response.
             # The authorization information is supposed to come in here.
-            sreg_data = sreg.SRegResponse.fromSuccessResponse(info)            
-            if sreg_data:
-                for i in ['role', 'group', 'site', 'fullname']:
-                    cherrypy.session[self.session_name][i] = \
-                                      sreg_data.get(i,None)
-            else:
-                cherrypy.session[self.session_name]['role']  = None
-                cherrypy.session[self.session_name]['group'] = None
-                cherrypy.session[self.session_name]['site']  = None
-                cherrypy.session[self.session_name]['fullname']  = None
+            sreg_data = sreg.SRegResponse.fromSuccessResponse(info) or {}
+            for i in ['role', 'group', 'site', 'fullname']:
+                cherrypy.session[self.session_name][i] = sreg_data.get(i,None)
                 
             # Set the new session state to authenticated
             cherrypy.session[self.session_name]['status'] = AUTHENTICATED

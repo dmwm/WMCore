@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.67 2010/02/09 18:15:33 swakef Exp $"
-__version__ = "$Revision: 1.67 $"
+__revision__ = "$Id: WorkQueue.py,v 1.68 2010/02/09 18:28:30 swakef Exp $"
+__version__ = "$Revision: 1.68 $"
 
 
 import uuid
@@ -84,6 +84,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('ParentQueue', None) # Get more work from here
         self.params.setdefault('QueueDepth', 2) # when less than this locally
         self.params.setdefault('ItemWeight', 0.01) # Queuing time weighted avg
+        self.params.setdefault('LocationRefreshInterval', 300)
         self.params.setdefault('FullLocationRefreshInterval', 3600)
         self.params.setdefault('TrackLocationOrSubscription', 'subscription')
         self.params.setdefault('ReleaseIncompleteBlocks', False)

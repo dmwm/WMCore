@@ -8,7 +8,7 @@ Implementation of StageOutImpl interface for Hadoop
 import os
 import logging
 
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
@@ -51,4 +51,4 @@ class HadoopImpl(StageOutImplV2):
 
     
 
-registerStageOutImplVersionTwo("hadoop", HadoopImpl)
+

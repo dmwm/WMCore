@@ -9,7 +9,7 @@ import os
 import logging
 from subprocess import Popen, PIPE
 
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommand
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
@@ -134,4 +134,4 @@ class RFCPImpl(StageOutImplV2):
         return os.path.dirname( path )
 
 
-registerStageOutImplVersionTwo("rfcp", RFCPImpl)
+

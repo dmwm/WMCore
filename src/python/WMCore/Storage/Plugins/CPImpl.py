@@ -8,7 +8,7 @@ Implementation of StageOutImpl interface for plain cp
 import os
 import shutil
 import os.path
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutFailure
 
@@ -46,4 +46,4 @@ class CPImpl(StageOutImplV2):
         os.unlink(pfn)
 
 
-registerStageOutImplVersionTwo("cp", CPImpl)
+

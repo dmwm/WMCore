@@ -12,7 +12,7 @@ Doesnt support deletion yet: This needs to be added
 """
 import os
 import logging
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 
 
@@ -69,4 +69,4 @@ class DCCPGenericImpl(StageOutImplV2):
 
     
 
-registerStageOutImplVersionTwo("dccp-generic", DCCPGenericImpl)
+

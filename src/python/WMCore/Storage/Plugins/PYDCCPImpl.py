@@ -8,7 +8,7 @@ available
 """
 import os
 import logging
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError
 
@@ -67,4 +67,4 @@ class PYDCCPImpl(StageOutImplV2):
 
 
 
-registerStageOutImplVersionTwo("pydcap", PYDCCPImpl)
+

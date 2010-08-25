@@ -10,7 +10,7 @@ import os
 import os.path
 import shutil
 
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutFailure
 
@@ -36,4 +36,4 @@ class TestFailImpl(StageOutImplV2):
 
 
 
-registerStageOutImplVersionTwo("test-fail", TestFailImpl)
+

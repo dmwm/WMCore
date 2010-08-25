@@ -9,7 +9,7 @@ import os, re
 import logging, tempfile
 import subprocess
 from subprocess import Popen, PIPE
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 
@@ -179,4 +179,4 @@ class SRMV2Impl(StageOutImplV2):
     def runCommandWarnOnError(self,command):
         return SRMV2Impl.runCommandWarnOnError(self, command)
 
-registerStageOutImplVersionTwo("srmv2", SRMV2Impl)
+

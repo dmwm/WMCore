@@ -6,7 +6,7 @@ Implementation of StageOutImpl interface for RFIO in Castor-2
 
 """
 import os 
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
@@ -105,4 +105,4 @@ class RFCP2Impl(StageOutImplV2):
         runCommand(["stageclr", "-M", pfn])
         runCommand(["nsrm", pfn])
 
-registerStageOutImplVersionTwo("rfcp-2", RFCP2Impl)
+

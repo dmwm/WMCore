@@ -7,7 +7,7 @@ Implementation of StageOutImpl interface for RFIO in Castor-2
 """
 import os 
 import logging
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.WMBase import getWMBASE
 from subprocess import Popen, PIPE
@@ -64,4 +64,4 @@ class XRDCPImpl(StageOutImplV2):
         self.runCommandWarnOnNonZero(['nsrm',pfnToRemove])
 
 
-registerStageOutImplVersionTwo("xrdcp", XRDCPImpl)
+

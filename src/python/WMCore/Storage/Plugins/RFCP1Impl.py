@@ -8,7 +8,7 @@ Implementation of StageOutImpl interface for RFIO in Castor-1
 import os
 import logging 
 from subprocess import Popen, PIPE
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
@@ -104,4 +104,4 @@ class RFCP1Impl(StageOutImplV2):
         runCommand(["nsrm", pfn])
 
 
-registerStageOutImplVersionTwo("rfcp-1", RFCP1Impl)
+

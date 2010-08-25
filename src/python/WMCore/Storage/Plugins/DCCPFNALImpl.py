@@ -11,7 +11,7 @@ import logging
 import subprocess
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo, retrieveStageOutImpl
+, retrieveStageOutImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
@@ -200,5 +200,5 @@ class DCCPFNALImpl(StageOutImplV2):
         return pfn
 
 
-registerStageOutImplVersionTwo("dccp-fnal", DCCPFNALImpl)
+
 

@@ -11,7 +11,7 @@ import re
 import logging
 from subprocess import Popen, PIPE
 
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 from WMCore.Storage.Execute import execute
@@ -214,4 +214,4 @@ class RFCPCERNImpl(StageOutImplV2):
         """
         self.runCommandWarnOnNonZero(['nschmod', mode, directory])
 
-registerStageOutImplVersionTwo("rfcp-CERN", RFCPCERNImpl)
+

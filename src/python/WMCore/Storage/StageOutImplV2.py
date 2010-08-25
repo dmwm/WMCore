@@ -33,7 +33,7 @@ class StageOutImplV2:
                 the toPfn is the target PFN, mapped from the LFN using the TFC or overrrides
             if stageOut is false:
                 The toPfn is the LOCAL FILE NAME on the node, without file://
-                the fromPfn is the target PFN, mapped from the LFN using the TFC or overrrides
+                the fromPfn is the source PFN, mapped from the LFN using the TFC or overrrides
             
             this behavior is because most transfer commands will switch their direction
             simply by swapping the order of the arguments. the stageOut flag is provided

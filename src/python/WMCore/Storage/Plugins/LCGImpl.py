@@ -6,7 +6,7 @@ Implementation of StageOutImplV2 interface for lcg-cp
 
 """
 import os, re, logging, subprocess
-from WMCore.Storage.Registry import registerStageOutImplVersionTwo
+
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -79,4 +79,4 @@ class LCGImpl(StageOutImplV2):
    
 
 
-registerStageOutImplVersionTwo("srmv2-lcg", LCGImpl)
+

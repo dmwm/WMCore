@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.14 2010/05/03 20:37:58 spigafi Exp $"
-__revision__ = "$Revision: 1.14 $"
+__version__ = "$Id: Job.py,v 1.15 2010/05/09 15:05:07 spigafi Exp $"
+__revision__ = "$Revision: 1.15 $"
 
 
 # imports
@@ -61,12 +61,12 @@ class Job(DbObject):
                  'executable' : None,
                  'events' : 0,
                  'arguments' : "",
-                 'standardInput' : "None",
-                 'standardOutput' : "None",
+                 'standardInput' : "",
+                 'standardOutput' : "",
                  'standardError' : "",
-                 'inputFiles' : "",
-                 'outputFiles' : "",
-                 'dlsDestination' : "",
+                 'inputFiles' : [],
+                 'outputFiles' : [],
+                 'dlsDestination' : [],
                  'submissionNumber' : 0,
                  'closed' : None
               }
@@ -111,9 +111,9 @@ class Job(DbObject):
         #if not self.existsInDataBase:
         db.objCreate(self)
         
-        # update ID & check... necessary call!
-        if self.exists(db) : 
-            self.existsInDataBase = True
+        # "if self.exists(db)" is not necessary because to save & create 
+        # a valid Job jobID and taskID must be valid! 
+        self.existsInDataBase = True
 
     ####################################################################
 
@@ -226,6 +226,7 @@ class Job(DbObject):
         close the running instance.
         it should be only one but ignore if there are more than one...
         """
+        
         # do not do anything if the job is not completely defined
         if not self.valid(['jobId', 'taskId']):
             return
@@ -330,7 +331,7 @@ class Job(DbObject):
         """
         set currently running job
         """
-
+        
         # check if the running instance is plain
         if not runningJob.valid(['taskId']) :
             runningJob['taskId'] = self.data['taskId']
@@ -338,6 +339,7 @@ class Job(DbObject):
             runningJob['jobId'] = self.data['jobId']
         if not runningJob.valid(['submission']) :
             runningJob['submission'] = self.data['submissionNumber']
+        
         
         # check consistency
         if runningJob['taskId'] != self.data['taskId'] or \
@@ -348,7 +350,6 @@ class Job(DbObject):
             str(runningJob['taskId']), str(runningJob['jobId']),
             str(runningJob['submission']), str(self.data['taskId']), \
             str(self.data['jobId']), str(self.data['submissionNumber']) ) )
-        
         
         # store instance
         self.runningJob = runningJob

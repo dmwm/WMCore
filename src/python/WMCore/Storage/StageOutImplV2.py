@@ -18,6 +18,7 @@ class StageOutImplV2:
     """
 
     def __init__(self):
+        self.numRetries = 5
         pass
 
     def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
@@ -49,7 +50,7 @@ class StageOutImplV2:
             error and skip retrying with this plugin
         """
         raise NotImplementedError
-    
+
     def prependFileProtocol(self, pfn):
         """
         _createSourceName_
@@ -68,6 +69,14 @@ class StageOutImplV2:
             logging.error("Error in file transfer:")
             logging.error(output)
             raise StageOutError, "Transfer failure"
+        return (exitCode, output)
+    
+    def runCommandWarnOnNonZero(self, command):
+        (exitCode, output) = runCommand(command)
+        if not exitCode:
+            logging.error("Error in file transfer..ignoring:")
+            logging.error(output)
+        return (exitCode, output)
     
     def generateCommandFromPreAndPostParts(self, pre,post,options):
         """

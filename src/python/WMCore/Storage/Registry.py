@@ -12,7 +12,6 @@ extra runtime dependencies.
 
 from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
-
 from WMCore.Storage.StageOutError import StageOutError
 
 class RegistryError(StageOutError):
@@ -108,6 +107,5 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
         return classRef(stagein)
     else:
         return classRef()   
-   
 
-        
+

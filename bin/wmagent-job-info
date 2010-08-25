@@ -58,6 +58,10 @@ def getJobInfo():
     fwjrDocsResult = changeStateDB.loadView("JobDump", "fwjrsByJobID", options)        
     jobDocResult = changeStateDB.loadView("JobDump", "jobsByJobID", options)
 
+    if len(jobDocResult["rows"]) != 1:
+        print "Unknown job: %s" % jobID
+        sys.exit(1)
+
     global jobDoc
     jobDoc = jobDocResult["rows"][0]["doc"]
 
@@ -71,6 +75,9 @@ def printJobInfo():
     Print the job name, mask and primary/secondary input files.
     """
     print "\nName: %s" % jobDoc["name"]
+    print "Owner: %s" % jobDoc["owner"]
+    print "Workflow: %s" % jobDoc["workflow"]
+    print "Task: %s" % jobDoc["task"]
 
     print "\nMask:"
     print "  First Event: %s" % jobDoc["mask"]["firstevent"]

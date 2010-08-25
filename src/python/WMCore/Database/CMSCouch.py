@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.9 2009/03/16 12:57:39 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: CMSCouch.py,v 1.10 2009/03/16 13:09:24 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 try:
     # Python 2.6
@@ -104,10 +104,9 @@ class Requests:
 
 class JSONRequests(Requests): 
     """
-    Implementation of Requests that encodes data to JSON, and talks to the 
-    CouchDB port (change that?).
+    Implementation of Requests that encodes data to JSON.
     """
-    def __init__(self, url = 'localhost:5984'):
+    def __init__(self, url = 'localhost:8080'):
         Requests.__init__(self, url)
         self.accept_type = "application/json"
         
@@ -122,8 +121,28 @@ class JSONRequests(Requests):
         decode the data to python from json
         """ 
         return json.loads(data)
-        
-class Database(JSONRequests):
+
+class CouchDBRequests(JSONRequests):
+    """
+    CouchDB has two non-standard HTTP calls, implement them here for 
+    completeness, and talks to the CouchDB port
+    """
+    def __init__(self, url = 'localhost:5984'):
+        JSONRequests.__init__(self, url)
+        self.accept_type = "application/json"
+    def move(self, uri=None, data=None):
+        """
+        MOVE some data
+        """
+        return self.makeRequest(uri, data, 'MOVE')
+
+    def copy(self, uri=None, data=None):
+        """
+        COPY some data
+        """
+        return self.makeRequest(uri, data, 'COPY')
+     
+class Database(CouchDBRequests):
     """
     Object representing a connection to a CouchDB Database instance.
     TODO: implement COPY and MOVE calls.
@@ -216,7 +235,7 @@ class Database(JSONRequests):
     def info(self):
         return self.get('/%s/' % self.name)
     
-class CouchServer(JSONRequests):
+class CouchServer(CouchDBRequests):
     """
     An object representing the CouchDB server, use it to list, create, delete 
     and connect to databases. 

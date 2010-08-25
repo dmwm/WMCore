@@ -7,8 +7,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.7 2009/03/16 12:17:36 metson Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: CMSCouch.py,v 1.8 2009/03/16 12:20:02 metson Exp $"
+__version__ = "$Revision: 1.8 $"
 
 try:
     # Python 2.6
@@ -211,9 +211,9 @@ class Database(JSONRequests):
         more info: http://wiki.apache.org/couchdb/HTTP_view_API
         """
         
-        options = urllib.urlencode(options)
+        #options = urllib.urlencode(options)
         
-        return self.get('/%s/_view/%s/%s?%s' % (self.name, design, view, options))
+        return self.get('/%s/_view/%s/%s' % (self.name, design, view), options)
         
     def allDocs(self):
         return self.get('/%s/_all_docs' % self.name)

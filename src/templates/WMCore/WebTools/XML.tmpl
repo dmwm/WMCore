@@ -3,13 +3,11 @@
 #except
 #set path = '/'
 #end try
-
 #try
 #set test = $data
 #except
 #set data = {}
 #end try
-
 <?xml version='1.0' standalone='yes'?>
 <$config.application>
 	<head>
@@ -30,6 +28,10 @@
 #end for
 
 #else
-	<body>$data</body>
+	<body>
+<pre>
+$data
+</pre>
+</body>
 #end if
 </$config.application>

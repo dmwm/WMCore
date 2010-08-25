@@ -3,8 +3,8 @@
 A page that knows how to format DB queries
 """
 
-__revision__ = "$Id: DatabasePage.py,v 1.3 2010/01/28 16:44:35 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DatabasePage.py,v 1.4 2010/02/10 20:01:44 afaq Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 from WMCore.WebTools.Page import TemplatedPage
@@ -45,7 +45,7 @@ class DatabasePage(TemplatedPage, DBFormatter):
         if self.config.database.find('mysql') != -1:
             if hasattr(self.config, 'dbsocket'):
                 option['unix_socket'] = self.config.dbsocket
-            elif os.environ['DBSOCK']:
+	    elif os.environ.get('DBSOCK', '') != '':
                 option['unix_socket'] = os.environ['DBSOCK']
                 
         conn = DBFactory(self, self.config.database, option).connect()

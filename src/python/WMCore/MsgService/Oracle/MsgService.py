@@ -38,9 +38,9 @@ messages after it is handled.
 # -mnorman
 
 __revision__ = \
-    "$Id: MsgService.py,v 1.1 2009/05/15 16:04:38 mnorman Exp $"
+    "$Id: MsgService.py,v 1.2 2009/07/06 19:05:39 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.1 $"
+    "$Revision: 1.2 $"
 __author__ = \
     "mnorman@fnal.gov"
 
@@ -190,7 +190,7 @@ class MsgService(MySQLMsgService):
         logging.debug("subscribeTo requested")
         # check if message type is in database
         result = self.query.checkMessageType(args = {'name' : name})
-        print result
+
         if result != {}:
             # message type was registered before, get id
             typeid = result['TYPEID']

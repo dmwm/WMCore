@@ -13,9 +13,9 @@ service.
 """
 
 __revision__ = \
-    "$Id: Queries.py,v 1.7 2009/02/27 22:18:02 fvlingen Exp $"
+    "$Id: Queries.py,v 1.8 2009/07/06 19:05:39 sfoulkes Exp $"
 __version__ = \
-    "$Revision: 1.7 $"
+    "$Revision: 1.8 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -45,7 +45,7 @@ class Queries(DBFormatter):
 
         sqlStr = """ 
 SELECT procid, host, pid FROM ms_process WHERE name = :name 
-""" 
+"""
         result = self.execute(sqlStr, args)
         return self.formatOneDict(result)
 
@@ -297,7 +297,7 @@ INSERT INTO %s(type,source,dest,payload,delay) VALUES(:type,:source,:dest,:paylo
                 self.execute(sqlStr, args['msgs'][start:end])
                 start += 100
                 end += 100 
-            return 
+            return
         self.execute(sqlStr, args['msgs'])
 
     def processMsg(self, args):

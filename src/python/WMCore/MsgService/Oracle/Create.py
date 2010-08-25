@@ -8,8 +8,8 @@ Class for creating Oracle specific schema for persistent messages.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.3 2009/06/16 14:45:43 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: Create.py,v 1.4 2009/07/06 19:05:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
@@ -115,7 +115,7 @@ CREATE TABLE ms_history (
     type      NUMBER(11)     default '0'        NOT NULL ENABLE,
     source    NUMBER(11)     default '0'        NOT NULL ENABLE,
     dest      NUMBER(11)     default '0'        NOT NULL ENABLE,
-    payload   long                              NOT NULL ENABLE,
+    payload   CLOB                              NOT NULL ENABLE,
     delay     varchar2(50)   default '00:00:00' NOT NULL ENABLE,
     time      timestamp      default CURRENT_TIMESTAMP    NOT NULL ENABLE,
 
@@ -162,7 +162,7 @@ CREATE TABLE ms_history_buffer (
     type       NUMBER(11)   default '0'   NOT NULL ENABLE,
     source     NUMBER(11)   default '0'   NOT NULL ENABLE,
     dest       NUMBER(11)   default '0'   NOT NULL ENABLE,
-    payload    LONG                       NOT NULL ENABLE,
+    payload    CLOB                       NOT NULL ENABLE,
     delay      varchar2(50) default '00:00:00'            NOT NULL ENABLE,
     time       timestamp    default CURRENT_TIMESTAMP     NOT NULL ENABLE,
 
@@ -208,7 +208,7 @@ CREATE TABLE ms_history_priority (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
 
@@ -255,7 +255,7 @@ CREATE TABLE ms_history_priority_buffer (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
 
@@ -300,7 +300,7 @@ CREATE TABLE ms_message (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
 
@@ -345,7 +345,7 @@ CREATE TABLE ms_message_buffer_in (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
 
@@ -390,9 +390,10 @@ CREATE TABLE ms_message_buffer_out (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
+   state     VARCHAR2(20) default 'wait',
 
    CONSTRAINT ms_message_buffer_out_pk     PRIMARY KEY (messageid),
    CONSTRAINT ms_message_buffer_out_type   FOREIGN KEY (type)   REFERENCES ms_type(typeid),
@@ -422,7 +423,7 @@ CREATE TRIGGER ms_message_buffer_out_timetrig BEFORE UPDATE ON ms_message_buffer
 REFERENCING NEW AS NEW
 FOR EACH ROW
      BEGIN
-          SET NEW.time = CURRENT_TIMESTAMP;
+          :NEW.time := CURRENT_TIMESTAMP;
      END;        """
 
 
@@ -435,7 +436,7 @@ CREATE TABLE ms_priority_message (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
 
@@ -483,7 +484,7 @@ CREATE TABLE ms_priority_message_buffer_in (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
 
@@ -531,12 +532,12 @@ CREATE TABLE ms_priority_message_buffer_out (
    type      NUMBER(11)   default '0'  NOT NULL ENABLE,
    source    NUMBER(11)   default '0'  NOT NULL ENABLE,
    dest      NUMBER(11)   default '0'  NOT NULL ENABLE,
-   payload   LONG                      NOT NULL ENABLE,
+   payload   CLOB                      NOT NULL ENABLE,
    time      timestamp    default CURRENT_TIMESTAMP   NOT NULL ENABLE,
    delay     varchar2(50) default '00:00:00'          NOT NULL ENABLE,
    state     varchar2(20) default 'wait',
 
-   CONSTRAINT ms_prio_msg_buff_out_state  CHECK(state IN ('queued', 'process')),
+   CONSTRAINT ms_prio_msg_buff_out_state  CHECK(state IN ('queued', 'processing', 'wait')),
    CONSTRAINT ms_prio_msg_buff_out_pk     PRIMARY KEY (messageid),
    CONSTRAINT ms_prio_msg_buff_out_type   FOREIGN KEY (type)   REFERENCES ms_type(typeid),
    CONSTRAINT ms_prio_msg_buff_out_dest   FOREIGN KEY (dest)   REFERENCES ms_process(procid),
@@ -565,7 +566,7 @@ CREATE TRIGGER ms_prio_msg_buff_out_timetrig BEFORE UPDATE ON ms_priority_messag
 REFERENCING NEW AS NEW
 FOR EACH ROW
      BEGIN
-          SET NEW.time = CURRENT_TIMESTAMP;
+          :NEW.time := CURRENT_TIMESTAMP;
      END;        """
 
 

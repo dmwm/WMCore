@@ -6,8 +6,8 @@ MySQL implementation of BossLite.Jobs.LoadByRunningJobAttr
 """
 
 __all__ = []
-__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.4 2010/05/20 11:57:20 spigafi Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: LoadByRunningJobAttr.py,v 1.5 2010/05/24 09:32:51 spigafi Exp $"
+__version__ = "$Revision: 1.5 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.BossLite.DbObjects.Job import JobDBFormatter
@@ -52,9 +52,11 @@ class LoadByRunningJobAttr(DBFormatter):
         
         for x in binds:
             if type(binds[x]) == str :
-                whereStatement.append( "bl_runningjob.%s = '%s'" % (RunningJob.fields[x], binds[x]) )
+                whereStatement.append( "bl_runningjob.%s = '%s'" % \
+                                       (RunningJob.fields[x], binds[x]) )
             else:
-                whereStatement.append( "bl_runningjob.%s = %s" % (RunningJob.fields[x], binds[x]) )
+                whereStatement.append( "bl_runningjob.%s = %s" % \
+                                       (RunningJob.fields[x], binds[x]) )
                 
         whereClause = ' AND '.join(whereStatement)
 
@@ -62,7 +64,8 @@ class LoadByRunningJobAttr(DBFormatter):
         
         if limit :
             if type(limit) == list and len(limit) == 2 :
-                sqlFilled += """ AND bl_job.id > %s LIMIT %s """ (limit[0], limit[1]) 
+                sqlFilled += """ AND bl_job.id > %s LIMIT %s """ % \
+                                                        (limit[0], limit[1]) 
                 # sqlFilled += """ LIMIT %s, %s """ % (limit[0], limit[1])
             # elif type(limit) == list and len(limit) == 1 :
             #      sqlFilled += """ LIMIT %s """ % (limit[0])

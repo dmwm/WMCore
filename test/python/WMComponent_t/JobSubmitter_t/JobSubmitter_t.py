@@ -452,7 +452,7 @@ class JobSubmitterTest(unittest.TestCase):
             
 
 
-
+    @attr('integration')
     def testA_BasicTest(self):
         """
         Use the CondorGlobusPlugin to create a very simple test
@@ -614,7 +614,7 @@ class JobSubmitterTest(unittest.TestCase):
         return
 
 
-
+    @attr('integration')
     def testC_TestPlugin(self):
         """
         Run the plugin directly.
@@ -802,7 +802,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
-
+    @attr('integration')
     def testE_WhiteListBlackList(self):
         """
         _WhiteListBlackList_
@@ -1017,7 +1017,7 @@ class JobSubmitterTest(unittest.TestCase):
         pipe.communicate()
 
 
-
+    @attr('integration')
     def testF_OverloadTest(self):
         """
         _OverloadTest_
@@ -1087,7 +1087,7 @@ class JobSubmitterTest(unittest.TestCase):
         return
 
 
-
+    @attr('integration')
     def testG_IndexErrorTest(self):
         """
         _IndexErrorTest_

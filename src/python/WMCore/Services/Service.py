@@ -19,11 +19,14 @@ The Service satisfies two caching cases:
 Data maybe passed to the remote service either via adding the query string to 
 the URL (for GET's) or by passing a dictionary to either the service constructor
 (case 1.) or by passing the data as a dictionary to the refreshCache, 
-forceCache, clearCache calls. 
+forceCache, clearCache calls. By default the cache lasts 30 minutes.
 
-The service has a default timeout of 30 seconds. Over ride this by passing in a 
-timeout via the configuration dict, set to None if you want to turn off the 
-timeout.
+Calling refreshCache/forceRefresh will return an open file object, the cache
+file. Once done with it you should close the object.
+
+The service has a default timeout to recieve a response from the remote service 
+of 30 seconds. Over ride this by passing in a timeout via the configuration 
+dict, set to None if you want to turn off the timeout.
 
 If you just want to retrieve the data without caching use the Requests class
 directly.
@@ -32,8 +35,8 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.19 2009/07/15 11:23:36 metson Exp $"
-__version__ = "$Revision: 1.19 $"
+__revision__ = "$Id: Service.py,v 1.20 2009/07/15 11:29:42 metson Exp $"
+__version__ = "$Revision: 1.20 $"
 
 import datetime
 import os
@@ -76,6 +79,9 @@ class Service(Requests):
                    self["cacheduration"]))
 
     def cacheFileName(self, cachefile, inputdata={}):
+        """
+        Calculate the cache filename for a given query.
+        """
         hash = 0
         for i in self['inputdata'].items():
             hash += i[0].__hash__() + i[1].__hash__()
@@ -85,6 +91,10 @@ class Service(Requests):
         return cachefile
     
     def refreshCache(self, cachefile, url, inputdata={}):
+        """
+        See if the cache has expired. If it has make a new request to the 
+        service for the input data. Return the cachefile as an open file object.  
+        """
         t = datetime.datetime.now() - datetime.timedelta(hours=self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, inputdata)
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
@@ -93,6 +103,10 @@ class Service(Requests):
         return open(cachefile, 'r')
 
     def forceRefresh(self, cachefile, url, inputdata={}):
+        """
+        Make a new request to the service for the input data, regardless of the 
+        cache statue. Return the cachefile as an open file object.  
+        """
         cachefile = self.cacheFileName(cachefile, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
@@ -100,6 +114,9 @@ class Service(Requests):
         return open(cachefile, 'r')
 
     def clearCache(self, cachefile, inputdata={}):
+        """
+        Delete the cache file.
+        """
         cachefile = self.cacheFileName(cachefile, inputdata)
         try:
             os.remove(cachefile)

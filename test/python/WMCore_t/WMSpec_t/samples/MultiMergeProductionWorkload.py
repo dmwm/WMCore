@@ -24,6 +24,8 @@ workload.setEndPolicy('SingleShot')
 # // set up the production task
 #//
 production = workload.newTask("Production")
+#WARNING: this is arbitrary task type (wmbs schema only supprot "Processing", "Merge", "Harvest") - maybe add "MCProduction"
+production.setTaskType("Merge")
 production.addProduction(totalevents = 1000)
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
@@ -66,6 +68,7 @@ prodCmsswHelper.addOutputModule("writeOutput3", primaryDataset = "Primary",
 # // set up the merge task for output dataset 1
 #//
 merge1 = production.addTask("MergeOutput1")
+merge1.setTaskType("Merge")
 merge1Cmssw = merge1.makeStep("cmsRun1")
 merge1Cmssw.setStepType("CMSSW")
 merge1StageOut = merge1Cmssw.addStep("stageOut1")
@@ -77,6 +80,7 @@ merge1.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)
 # // set up the merge task for output dataset 1
 #//
 merge2 = production.addTask("MergeOutput2")
+merge2.setTaskType("Merge")
 merge2Cmssw = merge2.makeStep("cmsRun1")
 merge2Cmssw.setStepType("CMSSW")
 merge2StageOut = merge2Cmssw.addStep("stageOut1")
@@ -88,6 +92,7 @@ merge2.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)
 # // set up the merge task for output dataset 3
 #//
 merge3 = production.addTask("MergeOutput3")
+merge3.setTaskType("Merge")
 merge3Cmssw = merge3.makeStep("cmsRun1")
 merge3Cmssw.setStepType("CMSSW")
 merge3StageOut = merge3Cmssw.addStep("stageOut1")

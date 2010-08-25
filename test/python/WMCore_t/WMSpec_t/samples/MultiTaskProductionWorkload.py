@@ -30,11 +30,13 @@ prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")
 prodStageOut.setStepType("StageOut")
 production.applyTemplates()
-
+production.setSplittingAlgorithm("EventBased", events_per_job = 100)
 #  //
 # // set up the merge task
 #//
 merge = production.addTask("Merge")
+merge.setTaskType("Merge")
+merge.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)
 mergeCmssw = merge.makeStep("cmsRun1")
 mergeCmssw.setStepType("CMSSW")
 mergeStageOut = mergeCmssw.addStep("stageOut1")
@@ -89,6 +91,7 @@ merge.setInputReference(prodCmssw, outputModule = "writeData")
 production = workload.newTask("Production2")
 production.addProduction(totalevents = 2000)
 production.setTaskType("Merge")
+production.setSplittingAlgorithm("EventBased", events_per_job = 100)
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")
@@ -99,6 +102,8 @@ production.applyTemplates()
 # // set up the merge task
 #//
 merge = production.addTask("Merge")
+merge.setTaskType("Merge")
+merge.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)
 mergeCmssw = merge.makeStep("cmsRun1")
 mergeCmssw.setStepType("CMSSW")
 mergeStageOut = mergeCmssw.addStep("stageOut1")

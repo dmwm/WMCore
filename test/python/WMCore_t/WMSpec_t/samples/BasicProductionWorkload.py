@@ -24,7 +24,9 @@ workload.setEndPolicy('SingleShot')
 #//
 production = workload.newTask("Production")
 production.addProduction(totalevents = 1000)
+#WARNING: this is arbitrary task type (wmbs schema only supprot "Processing", "Merge", "Harvest") - maybe add "MCProduction"
 production.setTaskType("Merge")
+production.setSplittingAlgorithm("EventBased", events_per_job = 100)
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")
@@ -35,6 +37,8 @@ production.applyTemplates()
 # // set up the merge task
 #//
 merge = production.addTask("Merge")
+merge.setTaskType("Merge")
+merge.setSplittingAlgorithm("MergeBySize", merge_size = 20000000)
 mergeCmssw = merge.makeStep("cmsRun1")
 mergeCmssw.setStepType("CMSSW")
 mergeStageOut = mergeCmssw.addStep("stageOut1")

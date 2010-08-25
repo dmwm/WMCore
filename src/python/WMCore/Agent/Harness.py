@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.22 2009/09/02 20:10:39 sfoulkes Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: Harness.py,v 1.23 2009/09/28 15:16:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.23 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -95,7 +95,7 @@ class Harness:
                     "ComponentLog")
             print('Log file is: '+compSect.logFile)
             logHandler = RotatingFileHandler(compSect.logFile,
-                "a", 1000000, 3)
+                "a", 1000000000, 3)
             logFormatter = \
                 logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
             logHandler.setFormatter(logFormatter)

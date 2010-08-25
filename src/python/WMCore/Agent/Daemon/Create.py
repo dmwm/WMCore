@@ -132,7 +132,7 @@ def test():
         This prints a count and timestamp once per second.
     '''
     logFile = os.path.join("/tmp/daemon.logging")
-    logHandler = RotatingFileHandler(logFile, "a", 1000000, 3)
+    logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
     logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     logHandler.setFormatter(logFormatter)
     logging.getLogger().addHandler(logHandler)

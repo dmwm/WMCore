@@ -328,6 +328,56 @@ class DBObjectsTest(unittest.TestCase):
         
         
         return
+    
+    
+    def testG_JobRunningJob(self):
+        """
+        Test load/save RunningJob correctly (draft)
+
+        """
+        
+        myThread = threading.currentThread()
+        
+        parameters = {'name': 'Bishop'}
+        task = Task(parameters)
+        
+        # without this nothing works!
+        task.create()
+        
+        parameters = {'name': 'Walter', 'events' : 42 }
+        job = Job( parameters )
+        job.newRunningInstance(  )
+        task.addJob(job)
+        task.save()
+        
+        #print task.jobs
+        #print task.jobLoaded
+        #print task.jobIndex
+        
+        task2 = Task(parameters = {'id': 1})  
+        task2.load()
+        
+        #print task2.jobs
+        #print task2.jobLoaded
+        #print task2.jobIndex
+        
+        self.assertEqual(task.data['name'], task2.data['name'])
+        
+        # 'loadedJob = task2.getJob(1)' doesn't work! 
+        loadedJob = task2.jobs[0]
+        
+        self.assertNotEqual(loadedJob.runningJob, None)
+        
+        loadedJob.runningJob['wrapperReturnCode'] = "60303"
+        
+        loadedJob.updateRunningInstance()
+        
+        loadedJob.closeRunningInstance()
+        
+        # print loadedJob.runningJob
+        
+        
+        return
 
 if __name__ == "__main__":
     unittest.main()

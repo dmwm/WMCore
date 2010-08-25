@@ -14,8 +14,8 @@ workflow + fileset = subscription
 subscription + application logic = jobs
 """
 
-__revision__ = "$Id: Subscription.py,v 1.54 2009/12/30 20:10:40 mnorman Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: Subscription.py,v 1.55 2010/01/14 21:03:36 mnorman Exp $"
+__version__ = "$Revision: 1.55 $"
 
 import logging
 
@@ -188,6 +188,7 @@ class Subscription(WMBSBase, WMSubscription):
         #Run through all files
         for f in fileList:
             fl = File(id = f['file'])
+            fl.loadChecksum()
             fl.update(fileInfoDict[f['file']])
             if 'locations' in f.keys():
                 fl.setLocation(f['locations'], immediateSave = False)
@@ -396,15 +397,25 @@ class Subscription(WMBSBase, WMSubscription):
 
         self.load()
 
+        print "Loaded self"
+
         jobGroups = self.getAllJobGroups()
+
+        print "Loaded jobGroups"
 
         existingTransaction = self.beginTransaction()
 
+        print "Have transaction"
+
         #First, jobs
         deleteAction = self.daofactory(classname = "Jobs.Delete")
+        jobDeleteList = []
         for job in self.getJobs():
-            deleteAction.execute(id = job["id"], conn = self.getDBConn(),
-                                 transaction = self.existingTransaction())
+            jobDeleteList.append(job['id'])
+        deleteAction.execute(id = jobDeleteList, conn = self.getDBConn(),
+                             transaction = self.existingTransaction())
+
+        print "Deleted Jobs"
 
         #Next jobGroups
         deleteAction = self.daofactory(classname = "JobGroup.Delete")
@@ -412,7 +423,11 @@ class Subscription(WMBSBase, WMSubscription):
             deleteAction.execute(id = jobGroupID, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
 
+        print "Deleted jobGroups"
+
         self.commitTransaction(existingTransaction)
+
+        print "Committed Transaction"
 
 
         #Next Fileset
@@ -421,6 +436,8 @@ class Subscription(WMBSBase, WMSubscription):
         action = self.daofactory(classname = "Fileset.DeleteCheck")
         action.execute(fileid = self["fileset"].id, subid = self["id"])
         self.commitTransaction(existingTransaction)
+
+        print "Deleted fileset"
 
         #If we got rid of the fileset
         #If we did not delete the fileset, all files are still in use
@@ -432,11 +449,15 @@ class Subscription(WMBSBase, WMSubscription):
                 action.execute(file = file['id'], fileset = filesetID)
         self.commitTransaction(existingTransaction)
 
+        print "Deleted files"
+
         #Next Workflow
         existingTransaction = self.beginTransaction()
         action = self.daofactory(classname = "Workflow.DeleteCheck")
         action.execute(workid = self["workflow"].id, subid = self["id"])
         self.commitTransaction(existingTransaction)
+
+        print "Deleted workflow"
 
         #And last
         self.delete()

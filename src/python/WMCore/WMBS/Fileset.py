@@ -14,8 +14,8 @@ complete block, a block in transfer, some user defined dataset etc.
 workflow + fileset = subscription
 """
 
-__revision__ = "$Id: Fileset.py,v 1.40 2009/04/27 13:43:41 sfoulkes Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Fileset.py,v 1.41 2009/04/28 22:32:27 sryu Exp $"
+__version__ = "$Revision: 1.41 $"
 
 from sets import Set
 
@@ -74,9 +74,18 @@ class Fileset(WMBSBase, WMFileset):
         """
         Does a fileset exist with this name in the database
         """
-        existsAction = self.daofactory(classname = "Fileset.Exists")
-        return existsAction.execute(self.name, conn = self.getReadDBConn(),
+        if self.id != -1:
+            action = self.daofactory(classname='Fileset.ExistsByID')
+            return action.execute(id = self.id, conn = self.getReadDBConn(),
+                                  transaction = self.existingTransaction())
+        else:
+            action = self.daofactory(classname='Fileset.Exists')
+            id = action.execute(self.name, conn = self.getReadDBConn(),
                                     transaction = self.existingTransaction())
+            if id != False:
+                self.id = id
+            return id
+        
         
     def create(self):
         """
@@ -175,7 +184,7 @@ class Fileset(WMBSBase, WMFileset):
         #Add Files to DB only if there are any files on newfiles            
         if len(ids) > 0:
             addAction = self.daofactory(classname='Files.AddToFilesetByIDs')
-            addAction.execute(file = ids, fileset = self.name,
+            addAction.execute(file = ids, fileset = self.id,
                               conn = self.getWriteDBConn(),
                               transaction = self.existingTransaction())
         self.commitIfNew()

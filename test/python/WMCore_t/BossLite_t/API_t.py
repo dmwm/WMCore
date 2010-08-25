@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: API_t.py,v 1.8 2010/05/17 19:12:56 spigafi Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: API_t.py,v 1.9 2010/05/17 20:52:53 spigafi Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import threading
@@ -65,10 +65,8 @@ class APITest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
-
-        Setup the database and logging connection.  Try to create all of the
-        WMBS tables.  Also, create some dummy locations.
         """
+        
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -79,7 +77,6 @@ class APITest(unittest.TestCase):
     def tearDown(self):
         """
         Tear down database
-
         """
 
         self.testInit.clearDatabase()
@@ -127,10 +124,16 @@ class APITest(unittest.TestCase):
         # this method doesn't work at the moment 
         #newTask= testAPI.declare(fname)
         #self.assertFalse(newTask.exists(db)
-                         
+        
+        # remove tmp XML file
+        os.unlink( fname )
+        
         return
 
     def testB_APITaskMethods(self):
+        """
+        put a description here
+        """
 
         testAPI = BossLiteAPI()
         db = BossLiteDBWM()
@@ -194,6 +197,9 @@ class APITest(unittest.TestCase):
 
 
     def testC_APIJobMethods(self):
+        """
+        put a description here
+        """
 
         testAPI = BossLiteAPI()
         db = BossLiteDBWM()
@@ -248,6 +254,9 @@ class APITest(unittest.TestCase):
     
 
     def testD_APIRunningJobMethods(self):
+        """
+        put a description here
+        """
 
         testAPI = BossLiteAPI()
         db = BossLiteDBWM()
@@ -322,34 +331,36 @@ class APITest(unittest.TestCase):
         
         return
     
-"""
-    def testE_APICombinedMethods(self):
 
+    def testE_APICombinedMethods(self):
+        """
+        This is only another test ...
+        """
 
         testAPI = BossLiteAPI()
         db = BossLiteDBWM()
 
         # First create a job
-        task = Task(db)
+        task = Task()
         task.create(db)
-
         job = Job(parameters = {'name': 'Hadrian', 'jobId': 101, 'taskId': task.exists(db)})
         job.create(db)
         
         self.assertEqual(job.runningJob, None)
-
+        
         testAPI.getNewRunningInstance(job = job, runningAttrs = {'status': 'Dead',
                                                                  'statusReason': 'WentToTheForum'} )
-
+        
         self.assertEqual(job.runningJob['jobId'], 101)
         self.assertEqual(job.runningJob['submission'], 1)
         self.assertEqual(job.runningJob['status'], 'Dead')
         self.assertEqual(job.runningJob['statusReason'], 'WentToTheForum')
-
+        
         job.runningJob.save(db)
         job.save(db)
-        task2 = Task(db)
-        task2 = testAPI.load(task = task, jobRange = "all")
+        task2 = Task()
+        
+        task2 = testAPI.loadTask(taskId = task.exists(db), jobRange = "all")
         
         for key in task.data.keys():
             self.assertEqual(task2.data[key], task.data[key])
@@ -360,7 +371,93 @@ class APITest(unittest.TestCase):
                 self.assertEqual(jobIter.runningJob.data[key], job.runningJob.data[key])
         
         return
-"""
 
+
+    def testF_APIbyRunningAttr(self):
+        """
+        This is only another test ...
+        """
+
+        testAPI = BossLiteAPI()
+        db = BossLiteDBWM()
+
+        # First create a job
+        task = Task()
+        task.save(db)
+        
+        tmp = task.exists(db)
+        
+        job = Job(parameters = {'name': 'Spartacus', 'taskId': tmp, 'jobId': 606})
+        job.save(db)
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'W'} )
+        self.assertNotEqual(job.runningJob, None) 
+        self.assertEqual(job.runningJob.data['jobId'], 606)  
+        # why I have to save the job?
+        job.save(db)
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'Fringe', 'taskId': tmp, 'jobId': 616 })
+        job.save(db)
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'SD'} )
+        self.assertNotEqual(job.runningJob, None) 
+        self.assertEqual(job.runningJob.data['jobId'], 616) 
+                # why I have to save the job?
+        job.save(db)
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'Stargate Universe', 'taskId': tmp, 'jobId': 626 })
+        job.save(db)
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'A'} )
+        self.assertNotEqual(job.runningJob, None) 
+        self.assertEqual(job.runningJob.data['jobId'], 626) 
+        # why I have to save the job?
+        job.save(db)
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'Caprica', 'taskId': tmp, 'jobId': 636 })
+        job.save(db)
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, runningAttrs = {'status' : 'K'} )
+        self.assertNotEqual(job.runningJob, None) 
+        self.assertEqual(job.runningJob.data['jobId'], 636) 
+        # why I have to save the job?
+        job.save(db)
+        task.addJob(job)
+        
+        job = Job(parameters = {'name': 'The Mentalist', 'taskId': tmp, 'jobId': 646 })
+        job.save(db)
+        self.assertEqual(job.runningJob, None)   
+        testAPI.getNewRunningInstance(job = job, runningAttrs = {'closed' : 'N'} )
+        self.assertNotEqual(job.runningJob, None) 
+        self.assertEqual(job.runningJob.data['jobId'], 646)
+        # why I have to save the job?
+        job.save(db) 
+        task.addJob(job)
+        
+        task.save(db)
+        
+        result = testAPI.loadCreated()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['name'], 'Spartacus')  
+        
+        result = testAPI.loadSubmitted()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['name'], 'The Mentalist') 
+        
+        result = testAPI.loadEnded()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['name'], 'Fringe') 
+        
+        result = testAPI.loadFailed()
+        self.assertEqual(len(result), 2)
+        
+        self.assertEqual(result[0]['name'], 'Stargate Universe') 
+        self.assertEqual(result[1]['name'], 'Caprica') 
+        
+        return
+    
 if __name__ == "__main__":
     unittest.main()

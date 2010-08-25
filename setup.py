@@ -6,6 +6,7 @@ from os.path import splitext, basename, join as pjoin, walk
 import os, sys
 try:
     from pylint import lint
+    PyLinter
 except:
     pass
 
@@ -121,7 +122,7 @@ class LintCommand(Command):
         for dirpath, dirnames, filenames in os.walk('./src/python/'):
             # skipping CVS directories and their contents
             pathelements = dirpath.split('/')
-            result = None
+            result = []
             if not 'CVS' in pathelements:
                 # to build up a list of file names which contain tests
                 for file in filenames:
@@ -130,9 +131,10 @@ class LintCommand(Command):
                         files.append(filepath)
                         # run individual tests as follows
                         try:
-                            result = lint.Run(['--rcfile=standards/.pylintrc', 
+                            score = lint.Run(['--rcfile=standards/.pylintrc', 
                                       '--output-format=parseable', 
                                       filepath])
+                            result.append((file, score))
                         except Exception, e:
                             print "Couldn't lint %s\n%s %s" % (file, e, type(e))
         # Could run a global test as:

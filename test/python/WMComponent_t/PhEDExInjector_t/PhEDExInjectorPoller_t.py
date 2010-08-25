@@ -7,13 +7,14 @@ and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
 back down and verify that everything is complete.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.4 2009/10/13 21:59:17 meloam Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: PhEDExInjectorPoller_t.py,v 1.5 2009/10/15 20:01:58 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import time
 import os
 import unittest
+import logging
 
 from sets import Set
 
@@ -176,7 +177,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         Create a config for the PhEDExInjector with paths to the test DBS and
         PhEDEx instances.
         """
-        config = self.testInit.getConfiguration
+        config = self.testInit.getConfiguration()
         config.component_("DBSUpload")
         config.DBSUpload.dbsurl = self.dbsURL
 
@@ -195,8 +196,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         attempts = 0
 
-        while attempts < 5:
-            result = self.phedex.getReplicaInfoForBlock(blockName)
+        while attempts < 15:
+            result = self.phedex.getReplicaInfoForFiles(block = blockName)
 
             if result.has_key("phedex"):
                 if result["phedex"].has_key("block"):
@@ -206,7 +207,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
             attempts += 1
             time.sleep(60)
 
-        print "Could not retrieve replica info for block: %s" % blockName
+        logging.info("Could not retrieve replica info for block: %s" % blockName)
         return None
 
     def testPoller(self):

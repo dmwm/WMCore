@@ -48,6 +48,7 @@ class CreateWMBSBase(DBCreator):
                                "09wmbs_workflow_output",
                                "08wmbs_subscription",
                                "10wmbs_sub_files_acquired",
+                               "10wmbs_sub_files_available",
                                "11wmbs_sub_files_failed",
                                "12wmbs_sub_files_complete",
                                "13wmbs_jobgroup",
@@ -57,7 +58,6 @@ class CreateWMBSBase(DBCreator):
                                "17wmbs_job_mask",
                                "18wmbs_checksum_type",
                                "19wmbs_file_checksums"]
-
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -174,6 +174,17 @@ class CreateWMBSBase(DBCreator):
              FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
                ON DELETE CASCADE)
              """
+
+        self.create["10wmbs_sub_files_available"] = \
+          """CREATE TABLE wmbs_sub_files_available (
+             subscription INTEGER NOT NULL,
+             file         INTEGER NOT NULL,
+             PRIMARY KEY (subscription, file),
+             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
+               ON DELETE CASCADE,
+             FOREIGN KEY (file)         REFERENCES wmbs_file_details(id)
+               ON DELETE CASCADE)
+             """        
 
         self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (
@@ -316,6 +327,12 @@ class CreateWMBSBase(DBCreator):
 
         self.constraints["02_idx_wmbs_sub_files_acquired"] = \
           """CREATE INDEX idx_wmbs_sub_files_acq_file ON wmbs_sub_files_acquired(file) %s""" % tablespaceIndex
+
+        self.constraints["01_idx_wmbs_sub_files_available"] = \
+          """CREATE INDEX idx_wmbs_sub_files_ava_sub ON wmbs_sub_files_available(subscription) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_sub_files_available"] = \
+          """CREATE INDEX idx_wmbs_sub_files_ava_file ON wmbs_sub_files_available(file) %s""" % tablespaceIndex        
 
         self.constraints["01_idx_wmbs_sub_files_failed"] = \
           """CREATE INDEX idx_wmbs_sub_files_fail_sub ON wmbs_sub_files_failed(subscription) %s""" % tablespaceIndex

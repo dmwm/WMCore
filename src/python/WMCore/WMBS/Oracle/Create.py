@@ -9,9 +9,6 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-
-
-
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.Transitions import Transitions
 
@@ -313,6 +310,32 @@ class Create(CreateWMBSBase):
 
         self.constraints["02_idx_wmbs_sub_files_acquired"] = \
           """CREATE INDEX idx_wmbs_sub_files_acq_file ON wmbs_sub_files_acquired(fileid) %s""" % tablespaceIndex
+
+        self.create["10wmbs_sub_files_available"] = \
+          """CREATE TABLE wmbs_sub_files_available (
+               subscription INTEGER NOT NULL,
+               fileid       INTEGER NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_sub_files_available"] = \
+          """ALTER TABLE wmbs_sub_files_available ADD
+               (CONSTRAINT wmbs_sub_files_available_pk PRIMARY KEY (subscription, fileid) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_sub_files_available"] = \
+          """ALTER TABLE wmbs_sub_files_available ADD
+               (CONSTRAINT fk_subsavailable_sub FOREIGN KEY (subscription)
+                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_sub_files_available"] = \
+          """ALTER TABLE wmbs_sub_files_available ADD
+               (CONSTRAINT fk_subsavailable_file FOREIGN KEY (fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
+
+        self.constraints["01_idx_wmbs_sub_files_available"] = \
+          """CREATE INDEX idx_wmbs_sub_files_ava_sub ON wmbs_sub_files_available(subscription) %s""" % tablespaceIndex
+
+        self.constraints["02_idx_wmbs_sub_files_available"] = \
+          """CREATE INDEX idx_wmbs_sub_files_ava_file ON wmbs_sub_files_available(fileid) %s""" % tablespaceIndex        
 
         self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (

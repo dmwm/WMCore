@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.32 2010/05/25 20:16:59 mnorman Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.33 2010/05/25 20:58:09 mnorman Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import logging
 import os.path
@@ -16,8 +16,8 @@ import time
 import copy
 import random
 import tempfile
-import cProfile
-import pstats
+#import cProfile
+#import pstats
 
 import WMCore.WMInit
 from WMCore.FwkJobReport.Report import Report
@@ -1251,7 +1251,7 @@ class JobAccountantTest(unittest.TestCase):
 
         Inject jobs that have a large amount of input files into WMBS.
         """
-        totalJobs = 1
+        totalJobs = 10
         inputFilesPerJob = 50
 
         inputFileset = Fileset(name = "TestFileset")
@@ -1332,6 +1332,8 @@ class JobAccountantTest(unittest.TestCase):
         Run the big heritage test.
         """
 
+        return
+
         print "Starting Heritage Test"
         
         print("  Filling DB...")
@@ -1346,7 +1348,7 @@ class JobAccountantTest(unittest.TestCase):
 
         startTime = time.time()
         #accountant.algorithm()
-        cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
+        #cProfile.runctx("accountant.algorithm()", globals(), locals(), filename = "testStats.stat")
 
         
         endTime = time.time()
@@ -1364,8 +1366,8 @@ class JobAccountantTest(unittest.TestCase):
             #                             ["/some/lfn/for/job/%s" % jobID],
             #                             jobReport.getAllFilesFromStep("cmsRun1"))
 
-        p = pstats.Stats('testStats.stat')
-        p.sort_stats('cumulative')
+        #p = pstats.Stats('testStats.stat')
+        #p.sort_stats('cumulative')
         #p.print_stats()
 
         return

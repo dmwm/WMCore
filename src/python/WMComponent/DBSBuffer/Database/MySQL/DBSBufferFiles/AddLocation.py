@@ -13,7 +13,13 @@ class AddLocation(DBFormatter):
                 (SELECT se_name FROM dbsbuffer_location WHERE se_name = :location)"""
     
     def execute(self, siteName, conn = None, transaction = False):
-        binds = {"location": siteName}
+        if type(siteName) == str:
+            binds = {"location": siteName}
+        else:
+            binds = []
+            for location in siteName:
+                binds.append({"location": location})
+            
         self.dbi.processData(self.sql, binds, conn = conn, 
                              transaction = transaction)
         return

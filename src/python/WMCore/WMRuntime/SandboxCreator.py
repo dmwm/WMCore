@@ -4,12 +4,13 @@
 
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.15 2010/04/05 18:58:50 mnorman Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.16 2010/04/09 20:40:09 sryu Exp $"
+__version__ = "$Revision: 1.16 $"
 import os
 import re
 import tarfile
 import tempfile
+import WMCore.WMSpec.WMTask as WMTask
 import WMCore.WMSpec.WMStep as WMStep
 import urllib
 import WMCore
@@ -42,8 +43,13 @@ class SandboxCreator:
         archive.close()
 
 
-
-    def makeSandbox(self, buildItHere, workload, task):
+    def _makePathonPackage(self, path):
+        os.makedirs( path )
+        initHandle = open(path + "/__init__.py", 'w')
+        initHandle.write("# dummy file for now")
+        initHandle.close()
+        
+    def makeSandbox(self, buildItHere, workload):
         """
             __makeSandbox__
 
@@ -54,63 +60,62 @@ class SandboxCreator:
         #  //
         # // Set up Fetcher plugins, use default list for maintaining
         #//  compatibility
-        fetcherNames = [ "CMSSWFetcher", "URLFetcher" ]
-        taskFetchers = getattr(task.data, "fetchers", [])
-        fetcherNames.extend(taskFetchers)
-        fetcherInstances = map(getFetcher, fetcherNames)
-
-
-
+        commonFetchers = [ "CMSSWFetcher", "URLFetcher" ]
+        
         # generate the real path and make it
         workloadName = workload.name()
-        taskName     = task.name()
-        path = "%s/%s/%s/WMSandbox" % (buildItHere, workloadName, taskName)
-        os.makedirs( path )
-
-        # for each step in the task, make a directory
-        for t in task.steps().nodeIterator():
-            t = WMStep.WMStepHelper(t)
-            stepPath = "%s/%s" % (path, t.name())
-            os.makedirs( stepPath )
-            initHandle = open(stepPath + "/__init__.py", 'w')
-            initHandle.write("# dummy file for now")
-            initHandle.close()
-
-
-
-        #  //
-        # // Execute the fetcher plugins
-        #//
-        for fetcher in fetcherInstances:
-            fetcher.setWorkingDirectory(path)
-            fetcher(task)
-
-        # and generate the __init__.py
-        # TODO: find out what else should go in this init. I don't understand
-        #   python's module system all the way yet
-        initHandle = open(path + "/__init__.py", 'w')
-        initHandle.write("# dummy file for now")
-        initHandle.close()
-
+        path = "%s/%s/WMSandbox" % (buildItHere, workloadName)
+        self._makePathonPackage(path)
+        
         # Create path to sandbox
-        archivePath = os.path.join(buildItHere, "%s-Sandbox.tar.bz2" % taskName)
-
+        archivePath = os.path.join(buildItHere, "%s-Sandbox.tar.bz2" % workloadName)
         # Add sandbox path to workload
-        setattr(task.data.input, 'sandbox', archivePath)
+        workload.setSandbox(archivePath)
+        
+        for topLevelTask in workload.taskIterator():         
+            for taskNode in topLevelTask.nodeIterator():
+                task = WMTask.WMTaskHelper(taskNode)
+                
+                fetcherNames = commonFetchers[:]            
+                taskFetchers = getattr(task.data, "fetchers", [])
+                fetcherNames.extend(taskFetchers)
+                fetcherInstances = map(getFetcher, fetcherNames)
+                
+                taskPath = "%s/%s" % (path, task.name())
+                self._makePathonPackage(taskPath)
+                
+                
+                #TODO sandbox is property of workload now instead of task
+                #but someother places uses as task propery (i.e. TaskQueue)
+                # so backward compatability save as task attribute as well.
+                setattr(task.data.input, 'sandbox', archivePath)
+        
+                for s in task.steps().nodeIterator():
+                    s = WMStep.WMStepHelper(s)
+                    stepPath = "%s/%s" % (taskPath, s.name())
+                    self._makePathonPackage(stepPath)
+                
+                #  //
+                # // Execute the fetcher plugins
+                #//
+                for fetcher in fetcherInstances:
+                    fetcher.setWorkingDirectory(taskPath)
+                    fetcher(task)
 
+        
+        
         # pickle up the workload for storage in the sandbox
-        workload.save(path + "/WMWorkload.pkl")
-
-
+        workloadFile = path + "/WMWorkload.pkl"
+        workload.setSpecUrl(workloadFile)
+        workload.save(workloadFile)
 
         # now, tar everything up and put it somewhere special
         #(archiveHandle,archivePath) = tempfile.mkstemp('.tar.bz2','sbox',
         #                                              buildItHere)
 
-        task.data.sandboxArchivePath = archivePath
         pythonHandle = open(archivePath, 'w+b')
         archive = tarfile.open(None,'w:bz2', pythonHandle)
-        archive.add("%s/%s/%s/" % (buildItHere, workloadName, taskName),'/')
+        archive.add("%s/%s/" % (buildItHere, workloadName),'/')
         if (self.packageWMCore):
             # package up the WMCore distribution
             # hopefully messing with this magic isn't a recipie for disaster

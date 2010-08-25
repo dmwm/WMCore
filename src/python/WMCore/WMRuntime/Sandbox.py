@@ -20,8 +20,8 @@ class Sandbox:
 
 
     """
-    def __init__(self, stepName):
-        self.moduleName = "WMSandbox.%s" % stepName
+    def __init__(self, taskName, stepName):
+        self.moduleName = "WMSandbox.%s.%s" % (taskName, stepName)
         self.module = __import__(self.moduleName,
                                  globals(), locals(), [stepName])
                                  #globals(), locals(), [stepName], -1)

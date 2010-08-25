@@ -5,8 +5,8 @@ _Report_
 Framework job report object.
 """
 
-__version__ = "$Revision: 1.15 $"
-__revision__ = "$Id: Report.py,v 1.15 2010/04/01 21:57:52 sfoulkes Exp $"
+__version__ = "$Revision: 1.16 $"
+__revision__ = "$Id: Report.py,v 1.16 2010/04/06 15:19:06 sfoulkes Exp $"
 
 import cPickle
 import logging
@@ -417,6 +417,15 @@ class Report:
         self.report.skipped.files.fileCount = 0
         self.report.analysis.fileCount = 0
 
+        return
+
+    def setStep(self, stepName, stepSection):
+        """
+        _setStep_
+
+        """
+        self.data.section_(stepName)
+        setattr(self.data, stepName, stepSection)
         return
 
     def retrieveStep(self, step):

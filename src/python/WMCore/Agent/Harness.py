@@ -18,8 +18,8 @@ including session objects and workflow entities.
 
 """
 
-__revision__ = "$Id: Harness.py,v 1.21 2009/08/12 19:43:10 sryu Exp $"
-__version__ = "$Revision: 1.21 $"
+__revision__ = "$Id: Harness.py,v 1.22 2009/09/02 20:10:39 sfoulkes Exp $"
+__version__ = "$Revision: 1.22 $"
 __author__ = "fvlingen@caltech.edu"
 
 from logging.handlers import RotatingFileHandler
@@ -136,16 +136,22 @@ class Harness:
             if hasattr(coreSect, "connectUrl"):
                 dbStr = coreSect.connectUrl
             else:
-                dbStr = coreSect.dialect + '://' + coreSect.user + \
-                ':' + coreSect.passwd+"@"+coreSect.hostname+'/'+\
-                coreSect.name
+                if coreSect.dialect.lower() == "oracle":
+                    dbStr = "oracle://%s:%s@%s" % (coreSect.user,
+                                                   coreSect.passwd,
+                                                   coreSect.hostname)
+                else:
+                    dbStr = "%s://%s:%s@%s/%s" % (coreSect.dialect,
+                                                  coreSect.user,
+                                                  coreSect.passwd,
+                                                  coreSect.hostname,
+                                                  coreSect.name)
             # we only want one DBFactory per database so we will need to 
             # to pass this on in case we are using threads.
             myThread.dbFactory = DBFactory(myThread.logger, dbStr, options)
             myThread.dbi = myThread.dbFactory.connect()
             myThread.transaction = Transaction(myThread.dbi)
             myThread.transaction.commit()
-
 
             # Attach a worker manager object to the main thread
             myThread.workerThreadManager = WorkerThreadManager(self)

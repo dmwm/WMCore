@@ -32,17 +32,6 @@ class HTTPFrontEnd(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-
-        self.staticDir = os.path.join(self.config.HTTPFrontEnd.ComponentDir, "static")
-        if not os.path.exists(self.staticDir):
-            os.makedirs(self.staticDir)
-        
-        if self.config.HTTPFrontEnd.Logfile == None:
-            self.config.HTTPFrontEnd.Logfile = os.path.join(self.config.HTTPFrontEnd.ComponentDir,
-                                                "ComponentLog")
-        if self.config.HTTPFrontEnd.HTTPLogfile == None:
-            self.config.HTTPFrontEnd.HTTPLogfile = os.path.join(self.config.HTTPFrontEnd.ComponentDir,
-                                                    "HTTPLog")
         #self.start()
 
 
@@ -63,26 +52,12 @@ class HTTPFrontEnd(Harness):
         Start up the cherrypy service for this component
 
         """
-        cherrypy.config.update({#'environment': 'production',
-                                'log.error_file': self.config.HTTPFrontEnd.HTTPLogfile,
-                                'log.screen': True,
-                                'engine.autoreload_on': True})
-        cherrypy.config.update({
-        "global" : {
-        "server.socket_host" :  self.config.HTTPFrontEnd.Host,
-        "server.socket_port" :  self.config.HTTPFrontEnd.Port,
-        "server.thread_pool" :  self.config.HTTPFrontEnd.ThreadPool,
-        }})
-        
-        baseUrl = "http://%s:%s" % (
-            self.config.HTTPFrontEnd.Host, self.config.HTTPFrontEnd.Port)
-        
-        
         root = Root(self.config)
+        root.configureCherryPy()
         root.loadPages()
         root.makeIndex()
-        cherrypy.server.quickstart()
         cherrypy.engine.start()
+        cherrypy.engine.block()
 
 
     def stop(self):
@@ -115,4 +90,4 @@ if __name__ == '__main__':
     harness.prepareToStart()
     harness.handleMessage("HTTPFrontendStart", "GOGOGOGOGO")
     #harness.handleMessage("HTTPFrontendStop", "WHOAWHOAWHOA")
-    harness.startComponent()
+    #harness.startComponent()

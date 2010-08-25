@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.11 2009/08/24 14:56:59 sryu Exp $"
-__version__ = "$Revision: 1.11 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.12 2009/08/24 15:15:44 sryu Exp $"
+__version__ = "$Revision: 1.12 $"
 
 import threading
 
@@ -95,13 +95,12 @@ class CreateWorkQueueBase(DBCreator):
              PRIMARY KEY(id)
              )"""
              
-
+        #-- oracle doesn have BOOL needs some other datatype --
+        #-- online BOOL DEFAULT FALSE, -- for when we track staging
         self.create["06wq_block_site_assoc"] = \
           """CREATE TABLE wq_block_site_assoc (
              block_id     INTEGER    NOT NULL,
              site_id      INTEGER    NOT NULL,
-             __ oracle doesn have BOOL needs some other datatype---
-             -- online BOOL DEFAULT FALSE, -- for when we track staging
              PRIMARY KEY (block_id, site_id)
              )"""
 
@@ -128,7 +127,10 @@ class CreateWorkQueueBase(DBCreator):
         self.constraints["FK_wq_block_element"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_block_element
                  FOREIGN KEY(block_id) REFERENCES wq_block(id)"""
-
+		
+        self.constraints["FK_wq_element_sub"] = \
+              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_sub
+                 FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""
 
         #TODO: need to find the better way to handle this        
         #block magic string for no block (production work)

@@ -1,85 +1,159 @@
-from WMCore.DataStructs.Fileset import Fileset 
+#!/usr/bin/env python
+"""
+_JobGroup_t_
+
+Testcase for the JobGroup class.
+""" 
+
 from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Subscription import Subscription 
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.JobGroup import JobGroup
-from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.Subscription import Subscription 
 
 from WMQuality.TestInit import TestInit
 
-from sets import Set
-
 import unittest
-import logging
-import random
-import os
 
 class JobGroupTest(unittest.TestCase):
-    _setup = False
-    
     def setUp(self):
-        if self._setup:
-            return
-        
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
-        self.testInit.setLogging()
-        self._setup = True
+        pass
          
-    def testSetup(self):
-        fileset = Fileset()
-        l = []
-        for i in range(0,10):
-            lfn = '/store/data/%s/%s/file.root' % (random.randint(1000, 9999), 
-                                              random.randint(1000, 9999))
-            size = random.randint(1000, 2000)
-            events = 1000
-            run = random.randint(0, 2000)
-            lumi = random.randint(0, 8)
-            
-            file = File(lfn=lfn, size=size, events=events, cksum=1)
-	    file.addRun(Run(run, *[lumi]))
-            fileset.addFile(file)
-            if i < 11:
-                l.append(file)
+    def testCreate(self):
+        """
+        _testCreate_
+
+        Test the JobGroup constructor and passing different job containers
+        into it.
+        """
+        testSubscription = Subscription()
+        testJobGroupA = JobGroup(subscription = testSubscription)
+
+        assert testJobGroupA.subscription == testSubscription, \
+            "ERROR: Failed to pass subscription in constructor"
+        assert len(testJobGroupA.jobs) == 0 and len(testJobGroupA.newjobs) == 0, \
+            "ERROR: JobGroup not empty on creation"
+
+        testJobA = Job()
+        testJobB = Job()
+
+        testJobGroupB = JobGroup(jobs = [testJobA, testJobB])
+
+        assert testJobGroupB.jobs == [], \
+            "ERROR: Jobs committed to jobgroup too soon."
+
+        jobGroupJobs = testJobGroupB.newjobs
+        goldenJobs = [testJobA, testJobB]
+        for job in jobGroupJobs:
+            assert job in goldenJobs, \
+                "ERROR: Extra job in job group"
+
+            goldenJobs.remove(job)
         
-        sub = Subscription(fileset=fileset, workflow='/my/test/workflow')
+        assert len(goldenJobs) == 0, \
+            "ERROR: Job missing from job group"
+
+        testJobGroupC = JobGroup(jobs = testJobA)
+
+        assert testJobGroupC.jobs == [], \
+            "ERROR: Jobs committed to jobgroup too soon."
+
+        jobGroupJobs = testJobGroupC.newjobs
+
+        assert len(jobGroupJobs) == 1, \
+            "ERROR: Wrong number of jobs in jobgroup."
+        assert testJobA in jobGroupJobs, \
+            "ERROR: Wrong job in jobgroup."
+
+        return
+
+    def testAddCommit(self):
+        """
+        _testAddCommit_
+
+        Test the add() and commit() methods of the JobGroup class.  Verify that
+        jobs are not returned from getJobs() until commit() has been called.
+        """
+        testJob = Job()
+        testJobGroup = JobGroup()
+
+        assert len(testJobGroup.getJobs()) == 0, \
+            "ERROR: JobGroup has jobs before jobs have been added."
+
+        testJobGroup.add(testJob)
+
+        assert len(testJobGroup.getJobs()) == 0, \
+            "ERROR: JobGroup has jobs commit() was called."
+
+        testJobGroup.commit()
+
+        assert len(testJobGroup.getJobs()) == 1, \
+            "ERROR: JobGroup has wrong number of jobs."
+        assert testJob in testJobGroup.getJobs(), \
+            "ERROR: JobGroup has unknown jobs."
+
+        return
+
+    def testAddOutput(self):
+        """
+        _testAddOutput_
+
+        Test the JobGroup's addOutput() method.  Verify that files are committed
+        to the output fileset immediately and are available from the getOutput()
+        method.
+        """
+        testFile = File()
+        testJobGroup = JobGroup()
+
+        assert len(testJobGroup.getOutput()) == 0, \
+            "ERROR: Files in the output fileset before anything has been added."
+
+        testJobGroup.addOutput(testFile)
+
+        assert len(testJobGroup.getOutput()) == 1, \
+            "ERROR: Unknown number of files in JobGroup output fileset."
+        assert testFile in testJobGroup.getOutput(), \
+            "ERROR: Unknown file in the JobGroup output fileset."
         
-        # pretend we've got the job group from a factory
-        set = Set()
-        for i in l:
-            fs = Fileset(name='tmp')
-            fs.addFile(i)
-            job = Job(files=fs)
-            set.add(job)
-            
-        group = JobGroup(subscription = sub, jobs=set) 
-        return group
+        return
     
-    def testFileCycle(self):
-        group = self.testSetup()
-        jobs = list(group.jobs)
-        maxacquire = 10
-        fail_prob = 1/4.
-        complete_prob = 1/2.
-        i=0
-        while group.status() != 'COMPLETE':
-            i = i + 1
-            # Decide if jobs have completed or failed
-            for j in jobs:
-                if j.status in ['QUEUED', 'FAILED']:
-                    j.submit(name='batch queue id')
-                if j.status == 'ACTIVE':
-                    dice = random.randint(0 , 10) / 10.
-                    if dice <= complete_prob:
-                        self.logger.debug( "#job completes" )
-                        j.complete('complete report')
-                        j.addOutput(File(lfn='iter%s_job%s' % (i, jobs.index(j))))                 
-                    elif random.randint(0 , 10) / 10. < fail_prob:
-                        self.logger.debug(  "#job fails" )
-                        j.fail('fail report')
-                
-    def testOutput(self):
-        group = self.testSetup()
-    
+    def testGetJobs(self):
+        """
+        _testGetJobs_
+
+        Verify that the getJobs() method of the JobGroup class returns the 
+        correct output for each output container type it supports.
+        """
+        testJobA = Job()
+        testJobB = Job()
+        testJobGroup = JobGroup(jobs = [testJobA, testJobB])
+        testJobGroup.commit()
+
+        assert len(testJobGroup.getJobs()) == 2,  \
+            "ERROR: Wrong number of jobs in job group"
+
+        goldenJobs = [testJobA, testJobB]
+        for job in testJobGroup.getJobs():
+            assert job in goldenJobs, \
+                "ERROR: Unknown Job in JobGroup."
+
+            goldenJobs.remove(job)
+
+        assert len(goldenJobs) == 0, \
+            "ERROR: Jobs are missing from the JobGroup."
+
+        goldenIDs = []
+        goldenIDs.append(testJobA["id"])
+        goldenIDs.append(testJobB["id"])
+        for jobID in testJobGroup.getJobs(type = "id"):
+            assert jobID in goldenIDs, \
+                "ERROR: Unknown JobID in JobGroup"
+
+            goldenIDs.remove(jobID)
+
+        assert len(goldenIDs) == 0, \
+            "ERROR: Job IDs are missing from the JobGroup."
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

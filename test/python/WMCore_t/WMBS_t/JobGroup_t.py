@@ -5,8 +5,8 @@ _JobGroup_t_
 Unit tests for the WMBS JobGroup class.
 """
 
-__revision__ = "$Id: JobGroup_t.py,v 1.18 2009/05/09 12:05:27 sryu Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: JobGroup_t.py,v 1.19 2009/05/12 16:17:30 sfoulkes Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import unittest
 import logging
@@ -82,15 +82,10 @@ class JobGroupTest(unittest.TestCase):
             
         self._teardown = True
     
-    def createTestJobGroupA(self, commitFlag = True):
+    def createTestJobGroup(self, commitFlag = True):
         """
-        _createTestJobGroupA_
+        _createTestJobGroup_
         
-               with testSubscription 
-                     using testWorkflow (wf001) and testWMBSFilset
-        add testJobA with testFileA and testJobB with testFileB
-            to testJobGroupA
-        return testJobGroupA
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
@@ -103,8 +98,8 @@ class JobGroupTest(unittest.TestCase):
                                         workflow = testWorkflow)
         testSubscription.create()
 
-        testJobGroupA = JobGroup(subscription = testSubscription)
-        testJobGroupA.create()
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
         testFileA.addRun(Run(10, *[12312]))
@@ -120,12 +115,13 @@ class JobGroupTest(unittest.TestCase):
         testJobB = Job(name = "TestJobB")
         testJobB.addFile(testFileB)
         
-        testJobGroupA.add(testJobA)
-        testJobGroupA.add(testJobB)
+        testJobGroup.add(testJobA)
+        testJobGroup.add(testJobB)
+
         if commitFlag:
-            testJobGroupA.commit()
+            testJobGroup.commit()
         
-        return testJobGroupA
+        return testJobGroup
     
     def testCreateDeleteExists(self):
         """
@@ -263,7 +259,7 @@ class JobGroupTest(unittest.TestCase):
         Test loading the JobGroup and any associated meta data from the
         database.
         """
-        testJobGroupA = self.createTestJobGroupA()
+        testJobGroupA = self.createTestJobGroup()
         
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.load()
@@ -282,10 +278,10 @@ class JobGroupTest(unittest.TestCase):
         assert type(testJobGroupC.subscription["id"]) == int, \
                "ERROR: Job group subscription id is not an int."        
 
-        assert type(testJobGroupB.groupoutput.id) == int, \
+        assert type(testJobGroupB.output.id) == int, \
                "ERROR: Job group output id is not an int."
 
-        assert type(testJobGroupC.groupoutput.id) == int, \
+        assert type(testJobGroupC.output.id) == int, \
                "ERROR: Job group output id is not an int."        
 
         assert testJobGroupB.uid == testJobGroupA.uid, \
@@ -302,10 +298,10 @@ class JobGroupTest(unittest.TestCase):
                testJobGroupA.subscription["id"], \
                "ERROR: Job group did not load subscription correctly"        
 
-        assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
+        assert testJobGroupB.output.id == testJobGroupA.output.id, \
                "ERROR: Output fileset didn't load properly"
 
-        assert testJobGroupC.groupoutput.id == testJobGroupA.groupoutput.id, \
+        assert testJobGroupC.output.id == testJobGroupA.output.id, \
                "ERROR: Output fileset didn't load properly"        
         
         return
@@ -317,7 +313,7 @@ class JobGroupTest(unittest.TestCase):
         Test loading the JobGroup, it's meta data and any data associated with
         its output fileset and jobs from the database.
         """
-        testJobGroupA = self.createTestJobGroupA()
+        testJobGroupA = self.createTestJobGroup()
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.loadData()
@@ -326,16 +322,17 @@ class JobGroupTest(unittest.TestCase):
                testJobGroupA.subscription["id"], \
                "ERROR: Job group did not load subscription correctly"
 
-        goldenJobs = testJobGroupA.getJobIDs(type="list")
-        for job in testJobGroupB.jobs:
-            assert job.id in goldenJobs, \
+        goldenJobs = testJobGroupA.getJobs(type = "list")
+
+        for job in testJobGroupB.getJobs(type = "list"):
+            assert job in goldenJobs, \
                    "ERROR: JobGroup loaded an unknown job"
-            goldenJobs.remove(job.id)
+            goldenJobs.remove(job)
 
         assert len(goldenJobs) == 0, \
             "ERROR: JobGroup didn't load all jobs"
 
-        assert testJobGroupB.groupoutput.id == testJobGroupA.groupoutput.id, \
+        assert testJobGroupB.output.id == testJobGroupA.output.id, \
                "ERROR: Output fileset didn't load properly"
         
         return    
@@ -348,27 +345,29 @@ class JobGroupTest(unittest.TestCase):
         on the JobGroup.  Also verify that commit() correctly commits the jobs
         to the database.
         """
-        testJobGroupA = self.createTestJobGroupA(commitFlag = False)
+        testJobGroupA = self.createTestJobGroup(commitFlag = False)
 
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.loadData()
 
-        assert len(testJobGroupA.jobs) == 0, \
+        assert len(testJobGroupA.getJobs()) == 0, \
                "ERROR: Original object commited too early"
-
-        assert len(testJobGroupB.jobs) == 0, \
+        assert len(testJobGroupB.getJobs()) == 0, \
                "ERROR: Loaded JobGroup has too many jobs"
 
         testJobGroupA.commit()
+        testJobGroupA.loadData()
 
-        assert len(testJobGroupA.jobs) == 2, \
+        assert len(testJobGroupA.getJobs()) == 2, \
                "ERROR: Original object did not commit jobs"
 
         testJobGroupC = JobGroup(id = testJobGroupA.id)
         testJobGroupC.loadData()
 
-        assert len(testJobGroupC.jobs) == 2, \
+        assert len(testJobGroupC.getJobs()) == 2, \
                "ERROR: Loaded object has too few jobs."
+
+        return
 
     def testCommitTransaction(self):
         """
@@ -380,15 +379,15 @@ class JobGroupTest(unittest.TestCase):
         verify that the jobs that were committed before are no longer associated
         with the JobGroup.
         """
-        testJobGroupA = self.createTestJobGroupA(commitFlag = False)
+        testJobGroupA = self.createTestJobGroup(commitFlag = False)
         
         testJobGroupB = JobGroup(id = testJobGroupA.id)
         testJobGroupB.loadData()
 
-        assert len(testJobGroupA.jobs) == 0, \
+        assert len(testJobGroupA.getJobs()) == 0, \
                "ERROR: Original object commited too early"
 
-        assert len(testJobGroupB.jobs) == 0, \
+        assert len(testJobGroupB.getJobs()) == 0, \
                "ERROR: Loaded JobGroup has too many jobs"
 
         myThread = threading.currentThread()
@@ -396,13 +395,13 @@ class JobGroupTest(unittest.TestCase):
 
         testJobGroupA.commit()
 
-        assert len(testJobGroupA.jobs) == 2, \
+        assert len(testJobGroupA.getJobs()) == 2, \
                "ERROR: Original object did not commit jobs"
 
         testJobGroupC = JobGroup(id = testJobGroupA.id)
         testJobGroupC.loadData()
 
-        assert len(testJobGroupC.jobs) == 2, \
+        assert len(testJobGroupC.getJobs()) == 2, \
                "ERROR: Loaded object has too few jobs."        
 
         myThread.transaction.rollback()
@@ -410,123 +409,10 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupD = JobGroup(id = testJobGroupA.id)
         testJobGroupD.loadData()
 
-        assert len(testJobGroupD.jobs) == 0, \
+        assert len(testJobGroupD.getJobs()) == 0, \
                "ERROR: Loaded object has too many jobs."        
 
         return
 
-    def AtestRecordSubscriptionStatus(self):
-        """
-        _testRecordSubscriptionStatus_
-
-        Create a JobGroup and then add some jobs to it. commit the job group
-        and change the status of input file status of the jobs        
-        """
-        testJobGroupA = self.createTestJobGroupA()
-        
-        jobs = testJobGroupA.getJobIDs(type = "JobList")
-        
-        assert testJobGroupA.status() == "ACTIVE", \
-               """ Error: All the jobs in available state: 
-                   JobGroup should be in ACTIVE State """
-                    
-        for job in jobs:
-            job.load()
-        
-        testJobGroupA.recordAcquire(jobs[0])
-        
-        assert testJobGroupA.status() == "ACTIVE", \
-               """ Error:  One job is in active state: 
-                   JobGroup should be in ACTIVE State """
-        
-        testJobGroupA.recordAcquire(jobs[1])
-        
-        assert testJobGroupA.status() == "ACTIVE", \
-               """ Error:  All jobs is in active state: 
-                   JobGroup should be in ACTIVE State """
-                   
-        assert  not testJobGroupA.isSuccessful(), \
-               """ Error:  One job is in active state: 
-                   JobGroup should be in ACTIVE State """
-        
-        fileName = "/this/is/a/lfnOut1"
-        testFile = File(lfn = fileName, size = 1024, events = 10)
-        testFile.create()
-        result = testJobGroupA.recordComplete(jobs[0], testFile)
-        
-        assert testJobGroupA.status() == "ACTIVE", \
-               """ Error:  One job is in active state: 
-                   JobGroup should be in ACTIVE State """
-        
-        assert  not testJobGroupA.isSuccessful(), \
-               """ Error:  One job is in active state: 
-                   JobGroup should be in ACTIVE State """
-        
-        fileName = "/this/is/a/lfnOut2"
-        testFile = File(lfn = fileName, size = 1024, events = 10)
-        testFile.create()
-        result = testJobGroupA.recordComplete(jobs[1], testFile)
-        
-        assert testJobGroupA.status() == "COMPLETE", \
-               """ Error:  both jobs are in COMPLETE state: 
-                   JobGroup should be in COMPLETE State """
-                   
-        assert testJobGroupA.isSuccessful(), \
-               """ Error:  both jobs are in COMPLETE state: 
-                   JobGroup should be in COMPLETE State """
-        
-        status = testJobGroupA.recordFail(jobs[1])                   
-        
-        assert status == "FailComplete", \
-               """Error: status should be FailComplete: %s""" % status
-               
-        assert testJobGroupA.status() == "FAILED", \
-               """ Error:  one job is in FAILED state: 
-                   JobGroup should be in FAILD State: """
-        
-        assert  not testJobGroupA.isSuccessful(), \
-               """ Error:  one job is in FAILED state: 
-                   JobGroup should be in FAILD State: """
-                   
-        # these will always return true according if no error occurs.
-        # To do: check actual files state 
-        assert testJobGroupA.recordAcquire() == True, \
-                "Error : recordAcquier failed"
-
-                
-    def testOutput(self):
-        """
-        _testOutput_ 
-
-        test adding output files in job group
-        """
-        testJobGroupA = self.createTestJobGroupA()
-        
-        jobs = testJobGroupA.getJobIDs(type = "JobList")
-        
-        count = 0 
-        lfnSet = Set()           
-        for job in jobs:
-            job.load()
-            count += 1
-            fileName = "/this/is/a/lfnOut%s" % count
-            lfnSet.add(fileName)
-            testFile = File(lfn = fileName, size = 1024, events = 10)
-            testFile.create()
-            output = testJobGroupA.recordComplete(job, testFile)
-        
-        assert testJobGroupA.isSuccessful() == True, \
-        	   """Error all the jobs in the job group should be completed"""
-        	                 
-        outputFileset = output
-        outputFileset.loadData()
-        
-        outputLfns = Set()
-        for file in outputFileset.files:
-            outputLfns.add(file['lfn'])
-        
-        assert (lfnSet - outputLfns) == Set(), \
-               "Error: output files doesn't match %s" % outputLfns
-                  
 if __name__ == "__main__":
     unittest.main() 

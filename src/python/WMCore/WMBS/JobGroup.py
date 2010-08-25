@@ -40,15 +40,16 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.28 2009/05/08 16:04:10 sfoulkes Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: JobGroup.py,v 1.29 2009/05/12 16:19:23 sfoulkes Exp $"
+__version__ = "$Revision: 1.29 $"
 
-from WMCore.Database.Transaction import Transaction
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
+from WMCore.WMBS.WMBSBase import WMBSBase
+
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.WMBSBase import WMBSBase
+
 from WMCore.Services.UUID import makeUUID
 
 from sets import Set
@@ -73,15 +74,15 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         existingTransaction = self.beginTransaction()
         
-        self.groupoutput = Fileset(name = makeUUID())
-        self.groupoutput.create()
+        self.output = Fileset(name = makeUUID())
+        self.output.create()
 
         if self.uid == None:
             self.uid = makeUUID()
 
-        action = self.daofactory(classname="JobGroup.New")
+        action = self.daofactory(classname = "JobGroup.New")
         action.execute(self.uid, self.subscription["id"],
-                       self.groupoutput.id, conn = self.getDBConn(),
+                       self.output.id, conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         
         self.id = self.exists()
@@ -131,7 +132,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         else:
             loadAction = self.daofactory(classname = "JobGroup.LoadFromUID")
             result = loadAction.execute(self.uid, conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())            
+                                        transaction = self.existingTransaction())
 
         self.id = result["id"]
         self.uid = result["uid"]
@@ -140,10 +141,10 @@ class JobGroup(WMBSBase, WMJobGroup):
         self.subscription = Subscription(id = result["subscription"])
         self.subscription.load()
         
-        self.groupoutput = Fileset(id = result["output"])
-        self.groupoutput.load()
+        self.output = Fileset(id = result["output"])
+        self.output.load()
         
-        self.jobs.clear()
+        self.jobs = []
         self.commitTransaction(existingTransaction)
         return
 
@@ -161,41 +162,24 @@ class JobGroup(WMBSBase, WMJobGroup):
             self.load()
 
         self.subscription.loadData()
-        self.groupoutput.loadData()
+        self.output.loadData()
 
-        jobIDs = self.getJobIDs(type="dict")
-        
-        for jobID in jobIDs:
+        loadAction = self.daofactory(classname = "JobGroup.LoadJobs")
+        result = loadAction.execute(self.id, conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        self.jobs = []
+        self.newjobs = []
+
+        for jobID in result:
             newJob = Job(id = jobID["id"])
             newJob.loadData()
-            self.jobs.add(newJob)
+            self.add(newJob)
 
+        WMJobGroup.commit(self)
         self.commitTransaction(existingTransaction)
-        return    
+        return
     
-    def getJobIDs(self, type="dict"):
-        """
-        return list of Job IDs
-        If type is JobList return list of Job object with only id field is 
-        filled
-        """
-        jobAction = self.daofactory(classname = "JobGroup.LoadJobs")
-        jobIDs = jobAction.execute(self.id, conn = self.getDBConn(),
-                                   transaction = self.existingTransaction())
-
-        if type == "JobList":
-            jobList = []
-            for jobID in jobIDs:
-                jobList.append(Job(id = jobID["id"]))
-            return jobList
-        elif type == "list":
-            idList = []
-            for jobID in jobIDs:
-                idList.append(jobID["id"])
-            return idList
-        else:
-            return jobIDs
-        
     def commit(self):
         """
         _commit_
@@ -209,229 +193,8 @@ class JobGroup(WMBSBase, WMJobGroup):
             self.create()
         
         for j in self.newjobs:
-            j.create(group=self)
-            
+            j.create(group = self)
+
         WMJobGroup.commit(self)
         self.commitTransaction(existingTransaction)
         return
-    
-    def recordAcquire(self, jobs = None):
-        """
-        _recordAcquire_
-        
-        Mark a set of jobs that are associated with the job group as acquired.
-        If no list of jobs is passed in then mark all files in jobGroup 
-        as acquired.
-        """
-        existingTransaction = self.beginTransaction()
-
-        if jobs == None:
-            jobs = self.getJobIDs(type = "JobList")
-        
-        if type(jobs) != list:
-            jobs = [jobs]
-
-        for job in jobs:
-            job.changeStatus("Active")
-            inputFiles = job.getFiles()
-
-            if len(inputFiles) > 0:
-                self.subscription.acquireFiles(inputFiles)
-
-        self.commitTransaction(existingTransaction)
-        return True
-    
-    def _recordFileStatusUponCompletion(self):
-        """
-        _recordFileStatusUponCompletion_
-        
-        This checks whether job group is completed 
-        (complete status means all the jobs are processed regardless their 
-        status (failed, or complete (succeed)) then update the input files'
-        status on those jobs if a input file is shared by more than a job, 
-        and one of the jobs are failed it will be marked as failed.
-        A file is marked as successful only if all the jobs using that file
-        as input succeed 
-        
-        if job group is in complete status return status, if not, False 
-        """
-        existingTransaction = self.beginTransaction()
-        status = self._completeStatus()
-        
-        if status == "COMPLETE" or status == "FailComplete":
-            jobs = self.getJobIDs(type = "JobList")
-            inputFiles = []
-            failFiles = []
-            if status == "COMPLETE":
-                for job in jobs:
-                    inputFiles.extend(job.getFiles())
-            else:
-                for job in jobs:
-                    if job.getStatus() == "FAIED":
-                        failFiles.extend(job.getFile())
-                    else:
-                        inputFiles.extend(job.getFiles())
-                        
-            if len(inputFiles) > 0:
-                self.subscription.completeFiles(inputFiles)
-                
-            if len(failFiles) > 0:
-                self.subscription.completeFiles(failFiles)
-            # Don't commit here this function is only supposed to be used within
-            # other function in the class
-            #self.commitIfNew()
-            return status
-
-        self.commitTransaction(existingTransaction)
-        return False
-    
-    def recordComplete(self, job, outputFiles):
-        """
-        _recordComplete_
-
-        Mark a set of jobs that are associated with the job group as complete.
-        If no list of jobs is passed in then mark all files in jobGroup 
-        as complete.
-        
-        calling recordComplete without jobs parameter only make sense when 
-        JobGroup is completed. but it will be responsible the one who calls this 
-        function to check jobGroup complete status
-        """
-        existingTransaction = self.beginTransaction()
-
-        #self.beginTransaction()
-        #print self.existingTransaction()
-        job.changeStatus("Complete")
-        #self.myThread.transaction.commit()
-        #self.beginTransaction()
-        if type(outputFiles) != list:
-            outputFiles = [outputFiles]
-        for file in outputFiles:
-            # add file parentage and run lumi
-            job.processSuccessfulJob(file)
-            # add output file to group out put
-            self.groupoutput.addFile(file)
-        self.groupoutput.commit()
-        #T0DO check whether it is needed to be committed for 
-        #updating the job status
-        status = self._recordFileStatusUponCompletion()                
-        if status == "COMPLETE":
-            output = self.output()
-        else:
-            output = False
-        self.myThread.transaction.commit()
-        #self.commitIfNew()
-
-        self.commitTransaction(existingTransaction)
-        return output
-    
-    def recordFail(self, job):
-        """
-        _recordFail_
-
-        Mark a set of jobs that are associated with the job group as failed.
-        If no list of jobs is passed in then mark all files in jobGroup 
-        as failed.
-        
-        calling recordFail without jobs parameter only make sense when 
-        JobGroup is failed. but it will be responsible the one who calls this 
-        function to check jobGroup failed status
-        """
-        existingTransaction = self.beginTransaction()
-
-        job.changeStatus("Failed")            
-        status = self._recordFileStatusUponCompletion()
-
-        self.commitTransaction(existingTransaction)
-        return status
-    
-    def status(self, detail = False):
-        """
-        The status of the job group is the sum of the status of all jobs in the
-        group.
-        
-        The status of the jobs can be correctly inferred by comparing the start,
-        complete and update times. The groups status is the sum of these 
-        statuses.
-        
-        return: ACTIVE, COMPLETE, FAILED
-        """
-        existingTransaction = self.beginTransaction()
-
-        statusAction = self.daofactory(classname = "JobGroup.Status")
-        av, ac, fa, cm = statusAction.execute(self.id,
-                                              conn = self.getDBConn(),
-                                              transaction = self.existingTransaction())
-    
-        total = av + ac + fa + cm
-        self.commitTransaction(existingTransaction)
-        
-        if total > 0:
-            report = ''
-            if detail:
-                report = ' (av %s, ac %s, fa %s, cm %s)' % (av, ac, fa, cm)
-            if cm == total:
-                return 'COMPLETE%s' % report
-            elif fa > 0:
-                return 'FAILED%s' % report
-            else:
-                # all the file status should be acquired at this point
-                return 'ACTIVE%s' % report
-    
-    def isSuccessful(self):
-        """
-         _isSuccessful_
-        
-        Check all the jobs in the group are successfully completed.
-        self.status can be used for this, but for the fast performance. 
-        use this function
-        """
-        if self._completeStatus() == "COMPLETE":
-            return True
-        else:
-            return False
-        
-    def _completeStatus(self):
-        """
-        _isSuccessful_
-        
-        Check all the jobs in the group are completed.
-        self.status can be used for this, but for the fast performance. 
-        use this function
-        
-        To: check query whether performance can be improved
-        """
-        existingTransaction = self.beginTransaction()
-
-        statusAction = self.daofactory(classname = "JobGroup.IsComplete")
-        all, cm, fa = statusAction.execute(self.id,
-                                      conn = self.getDBConn(),
-                                      transaction = self.existingTransaction())
-
-        self.commitTransaction(existingTransaction)
-
-        if all == cm:
-            return "COMPLETE"
-        elif all == cm + fa:
-            return "FailComplete"
-        elif fa > 0:
-            return "FailIncomplete"
-        else:
-            return "Incomplete"
-        
-    def output(self):
-        """
-        The output is the files produced by the jobs in the group - these must
-        be merged up together.
-        getting output doesn't make sense if all the jobs are successful in the
-        given job group. But it is the caller's responsibility to check where 
-        the job group is successfully finished using isSuccessful() function
-        """
-        existingTransaction = self.beginTransaction()
-        
-        # output only makes sense if the group is completed
-        # load output from DB 
-        self.groupoutput.load()
-        self.commitTransaction(existingTransaction)
-        return self.groupoutput
-        

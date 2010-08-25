@@ -5,8 +5,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: File_t.py,v 1.41 2010/02/26 20:46:31 mnorman Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: File_t.py,v 1.42 2010/03/09 20:01:20 mnorman Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import unittest
 import logging
@@ -1355,7 +1355,7 @@ class FileTest(unittest.TestCase):
 
 
         parentAction = self.daofactory(classname = "Files.SetParentageByJob")
-        parentAction.execute(jobID = testJobA.exists(), child = testFileA['id'])
+        parentAction.execute(binds = {'jobID': testJobA.exists(), 'child': testFileA['lfn']})
 
 
         testFileB = File(id = testFileA["id"])
@@ -1363,15 +1363,90 @@ class FileTest(unittest.TestCase):
 
         goldenFiles = [testFileParentA, testFileParentB]
         for parentFile in testFileB["parents"]:
-            assert parentFile in goldenFiles, \
-                   "ERROR: Unknown parent file"
+            self.assertEqual(parentFile in goldenFiles, True,
+                   "ERROR: Unknown parent file")
             goldenFiles.remove(parentFile)
 
-        assert len(goldenFiles) == 0, \
-              "ERROR: Some parents are missing"
+        self.assertEqual(len(goldenFiles), 0,
+                         "ERROR: Some parents are missing")
 
 
-    
+    def testAddChecksumsByLFN(self):
+        """
+        _testAddChecksumsByLFN_
+        
+        Tests for adding checksums by DAO by LFN
+        """
+
+        testWorkflow = Workflow(spec = 'hello', owner = "mnorman",
+                                name = "wf001", task="basicWorkload/Production")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
+        testSubscription.create()
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
+        testFileB.addRun(Run( 1, *[45]))
+        testFileB.create()
+
+        testJobA = Job()
+        testJobA.create(group = testJobGroup)
+        testJobA.associateFiles()
+
+        parentAction = self.daofactory(classname = "Files.AddChecksumByLFN")
+        binds = [{'lfn': testFileA['lfn'], 'cktype': 'cksum', 'cksum': 101},
+                 {'lfn': testFileA['lfn'], 'cktype': 'adler32', 'cksum': 201},
+                 {'lfn': testFileB['lfn'], 'cktype': 'cksum', 'cksum': 101}]
+        parentAction.execute(bulkList = binds)
+
+        testFileC = File(id = testFileA["id"])
+        testFileC.loadData()
+        testFileD = File(id = testFileB["id"])
+        testFileD.loadData()
+
+        self.assertEqual(testFileC['checksums'], {'adler32': '201', 'cksum': '101'})
+        self.assertEqual(testFileD['checksums'], {'cksum': '101'})
+
+        return
+
+
+    def testSetLocationByLFN(self):
+        """
+        _testSetLocationByLFN_
+
+        Create a file and add a couple locations.  Load the file from the
+        database to make sure that the locations were set correctly.
+        """
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
+                        checksums = {'cksum':1})
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
+                        checksums = {'cksum':1})
+        testFileB.addRun(Run( 1, *[45]))
+        testFileB.create()
+
+        parentAction = self.daofactory(classname = "Files.SetLocationByLFN")
+        parentAction.execute(lfn = ["/this/is/a/lfnA", "/this/is/a/lfnB"],
+                             location = 'se1.fnal.gov')
+
+        testFileC = File(id = testFileA["id"])
+        testFileC.loadData()
+        testFileD = File(id = testFileB["id"])
+        testFileD.loadData()
+
+        self.assertEqual(testFileC['locations'], set(['se1.fnal.gov']))
+        self.assertEqual(testFileD['locations'], set(['se1.fnal.gov']))
+
+        
+        return
+
         
 if __name__ == "__main__":
     unittest.main() 

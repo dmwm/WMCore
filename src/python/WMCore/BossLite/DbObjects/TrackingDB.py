@@ -4,8 +4,8 @@ _TrackingDB_
 
 """
 
-__version__ = "$Id: TrackingDB.py,v 1.3 2010/05/03 08:38:06 spigafi Exp $"
-__revision__ = "$Revision: 1.3 $"
+__version__ = "$Id: TrackingDB.py,v 1.4 2010/05/03 09:13:38 spigafi Exp $"
+__revision__ = "$Revision: 1.4 $"
 
 from copy import deepcopy
 
@@ -13,7 +13,7 @@ from WMCore.BossLite.Common.Exceptions  import DbError
 from WMCore.BossLite.Common.System      import evalCustomList
 
 from WMCore.BossLite.DbObjects.Task         import Task
-#from WMCore.BossLite.DbObjects.Job          import Job
+from WMCore.BossLite.DbObjects.Job          import Job
 #from WMCore.BossLite.DbObjects.RunningJob   import RunningJob
 
 from WMCore.WMConnectionBase import WMConnectionBase
@@ -747,16 +747,20 @@ class TrackingDB(WMConnectionBase):
             tmpId = action.execute(name = obj.data['name'],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
-            return tmpId
         
         elif type(obj) == Job :
-            raise NotImplementedError
+            action = self.daofactory(classname = "Job.Exists")
+            tmpId = action.execute(name = obj.data['name'],
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
             raise NotImplementedError
         
         else :
             raise NotImplementedError
+        
+        return tmpId
         
     ##########################################################################
     
@@ -773,7 +777,10 @@ class TrackingDB(WMConnectionBase):
                            transaction = self.existingTransaction)
         
         elif type(obj) == Job :
-            raise NotImplementedError
+            action = self.daofactory(classname = "Job.Save")
+            action.execute(binds = obj.data,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
             raise NotImplementedError
@@ -796,7 +803,10 @@ class TrackingDB(WMConnectionBase):
                            transaction = self.existingTransaction)
         
         elif type(obj) == Job :
-            raise NotImplementedError
+            action = self.daofactory(classname = "Job.New")
+            action.execute(binds = obj.data,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
             raise NotImplementedError
@@ -841,7 +851,31 @@ class TrackingDB(WMConnectionBase):
             return result
         
         elif type(obj) == Job :
-            raise NotImplementedError
+            
+            if obj.data['id'] > 0:
+                value = obj.data['id']
+                column = 'id'
+    
+            elif obj.data['jobId'] > 0:
+                value = obj.data['jobId']
+                column = 'job_id'
+    
+            elif obj.data['name']:
+                value = obj.data['name']
+                column = 'name'
+    
+            else:
+                # We have no identifiers.  We're screwed
+                # this branch doesn't exist
+                return []
+            
+            action = self.daofactory(classname = "Job.SelectJob")
+            result = action.execute(value = value,
+                                    column = column,
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction)
+            
+            return result
         
         elif type(obj) == RunningJob :
             raise NotImplementedError
@@ -878,23 +912,38 @@ class TrackingDB(WMConnectionBase):
         """
 
         if type(obj) == Task :
+            
             action = self.daofactory(classname = 'Task.Delete')
             
             # verify data is complete
             if not obj.valid(['id']):
-                # We can delete by name without an ID
-                action.execute(column = 'name',
-                               value = obj.data['name'],
-                               conn = self.getDBConn(),
-                               transaction = self.existingTransaction)
-            else:
-                action.execute(column = 'id',
-                               value = obj.data['id'],
-                               conn = self.getDBConn(),
-                               transaction = self.existingTransaction)
+                column = 'name'
+                value = obj.data['name']
+            else :
+                column = 'id'
+                value = obj.data['id']
+            
+            action.execute(value = value,
+                           column = column,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
         
         elif type(obj) == Job :
-            raise NotImplementedError
+            
+            action = self.daofactory(classname = "Job.Delete")
+            
+            # verify data is complete
+            if not obj.valid(['id']):
+                column = 'name'
+                value = obj.data['name']
+            else :
+                column = 'id'
+                value = obj.data['id']
+            
+            action.execute(value = value,
+                           column = column,
+                           conn = self.getDBConn(),
+                           transaction = self.existingTransaction)
         
         elif type(obj) == RunningJob :
             raise NotImplementedError

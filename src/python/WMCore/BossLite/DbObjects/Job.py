@@ -4,8 +4,8 @@ _Job_
 
 """
 
-__version__ = "$Id: Job.py,v 1.10 2010/04/27 18:54:03 spigafi Exp $"
-__revision__ = "$Revision: 1.10 $"
+__version__ = "$Id: Job.py,v 1.11 2010/05/03 09:13:39 spigafi Exp $"
+__revision__ = "$Revision: 1.11 $"
 
 
 # imports
@@ -16,7 +16,7 @@ from WMCore.Services.UUID import makeUUID
 
 
 from WMCore.BossLite.Common.Exceptions    import JobError # , DbError
-from WMCore.BossLite.DbObjects.DbObject   import DbObject, dbTransaction
+from WMCore.BossLite.DbObjects.DbObject   import DbObject
 from WMCore.BossLite.DbObjects.RunningJob import RunningJob
 
 # from WMCore.DAOFactory   import DAOFactory
@@ -102,27 +102,28 @@ class Job(DbObject):
 
     ##########################################################################
 
-    @dbTransaction
-    def create(self):
+    def create(self, db):
         """
         Create a new instance of a job
         """
         
         # is this 'if' necessary? This check is probably duplicated...
         #if not self.existsInDataBase:
+        """
         action = self.daofactory(classname = "Job.New")
         action.execute(binds = self.data,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction)
+        """
+        db.objCreate(self)
         
         # update ID & check... necessary call!
-        if self.exists() : 
+        if self.exists(db) : 
             self.existsInDataBase = True
 
     ####################################################################
 
-    @dbTransaction
-    def exists(self, noDB = False):
+    def exists(self, db, noDB = False):
         """
         Check to see if the job exists
         """
@@ -134,10 +135,14 @@ class Job(DbObject):
                 return self.data['id']
 
         # Then use the database    
+        """
         action = self.daofactory(classname = "Job.Exists")
         tmpId = action.execute(name = self.data['name'],
                             conn = self.getDBConn(),
                             transaction = self.existingTransaction)
+        """
+        tmpId = db.objExists(self)
+        
         if tmpId:
             self.data['id'] = tmpId
         
@@ -145,22 +150,23 @@ class Job(DbObject):
 
     ###############################################################
 
-    @dbTransaction
-    def save(self, deep = True):
+    def save(self, db, deep = True):
         """
         Save the object into the database
         """
 
         if not self.existsInDataBase:
             # Then we don't have an entry yet
-            self.create()
+            self.create(db)
         else:
+            """
             action = self.daofactory(classname = "Job.Save")
             action.execute(binds = self.data,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction)
+            """
+            db.objSave(self)
             
-        
         # create entry for runningJob
         if deep and self.runningJob is not None:
             # consistency?
@@ -173,8 +179,7 @@ class Job(DbObject):
 
     ########################################################################
 
-    @dbTransaction
-    def load(self, deep = True):
+    def load(self, db, deep = True):
         """
         Load the job info from the database
         """
@@ -184,6 +189,7 @@ class Job(DbObject):
             raise JobError("The following job instance cannot be loaded," + \
                      " since it is not completely specified: %s" % self)
         
+        """
         # the select MUST be done taking care of these three fields...
         if self.data['id'] > 0:
             # Then load by ID
@@ -211,7 +217,9 @@ class Job(DbObject):
                                 column = column,
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction)
-
+        """
+        result = db.objLoad(self)
+        
         if result == []:
             # Then the job doesn't exist!
             raise JobError("No job instances corresponds to the," + \
@@ -328,7 +336,7 @@ class Job(DbObject):
 
     ###########################################################################
 
-    def update(self, deep = True):
+    def update(self, db, deep = True):
         """
         update job information in database
         """
@@ -339,18 +347,20 @@ class Job(DbObject):
             status += 1
         """
         
-        return self.save(deep)
+        return self.save(db, deep)
 
     ###########################################################################
 
-    @dbTransaction
-    def remove(self):
+    def remove(self, db):
         """
         remove job object from database
         """
 
-        action = self.daofactory(classname = "Job.Delete")
-
+        if not self.exists(db):
+            raise JobError("The following job instance cannot be removed," + \
+                     " since it is not completely specified: %s" % self) 
+        
+        """
         # verify data is complete
         if self.valid(['id']):
             value  = self.data['id']
@@ -366,13 +376,8 @@ class Job(DbObject):
             column = 'job_id'
 
         else:
-            raise JobError("The following job instance cannot be removed," + \
-                     " since it is not completely specified: %s" % self) 
-
-        action.execute(value = value,
-                       column = column,
-                       conn = self.getDBConn(),
-                       transaction = self.existingTransaction)
+        """ 
+        db.objRemove(self)
         
         # update status
         self.existsInDataBase = False

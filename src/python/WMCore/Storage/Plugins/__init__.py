@@ -21,4 +21,7 @@ import WMCore.Storage.Plugins.CPImpl
 import WMCore.Storage.Plugins.LCGImpl
 import WMCore.Storage.Plugins.DCCPFNALImpl
 import WMCore.Storage.Plugins.HadoopImpl
+import WMCore.Storage.Plugins.TestFailImpl
+import WMCore.Storage.Plugins.TestWinImpl
+import WMCore.Storage.Plugins.TestLocalCopyImpl
 

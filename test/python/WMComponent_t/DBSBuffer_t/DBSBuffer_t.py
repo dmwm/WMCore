@@ -3,8 +3,8 @@
 DBSBuffer test TestDBSBuffer module and the harness
 """
 
-__revision__ = "$Id: DBSBuffer_t.py,v 1.6 2009/08/13 19:51:47 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DBSBuffer_t.py,v 1.7 2009/08/17 15:15:33 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "anzar@fnal.gov"
 
 import commands
@@ -41,7 +41,7 @@ class DBSBufferTest(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         DBSBuffer tables.  Also add some dummy locations.
         """
-        #self.config = loadConfigurationFile(os.getenv("WMAGENT_CONFIG"))
+
         self.config = self.getConfig()
         myThread = threading.currentThread()
         myThread.dialect = self.config.CoreDatabase.dialect
@@ -53,14 +53,9 @@ class DBSBufferTest(unittest.TestCase):
         myThread.dbi = myThread.dbFactory.connect()
         myThread.transaction = Transaction(myThread.dbi)
 
-        #self.tearDown()
-        
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database", 'WMCore.ThreadPool','WMCore.MsgService','WMCore.Trigger'],
                                 useDefault = True)
 
-        #myThread.transaction = None
-        #myThread.dbi = None
-        #myThread.dbFactory = None
         return
           
     def tearDown(self):        
@@ -153,24 +148,20 @@ class DBSBufferTest(unittest.TestCase):
 
         return config
 
-    def testA(self):
+    def testMultipleJobFrameworkReports(self):
         """
-        Mimics creation of component and handles JobSuccess messages.
+        Mimics creation of component and handles JobSuccess messages with
+        many different job framework reports
         """
-        print "1"
+        myThread = threading.currentThread()
         
         testDBSBuffer = DBSBuffer(self.config)
         
-        print "2a"
-        
         testDBSBuffer.prepareToStart()
         
-        print "3"
-         
         fjr_path = 'FmwkJobReports'
         count = 0;
         for aFJR in os.listdir(fjr_path):
-            print "weee..."
             if aFJR.endswith('.xml') and aFJR.startswith('FrameworkJobReport'):
                 count = count + 1
                 testDBSBuffer.handleMessage('JobSuccess', fjr_path+'/'+aFJR)
@@ -180,6 +171,24 @@ class DBSBufferTest(unittest.TestCase):
             print('Currently: '+str(threading.activeCount())+\
                     ' Threads. Wait until all our threads have finished')
             time.sleep(1)
+
+        result = myThread.dbi.processData("SELECT Path FROM dbsbuffer_dataset")[0].fetchall()
+
+        self.assertEqual(len(result), 11)
+
+        testList = []
+        for i in result:
+            testList.append(i.values()[0])
+
+        assert "/Calo/Commissioning08-v1-merged/RAW" in testList, "Could not find dataset in the result"
+
+        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_file")[0].fetchall()
+
+        self.assertEqual(len(result), 173)
+
+
+        return
+        
 
     def testSingleJobFrameworkReport(self):
         """
@@ -216,6 +225,26 @@ class DBSBufferTest(unittest.TestCase):
                   ' Threads. Wait until all our threads have finished')
             time.sleep(1)
 
+
+        result = myThread.dbi.processData("SELECT Path FROM dbsbuffer_dataset")[0].fetchall()
+
+        self.assertEqual(len(result), 5)
+
+        testList = []
+        for i in result:
+            testList.append(i.values()[0])
+
+        assert "/Calo/Commissioning08-v1-merged/RAW" in testList, "Could not find dataset in the result"
+
+
+        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_file")[0].fetchall()
+
+        self.assertEqual(len(result), 5)
+
+        result = myThread.dbi.processData("SELECT * FROM dbsbuffer_algo")[0].fetchall()
+
+        #Is this right?  Calo and Commissioning don't have separate algos?
+        self.assertEqual(len(result), 4)
 
         return
 

@@ -19,11 +19,11 @@ active.rest.formatter.templates = '/templates/WMCore/WebTools/'
 
 """
 
-__revision__ = "$Id: RESTApi.py,v 1.22 2009/09/22 15:38:18 metson Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: RESTApi.py,v 1.23 2009/09/22 16:40:08 metson Exp $"
+__version__ = "$Revision: 1.23 $"
 
 from WMCore.WebTools.WebAPI import WebAPI
-from WMCore.WebTools.Page import Page, exposejson, exposexml
+from WMCore.WebTools.Page import Page, exposejson, exposexml, make_rfc_timestamp
 from WMCore.WMFactory import WMFactory
 from cherrypy import expose, request, response
 from cherrypy.lib.cptools import accept
@@ -102,6 +102,12 @@ class RESTApi(WebAPI):
                                  description = self.config.description)
     
         data = self.methods['handler']['call'](request.method, args, kwargs)
+        
+        if 'expire' in data.keys():
+            response.headers['Expires'] = make_rfc_timestamp(data['expire'])
+        else:
+            response.headers['Expires'] = make_rfc_timestamp(5*60)
+
         return self.formatResponse(data)
     
     def formatResponse(self, data):
@@ -112,7 +118,7 @@ class RESTApi(WebAPI):
             datatype = accept(self.supporttypes)
 
         data = self.formatter.format(data, datatype)
-        
+        response.headers['ETag'] = data.__str__().__hash__()
         response.headers['Content-Type'] = datatype
         response.headers['Content-Length'] = len(data)
         return data

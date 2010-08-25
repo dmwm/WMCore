@@ -21,10 +21,10 @@ class CMSSW(Emulator):
 
 
         """
-        step.section_("execution")
-        step.execution.exitStatus = 0
-        step.section_("emulation")
-        step.emulation.emulatedBy = str(self.__class__.__name__)
+        self.step.section_("execution")
+        self.step.execution.exitStatus = 0
+        self.step.section_("emulation")
+        self.step.emulation.emulatedBy = str(self.__class__.__name__)
 
         print "Emulating CMSSW Step"
     

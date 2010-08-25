@@ -82,21 +82,21 @@ for i in range(0, 100):
 db.commit()
 
 # Now to interact with the data itself
-reddata = db.loadview('demo', 'listAllRed')
+reddata = db.loadView('demo', 'listAllRed')
 print 'there are %s red documents' % reddata['total_rows']
 # This will give us the sum over all docs, we need to group by key to get 
 # something interesting...
-countdata = db.loadview('demo', 'countColours')
+countdata = db.loadView('demo', 'countColours')
 print 'number of documents: %s' % countdata['rows'][0]['value']
 # Pass in group = True to the loadview call  
 print 'number of documents by colour'
-countdata = db.loadview('demo', 'countColours', {'group': True})
+countdata = db.loadView('demo', 'countColours', {'group': True})
 for row in countdata['rows']:
     print 'there are %s %s documents' % (row['value'], row['key'])
     if row['key'] == 'red':
         assert row['value'] == reddata['total_rows']
 print 'now call the double counted red document'
-doublecountdata = db.loadview('demo', 'weightedCountColours', {'group': True})
+doublecountdata = db.loadView('demo', 'weightedCountColours', {'group': True})
 for row in doublecountdata['rows']:
     print 'there are %s %s documents' % (row['value'], row['key'])
     if row['key'] == 'red':
@@ -117,13 +117,13 @@ print 'doc after the update: %s' % db.document(doc['_id'])
 
 print "now delete all the red documents, we emit'ed them as a key in the view"
 for doc in reddata['rows']:
-    db.queuedelete(doc['key'])
+    db.queueDelete(doc['key'])
 # Bulk delete
 db.commit()
 # Remove them permanently
 db.compact()
 
-countdata = db.loadview('demo', 'countColours', {'group': True})
+countdata = db.loadView('demo', 'countColours', {'group': True})
 for row in countdata['rows']:
     if row['value'] == 1:
         print 'there is %s %s document' % (row['value'], row['key'])

@@ -8,8 +8,8 @@ Module dealing with Configuration file in python format
 
 """
 
-__revision__ = "$Id: Configuration.py,v 1.6 2009/02/06 15:26:35 fvlingen Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Configuration.py,v 1.7 2009/06/18 20:05:27 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import os
 import imp
@@ -59,6 +59,19 @@ class ConfigSection(object):
         self._internal_docstrings = {}
         self._internal_children = set()
         self._internal_parent_ref = None
+        
+    def __eq__(self, other):
+        if (isinstance(other, type(self))):
+            return ( 
+                (self._internal_documentation == other._internal_documentation) and
+                (self._internal_name == other._internal_name) and
+                (self._internal_settings == other._internal_settings) and
+                (self._internal_docstrings == other._internal_docstrings) and
+                (self._internal_children == other._internal_children) and
+                (self._internal_parent_ref == other._internal_parent_ref))
+        else:
+            return (id(self) == id(other))
+        
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):

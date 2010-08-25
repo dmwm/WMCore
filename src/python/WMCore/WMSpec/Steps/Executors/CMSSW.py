@@ -5,11 +5,12 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step
 
 """
-__revision__ = "$Id: CMSSW.py,v 1.3 2009/06/11 15:56:56 meloam Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: CMSSW.py,v 1.4 2009/06/18 20:05:27 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.WMSpec.Steps.Executor import Executor
 import WMCore.Cache.ConfigCache as ConfigCache
+import WMCore.WMException as WMException
 import tempfile
 import subprocess
 import os
@@ -104,7 +105,32 @@ class CMSSW(Executor):
             # give the process some time to fill a buffer
             select.select([], [], [], .1)
         
-        spawnedChild.wait()        
+        spawnedChild.wait()
+        # the spawned CMSSW shell has returned, let's interpret return calls
+        # I'm avoiding the codes from 
+        # https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes      
+        # 70 we called the script with too few arguments
+        # 71 scram project failure
+        # 72 chdir failure
+        # 73 scram runtime fail
+        # FIXME python doesn't have a switch construct, is there a nicer
+        #    way to do this?
+        argsDump = { arguments: args}
+        if (spawnedChild.returncode == 70):
+            raise WMException("Wrong number of arguments to cmssw wrapper"
+                              ,None,argsDump)
+        elif (spawnedChild.returncode == 71):
+            raise WMException("Failure in scram project"
+                              ,None,argsDump)
+        elif (spawnedChild.returncode == 72):
+            raise WMException("Failed to chdir to the cmssw directory"
+                              ,None,argsDump)    
+        elif (spawnedChild.returncode == 73):
+            raise WMException("Failed to execute the scram runtime"
+                              ,None,argsDump)
+        elif (spawnedChild.returncode != 0):
+            raise WMException("Unknown error in cmsRun. Code: %i" 
+                                % spawnedChild.returncode, None, argsDump)
         step.section_("execution")
         step.execution.exitStatus = spawnedChild.returncode
         
@@ -130,12 +156,13 @@ configBlob = """#!/bin/bash
 REQUIRED_ARGUMENT_COUNT=5
 if [ $# -lt $REQUIRED_ARGUMENT_COUNT ]
 then
-    echo "Usage: `basename $0` <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION> <JOB_REPORT> <EXECUTABLE> <CONFIG> [Arguments for cmsRun]"
-    exit 1
+    echo "Usage: `basename $0` <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION>\
+                 <JOB_REPORT> <EXECUTABLE> <CONFIG> [Arguments for cmsRun]"
+    exit 70
 fi
 
-# Extract the required arguments out, leaving an unknown number of cmsRun arguments
-# <SCRAM_COMMAND> <SCRAM_PROJECT> <CMSSW_VERSION> <JOB_REPORT> <EXECUTABLE> <CONFIG>
+# Extract the required arguments out, leaving an unknown number of
+#  cmsRun arguments
 SCRAM_COMMAND=$1
 SCRAM_PROJECT=$2
 CMSSW_VERSION=$3
@@ -147,8 +174,11 @@ shift;shift;shift
 
 # do the actual executing
 $SCRAM_COMMAND $SCRAM_PROJECT $CMSSW_VERSION
+if [ $? -ne 0] then echo "***\nScram failed: $?\n"; exit 71; fi
 cd $CMSSW_VERSION
+if [ $? -ne 0] then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 eval `$SCRAM_COMMAND runtime -sh`
+if [ $? -ne 0] then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
 cd ..
 $EXECUTABLE "$@" -j $JOB_REPORT $CONFIG &
 PROCID=$!
@@ -157,6 +187,7 @@ wait $PROCID
 EXIT_STATUS=$?
 echo "process id is $PROCID status is $EXIT_STATUS"
 exit $EXIT_STATUS
+
 """
 
 if __name__ == "__main__":

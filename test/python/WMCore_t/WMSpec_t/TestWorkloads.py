@@ -27,7 +27,6 @@ def oneTaskTwoStep():
 
     task1.applyTemplates()
 
-    print str(workload.data)
     return workload
 
 
@@ -79,4 +78,3 @@ def twoTaskTree():
     return workload
 
 
-oneTaskTwoStep()

@@ -4,11 +4,13 @@
 Unittest for Builder.py
 '''
 
-__revision__ = "$Id: Builder_t.py,v 1.1 2009/05/20 22:47:24 meloam Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Builder_t.py,v 1.2 2009/06/18 20:05:27 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 
 import unittest
+import tempfile
+import shutil
 from WMCore.WMSpec.Steps.Builder import Builder
 from WMCore.WMSpec.WMStep import makeWMStep
 
@@ -34,7 +36,8 @@ class WMBuilderTest(unittest.TestCase):
         mystep = makeWMStep("demostep")
         self.testBuilder.installWorkingArea(mystep.data,"workingdir")
         self.assertEqual(mystep.data.builder.workingDir, "workingdir")
-
+        
+                
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

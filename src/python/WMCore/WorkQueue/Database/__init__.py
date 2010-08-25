@@ -6,7 +6,7 @@ Implementations for the various database backends.
 
 """
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.1 2009/05/11 11:49:35 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
-__author__ = "james.jackson@cern.ch"
+__revision__ = "$Id: __init__.py,v 1.2 2009/08/18 23:18:17 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
+States = {'Available' : 0, 'Acquired' : 1, 'Done' : 2, 'Failed' : 3}

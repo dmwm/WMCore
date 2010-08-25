@@ -5,8 +5,8 @@ Oracle implementation of WMSpec.New
 """
 
 __all__ = []
-__revision__ = "$Id: New.py,v 1.1 2009/06/25 18:55:52 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: New.py,v 1.2 2009/08/18 23:18:14 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.WorkQueue.Database.MySQL.WMSpec.New import New \
      as NewMySQL

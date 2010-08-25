@@ -6,10 +6,10 @@ A class that parses WMSpec files and provides relevant info
 """
 
 __all__ = []
-__revision__ = "$Id: WorkSpecParser.py,v 1.8 2009/06/25 16:41:30 sryu Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: WorkSpecParser.py,v 1.9 2009/08/18 23:18:15 swakef Exp $"
+__version__ = "$Revision: 1.9 $"
 
-from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
+from WMCore.Services.DBS.DBSReader import DBSReader
 from ProdCommon.MCPayloads.UUID import makeUUID
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, newWorkload
@@ -18,34 +18,21 @@ from WMCore.WorkQueue.DataStructs.Block import Block
 #TODO: Pull useful stuff out of wmspec then free it - large data structure
 #TODO: Cleanup, logArchive etc. WorkflowTypes needed???
 
-class WorkUnit:
-    """
-    Represents a chunk of work
-    Either processing a block or a reasonable sized production request
-    """
-    def __init__(self, primaryBlock, blocks, jobs):
-        self.primaryBlock = primaryBlock
-        self.blocks = blocks
-        self.jobs = jobs
-
-
 globalDBS = 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet'
 
 class WorkSpecParser:
     """
     Helper object to parse a WMSpec and return chunks of work
     """
-    
+
     #TODO: Close wmspec file after pulling what we need
     def __init__(self, url):
         self.specUrl = url
         import pickle
-        input = open(self.specUrl)
-        self.wmSpec = pickle.load(input) #TODO: Replace by WMSpec load method
+        inp = open(self.specUrl)
+        self.wmSpec = pickle.load(inp) #TODO: Replace by WMSpec load method
         self.initialTask = self.wmSpec.taskIterator().next()
-        #self.dbsUrl = getattr(self.wmSpec, 'dbsUrl', 'http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet')
-        #self.dbs = DBSReader(self.dbsUrl)
-        input.close()
+        inp.close()
 
 
 #TODO: Resume this kind of thing at some point
@@ -70,7 +57,7 @@ class WorkSpecParser:
 #                                           'inputDatasets', ())
 #        del initialTask, spec
 #        input.close()
-        
+
 
     def split(self, dbs_pool = None):
         """
@@ -83,11 +70,8 @@ class WorkSpecParser:
         splitting criteria i.e. Generation jobs
         """
         self.validateWorkflow()
-        
         results = []
-        #print self.wmSpec.name()
-                
-        #print "######### %s" % dbs_pool
+
         if not self.inputDatasets:
             # we don't have any input data - divide into one block
             jobs = self.__estimateJobs(self.splitSize, self.totalEvents)
@@ -96,10 +80,9 @@ class WorkSpecParser:
             block["NumFiles"] = 0
             block["NumEvents"] = self.totalEvents
             block["Size"] = 0
-            results.append(WorkUnit(block, None, jobs))
+            results.append((block, tuple(), jobs))
             return results
-        
-        #print "######### %s" % self.dbs_url
+
         # data processing - assume blocks are reasonable size
         #Only run over closed blocks - may need to change this
         if dbs_pool and dbs_pool.has_key(self.dbs_url):
@@ -107,26 +90,28 @@ class WorkSpecParser:
         else:
             dbs = DBSReader(self.dbs_url)
         for dataset in self.inputDatasets:
-            blocks = dbs.getFileBlocksInfo(dataset, onlyClosedBlocks=True)
+            blocks = dbs.getFileBlocksInfo(dataset, onlyClosedBlocks = True)
             for block in blocks:
                 #name = block['Name']
                 if self.splitType == 'Event':
-                    jobs = self.__estimateJobs(self.splitSize, block['NumEvents'])
+                    jobs = self.__estimateJobs(self.splitSize,
+                                               block['NumEvents'])
                 elif self.splitType == 'File':
-                    jobs = self.__estimateJobs(self.splitSize, block['NumFiles'])
+                    jobs = self.__estimateJobs(self.splitSize,
+                                               block['NumFiles'])
                 else:
-                    raise RuntimeError, 'Unsupported SplitType: %s' % self.splitType
+                    raise RuntimeError, \
+                                'Unsupported SplitType: %s' % self.splitType
 
-                parentBlocks = None 
+                parentBlocks = None
                 if self.parentFlag:
-                    #TODO: get parent blocks' info from dbs or is it returning dbs block? - needed for calculating jobs
                     parentBlocks = block['Parents']
                     if not parentBlocks:
                         msg = "Parentage required but no parents found for %s"
                         raise RuntimeError, msg % block['Name']
                 else:
-                    blocks = []
-                results.append(WorkUnit(block, parentBlocks, jobs))
+                    parentBlocks = []
+                results.append((block, parentBlocks, jobs))
         return results
 
 
@@ -148,7 +133,7 @@ class WorkSpecParser:
 #            results.append(WorkUnit(str(count), None, (), jobs))
 #            if total < blockTotal: blockTotal = total
 #        return results
-            
+
 
     def __estimateJobs(self, unit, total):
         """
@@ -156,17 +141,15 @@ class WorkSpecParser:
         """
         #TODO: Possibility to run JobSplitting in DryRun mode, need changes
         # there for this though. Also maybe unnecessary as subscriptions need 
-        # a fileset setup etc... might be able to fake without persisting in db though...
-        # for now fake this
+        # a fileset setup etc... might be able to fake without
+        # persisting in db... for now fake this
         count = 0
         while total > 0:
             count += 1
             total -= unit
-#            if total < unit:
-#                eventsPerBlock = total
         return count
 
-    
+
     def validateWorkflow(self):
         """Check necessary params set"""
         required = ('splitType', 'splitSize')
@@ -174,7 +157,7 @@ class WorkSpecParser:
             try:
                 getattr(self, key)
             except AttributeError:
-                msg = "Required parameter \'%s\' missing from %s" 
+                msg = "Required parameter \'%s\' missing from %s"
                 raise RuntimeError, msg % (key, self.specUrl)
         for site in self.whitelist:
             if site in self.blacklist:
@@ -185,7 +168,7 @@ class WorkSpecParser:
         else:
             return self.validateForProduction()
 
-    
+
     def validateForProduction(self):
         """Check for needed production params"""
         if self.splitType != 'Event':
@@ -211,25 +194,25 @@ class WorkSpecParser:
         """wm spec name - should be unique"""
         return self.wmSpec.name()
     name = property(name)
-    
+
     def owner(self):
         """wm spec owner - should be unique"""
         #TODO currently spec doesn't have owner property. - need to be added
         #return self.wmSpec.owner
         return "wmspecOwner"
     owner = property(owner)
-    
+
     def topLevelTaskName(self):
         """topLevel task name name - should be unique"""
         return self.initialTask.name()
     topLevelTaskName = property(topLevelTaskName)
-    
+
     def whitelist(self):
         """Site whitelist as defined in task"""
         return self.initialTask.data.constraints.sites.whitelist
     whitelist = property(whitelist)
 
-  
+
     def blacklist(self):
         """Site blacklist as defined in task"""
         return self.initialTask.data.constraints.sites.blacklist
@@ -241,7 +224,7 @@ class WorkSpecParser:
         #return self.specParams['priority'] 
         return getattr(self.wmSpec, 'Priority', 1)
     priority = property(priority)
-    
+
 
     def dbs_url(self):
         """Return dbsUrl"""
@@ -258,8 +241,8 @@ class WorkSpecParser:
 #                                  self.initialTask.data.parameters, 'inputDatasets', ())
         return getattr(self.initialTask.data.parameters, 'inputDatasets', ())
     inputDatasets = property(inputDatasets)
-    
-    
+
+
     def splitType(self, throw = True):
         """Return split type"""
         if not throw:

@@ -5,8 +5,8 @@ Implementation of CreateWorkQueue for SQLite.
 
 """
 
-__revision__ = "$Id: Create.py,v 1.2 2009/07/17 14:25:30 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Create.py,v 1.3 2009/08/18 23:18:17 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from WMCore.WorkQueue.Database.CreateWorkQueueBase import CreateWorkQueueBase
 
@@ -20,19 +20,20 @@ class Create(CreateWorkQueueBase):
 
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
-        """        
+        """
         CreateWorkQueueBase.__init__(self, logger, dbi)
-        
+
         # Can't use ALTER TABLE to add constrints
         self.create["04wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL REFERENCES wq_wmspec(id),
-             block_id         INTEGER    NOT NULL REFERENCES wq_block(id),
+             block_id         INTEGER             REFERENCES wq_block(id),
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
              status           INTEGER    DEFAULT 0 REFERENCES wq_element_status(id),
+             subscription_id  INTEGER    NOT NULL REFERENCES wmbs_subscription(id),
              insert_time      INTEGER    NOT NULL,
              PRIMARY KEY (id),
              UNIQUE (wmspec_id, block_id)
@@ -45,12 +46,13 @@ class Create(CreateWorkQueueBase):
              PRIMARY KEY (child, parent)
              )"""
 
-        self.create["06wq_element_subs_assoc"] = \
-          """CREATE TABLE wq_element_subs_assoc (
-             element_id        INTEGER    NOT NULL REFERENCES wq_element(id),
-             subscription_id   INTEGER    NOT NULL REFERENCES wmbs_subscription(id),
-             PRIMARY KEY (element_id, subscription_id)
-             )"""
-             
+        self.create["08wq_block_site_assoc"] = \
+          """CREATE TABLE wq_block_site_assoc (
+             block_id     INTEGER    NOT NULL REFERENCES wq_block(id),
+             site_id      INTEGER    NOT NULL REFERENCES wq_site(id),
+             -- online BOOL DEFAULT FALSE, -- for when we track staging
+             PRIMARY KEY (block_id, site_id)
+             )""" #-- PRIMARY KEY (block_id, site_id) #-- online BOOL DEFAULT FALSE, -- for when we track staging
+
         # constraints added in table definition
         self.constraints.clear()

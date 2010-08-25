@@ -4,8 +4,8 @@ _Exists_
 MySQL implementation of WMSpec.Exists
 """
 __all__ = []
-__revision__ = "$Id: Exists.py,v 1.1 2009/06/25 16:01:09 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: Exists.py,v 1.2 2009/08/18 23:18:12 swakef Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 

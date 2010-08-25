@@ -4,8 +4,8 @@ _Destroy_
 
 """
 
-__revision__ = "$Id: DestroyWorkQueueBase.py,v 1.2 2009/07/17 14:25:30 swakef Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: DestroyWorkQueueBase.py,v 1.3 2009/08/18 23:18:17 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 import string

@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.9 2009/07/17 21:21:06 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.10 2009/08/18 23:18:17 swakef Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import threading
 
@@ -23,12 +23,12 @@ class CreateWorkQueueBase(DBCreator):
     """
     requiredTables = ["01wq_wmspec",
                       "02wq_block",
-                      "03wq_element_status",
                       "04wq_element",
                       "05wq_block_parentage",
-                      "06wq_element_subs_assoc"
+                      "07wq_site",
+                      "08wq_block_site_assoc"
                       ]
-    
+
 
     def __init__(self, logger = None, dbi = None):
         """
@@ -44,8 +44,8 @@ class CreateWorkQueueBase(DBCreator):
             dbi = myThread.dbi
 
         DBCreator.__init__(self, logger, dbi)
-        
-        
+
+
         self.create["01wq_wmspec"] = \
           """CREATE TABLE wq_wmspec (
              id          INTEGER      NOT NULL, 
@@ -54,7 +54,7 @@ class CreateWorkQueueBase(DBCreator):
              PRIMARY KEY(id),
              UNIQUE (name)
              )"""
-                                    
+
         self.create["02wq_block"] = \
           """CREATE TABLE wq_block (
              id             INTEGER      NOT NULL,
@@ -65,15 +65,7 @@ class CreateWorkQueueBase(DBCreator):
              PRIMARY KEY(id),
              UNIQUE (name)
              )"""
-        
-        self.create["03wq_element_status"] = \
-          """CREATE TABLE wq_element_status (
-             id        INTEGER     NOT NULL,
-             status    VARCHAR(25),
-             PRIMARY KEY (id),
-             UNIQUE (status)
-             )"""
-        
+
         self.create["04wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
@@ -83,61 +75,76 @@ class CreateWorkQueueBase(DBCreator):
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
              status           INTEGER    DEFAULT 0,
+             subscription_id  INTEGER    NOT NULL,
              insert_time      INTEGER    NOT NULL,
              PRIMARY KEY (id),
              UNIQUE (wmspec_id, block_id)
              ) """
-               
+
         self.create["05wq_block_parentage"] = \
           """CREATE TABLE wq_block_parentage (
              child        INTEGER    NOT NULL,
              parent       INTEGER    NOT NULL,
              PRIMARY KEY (child, parent)
              )"""
-        
-        # oracle doesn't allow foreign key has null value.
-        # so create another table 
-        self.create["06wq_element_subs_assoc"] = \
-          """CREATE TABLE wq_element_subs_assoc (
-             element_id        INTEGER    NOT NULL,
-             subscription_id   INTEGER    NOT NULL,
-             PRIMARY KEY (element_id, subscription_id)
+
+        self.create["07wq_site"] = \
+          """CREATE TABLE wq_site (
+             id          INTEGER      NOT NULL,
+             name        VARCHAR(255) NOT NULL,
+             PRIMARY KEY(id)
              )"""
-        
-        self.constraints["FK_wq_block_child"]=\
+
+        self.create["08wq_block_site_assoc"] = \
+          """CREATE TABLE wq_block_site_assoc (
+             block_id     INTEGER    NOT NULL,
+             site_id      INTEGER    NOT NULL,
+             -- online BOOL DEFAULT FALSE, -- for when we track staging
+             PRIMARY KEY (block_id, site_id)
+             )"""
+
+        self.constraints["FK_wq_block_assoc"] = \
+              """ALTER TABLE wq_block_site_assoc ADD CONSTRAINT FK_wq_block_assoc
+                 FOREIGN KEY(block_id) REFERENCES wq_block(id)"""
+
+        self.constraints["FK_wq_site_assoc"] = \
+              """ALTER TABLE wq_block_site_assoc ADD CONSTRAINT FK_wq_site_assoc
+                 FOREIGN KEY(site_id) REFERENCES wq_site(id)"""
+
+        self.constraints["FK_wq_block_child"] = \
               """ALTER TABLE wq_block_parentage ADD CONSTRAINT FK_wq_block_child
                  FOREIGN KEY(child) REFERENCES wq_block(id)"""
-        
-        self.constraints["FK_wq_block_parent"]=\
+
+        self.constraints["FK_wq_block_parent"] = \
               """ALTER TABLE wq_block_parentage ADD CONSTRAINT FK_wq_block_parent
                  FOREIGN KEY(parent) REFERENCES wq_block(id)"""
-                  
-        self.constraints["FK_wq_wmspec_element"]=\
+
+        self.constraints["FK_wq_wmspec_element"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_wmspec_element
                  FOREIGN KEY(wmspec_id) REFERENCES wq_wmspec(id)"""
-        
-        self.constraints["FK_wq_block_element"]=\
+
+        self.constraints["FK_wq_block_element"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_block_element
                  FOREIGN KEY(block_id) REFERENCES wq_block(id)"""
-        
-        self.constraints["FK_wq_element_assoc"]=\
+
+        self.constraints["FK_wq_element_assoc"] = \
               """ALTER TABLE wq_element_subs_assoc ADD CONSTRAINT FK_wq_element_assoc
                  FOREIGN KEY(element_id) REFERENCES wq_element(id)"""
-        
-        self.constraints["FK_wq_subs_assoc"]=\
-              """ALTER TABLE wq_element_subs_assoc ADD CONSTRAINT FK_wq_subs_assoc
-                 FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""
-        
-        self.constraints["FK_wq_element_status"]=\
+
+        self.constraints["FK_wq_element_status"] = \
               """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_status
                  FOREIGN KEY(status) REFERENCES wq_element_status(id)"""
-        
+
+        self.constraints["FK_wq_element_sub"] = \
+              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_sub
+                 FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""
+
         wqStatus = ["Available", "Acquired", "Done", "Failed"]
         for i in range(3):
-            self.inserts["%swq_elem_status_insert" % (60 + i)]=\
+            self.inserts["%swq_elem_status_insert" % (60 + i)] = \
                 """INSERT INTO wq_element_status (id, status) VALUES (%d, '%s')
                 """ % (i, wqStatus[i])
-        
+
         #TODO: need to find the better way to handle this        
         #block magic string for no block (production work)  
 #        self.inserts["80wq_block_insert"]=\

@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 """
-_FeederManager_
+_WorkQueue_
 
-    A FeederManager associates filesets of interest with feeders (DBS, PhEDEx 
-etc.) and calls the feeders to populate the WMBS with new/updated files. 
-  
-    Also provide some method for callbacks to feeders such that the feeders can 
-persist state. This will need to know data type and appropriate mappings - 
-maybe persist to config type file instead of a database, as the state will be 
-complex and varied.
+WorkQueue provides functionality to queue large chunks of work,
+thus acting as a buffer for the next steps in job processing
 
-    The FeederManager may need to evaluate reg exp's in fileset names... tbd
+WMSpec objects are fed into the queue, split into coarse grained work units
+and released when a suitable resource is found to execute them.
+
+https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 __all__ = []
-__revision__ = "$Id: __init__.py,v 1.1 2009/05/11 11:49:35 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: __init__.py,v 1.2 2009/08/18 23:18:15 swakef Exp $"
+__version__ = "$Revision: 1.2 $"

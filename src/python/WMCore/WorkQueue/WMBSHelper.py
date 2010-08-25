@@ -2,8 +2,8 @@
 """
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
-__revision__ = "$Id: WMBSHelper.py,v 1.5 2009/08/12 17:10:11 sryu Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: WMBSHelper.py,v 1.6 2009/08/18 23:18:15 swakef Exp $"
+__version__ = "$Revision: 1.6 $"
 from sets import Set
 
 from WMCore.WMBS.File import File
@@ -12,8 +12,8 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 
 class WMBSHelper:
-    
-    def __init__(self, wmSpec):        
+
+    def __init__(self, wmSpec, block):
         #TODO: 
         # 1. get the top level task.
         # 2. get the top level step and inpup
@@ -21,46 +21,48 @@ class WMBSHelper:
         # 4. get input file list from top level step
         # 5. generate the file set from work flow.
         self.wmSpec = wmSpec
-        self._fileset = None
-        self._workflow = None
-        self._subscription = None
-        
+        self.block = block or None
+        self.fileset = None
+        self.workflow = None
+        self.subscription = None
+
     def createWorkflow(self):
         # create workflow
         # make up workflow name from task name
-        if self._workflow == None:
-            workflowName = ("%s-%s-%s" % (self.wmSpec.name, self.wmSpec.topLevelTaskName,
-                                         self.wmSpec.owner))
-            self._workflow = Workflow(self.wmSpec.specUrl, 
-                                     self.wmSpec.owner, workflowName, 
-                                     self.wmSpec.topLevelTaskName)
-            self._workflow.create()
-            
-        return self._workflow
-    
+        workflowName = self.wmSpec.name
+        if self.block:
+            workflowName += "-%s" % self.block
+        self.workflow = Workflow(self.wmSpec.specUrl,
+                                 self.wmSpec.owner, workflowName,
+                                 self.wmSpec.topLevelTaskName)
+        self.workflow.create()
+
+        return self.workflow
+
     def createFilesset(self):
-        if self._fileset == None:
-            # create fileset
-            # make up fileset name from task name 
-            filesetName = ("%s-%s" % (self.wmSpec.name, self.wmSpec.topLevelTaskName))
-            self._fileset = Fileset(filesetName)
-            self._fileset.create()
-        return self._fileset
-        
-        
+        # create fileset
+        # make up fileset name from task name
+        filesetName = ("%s-%s" % (self.wmSpec.name, self.wmSpec.topLevelTaskName))
+        if self.block:
+            filesetName += "-%s" % self.block
+        self.fileset = Fileset(filesetName)
+        self.fileset.create()
+        return self.fileset
+
+
     def createSubscription(self):
         """
         _createSubscription_
         
         create the wmbs subscription by a given fileset name and workflow name
         """
-        if self._subscription == None:
-            fileset = self.createFilesset()
-            workflow = self.createWorkflow()
-            self._subscription = Subscription(fileset, workflow)
-            self._subscription.create()
-        return self._subscription
-    
+        self.createFilesset()
+        self.createWorkflow()
+        self.subscription = Subscription(self.fileset, self.workflow,
+                                         whitelist = self.wmSpec.whitelist,
+                                         blacklist = self.wmSpec.blacklist)
+        return self.subscription
+
     def addFiles(self, dbsFiles, locations):
         """
         _createFiles_
@@ -68,7 +70,7 @@ class WMBSHelper:
         create wmbs files from given dbs files.
         as well as run lumi update
         """
-        
+
         if type(dbsFiles) != list:
             dbsFiles = [dbsFiles]
         
@@ -83,5 +85,3 @@ class WMBSHelper:
             wmbsFile.create()
             fileset.addFile(wmbsFile)
         fileset.commit()
-        
-        

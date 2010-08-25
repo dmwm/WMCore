@@ -4,8 +4,8 @@ _Block_
 A dictionary based object meant to represent a row in the active_block/block table.
 """
 
-__revision__ = "$Id: Block.py,v 1.2 2009/06/24 21:00:23 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Block.py,v 1.3 2009/08/18 23:18:17 swakef Exp $"
+__version__ = "$Revision: 1.3 $"
 
 class Block(dict):
     """

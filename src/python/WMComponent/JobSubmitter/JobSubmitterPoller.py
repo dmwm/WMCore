@@ -10,8 +10,8 @@ Creates jobs for new subscriptions
 
 """
 
-__revision__ = "$Id: JobSubmitterPoller.py,v 1.33 2010/07/15 16:57:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: JobSubmitterPoller.py,v 1.34 2010/07/20 15:41:31 mnorman Exp $"
+__version__ = "$Revision: 1.34 $"
 
 
 #This job currently depends on the following config variables in JobSubmitter:
@@ -129,7 +129,10 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         if hasattr(self.config, 'BossAir'):
             configDict['pluginName'] = config.BossAir.pluginName
-            configDict['pluginName'] = config.BossAir.pluginDir 
+            configDict['pluginDir']  = config.BossAir.pluginDir
+
+        if hasattr(self.config.JobSubmitter, 'gLiteConf'):
+            configDict['gLiteConf'] = self.config.JobSubmitter.gLiteConf
 
         workerName = "%s.%s" % (self.config.JobSubmitter.pluginDir, \
                                 self.config.JobSubmitter.pluginName)
@@ -436,14 +439,18 @@ class JobSubmitterPoller(BaseWorkerThread):
             sortedJobList[sandbox].append(loadedJob)
 
 
+            
+
+
 
             # Enqueue jobs
             if len(sortedJobList[sandbox]) >= self.config.JobSubmitter.jobsPerWorker:
                 # First get them ready to run
                 jobList = sortedJobList[sandbox]
-                index = submitIndex.get(sandbox, 0)
                 packagePath = os.path.join(os.path.dirname(sandbox),
-                                           'batch_%i' %(jobList[0]['id']))
+                                       'batch_%i' %(jobList[0]['id']))
+                index = submitIndex.get(packagePath, 0)
+                
                 jobsReady = self.prepForSubmit(jobList = jobList,
                                                sandbox = sandbox,
                                                packagePath = packagePath)
@@ -456,9 +463,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                 # Increment our counters
                 lenWork += 1
-                if not sandbox in submitIndex.keys():
-                    submitIndex[sandbox] = 0
-                submitIndex[sandbox] += len(jobList)
+                if not packagePath in submitIndex.keys():
+                    submitIndex[packagePath] = 0
+                submitIndex[packagePath] += len(jobList)
 
                 # We've submitted them, let's dump them
                 sortedJobList[sandbox] = []
@@ -487,9 +494,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             if len(sortedJobList[sandbox]) > 0:
                 # Then we have to submit them.
                 jobList = sortedJobList[sandbox]
-                index = submitIndex.get(sandbox, 0)
                 packagePath = os.path.join(os.path.dirname(sandbox),
                                            'batch_%i' %(jobList[0]['id']))
+                index = submitIndex.get(packagePath, 0)
                 jobsReady = self.prepForSubmit(jobList = jobList,
                                                sandbox = sandbox,
                                                packagePath = packagePath)

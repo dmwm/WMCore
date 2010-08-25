@@ -5,12 +5,12 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
-__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.3 2010/07/12 16:06:56 metson Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: TrivialFileCatalog_t.py,v 1.4 2010/07/13 13:17:44 metson Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import unittest
-
+from xml.dom.minidom import parseString
 from WMCore.WMInit import getWMBASE
 
 from WMQuality.TestInit import TestInit
@@ -63,15 +63,21 @@ class TrivialFileCatalogTest(unittest.TestCase):
         phedex = PhEDEx(responseType='xml')
         
         site = 'T2_UK_SGrid_Bristol'
-        
+        lfn = '/store/users/metson/file'
+        protocol = 'srmv2'
         phedex.getNodeTFC(site)
         
         tfc_file = phedex.cacheFileName('tfc', inputdata={'node': site})
         tfc = readTFC(tfc_file)
         
-        pfn = tfc.matchLFN('srmv2', '/store/user/metson/file')
+        # Hacky XML parser 
+        phedex_dom = parseString(phedex.getPFN(site, lfn, protocol))
+         
+        phedex_pfn = phedex_dom.getElementsByTagName("mapping")[0].getAttribute('pfn') 
         
-        assert pfn.startswith('srm')
+        pfn = tfc.matchLFN(protocol, lfn)
+        msg = 'TFC pfn (%s) did not match PhEDEx pfn (%)' % (pfn, phedex_pfn)
+        assert phedex_pfn == pfn,  msg
     
 if __name__ == "__main__":
     unittest.main()

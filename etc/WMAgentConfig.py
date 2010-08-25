@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.10 2010/04/09 18:06:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.11 2010/05/03 16:06:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import os
 import WMCore.WMInit
@@ -39,11 +39,11 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = 'INFO'
-config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:8570'
+config.WorkQueueManager.serviceUrl = 'cmssrv52.fnal.gov:9996'
 config.WorkQueueManager.pollInterval = 10
 config.WorkQueueManager.queueParams = {"PopulateFilesets": True,
                                        "ParentQueue": "http://%s/workqueue/" % config.WorkQueueManager.serviceUrl,
-                                       "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
+                                        "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
 
 config.component_("DBSUpload")
 config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
@@ -73,7 +73,7 @@ config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
 config.JobAccountant.componentDir = config.General.workDir + "/JobAccountant"
 config.JobAccountant.logLevel = "DEBUG"
 config.JobAccountant.workerThreads = 1
-config.JobAccountant.pollInterval = 60
+config.JobAccountant.pollInterval = 20
 
 config.component_("JobCreator")
 config.JobCreator.namespace = "WMComponent.JobCreator.JobCreator"
@@ -85,8 +85,6 @@ config.JobCreator.pollInterval = 10
 config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
 config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 2
-config.JobCreator.useWorkQueue = False
-config.JobCreator.WorkQueueParams = getattr(config.WorkQueueManager, 'queueParams', {})
 
 config.component_("JobSubmitter")
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
@@ -94,7 +92,7 @@ config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
 config.JobSubmitter.logLevel = "DEBUG"
 config.JobSubmitter.maxThreads = 1
 config.JobSubmitter.pollInterval = 10
-config.JobSubmitter.pluginName = "CondorGlobusPlugin"
+config.JobSubmitter.pluginName = "CondorGlideInPlugin"
 config.JobSubmitter.pluginDir = "JobSubmitter.Plugins"
 config.JobSubmitter.submitNode = "cmssrv52.fnal.gov"
 config.JobSubmitter.submitDir = config.General.workDir + "/SubmitJDLs"
@@ -117,7 +115,7 @@ config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
 config.ErrorHandler.componentDir  = config.General.workDir + "/ErrorHandler"
 config.ErrorHandler.logLevel = "DEBUG"
-config.ErrorHandler.maxRetries = 10
+config.ErrorHandler.maxRetries = 3
 config.ErrorHandler.pollInterval = 10
 
 config.component_("RetryManager")
@@ -142,6 +140,9 @@ config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = "DEBUG"
 config.TaskArchiver.pollInterval = 10
 config.TaskArchiver.timeOut      = 0
+config.TaskArchiver.WorkQueueParams = {"PopulateFilesets": True,
+                                       "ParentQueue": "http://%s/workqueue/" % 'cmssrv52.fnal.gov:9996',
+                                       "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
 config.TaskArchiver.useWorkQueue = False
 
 config.webapp_('WorkQueueService')
@@ -162,7 +163,9 @@ config.WorkQueueService.views.active.workqueue.model.object = 'WMCore.HTTPFrontE
 config.WorkQueueService.views.active.workqueue.section_('formatter')
 config.WorkQueueService.views.active.workqueue.formatter.object = 'WMCore.HTTPFrontEnd.WorkQueue.WorkQueueRESTFormatter'
 config.WorkQueueService.views.active.workqueue.serviceModules = ['WMCore.HTTPFrontEnd.WorkQueue.Services.WorkQueueService']
-config.WorkQueueService.views.active.workqueue.queueParams = getattr(config.WorkQueueManager, 'queueParams', {})
+config.WorkQueueService.views.active.workqueue.queueParams = {"PopulateFilesets": True,
+                                                              "ParentQueue": "http://%s/workqueue/" % 'cmssrv52.fnal.gov:9996',
+                                                              "QueueURL": "/storage/local/data1/workqueue/workWorkQueueManager"}
 
 config.webapp_("WMBSMonitoring")
 config.WMBSMonitoring.componentDir = config.General.workDir + "/WMBSMonitoring"

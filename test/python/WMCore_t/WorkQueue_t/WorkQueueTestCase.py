@@ -4,8 +4,8 @@ _File_t_
 Unit tests for the WMBS File class.
 """
 
-__revision__ = "$Id: WorkQueueTestCase.py,v 1.6 2009/11/05 16:54:01 sryu Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: WorkQueueTestCase.py,v 1.7 2010/01/28 13:53:21 swakef Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import logging
@@ -34,7 +34,7 @@ class WorkQueueTestCase(unittest.TestCase):
                                 useDefault = False)
         self.testInit.setSchema(customModules = ["WMCore.WorkQueue.Database"],
                                 useDefault = False)
-
+        self.workDir = self.testInit.generateWorkDir()
 
     def tearDown(self):
         """
@@ -43,3 +43,4 @@ class WorkQueueTestCase(unittest.TestCase):
         Drop all the WMBS tables.
         """
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()

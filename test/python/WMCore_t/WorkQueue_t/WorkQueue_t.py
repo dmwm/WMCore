@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.24 2009/12/16 22:31:49 sryu Exp $"
-__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.25 2010/01/28 13:53:21 swakef Exp $"
+__version__ = "$Revision: 1.25 $"
 
 import unittest
 import os
@@ -42,18 +42,18 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Basic production Spec
         self.spec = BasicProductionWorkload
-        self.spec.setSpecUrl(os.path.join(os.getcwd(), 'testworkflow.spec'))
+        self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
 
         # Sample Tier1 ReReco spec
         self.processingSpec = Tier1ReRecoWorkload
-        self.processingSpec.setSpecUrl(os.path.join(os.getcwd(),
+        self.processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessing.spec'))
         self.processingSpec.save(self.processingSpec.specUrl())
 
         # ReReco spec with blacklist
         self.blacklistSpec = deepcopy(self.processingSpec)
-        self.blacklistSpec.setSpecUrl(os.path.join(os.getcwd(),
+        self.blacklistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testBlacklist.spec'))
         self.blacklistSpec.taskIterator().next().data.constraints.sites.blacklist = ['SiteA']
         self.blacklistSpec.data._internal_name = 'blacklistSpec'
@@ -61,14 +61,14 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # ReReco spec with whitelist
         self.whitelistSpec = deepcopy(self.processingSpec)
-        self.whitelistSpec.setSpecUrl(os.path.join(os.getcwd(),
+        self.whitelistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testWhitelist.spec'))
         self.whitelistSpec.taskIterator().next().data.constraints.sites.whitelist = ['SiteB']
         self.blacklistSpec.data._internal_name = 'whitelistlistSpec'
         self.whitelistSpec.save(self.whitelistSpec.specUrl())
 
         # Create queues
-        self.globalQueue = globalQueue(CacheDir = 'global',
+        self.globalQueue = globalQueue(CacheDir = self.workDir,
                                        NegotiationTimeout = 0,
                                        QueueURL = 'global.example.com')
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
@@ -77,11 +77,11 @@ class WorkQueueTest(WorkQueueTestCase):
 #                            CacheDir = None)
         # ignore mid queue as it causes database duplication's
         self.localQueue = localQueue(ParentQueue = self.globalQueue,
-                                     CacheDir = 'local',
+                                     CacheDir = self.workDir,
                                      ReportInterval = 0,
                                      QueueURL = "local.example.com")
         # standalone queue for unit tests
-        self.queue = WorkQueue(CacheDir = 'standalone')
+        self.queue = WorkQueue(CacheDir = self.workDir)
 
         # setup Mock DBS and PhEDEx
         inputDataset = Tier1ReRecoWorkload.taskIterator().next().inputDataset()
@@ -98,18 +98,6 @@ class WorkQueueTest(WorkQueueTestCase):
     def tearDown(self):
         """tearDown"""
         WorkQueueTestCase.tearDown(self)
-
-        for f in (self.spec.specUrl(),
-                  self.processingSpec.specUrl(),
-                  self.blacklistSpec.specUrl(),
-                  self.whitelistSpec.specUrl()):
-            try:
-                os.unlink(f)
-            except OSError:
-                pass
-        for d in ('standalone', 'global', 'local'):
-            shutil.rmtree(d, ignore_errors = True)
-
 
 
     def testProduction(self):
@@ -368,7 +356,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         # Basic production Spec
         spec = MultiTaskProductionWorkload
-        spec.setSpecUrl(os.path.join(os.getcwd(), 'multiTaskProduction.spec'))
+        spec.setSpecUrl(os.path.join(self.workDir, 'multiTaskProduction.spec'))
         spec.save(spec.specUrl())
         
         specfile = spec.specUrl()
@@ -395,5 +383,6 @@ class WorkQueueTest(WorkQueueTestCase):
             os.unlink(specfile)
         except OSError:
             pass
+
 if __name__ == "__main__":
     unittest.main()

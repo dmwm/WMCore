@@ -7,7 +7,7 @@ import threading
 import logging
 import time
 import random
-
+import WMCore.WMInit
 from WMQuality.TestInit         import TestInit
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.WMFactory           import WMFactory
@@ -260,7 +260,7 @@ class FullRunthroughTest(unittest.TestCase):
         config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
         config.RetryManager.pluginName   = ''
-        config.RetryManager.WMCoreBase   = os.getenv('WMCOREBASE')
+        config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
         
 
         #JobAccountant
@@ -542,7 +542,7 @@ class FullRunthroughTest(unittest.TestCase):
         
         self.assertEqual(state[0].values()[0], 'executing')
 
-        #passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(os.getenv('WMCOREBASE')),
+        #passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(WMCore.WMInit.getWMBASE()),
         #                                  fractionPassed = 0.0)
 
 
@@ -654,7 +654,7 @@ class FullRunthroughTest(unittest.TestCase):
 
 
         #First tell emulator to randomly pass/fail jobs
-        passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(os.getenv('WMCOREBASE')), 
+        passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(WMCore.WMInit.getWMBASE()), 
                                           fractionPassed = 0.5)
         #Remove jobs to trigger tracker
         os.popen3('condor_rm %s' %(os.getenv('USER')))
@@ -685,7 +685,7 @@ class FullRunthroughTest(unittest.TestCase):
         time.sleep(60)
 
         #Re-emulate jobs
-        passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(os.getenv('WMCOREBASE')),
+        passed, failed = self.jobEmulator(goodFJR = "%s/test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports/" %(WMCore.WMInit.getWMBASE()),
                                           fractionPassed = 1.0)
 
         #Remove jobs to trigger tracker

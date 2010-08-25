@@ -4,8 +4,8 @@
 ErrorHandler test TestErrorHandler module and the harness
 """
 
-__revision__ = "$Id: ErrorHandler_t.py,v 1.13 2010/02/02 20:50:30 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: ErrorHandler_t.py,v 1.14 2010/02/04 22:36:35 meloam Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "fvlingen@caltech.edu"
 
 import os
@@ -15,6 +15,7 @@ import unittest
 
 from WMComponent.ErrorHandler.ErrorHandler import ErrorHandler
 
+import WMCore.WMInit
 from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -79,7 +80,7 @@ class ErrorHandlerTest(unittest.TestCase):
 
     def getConfig(self, configPath=None):
         if configPath == None:
-            configPath = os.path.join(os.getenv('WMCOREBASE'), \
+            configPath = os.path.join(WMCore.WMInit.getWMBASE(), \
                                                 'src/python/WMComponent/ErrorHandler/DefaultConfig.py')
 
         config = Configuration()

@@ -6,14 +6,14 @@ General test for FJR
 
 """
 
-__revision__ = "$Id: FJR_t.py,v 1.6 2009/10/13 22:43:00 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: FJR_t.py,v 1.7 2010/02/04 22:36:37 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "fvlingen@caltech.edu"
 
 import logging
 import os
 import unittest
-
+import WMCore.WMInit
 from WMCore.FwkJobReport.FJR import FJR
 from WMCore.FwkJobReport.FJRParser import readJobReport
 from WMCore.FwkJobReport import FJRUtils
@@ -142,7 +142,7 @@ class FJRTest(unittest.TestCase):
         Depends on FJRs in WMComponent_t.DBSBuffer_t
         """
 
-        reportDir = os.path.join(os.getenv('WMCOREBASE'), 'test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports')
+        reportDir = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports')
         if not os.path.isdir(reportDir):
             print "Could not find test/python/WMComponent_t/DBSBuffer_t/FmwkJobReports"
             print "Aborting this test without error"

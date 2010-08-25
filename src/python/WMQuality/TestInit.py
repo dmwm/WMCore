@@ -12,9 +12,9 @@ is based on the WMCore.WMInit class.
 
 """
 __revision__ = \
-    "$Id: TestInit.py,v 1.28 2010/02/04 15:59:27 mnorman Exp $"
+    "$Id: TestInit.py,v 1.29 2010/02/04 22:36:35 meloam Exp $"
 __version__ = \
-    "$Revision: 1.28 $"
+    "$Revision: 1.29 $"
 __author__ = \
     "fvlingen@caltech.edu"
 
@@ -29,6 +29,9 @@ from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 from WMCore.WMInit import WMInit
+
+# Sorry for the global, but I think this should go here
+trashDatabases = False  # delete databases after every test?
 
 class TestInit:
     """

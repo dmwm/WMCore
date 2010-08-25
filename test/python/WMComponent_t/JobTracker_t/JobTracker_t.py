@@ -4,15 +4,15 @@
 JobTracker test 
 """
 
-__revision__ = "$Id: JobTracker_t.py,v 1.3 2009/11/17 17:43:56 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: JobTracker_t.py,v 1.4 2010/02/04 22:36:37 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import logging
 import threading
 import unittest
 
-
+import WMCore.WMInit
 from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -69,7 +69,7 @@ class JobTrackerTest(unittest.TestCase):
         self.testInit.clearDatabase()
         
 
-    def getConfig(self, configPath=os.path.join(os.getenv('WMCOREBASE'), \
+    def getConfig(self, configPath=os.path.join(WMCore.WMInit.getWMBASE(), \
                                                 'src/python/WMComponent/JobTracker/DefaultConfig.py')):
 
 

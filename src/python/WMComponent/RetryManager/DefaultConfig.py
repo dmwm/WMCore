@@ -5,14 +5,14 @@ Defines default config values for errorhandler specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.3 2009/07/30 19:25:52 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.4 2010/02/04 22:36:36 meloam Exp $"
+__version__ = "$Revision: 1.4 $"
 
 
 from WMCore.Agent.Configuration import Configuration
 import os
 import os.path
-
+import WMCore.WMInit
 config = Configuration()
 config.component_("RetryManager")
 config.RetryManager.logLevel = 'DEBUG'
@@ -25,7 +25,7 @@ config.RetryManager.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
 #Path to plugin directory
 config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
 config.RetryManager.pluginName = ''
-config.RetryManager.WMCoreBase = os.getenv('WMCOREBASE')
+config.RetryManager.WMCoreBase = WMCore.WMInit.getWMBASE()
 
 
 jsm = config.component_('JobStateMachine')

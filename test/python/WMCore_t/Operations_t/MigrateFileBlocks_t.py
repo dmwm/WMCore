@@ -7,14 +7,14 @@ DBSUpload test TestDBSUpload module and the harness
 """
 
 __revision__ = "$Id $"
-__version__ = "$Revision: 1.2 $"
+__version__ = "$Revision: 1.3 $"
 
 
 import os
 import threading
 import time
 import unittest
-
+import WMCore.WMInit
 from WMComponent.DBSUpload.DBSUpload import DBSUpload
 from WMComponent.DBSUpload.DBSUploadPoller import DBSUploadPoller
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
@@ -195,8 +195,8 @@ class MigrateFileBlocksTest(unittest.TestCase):
         self.assertEqual(randomDataset in primaries, False, 'Dataset %s already migrated!' %(randomDataset))
 
         datasetPath = "/%s/%s/RECO" % (randomDataset, randomDataset)
-        filePath = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/Operations/MigrateFileBlocks.py')
-        configLocation = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/DBSUpload/DefaultConfig.py')
+        filePath = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore/Operations/MigrateFileBlocks.py')
+        configLocation = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMComponent/DBSUpload/DefaultConfig.py')
 
         migrator = MigrateFileBlocks(config)
         migrator.migrateDataset(datasetPath)
@@ -251,8 +251,8 @@ class MigrateFileBlocksTest(unittest.TestCase):
         self.assertEqual(randomDataset in primaries, False, 'Dataset %s already migrated!' %(randomDataset))
 
         datasetPath = "/%s/%s/RECO" % (randomDataset, randomDataset)
-        filePath = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMCore/Operations/MigrateFileBlocks.py')
-        configLocation = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/DBSUpload/DefaultConfig.py')
+        filePath = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore/Operations/MigrateFileBlocks.py')
+        configLocation = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMComponent/DBSUpload/DefaultConfig.py')
 
         command = ['python2.4', filePath, datasetPath, configLocation]
 

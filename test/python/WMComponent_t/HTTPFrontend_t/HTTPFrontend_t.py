@@ -11,7 +11,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.Database.Transaction import Transaction
 from WMComponent.HTTPFrontend.HTTPFrontEnd import HTTPFrontEnd
 from WMQuality.TestInit import TestInit
-
+import WMCore.WMInit
 
 class MsgServiceApp(unittest.TestCase):
     """
@@ -59,7 +59,7 @@ class MsgServiceApp(unittest.TestCase):
         self.testInit.clearDatabase()
         
     def testA(self):
-        config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'), \
+        config = self.testInit.getConfiguration(WMCore.WMInit.getWMBASE(), \
                         'src/python/WMComponent/ErrorHandler/DefaultConfig.py'))
         self.testInit.generateWorkDir(config)
         

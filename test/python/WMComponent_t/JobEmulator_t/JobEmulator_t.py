@@ -12,7 +12,7 @@ Inheritance is preferred.
 import os
 import unittest
 import threading
-
+import WMCore.WMInit
 #FIXME: need to be migrated to new wmcore jobspec stuff.
 from ProdCommon.MCPayloads.JobSpec import JobSpec
 
@@ -54,7 +54,7 @@ class JobEmulatorTest(unittest.TestCase):
         myThread.transaction.commit()
 
          
-        config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'),'src/python/WMComponent/JobEmulator/DefaultConfig.py'))
+        config = self.testInit.getConfiguration(os.path.join(WMCore.WMInit.getWMBASE(),'src/python/WMComponent/JobEmulator/DefaultConfig.py'))
         self.testInit.generateWorkDir(config)
         jobEmulator = JobEmulator(config)
         jobEmulator.prepareToStart()

@@ -5,15 +5,15 @@ _FeederManager_t_
 Unit tests for the FeederManager_t.
 """
 
-__revision__ = "$Id: FeederManager_t.py,v 1.1 2009/11/06 23:36:33 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: FeederManager_t.py,v 1.2 2010/02/04 22:36:34 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import time
 import unittest
 import os
 import threading
 from WMComponent.FeederManager.FeederManager import FeederManager
-
+import WMCore.WMInit
 from WMQuality.TestInit import TestInit
 
 class FeederManagerTest(unittest.TestCase):
@@ -61,7 +61,7 @@ class FeederManagerTest(unittest.TestCase):
         Get defaults FeederManager parameters
         """
         return self.testInit.getConfiguration(
-                    os.path.join(os.getenv('WMCOREBASE'), \
+                    os.path.join(WMCore.WMInit.getWMBASE(), \
             'src/python/WMComponent/FeederManager/DefaultConfig.py'))
 
 

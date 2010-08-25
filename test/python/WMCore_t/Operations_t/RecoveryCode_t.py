@@ -13,7 +13,7 @@ from WMQuality.TestInit         import TestInit
 from WMCore.Operations.RecoveryCode import PurgeJobs
 
 from subprocess import Popen, PIPE
-
+import WMCore.WMInit
 
 class TestRecoveryCode(unittest.TestCase):
     """
@@ -189,7 +189,7 @@ class TestRecoveryCode(unittest.TestCase):
         config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
         config.RetryManager.pluginName   = ''
-        config.RetryManager.WMCoreBase   = os.getenv('WMCOREBASE')
+        config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
         
 
         #JobAccountant

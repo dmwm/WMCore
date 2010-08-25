@@ -8,8 +8,8 @@ and generate a file for checking the
 code style.
 """
 
-__revision__ = "$Id: Code.py,v 1.5 2009/02/11 09:21:01 fvlingen Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: Code.py,v 1.6 2010/02/04 22:36:35 meloam Exp $"
+__version__ = "$Revision: 1.6 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -237,7 +237,7 @@ packages = {\\
             styleFile.writelines("        '"+moduleName+"':'"+self.module[moduleName]+"',\\\n")
         styleFile.writelines('}\n')
         tail = """
-code = Code(qualityScript, qualityReport, os.getenv('WMCOREBASE'), threshold, packages)
+code = Code(qualityScript, qualityReport, WMCore.WMInit.getWMBASE(), threshold, packages)
 code.run()
 code.summaryText()
         """

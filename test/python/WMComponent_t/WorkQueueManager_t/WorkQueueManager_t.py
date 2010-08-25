@@ -4,8 +4,8 @@
 JobArchiver test 
 """
 
-__revision__ = "$Id: WorkQueueManager_t.py,v 1.1 2009/12/01 21:53:56 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkQueueManager_t.py,v 1.2 2010/02/04 22:36:36 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import os
 import logging
@@ -13,7 +13,7 @@ import threading
 import unittest
 import time
 import shutil
-
+import WMCore.WMInit
 from subprocess import Popen, PIPE
 
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -62,7 +62,7 @@ class WorkQueueManagerTest(unittest.TestCase):
 
         General config file
         """
-        #configPath=os.path.join(os.getenv('WMCOREBASE'), \
+        #configPath=os.path.join(WMCore.WMInit.getWMBASE(), \
         #                        'src/python/WMComponent/WorkQueueManager/DefaultConfig.py')):
 
 

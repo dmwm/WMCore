@@ -4,8 +4,8 @@
 RetryManager test for module and the harness
 """
 
-__revision__ = "$Id: RetryManager_t.py,v 1.4 2010/02/02 20:42:19 mnorman Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: RetryManager_t.py,v 1.5 2010/02/04 22:36:36 meloam Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "mnorman@fnal.gov"
 
 import os
@@ -15,7 +15,7 @@ import unittest
 
 from WMComponent.RetryManager.RetryManager import RetryManager
 
-
+import WMCore.WMInit
 from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -76,7 +76,7 @@ class RetryManagerTest(unittest.TestCase):
 
 
 
-    def getConfig(self, configPath=os.path.join(os.getenv('WMCOREBASE'), \
+    def getConfig(self, configPath=os.path.join(WMCore.WMInit.getWMBASE(), \
                                                 'src/python/WMComponent/RetryManager/DefaultConfig.py')):
 
         config = Configuration()
@@ -110,7 +110,7 @@ class RetryManagerTest(unittest.TestCase):
         # Path to plugin directory
         config.RetryManager.pluginPath = 'WMComponent.RetryManager.PlugIns'
         config.RetryManager.pluginName = ''
-        config.RetryManager.WMCoreBase = os.getenv('WMCOREBASE')
+        config.RetryManager.WMCoreBase = WMCore.WMInit.getWMBASE()
 
 
         # JobStateMachine

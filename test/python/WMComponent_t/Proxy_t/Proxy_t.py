@@ -133,8 +133,8 @@ particular message to the proxy which forwards it.
 
 """
 
-__revision__ = "$Id: Proxy_t.py,v 1.13 2010/02/02 19:45:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: Proxy_t.py,v 1.14 2010/02/04 22:36:36 meloam Exp $"
+__version__ = "$Revision: 1.14 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
@@ -144,7 +144,7 @@ import os
 import threading
 import time
 import unittest
-
+import WMCore.WMInit
 from WMComponent.Proxy.Proxy import Proxy
 from WMComponent.Proxy.ProxyMsgs import ProxyMsgs
 
@@ -195,7 +195,7 @@ class ProxyTest(unittest.TestCase):
         Mimics creation of component and handles come messages.
         """
         # read the default config first.
-        config = self.testInit.getConfiguration(os.path.join(os.getenv('WMCOREBASE'), \
+        config = self.testInit.getConfiguration(os.path.join(WMCore.WMInit.getWMBASE(), \
             'src/python/WMComponent/Proxy/DefaultConfig.py'))
 
         # details will be a pickled dictionary

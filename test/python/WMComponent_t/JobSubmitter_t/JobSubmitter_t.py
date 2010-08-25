@@ -10,7 +10,7 @@ import time
 import shutil
 import pickle
 
-
+import WMCore.WMInit
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
 
@@ -170,7 +170,7 @@ class JobSubmitterTest(unittest.TestCase):
         return jobGroupList
         
 
-    def getConfig(self, configPath = os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobSubmitter/DefaultConfig.py')):
+    def getConfig(self, configPath = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMComponent/JobSubmitter/DefaultConfig.py')):
         """
         _getConfig_
 
@@ -210,11 +210,11 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
         config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
         config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
-        config.JobSubmitter.submitScript  = os.path.join(os.getenv('WMCOREBASE'), 'test/python/WMComponent_t/JobSubmitter_t', 'submit.sh')
+        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/JobSubmitter_t', 'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
         config.JobSubmitter.workerThreads = 1
         config.JobSubmitter.jobsPerWorker = 100
-        config.JobSubmitter.inputFile     = os.path.join(os.getenv('WMCOREBASE'), 'test/python/WMComponent_t/JobSubmitter_t', 'FrameworkJobReport-4540.xml')
+        config.JobSubmitter.inputFile     = os.path.join(WMCore.WMInit.getWMBASE(), 'test/python/WMComponent_t/JobSubmitter_t', 'FrameworkJobReport-4540.xml')
 
         #JobStateMachine
         config.component_('JobStateMachine')

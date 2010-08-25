@@ -8,14 +8,14 @@ and generate a file for generating test that map
 to developers responsible for the test.
 """
 
-__revision__ = "$Id: Test.py,v 1.9 2009/02/11 09:21:01 fvlingen Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Test.py,v 1.10 2010/02/04 22:36:35 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 __author__ = "fvlingen@caltech.edu"
 
 import commands
 import os
 import unittest
-
+import WMCore.WMInit
 class Test:
     """
     _Test_
@@ -64,7 +64,7 @@ Test framework error! Did you use the proper test classes? """
             # call the script we use for cleaning the backends:
             # FIXME: need to add something for oracle too.
             print('Cleaning database backends')
-            command = os.getenv('WMCOREBASE')+ '/standards/./cleanup_mysql.sh'
+            command = os.path.join(WMCore.WMInit.getWMBASE(), '/standards/./cleanup_mysql.sh')
             result = commands.getstatusoutput(command)
             for entry in result:
                 print(str(entry))

@@ -5,8 +5,8 @@ _JobAccountant_t_
 Unit tests for the WMAgent JobAccountant component.
 """
 
-__revision__ = "$Id: JobAccountant_t.py,v 1.15 2010/02/02 22:34:45 sfoulkes Exp $"
-__version__ = "$Revision: 1.15 $"
+__revision__ = "$Id: JobAccountant_t.py,v 1.16 2010/02/04 22:36:35 meloam Exp $"
+__version__ = "$Revision: 1.16 $"
 
 import logging
 import os.path
@@ -14,7 +14,7 @@ import threading
 import unittest
 import time
 import copy
-
+import WMCore.WMInit
 from WMCore.FwkJobReport.ReportParser import readJobReport
 
 from WMQuality.TestInit import TestInit

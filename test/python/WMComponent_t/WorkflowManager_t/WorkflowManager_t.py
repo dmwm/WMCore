@@ -5,8 +5,8 @@ _WorkflowManager_t_
 Unit tests for the WorkflowManager_t.
 """
 
-__revision__ = "$Id: WorkflowManager_t.py,v 1.1 2009/11/06 23:41:45 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: WorkflowManager_t.py,v 1.2 2010/02/04 22:36:34 meloam Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import time
 import unittest
@@ -17,7 +17,7 @@ from WMComponent.WorkflowManager.WorkflowManager import WorkflowManager
 
 from WMQuality.TestInit import TestInit
 
-
+import WMCore.WMInit
 class WorkflowManagerTest(unittest.TestCase):
     """
     TestCase for TestWorkflowManager module
@@ -63,7 +63,7 @@ class WorkflowManagerTest(unittest.TestCase):
         """
 
         return self.testInit.getConfiguration(
-                    os.path.join(os.getenv('WMCOREBASE'), \
+                    os.path.join(WMCore.WMInit.getWMBASE(), \
            'src/python/WMComponent/WorkflowManager/DefaultConfig.py'))
 
 

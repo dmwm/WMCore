@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.132 2010/08/03 14:48:22 swakef Exp $"
-__version__ = "$Revision: 1.132 $"
+__revision__ = "$Id: WorkQueue.py,v 1.133 2010/08/03 16:23:48 sryu Exp $"
+__version__ = "$Revision: 1.133 $"
 
 
 import time
@@ -876,6 +876,8 @@ class WorkQueue(WorkQueueBase):
             wmSpecAction.execute(wmSpec.name(), wmSpec.specUrl(), owner,
                                  conn = self.getDBConn(),
                                  transaction = self.existingTransaction())
+        
+        return exists
 
     def _insertWMTask(self, wmSpecName, task):
         """

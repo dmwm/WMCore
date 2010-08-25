@@ -10,8 +10,8 @@ Has a default timeout of 30 seconds. Over ride this by passing in a timeout via
 the configuration dict, set to None if you want to turn off the timeout.
 """
 
-__revision__ = "$Id: Service.py,v 1.9 2009/06/23 10:44:45 metson Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Service.py,v 1.10 2009/06/24 09:21:55 metson Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import datetime
 import os
@@ -92,4 +92,4 @@ class Service:
             self.logger.exception(e)
             raise e
         # Reset the timeout to 30s
-        socket.setdefaulttimeout(30)
+        socket.setdefaulttimeout(None)

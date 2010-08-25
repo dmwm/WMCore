@@ -6,8 +6,8 @@ MySQL implementation of Jobs.LoadFromID.
 """
 
 __all__ = []
-__revision__ = "$Id: LoadFromID.py,v 1.10 2010/04/14 20:58:17 sfoulkes Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: LoadFromID.py,v 1.11 2010/05/03 14:02:14 mnorman Exp $"
+__version__ = "$Revision: 1.11 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -36,15 +36,21 @@ class LoadFromID(DBFormatter):
         Cast the id, jobgroup and last_update columns to integers because
         formatDict() turns everything into strings.
         """
-        formattedResult = DBFormatter.formatDict(self, result)[0]
+        
+        formattedResult = DBFormatter.formatDict(self, result)
 
-        if formattedResult["bool_outcome"] == 0:
-            formattedResult["outcome"] = "failure"
+        for entry in formattedResult:
+            if entry["bool_outcome"] == 0:
+                entry["outcome"] = "failure"
+            else:
+                entry["outcome"] = "success"
+
+            del entry["bool_outcome"]
+
+        if len(formattedResult) == 1:
+            return formattedResult[0]
         else:
-            formattedResult["outcome"] = "success"
-
-        del formattedResult["bool_outcome"]
-        return formattedResult
+            return formattedResult
     
     def execute(self, jobID, conn = None, transaction = False):
         """
@@ -53,6 +59,12 @@ class LoadFromID(DBFormatter):
         Execute the SQL for the given job ID and then format and return
         the result.
         """
-        result = self.dbi.processData(self.sql, {"jobid": jobID}, conn = conn,
+
+        if type(jobID) == list:
+            binds = jobID
+        else:
+            binds = {"jobid": jobID}
+            
+        result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         return self.formatDict(result)

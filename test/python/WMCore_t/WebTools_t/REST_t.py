@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.14 2009/12/31 14:15:52 sryu Exp $"
-__version__ = "$Revision: 1.14 $"
+__revision__ = "$Id: REST_t.py,v 1.15 2010/01/04 17:04:49 sryu Exp $"
+__version__ = "$Revision: 1.15 $"
 
 import unittest
 import json
@@ -112,9 +112,15 @@ class RESTTest(unittest.TestCase):
         #assert code == 405, 'Got a return code != 405 (got %s), message: %s' % (code, data)
         data, code, type, response = makeRequest('/rest/wrong/',
                                           type='GET', accept='text/json')
+        assert code == 404, 'Got a return code != 404 (got %s), message: %s' % (code, data)
+        
+        data, code, type, response = makeRequest('/rest/echo/',
+                                          type='GET', accept='text/json')
         assert code == 405, 'Got a return code != 405 (got %s), message: %s' % (code, data)
+        
         data, code, type, response = makeRequest('/rest/ping/wrong/',
                                           type='GET', accept='text/json')
+        
         assert code == 400, 'Got a return code != 400 (got %s), message: %s' % (code, data)
         assert type == 'text/json'
         expires = response.getheader('Expires')

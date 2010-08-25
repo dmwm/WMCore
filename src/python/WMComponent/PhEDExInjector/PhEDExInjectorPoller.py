@@ -2,10 +2,11 @@
 """
 _PhEDExInjectorPoller_
 
+Poll the DBSBuffer database and inject blocks as they are created.
 """
 
-__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.6 2009/09/08 20:06:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: PhEDExInjectorPoller.py,v 1.7 2009/09/18 18:53:03 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import threading
 import logging
@@ -14,6 +15,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx as phedexApi
 from WMCore.Services.Requests import JSONRequests
+from WMCore.Services.Requests import SSLJSONRequests
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -21,8 +23,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
     """
     _PhEDExInjectorPoller_
 
+    Poll the DBSBuffer database and inject blocks as they are created.
     """
-    def __init__(self, config, noclue = None):
+    def __init__(self, config):
         """
         ___init___
         
@@ -38,6 +41,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # of one of the following: MSS, Disk, Buffer.  The next key will be the
         # SE name.
         self.seMap = {}
+        self.nodeNames = []
     
     def setup(self, parameters):
         """
@@ -54,14 +58,21 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         self.getUninjected = daofactory(classname = "GetUninjectedBlocks")
         self.setInjected = daofactory(classname = "SetBlocksInjected")
 
-        cmswebReq = JSONRequests(url = "cmsweb.cern.ch")
-        cmswebResp = cmswebReq.get(uri = "/phedex/datasvc/json/prod/nodes")[0]
+        (protocol, blank, host, path) = self.config.PhEDExInjector.phedexurl.split("/", 3)
+        if protocol == "https:":
+            cmswebReq = SSLJSONRequests(url = host)
+        else:
+            cmswebReq = JSONRequest(url = host)
+
+        cmswebResp = cmswebReq.get(uri = "/" + path + "nodes")[0]
 
         for node in cmswebResp["phedex"]["node"]:
             if not self.seMap.has_key(node["kind"]):
                 self.seMap[node["kind"]] = {}
 
+            logging.debug("Adding mapping %s -> %s" % (node["se"], node["name"]))
             self.seMap[node["kind"]][node["se"]] = node["name"]
+            self.nodeNames.append(node["name"])
 
         return
 
@@ -79,16 +90,20 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         injectedBlocks = []
         for uninjectedBlock in uninjectedBlocks:
-            # SE names are stored in DBSBuffer as that is what is returned in
+            # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
             # PhEDEx node name here. 
             location = None
-            if self.seMap.has_key("MSS"):
-                if self.seMap["MSS"].has_key(uninjectedBlock["location"]):
-                    location = self.seMap["MSS"][uninjectedBlock["location"]]
-            elif self.seMap.has_key("Disk"):
-                if self.seMap["Disk"].has_key(uninjectedBlock["location"]):
-                    location = self.seMap["Disk"][uninjectedBlock["location"]]
+
+            if uninjectedBlock["location"] in self.nodeNames:
+                location = uninjectedBlock["location"]
+            else:
+                if self.seMap.has_key("MSS"):
+                    if self.seMap["MSS"].has_key(uninjectedBlock["location"]):
+                        location = self.seMap["MSS"][uninjectedBlock["location"]]
+                elif self.seMap.has_key("Disk"):
+                    if self.seMap["Disk"].has_key(uninjectedBlock["location"]):
+                        location = self.seMap["Disk"][uninjectedBlock["location"]]
 
             if location == None:
                 logging.error("Could not map SE %s to PhEDEx node." % \

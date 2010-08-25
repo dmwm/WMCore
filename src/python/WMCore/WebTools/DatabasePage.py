@@ -1,9 +1,20 @@
+#!/usr/bin/env python
+"""
+A page that knows how to format DB queries
+"""
+
+__revision__ = "$Id: DatabasePage.py,v 1.3 2010/01/28 16:44:35 metson Exp $"
+__version__ = "$Revision: 1.3 $"
+
 import os
 from WMCore.WebTools.Page import TemplatedPage
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.DBFactory import DBFactory
 
 class DatabasePage(TemplatedPage, DBFormatter):
+    """
+    A page that knows how to format DB queries
+    """
     def __init__(self, config = {}):
         """
         __DatabasePage__

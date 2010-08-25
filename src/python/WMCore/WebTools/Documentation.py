@@ -1,3 +1,12 @@
+#!/usr/bin/env python
+
+"""
+The documentation for the framework
+"""
+    
+__revision__ = "$Id: Documentation.py,v 1.7 2010/01/28 16:44:35 metson Exp $"
+__version__ = "$Revision: 1.7 $"
+
 from cherrypy import expose
 from WMCore.WebTools.Page import TemplatedPage
 from os import listdir
@@ -8,6 +17,9 @@ class Documentation(TemplatedPage):
     """
     @expose
     def index(self):
+        """
+        The index of the documentation
+        """
         templates = listdir(self.templatedir)
         index = "<h1>Documentation</h1>\n<ol>"
         for t in templates:
@@ -21,6 +33,9 @@ class Documentation(TemplatedPage):
     
     @expose
     def default(self, *args, **kwargs):
+        """
+        Show the documentation for a page or return the index
+        """
         if len(args) > 0:
             return self.templatepage(args[0], config=self.config)
         else:

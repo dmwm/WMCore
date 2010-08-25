@@ -6,6 +6,10 @@ Unittest for WMWorkload class
 
 """
 
+
+__revision__ = "$Id: WMWorkload_t.py,v 1.4 2010/04/20 16:03:31 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
+
 import os
 import unittest
 
@@ -72,6 +76,9 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(workload.listAllTaskNodes(),
                          ["task1", "task2", "task3", "task4"])
 
+        for i in workload.taskIterator():
+            print i.name()
+
         # prevent adding duplicate tasks
         self.assertRaises(RuntimeError, workload.addTask, task1)
         self.assertRaises(RuntimeError, workload.newTask, "task4")
@@ -105,6 +112,26 @@ class WMWorkloadTest(unittest.TestCase):
             workload2.listAllTaskNames()
             )
         # probably need to flesh this out a bit more
+
+
+    def testD_Owner(self):
+        """Test setOwner/getOwner function. """
+
+        workload = WMWorkloadHelper(WMWorkload("workload1"))
+
+        workload.setOwner(name = "Lumumba")
+        self.assertEqual(workload.data.owner.name, "Lumumba")
+        result = workload.getOwner()
+
+        ownerProps = {'capital': 'Kinshasa',
+                      'adversary': 'Katanga',
+                      'removedby': 'Kabila'}
+
+        workload.setOwner(name = "Mobutu", ownerProperties = ownerProps)
+        result = workload.getOwner()
+
+        for key in ownerProps.keys():
+            self.assertEqual(result[key], ownerProps[key])
 
 
 

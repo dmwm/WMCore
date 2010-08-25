@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.120 2010/07/02 18:12:18 sryu Exp $"
-__version__ = "$Revision: 1.120 $"
+__revision__ = "$Id: WorkQueue.py,v 1.121 2010/07/19 12:23:00 swakef Exp $"
+__version__ = "$Revision: 1.121 $"
 
 
 import time
@@ -109,14 +109,22 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('ReportInterval', 300)
 
         self.params.setdefault('SplittingMapping', {})
-        self.params['SplittingMapping'].setdefault('DatasetBlock', 
-                                                   {'name': 'Block', 
+        self.params['SplittingMapping'].setdefault('DatasetBlock',
+                                                   {'name': 'Block',
                                                     'args': {}}
                                                   )
-        self.params['SplittingMapping'].setdefault('MonteCarlo', 
-                                                   {'name': 'MonteCarlo', 
+        self.params['SplittingMapping'].setdefault('MonteCarlo',
+                                                   {'name': 'MonteCarlo',
                                                     'args':{}}
                                                    )
+        self.params['SplittingMapping'].setdefault('Dataset',
+                                                   {'name': 'Dataset',
+                                                    'args': {}}
+                                                  )
+        self.params['SplittingMapping'].setdefault('Block',
+                                                   {'name': 'Block',
+                                                    'args': {}}
+                                                  )
         
         # define how many more works to retrieve from the queue
         # i.e. if JobSlotMultiplier is set to 1000 it will pull down 

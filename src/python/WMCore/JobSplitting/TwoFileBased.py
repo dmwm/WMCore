@@ -7,8 +7,8 @@ normal file based splitting except that the input files will also have their
 parentage information loaded so that the parents can be included in the job.
 """
 
-__revision__ = "$Id: TwoFileBased.py,v 1.10 2010/06/01 13:21:29 sfoulkes Exp $"
-__version__  = "$Revision: 1.10 $"
+__revision__ = "$Id: TwoFileBased.py,v 1.11 2010/06/01 13:22:11 sfoulkes Exp $"
+__version__  = "$Revision: 1.11 $"
 
 import logging
 
@@ -31,6 +31,7 @@ class TwoFileBased(JobFactory):
         baseName = makeUUID()
 
         for availableFile in self.subscription.availableFiles():
+            availableFile.loadData(parentage = 1)
             if filesInJob == 0 or filesInJob == filesPerJob:
                 self.newGroup()
                 self.newJob(name = "%s-%s" % (baseName, totalJobs))

@@ -5,8 +5,8 @@ WMAgent Configuration
 Sample WMAgent configuration.
 """
 
-__revision__ = "$Id: WMAgentConfig.py,v 1.18 2010/06/08 19:53:34 sfoulkes Exp $"
-__version__ = "$Revision: 1.18 $"
+__revision__ = "$Id: WMAgentConfig.py,v 1.19 2010/06/10 13:16:16 mnorman Exp $"
+__version__ = "$Revision: 1.19 $"
 
 import os
 import WMCore.WMInit
@@ -50,15 +50,19 @@ config.DBSUpload.namespace = "WMComponent.DBSUpload.DBSUpload"
 config.DBSUpload.componentDir = config.General.workDir + "/DBSUpload"
 config.DBSUpload.logLevel = "DEBUG"
 config.DBSUpload.maxThreads = 1
-config.DBSUpload.dbsurl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
-config.DBSUpload.dbsversion = "DBS_2_0_8"
-config.DBSUpload.globalDBSUrl = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
-config.DBSUpload.globalDBSVer = "DBS_2_0_8"
-config.DBSUpload.uploadFileMax = 10
 config.DBSUpload.pollInterval = 100
-config.DBSUpload.DBSMaxSize = 1000000000000
-config.DBSUpload.DBSMaxFiles = 100
-config.DBSUpload.DBSBlockTimeout = 21600
+config.DBSUpload.workerThreads = 4
+
+
+config.section_("DBSInterface")
+config.DBSInterface.globalDBSUrl     = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
+config.DBSInterface.globalDBSVersion = 'DBS_2_0_8'
+config.DBSInterface.DBSUrl           = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
+config.DBSInterface.DBSVersion       = 'DBS_2_0_8'
+config.DBSInterface.DBSBlockMaxFiles = 10
+config.DBSInterface.DBSBlockMaxSize  = 9999999999
+config.DBSInterface.DBSBlockMaxTime  = 21600
+config.DBSInterface.MaxFilesToCommit = 10
 
 config.component_("PhEDExInjector")
 config.PhEDExInjector.namespace = "WMComponent.PhEDExInjector.PhEDExInjector"

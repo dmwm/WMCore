@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.38 2009/12/02 13:52:44 swakef Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: WorkQueue.py,v 1.39 2009/12/03 14:48:46 swakef Exp $"
+__version__ = "$Revision: 1.39 $"
 
 # pylint: disable-msg = W0104, W0622
 try:
@@ -363,12 +363,11 @@ class WorkQueue(WorkQueueBase):
             blocks = unit['ParentData']
             jobs = unit['Jobs']
             wmspec = unit['WMSpec']
-            unique = uuid.uuid1()
+            unique = uuid.uuid4().hex[:10] # hopefully random enough
             new_url = os.path.join(self.params['CacheDir'],
                                    "%s.spec" % unique)
-            #wmspec.data.owner = self.params['QueueURL']
-            wmspec.data._internal_name = "%s/WorkQueue-%s" % \
-                                 (wmspec.name().split('/WorkQueue')[0], unique)
+            if os.path.exists(new_url):
+                raise RuntimeErorr, "spec file %s exists" % new_url
             wmspec.setSpecUrl(new_url) #TODO: look at making this a web accessible url
             wmspec.save(new_url)
 

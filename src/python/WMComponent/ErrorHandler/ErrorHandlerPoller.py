@@ -5,11 +5,12 @@
 The actual error handler algorithm
 """
 __all__ = []
-__revision__ = "$Id: ErrorHandlerPoller.py,v 1.7 2010/04/29 14:49:54 mnorman Exp $"
-__version__ = "$Revision: 1.7 $"
+__revision__ = "$Id: ErrorHandlerPoller.py,v 1.8 2010/07/02 14:26:14 mnorman Exp $"
+__version__ = "$Revision: 1.8 $"
 
 import threading
 import logging
+import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -31,7 +32,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        self.daofactory = DAOFactory(package = "WMCore.WMBS",
+        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         self.changeState = ChangeState(self.config)
@@ -80,8 +81,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 exhaustJobs.append(ajob)
                 #SIMON's CODE SHOULD PUT the job in "newstate" state
             else:
-                logging.error("Job %i had %s retries remaining" \
-                              %(ajob['id'], str(ajob['retry_count'])))
+                logging.debug("Job %i had %s retries remaining" \
+                              % (ajob['id'], str(ajob['retry_count'])))
 
         #Now to actually do something.
 
@@ -104,29 +105,28 @@ class ErrorHandlerPoller(BaseWorkerThread):
         submitList = []
         jobList    = []
 
-        getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
+        getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
 
+        # Run over created jobs
         idList = getJobs.execute(state = 'CreateFailed')
-        logging.debug("Found %s failed jobs failed during creation" \
-                      % len(idList))
-        for jid in idList:
-            job = Job(id = jid)
-            job.loadData()
-            createList.append(job)
+        logging.info("Found %s failed jobs failed during creation" \
+                     % len(idList))
+        if len(idList) > 0:
+            createList = self.loadJobsFromList(idList = idList)
+
+        # Run over submitted jobs
         idList = getJobs.execute(state = 'SubmitFailed')
-        logging.debug("Found %s failed jobs failed during submit" \
-                      % len(idList))
-        for jid in idList:
-            job = Job(id = jid)
-            job.loadData()
-            submitList.append(job)
+        logging.info("Found %s failed jobs failed during submit" \
+                     % len(idList))
+        if len(idList) > 0:
+            submitList = self.loadJobsFromList(idList = idList)
+
+        # Run over executed jobs
         idList = getJobs.execute(state = 'JobFailed')
-        logging.debug("Found %s failed jobs failed during execution" \
-                      % len(idList))
-        for jid in idList:
-            job = Job(id = jid)
-            job.loadData()
-            jobList.append(job)
+        logging.info("Found %s failed jobs failed during execution" \
+                     % len(idList))
+        if len(idList) > 0:
+            jobList = self.loadJobsFromList(idList = idList)
 
 
         self.processRetries(createList, 'create')
@@ -134,17 +134,61 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.processRetries(jobList, 'job')
 
 
-    def algorithm(self, parameters):
+        return
+
+
+    def loadJobsFromList(self, idList):
+        """
+        _loadJobsFromList_
+
+        Load jobs in bulk
+        """
+
+        loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
+
+
+        binds = []
+        for jobID in idList:
+            binds.append({"jobid": jobID})
+
+        results = loadAction.execute(jobID = binds)
+
+        # You have to have a list
+        if type(results) == dict:
+            results = [results]
+
+        listOfJobs = []
+        for entry in results:
+            # One job per entry
+            tmpJob = Job(id = entry['id'])
+            tmpJob.update(entry)
+            listOfJobs.append(tmpJob)
+
+
+        return listOfJobs
+
+
+    def algorithm(self, parameters = None):
         """
 	Performs the handleErrors method, looking for each type of failure
 	And deal with it as desired.
         """
-        logging.debug("Running subscription / fileset matching algorithm")
+        logging.debug("Running error handling algorithm")
         myThread = threading.currentThread()
         try:
             myThread.transaction.begin()
             self.handleErrors()
             myThread.transaction.commit()
-        except:
-            myThread.transaction.rollback()
-            raise
+        except Exception, ex:
+            msg = "Caught exception in ErrorHandler\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            msg += "\n\n"
+            logging.error(msg)
+            if hasattr(myThread, 'transaction') \
+                   and myThread.transaction != None \
+                   and hasattr(myThread.transaction, 'transaction') \
+                   and myThread.transaction.transaction != None:
+                myThread.transaction.rollback()
+            raise Exception(msg)
+

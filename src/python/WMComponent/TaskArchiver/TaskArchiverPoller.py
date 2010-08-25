@@ -3,8 +3,8 @@
 The actual taskArchiver algorithm
 """
 __all__ = []
-__revision__ = "$Id: TaskArchiverPoller.py,v 1.4 2010/03/22 19:18:39 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: TaskArchiverPoller.py,v 1.5 2010/03/31 16:50:50 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import threading
 import logging
@@ -35,18 +35,16 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
-        self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
+        if getattr(self.config.TaskArchiver, "useWorkQueue", False) != False:
+            self.workQueue = localQueue(**self.config.TaskArchiver.WorkQueueParams)
+        else:
+            self.workQueue = None
     
     def setup(self, parameters):
         """
         Load DB objects required for queries
         """
-
         return
-
-
-
 
     def terminate(self, params):
         """
@@ -77,19 +75,22 @@ class TaskArchiverPoller(BaseWorkerThread):
 
     def archiveTasks(self):
         """
-        _archiveJobs_
+        _archiveTasks_
         
-        archiveJobs will handle the master task of looking for finished subscriptions,
+        archiveTaks will handle the master task of looking for finished subscriptions,
         checking to see if they've finished, and then notifying the workQueue and
         finishing things up.
         """
-
-
         subList  = self.findFinishedSubscriptions()
-        doneList = self.notifyWorkQueue(subList)
-        self.killSubscriptions(doneList)
-        #self.cleanWorkArea(doneList)
 
+        if self.workQueue != None:
+            doneList = self.notifyWorkQueue(subList)
+            self.killSubscriptions(doneList)
+        else:
+            self.killSubscriptions(subList)
+            
+        #self.cleanWorkArea(doneList)
+        return
 
     def findFinishedSubscriptions(self):
         """
@@ -102,9 +103,6 @@ class TaskArchiverPoller(BaseWorkerThread):
         myThread = threading.currentThread()
 
         myThread.transaction.begin()
-
-        #jobListAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        #jobList  = jobListAction.execute(state = "cleanout")
 
         subscriptionList = self.daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
         subscriptions    = subscriptionList.execute()
@@ -148,7 +146,6 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         Actually dump the subscriptions
         """
-
         for subscription in doneList:
             subscription.deleteEverything()
 
@@ -175,9 +172,4 @@ class TaskArchiverPoller(BaseWorkerThread):
             openFileset.markOpen(False)
 
         myThread.transaction.commit()
-
-
-
-
-        
-    
+        return

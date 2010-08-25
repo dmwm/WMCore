@@ -6,14 +6,16 @@ Implementation of an Executor for a StageOut step
 
 """
 
-__revision__ = "$Id: LogCollect.py,v 1.3 2010/05/27 19:45:03 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: LogCollect.py,v 1.4 2010/07/23 15:01:44 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os.path
 import logging
 import signal
 import tarfile
 import datetime
+
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.FwkJobReport.Report             import Report
@@ -73,6 +75,7 @@ class LogCollect(Executor):
             stageOutMgr = StageOutMgr.StageOutMgr(**stageOutParams)
         except StandardError, ex:
             msg = "Unable to load StageIn/Out/Delete Impl: %s" % str(ex)
+            logging.error(msg)
             raise WMExecutionFailure(60312, "MgrImplementationError", msg)
 
 
@@ -105,6 +108,7 @@ class LogCollect(Executor):
             # Then we have no output; all the files failed
             # Panic!
             msg = "No logs staged in during LogCollect step"
+            logging.error(msg)
             raise WMExecutionFailure(60312, "LogCollectError", msg)
 
         now = datetime.datetime.now()
@@ -144,6 +148,7 @@ class LogCollect(Executor):
             except Exception, ex:
                 msg = "Unable to delete files:\n"
                 msg += str(ex)
+                logging.error(msg)
                 raise WMExecutionFailure(60312, "DeleteError", msg)
             signal.alarm(0)
 

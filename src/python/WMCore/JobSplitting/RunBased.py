@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.14 2009/05/28 17:00:33 sfoulkes Exp $"
-__version__  = "$Revision: 1.14 $"
+__revision__ = "$Id: RunBased.py,v 1.15 2009/06/03 19:04:09 mnorman Exp $"
+__version__  = "$Revision: 1.15 $"
 
 from sets import Set
 
@@ -38,6 +38,9 @@ class RunBased(JobFactory):
         
         # Resulting job set
         jobs = []
+
+        # List of Job Groups
+        jobGroupList = []
         
         # Get the available Fileset
         fileset = list(self.subscription.availableFiles())
@@ -45,38 +48,56 @@ class RunBased(JobFactory):
         # Select all primary files for the first present run
         curRun = None
         primaryFiles = []
+        #The current objective of this code is to find all runs in
+        #a fileset, and then for each run, create a jobGroup
+        #in each jobGroup have a list of jobs containing all the
+        #files for that run.
+        #If files have more then one run, sort that file with
+        #the lowest run
+        #In future, mask these files?
+
+        runDict = {}
+        
         for f in fileset:
-            # Check file doesn't span runs
-            # In future, mask this file?
-            if len(f['runs']) != 1:
-                msg = "File %s contains %s runs, should be 1" % \
-                    (f['lfn'], len(f['runs']))
+
+            #Die if there are no runs
+            if len(f['runs']) < 1:
+                msg = "File %s claims to contain %s runs!" %(f['lfn'], len(f['runs']))
                 raise RuntimeError, msg
-            # Acquire run of interest if required
-            elif not curRun:
-                for run in f['runs']:
-                    curRun = run.run
-                
-            # Add file to primary interest list if contains current run
-            for run in f['runs']:
-                if run.run == curRun:
-                    primaryFiles.append(f)
-        
-        # Create jobs for the available files, split by number of files
-        num_files = len(primaryFiles)
-        while num_files > 0:
-            # Extract a subset of primary files
-            jobFiles = Fileset(files=primaryFiles[:filesPerJob])
-            primaryFiles = primaryFiles[filesPerJob:]
-            num_files = num_files - len(jobFiles)
 
-            # Create the job
-            job = jobInstance(name = '%s-%s' % (baseName, len(jobs) + 1),
-                              files = jobFiles)
-            jobs.append(job)
-        
-        jobGroup = groupInstance(subscription = self.subscription)
-        jobGroup.add(jobs)
-        jobGroup.commit()
+            #First we need to pick the lowest run
+            run = min(f['runs'])
 
-        return jobGroup
+            #If we don't have the run, we need to add it
+            if not run in runDict.keys():
+                runDict[run] = []
+
+            runDict[run].append(f)
+
+
+        for run in runDict.keys():
+            #Find the runs in the dictionary we assembled and split the files in them
+            
+            joblist = []
+
+            #Now split them into sections according to files per job
+            while len(runDict[run]) > 0:
+                jobFiles = Fileset()
+                for i in range(filesPerJob):
+                    #Watch out if your last job has less then the full number of files
+                    if len(runDict[run]) > 0:
+                        jobFiles.addFile(runDict[run].pop())
+
+                # Create the job
+                job = jobInstance(name = '%s-%s' % (baseName, len(joblist) + 1),
+                                  files = jobFiles)
+                joblist.append(job)
+
+
+            jobGroup = groupInstance(subscription = self.subscription)
+            jobGroup.add(joblist)
+            jobGroup.commit()
+            jobGroupList.append(jobGroup)
+
+
+        return jobGroupList

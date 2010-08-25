@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool 
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.17 2009/07/02 18:30:13 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: WorkQueue.py,v 1.18 2009/07/06 20:24:26 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import time
 # pylint: disable-msg=W0104,W0622
@@ -42,7 +42,8 @@ class _WQElement(WorkQueueBase):
     WQElement container
 
     """
-    def __init__(self, specHelper, nJobs, insertTime = None, primaryBlock = None, blocks = None):
+    def __init__(self, specHelper, nJobs, insertTime = None, primaryBlock = None, blocks = None,
+                 status="Available"):
                  
         WorkQueueBase.__init__(self)
         self.wmSpec = specHelper
@@ -52,7 +53,7 @@ class _WQElement(WorkQueueBase):
         self.nJobs = nJobs
         #TODO: need to set it NONE
         self.insertTime = insertTime 
-        self.status = "Available"
+        self.status = status
         self.subscription = None
             
     def create(self):
@@ -497,19 +498,19 @@ class WorkQueue(WorkQueueBase):
             # self.load() 
         return True
 
-    def listWQElementBySpec(self, wmspecName, status="Available"):
+    def listWQElementBySpec(self, wmspecName):
         """
         return the list of work queue element given by wmspec name
         TODO: currently only returns available work queue elements. Check with Rick what he
               needs.
         """
         wqAction = self.daofactory(classname = "WorkQueueElement.GetElementsBySpecName")
-        elements = wqAction.execute(wmspecName, status, conn = self.getDBConn(),
+        elements = wqAction.execute(wmspecName, conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         wqElements = []
         for ele in elements:
             wqEle = self._getWQElement(ele["wmspec_id"], ele["block_id"], 
-                       ele["num_jobs"], ele["insert_time"])
+                       ele["num_jobs"], ele["insert_time"], ele["status"])
             wqElements.append(wqEle)
         self.updateLocationInfo(wqElements)
         return wqElements

@@ -288,7 +288,6 @@ class JSONThunker:
                 # things that got blacklisted
                 return toThunk
             if (hasattr(toThunk, '__to_json__')):
-                print "tojson on %s " % toThunk.__class__.__module___
                 toThunk2 = toThunk.__to_json__(self)
                 self.unrecurse(toThunk)
                 return toThunk2

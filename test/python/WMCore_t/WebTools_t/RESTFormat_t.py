@@ -7,11 +7,16 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: RESTFormat_t.py,v 1.9 2010/01/27 19:44:34 meloam Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: RESTFormat_t.py,v 1.10 2010/01/27 20:18:20 meloam Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import unittest
-import json
+try:
+    # Python 2.6
+    import json
+except:
+    # Prior to 2.6 requires simplejson
+    import simplejson as json
 import urllib
 
 from cherrypy import HTTPError

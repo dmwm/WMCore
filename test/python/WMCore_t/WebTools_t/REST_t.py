@@ -7,11 +7,17 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.20 2010/01/12 21:37:53 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: REST_t.py,v 1.21 2010/01/27 20:18:20 meloam Exp $"
+__version__ = "$Revision: 1.21 $"
 
 import unittest
-import json
+try:
+    # Python 2.6
+    import json
+except:
+    # Prior to 2.6 requires simplejson
+    import simplejson as json
+
 from cherrypy import HTTPError
 from wsgiref.handlers import format_date_time
 from WMQuality.TestInit import TestInit

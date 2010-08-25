@@ -1,4 +1,10 @@
-import json, random, urllib 
+import random, urllib 
+try:
+    # Python 2.6
+    import json
+except:
+    # Prior to 2.6 requires simplejson
+    import simplejson as json
 
 def generate_random_baobab():
 	def random_recurse(total,depth_left):

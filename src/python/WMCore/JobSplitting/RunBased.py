@@ -10,8 +10,8 @@ creation and/or tracking.
 If file spans a run will need to create a mask for that file.
 """
 
-__revision__ = "$Id: RunBased.py,v 1.20 2010/01/26 14:53:04 riahi Exp $"
-__version__  = "$Revision: 1.20 $"
+__revision__ = "$Id: RunBased.py,v 1.21 2010/01/29 16:26:08 mnorman Exp $"
+__version__  = "$Revision: 1.21 $"
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
@@ -62,7 +62,11 @@ class RunBased(JobFactory):
                     raise RuntimeError, msg
 
                 #First we need to pick the lowest run
-                run = min(f['runs'])
+                runList = []
+                for r in f['runs']:
+                    runList.append(r.run)
+
+                run = min(runList)
 
                 #If we don't have the run, we need to add it
                 if not run in runDict.keys():

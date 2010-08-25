@@ -149,6 +149,7 @@ def printFWJRInfo():
     for retryNumber in fwjrDocs.keys():
         for stepName in fwjrDocs[retryNumber]["steps"].keys():
             if fwjrDocs[retryNumber]["steps"][stepName]["status"] != 0:
+                print ""
                 print "Rerty %s, step %s failed:" % (retryNumber, stepName)
 
                 for error in fwjrDocs[retryNumber]["steps"][stepName]["errors"]:

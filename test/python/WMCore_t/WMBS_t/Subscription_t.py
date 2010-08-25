@@ -1254,7 +1254,6 @@ class SubscriptionTest(unittest.TestCase):
         testFileC.delete()        
         return
 
-
     def testGetSubTypes(self):
         """
         _testGetSubTypes_
@@ -1262,15 +1261,15 @@ class SubscriptionTest(unittest.TestCase):
         Test the getSubTypes function
         """
         getSubTypes = self.daofactory(classname = "Subscriptions.GetSubTypes")
-
         result = getSubTypes.execute()
 
-        self.assertEqual(len(result), 6, "Error: Wrong number of types.")
-        for subType in ["Processing", "Merge", "Harvesting", "Cleanup", "LogCollect", "Skim"]:
+        self.assertEqual(len(result), 7, "Error: Wrong number of types.")
+
+        for subType in ["Processing", "Merge", "Harvesting", "Cleanup",
+                        "LogCollect", "Skim", "Analysis"]:
             self.assertTrue(subType in result, "Type %s is missing" % (subType))
 
         return
-
 
     def testBulkCommit(self):
         """
@@ -1278,7 +1277,6 @@ class SubscriptionTest(unittest.TestCase):
 
         Test committing everything in bulk
         """
-
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task = "Test")
         testWorkflow.create()

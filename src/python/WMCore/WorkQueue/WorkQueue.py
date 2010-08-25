@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.90 2010/03/24 15:18:24 sryu Exp $"
-__version__ = "$Revision: 1.90 $"
+__revision__ = "$Id: WorkQueue.py,v 1.91 2010/03/30 17:40:08 sryu Exp $"
+__version__ = "$Revision: 1.91 $"
 
 
 import time
@@ -250,6 +250,7 @@ class WorkQueue(WorkQueueBase):
     def _wmbsPreparation(self, match, wmSpecInfo):
         """
         """
+        self.logger.info("Adding WMBS subscription")
         wAction = self.daofactory(classname = "Site.GetWhiteListByElement")
         whitelist = wAction.execute(match['id'], conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
@@ -259,6 +260,7 @@ class WorkQueue(WorkQueueBase):
                                      transaction = self.existingTransaction())
 
         if not match['input_id']:
+            self.logger.info("Adding Production work")
             wmbsHelper = WMBSHelper(wmSpecInfo['wmspec_name'], wmSpecInfo['url'],
                                     wmSpecInfo['owner'], wmSpecInfo['wmtask_name'],
                                     wmSpecInfo['wmtask_type'],
@@ -270,6 +272,7 @@ class WorkQueue(WorkQueueBase):
             #wmbsHelper.addMCFakeFile()
         else:
             #TODO : not to create dao multiple times
+            self.logger.info("Adding Processing work")
             blockLoader = self.daofactory(classname = "Data.LoadByID")
             
             block = blockLoader.execute(match['input_id'],

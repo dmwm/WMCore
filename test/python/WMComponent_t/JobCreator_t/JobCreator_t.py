@@ -4,30 +4,22 @@
 
 import unittest
 import random
-import os
-import os.path
-import logging
 import threading
 import time
-
+import os
 
 from WMQuality.TestInit import TestInit
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
+
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Job import Job
-
-from WMCore.Agent.Configuration import loadConfigurationFile
 
 from WMComponent.JobCreator.JobCreator import JobCreator
 
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.WMSpec.WMTask                   import WMTask, WMTaskHelper
 
 class JobCreatorTest(unittest.TestCase):
     """

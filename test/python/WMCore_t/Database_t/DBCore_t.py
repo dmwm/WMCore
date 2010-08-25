@@ -5,8 +5,8 @@ _DBCore_t_
 Unit tests for the DBInterface class
 """
 
-__revision__ = "$Id: DBCore_t.py,v 1.6 2010/03/01 16:50:13 sfoulkes Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: DBCore_t.py,v 1.7 2010/05/04 16:18:59 sfoulkes Exp $"
+__version__ = "$Revision: 1.7 $"
 
 import unittest
 import logging
@@ -285,6 +285,37 @@ class DBCoreTest(unittest.TestCase):
 
         return
 
+    def testInsertHugeNumber(self):
+        """
+        _testInsertHugeNumber_
+
+        Verify that we can insert and select huge numbers.
+        """
+        insertSQL = "INSERT INTO test_bigcol VALUES(:val1)"
+        selectSQL = "SELECT * FROM test_bigcol"
+
+        bindsA = {"val1": 2012211901}
+        bindsB = {"val1": 20122119010}
+        
+        myThread = threading.currentThread()
+        myThread.dbi.processData(insertSQL, binds = bindsA)
+        myThread.dbi.processData(insertSQL, binds = bindsB)        
+
+        resultSets = myThread.dbi.processData(selectSQL)
+        results = []
+        for resultSet in resultSets:
+            for row in resultSet.fetchall():
+                results.append(row[0])
+
+        assert len(results) == 2, \
+               "Error: Wrong number of results."
+        assert bindsA["val1"] in results, \
+               "Error: Value one is missing."
+        assert bindsB["val1"] in results, \
+               "Error: Value one is missing."        
+
+        return
+    
 if __name__ == "__main__":
     unittest.main()     
                    

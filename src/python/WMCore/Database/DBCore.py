@@ -6,8 +6,8 @@ Core Database APIs
 
 
 """
-__revision__ = "$Id: DBCore.py,v 1.35 2010/01/29 20:46:00 sfoulkes Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: DBCore.py,v 1.36 2010/02/10 02:53:21 meloam Exp $"
+__version__ = "$Revision: 1.36 $"
 
 from copy import copy   
 from WMCore.DataStructs.WMObject import WMObject
@@ -133,7 +133,7 @@ class DBInterface(WMObject):
             if len(sqlstmt) > 0 and (len(binds) == 0 or (binds[0] == {} or binds[0] == None)):
                 # Should only be run by create statements
                 if not transaction: 
-                    WMCore.WMLogging.sqldebug("transaction created in DBInterface")
+                    #WMCore.WMLogging.sqldebug("transaction created in DBInterface")
                     trans = connection.begin()
 
                 for i in sqlstmt:

@@ -3,8 +3,8 @@
     WorkQueue tests
 """
 
-__revision__ = "$Id: WorkQueue_t.py,v 1.35 2010/06/08 20:02:39 sryu Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: WorkQueue_t.py,v 1.36 2010/06/11 19:23:24 sryu Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import unittest
 import os
@@ -21,7 +21,7 @@ from WMCore_t.WMSpec_t.samples.BasicProductionWorkload import workload as BasicP
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload import workload as MultiTaskProductionWorkload
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
-
+from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
 from WMCore_t.WorkQueue_t.MockDBSReader import MockDBSReader
 from WMCore_t.WorkQueue_t.MockPhedexService import MockPhedexService
 
@@ -33,31 +33,12 @@ class fakeSiteDB:
 
 # NOTE: All queues point to the same database backend
 # Thus total element counts etc count elements in all queues
-rerecoArgs = {
-    "CmsPath": "/uscmst1/prod/sw/cms",
-    "AcquisitionEra": "WMAgentCommissioning10",
-    "Requestor": "workqueue@fnal.gov",
-    "InputDataset": "/MinimumBias/BeamCommissioning09-v1/RAW",
-    "CMSSWVersion": "CMSSW_3_5_8_patch3",
-    "ScramArch": "slc5_ia32_gcc434",
-    "ProcessingVersion": "v2scf",
-    "SkimInput": "output",
-    "GlobalTag": "GR10_P_v4::All",
-    
-    "ProcessingConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/GlobalRuns/python/rereco_FirstCollisions_MinimumBias_35X.py?revision=1.8",
-    "SkimConfig": "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1",
-    
+rerecoArgs = getTestArguments()
+#update to not connect couch
+rerecoArgs.update({
     "CouchUrl": None,
     "CouchDBName": None,
-    "Scenario": ""
-#     "scenario": "cosmics",
-#     "processingOutputModules": {"outputRECORECO": {"dataTier": "RECO", "filterName": ""},
-#                                 "outputALCARECOALCARECO": {"dataTier": "ALCARECO", "filterName": ""}},
-#     "skimOutputModules": {},
-#     "processingConfig": "",
-#     "skimConfig": ""
-    
-    }
+    })
 
 class TestReRecoFactory(ReRecoWorkloadFactory):
     

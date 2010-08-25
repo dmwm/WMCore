@@ -36,8 +36,6 @@ class JobCreatorTest(unittest.TestCase):
     """
 
     sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN']
-    _setup    = False
-    _teardown = False
 
 
     def setUp(self):
@@ -49,21 +47,12 @@ class JobCreatorTest(unittest.TestCase):
         """
         #Stolen from Subscription_t.py
         
-        if self._setup:
-            return
-        
-        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
-        #self.testInit.setSchema(customModules = ["WMCore.Services.BossLite"],
-        #                        useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.MsgService"],
-                                useDefault = False)
-        self.testInit.setSchema(customModules = ["WMCore.ThreadPool"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules = ['WMCore.WMBS', 
+                                                 'WMCore.MsgService',
+                                                 'WMCore.ThreadPool'], useDefault = False)
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
@@ -71,16 +60,12 @@ class JobCreatorTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         
         locationAction = daofactory(classname = "Locations.New")
-        #locationAction.execute(siteName = "goodse.cern.ch")
-        #locationAction.execute(siteName = "badse.cern.ch")
+
         for site in self.sites:
             locationAction.execute(siteName = site)
 
-
-        self._setup = True
-        self._teardown = False
-
-        self.cwd = '/home/mnorman/WMCORE/test/python/WMComponent_t/JobCreator_t/'
+        self.testDir = self.testInit.generateWorkDir()
+        self.cwd = os.getcwd()
 
         return
 
@@ -94,52 +79,7 @@ class JobCreatorTest(unittest.TestCase):
         
         Drop all the WMBS tables.
         """
-        #Likewise
-        
-        myThread = threading.currentThread()
-        
-        #if self._teardown:
-        #    return
-        
-        factory = WMFactory("WMBS", "WMCore.WMBS")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete WMBS tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("MsgService", "WMCore.MsgService")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete MsgService tear down.")
-        myThread.transaction.commit()
-
-        factory = WMFactory("Threadpool", "WMCore.ThreadPool")
-        destroy = factory.loadObject(myThread.dialect + ".Destroy")
-        myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
-        if not destroyworked:
-            raise Exception("Could not complete ThreadPool tear down.")
-        myThread.transaction.commit()
-
-        #factory2 = WMFactory("WMBS", "WMCore.Services.BossLite")
-        #destroy2 = factory2.loadObject(myThread.dialect + ".Destroy")
-        #myThread.transaction.begin()
-        #destroyworked = destroy2.execute(conn = myThread.transaction.conn)
-        #if not destroyworked:
-        #    raise Exception("Could not complete BossLite tear down.")
-        #myThread.transaction.commit()
-
-        os.popen3('rm -r test/Test*')
-        
-        self._teardown = True
-
-
-
-        return
+        self.testInit.clearDatabase()
 
 
 
@@ -180,21 +120,13 @@ class JobCreatorTest(unittest.TestCase):
             testSubscription.create()
 
             myThread.transaction.commit()
-
-    
-
-        #myThread.transaction.commit()
-
         return
 
 
 
     def createSingleSiteCollection(self, instance, nSubs, workloadSpec = None):
         """
-
         Creates a giant block of jobs at one site
-
-
         """
 
 
@@ -340,45 +272,10 @@ class JobCreatorTest(unittest.TestCase):
         Creates a common config.
         """
 
-        myThread = threading.currentThread()
-
-        config = loadConfigurationFile(os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
-
-        config.section_("General")
-        
-        if not os.getenv("TESTDIR") == None:
-            config.General.workDir = os.getenv("TESTDIR")
-        else:
-            config.General.workDir = os.getcwd()
-        
-        config.section_("CoreDatabase")
-        if not os.getenv("DIALECT") == None:
-            config.CoreDatabase.dialect = os.getenv("DIALECT")
-            myThread.dialect = os.getenv('DIALECT')
-        #config.CoreDatabase.socket = os.getenv("DBSOCK")
-        if not os.getenv("DBUSER") == None:
-            config.CoreDatabase.user = os.getenv("DBUSER")
-        else:
-            config.CoreDatabase.user = os.getenv("USER")
-        if not os.getenv("DBHOST") == None:
-            config.CoreDatabase.hostname = os.getenv("DBHOST")
-        else:
-            config.CoreDatabase.hostname = os.getenv("HOSTNAME")
-        config.CoreDatabase.passwd = os.getenv("DBPASS")
-        if not os.getenv("DBNAME") == None:
-            config.CoreDatabase.name = os.getenv("DBNAME")
-        else:
-            config.CoreDatabase.name = os.getenv("DATABASE")
-        if not os.getenv("DATABASE") == None:
-            config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        if not os.getenv("DBSOCK") == None:
-            config.CoreDatabase.dbsock = os.getenv("DBSOCK")
-        else:
-            config.CoreDatabase.dbsock = None
 
 
-        return config
-
+        return self.testInit.getConfiguration(
+                    os.path.join(os.getenv('WMCOREBASE'), 'src/python/WMComponent/JobCreator/DefaultConfig.py'))
 
 
 
@@ -550,12 +447,6 @@ class JobCreatorTest(unittest.TestCase):
             print "Waiting for threads to finish"
             time.sleep(1)
 
-        #os.chdir(self.cwd)
-
-        os.popen3('rm -r test/*')
-
-
-
         return
 
 
@@ -565,8 +456,6 @@ class JobCreatorTest(unittest.TestCase):
         This is not well tested, since I don't know which location it will end up in.
 
         """
-
-        #return
 
         print "Starting testD"
         print os.getcwd()

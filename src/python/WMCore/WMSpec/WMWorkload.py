@@ -6,8 +6,8 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 
 """
-__revision__ = "$Id: WMWorkload.py,v 1.13 2010/01/26 22:19:13 evansde Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: WMWorkload.py,v 1.14 2010/02/10 20:52:01 evansde Exp $"
+__version__ = "$Revision: 1.14 $"
 
 
 
@@ -217,9 +217,20 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         result = []
         for t in self.taskIterator():
-            result.extend(t.listNodes())
+            result.extend(t.listPathNames())
         return result
 
+    def listTasksOfType(self, ttype):
+        """
+        _listTasksOfType_
+        
+        Get tasks matching the type provided
+        """
+        for t in self.taskIterator():
+			print t
+			print t.taskType()
+        return [ t for t in self.taskIterator() if t.taskType() == ttype ]
+        
 
     def addTask(self, wmTask):
         """

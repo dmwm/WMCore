@@ -10,8 +10,8 @@ Equivalent of a WorkflowSpec in the ProdSystem
 """
 
 
-__version__ = "$Id: WMTask.py,v 1.21 2010/02/05 22:32:21 evansde Exp $"
-__revision__ = "$Revision: 1.21 $"
+__version__ = "$Id: WMTask.py,v 1.22 2010/02/10 20:52:01 evansde Exp $"
+__revision__ = "$Revision: 1.22 $"
 
 import os
 
@@ -101,7 +101,14 @@ class WMTaskHelper(TreeHelper):
         
         """
         return self.data.pathName
-    
+    def listPathNames(self):
+        """
+        _listPathNames
+        
+        """
+        for t in self.taskIterator():
+            yield t.getPathName()
+
     def makeWorkflow(self):
         """
         _makeWorkflow_

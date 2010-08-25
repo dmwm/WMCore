@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: SizeBased_t.py,v 1.2 2009/10/13 23:06:10 meloam Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: SizeBased_t.py,v 1.3 2009/12/16 18:47:28 mnorman Exp $"
+__version__ = "$Revision: 1.3 $"
 
 from sets import Set
 import unittest
@@ -244,11 +244,12 @@ class EventBasedTest(unittest.TestCase):
         jobFactory = splitter(self.multipleFileSubscription)
 
 
-        #Test it with something too small to handle; should return no jobs
+        #Test it with something too small to handle; should return one job per file, plus one extra
+        #open at the end
         jobGroups  = jobFactory(size_per_job = 500)
 
         self.assertEqual(len(jobGroups), 1)
-        self.assertEqual(len(jobGroups[0].jobs), 0)
+        self.assertEqual(len(jobGroups[0].jobs), 11)
 
         return
 

@@ -40,8 +40,8 @@ CREATE TABLE wmbs_jobgroup (
             ON DELETE CASCADE)
 """
 
-__revision__ = "$Id: JobGroup.py,v 1.30 2009/07/21 14:10:56 mnorman Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: JobGroup.py,v 1.31 2009/09/10 16:25:44 mnorman Exp $"
+__version__ = "$Revision: 1.31 $"
 
 from WMCore.DataStructs.JobGroup import JobGroup as WMJobGroup
 from WMCore.WMBS.WMBSBase import WMBSBase
@@ -53,6 +53,8 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.Services.UUID import makeUUID
 
 from sets import Set
+import logging
+import threading
 
 class JobGroup(WMBSBase, WMJobGroup):
     """
@@ -75,6 +77,7 @@ class JobGroup(WMBSBase, WMJobGroup):
         """
         Add the new jobgroup to WMBS, create the output Fileset object
         """
+        myThread = threading.currentThread()
         existingTransaction = self.beginTransaction()
         
         self.output = Fileset(name = makeUUID())
@@ -87,9 +90,10 @@ class JobGroup(WMBSBase, WMJobGroup):
         action.execute(self.uid, self.subscription["id"],
                        self.output.id, conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-        
+
         self.id = self.exists()
         self.commitTransaction(existingTransaction)
+
         return
 
     def delete(self):
@@ -229,3 +233,81 @@ class JobGroup(WMBSBase, WMJobGroup):
                                 transaction = self.existingTransaction())
 
         return result
+
+    def listJobIDs(self):
+        """
+        Returns a list of job IDs
+        Useful for times when threading the loading of jobGroups, where running loadData can overload UUID
+        """
+
+        existingTransaction = self.beginTransaction()
+
+        if self.id < 0 or self.uid == None:
+            self.load()
+
+        loadAction = self.daofactory(classname = "JobGroup.LoadJobs")
+        result = loadAction.execute(self.id, conn = self.getDBConn(),
+                                    transaction = self.existingTransaction())
+
+        jobIDList = []
+
+        for jobID in result:
+            jobIDList.append(jobID["id"])
+
+        self.commitTransaction(existingTransaction)
+        return jobIDList
+
+
+    def commitBulk(self):
+        """
+        Creates jobs in a group instead of singly, as is done in jobGroup.commit()
+        """
+
+        myThread = threading.currentThread()
+        
+        if self.id == -1:
+            myThread.transaction.begin()
+            #existingTransaction = self.beginTransaction()
+            self.create()
+            #self.commitTransaction(existingTransaction)
+            myThread.transaction.commit()
+
+        existingTransaction = self.beginTransaction()
+    
+        listOfJobs = []
+        for job in self.newjobs:
+            #First do all the header stuff
+            if job["id"] != None:
+                continue
+            
+            job["jobgroup"] = self.id
+
+            if job["name"] == None:
+                job["name"] = makeUUID()
+
+            listOfJobs.append(job)
+            
+        bulkAction = self.daofactory(classname = "Jobs.New")
+        result = bulkAction.execute(jobList = listOfJobs)
+
+        #Use the results of the bulk commit to get the jobIDs
+        fileDict = {}
+        for job in listOfJobs:
+            job['id'] = result[job['name']]
+            fileDict[job['id']] = []
+            for file in job['input_files']:
+                fileDict[job['id']].append(file['id'])
+
+        maskAction = self.daofactory(classname = "Masks.New")
+        maskAction.execute(jobList = listOfJobs, conn = self.getDBConn(), \
+                           transaction = self.existingTransaction())
+
+        fileAction = self.daofactory(classname = "Jobs.AddFiles")
+        fileAction.execute(jobDict = fileDict, conn = self.getDBConn(), \
+                           transaction = self.existingTransaction())
+
+
+        WMJobGroup.commit(self)
+        self.commitTransaction(existingTransaction)
+
+        return

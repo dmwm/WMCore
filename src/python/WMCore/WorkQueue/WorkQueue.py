@@ -9,8 +9,8 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-__revision__ = "$Id: WorkQueue.py,v 1.118 2010/06/18 15:12:53 swakef Exp $"
-__version__ = "$Revision: 1.118 $"
+__revision__ = "$Id: WorkQueue.py,v 1.119 2010/07/01 21:37:32 sryu Exp $"
+__version__ = "$Revision: 1.119 $"
 
 
 import time
@@ -615,8 +615,8 @@ class WorkQueue(WorkQueueBase):
                 # get more work than we have slots - QueueDepth param
                 sites = {}
                 [sites.__setitem__(name,
-                    self.params['QueueDepth'] * slots['total_slots']) for name,
-                    slots in rc_sites.items() if slots['total_slots'] > 0]
+                    self.params['QueueDepth'] * slots['total_slots'] * self.params['JobSlotMultiplier']) 
+                    for name, slots in rc_sites.items() if slots['total_slots'] > 0]
                 self.logger.info("Pull work for sites %s" % str(sites))
                 _, resources = self._match(sites)
 

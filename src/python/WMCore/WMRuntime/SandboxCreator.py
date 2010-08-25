@@ -4,8 +4,8 @@
     
     Given a path, workflow and task, create a sandbox within the path
 """
-__revision__ = "$Id: SandboxCreator.py,v 1.6 2009/06/15 17:20:23 meloam Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: SandboxCreator.py,v 1.7 2009/06/17 16:15:51 meloam Exp $"
+__version__ = "$Revision: 1.7 $"
 import os
 import re
 import tarfile
@@ -27,6 +27,18 @@ class SandboxCreator:
             testing would take forever otherwise
         """
         self.packageWMCore = False
+    
+    def extractSandbox(self, archivePath, targetPath):
+        """
+            __extractSandbox__
+            
+            extracts a sandbox at the given archivePath to the given targetPath
+        """
+        os.makedirs(targetPath)
+        archive = tarfile.TarFile(archivePath)
+        archive.extractall(targetPath)
+        archive.close()
+        
     
     def makeSandbox(self, buildItHere, workload, task):
         """

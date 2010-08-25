@@ -12,8 +12,8 @@ A plug-in that should submit directly to condor globus CEs
 
 """
 
-__revision__ = "$Id: CondorGlobusPlugin.py,v 1.3 2010/03/09 21:03:07 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: CondorGlobusPlugin.py,v 1.4 2010/04/28 16:43:53 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 import os
 import os.path
@@ -66,48 +66,51 @@ class CondorGlobusPlugin(PluginBase):
 
         logging.error(parameters)
 
-        jobList = parameters.get('jobs')
-        self.packageDir = parameters.get('packageDir', None)
-        self.unpacker   = os.path.join(getWMBASE(),
-                                       'src/python/WMCore/WMRuntime/Unpacker.py')
-
-        logging.error("I have jobs")
-        logging.error(jobList[0])
-
-        if type(jobList) == dict:
-            #We only got one of them
-            #Retain list functionality for possibiity of future multi-jobs
-            jobList = [jobList]
-
-        if not os.path.isdir(self.config['submitDir']):
-            if not os.path.exists(self.config['submitDir']):
-                os.mkdir(self.config['submitDir'])
-
-
-        jdlList = self.makeSubmit(jobList)
-        if not jdlList or jdlList == []:
-            # Then we got nothing
-            logging.error("No JDL file made!")
-            return {'NoResult': [0]}
-        jdlFile = "%s/submit.jdl" % (self.config['submitDir'])
-        handle = open(jdlFile, 'w')
-        handle.writelines(jdlList)
-        handle.close()
-
-
-        #Now submit them
-        logging.error("About to submit %i jobs" %(len(jobList)))
-        command = ["condor_submit", jdlFile]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.wait()
-
-
         result = {'Success': []}
 
-        for job in jobList:
-            if job == {}:
-                continue
-            result['Success'].append(job['id'])
+        for entry in parameters:
+            jobList         = entry.get('jobs')
+            self.packageDir = entry.get('packageDir', None)
+            self.unpacker   = os.path.join(getWMBASE(),
+                                       'src/python/WMCore/WMRuntime/Unpacker.py')
+            
+            logging.error("I have jobs")
+            logging.error(jobList[0])
+            
+            if type(jobList) == dict:
+                # We only got one of them
+                # Retain list functionality for possibiity of future multi-jobs
+                jobList = [jobList]
+
+            if not os.path.isdir(self.config['submitDir']):
+                if not os.path.exists(self.config['submitDir']):
+                    os.mkdir(self.config['submitDir'])
+
+
+            jdlList = self.makeSubmit(jobList)
+            if not jdlList or jdlList == []:
+                # Then we got nothing
+                logging.error("No JDL file made!")
+                return {'NoResult': [0]}
+            jdlFile = "%s/submit.jdl" % (self.config['submitDir'])
+            handle = open(jdlFile, 'w')
+            handle.writelines(jdlList)
+            handle.close()
+
+
+            # Now submit them
+            logging.error("About to submit %i jobs" %(len(jobList)))
+            command = ["condor_submit", jdlFile]
+            pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+            pipe.wait()
+            
+            
+
+
+            for job in jobList:
+                if job == {}:
+                    continue
+                result['Success'].append(job['id'])
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
@@ -208,8 +211,4 @@ class CondorGlobusPlugin(PluginBase):
         if not jobSite in self.locationDict.keys():
             siteInfo = self.locationAction.execute(siteName = jobSite)
             self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
-            logging.error("About to get jobSite info")
-            logging.error(jobSite)
-            logging.error(siteInfo)
-            logging.error(self.locationDict)
         return self.locationDict[jobSite]

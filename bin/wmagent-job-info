@@ -134,12 +134,14 @@ def printTransitionInfo():
 
     return
 
-def printErrors():
+def printFWJRInfo():
     """
-    _printErrors_
+    _printFWJRInfo_
 
-    Search the FWJRs for error and print them.
+    Search the FWJRs for error and logarchive information, print anything that
+    is found.
     """
+    logArchiveLFNs = {}
     for retryNumber in fwjrDocs.keys():
         for stepName in fwjrDocs[retryNumber].keys():
             if fwjrDocs[retryNumber][stepName]["status"] != 0:
@@ -149,6 +151,18 @@ def printErrors():
                     print "  Type: %s" % error["type"]
                     print "  Details: %s" % error["details"]
                     print "  Exit Code: %s" % error["exitCode"]
+            if stepName == "logArch1":
+                logArchStep = fwjrDocs[retryNumber][stepName]
+                logArchiveLFNs[retryNumber] = logArchStep["output"]["logArchive"][0]["lfn"]
+
+    logArchiveRetries = logArchiveLFNs.keys()
+    logArchiveRetries.sort()
+
+    if len(logArchiveRetries) > 0:
+        print "\nLog Archive LFNs:"
+
+        for logArchiveRetry in logArchiveRetries:
+            print "  %s -> %s" % (logArchiveRetry, logArchiveLFNs[logArchiveRetry])
         
     return
 
@@ -156,4 +170,4 @@ getJobInfo()
 
 printJobInfo()
 printTransitionInfo()
-printErrors()
+printFWJRInfo()

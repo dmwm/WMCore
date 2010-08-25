@@ -4,9 +4,6 @@
 
 var workloadTable = function(divID) {
 	
-    var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-            elCell.innerHTML = "<a href='" + oRecord.getData("ChildQueueUrl") + "' target='_blank'>" + sData + "</a>"; 
-        };
     var pbs = [];
     var progressFormatter = function (elLiner, oRecord, oColumn, oData) {
                 var pb = new YAHOO.widget.ProgressBar({

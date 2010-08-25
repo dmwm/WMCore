@@ -1,7 +1,7 @@
 var elementTable = function(divID) {
         
     var formatUrl = function(elCell, oRecord, oColumn, sData) { 
-            elCell.innerHTML = "<a href='" + oRecord.getData("child_queue") + "' target='_blank'>" + sData + "</a>"; 
+            elCell.innerHTML = "<a href='" + sData + "/workqueuemonitor' target='_blank'>" + sData + "</a>"; 
         };
         
 	var dateFormatter = function(elCell, oRecord, oColumn, oData) {

@@ -107,7 +107,6 @@ class SetupCMSSWPset(ScriptInterface):
 
         # Make sure that the process object has the following attributes:
         #    GlobtalTag.globaltag
-        #    source.firstEvent
         #    source.firstRun
         #    source.firstLuminosityBlock
         #    source.skipEvents
@@ -119,8 +118,6 @@ class SetupCMSSWPset(ScriptInterface):
             self.process.GlobalTag = cms.PSet(globalTag = cms.string(""))
         if not hasattr(self.process.GlobalTag, "globaltag"):
             self.process.GlobalTag.globaltag = cms.string("")
-        if not hasattr(self.process.source, "firstEvent"):
-            self.process.source.firstEvent = cms.untracked.uint32(0)
         if not hasattr(self.process.source, "firstRun"):
             self.process.source.firstRun = cms.untracked.uint32(0)
         if not hasattr(self.process.source, "firstLuminosityBlock"):

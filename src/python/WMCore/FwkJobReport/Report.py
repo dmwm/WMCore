@@ -5,8 +5,8 @@ _Report_
 Job Report object
 
 """
-__version__ = "$Revision: 1.5 $"
-__revision__ = "$Id: Report.py,v 1.5 2009/12/14 20:32:32 evansde Exp $"
+__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: Report.py,v 1.6 2010/01/08 15:43:31 evansde Exp $"
 __author__ = "evansde"
 
 import pickle
@@ -164,6 +164,7 @@ class Report:
         outMod.files.fileCount += 1
 
         fileRef.section_("inputs")
+        fileRef.inputs.fileCount = 0
         fileRef.section_("runs")
         fileRef.section_("branches")
         return fileRef

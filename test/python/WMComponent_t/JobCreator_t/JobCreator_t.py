@@ -1,7 +1,7 @@
 #!/bin/env python
 
-__revision__ = "$Id: JobCreator_t.py,v 1.13 2010/03/22 15:04:40 mnorman Exp $"
-__version__ = "$Revision: 1.13 $"
+__revision__ = "$Id: JobCreator_t.py,v 1.14 2010/03/22 15:22:41 sryu Exp $"
+__version__ = "$Revision: 1.14 $"
 
 import unittest
 import random
@@ -38,9 +38,9 @@ from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMStep import makeWMStep
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+from WMQuality.Emulators.EmulatorUnitTestBase import EmulatorUnitTestBase
 
-
-class JobCreatorTest(unittest.TestCase):
+class JobCreatorTest(EmulatorUnitTestBase):
     """
     Test case for the JobCreator
 
@@ -48,6 +48,14 @@ class JobCreatorTest(unittest.TestCase):
 
     sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN']
 
+    def setEmulator(self):
+        """
+        Don't use real dbs, phedex or requestMgr.
+        Use emulator. - since this is not really testing those libraries.
+        """
+        self.phedexFlag = True
+        self.dbsFlag = True
+        self.requestMgrFlag = True
 
     def setUp(self):
         """
@@ -57,7 +65,8 @@ class JobCreatorTest(unittest.TestCase):
         WMBS tables.  Also, create some dummy locations.
         """
         #Stolen from Subscription_t.py
-
+        EmulatorUnitTestBase.setUp(self)
+        
         myThread = threading.currentThread()
         
         self.testInit = TestInit(__file__)

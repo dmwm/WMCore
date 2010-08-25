@@ -26,31 +26,31 @@ This will push the configuration up to the Registration service
 
 @author: metson
 '''
-from WMCore.Services.AuthorisedService import AuthorisedService #Service as 
+from WMCore.Services.Service import Service #Service as
 from WMCore.Services.Requests import JSONRequests
 import datetime
 import logging
 
-class Registration(JSONRequests, AuthorisedService):
+class Registration(JSONRequests, Service):
     def __init__(self, dict):
-        defaultdict = {'endpoint': "cmsweb.cern.ch/registration/",
+        defaultdict = {'endpoint': "https://cmsweb.cern.ch/registration/",
                        'cacheduration': 1,
                        'cachepath': '/tmp'}
         defaultdict.update(dict)
         defaultdict["method"] = 'PUT'
         if 'logger' not in defaultdict.keys():
-            logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
-                    filename=defaultdict['cachepath'] + '/regsvc.log',
-                    filemode='w')
+            logging.basicConfig(level = logging.DEBUG,
+                    format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt = '%m-%d %H:%M',
+                    filename = defaultdict['cachepath'] + '/regsvc.log',
+                    filemode = 'w')
             defaultdict['logger'] = logging.getLogger('RegService')
 
-        AuthorisedService.__init__(self, defaultdict)
+        Service.__init__(self, defaultdict)
         JSONRequests.__init__(self, defaultdict['endpoint'])
-        
+
     def refreshCache(self):
         self['inputdata']['timestamp'] = str(datetime.datetime.now())
-        return AuthorisedService.refreshCache(self, 
-                                       'regsvc', 
+        return Service.refreshCache(self,
+                                       'regsvc',
                                        self['inputdata']['url'].__hash__())

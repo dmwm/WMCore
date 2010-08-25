@@ -35,8 +35,10 @@ TODO: support etags, respect server expires (e.g. update self['cacheduration']
 to the expires set on the server if server expires > self['cacheduration'])   
 """
 
-__revision__ = "$Id: Service.py,v 1.26 2009/08/06 17:02:35 metson Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: Service.py,v 1.27 2009/10/12 15:05:40 swakef Exp $"
+__version__ = "$Revision: 1.27 $"
+
+SECURE_SERVICES = ('https',)
 
 import datetime
 import os
@@ -45,45 +47,61 @@ from urlparse import urlparse
 import time
 import socket
 from WMCore.Services.Requests import Requests
+from WMCore.WMException import WMException
 
 class Service(dict):
-    def __init__(self, dict={}):
+    def __init__(self, dict = {}):
         #The following should read the configuration class
         for a in ['logger', 'endpoint']:
             assert a in dict.keys(), "Can't have a service without a %s" % a
 
-        # Instantiate a Request
         # then split the endpoint into netloc and basepath
         endpoint = urlparse(dict['endpoint'])
-        
         try:
             #Only works on python 2.5 or above
-            self.setdefault("basepath", endpoint.path)
-            self.setdefault("requests", Requests(endpoint.netloc))
-        except:
-            self.setdefault("basepath", endpoint[2])
-            self.setdefault("requests", Requests(endpoint[1]))
-                    
+            scheme = endpoint.scheme
+            netloc = endpoint.netloc
+            path = endpoint.path
+        except AttributeError:
+            scheme, netloc, path = endpoint[:3]
+
+        # Is this a secure service - add other schemes as we need them
+        if dict.get('secure') or scheme in SECURE_SERVICES:
+            # only bring in ssl stuff if we really need it
+            from WMCore.Services.Requests import SecureRequests
+            requests = SecureRequests
+        else:
+            requests = Requests
+
+        try:
+            self.setdefault("basepath", path)
+            # Instantiate a Request
+            self.setdefault("requests", requests(netloc))
+        except WMException, ex:
+            msg = str(ex)
+            self["logger"].exception(msg)
+            raise WMException(msg)
+
         #set up defaults
         self.setdefault("inputdata", {})
         self.setdefault("cachepath", '/tmp')
         self.setdefault("cacheduration", 0.5)
         self.setdefault("accept_type", 'text/xml')
         self.setdefault("method", 'GET')
-        
+
         #Set a timeout for the socket
         self.setdefault("timeout", 30)
-        
+
         # then update with the incoming dict
         self.update(dict)
-        
+
         self['logger'].debug("""Service initialised (%s):
 \t host: %s, basepath: %s (%s)\n\t cache: %s (duration %s hours)""" %
                   (self, self["requests"]["host"], self["basepath"],
-                   self["accept_type"], self["cachepath"], 
+                   self["accept_type"], self["cachepath"],
                    self["cacheduration"]))
-       
-    def cacheFileName(self, cachefile, inputdata={}):
+
+    def cacheFileName(self, cachefile, inputdata = {}):
         """
         Calculate the cache filename for a given query.
         """
@@ -99,23 +117,23 @@ class Service(dict):
                     value = tuple(value)
                 hash += key.__hash__() + value.__hash__()
         cachefile = "%s/%s_%s" % (self["cachepath"], hash, cachefile)
-        
+
         return cachefile
-    
-    def refreshCache(self, cachefile, url, inputdata={}):
+
+    def refreshCache(self, cachefile, url, inputdata = {}):
         """
         See if the cache has expired. If it has make a new request to the 
         service for the input data. Return the cachefile as an open file object.  
         """
-        t = datetime.datetime.now() - datetime.timedelta(hours=self['cacheduration'])
+        t = datetime.datetime.now() - datetime.timedelta(hours = self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, inputdata)
-        
+
         if not os.path.exists(cachefile) or os.path.getmtime(cachefile) < time.mktime(t.timetuple()):
             self['logger'].debug("%s expired, refreshing cache" % cachefile)
             self.getData(cachefile, url, inputdata)
         return open(cachefile, 'r')
 
-    def forceRefresh(self, cachefile, url, inputdata={}):
+    def forceRefresh(self, cachefile, url, inputdata = {}):
         """
         Make a new request to the service for the input data, regardless of the 
         cache statue. Return the cachefile as an open file object.  
@@ -126,7 +144,7 @@ class Service(dict):
         self.getData(cachefile, url, inputdata)
         return open(cachefile, 'r')
 
-    def clearCache(self, cachefile, inputdata={}):
+    def clearCache(self, cachefile, inputdata = {}):
         """
         Delete the cache file.
         """
@@ -136,7 +154,7 @@ class Service(dict):
         except OSError: # File doesn't exist
             return
 
-    def getData(self, cachefile, url, inputdata={}):
+    def getData(self, cachefile, url, inputdata = {}):
         """
         Takes the already generated *full* path to cachefile and the url of the 
         resource. Don't need to call self.cacheFileName(cachefile, inputdata)
@@ -145,17 +163,17 @@ class Service(dict):
         # Set the timeout
         deftimeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(self['timeout'])
-        
+
         try:
             # Get the data
             if not inputdata:
                 inputdata = self["inputdata"]
             #prepend the basepath
             url = self["basepath"] + str(url)
-            
-            data, status, reason = self["requests"].makeRequest(uri=url, 
-                                                    verb=self["method"],
-                                                    data=inputdata)
+
+            data, status, reason = self["requests"].makeRequest(uri = url,
+                                                    verb = self["method"],
+                                                    data = inputdata)
             # Don't need to prepend the cachepath, the methods calling getData
             # have done that for us 
             f = open(cachefile, 'w')

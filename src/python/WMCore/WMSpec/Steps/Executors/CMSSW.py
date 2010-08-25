@@ -5,8 +5,8 @@ _Step.Executor.CMSSW_
 Implementation of an Executor for a CMSSW step.
 """
 
-__revision__ = "$Id: CMSSW.py,v 1.22 2010/07/04 23:51:32 meloam Exp $"
-__version__ = "$Revision: 1.22 $"
+__revision__ = "$Id: CMSSW.py,v 1.23 2010/07/05 00:42:02 meloam Exp $"
+__version__ = "$Revision: 1.23 $"
 
 import tempfile
 import subprocess
@@ -14,6 +14,7 @@ import sys
 import os
 import select
 import time
+import logging
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
@@ -39,7 +40,7 @@ class CMSSW(Executor):
         """
         if (emulator != None):
             return emulator.emulatePre( self.step )
-
+        logging.info("Pre-executing CMSSW step")
         if hasattr(self.step.application.configuration, 'configCacheUrl'):
             # means we have a configuration & tweak in the sandbox
             psetFile = self.step.application.command.configuration
@@ -76,7 +77,9 @@ class CMSSW(Executor):
         cmsswCommand   = self.step.application.command.executable
         cmsswConfig    = self.step.application.command.configuration
         cmsswArguments = self.step.application.command.arguments
-
+        
+        logging.info("Executing CMSSW step with following parameters")
+        logging.info(self.step)
         #
         # scram bootstrap
         #
@@ -87,7 +90,8 @@ class CMSSW(Executor):
             directory = self.step.builder.workingDir,
             architecture = scramArch,
             )
- 	print "Runing SCRAM"       
+        
+        logging.info("Runing SCRAM")   
         projectOutcome = scram.project()
         if projectOutcome > 0:
             msg = scram.diagnostic()
@@ -105,7 +109,7 @@ class CMSSW(Executor):
         #
         # pre scripts
         #
-	print "RUNNING PRE SCRIPTS"
+        logging.info("Running PRE scripts")
         for script in self.step.runtime.preScripts:
             # TODO: Exception handling and error handling & logging
             scriptProcess = subprocess.Popen(
@@ -120,7 +124,7 @@ class CMSSW(Executor):
                 sys.executable,
                 stepModule,
                 script)
-
+            logging.info("    Invoking command: %s" % invokeCommand)
             scriptProcess.stdin.write(invokeCommand)
             stdout, stderr = scriptProcess.communicate()
             retCode = scriptProcess.returncode
@@ -133,14 +137,14 @@ class CMSSW(Executor):
         #
         # pre scripts with scram
         #
-	print "RUNNING SCRAM SCRIPTS"
+        logging.info("RUNNING SCRAM SCRIPTS")
         for script in self.step.runtime.scramPreScripts:
             "invoke scripts with scram()"
             invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
                 sys.executable,
                 stepModule,
                 script)
-
+            logging.info("    Invoking command: %s" % invokeCommand)
             retCode = scram(invokeCommand)
             if retCode > 0:
                 msg = "Error running command\n%s\n" % invokeCommand
@@ -171,25 +175,25 @@ class CMSSW(Executor):
                                          cmsswCommand,
                                          cmsswConfig,
                                          cmsswArguments]
-        print "Executing CMSSW. args: %s" % args
-	spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
-                                         stderrHandle )
-
-	(stdoutData, stderrData) = spawnedChild.communicate()
+        logging.info("Executing CMSSW. args: %s" % args)
+        spawnedChild = subprocess.Popen( args, 0, None, None, stdoutHandle,
+                                             stderrHandle )
+        
+        #(stdoutData, stderrData) = spawnedChild.communicate()
         # the above line replaces the bottom block. I'm unsure of why
-	# nobody used communicate(), but I'm leaving this just in case
-	# AMM Jul 4th, /2010
-	# loop and collect the data
-#        while True:
-#           (rdready, wrready, errready) = select.select(
-#                [stdoutHandle.fileno(),
-#                 stderrHandle.fileno()],[],[])
-#            # see if the process is still running
-#            spawnedChild.poll()
-#            if (spawnedChild.returncode != None):
-#                break
-#            # give the process some time to fill a buffer
-#            select.select([], [], [], .1)
+        # nobody used communicate(), but I'm leaving this just in case
+        # AMM Jul 4th, /2010
+        # loop and collect the data
+        while True:
+            (rdready, wrready, errready) = select.select(
+                [stdoutHandle.fileno(),
+                 stderrHandle.fileno()],[],[])
+            # see if the process is still running
+            spawnedChild.poll()
+            if (spawnedChild.returncode != None):
+                break
+            # give the process some time to fill a buffer
+            select.select([], [], [], .1)
 
         spawnedChild.wait()
         stdoutHandle.close()
@@ -201,6 +205,7 @@ class CMSSW(Executor):
         if spawnedChild.returncode != 0:
             msg = "Error running cmsRun\n%s\n" % argsDump
             msg += "%s\n" % spawnedChild.returncode
+            logging.critical(msg)
             raise WMExecutionFailure(spawnedChild.returncode,
                                      "CmsRunFailure", msg)
 
@@ -214,7 +219,7 @@ class CMSSW(Executor):
         Post execution checkpointing
 
         """
-        print "Steps.Executors.CMSSW.post called"
+        logging.info("Steps.Executors.CMSSW.post called")
 
         if (emulator != None):
             return emulator.emulatePost( self.step )

@@ -11,7 +11,7 @@ class Downloader:
     """
     def __init__(self, config):
         print str(config)
-        self.rootDir = config.dir
+        self.rootdir = config.dir
 
     def index(self, filepath):
         """
@@ -21,8 +21,14 @@ class Downloader:
         requested
 
         """
-        pathInCache = os.path.join(self.rootDir, filepath)
-        logging.debug("Download Agent serving file: %s" % pathInCache)
-        return serve_file(pathInCache, "application/x-download", "attachment")
+        name = os.path.normpath(os.path.join(self.rootdir, filepath))
+        logging.debug("Download Agent serving file: %s" % name)
+
+        if os.path.commonprefix([name,  self.rootdir]) != self.rootdir:
+            raise RuntimeError, "You tried to leave the CacheDir"
+        if not os.path.exists(name):
+            raise RuntimeError, "%s not found" % name
+        return serve_file(name, "application/x-download", "attachment")
+
     index.exposed = True
 

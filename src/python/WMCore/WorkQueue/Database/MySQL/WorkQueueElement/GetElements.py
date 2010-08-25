@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.GetElements
 """
 
 __all__ = []
-__revision__ = "$Id: GetElements.py,v 1.10 2009/12/17 16:50:36 sryu Exp $"
-__version__ = "$Revision: 1.10 $"
+__revision__ = "$Id: GetElements.py,v 1.11 2010/06/02 15:22:18 swakef Exp $"
+__version__ = "$Revision: 1.11 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -15,7 +15,7 @@ from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement as WQ
 
 
 class GetElements(DBFormatter):
-    sql = """SELECT we.id, we.status,  we.wmtask_id, we.input_id, we.num_jobs,
+    sql = """SELECT we.id, we.status,  wt.name, we.input_id, we.num_jobs,
                     we.priority, we.parent_flag, we.insert_time,
                     we.update_time, we.subscription_id, we.parent_queue_id,
                     wq.url child_url, ww.url spec_url
@@ -40,7 +40,8 @@ class GetElements(DBFormatter):
                               ParentQueueId = item['parent_queue_id'],
                               Priority = item['priority'],
                               SubscriptionId = item['subscription_id'],
-                              WMSpecUrl = item['spec_url']))
+                              WMSpecUrl = item['spec_url'],
+                              Task = item['name']))
         return result
 
 

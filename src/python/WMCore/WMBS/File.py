@@ -5,8 +5,8 @@ _File_
 A simple object representing a file in WMBS.
 """
 
-__revision__ = "$Id: File.py,v 1.58 2009/12/15 15:24:30 mnorman Exp $"
-__version__ = "$Revision: 1.58 $"
+__revision__ = "$Id: File.py,v 1.59 2010/02/02 16:45:44 mnorman Exp $"
+__version__ = "$Revision: 1.59 $"
 
 import threading
 import time
@@ -486,6 +486,26 @@ class File(WMBSBase, WMFile):
                                 transaction = self.existingTransaction())
         if result:
             self.update(result)
+
+        return
+
+
+    def loadFromDataStructsFile(self, file):
+        """
+        _loadFromDataStructsFile_
+
+        This function will create a WMBS File given a DataStructs file
+        """
+
+        self.update(file)
+        self.create()
+
+        for parent in file['parents']:
+            self.addParent(parent)
+
+        for location in file['locations']:
+            self.setLocation(se = location)
+
 
         return
 

@@ -9,8 +9,8 @@ at some high value.
 Remove Oracle reserved words (e.g. size, file) and revise SQL used (e.g. no BOOLEAN)
 """
 
-__revision__ = "$Id: Create.py,v 1.20 2009/08/24 11:27:03 sryu Exp $"
-__version__ = "$Revision: 1.20 $"
+__revision__ = "$Id: Create.py,v 1.21 2009/08/31 18:57:47 sfoulkes Exp $"
+__version__ = "$Revision: 1.21 $"
 
 from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.JobStateMachine.ChangeState import Transitions
@@ -30,255 +30,391 @@ class Create(CreateWMBSBase):
     sequence_tables.append('wmbs_job')
     sequence_tables.append('wmbs_job_state')
     
-    def __init__(self, logger = None, dbi = None):
+    def __init__(self, logger = None, dbi = None, params = None):
         """
         _init_
 
         Call the base class's constructor and create all necessary tables,
         constraints and inserts.
         """
-        CreateWMBSBase.__init__(self, logger, dbi)
+        CreateWMBSBase.__init__(self, logger, dbi, params)
         self.requiredTables.append('09wmbs_subs_type')
+
+        tablespaceTable = ""
+        tablespaceIndex = ""
+
+        if params:
+            if params.has_key("tablespace_table"):
+                tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
+            if params.has_key("tablespace_index"):
+                tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
-             id          INTEGER not null,
-             name        VARCHAR(255) not null,
-             open        CHAR(1) CHECK (open IN ('0', '1' )) not null,
-             last_update INTEGER    not null,
-             constraint pk_fileset primary key (id),
-             constraint uk_filesetname unique (name))"""
+               id          INTEGER      NOT NULL,
+               name        VARCHAR(255) NOT NULL,
+               open        CHAR(1)      CHECK (open IN ('0', '1' )) NOT NULL,
+               last_update INTEGER      NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_fileset"] = \
+          """ALTER TABLE wmbs_fileset ADD
+               (CONSTRAINT wmbs_fileset_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_fileset"] = \
+          """ALTER TABLE wmbs_fileset ADD
+               (CONSTRAINT wmbs_fileset_unique UNIQUE (name) %s)""" % tablespaceIndex
              
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
-             id           INTEGER not null,
-             lfn          VARCHAR(255) not null,
-             filesize     INTEGER,
-             events       INTEGER,
-             cksum        VARCHAR(100),
-             first_event  INTEGER,
-             last_event   INTEGER,
-             merged       CHAR(1) CHECK (merged IN ('0', '1' )) NOT NULL,
-             constraint pk_file primary key (id),
-             constraint uk_filelfn unique (lfn))"""
+               id          INTEGER NOT NULL,
+               lfn         VARCHAR(255) NOT NULL,
+               filesize    INTEGER,
+               events      INTEGER,
+               cksum       VARCHAR(100),
+               first_event INTEGER,
+               last_event  INTEGER,
+               merged      CHAR(1) CHECK (merged IN ('0', '1' )) NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_file_details"] = \
+          """ALTER TABLE wmbs_file_details ADD
+               (CONSTRAINT wmbs_file_details_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_file_details"] = \
+          """ALTER TABLE wmbs_file_details ADD
+               (CONSTRAINT wmbs_fildetails_unique UNIQUE (lfn) %s)""" % tablespaceIndex
              
         self.create["03wmbs_fileset_files"] = \
           """CREATE TABLE wmbs_fileset_files (
-             fileid      INTEGER   not null,
-             fileset     INTEGER   not null,
-             insert_time INTEGER not null,
-             UNIQUE(fileid, fileset),
-             constraint fk_filesetfiles_fileset
-                 FOREIGN KEY(fileset) references wmbs_fileset(id)
-                    ON DELETE CASCADE,
-             constraint fk_filesetfiles_file
-                 FOREIGN KEY(fileid) references wmbs_file_details(id)
-                    ON DELETE CASCADE)"""
+               fileid      INTEGER NOT NULL,
+               fileset     INTEGER NOT NULL,
+               insert_time INTEGER NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_fileset_files"] = \
+          """ALTER TABLE wmbs_fileset_files ADD
+               (CONSTRAINT wmbs_file_details_pk PRIMARY KEY (fileid, fileset) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_fileset_files"] = \
+          """ALTER TABLE wmbs_fileset_files ADD
+               (CONSTRAINT fk_filesetfiles_fileset FOREIGN KEY(fileset)
+                  REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_fileset_files"] = \
+          """ALTER TABLE wmbs_fileset_files ADD
+               (CONSTRAINT fk_filesetfiles_file FOREIGN KEY(fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
              
         self.create["04wmbs_file_parent"] = \
           """CREATE TABLE wmbs_file_parent (
-             child  INTEGER not null,
-             parent INTEGER not null,
-             constraint fk_fileparentage_child
-                 FOREIGN KEY (child)  references wmbs_file_details(id)
-                   ON DELETE CASCADE,
-             constraint fk_fileparentage_parent        
-                 FOREIGN KEY (parent) references wmbs_file_details(id),
-             UNIQUE(child, parent))"""  
-        
+               child  INTEGER NOT NULL,
+               parent INTEGER NOT NULL
+               ) %s""" % tablespaceTable
+
         self.create["05wmbs_file_runlumi_map"] = \
           """CREATE TABLE wmbs_file_runlumi_map (
-             fileid  INTEGER not null,
-             run     INTEGER not null,
-             lumi    INTEGER not null,
-             constraint fk_runlumi_file
-                 FOREIGN KEY (fileid) references wmbs_file_details(id)
-                   ON DELETE CASCADE)"""
+               fileid INTEGER NOT NULL,
+               run    INTEGER NOT NULL,
+               lumi   INTEGER NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.constraints["01_fk_wmbs_file_runlumi_map"] = \
+          """ALTER TABLE wmbs_file_runlumi_map ADD                                              
+               (CONSTRAINT fk_runlumi_file FOREIGN KEY (fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
         
         self.create["06wmbs_location"] = \
           """CREATE TABLE wmbs_location (
-             id          INTEGER not null,
-             site_name   VARCHAR(255) not null,
-             job_slots   INTEGER,
-             constraint pk_sename primary key (id),
-             constraint uk_sename unique (site_name))"""
-             
+               id        INTEGER      NOT NULL,
+               site_name VARCHAR(255) NOT NULL,
+               job_slots INTEGER
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_location"] = \
+          """ALTER TABLE wmbs_location ADD
+               (CONSTRAINT wmbs_location_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_location"] = \
+          """ALTER TABLE wmbs_location ADD
+               (CONSTRAINT wmbs_location_unique UNIQUE (site_name) %s)""" % tablespaceIndex        
+
         self.create["07wmbs_file_location"] = \
           """CREATE TABLE wmbs_file_location (
-             fileid   INTEGER not null,
-             location INTEGER not null,
-             constraint uk_sfile_location unique (fileid, location),
-             constraint fk_location_file
-                 FOREIGN KEY(fileid)     REFERENCES wmbs_file_details(id)
-                   ON DELETE CASCADE,
-             constraint fk_location_se
-                 FOREIGN KEY(location) REFERENCES wmbs_location(id)
-                   ON DELETE CASCADE)"""
+               fileid   INTEGER NOT NULL,
+               location INTEGER NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_file_location"] = \
+          """ALTER TABLE wmbs_file_location ADD
+               (CONSTRAINT wmbs_file_location_pk PRIMARY KEY (fileid, location) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_file_location"] = \
+          """ALTER TABLE wmbs_file_location ADD                      
+              (CONSTRAINT fk_location_file FOREIGN KEY(fileid)
+                 REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
+        
+        self.constraints["02_fk_wmbs_file_location"] = \
+          """ALTER TABLE wmbs_file_location ADD                      
+              (CONSTRAINT fk_location_file FOREIGN KEY(location)
+                 REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
          
         self.create["08wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
-             id     INTEGER not null,
-             spec   VARCHAR(255) not null,
-             name   VARCHAR(255) not null,
-             task   VARCHAR(255) not null,
-             owner  VARCHAR(255),
-             
-             constraint pk_workflow primary key (id),
-             constraint uk_workflow_nameowner unique (name, task))"""
+               id    INTEGER      NOT NULL,
+               spec  VARCHAR(255) NOT NULL,
+               name  VARCHAR(255) NOT NULL,
+               task  VARCHAR(255) NOT NULL,
+               owner VARCHAR(255)
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_workflow"] = \
+          """ALTER TABLE wmbs_workflow ADD
+               (CONSTRAINT wmbs_workflow_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_workflow"] = \
+          """ALTER TABLE wmbs_workflow ADD
+               (CONSTRAINT wmbs_workflow_unique UNIQUE (name, task) %s)""" % tablespaceIndex
 
         self.create["09wmbs_workflow_output"] = \
           """CREATE TABLE wmbs_workflow_output (
-             workflow_id       INTEGER NOT NULL,
-             output_identifier VARCHAR(255) NOT NULL,
-             output_fileset    INTEGER NOT NULL,
-             constraint fk_wfoutput_workflow
-               FOREIGN KEY(workflow_id)  REFERENCES wmbs_workflow(id)
-                 ON DELETE CASCADE,
-             constraint fk_wfoutput_fileset                 
-               FOREIGN KEY(output_fileset)  REFERENCES wmbs_fileset(id)
-                 ON DELETE CASCADE)
-             """
+               workflow_id       INTEGER      NOT NULL,
+               output_identifier VARCHAR(255) NOT NULL,
+               output_fileset    INTEGER      NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.constraints["01_fk_wmbs_workflow_output"] = \
+          """ALTER TABLE wmbs_file_location ADD
+              (CONSTRAINT fk_wfoutput_workflow FOREIGN KEY(workflow_id)
+                 REFERENCES wmbs_workflow(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_workflow_output"] = \
+          """ALTER TABLE wmbs_file_location ADD
+              (CONSTRAINT fk_wfoutput_fileset FOREIGN KEY(output_fileset)
+                 REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
         
         self.create["09wmbs_subs_type"] = \
           """CREATE TABLE wmbs_subs_type (
-             id          INTEGER not null,
-             name VARCHAR(255) not null,
-             constraint pk_subtype primary key (id),
-             constraint uk_subtype_name unique (name))"""
+               id   INTEGER      NOT NULL,
+               name VARCHAR(255) NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_subs_type"] = \
+          """ALTER TABLE wmbs_subs_type ADD
+               (CONSTRAINT wmbs_subs_type_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_subs_type"] = \
+          """ALTER TABLE wmbs_subs_type ADD
+               (CONSTRAINT wmbs_subs_type_uk UNIQUE (name) %s)""" % tablespaceIndex
              
         self.create["09wmbs_subscription"] = \
           """CREATE TABLE wmbs_subscription (
-             id          INTEGER   not null,
-             fileset     INTEGER      not null,
-             workflow    INTEGER      not null,
-             split_algo  varchar(255) not null,
-             subtype     INTEGER      not null,
-             last_update INTEGER   not null,
-             constraint fk_subs_fileset
-                 FOREIGN KEY(fileset)  REFERENCES wmbs_fileset(id)
-                   ON DELETE CASCADE,
-             constraint fk_subs_type
-                 FOREIGN KEY(subtype)     REFERENCES wmbs_subs_type(id)
-                   ON DELETE CASCADE,
-             constraint fk_subs_workflow           
-                 FOREIGN KEY(workflow) REFERENCES wmbs_workflow(id)
-                   ON DELETE CASCADE,
-             constraint pk_subscription primary key (id))""" 
+               id          INTEGER      NOT NULL,
+               fileset     INTEGER      NOT NULL,
+               workflow    INTEGER      NOT NULL,
+               split_algo  VARCHAR(255) NOT NULL,
+               subtype     INTEGER      NOT NULL,
+               last_update INTEGER      NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_subscription"] = \
+          """ALTER TABLE wmbs_subscription ADD
+               (CONSTRAINT wmbs_subscription_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_subscription"] = \
+          """ALTER TABLE wmbs_subscription ADD
+               (CONSTRAINT fk_subs_fileset FOREIGN KEY(fileset)
+                  REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_subscription"] = \
+          """ALTER TABLE wmbs_subscription ADD
+               (CONSTRAINT fk_subs_type FOREIGN KEY(subtype)
+                  REFERENCES wmbs_subs_type(id) ON DELETE CASCADE)"""
+
+        self.constraints["03_fk_wmbs_subscription"] = \
+          """ALTER TABLE wmbs_subscription ADD        
+               (CONSTRAINT fk_subs_workflow FOREIGN KEY(workflow)
+                  REFERENCES wmbs_workflow(id) ON DELETE CASCADE)"""
 
         self.create["09wmbs_subscription_location"] = \
           """CREATE TABLE wmbs_subscription_location (
-             subscription     INTEGER      NOT NULL,
-             location         INTEGER      NOT NULL,
-             valid            CHAR(1)    not null,
-             constraint ck_valid CHECK (valid IN ( '0', '1' )),
-             constraint fk_subs_loc_subscription
-                 FOREIGN KEY(subscription)  REFERENCES wmbs_subscription(id)
-                   ON DELETE CASCADE,
-             constraint fk_subs_loc_location
-                 FOREIGN KEY(location)     REFERENCES wmbs_location(id)
-                   ON DELETE CASCADE)"""
+               subscription INTEGER NOT NULL,
+               location     INTEGER NOT NULL,
+               valid        CHAR(1) NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.constraints["01_fk_wmbs_subscription_location"] = \
+          """ALTER TABLE wmbs_subscription_location ADD
+               (CONSTRAINT ck_valid CHECK (valid IN ( '0', '1' )))"""
+
+        self.constraints["02_fk_wmbs_subscription_location"] = \
+          """ALTER TABLE wmbs_subscription_location ADD
+               (CONSTRAINT fk_subs_loc_subscription FOREIGN KEY(subscription)
+                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
+
+        self.constraints["03_fk_wmbs_subscription_location"] = \
+          """ALTER TABLE wmbs_subscription_location ADD
+               (CONSTRAINT fk_subs_loc_location FOREIGN KEY(location)
+                  REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
         self.create["10wmbs_sub_files_acquired"] = \
           """CREATE TABLE wmbs_sub_files_acquired (
-             subscription INTEGER not null,
-             fileid       INTEGER not null,
-             constraint fk_subsacquired_sub
-                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-                   ON DELETE CASCADE,
-             constraint fk_subsacquired_file
-                 FOREIGN KEY (fileid)         REFERENCES wmbs_file_details(id))"""
+               subscription INTEGER NOT NULL,
+               fileid       INTEGER NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.constraints["01_fk_wmbs_sub_files_acquired"] = \
+          """ALTER TABLE wmbs_sub_files_acquied ADD
+               (CONSTRAINT fk_subsacquired_sub FOREIGN KEY (subscription)
+                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_sub_files_acquired"] = \
+          """ALTER TABLE wmbs_sub_files_acquied ADD
+               (CONSTRAINT fk_subsacquired_file FOREIGN KEY (fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
         self.create["11wmbs_sub_files_failed"] = \
           """CREATE TABLE wmbs_sub_files_failed (
-             subscription INTEGER not null,
-             fileid       INTEGER not null,
-             constraint fk_subsfailed_sub
-                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-                   ON DELETE CASCADE,
-             constraint fk_subsfailed_file
-                 FOREIGN KEY (fileid)       REFERENCES wmbs_file_details(id))"""
+               subscription INTEGER NOT NULL,
+               fileid       INTEGER NOT NULL
+               ) %s""" % tablespaceTable
 
+        self.constraints["01_fk_wmbs_sub_files_failed"] = \
+          """ALTER TABLE wmbs_sub_files_failed ADD
+               (CONSTRAINT fk_subsfailed_sub FOREIGN KEY (subscription)
+                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_sub_files_failed"] = \
+          """ALTER TABLE wmbs_sub_files_failed ADD
+               (CONSTRAINT fk_subsfailed_file FOREIGN KEY (fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
         self.create["12wmbs_sub_files_complete"] = \
           """CREATE TABLE wmbs_sub_files_complete (
-          subscription INTEGER not null,
-          fileid       INTEGER not null,
-          constraint fk_subscomplete_sub
-             FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-               ON DELETE CASCADE,
-          constraint fk_subscomplete_file
-             FOREIGN KEY (fileid)         REFERENCES wmbs_file_details(id))"""
+               subscription INTEGER NOT NULL,
+               fileid       INTEGER NOT NULL
+               ) %s""" % tablespaceTable
 
-               
+        self.constraints["01_fk_wmbs_sub_files_complete"] = \
+          """ALTER TABLE wmbs_sub_files_complete ADD
+               (CONSTRAINT fk_subscomplete_sub FOREIGN KEY (subscription)
+                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_sub_files_complete"] = \
+          """ALTER TABLE wmbs_sub_files_complete ADD
+               (CONSTRAINT fk_subscomplete_file FOREIGN KEY (fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""                  
+
         self.create["13wmbs_jobgroup"] = \
           """CREATE TABLE wmbs_jobgroup (
-             id           INTEGER not null,
-             subscription INTEGER    not null,
-             guid          VARCHAR(255),
-             output       INTEGER,
-             last_update  INTEGER not null,
-             location     INTEGER,
-             constraint fk_jobgroup_subscription
-                 FOREIGN KEY (subscription) REFERENCES wmbs_subscription(id)
-                   ON DELETE CASCADE,
-             constraint fk_jobgroup_fileset  
-                 FOREIGN KEY (output) REFERENCES wmbs_fileset(id)
-                        ON DELETE CASCADE,                        
-             constraint pk_jobgroup primary key (id),
-             constraint uk_jobgroup_output unique (output),
-             constraint uk_jobgroup_uid unique (guid))"""
+               id           INTEGER       NOT NULL,
+               subscription INTEGER       NOT NULL,
+               guid         VARCHAR(255),
+               output       INTEGER,
+               last_update  INTEGER       NOT NULL,
+               location     INTEGER
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_jobgroup"] = \
+          """ALTER TABLE wmbs_jobgroup ADD
+               (CONSTRAINT wmbs_jobgroup_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_jobgroup"] = \
+          """ALTER TABLE wmbs_jobgroup ADD
+               (CONSTRAINT wmbs_jobgroup_unique1 UNIQUE (output) %s)""" % tablespaceIndex
+
+        self.indexes["03_pk_wmbs_jobgroup"] = \
+          """ALTER TABLE wmbs_jobgroup ADD
+               (CONSTRAINT wmbs_jobgroup_unique2 UNIQUE (guid) %s)""" % tablespaceIndex               
+
+        self.constraints["01_fk_wmbs_jobgroup"] = \
+          """ALTER TABLE wmbs_jobgroup ADD
+               (CONSTRAINT fk_jobgroup_subscription FOREIGN KEY (subscription)
+                  REFERENCES wmbs_subscription(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_jobgroup"] = \
+          """ALTER TABLE wmbs_jobgroup ADD                  
+               (CONSTRAINT fk_jobgroup_fileset FOREIGN KEY (output)
+                  REFERENCES wmbs_fileset(id) ON DELETE CASCADE)"""
              
         self.create["14wmbs_job_state"] = \
           """CREATE TABLE wmbs_job_state (
-             id  INTEGER NOT NULL,
-             name VARCHAR(100),
-             constraint pk_wmbs_job_state primary key (id))"""
+               id   INTEGER      NOT NULL,
+               name VARCHAR(100) NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_job_state"] = \
+          """ALTER TABLE wmbs_job_state ADD
+               (CONSTRAINT wmbs_job_state_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
 
         self.create["15wmbs_job"] = \
           """CREATE TABLE wmbs_job (
-             id           INTEGER not null,
-             jobgroup     INTEGER   not null,
-             name         VARCHAR(255),
-             state        INTEGER not null,
-             state_time   INTEGER not null,
-             retry_count  INTEGER DEFAULT 0,
-             couch_record VARCHAR(255),
-             location     INTEGER,
-             outcome      INTEGER DEFAULT 0,
-             constraint fk_job_jobgroup
-                 FOREIGN KEY (jobgroup) REFERENCES wmbs_jobgroup(id)
-                   ON DELETE CASCADE,
-             constraint fk_location
-                 FOREIGN KEY (location) REFERENCES wmbs_location(id),
-             constraint fk_state
-                 FOREIGN KEY (state) REFERENCES wmbs_job_state(id),
-             constraint pk_job PRIMARY KEY(id),
-             constraint uk_job_name UNIQUE(name))"""     
+               id           INTEGER       NOT NULL,
+               jobgroup     INTEGER       NOT NULL,
+               name         VARCHAR(255),
+               state        INTEGER       NOT NULL,
+               state_time   INTEGER       NOT NULL,
+               retry_count  INTEGER       DEFAULT 0,
+               couch_record VARCHAR(255),
+               location     INTEGER,
+               outcome      INTEGER       DEFAULT 0
+               ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT wmbs_job_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
+        self.indexes["02_pk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT wmbs_job_uk UNIQUE (name) %s)""" % tablespaceIndex
+
+        self.constraints["01_fk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT FOREIGN KEY (jobgroup)
+                  REFERENCES wmbs_jobgroup(id) ON DELETE CASCADE)"""
+        
+        self.constraints["02_fk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD                  
+               (CONSTRAINT fk_location FOREIGN KEY (location)
+                  REFERENCES wmbs_location(id))"""
+
+        self.constraints["03_fk_wmbs_job"] = \
+          """ALTER TABLE wmbs_job ADD
+               (CONSTRAINT fk_state FOREIGN KEY (state)
+                  REFERENCES wmbs_job_state(id))"""
 
         self.create["16wmbs_job_assoc"] = \
           """CREATE TABLE wmbs_job_assoc (
-             job    INTEGER not null,
-             fileid  INTEGER not null,
-             constraint fk_jobassoc_job
-                 FOREIGN KEY (job)  REFERENCES wmbs_job(id)
-                   ON DELETE CASCADE,
-             constraint fk_jobassoc_file
-                 FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
-                   ON DELETE CASCADE)"""
+               job    INTEGER NOT NULL,
+               fileid INTEGER NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.constraints["01_fk_wmbs_job_assoc"] = \
+          """ALTER TABLE wmbs_job_assoc ADD
+               (CONSTRAINT fk_jobassoc_job FOREIGN KEY (job)
+                  REFERENCES wmbs_job(id) ON DELETE CASCADE)"""
+
+        self.constraints["02_fk_wmbs_job_assoc"] = \
+          """ALTER TABLE wmbs_job_assoc ADD                   
+               (CONSTRAINT fk_jobassoc_file FOREIGN KEY (fileid)
+                  REFERENCES wmbs_file_details(id) ON DELETE CASCADE)"""
 
         self.create["17wmbs_job_mask"] = \
-      """CREATE TABLE wmbs_job_mask (
-          job           INTEGER     not null,
-          FirstEvent    INTEGER,
-          LastEvent     INTEGER,
-          FirstLumi     INTEGER,
-          LastLumi      INTEGER,
-          FirstRun      INTEGER,
-          LastRun       INTEGER,
-          inclusivemask CHAR(1) CHECK (inclusivemask IN ('Y', 'N')) not null,
-          constraint fk_mask_job
-              FOREIGN KEY (job) REFERENCES wmbs_job(id)
-                ON DELETE CASCADE)"""
+          """CREATE TABLE wmbs_job_mask (
+               job           INTEGER  NOT NULL,
+               FirstEvent    INTEGER,
+               LastEvent     INTEGER,
+               FirstLumi     INTEGER,
+               LastLumi      INTEGER,
+               FirstRun      INTEGER,
+               LastRun       INTEGER,
+               inclusivemask CHAR(1) CHECK (inclusivemask IN ('Y', 'N')) NOT NULL
+               ) %s""" % tablespaceTable
+
+        self.constraints["01_fk_wmbs_job_mask"] = \
+          """ALTER TABLE wmbs_job_mask ADD                   
+               (CONSTRAINT fk_mask_job FOREIGN KEY (job)
+                  REFERENCES wmbs_job(id) ON DELETE CASCADE)"""
 
         for jobState in Transitions().states():
             jobStateQuery = """INSERT INTO wmbs_job_state(id, name) VALUES
@@ -296,3 +432,18 @@ class Create(CreateWMBSBase):
             self.create["%s%s" % (j, seqname)] = \
       "CREATE SEQUENCE %s start with 1 increment by 1 nomaxvalue cache 100" \
                     % seqname
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+

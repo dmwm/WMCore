@@ -5,8 +5,8 @@ Defines default config values for DBSUpload specific
 parameters.
 """
 __all__ = []
-__revision__ = "$Id: DefaultConfig.py,v 1.5 2010/01/22 22:14:12 mnorman Exp $"
-__version__ = "$Revision: 1.5 $"
+__revision__ = "$Id: DefaultConfig.py,v 1.6 2010/03/22 14:27:57 sryu Exp $"
+__version__ = "$Revision: 1.6 $"
 
 
 from WMCore.Agent.Configuration import Configuration
@@ -32,6 +32,10 @@ config.JobCreator.workerThreads             = 2
 config.JobCreator.componentDir              = os.getcwd()
 config.JobCreator.useWorkQueue              = False
 
+if config.JobCreator.useWorkQueue:
+    # take queueParams from WorkQueueManager - specify here to override
+    config.JobCreator.WorkQueuParams = getattr(config.WorkQueueManager, 'queueParams', {})
+    
 #We now call the JobMaker from here
 config.component_('JobMaker')
 config.JobMaker.logLevel        = 'INFO'

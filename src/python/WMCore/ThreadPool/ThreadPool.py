@@ -7,8 +7,8 @@ To use this you need to use the ThreadSlave class
 """
 
 
-__revision__ = "$Id: ThreadPool.py,v 1.6 2009/06/16 14:36:07 mnorman Exp $"
-__version__ = "$Revision: 1.6 $"
+__revision__ = "$Id: ThreadPool.py,v 1.7 2009/06/19 18:03:27 mnorman Exp $"
+__version__ = "$Revision: 1.7 $"
 __author__ = "mnorman@fnal.gov"
 
 import base64
@@ -164,6 +164,7 @@ class ThreadPool(Queue):
         # enqueue the work item
         self.callQueue += 1
         # check if there is a slave in the queue (then resue it)
+        thread = None
         if len( self.slaveQueue ):
             # There is an available server: spawn a thread
             slave = self.slaveQueue[0]
@@ -187,7 +188,10 @@ class ThreadPool(Queue):
     
         self.lock.release()
 
-        thread.join()
+        #if thread != None:
+            #thread.join()
+
+        
 
     def slaveThread( self, slaveServer ):
         """

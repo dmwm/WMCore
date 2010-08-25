@@ -5,13 +5,13 @@ MySQL implementation of WorkQueueElement.UpdateSubscription
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateSubscription.py,v 1.1 2009/06/15 20:56:59 sryu Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: UpdateSubscription.py,v 1.2 2009/06/25 18:56:36 sryu Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
 
-class New(DBFormatter):
+class UpdateSubscription(DBFormatter):
     sql = """INSERT INTO wq_element_subs_assoc (element_id, subscription_id) 
                  VALUES (:elementID, :subsID)
           """

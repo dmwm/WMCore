@@ -137,6 +137,11 @@ if options.printThresholds == True:
                   (taskType, siteThresholds[taskType]["task_running_jobs"],
                    siteThresholds[taskType]["max_slots"],
                    siteThresholds[taskType]["min_slots"])
+            if siteThresholds[taskType]["task_running_jobs"] > 0:
+                tasks = myResourceControl.listWorkloadsForTaskSite(taskType, siteName)
+                for task in tasks:
+                    print "    %d - %s" % (task["running"], task["task"])
+            
         print ""
 else:
     updateResourceControl(myResourceControl, myOptParser, options)

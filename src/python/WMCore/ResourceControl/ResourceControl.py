@@ -5,8 +5,8 @@ _ResourceControl_
 Library from manipulating and querying the resource control database.
 """
 
-__revision__ = "$Id: ResourceControl.py,v 1.3 2010/03/01 21:20:33 sfoulkes Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: ResourceControl.py,v 1.4 2010/07/07 19:20:54 sfoulkes Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
@@ -99,4 +99,16 @@ class ResourceControl(WMConnectionBase):
         """
         listAction = self.daofactory(classname = "ListThresholdsForCreate")
         return listAction.execute(conn = self.getDBConn(),
-                                  transaction = self.existingTransaction())        
+                                  transaction = self.existingTransaction())
+
+    def listWorkloadsForTaskSite(self, taskType, siteName):
+        """
+        _listWorkflowsForTaskSite_
+
+        For the given task and site list the number of jobs running for each
+        task.
+        """
+        listActions = self.daofactory(classname = "ListWorkloadsForTaskSite")
+        return listActions.execute(taskType, siteName,
+                                   conn = self.getDBConn(),
+                                   transaction = self.existingTransaction())

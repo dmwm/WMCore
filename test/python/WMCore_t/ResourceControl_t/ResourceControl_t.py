@@ -5,8 +5,8 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-__revision__ = "$Id: ResourceControl_t.py,v 1.4 2010/02/11 21:53:50 sfoulkes Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: ResourceControl_t.py,v 1.5 2010/03/01 21:19:48 sfoulkes Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import unittest
 import threading
@@ -61,7 +61,7 @@ class ResourceControlTest(unittest.TestCase):
         myResourceControl = ResourceControl()
         myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1")
         myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1")
-        myResourceControl.insertSite("testSite2", 100, "testSE2", "testCE2")        
+        myResourceControl.insertSite("testSite2", 100, "testSE2", "testCE2")
 
         myResourceControl.insertThreshold("testSite1", "Processing", 10, 20)
         myResourceControl.insertThreshold("testSite1", "Merge", 100, 200) 
@@ -317,6 +317,29 @@ class ResourceControlTest(unittest.TestCase):
                "Error: Wrong number of task running jobs for submit thresholds."
         assert submitThresholds["testSite2"]["Processing"]["task_running_jobs"] == 1, \
                "Error: Wrong number of task running jobs for submit thresholds."
+
+        return
+
+    def testListSiteInfo(self):
+        """
+        _testListSiteInfo_
+
+        Verify that the listSiteInfo() methods works properly.
+        """
+        myResourceControl = ResourceControl()
+        myResourceControl.insertSite("testSite1", 10, "testSE1", "testCE1")
+        myResourceControl.insertSite("testSite2", 100, "testSE2", "testCE2")                
+
+        siteInfo = myResourceControl.listSiteInfo("testSite1")
+
+        assert siteInfo["site_name"] == "testSite1", \
+               "Error: Site name is wrong."
+        assert siteInfo["se_name"] == "testSE1", \
+               "Error: SE name is wrong."
+        assert siteInfo["ce_name"] == "testCE1", \
+               "Error: CE name is wrong."
+        assert siteInfo["job_slots"] == 10, \
+               "Error: Job slots is wrong."
 
         return
 

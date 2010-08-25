@@ -1,0 +1,277 @@
+#!/usr/bin/env python
+"""
+_EventBased_t_
+
+Event based splitting test.
+"""
+
+__revision__ = "$Id: SizeBased_t.py,v 1.1 2009/08/06 16:44:53 mnorman Exp $"
+__version__ = "$Revision: 1.1 $"
+
+from sets import Set
+import unittest
+import threading
+import os
+
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+
+from WMCore.JobSplitting.SplitterFactory import SplitterFactory
+from WMCore.Services.UUID import makeUUID
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMFactory import WMFactory
+from WMQuality.TestInit import TestInit
+
+class EventBasedTest(unittest.TestCase):
+    """
+    _EventBasedTest_
+
+    Test event based job splitting.
+    """
+    
+    def setUp(self):
+        """
+        _setUp_
+
+        Create two subscriptions: One that contains a single file and one that
+        contains multiple files.
+        """
+        self.testInit = TestInit(__file__, os.getenv("DIALECT"))
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
+                                useDefault = False)
+        
+        myThread = threading.currentThread()
+        daofactory = DAOFactory(package = "WMCore.WMBS",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        
+        locationAction = daofactory(classname = "Locations.New")
+        locationAction.execute(siteName = "somese.cern.ch")
+        locationAction.execute(siteName = "otherse.cern.ch")
+        
+        self.multipleFileFileset = Fileset(name = "TestFileset1")
+        self.multipleFileFileset.create()
+        for i in range(10):
+            newFile = File(makeUUID(), size = 1000, events = 100,
+                           locations = Set(["somese.cern.ch"]))
+            newFile.create()
+            self.multipleFileFileset.addFile(newFile)
+        self.multipleFileFileset.commit()
+
+        self.singleFileFileset = Fileset(name = "TestFileset2")
+        self.singleFileFileset.create()
+        newFile = File("/some/file/name", size = 1000, events = 100,
+                       locations = Set(["somese.cern.ch"]))
+        newFile.create()
+        self.singleFileFileset.addFile(newFile)
+        self.singleFileFileset.commit()
+
+
+        self.multipleSiteFileset = Fileset(name = "TestFileset3")
+        self.multipleSiteFileset.create()
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile.setLocation("somese.cern.ch")
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile.setLocation(["somese.cern.ch","otherse.cern.ch"])
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        self.multipleSiteFileset.commit()
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task="Test")
+        testWorkflow.create()
+        self.multipleFileSubscription = Subscription(fileset = self.multipleFileFileset,
+                                                     workflow = testWorkflow,
+                                                     split_algo = "SizeBased",
+                                                     type = "Processing")
+        self.multipleFileSubscription.create()
+        self.singleFileSubscription = Subscription(fileset = self.singleFileFileset,
+                                                   workflow = testWorkflow,
+                                                   split_algo = "SizeBased",
+                                                   type = "Processing")
+        self.singleFileSubscription.create()
+        self.multipleSiteSubscription = Subscription(fileset = self.multipleSiteFileset,
+                                                     workflow = testWorkflow,
+                                                     split_algo = "SizeBased",
+                                                     type = "Processing")
+        self.multipleSiteSubscription.create()
+        return
+
+    def tearDown(self):
+        """
+        _tearDown_
+
+        Clear out WMBS.
+        """
+        myThread = threading.currentThread()
+
+        if myThread.transaction == None:
+            myThread.transaction = Transaction(self.dbi)
+            
+        myThread.transaction.begin()
+            
+        factory = WMFactory("WMBS", "WMCore.WMBS")
+        destroy = factory.loadObject(myThread.dialect + ".Destroy")
+        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        
+        if not destroyworked:
+            raise Exception("Could not complete WMBS tear down.")
+            
+        myThread.transaction.commit()
+        return    
+
+    def testExactEvents(self):
+        """
+        _testExactEvents_
+
+        Test event based job splitting when the number of events per job is
+        exactly the same as the number of events in the input file.
+        """
+
+        print "testExactEvents"
+        
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.singleFileSubscription)
+
+        jobGroups = jobFactory(size_per_job = 1000)
+
+        assert len(jobGroups) == 1, \
+               "ERROR: JobFactory didn't return one JobGroup."
+
+        assert len(jobGroups[0].jobs) == 1, \
+               "ERROR: JobFactory didn't create a single job."
+
+        job = jobGroups[0].jobs.pop()
+
+        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
+               "ERROR: Job contains unknown files."
+        
+
+        return
+
+
+    def testMultipleFiles(self):
+        """
+        _testMultipleFiles_
+        
+        Tests the mechanism for splitting up multiple files into jobs with
+        a variety of different arguments.
+        """
+
+        print "testMultipleFiles"
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+
+        jobGroups  = jobFactory(size_per_job = 1000)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles()), 1)
+
+        return
+
+
+    def testMultipleFiles2000(self):
+        """
+        _testMultipleFiles2000_
+        
+        Tests the mechanism for splitting up multiple files into jobs with
+        a variety of different arguments.
+        """
+
+        print "testMultipleFiles2000"
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+        #Test it with two files per job
+        jobGroups  = jobFactory(size_per_job = 2000)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles()), 2)
+
+        return
+
+
+    def testMultipleFiles2500(self):
+        """
+        _testMultipleFiles2500_
+        
+        Tests the mechanism for splitting up multiple files into jobs with
+        a variety of different arguments.
+        """
+
+        print "testMultipleFiles2500"
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+
+
+        #Now test it with a size that can't be broken up evenly
+        jobGroups  = jobFactory(size_per_job = 2500)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles()), 2)
+
+        return
+
+
+    def testMultipleFiles500(self):
+        """
+        _testMultipleFiles500_
+        
+        Tests the mechanism for splitting up multiple files into jobs with
+        a variety of different arguments.
+        """
+
+        print "testMultipleFiles500"
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+
+
+        #Test it with something too small to handle; should return no jobs
+        jobGroups  = jobFactory(size_per_job = 500)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 0)
+
+        return
+
+
+    def testMultipleSites(self):
+        """
+        _testMultipleSites_
+
+        Tests how to break up files at different locations
+        """
+
+        print "testMultipleSites"
+
+        splitter   = SplitterFactory()
+        jobFactory = splitter(self.multipleSiteSubscription)
+
+        jobGroups  = jobFactory(size_per_job = 1000)
+
+        self.assertEqual(len(jobGroups), 2)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles()), 1)
+
+
+if __name__ == '__main__':
+    unittest.main()

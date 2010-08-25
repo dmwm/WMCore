@@ -5,8 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
-__revision__ = "$Id: EventBased_t.py,v 1.3 2009/07/13 16:06:37 mnorman Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: EventBased_t.py,v 1.4 2009/08/06 16:44:53 mnorman Exp $"
+__version__ = "$Revision: 1.4 $"
 
 from sets import Set
 import unittest
@@ -59,6 +59,7 @@ class EventBasedTest(unittest.TestCase):
         
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "somese.cern.ch")
+        locationAction.execute(siteName = "otherse.cern.ch")
         
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
@@ -77,6 +78,21 @@ class EventBasedTest(unittest.TestCase):
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
 
+
+        self.multipleSiteFileset = Fileset(name = "TestFileset3")
+        self.multipleSiteFileset.create()
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile.setLocation("somese.cern.ch")
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        for i in range(5):
+            newFile = File(makeUUID(), size = 1000, events = 100)
+            newFile.setLocation(["somese.cern.ch","otherse.cern.ch"])
+            newFile.create()
+            self.multipleSiteFileset.addFile(newFile)
+        self.multipleSiteFileset.commit()
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task="Test")
         testWorkflow.create()
@@ -90,6 +106,11 @@ class EventBasedTest(unittest.TestCase):
                                                    split_algo = "EventBased",
                                                    type = "Processing")
         self.singleFileSubscription.create()
+        self.multipleSiteSubscription = Subscription(fileset = self.multipleSiteFileset,
+                                                     workflow = testWorkflow,
+                                                     split_algo = "EventBased",
+                                                     type = "Processing")
+        self.multipleSiteSubscription.create()
         return
 
     def tearDown(self):
@@ -128,22 +149,17 @@ class EventBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(events_per_job = 100)
 
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
+        self.assertEqual(len(jobGroups), 1)
 
-        assert len(jobGroups[0].jobs) == 1, \
-               "ERROR: JobFactory didn't create a single job."
+        self.assertEqual(len(jobGroups[0].jobs), 1)
 
         job = jobGroups[0].jobs.pop()
 
-        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-               "ERROR: Job contains unknown files."
+        self.assertEqual(job.getFiles(type = "lfn"),  ["/some/file/name"])
         
-        assert job["mask"].getMaxEvents() == 100, \
-               "ERROR: Job's max events is incorrect."
+        self.assertEqual(job["mask"].getMaxEvents(), 100)
         
-        assert job["mask"]["FirstEvent"] == 0, \
-               "ERROR: Job's first event is incorrect."
+        self.assertEqual(job["mask"]["FirstEvent"], 0)
 
         return
 
@@ -159,22 +175,17 @@ class EventBasedTest(unittest.TestCase):
         
         jobGroups = jobFactory(events_per_job = 1000)
         
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
+        self.assertEqual(len(jobGroups), 1)
 
-        assert len(jobGroups[0].jobs) == 1, \
-               "ERROR: JobFactory didn't create a single job."
+        self.assertEqual(len(jobGroups[0].jobs), 1)
 
         job = jobGroups[0].jobs.pop()
 
-        assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-               "ERROR: Job contains unknown files."
+        self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
         
-        assert job["mask"].getMaxEvents() == 1000, \
-               "ERROR: Job's max events is incorrect."
+        self.assertEqual(job["mask"].getMaxEvents(), 1000)
         
-        assert job["mask"]["FirstEvent"] == 0, \
-               "ERROR: Job's first event is incorrect."
+        self.assertEqual(job["mask"]["FirstEvent"], 0)
 
         return
 
@@ -190,18 +201,14 @@ class EventBasedTest(unittest.TestCase):
         
         jobGroups = jobFactory(events_per_job = 50)
         
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
+        self.assertEqual(len(jobGroups), 1)
 
-        assert len(jobGroups[0].jobs) == 2, \
-               "ERROR: JobFactory didn't create two jobs."
+        self.assertEqual(len(jobGroups[0].jobs), 2)
 
         for job in jobGroups[0].jobs:
-            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-                   "ERROR: Job contains unknown files."
+            self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
         
-            assert job["mask"].getMaxEvents() == 50, \
-                   "ERROR: Job's max events is incorrect."
+            self.assertEqual(job["mask"].getMaxEvents(), 50)
         
             assert job["mask"]["FirstEvent"] in [0, 50], \
                    "ERROR: Job's first event is incorrect."
@@ -220,18 +227,14 @@ class EventBasedTest(unittest.TestCase):
         
         jobGroups = jobFactory(events_per_job = 99)
         
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
+        self.assertEqual(len(jobGroups), 1)
 
-        assert len(jobGroups[0].jobs) == 2, \
-               "ERROR: JobFactory didn't create two jobs."
+        self.assertEqual(len(jobGroups[0].jobs), 2)
 
         for job in jobGroups[0].jobs:
-            assert job.getFiles(type = "lfn") == ["/some/file/name"], \
-                   "ERROR: Job contains unknown files."
+            self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
         
-            assert job["mask"].getMaxEvents() == 99, \
-                   "ERROR: Job's max events is incorrect."
+            self.assertEqual(job["mask"].getMaxEvents(), 99)
         
             assert job["mask"]["FirstEvent"] in [0, 99], \
                    "ERROR: Job's first event is incorrect."
@@ -250,18 +253,14 @@ class EventBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(events_per_job = 100)
 
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
+        self.assertEqual(len(jobGroups), 1)
 
-        assert len(jobGroups[0].jobs) == 10, \
-               "ERROR: JobFactory didn't create 10 jobs."
+        self.assertEqual(len(jobGroups[0].jobs), 10)
         
         for job in jobGroups[0].jobs:
-            assert len(job.getFiles(type = "lfn")) == 1, \
-                   "ERROR: Job contains too many files."
+            self.assertEqual(len(job.getFiles(type = "lfn")), 1)
         
-            assert job["mask"].getMaxEvents() == 100, \
-                   "ERROR: Job's max events is incorrect."
+            self.assertEqual(job["mask"].getMaxEvents(), 100)
         
             assert job["mask"]["FirstEvent"] == 0, \
                    "ERROR: Job's first event is incorrect."
@@ -276,26 +275,17 @@ class EventBasedTest(unittest.TestCase):
         more than one file available.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)        
-
-        splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
         jobGroups = jobFactory(events_per_job = 50)
 
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
+        self.assertEqual(len(jobGroups), 1)
 
-        assert len(jobGroups[0].jobs) == 20, \
-               "ERROR: JobFactory didn't create 20 jobs."
+        self.assertEqual(len(jobGroups[0].jobs), 20)
         
         for job in jobGroups[0].jobs:
-            assert len(job.getFiles(type = "lfn")) == 1, \
-                   "ERROR: Job contains too many files."
-        
-            assert job["mask"].getMaxEvents() == 50, \
-                   "ERROR: Job's max events is incorrect."
-        
+            self.assertEqual(len(job.getFiles(type = "lfn")), 1)        
+            self.assertEqual(job["mask"].getMaxEvents(), 50)
             assert job["mask"]["FirstEvent"] in [0, 50], \
                    "ERROR: Job's first event is incorrect."
 
@@ -310,30 +300,113 @@ class EventBasedTest(unittest.TestCase):
         code will put at most one file in a job.
         """
         splitter = SplitterFactory()
-        jobFactory = splitter(self.multipleFileSubscription)        
-
-        splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
 
         jobGroups = jobFactory(events_per_job = 150)
 
-        assert len(jobGroups) == 1, \
-               "ERROR: JobFactory didn't return one JobGroup."
-
-        assert len(jobGroups[0].jobs) == 10, \
-               "ERROR: JobFactory didn't create 10 jobs."
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 10)
+        self.assertEqual(len(jobGroups[0].jobs[0].getFiles(type = "lfn")), 1)
+        self.assertEqual(len(jobGroups[0].jobs[6].getFiles(type = "lfn")), 1)
         
         for job in jobGroups[0].jobs:
-            assert len(job.getFiles(type = "lfn")) == 1, \
-                   "ERROR: Job contains too many files."
+
         
-            assert job["mask"].getMaxEvents() == 150, \
-                   "ERROR: Job's max events is incorrect."
+            self.assertEqual(job["mask"].getMaxEvents(), 150)
+        
+            self.assertEqual(job["mask"]["FirstEvent"], 0)
+
+        return
+
+
+
+    def test500EventMultipleFileSplit(self):
+        """
+        _test500EventMultipleFileSplit_
+
+        Test job splitting into 500 event jobs when the input subscription has
+        more than one file available.  This test verifies that the job splitting
+        code will put five files per job.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+
+        jobGroups = jobFactory(events_per_job = 500)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 2)
+        self.assertEqual(len(jobGroups[0].jobs[0].getFiles(type = "lfn")), 5)
+        self.assertEqual(len(jobGroups[0].jobs[1].getFiles(type = "lfn")), 5)
+        
+        for job in jobGroups[0].jobs:
+
+        
+            self.assertEqual(job["mask"].getMaxEvents(), 500)
+        
+            self.assertEqual(job["mask"]["FirstEvent"], 0)
+
+        return
+
+
+    def test350EventMultipleFileSplit(self):
+        """
+        _test350EventMultipleFileSplit_
+
+        Test job splitting into 350 event jobs when the input subscription has
+        more than one file available.  This test verifies that the job splitting
+        code will put three files per job, and pass on the file that is too large.
+        This should create three jobs of three files each, and dump the last file
+        into the last job.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+
+        jobGroups = jobFactory(events_per_job = 350)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 4)
+        self.assertEqual(len(jobGroups[0].jobs[0].getFiles(type = "lfn")), 3)
+        self.assertEqual(len(jobGroups[0].jobs[3].getFiles(type = "lfn")), 1)
+        
+        for job in jobGroups[0].jobs:
+
+        
+            self.assertEqual(job["mask"].getMaxEvents(), 350)
+        
+            self.assertEqual(job["mask"]["FirstEvent"], 0)
+
+        return
+
+
+    def test100EventMultipleSite(self):
+        """
+        _test100EventMultipleSite_
+
+        Test job splitting into 100 event jobs when the input subscription has
+        more than one file available, at different site combinations.
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleSiteSubscription)
+
+        jobGroups = jobFactory(events_per_job = 100)
+
+        self.assertEqual(len(jobGroups), 2)
+
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+        self.assertEqual(len(jobGroups[1].jobs), 5)
+        
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles(type = "lfn")), 1)
+        
+            self.assertEqual(job["mask"].getMaxEvents(), 100)
         
             assert job["mask"]["FirstEvent"] == 0, \
                    "ERROR: Job's first event is incorrect."
 
-        return    
+        return
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

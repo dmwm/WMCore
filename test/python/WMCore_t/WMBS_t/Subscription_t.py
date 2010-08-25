@@ -1285,6 +1285,11 @@ class SubscriptionTest(unittest.TestCase):
         testFileset.addFile(testFileD)
         testFileset.commit()
 
+        testFilesetQ = Fileset(name = "TestFilesetQ")
+        testFilesetQ.create()
+        # Put it in the workflow
+        testWorkflow.addOutput(outputIdentifier = 'a', outputFileset = testFilesetQ)
+
         testFileset2.addFile(testFileD)
         testFileset2.commit()
 
@@ -1321,6 +1326,8 @@ class SubscriptionTest(unittest.TestCase):
         self.assertEqual(len(result), 0)
         result = myThread.dbi.processData("SELECT * FROM wmbs_jobgroup")[0].fetchall()
         self.assertEqual(len(result), 0)
+        self.assertFalse(testJobGroupA.output.exists())
+        self.assertFalse(testFilesetQ.exists())
         self.assertEqual(testFileA.exists(), False)
         self.assertEqual(testFileB.exists(), False)
         self.assertEqual(testFileC.exists(), False)

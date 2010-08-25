@@ -280,6 +280,7 @@ class DumbCoverageCommand(Command):
         print "This determines test coverage in a very crude manner. If your"
         print "test file is incorrectly named it will not be counted, and" 
         print "result in a lower coverage score." 
+        print '----------------------------------------------------------------'
         filelist = generate_filelist()
         tests = 0
         files = 0
@@ -315,7 +316,7 @@ class DumbCoverageCommand(Command):
                 pass
             
         coverage = (float(tests) / float(files)) * 100
-        print '----------------------------------'
+        print '----------------------------------------------------------------'
         print 'Code coverage (%s packages) is %.2f percent' % (pkgcnt, coverage)
         return coverage
     

@@ -29,7 +29,7 @@ config.SecurityModule.use_decorators = True
 config.SecurityModule.store = 'filestore'
 config.SecurityModule.store_path = environ['WTBASE'] + '/security-store'
 #config.CernOpenID.store.database = 'sqlite://'
-config.SecurityModule.default_session_name = 'SecurityModule'
+config.SecurityModule.session_name = 'SecurityModule'
 
 # This is the config for the application
 config.component_('WebtoolsDocs')

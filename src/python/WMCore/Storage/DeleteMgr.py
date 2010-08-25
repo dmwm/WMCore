@@ -52,7 +52,8 @@ class DeleteMgr:
 
 
         self.numberOfRetries = 3
-        self.retryPauseTime = 600
+        self.retryPauseTime  = 600
+        self.seName          = None
 
         #  //
         # // If override isnt None, we dont need SiteCfg, if it is
@@ -60,7 +61,7 @@ class DeleteMgr:
 
         if self.override == False:
             self.siteCfg = loadSiteLocalConfig()
-
+            
         if self.override:
             self.initialiseOverride()
         else:
@@ -110,6 +111,7 @@ class DeleteMgr:
             raise StageOutInitError( msg )
 
         print msg
+        self.seName = seName
         return
 
 
@@ -149,10 +151,11 @@ class DeleteMgr:
         print msg
         self.fallbacks = []
         self.fallbacks.append(overrideParams)
+        self.seName = overrideParams['se-name']
         return
 
 
-    def __call__(self, **fileToDelete):
+    def __call__(self, fileToDelete):
         """
         _operator()_
 
@@ -165,6 +168,7 @@ class DeleteMgr:
             print "==>Working on file: %s" % fileToDelete['LFN']
 
             lfn = fileToDelete['LFN']
+            fileToDelete['SEName'] = self.seName
 
             #  //
             # // No override => use local-stage-out from site conf

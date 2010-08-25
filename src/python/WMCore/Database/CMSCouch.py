@@ -5,12 +5,14 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.60 2010/05/05 21:01:52 sfoulkes Exp $"
-__version__ = "$Revision: 1.60 $"
+__revision__ = "$Id: CMSCouch.py,v 1.61 2010/05/05 21:30:56 sfoulkes Exp $"
+__version__ = "$Revision: 1.61 $"
 
 import urllib
-from httplib import BadStatusLine
 import datetime
+
+from httplib import HTTPException
+
 from WMCore.Services.Requests import BasicAuthJSONRequests
 
 class Document(dict):
@@ -79,37 +81,36 @@ class CouchDBRequests(BasicAuthJSONRequests):
             result, status, reason = BasicAuthJSONRequests.makeRequest(
                                         self, uri, data, type, encode, decode, 
                                         contentType)
-        except BadStatusLine,e:
-            print "BadStatusLine failure: %s" % e
-            print "     at uri: %s" % uri
-            print "  with data: %s" % data
-            raise
-        self.checkForCouchError(status, reason, data, result)
+        except HTTPException, e:
+            self.checkForCouchError(e.status, e.reason, data)
+            
         return result
     
     def checkForCouchError(self, status, reason, data = None, result = None):
         """
-        Check the HTTP status and raise an appropriate exception 
+        _checkForCouchError_
+        
+        Check the HTTP status and raise an appropriate exception.
         """
-        if (status == 400 ):
-            raise CouchBadRequestError( reason, data, result )
-        elif (status == 403):
-            raise CouchForbidden( reason, data, result )
-        elif (status == 404):
-            raise CouchNotFoundError( reason, data, result )
-        elif (status == 405):
-            raise CouchNotAllowedError( reason, data, result )
-        elif (status == 409):
-            raise CouchConflictError( reason, data, result )
-        elif (status == 412):
-            raise CouchPreconditionFailedError( reason, data, result )
-        elif (status == 500):
-            raise CouchInternalServerError( reason, data, result )
-        elif (status >= 400):
-            # we have a new error status, log it
+        if status == 400:
+            raise CouchBadRequestError(reason, data, result)
+        elif status == 403:
+            raise CouchForbidden(reason, data, result)
+        elif status == 404:
+            raise CouchNotFoundError(reason, data, result)
+        elif status == 405:
+            raise CouchNotAllowedError(reason, data, result)
+        elif status == 409:
+            raise CouchConflictError(reason, data, result)
+        elif status == 412:
+            raise CouchPreconditionFailedError(reason, data, result)
+        elif status == 500:
+            raise CouchInternalServerError(reason, data, result)
+        elif status >= 400:
+            # We have a new error status, log it
             raise CouchError(reason, data, result, status)
-        else:
-            return
+
+        return
         
 class Database(CouchDBRequests):
     """
@@ -426,7 +427,7 @@ class CouchServer(CouchDBRequests):
 class CouchError(Exception):
     "An error thrown by CouchDB"
     def __init__(self, reason, data, result, status = None):
-        Exception.__init__()
+        Exception.__init__(self)
         self.reason = reason
         self.data = data
         self.result = result

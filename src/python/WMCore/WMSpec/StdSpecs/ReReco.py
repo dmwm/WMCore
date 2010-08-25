@@ -12,8 +12,8 @@ Standard ReReco workflow.
 """
 
 
-__version__ = "$Id: ReReco.py,v 1.42 2010/08/06 21:30:00 sryu Exp $"
-__revision__ = "$Revision: 1.42 $"
+__version__ = "$Id: ReReco.py,v 1.43 2010/08/09 16:04:48 sfoulkes Exp $"
+__revision__ = "$Revision: 1.43 $"
 
 import subprocess
 
@@ -166,6 +166,8 @@ class ReRecoWorkloadFactory(object):
         procTaskLogArch.setStepType("LogArchive")
         procTask.applyTemplates()
 
+        procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
+
         procTask.setSiteWhitelist(self.siteWhitelist)
         procTask.setSiteBlacklist(self.siteBlacklist)
 
@@ -205,7 +207,7 @@ class ReRecoWorkloadFactory(object):
 
     def addLogCollectTask(self, parentTask, taskName = "LogCollect"):
         """
-        _addLogCollecTask_
+        _addLogCollectTask_
         
         Create a LogCollect task for log archives that are produced by the
         parent task.
@@ -270,7 +272,10 @@ class ReRecoWorkloadFactory(object):
         mergeTaskStageOut.setStepType("StageOut")
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
-        self.addLogCollectTask(mergeTask, taskName = "%sMergeLogCollect" % parentOutputModule)        
+
+        mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)        
+        self.addLogCollectTask(mergeTask, taskName = "%sMergeLogCollect" % parentOutputModule)
+        
         mergeTask.addGenerator("BasicNaming")
         mergeTask.addGenerator("BasicCounter")
         mergeTask.setTaskType("Merge")  

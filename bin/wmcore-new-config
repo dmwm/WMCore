@@ -8,8 +8,8 @@ together into one big configuration file that operators can then
 edit.
 """
 
-__revision__ = "$Id: wmcore-new-config,v 1.4 2009/07/17 21:19:44 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: wmcore-new-config,v 1.5 2010/01/22 22:08:32 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 __author__ = "fvlingen@caltech.edu"
 
 import getopt
@@ -85,14 +85,8 @@ socket:  Set the socket file location for mysql (optional)
 
 config.section_("CoreDatabase")
 config.CoreDatabase.document_(msg)
-config.CoreDatabase.dialect = 'mysql'
 config.CoreDatabase.socket = '..../mysqldata/mysql.sock'
-config.CoreDatabase.masterUser = 'some_user'
-config.CoreDatabase.masterPasswd = 'some_pass'
-config.CoreDatabase.user = 'some_user'
-config.CoreDatabase.passwd = 'some_pass'
-config.CoreDatabase.hostname = 'localhost'
-config.CoreDatabase.name = 'wmbs'
+config.CoreDatabase.connectUrl = 'mysql://username:password@hostname/database_name'
 
 for root in roots:
     # find the DefaultConfig.py files.

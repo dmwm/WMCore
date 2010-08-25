@@ -5,8 +5,8 @@ _MySQLCore_t
 Unit tests for the MySQL version of DBCore.
 """
 
-__revision__ = "$Id: MySQLCore_t.py,v 1.1 2010/02/12 21:01:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: MySQLCore_t.py,v 1.2 2010/02/18 14:46:27 sfoulkes Exp $"
+__version__ = "$Revision: 1.2 $"
 
 import unittest
 import logging
@@ -33,9 +33,9 @@ class DBCoreTest(unittest.TestCase):
         """
         return
 
-    def testBindSubstitution(self):
+    def testBindSubstitutionA(self):
         """
-        _testBindSubstitution_
+        _testBindSubstitutionA_
 
         Verify that bind substition works correctly with similarly named bind
         variables.
@@ -60,6 +60,67 @@ class DBCoreTest(unittest.TestCase):
                "Error: Second bind parameter is wrong."
                
         return
+
+    def testBindSubstitutionB(self):
+        """
+        _testBindSubstitutionB_
+
+        Test another query that has been causing problems.
+        """
+        sql = "INSERT INTO FILE_LUMIS (FILE_LUMI_ID, RUN_NUM, LUMI_SECTION_NUM, FILE_ID) VALUES (:file_lumi_id, :run_num, :lumi_section_num, :file_id)"
+        binds = [{"lumi_section_num": "27414", "run_num": "1", "file_lumi_id": 1L, "file_id": 1L},
+                 {"lumi_section_num": "26422", "run_num": "1", "file_lumi_id": 2L, "file_id": 1L},
+                 {"lumi_section_num": "29838", "run_num": "1", "file_lumi_id": 3L, "file_id": 1L}] 
+
+        myInterface = MySQLInterface(logger = logging, engine = None)
+        (updatedSQL, bindList) = myInterface.substitute(sql, binds)
+
+        goodSQL = "INSERT INTO FILE_LUMIS (FILE_LUMI_ID, RUN_NUM, LUMI_SECTION_NUM, FILE_ID) VALUES (%s, %s, %s, %s)"
+
+        assert updatedSQL == goodSQL, \
+               "Error: SQL updated failed."
+
+        assert len(bindList) == 3, \
+               "Error: Wrong number of binds."
+        assert bindList[0] == (1L, '1', '27414', 1L), \
+               "Error: Bind 0 has wrong values."
+        assert bindList[1] == (2L, '1', '26422', 1L), \
+               "Error: Bind 1 has wrong values."
+        assert bindList[2] == (3L, '1', '29838', 1L), \
+               "Error: Bind 2 has wrong values."        
+
+        return
+
+    def testBindSubstitutionCase(self):
+        """
+        _testBindSubstitutionCase_
+
+        Verify that bind substitution works correctly when the bind variables in
+        the query and the bind variables list have different case.
+        """
+        sql = "INSERT INTO FILE_LUMIS (FILE_LUMI_ID, RUN_NUM, LUMI_SECTION_NUM, FILE_ID) VALUES (:FILE_LUMI_ID, :RUN_NUM, :LUMI_SECTION_NUM, :FILE_ID)"
+        binds = [{"lumi_section_num": "27414", "run_num": "1", "file_lumi_id": 1L, "file_id": 1L},
+                 {"lumi_section_num": "26422", "run_num": "1", "file_lumi_id": 2L, "file_id": 1L},
+                 {"lumi_section_num": "29838", "run_num": "1", "file_lumi_id": 3L, "file_id": 1L}] 
+
+        myInterface = MySQLInterface(logger = logging, engine = None)
+        (updatedSQL, bindList) = myInterface.substitute(sql, binds)
+
+        goodSQL = "INSERT INTO FILE_LUMIS (FILE_LUMI_ID, RUN_NUM, LUMI_SECTION_NUM, FILE_ID) VALUES (%s, %s, %s, %s)"
+
+        assert updatedSQL == goodSQL, \
+               "Error: SQL updated failed."
+
+        assert len(bindList) == 3, \
+               "Error: Wrong number of binds."
+        assert bindList[0] == (1L, '1', '27414', 1L), \
+               "Error: Bind 0 has wrong values."
+        assert bindList[1] == (2L, '1', '26422', 1L), \
+               "Error: Bind 1 has wrong values."
+        assert bindList[2] == (3L, '1', '29838', 1L), \
+               "Error: Bind 2 has wrong values."        
+
+        return    
 
 if __name__ == "__main__":
     unittest.main()     

@@ -9,8 +9,8 @@ Placeholder for ideas at present....
 
 """
 
-__revision__ = "$Id: Persistency.py,v 1.9 2010/04/07 16:24:11 sryu Exp $"
-__version__ = "$Revision: 1.9 $"
+__revision__ = "$Id: Persistency.py,v 1.10 2010/04/07 16:28:06 sryu Exp $"
+__version__ = "$Revision: 1.10 $"
 
 import cPickle
 from urllib2 import urlopen, Request
@@ -44,15 +44,7 @@ class PersistencyHelper:
         """
         handle = open(filename, 'w')
         extension = filename.split(".")[-1].lower()
-        if extension == "pkl":
-            cPickle.dump(self.data, handle)
-        #elif extension == 'json':
-        #    JsonWrapper.dump(JSONThunker().thunk(self.data), 
-        #                     handle)
-        else:
-            cPickle.dump(self.data, handle)
-            #handle.write(str(self.data))
-            
+        cPickle.dump(self.data, handle)     
         handle.close()
         return
 
@@ -73,13 +65,7 @@ class PersistencyHelper:
         # Send Accept header so we dont get default which may be fancy ie. json
         handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
         extension = filename.split(".")[-1].lower()
-        if extension == "pkl":
-            self.data = cPickle.load(handle)
-        #elif extension == 'json':
-        #    self.data = JSONThunker().unthunk(JsonWrapper.load(handle))  
-        else:
-            self.data = cPickle.load(handle)
-            #self.data = handle.read()
+        self.data = cPickle.load(handle)
         handle.close()
         return
 

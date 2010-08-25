@@ -136,7 +136,21 @@ class testRepeatCalls(RESTBaseUnitTest):
                 fail_count += 1
         if fail_count > 0:
             raise Exception('Test did not pass!')
-            
+
+    def testRecoveryFromConnRefused(self):
+        """Connections succeed after server down"""
+        import socket
+        self.rt.stop()
+        req = Requests.Requests(self.urlbase)
+        headers = {'Cache-Control':'no-cache'}
+        self.assertRaises(socket.error, req.get, '/', incoming_headers=headers)
+
+        # now restart server and hope we can connect
+        self.rt.start(blocking=False)
+        result = req.get('/', incoming_headers=headers)
+        self.assertEqual(result[3], False)
+        self.assertEqual(result[1], 200)
+
 class testJSONRequests(unittest.TestCase):
     def setUp(self):
         self.testInit = TestInit(__file__)

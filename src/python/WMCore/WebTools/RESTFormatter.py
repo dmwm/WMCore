@@ -21,9 +21,9 @@ class RESTFormatter(TemplatedPage):
                    'text/json': self.json, 
                    'text/x-json': self.json, 
                    'application/json': self.json,
-                   'text/html': str,
-                   'text/plain': str,
-                   '*/*': str}
+                   'text/html': self.to_string,
+                   'text/plain': self.to_string,
+                   '*/*': self.to_string}
     
     @exposejson
     def json(self, data, expires=DEFAULT_EXPIRE):
@@ -36,6 +36,10 @@ class RESTFormatter(TemplatedPage):
     @exposeatom
     def atom(self, data, expires=DEFAULT_EXPIRE):
         return data
+    
+    @expose
+    def to_string(self, data, expires=DEFAULT_EXPIRE):
+        return str(data)
     
     def format(self, data, datatype, expires=DEFAULT_EXPIRE):
         try:

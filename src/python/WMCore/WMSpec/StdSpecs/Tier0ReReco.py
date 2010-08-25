@@ -136,7 +136,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
 
     if "ALCARECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputALCARECORECO", primaryDataset = inputPrimaryDataset,
+            "outputALCARECOALCARECO", primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
             dataTier = "ALCARECO",
             lfnBase = "%s/ALCARECO/%s" % ( unmergedLfnBase, processedDatasetName)
@@ -157,10 +157,10 @@ def tier0ReRecoWorkload(workloadName, arguments):
     rerecoLogArchHelper  = rerecoLogArch.getTypeHelper()
 
     # Emulation
-    if emulationMode:
-        rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
-        rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
-        rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
+    #if emulationMode:
+    #    rerecoCmsswHelper.data.emulator.emulatorName = "CMSSW"
+    rerecoStageOutHelper.data.emulator.emulatorName = "StageOut"
+    rerecoLogArchHelper.data.emulator.emulatorName = "LogArchive"
 
 
 
@@ -207,20 +207,21 @@ def tier0ReRecoWorkload(workloadName, arguments):
 
     if "ALCARECO" in writeDataTiers:
         skimAlca = rereco.addTask("SkimAlcaReco")
-        skimAlca.Cmssw = skimAlca.makeStep("skimAlcaReco")
-        skimAlca.Cmssw.setStepType("CMSSW")
+        skimAlca.setInputReference(rerecoCmssw, outputModule = "outputALCARECOALCARECO")        
+        skimAlcaCmssw = skimAlca.makeStep("skimAlcaReco")
+        skimAlcaCmssw.setStepType("CMSSW")
         skimAlcaStageOut = skimAlcaCmssw.addStep("stageOut1")
         skimAlcaStageOut.setStepType("StageOut")
         skimAlcaLogArch = skimAlcaCmssw.addStep("logArch1")
         skimAlcaLogArch.setStepType("LogArchive")
         skimAlca.addGenerator("BasicNaming")
         skimAlca.addGenerator("BasicCounter")
-        skimAlca.setTaskType("Skim")
+        skimAlca.setTaskType("Processing")
         skimAlca.applyTemplates()
         skimAlca.setSplittingAlgorithm("SplitFileBased")
 
         skimAlcaCmsswHelper = skimAlcaCmssw.getTypeHelper()
-        skimAlcaCmsswHelper.cmsswSteup(cmsswVersion,
+        skimAlcaCmsswHelper.cmsswSetup(cmsswVersion,
                                        softwareEnvironment = softwareInitCommand,
                                        scramArch = scramArchitecture)
 
@@ -233,18 +234,18 @@ def tier0ReRecoWorkload(workloadName, arguments):
                  "MuAlGlobalCosmics",
                  "MuAlCalIsolatedMu",
                  "HcalCalHOCosmics"]
-        
+
         skimAlcaCmsswHelper.setDataProcessingConfig(scenario, "alcaSkim", skims = skims)
         for skim in skims:
             skimAlcaCmsswHelper.addOutputModule(
-                "outputALCARECORECOStream%s" % skim,
+                "ALCARECOStream%s" % skim,
                 primaryDataset = inputPrimaryDataset,
                 processedDataset = processedDatasetName,
                 dataTier = "ALCARECO",
                 lfnBase = "%s/ALCARECO/%s" % (commonLfnBase, processedDatasetName))
             
-            mergeAlca = rereco.addTask("MergeAlcaReco")
-            mergeAlcaCmssw = mergeAlca.makeStep("mergeAlcaReco")    
+            mergeAlca = rereco.addTask("MergeAlcaReco%s" % skim)
+            mergeAlcaCmssw = mergeAlca.makeStep("mergeAlcaReco%s" % skim)
             mergeAlcaCmssw.setStepType("CMSSW")
             mergeAlcaStageOut = mergeAlcaCmssw.addStep("stageOut1")
             mergeAlcaStageOut.setStepType("StageOut")
@@ -270,7 +271,7 @@ def tier0ReRecoWorkload(workloadName, arguments):
                 lfnBase = "%s/ALCARECO/%s" % ( commonLfnBase, processedDatasetName)
                 )
 
-            mergeAlca.setInputReference(rerecoCmssw, outputModule = "outputALCARECORECO")
+            mergeAlca.setInputReference(rerecoCmssw, outputModule = "ALCARECOStream%s" % skim)
 
         if emulationMode:
             mergeAlcaStageOutHelper = mergeAlcaStageOut.getTypeHelper()

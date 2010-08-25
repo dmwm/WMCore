@@ -156,7 +156,7 @@ def rerecoWorkload(workloadName, arguments):
 
     if "ALCARECO" in writeDataTiers:
         rerecoCmsswHelper.addOutputModule(
-            "outputALCARECORECO", primaryDataset = inputPrimaryDataset,
+            "outputALCARECOALCARECO", primaryDataset = inputPrimaryDataset,
             processedDataset = unmergedDatasetName,
             dataTier = "ALCARECO",
             lfnBase = "%s/ALCARECO/%s" % ( unmergedLfnBase, processedDatasetName)
@@ -255,7 +255,7 @@ def rerecoWorkload(workloadName, arguments):
         )
 
 
-        mergeAlca.setInputReference(rerecoCmssw, outputModule = "outputALCARECORECO")
+        mergeAlca.setInputReference(rerecoCmssw, outputModule = "outputALCARECOALCARECO")
         if emulationMode:
             mergeAlcaStageOutHelper = mergeAlcaStageOut.getTypeHelper()
             mergeAlcaLogArchHelper  = mergeAlcaLogArch.getTypeHelper()

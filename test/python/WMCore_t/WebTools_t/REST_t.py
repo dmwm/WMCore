@@ -7,8 +7,8 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
-__revision__ = "$Id: REST_t.py,v 1.17 2010/01/05 21:57:26 sryu Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: REST_t.py,v 1.18 2010/01/07 22:38:03 sryu Exp $"
+__version__ = "$Revision: 1.18 $"
 
 import unittest
 import json
@@ -159,17 +159,21 @@ class RESTTest(unittest.TestCase):
                 
         drm = DummyRESTModel(component)
         
+        def func(*args, **kwargs):
+            input = drm.sanitise_input(args, kwargs, "list")
+            return drm.list(**input)
+        
         # 2 positional args (e.g. url/arg1/arg2)
-        result = drm.list(123, 'abc')
+        result = func(123, 'abc')
         assert result == {'int':123, 'str':'abc'},\
                 'list with 2 positional args failed: %s' % result
         # 2 query string args (e.g. url?int=arg1&str=arg2)
-        result = drm.list(int=123, str='abc')
+        result = func(int=123, str='abc')
         assert result == {'int':123, 'str':'abc'},\
                 'list with 2 query string args failed: %s' % result
         
         # 1 positional, 1 keyword  (e.g. url/arg1/?str=arg2)
-        result = drm.list(123, str='abc')
+        result = func(123, str='abc')
         assert result == {'int':123, 'str':'abc'},\
                 'list with 1 positional, 1 keyword failed: %s' % result
 #    
@@ -226,23 +230,29 @@ class RESTTest(unittest.TestCase):
         #However the purpose of the test is just demonstrating how validation is used,
         #If necessary make the test more accurate.
          
+        # test validation
+        # TODO: maybe needs to throw different exceptions other than HTTPError 
+        def func(*args, **kwargs):
+            input = drm.sanitise_input(args, kwargs, "list")
+            return drm.list(**input)
+        
         # Wrong type for input args
-        self.assertRaises(HTTPError, drm.list, 123, 123)
-        self.assertRaises(HTTPError, drm.list, 'abc', 'abc')
-        self.assertRaises(HTTPError, drm.list, str = 123, int ='abc')
-        self.assertRaises(HTTPError, drm.list, str =' abc', int = 'abc')
-        self.assertRaises(HTTPError, drm.list, 'abc', 123)
-        self.assertRaises(HTTPError, drm.list, 'abc', 'abc')
-        self.assertRaises(HTTPError, drm.list, str = 123, int = 'abc')
-        self.assertRaises(HTTPError, drm.list, str =123, int = 123)
-        self.assertRaises(HTTPError, drm.list, str = 'abc', int ='abc')
+        self.assertRaises(HTTPError, func, 123, 123)
+        self.assertRaises(HTTPError, func, 'abc', 'abc')
+        self.assertRaises(HTTPError, func, str = 123, int ='abc')
+        self.assertRaises(HTTPError, func, str =' abc', int = 'abc')
+        self.assertRaises(HTTPError, func, 'abc', 123)
+        self.assertRaises(HTTPError, func, 'abc', 'abc')
+        self.assertRaises(HTTPError, func, str = 123, int = 'abc')
+        self.assertRaises(HTTPError, func, str =123, int = 123)
+        self.assertRaises(HTTPError, func, str = 'abc', int ='abc')
         
         # Incorrect values for input args
-        self.assertRaises(HTTPError, drm.list, 1234, 'abc')
-        self.assertRaises(HTTPError, drm.list, 123, 'abcd')
+        self.assertRaises(HTTPError, func, 1234, 'abc')
+        self.assertRaises(HTTPError, func, 123, 'abcd')
         
         # Empty input data, when data is required
-        self.assertRaises(HTTPError, drm.list)
+        self.assertRaises(HTTPError, func)
     
 
     @setUpDummyRESTModel

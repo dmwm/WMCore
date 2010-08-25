@@ -5,16 +5,16 @@ _RunningJob_
 Class for jobs that are running
 """
 
-__version__ = "$Id: RunningJob.py,v 1.8 2010/05/09 19:59:06 spigafi Exp $"
-__revision__ = "$Revision: 1.8 $"
+__version__ = "$Id: RunningJob.py,v 1.9 2010/05/10 12:45:55 spigafi Exp $"
+__revision__ = "$Revision: 1.9 $"
 
 # imports
-import time
 import logging
 
-from WMCore.BossLite.DbObjects.DbObject import DbObject
-from WMCore.BossLite.Common.Exceptions import JobError, DbError
+from WMCore.BossLite.DbObjects.DbObject import DbObject, DbObjectDBFormatter
 
+from WMCore.BossLite.Common.Exceptions import JobError
+from WMCore.BossLite.Common.System import strToList, listToStr
 
 class RunningJob(DbObject):
     """
@@ -103,7 +103,7 @@ class RunningJob(DbObject):
 
     ##########################################################################
 
-    def __init__(self, parameters = {}):
+    def __init__(self, parameters = None):
         """
         initialize a RunningJob instance
         """
@@ -154,7 +154,7 @@ class RunningJob(DbObject):
 
     ##########################################################################
 
-    def save(self, db):
+    def save(self, db, deep = True):
         """
         Save the job
         """
@@ -165,6 +165,7 @@ class RunningJob(DbObject):
             db.objSave(self)               
 
         self.existsInDataBase = True
+        
         return
 
     ##########################################################################
@@ -201,8 +202,9 @@ class RunningJob(DbObject):
         """
         
         if not self.existsInDataBase:
-            logging.error("Cannot remove from DB non-existant runningJob %s" 
-                          % (self.data) )
+            # need to check!
+            # logging.error("Cannot remove from DB non-existant runningJob %s" 
+            #              % (self.data) )
             return 0
         
         db.objRemove(self) 
@@ -230,3 +232,94 @@ class RunningJob(DbObject):
         """
 
         return self.save(db, deep)
+
+
+class RunningJobDBFormatter(DbObjectDBFormatter):
+
+    def preFormat(self, res):
+        """
+        It maps database fields with object dictionary and it translate python 
+        List and timestamps in well formatted string. This is useful for any 
+        kind of database engine!
+        """
+        
+        result = {}  
+        
+        # result['id']                    = entry['id']
+        result['jobId']                 = res['jobId']
+        result['taskId']                = res['taskId']
+        result['submission']            = res['submission']
+        result['state']                 = res['state']
+        result['scheduler']             = res['scheduler']
+        result['service']               = res['service']
+        result['schedulerAttributes']   = res['schedulerAttributes']
+        result['schedulerId']           = res['schedulerId']
+        result['schedulerParentId']     = res['schedulerParentId']
+        result['statusScheduler']       = res['statusScheduler']
+        result['status']                = res['status']
+        result['statusReason']          = res['statusReason']
+        result['destination']           = res['destination']
+        result['lbTimestamp']           = res['lbTimestamp']
+        result['submissionTime']        = res['submissionTime']
+        result['scheduledAtSite']       = res['scheduledAtSite']
+        result['startTime']             = res['startTime']
+        result['stopTime']              = res['stopTime']
+        result['stageOutTime']          = res['stageOutTime']
+        result['getOutputTime']         = res['getOutputTime']
+        result['outputRequestTime']     = res['outputRequestTime']
+        result['outputEnqueueTime']     = res['outputEnqueueTime']
+        result['getOutputRetry']        = res['getOutputRetry']
+        result['outputDirectory']       = res['outputDirectory']
+        result['storage']               = listToStr(res['storage'])
+        result['lfn']                   = listToStr(res['lfn'])
+        result['applicationReturnCode'] = res['applicationReturnCode']
+        result['wrapperReturnCode']     = res['wrapperReturnCode']
+        result['processStatus']         = res['processStatus']
+        result['closed']                = res['closed']
+            
+        return result
+    
+    def postFormat(self, res):
+        """
+        Format the results into the right output. This is useful for any 
+        kind of database engine!
+        """
+        
+        final = []
+        for entry in res:
+            result = {}
+            result['id']                    = entry['id']
+            result['jobId']                 = entry['jobid']
+            result['taskId']                = entry['taskid']
+            result['submission']            = entry['submission']
+            result['state']                 = entry['state']
+            result['scheduler']             = entry['scheduler']
+            result['service']               = entry['service']
+            result['schedulerAttributes']   = entry['schedulerattributes']
+            result['schedulerId']           = entry['schedulerid']
+            result['schedulerParentId']     = entry['schedulerparentid']
+            result['statusScheduler']       = entry['statusscheduler']
+            result['status']                = entry['status']
+            result['statusReason']          = entry['statusreason']
+            result['destination']           = entry['destination']
+            result['lbTimestamp']           = entry['lbtimestamp']
+            result['submissionTime']        = entry['submissiontime']
+            result['scheduledAtSite']       = entry['scheduledatsite']
+            result['startTime']             = entry['starttime']
+            result['stopTime']              = entry['stoptime']
+            result['stageOutTime']          = entry['stageouttime']
+            result['getOutputTime']         = entry['getoutputtime']
+            result['outputRequestTime']     = entry['outputrequesttime']
+            result['outputEnqueueTime']     = entry['outputenqueuetime']
+            result['getOutputRetry']        = entry['getoutputretry']
+            result['outputDirectory']       = entry['outputdirectory']
+            result['storage']               = strToList(entry['storage'])
+            result['lfn']                   = strToList(entry['lfn'])
+            result['applicationReturnCode'] = entry['applicationreturncode']
+            result['wrapperReturnCode']     = entry['wrapperreturncode']
+            result['processStatus']         = entry['processstatus']
+            result['closed']                = entry['closed']
+            final.append(result)
+
+        return final
+    

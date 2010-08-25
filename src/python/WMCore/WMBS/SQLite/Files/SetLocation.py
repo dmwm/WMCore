@@ -6,9 +6,7 @@ from WMCore.WMBS.MySQL.Files.SetLocation import SetLocation as SetLocationMySQL
 from sets import Set
 
 class SetLocation(SetLocationMySQL):
-    sql = """insert into wmbs_file_location (file, location) 
-                values ((select id from wmbs_file_details where lfn = :file),
-                (select id from wmbs_location where se_name = :location))"""
+    sql = SetLocationMySQL.sql
                 
     def getBinds(self, file = None, location = None):
         if type(location) == type('string'):

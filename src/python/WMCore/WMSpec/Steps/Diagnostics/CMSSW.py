@@ -8,8 +8,11 @@ Diagnostic implementation for a CMSSW job
 """
 
 import os
+import os.path
 import logging
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
+
+import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
 class Exit127(DiagnosticHandler):
     def __call__(self, errCode, executor, **args):
@@ -64,6 +67,15 @@ class CMSRunHandler(DiagnosticHandler):
             executor.report.parse(jobRepXml)
             reportStep = executor.report.retrieveStep(executor.step._internal_name)
             reportStep.status = self.code
+
+
+        errLog = os.path.join(os.path.basename(jobRepXml),
+                              '%s-stderr.log' % (executor.step.name()))
+
+        if os.path.exists(errLog):
+            logTail = BasicAlgos.tail(errLog, 10)
+            msg += '\n Adding last ten lines of error report\n'
+            msg += logTail
                 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
@@ -107,6 +119,10 @@ class EDMExceptionHandler(DiagnosticHandler):
         
         # job report XML exists, load the exception information from it
         executor.report.parse(jobRepXml)
+
+
+        
+                              
         
         
         # make sure the report has the error in it

@@ -67,7 +67,8 @@ class DBSUploadTest(unittest.TestCase):
         self.testInit.setSchema(customModules = 
                                 ["WMCore.ThreadPool",
                                  "WMCore.MsgService",
-                                 "WMComponent.DBSBuffer.Database"],
+                                 "WMComponent.DBSBuffer.Database",
+                                 'WMCore.Agent.Database'],
                                 useDefault = False)
       
         myThread = threading.currentThread()

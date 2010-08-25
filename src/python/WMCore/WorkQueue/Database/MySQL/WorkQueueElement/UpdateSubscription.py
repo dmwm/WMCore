@@ -5,8 +5,8 @@ MySQL implementation of WorkQueueElement.UpdateSubscription
 """
 
 __all__ = []
-__revision__ = "$Id: UpdateSubscription.py,v 1.4 2009/11/20 22:59:58 sryu Exp $"
-__version__ = "$Revision: 1.4 $"
+__revision__ = "$Id: UpdateSubscription.py,v 1.5 2010/05/05 14:36:53 sryu Exp $"
+__version__ = "$Revision: 1.5 $"
 
 import time
 from WMCore.Database.DBFormatter import DBFormatter
@@ -24,6 +24,6 @@ class UpdateSubscription(DBFormatter):
     def execute(self, elementID, subscriptionID, conn = None, transaction = False):
         binds = {"elementID":elementID, "subsID":subscriptionID}
 
-        self.dbi.processData(self.sql, binds, conn = conn,
+        result = self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)            
-        return
+        return result[0].rowcount

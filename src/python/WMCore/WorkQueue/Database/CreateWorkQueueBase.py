@@ -7,8 +7,8 @@ Inherit from CreateWMBSBase, and add MySQL specific substitutions (e.g. add
 INNODB) and specific creates (e.g. for time stamp and enum fields).
 """
 
-__revision__ = "$Id: CreateWorkQueueBase.py,v 1.2 2009/06/10 21:05:10 sryu Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: CreateWorkQueueBase.py,v 1.3 2009/06/15 20:58:43 sryu Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -25,10 +25,11 @@ class CreateWorkQueueBase(DBCreator):
     requiredTables = ["01wq_wmspec",
                       "02wq_site",
                       "03wq_block",
-                      "04wq_element",
-                      "05wq_block_site_assoc",
-                      "06wq_block_parentage",
-                      "07wq_element_subs_assoc"
+                      "04wq_element_status",
+                      "05wq_element",
+                      "06wq_block_site_assoc",
+                      "07wq_block_parentage",
+                      "08wq_element_subs_assoc"
                       ]
     
 
@@ -70,8 +71,16 @@ class CreateWorkQueueBase(DBCreator):
              num_event      INTEGER      NOT NULL,
              PRIMARY KEY(id)
              )"""
-             
-        self.create["04wq_element"] = \
+        
+        self.create["04wq_element_status"] = \
+          """CREATE TABLE wq_element_status (
+             id        INTEGER     NOT NULL,
+             status    VARCHAR(25),
+             PRIMARY KEY (id),
+             UNIQUE (status)
+             )"""
+        
+        self.create["05wq_element"] = \
           """CREATE TABLE wq_element (
              id               INTEGER    NOT NULL,
              wmspec_id        INTEGER    NOT NULL,
@@ -79,19 +88,20 @@ class CreateWorkQueueBase(DBCreator):
              num_jobs         INTEGER    NOT NULL,
              priority         INTEGER    NOT NULL,
              parent_flag      INTEGER    DEFAULT 0,
-             last_update      INTEGER    NOT NULL,
+             status           INTEGER    DEFAULT 0,
+             last_updated      INTEGER    NOT NULL,
              PRIMARY KEY (id),
              UNIQUE (wmspec_id, block_id)
              ) """
                
-        self.create["05wq_block_site_assoc"] = \
+        self.create["06wq_block_site_assoc"] = \
           """CREATE TABLE wq_block_site_assoc (
              block_id     INTEGER    NOT NULL,
              site_id      INTEGER    NOT NULL,
              PRIMARY KEY (block_id, site_id)
              )"""
         
-        self.create["06wq_block_parentage"] = \
+        self.create["07wq_block_parentage"] = \
           """CREATE TABLE wq_block_parentage (
              child        INTEGER    NOT NULL,
              parent       INTEGER    NOT NULL,
@@ -100,12 +110,12 @@ class CreateWorkQueueBase(DBCreator):
         
         # oracle doesn't allow foreign key has null value.
         # so create another table 
-        self.create["07wq_element_subs_assoc"] = \
+        self.create["08wq_element_subs_assoc"] = \
           """CREATE TABLE wq_element_subs_assoc (
              element_id        INTEGER    NOT NULL,
              subscription_id   INTEGER    NOT NULL,
              PRIMARY KEY (element_id, subscription_id)
-             ) """
+             )"""
              
         self.constraints["FK_wq_block_assoc"]=\
               """ALTER TABLE wq_block_site_assoc ADD CONSTRAINT FK_wq_block_assoc
@@ -138,7 +148,17 @@ class CreateWorkQueueBase(DBCreator):
         self.constraints["FK_wq_subs_assoc"]=\
               """ALTER TABLE wq_element_subs_assoc ADD CONSTRAINT FK_wq_subs_assoc
                  FOREIGN KEY(subscription_id) REFERENCES wmbs_subscription(id)"""
-                          
+        
+        self.constraints["FK_wq_element_status"]=\
+              """ALTER TABLE wq_element ADD CONSTRAINT FK_wq_element_status
+                 FOREIGN KEY(status) REFERENCES wq_element_status(id)"""
+        
+        wqStatus = ["Available", "Acquired", "Done"]
+        for i in range(3):
+            self.inserts["%swq_elem_status_insert" % (60 + i)]=\
+                """INSERT INTO wq_element_status (id, status) VALUES (%d, '%s')
+                """ % (i, wqStatus[i]) 
+                
     def execute(self, conn = None, transaction = None):
         """
         _execute_

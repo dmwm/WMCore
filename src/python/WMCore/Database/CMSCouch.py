@@ -5,8 +5,8 @@ _CMSCouch_
 A simple API to CouchDB that sends HTTP requests to the REST interface.
 """
 
-__revision__ = "$Id: CMSCouch.py,v 1.50 2009/10/28 10:29:08 sfoulkes Exp $"
-__version__ = "$Revision: 1.50 $"
+__revision__ = "$Id: CMSCouch.py,v 1.51 2010/02/09 01:39:46 metson Exp $"
+__version__ = "$Revision: 1.51 $"
 
 try:
     # Python 2.6
@@ -91,6 +91,8 @@ class CouchDBRequests(BasicAuthJSONRequests):
         """
         if (status == 400 ):
             raise CouchBadRequestError( reason, data, result )
+        elif (status == 403):
+            raise CouchForbidden( reason, data, result )
         elif (status == 404):
             raise CouchNotFoundError( reason, data, result )
         elif (status == 405):
@@ -385,3 +387,8 @@ class CouchInternalServerError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchInternalServerError"
+
+class CouchForbidden(CouchError):
+    def __init__(self, reason, data, result):
+        CouchError.__init__(self, reason, data, result)
+        self.type = "CouchForbidden"

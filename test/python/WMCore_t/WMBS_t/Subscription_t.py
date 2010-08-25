@@ -74,6 +74,41 @@ class SubscriptionTest(unittest.TestCase):
         myThread.transaction.commit()
         
         self._teardown = True
+        
+    def createSubscriptionWithFileABC(self):
+        
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
+                                name = "wf001")
+        testWorkflow.create()
+
+        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileA.addRun(Run(1, *[45]))
+                                 
+        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))                         
+        testFileB.addRun(Run(1, *[45]))
+        
+        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
+                         locations = Set(["goodse.cern.ch"]))
+        testFileC.addRun(Run(2, *[48]))
+         
+        testFileA.create()
+        testFileB.create()
+        testFileC.create()
+        
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.addFile(testFileC)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        
+        return testSubscription, testFileset, testWorkflow, testFileA, testFileB, testFileC
 
     def testCreateDeleteExists(self):
         """
@@ -82,30 +117,8 @@ class SubscriptionTest(unittest.TestCase):
         Create and delete a subscription and use the exists() method to
         determine if the create()/delete() methods were successful.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFilesetA = Fileset(name = "TestFileset")
-        testFilesetA.create()
-        
-        testFilesetA.addFile(testFileA)
-        testFilesetA.addFile(testFileB)
-        testFilesetA.addFile(testFileC)
-        testFilesetA.commit()
-
-        testSubscription = Subscription(fileset = testFilesetA,
-                                        workflow = testWorkflow)
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         assert testSubscription.exists() == False, \
                "ERROR: Subscription exists before it was created"
@@ -120,7 +133,7 @@ class SubscriptionTest(unittest.TestCase):
         assert testSubscription.exists() == False, \
                "ERROR: Subscription exists after it was deleted"
 
-        testFilesetA.delete()
+        testFileset.delete()
         testFileA.delete()
         testFileB.delete()
         testFileC.delete()
@@ -135,30 +148,8 @@ class SubscriptionTest(unittest.TestCase):
         database connection and verify that the subscription is no longer
         there.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFilesetA = Fileset(name = "TestFileset")
-        testFilesetA.create()
-        
-        testFilesetA.addFile(testFileA)
-        testFilesetA.addFile(testFileB)
-        testFilesetA.addFile(testFileC)
-        testFilesetA.commit()
-
-        testSubscription = Subscription(fileset = testFilesetA,
-                                        workflow = testWorkflow)
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         assert testSubscription.exists() == False, \
                "ERROR: Subscription exists before it was created"
@@ -176,7 +167,7 @@ class SubscriptionTest(unittest.TestCase):
         assert testSubscription.exists() == False, \
                "ERROR: Subscription exists after transaction was rolled back."
 
-        testFilesetA.delete()
+        testFileset.delete()
         testFileA.delete()
         testFileB.delete()
         testFileC.delete()
@@ -192,30 +183,8 @@ class SubscriptionTest(unittest.TestCase):
         is no longer in the database and then roll back the transaction.  Verify
         that the subscription is once again in the database.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFilesetA = Fileset(name = "TestFileset")
-        testFilesetA.create()
-        
-        testFilesetA.addFile(testFileA)
-        testFilesetA.addFile(testFileB)
-        testFilesetA.addFile(testFileC)
-        testFilesetA.commit()
-
-        testSubscription = Subscription(fileset = testFilesetA,
-                                        workflow = testWorkflow)
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
 
         assert testSubscription.exists() == False, \
                "ERROR: Subscription exists before it was created"
@@ -238,7 +207,7 @@ class SubscriptionTest(unittest.TestCase):
         assert testSubscription.exists() >= 0, \
                "ERROR: Subscription does not exist after roll back."
 
-        testFilesetA.delete()
+        testFileset.delete()
         testFileA.delete()
         testFileB.delete()
         testFileC.delete()
@@ -252,34 +221,15 @@ class SubscriptionTest(unittest.TestCase):
         Create a subscription and fail a couple of files in it's fileset.  Test
         to make sure that only the failed files are marked as failed.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
+        
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+                  
+        testSubscription.create()
+
         dummyWorkflow = Workflow(spec = "spec1.xml", owner = "Simon",
                                 name = "wf002")
         dummyWorkflow.create()        
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
 
         failSubscription = Subscription(fileset = testFileset,
                                         workflow = dummyWorkflow)
@@ -314,30 +264,9 @@ class SubscriptionTest(unittest.TestCase):
         fileset.  Rollback the subscription and verify that the files are
         no longer failed.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         
         testSubscription.create()
 
         myThread = threading.currentThread()
@@ -377,34 +306,14 @@ class SubscriptionTest(unittest.TestCase):
         Create a subscription and complete a couple of files in it's fileset.  Test
         to make sure that only the completed files are marked as complete.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()  
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+
+        testSubscription.create()
+ 
         dummyWorkflow = Workflow(spec = "spec2.xml", owner = "Simon",
                                 name = "wf003")
         dummyWorkflow.create()      
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
-        testSubscription.create()
 
         completeSubscription = Subscription(fileset = testFileset,
                                             workflow = dummyWorkflow)
@@ -439,30 +348,9 @@ class SubscriptionTest(unittest.TestCase):
         fileset.  Rollback the transaction and verify that the files are no
         longer marked as complete.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = Set(["goodse.cern.ch"]))                         
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         
         testSubscription.create()
 
         myThread = threading.currentThread()
@@ -502,34 +390,17 @@ class SubscriptionTest(unittest.TestCase):
         Create a subscription and acquire a couple of files in it's fileset.  Test
         to make sure that only the acquired files are marked as acquired.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         
         testSubscription.create()
-
+        
+        dummyWorkflow = Workflow(spec = "spec2.xml", owner = "Simon",
+                                name = "wf003")
+        dummyWorkflow.create()
+         
         acquireSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+                                        workflow = dummyWorkflow)
         acquireSubscription.create()        
         acquireSubscription.acquireFiles()
 
@@ -561,30 +432,9 @@ class SubscriptionTest(unittest.TestCase):
         Rollback the transaction and verify that the files are no longer marked
         as acquired.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         
         testSubscription.create()
 
         myThread = threading.currentThread()
@@ -918,30 +768,9 @@ class SubscriptionTest(unittest.TestCase):
         Create a subscription and save it to the database.  Test the various
         load methods to make sure that everything saves/loads.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscriptionA = Subscription(fileset = testFileset,
-                                         workflow = testWorkflow)
+        (testSubscriptionA, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         
         testSubscriptionA.create()
 
         testSubscriptionB = Subscription(id = testSubscriptionA["id"])
@@ -987,30 +816,9 @@ class SubscriptionTest(unittest.TestCase):
         Test the Subscription's loadData() method to make sure that everything
         that should be loaded is loaded correctly.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001")
-        testWorkflow.create()
-
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
-                         events = 20)
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20)
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
-                         events = 20)
-        testFileA.create()
-        testFileB.create()
-        testFileC.create()
-        
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.addFile(testFileC)        
-        testFileset.commit()
-
-        testSubscriptionA = Subscription(fileset = testFileset,
-                                         workflow = testWorkflow)
+        (testSubscriptionA, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+         
         testSubscriptionA.create()
 
         testSubscriptionB = Subscription(id = testSubscriptionA["id"])
@@ -1087,6 +895,39 @@ class SubscriptionTest(unittest.TestCase):
                "ERROR: Subscription B is missing."
 
         return
+    
+    def testSubscriptionCompleteStatusByRun(self):
+        """
+        _testSubscriptionCompleteStatusByRun_
         
+        test status for a given subscription and given run 
+        testFileA, testFileB is in run 1
+        testFileC is in run 2
+        """
+        (testSubscription, testFileset, testWorkflow, 
+         testFileA, testFileB, testFileC) = self.createSubscriptionWithFileABC()
+        testSubscription.create()
+        
+        assert testSubscription.isCompleteOnRun(1) == False, \
+               "Run 1 shouldn't be completed."
+        
+        assert testSubscription.isCompleteOnRun(2) == False, \
+               "Run 2 shouldn't be completed."
+                
+        testSubscription.completeFiles([testFileA, testFileB])
+        
+        assert testSubscription.isCompleteOnRun(1) == True, \
+               "Run 1 should be completed."
+        
+        assert testSubscription.isCompleteOnRun(2) == False, \
+               "Run 2 shouldn't be completed."
+        
+        testSubscription.failFiles([testFileA, testFileC])
+        
+        assert testSubscription.isCompleteOnRun(1) == True, \
+               "Run 1 should be completed."
+        assert testSubscription.isCompleteOnRun(2) == True, \
+               "Run 2 should be completed."
+               
 if __name__ == "__main__":
     unittest.main()

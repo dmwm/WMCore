@@ -5,8 +5,8 @@ _Queries_
 This module implements the SQLite backend for the persistent threadpool.
 """
 
-__revision__ = "$Id: Queries.py,v 1.2 2009/07/17 16:01:02 sfoulkes Exp $"
-__version__ = "$Revision: 1.2 $"
+__revision__ = "$Id: Queries.py,v 1.3 2009/08/13 00:09:09 meloam Exp $"
+__version__ = "$Revision: 1.3 $"
 
 import threading
 
@@ -94,3 +94,23 @@ INSERT INTO %s_enum VALUES('process')
             self.execute(sqlStr2, {})
 
         return
+    
+    def moveWorkFromBufferIn(self, source, target):
+        """
+        Moves work from buffer in to main queue or buffer out
+        """
+
+        sqlStr1 = ''
+        sqlStr2 = ''
+        if source == 'tp_threadpool_buffer_in':
+            sqlStr1 = """
+INSERT INTO %s(event,component,payload,thread_pool_id) SELECT event,component,payload,thread_pool_id FROM %s
+            """ % (target, source)
+            sqlStr2 = """ DELETE FROM %s """ % (source)
+        else:
+            sqlStr1 = """
+INSERT INTO %s(event,payload) SELECT event,payload FROM %s
+            """ % (target, source)
+            sqlStr2 = """ DELETE FROM %s """ % (source)
+        self.execute(sqlStr1, {})
+        self.execute(sqlStr2, {})

@@ -105,7 +105,7 @@ def testMergeSubscription(unmergedOutMod, mergeTask):
     lfnBase = unmergedOutMod.lfnBase
     for i in range(0, random.randint(15,25)):
         inpFile = File("%s/%s.root" %(lfnBase, makeUUID()),
-                       random.randint(20000, 100000),
+                       random.randint(200000, 1000000),
                        random.randint(1000,2000)
         )
         fileset.addFile(inpFile)
@@ -221,28 +221,30 @@ def makeMergeJobs(task, subs):
     jobfactory = splitter(subs, "WMCore.DataStructs", makeGenerators(task))
     params = task.jobSplittingParameters()
     jobGroups = jobfactory(**params)
+    print jobGroups
     package = JobPackage()
     [ package.extend(group.getJobs()) for group in jobGroups ]
-
+    print package
+    
     return package
 
 if __name__ == '__main__':
     pkg = makeRerecoJobs(rereco, subs)
-    savePkg = "%s/RecoJobPackage.pkl" % workingDir
-    pkg.save(savePkg)
+    saveRecoPkg = "%s/RecoJobPackage.pkl" % workingDir
+    pkg.save(saveRecoPkg)
 
     if 'RECO' in arguments['OutputTiers']:
         mrgRecoPkg = makeMergeJobs(mergeReco, mergeRecoSubs)
-        savePkg = "%s/MergeRecoJobPackage.pkl" % workingDir
-        mrgRecoPkg.save(savePkg)
+        saveMergeRecoPkg = "%s/MergeRecoJobPackage.pkl" % workingDir
+        mrgRecoPkg.save(saveMergeRecoPkg)
     if 'AOD' in arguments['OutputTiers']:
         mrgAodPkg = makeMergeJobs(mergeAod, mergeAodSubs)
-        savePkg = "%s/MergeAodJobPackage.pkl" % workingDir
-        mrgAodPkg.save(savePkg)
+        saveMergeAodPkg = "%s/MergeAodJobPackage.pkl" % workingDir
+        mrgAodPkg.save(saveMergeAodPkg)
     if 'ALCA' in arguments['OutputTiers']:
         mrgAlcaPkg = makeMergeJobs(mergeAlca, mergeAlcaSubs)
-        savePkg = "%s/MergeAlcaJobPackage.pkl" % workingDir
-        mrgAlcaPkg.save(savePkg)
+        saveMergeAlcaPkg = "%s/MergeAlcaJobPackage.pkl" % workingDir
+        mrgAlcaPkg.save(saveMergeAlcaPkg)
 
 
 
@@ -258,18 +260,50 @@ if __name__ == '__main__':
     unpacker = runtimeLoc.replace('__init__.py', "Unpacker.py")
     sandbox = rereco.data.sandboxArchivePath
 
-    runitScript = \
-    """
-    %s %s --sandbox=%s --package=%s --index=1
-    echo "#To start job do:"
-    echo "export PYTHONPATH=`pwd`/job"
-    echo "cd job"
-    echo "%s WMCore/WMRuntime/Startup.py"
-    """ % (
+    rerecoCommand = "mkdir rereco; cd rereco; %s %s --sandbox=%s --package=%s --index=1; cd ..\n" % (
         sys.executable,
         unpacker,
         sandbox,
-        savePkg,
+        saveRecoPkg,
+    )
+     
+    mergerecoCommand = "mkdir mergereco; cd mergereco; %s %s --sandbox=%s --package=%s --index=1; cd ..\n" % (
+        sys.executable,
+        unpacker,
+        mergeReco.data.sandboxArchivePath,
+        saveMergeRecoPkg,
+    )
+    mergeaodCommand = "mkdir mergeaod; cd mergeaod; %s %s --sandbox=%s --package=%s --index=1; cd ..\n" % (
+        sys.executable,
+        unpacker,
+        mergeAod.data.sandboxArchivePath,
+        saveMergeAodPkg,
+    )
+    mergealcaCommand = "mkdir mergealca; cd mergealca; %s %s --sandbox=%s --package=%s --index=1; cd ..\n" % (
+        sys.executable,
+        unpacker,
+        mergeAlca.data.sandboxArchivePath,
+        saveMergeAlcaPkg,
+    )
+    
+    
+
+    runitScript = \
+    """
+    %s
+    %s
+    %s
+    %s
+    
+    echo "#To start rereco job do:"
+    echo "export PYTHONPATH=`pwd`/rereco/job"
+    echo "cd rereco/job"
+    echo "%s WMCore/WMRuntime/Startup.py"
+    """ % (
+        rerecoCommand,
+        mergerecoCommand,
+        mergeaodCommand,
+        mergealcaCommand,
         sys.executable)
 
     runitFile = open("%s/build.sh" % workingDir, 'w')

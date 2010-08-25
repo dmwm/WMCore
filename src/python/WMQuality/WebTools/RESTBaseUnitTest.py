@@ -17,9 +17,7 @@ class RESTBaseUnitTest(unittest.TestCase):
             self.testInit = TestInit(__file__)
             self.testInit.setLogging() # logLevel = logging.SQLDEBUG
             print "Database URL: %s" % self.config.getDBUrl()
-            print "Database socket: %s" % self.config.getDBSocket()
-            self.testInit.setDatabaseConnection(self.config.getDBUrl(), 
-                                                self.config.getDBSocket())
+            self.testInit.setDatabaseConnection(self.config.getDBUrl())
             #self.testInit.setDatabaseConnection()
             self.testInit.setSchema(customModules = self.schemaModules,
                                     useDefault = False)

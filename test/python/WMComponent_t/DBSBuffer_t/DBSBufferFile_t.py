@@ -5,8 +5,8 @@ _DBSBufferFile_t_
 Unit tests for the DBSBufferFile class.
 """
 
-__revision__ = "$Id: DBSBufferFile_t.py,v 1.8 2009/11/02 20:10:51 sfoulkes Exp $"
-__version__ = "$Revision: 1.8 $"
+__revision__ = "$Id: DBSBufferFile_t.py,v 1.9 2009/12/02 20:10:29 mnorman Exp $"
+__version__ = "$Revision: 1.9 $"
 
 import unittest
 import os
@@ -36,6 +36,7 @@ class FileTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMComponent.DBSBuffer.Database"],
                                 useDefault = False)
+                                #useDefault = False, params = {"tablespace_table": '', "tablespace_index":''})
 
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
@@ -44,7 +45,10 @@ class FileTest(unittest.TestCase):
 
         locationAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
-        locationAction.execute(siteName = "se1.fnal.gov")        
+        locationAction.execute(siteName = "se1.fnal.gov")
+
+        cktypeAction = self.daoFactory(classname = "DBSBufferFiles.AddCKType")
+        cktypeAction.execute(cktype = 'cksum')
         
     def tearDown(self):        
         """
@@ -54,6 +58,7 @@ class FileTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
+
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -62,6 +67,7 @@ class FileTest(unittest.TestCase):
         by creating and deleting a file.  The exists() method will be
         called before and after creation and after deletion.
         """
+
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10, cksum=1111)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                      appFam = "RECO", psetHash = "GIBBERISH",
@@ -93,6 +99,7 @@ class FileTest(unittest.TestCase):
         after it was created and doesn't exist after the transaction was rolled
         back.
         """
+
         myThread = threading.currentThread()
         myThread.transaction.begin()
         
@@ -127,6 +134,7 @@ class FileTest(unittest.TestCase):
         does not exist after it has been deleted but does exist after the
         transaction is rolled back.
         """
+
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024,
                                  events = 10, cksum=1111)
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -165,6 +173,7 @@ class FileTest(unittest.TestCase):
         to make sure that getParentLFNs() on the child file returns the correct
         LFNs.
         """
+
         testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
                                         events = 20, cksum = 1)
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -231,8 +240,9 @@ class FileTest(unittest.TestCase):
         Test the loading of file meta data using the ID of a file and the
         LFN of a file.
         """
+
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                                  cksum = 1)
+                                  cksum = 101, cktype = 'cksum')
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
@@ -256,8 +266,8 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileB["events"]) == int or type(testFileB["events"]) == long, \
                "ERROR: File events is not an integer type."
-        assert type(testFileB["cksum"]) == int or type(testFileB["cksum"]) == long, \
-               "ERROR: File cksum is not an integer type."
+        assert type(testFileB["cksum"]) == str, \
+               "ERROR: File cksum is not a string type."
         
         assert type(testFileC["id"]) == int or type(testFileC["id"]) == long, \
                "ERROR: File id is not an integer type."
@@ -265,8 +275,11 @@ class FileTest(unittest.TestCase):
                "ERROR: File size is not an integer type."
         assert type(testFileC["events"]) == int or type(testFileC["events"]) == long, \
                "ERROR: File events is not an integer type."
-        assert type(testFileC["cksum"]) == int or type(testFileC["cksum"]) == long, \
+        assert type(testFileC["cksum"]) == str, \
                "ERROR: File cksum is not an integer type."
+
+        self.assertEqual(testFileC['cksum'], '101')
+        self.assertEqual(testFileC['cktype'], 'cksum')
 
         testFileA.delete()
         return
@@ -278,6 +291,7 @@ class FileTest(unittest.TestCase):
         Add a child to some parent files and make sure that all the parentage
         information is loaded/stored correctly from the database.
         """
+
         testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
                                         events = 20, cksum = 1)
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -330,6 +344,7 @@ class FileTest(unittest.TestCase):
         addition of one of the childs and then verify that it does in fact only
         have one parent.
         """
+
         testFileParentA = DBSBufferFile(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, cksum = 1)
         testFileParentA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -397,6 +412,7 @@ class FileTest(unittest.TestCase):
         Create a file and add a couple locations.  Load the file from the
         database to make sure that the locations were set correctly.
         """
+
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         cksum = 1)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -413,7 +429,7 @@ class FileTest(unittest.TestCase):
         testFileB = DBSBufferFile(id = testFileA["id"])
         testFileB.load()
 
-        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
+        goldenLocations = ["se1.fnal.gov", "se1.cern.ch", "se2.fnal.gov"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
@@ -433,6 +449,7 @@ class FileTest(unittest.TestCase):
         locations are correct.  Rollback the database transaction and once
         again reload the file.  Verify that the original locations are back.
         """
+
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                                   cksum = 1)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -487,6 +504,7 @@ class FileTest(unittest.TestCase):
         sure that the class behaves well when the location is passed in as a
         single string instead of a set.
         """
+
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                                   cksum = 1, locations = Set(["se1.fnal.gov"]))
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
@@ -536,6 +554,7 @@ class FileTest(unittest.TestCase):
 
         Test the ability to add run and lumi information to a file.
         """
+
         testFile = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                                  cksum = 1, locations = "se1.fnal.gov")
         testFile.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
